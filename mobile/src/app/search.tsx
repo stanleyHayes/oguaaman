@@ -31,8 +31,15 @@ const KIND_LABEL: Record<string, string> = {
   member: "Person", institution: "Institution", artist: "Artist", business: "Business",
   memorial: "In memoriam", person: "Son / daughter", event: "Event", memory: "Memory", opportunity: "Opportunity",
 };
+const KIND_TONE: Record<string, string> = {
+  member: C.green, institution: C.maroon, artist: C.clay, business: C.teal,
+  memorial: C.goldBrand, person: C.green, event: C.goldText, memory: C.clay, opportunity: C.teal,
+};
 function label(h: SearchHit): string {
   return KIND_LABEL[h.kind === "listing" ? (h.type ?? "") : h.kind] ?? "Result";
+}
+function tone(h: SearchHit): string {
+  return KIND_TONE[h.kind === "listing" ? (h.type ?? "") : h.kind] ?? C.inkFaint;
 }
 
 export default function Search() {
@@ -57,15 +64,20 @@ export default function Search() {
 
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-      <TextInput
-        autoFocus
-        value={q}
-        onChangeText={setQ}
-        placeholder="Search people, businesses, memorials…"
-        placeholderTextColor={C.inkFaint}
-        autoCapitalize="none"
-        style={s.input}
-      />
+      <Text style={s.pageTitle}>Search</Text>
+      <Text style={s.pageLede}>People, businesses, memorials, events and more — the whole town in one box.</Text>
+      <View style={s.inputWrap}>
+        <Text style={s.inputIcon} aria-hidden>⌕</Text>
+        <TextInput
+          autoFocus
+          value={q}
+          onChangeText={setQ}
+          placeholder="Search people, businesses, memorials…"
+          placeholderTextColor={C.inkFaint}
+          autoCapitalize="none"
+          style={s.input}
+        />
+      </View>
 
       <Results q={q} hits={hits} loading={loading} />
     </ScrollView>
@@ -92,7 +104,7 @@ function HitRow({ hit: h }: Readonly<{ hit: SearchHit }>) {
         <Text style={s.rowTitle}>{h.title}</Text>
         {h.subtitle ? <Text style={s.rowSub} numberOfLines={1}>{h.subtitle}</Text> : null}
       </View>
-      <Text style={s.tag}>{label(h)}</Text>
+      <View style={[s.tag, { borderColor: tone(h) }]}><Text style={[s.tagText, { color: tone(h) }]}>{label(h)}</Text></View>
     </View>
   );
   if (!route) return <View>{inner}</View>;
@@ -100,12 +112,17 @@ function HitRow({ hit: h }: Readonly<{ hit: SearchHit }>) {
 }
 
 const s = StyleSheet.create({
-  input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 12, fontSize: 16, color: C.ink },
+  pageTitle: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.ink },
+  pageLede: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 14 },
+  inputWrap: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 16 },
+  inputIcon: { color: C.goldText, fontSize: 18, fontWeight: "700" },
+  input: { flex: 1, paddingVertical: 12, fontSize: 16, color: C.ink },
   hint: { color: C.inkFaint, textAlign: "center", marginTop: 28, fontSize: 14 },
   row: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
-  rowThumb: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  rowThumbInit: { color: C.cream, fontFamily: serif, fontSize: 15, fontWeight: "700" },
+  rowThumb: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  rowThumbInit: { color: C.cream, fontFamily: serif, fontSize: 16, fontWeight: "700" },
   rowTitle: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink },
   rowSub: { color: C.inkMuted, fontSize: 13, marginTop: 2 },
-  tag: { color: C.inkFaint, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+  tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+  tagText: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
 });

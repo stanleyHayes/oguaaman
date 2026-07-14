@@ -78,7 +78,10 @@ function NotifList({ initial }: { initial: Notification[] }) {
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 10 }}>
       <View style={s.topRow}>
-        <Text style={s.count}>{unread > 0 ? `${unread} unread` : "All caught up"}</Text>
+        <View>
+          <Text style={s.pageTitle}>Notifications</Text>
+          <Text style={s.count}>{unread > 0 ? `${unread} unread` : "All caught up"}</Text>
+        </View>
         {unread > 0 && (
           <Pressable onPress={markAll} disabled={busy} style={s.markBtn}><Text style={s.markText}>Mark all read</Text></Pressable>
         )}
@@ -90,7 +93,7 @@ function NotifList({ initial }: { initial: Notification[] }) {
         const linkable = mobileLink(n.link) != null;
         return (
           <Pressable key={n.id} onPress={() => openItem(n)} style={[s.card, !n.read && s.cardUnread]}>
-            <View style={[s.dot, { backgroundColor: KIND_COLOR[n.kind] ?? C.inkFaint, opacity: n.read ? 0.3 : 1 }]} />
+            <View style={[s.bar, { backgroundColor: KIND_COLOR[n.kind] ?? C.inkFaint, opacity: n.read ? 0.3 : 1 }]} />
             <View style={{ flex: 1 }}>
               <View style={s.cardHead}>
                 <Text style={s.cardTitle}>{n.title}</Text>
@@ -113,15 +116,16 @@ const s = StyleSheet.create({
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
   primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
 
-  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 },
-  count: { color: C.inkFaint, fontSize: 12, letterSpacing: 1, fontWeight: "700", textTransform: "uppercase" },
+  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
+  pageTitle: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.ink },
+  count: { color: C.goldText, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginTop: 2 },
   markBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   markText: { color: C.green, fontWeight: "700", fontSize: 12 },
   empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 24, lineHeight: 20 },
 
-  card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
+  card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, overflow: "hidden" },
   cardUnread: { backgroundColor: "#fffdf7", borderColor: C.goldBrand },
-  dot: { width: 9, height: 9, borderRadius: 5, marginTop: 5 },
+  bar: { width: 4, borderRadius: 2 },
   cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
   cardTitle: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink, flexShrink: 1 },
   cardDate: { color: C.inkFaint, fontSize: 11 },
