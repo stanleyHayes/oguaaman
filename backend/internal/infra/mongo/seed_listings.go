@@ -37,6 +37,9 @@ const (
 	d20260510 = "2026-05-10"
 	d20260515 = "2026-05-15"
 	d20260601 = "2026-06-01"
+	d20260620 = "2026-06-20"
+	d20260625 = "2026-06-25"
+	d20260628 = "2026-06-28"
 
 	// Incident & lost-and-found report times (shared with the status history).
 	tsFosuFlood      = "2026-07-12T06:45:00Z"
@@ -52,8 +55,10 @@ const (
 	noteIncidentReported    = "Incident reported"
 	tagLostFound            = "lost-found"
 	tagYoungTalent          = "young-talent"
-	imgGroupPhoto           = "https://res.cloudinary.com/demo/image/upload/samples/imagecon-group.jpg"
-	imgBeachBoat            = "https://res.cloudinary.com/demo/image/upload/samples/landscapes/beach-boat.jpg"
+	tagAdoptAProject        = "adopt-a-project"
+	bakaanCanoeFishermen    = "Bakaano Canoe Fishermen"
+	placeholderPhone        = "tel:+233000000000"
+	placeholderWhatsApp     = "https://wa.me/233000000000"
 	exampleApplyURL         = "https://example.org/apply"
 	oguaaTraditionalCouncil = "Oguaa Traditional Council"
 	venueVictoriaPark       = "Victoria Park & across Cape Coast"
@@ -68,38 +73,38 @@ const (
 func seedListings() []domain.Listing {
 	return []domain.Listing{
 		// ── Artists ──────────────────────────────────────────────────────────
-		{ID: "a-esi-sunshine", Slug: "esi-sunshine", Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Esi Sunshine", Status: domain.StatusApproved, Featured: true, Tags: []string{"gospel-highlife", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{schoolHolyChild}, CreatedAt: d20260310, SubmittedAt: d20260310, PublishedAt: d20260310, Details: map[string]any{
+		{ID: "a-esi-sunshine", Slug: "esi-sunshine", CoverImageURL: seedImg("fetu-queenmother.jpg"), Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Esi Sunshine", Status: domain.StatusApproved, Featured: true, Tags: []string{"gospel-highlife", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{schoolHolyChild}, CreatedAt: d20260310, SubmittedAt: d20260310, PublishedAt: d20260310, Details: map[string]any{
 			"actName": "Esi Sunshine", "genres": []string{"Gospel Highlife", "Gospel"}, "spotlight": true,
 			"bio":            "Raised in the chapel choirs of the coast, Esi turns Methodist hymn-craft and the osode pulse into radiant gospel highlife. A regular at Cape Coast crusades and Fetu Afahye thanksgiving services.",
 			"streamingLinks": streams(), "socials": []domain.SocialLink{sl("Instagram", "https://instagram.com")},
 			"latestRelease": map[string]any{"title": "Nyame Ayɛ (God Has Done It)", "year": 2026}, "booking": "Via management",
 		}},
-		{ID: "a-kojo-castle", Slug: "kojo-castle", Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Kojo Castle", Status: domain.StatusApproved, Tags: []string{"hiplife", "drill", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{"adisadel"}, CreatedAt: d20260222, SubmittedAt: d20260222, PublishedAt: d20260222, Details: map[string]any{
+		{ID: "a-kojo-castle", Slug: "kojo-castle", CoverImageURL: seedImg("posuban.jpg"), Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Kojo Castle", Status: domain.StatusApproved, Tags: []string{"hiplife", "drill", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{"adisadel"}, CreatedAt: d20260222, SubmittedAt: d20260222, PublishedAt: d20260222, Details: map[string]any{
 			"actName": "Kojo Castle", "genres": []string{"Hiplife", "Drill"},
 			"bio":            "Adisco-bred rapper trading bars in Fante and English, named for the fortress he grew up under. Coastal drill with brass-band horns sampled from the Fun Games.",
 			"streamingLinks": streams(), "latestRelease": map[string]any{"title": "Cabo Corso", "year": 2026},
 		}},
-		{ID: "a-nana-tone", Slug: "nana-tone", Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Nana Tone", Status: domain.StatusApproved, Tags: []string{"highlife", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{"mfantsipim"}, CreatedAt: d20260130, SubmittedAt: d20260130, PublishedAt: d20260130, Details: map[string]any{
+		{ID: "a-nana-tone", Slug: "nana-tone", CoverImageURL: seedImg(imgFetuProcession), Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Nana Tone", Status: domain.StatusApproved, Tags: []string{"highlife", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{"mfantsipim"}, CreatedAt: d20260130, SubmittedAt: d20260130, PublishedAt: d20260130, Details: map[string]any{
 			"actName": "Nana Tone", "genres": []string{"Highlife", "Palm-wine"},
 			"bio":            "A guitarist keeping the palm-wine and osode tradition of C.K. Mann alive for a new generation, performing at the Castle gardens and UCC.",
 			"streamingLinks": streams(), "latestRelease": map[string]any{"title": "Osode Revival", "year": 2025},
 		}},
-		{ID: "a-abena-wave", Slug: "abena-wave", Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Abena Wave", Status: domain.StatusApproved, Tags: []string{"afrobeats", "oguaa"}, TownID: "amanful", SchoolIDs: []string{schoolWesleyGirls}, CreatedAt: d20260318, SubmittedAt: d20260318, PublishedAt: d20260318, Details: map[string]any{
+		{ID: "a-abena-wave", Slug: "abena-wave", CoverImageURL: seedImg(imgBakatue2016), Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Abena Wave", Status: domain.StatusApproved, Tags: []string{"afrobeats", "oguaa"}, TownID: "amanful", SchoolIDs: []string{schoolWesleyGirls}, CreatedAt: d20260318, SubmittedAt: d20260318, PublishedAt: d20260318, Details: map[string]any{
 			"actName": "Abena Wave", "genres": []string{"Afrobeats", "R&B"},
 			"bio":            "Wey-Gey-Hey alumna making sun-warm Afrobeats with Fante hooks. Tipped as the breakout voice of the new Oguaa Sound.",
 			"streamingLinks": streams(), "latestRelease": map[string]any{"title": "Bakatue", "year": 2026},
 		}},
-		{ID: "a-frankaa-band", Slug: "frankaa-band", CoverImageURL: imgGroupPhoto, Type: domain.TypeArtist, OwnerID: memberNana, Title: "The Frankaa Band", Status: domain.StatusApproved, Tags: []string{"asafo-fusion", "live", "oguaa"}, TownID: "oguaa", CreatedAt: d20260205, SubmittedAt: d20260205, PublishedAt: d20260205, Details: map[string]any{
+		{ID: "a-frankaa-band", Slug: "frankaa-band", CoverImageURL: seedImg(imgFetuCrowd), Type: domain.TypeArtist, OwnerID: memberNana, Title: "The Frankaa Band", Status: domain.StatusApproved, Tags: []string{"asafo-fusion", "live", "oguaa"}, TownID: "oguaa", CreatedAt: d20260205, SubmittedAt: d20260205, PublishedAt: d20260205, Details: map[string]any{
 			"actName": "The Frankaa Band", "genres": []string{"Asafo Fusion", "Highlife"},
 			"bio":            "A live ensemble fusing Asafo war drums with brass and guitar — the closest thing to standing in the durbar when the seven companies parade.",
 			"streamingLinks": streams(),
 		}},
-		{ID: "a-kweku-brass", Slug: "kweku-brass", Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Kweku Brass", Status: domain.StatusApproved, Tags: []string{"jazz", "brass", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{"adisadel"}, CreatedAt: d20260325, SubmittedAt: d20260325, PublishedAt: d20260325, Details: map[string]any{
+		{ID: "a-kweku-brass", Slug: "kweku-brass", CoverImageURL: seedImg("fetu-flagbearer.jpg"), Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Kweku Brass", Status: domain.StatusApproved, Tags: []string{"jazz", "brass", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{"adisadel"}, CreatedAt: d20260325, SubmittedAt: d20260325, PublishedAt: d20260325, Details: map[string]any{
 			"actName": "Kweku Brass", "genres": []string{"Jazz", "Brass"},
 			"bio":            "Trumpeter out of the Adisco Jazz Band tradition, scoring the coast in smoke and gold.",
 			"streamingLinks": streams(),
 		}},
-		{ID: "a-pending-djkofi", Slug: "dj-kofi-oguaa", Type: domain.TypeArtist, OwnerID: "m-yaw", Title: "DJ Kofi Oguaa", Status: domain.StatusPending, Tags: []string{"afrobeats", "dj"}, TownID: "oguaa", CreatedAt: d20260601, SubmittedAt: d20260601, Details: map[string]any{
+		{ID: "a-pending-djkofi", Slug: "dj-kofi-oguaa", CoverImageURL: seedImg("aboakyer.jpg"), Type: domain.TypeArtist, OwnerID: "m-yaw", Title: "DJ Kofi Oguaa", Status: domain.StatusPending, Tags: []string{"afrobeats", "dj"}, TownID: "oguaa", CreatedAt: d20260601, SubmittedAt: d20260601, Details: map[string]any{
 			"actName": "DJ Kofi Oguaa", "genres": []string{"Afrobeats", "Amapiano"},
 			"bio":            "Resident DJ across Cape Coast beach bars; submitted for review.",
 			"streamingLinks": streams(),
@@ -140,7 +145,7 @@ func seedListings() []domain.Listing {
 				"honorific": "Madam", "bornYear": 1951, "diedDate": "2025-03-14", "birthday": "1951-06-03", "observeBirthday": true, "remindersEnabled": true,
 				"epitaph":      "She taught half of Bakaano to read, and all of us to be kind.",
 				"lifeStory":    "Madam Adwoa Mensah was born in Bakaano in 1951, the eldest of six, and never really left the sea air she loved. After Wesley Girls', she came home to teach — first at the primary school by the lagoon, then for thirty-one years in classrooms across Cape Coast.\n\nGenerations of Oguaa children passed through her care. She is remembered for her patience, her quick humour, and the way she could quiet a noisy room with a single raised eyebrow. On Saturdays she sold kenkey at the junction, and no child who was hungry ever paid.\n\nShe passed peacefully at home, surrounded by family, on 14 March 2025. She leaves her husband, four children, eleven grandchildren, and a town that is kinder for having known her.",
-				"gallery":      []map[string]any{{"caption": "Her classroom, 1985"}, {"caption": "By the lagoon"}, {"caption": "Speech & prize day"}, {"caption": "The junction stall"}, {"caption": "Family, 2019"}, {"caption": "Fetu Afahye, 2022"}},
+				"gallery":      []map[string]any{{"caption": "Her classroom, 1985", "url": seedImg(imgClassroomGhana)}, {"caption": "By the lagoon", "url": seedImg("bakaano.jpg")}, {"caption": "Speech & prize day", "url": seedImg("school-girl-ghana.jpg")}, {"caption": "The junction stall", "url": seedImg(imgMarketWomen)}, {"caption": "Family, 2019", "url": seedImg("church-anglican.jpg")}, {"caption": "Fetu Afahye, 2022", "url": seedImg(imgFetuCrowd)}},
 				"associations": []string{"Wesley Girls' High School", "Bakaano"}, "candles": 142, "rememberedByCount": 38, "keeperId": "m-ama",
 			},
 			Tributes: []domain.Tribute{
@@ -153,40 +158,87 @@ func seedListings() []domain.Listing {
 				"honorific": "Opanyin", "bornYear": 1939, "diedDate": "2026-01-09", "observeBirthday": false, "remindersEnabled": true,
 				"epitaph":      "The sea gave him everything, and he gave the quarter everything back.",
 				"lifeStory":    "Opanyin Kobina Eshun was a master fisherman of Bakaano for more than fifty years, and for the last fifteen the chief fisherman who read the lagoon better than any almanac.\n\nHe knew where the catch would run before the tide turned, mended nets for widows without charge, and never let a young man go to sea unprepared. At Bakatue he carried the Omanhene's net.\n\nHe joined his ancestors on 9 January 2026. Da yie, Opanyin.",
-				"gallery":      []map[string]any{{"caption": "At the harbour"}, {"caption": "Mending nets"}, {"caption": "Bakatue"}},
-				"associations": []string{"Bakaano Canoe Fishermen"}, "candles": 64, "rememberedByCount": 21, "keeperId": "m-esi",
+				"gallery":      []map[string]any{{"caption": "At the harbour", "url": seedImg("elmina-castle.jpg")}, {"caption": "Mending nets", "url": seedImg("fishermen.jpg")}, {"caption": "Bakatue", "url": seedImg("bakatue.jpg")}},
+				"associations": []string{bakaanCanoeFishermen}, "candles": 64, "rememberedByCount": 21, "keeperId": "m-esi",
 			},
 			Tributes: []domain.Tribute{
 				{ID: "t-4", AuthorName: "Esi Quayson", Relation: "Family", Message: "Grandpa, the harbour is quiet without your whistle. We remember.", CreatedAt: "2026-01-15"},
 			}},
+		{ID: "mem-efua-abakah", Slug: "madam-efua-abakah", Type: domain.TypeMemorial, OwnerID: memberEfua, Title: "Efua Abakah", Status: domain.StatusApproved, Tags: []string{"oguaa", "nurse", "health"}, TownID: "oguaa", CreatedAt: d20260601, SubmittedAt: d20260601, PublishedAt: d20260601,
+			Details: map[string]any{
+				"honorific": "Madam", "bornYear": 1948, "diedDate": "2026-05-27", "observeBirthday": false, "remindersEnabled": true,
+				"epitaph":      "She brought half the town into the world, and nursed the other half through it.",
+				"lifeStory":    "Madam Efua Abakah trained as a nurse and midwife in the years after independence and gave her whole working life to the people of Cape Coast, retiring from the regional hospital after more than three decades on the wards.\n\nMothers she delivered grew up to bring their own daughters to her. In retirement she ran a small clinic of kindness from her veranda — blood-pressure checks, advice, and a listening ear for the whole street.\n\nShe passed peacefully on 27 May 2026. Da yie, Madam Nurse.",
+				"gallery":      []map[string]any{{"caption": "Christ Church, her chapel", "url": seedImg("church-anglican.jpg")}, {"caption": "The town she nursed", "url": seedImg("town-view.jpg")}, {"caption": "Kotokuraba mornings", "url": seedImg(imgMarketWomen)}},
+				"associations": []string{"Cape Coast Teaching Hospital (retired)", "Christ Church"}, "candles": 57, "rememberedByCount": 16, "keeperId": memberEfua,
+			},
+			Tributes: []domain.Tribute{
+				{ID: "t-5", AuthorName: "Efia Quagraine", Relation: "Church", Message: "Madam Nurse checked on every family on our street. The veranda feels empty without her.", CreatedAt: "2026-06-03"},
+				{ID: "t-6", AuthorName: "Esi Quayson", Relation: "Kotokuraba", Message: "She delivered my firstborn. Rest well, Madam.", CreatedAt: "2026-05-31"},
+			}},
+		{ID: "mem-kweku-sam", Slug: "opanyin-kweku-sam", Type: domain.TypeMemorial, OwnerID: "m-esi", Title: "Kweku Sam", Status: domain.StatusApproved, Tags: []string{"bakaano", "fishing", "elder"}, TownID: "bakaano", CreatedAt: d20260625, SubmittedAt: d20260625, PublishedAt: d20260625,
+			Details: map[string]any{
+				"honorific": "Opanyin", "bornYear": 1944, "diedDate": "2026-06-18", "observeBirthday": false, "remindersEnabled": true,
+				"epitaph":      "He read the sea like a book, and taught a whole quarter to do the same.",
+				"lifeStory":    "Opanyin Kweku Sam went to sea as a boy and came home an elder. For decades his canoe was first out at dawn, and in his later years he was the one the young fishermen came to before they bought an engine, mended a net, or named a boat.\n\nHe kept the old songs of the fleet and the old courtesies of the shore. At Bakatue he stood with the elders and watched the sacred net come in.\n\nHe joined his ancestors on 18 June 2026. Da yie, Opanyin.",
+				"gallery":      []map[string]any{{"caption": "The fleet at dawn", "url": seedImg("fishing-boats.jpg")}, {"caption": "Bakatue regatta", "url": seedImg(imgBakatue2016)}},
+				"associations": []string{bakaanCanoeFishermen}, "candles": 41, "rememberedByCount": 12, "keeperId": "m-esi",
+			},
+			Tributes: []domain.Tribute{
+				{ID: "t-7", AuthorName: "Nana Kweku Essien", Relation: "Bakaano", Message: "The shore will not forget him. Every canoe that lands safely carries a little of his teaching.", CreatedAt: "2026-06-22"},
+			}},
 
 		// ── Businesses ─────────────────────────────────────────────────────────
-		{ID: "b-castleview", Slug: "castle-view-guesthouse", CoverImageURL: imgBeachBoat, Type: domain.TypeBusiness, OwnerID: "m-yaw", Title: "Castle View Guesthouse", Status: domain.StatusApproved, Featured: true, Tags: []string{"hospitality", "oguaa"}, TownID: "oguaa", CreatedAt: d20260302, SubmittedAt: d20260302, PublishedAt: d20260302, Details: map[string]any{
+		{ID: "b-castleview", Slug: "castle-view-guesthouse", CoverImageURL: seedImg("castle-exterior.jpg"), Type: domain.TypeBusiness, OwnerID: "m-yaw", Title: "Castle View Guesthouse", Status: domain.StatusApproved, Featured: true, Tags: []string{"hospitality", "oguaa"}, TownID: "oguaa", CreatedAt: d20260302, SubmittedAt: d20260302, PublishedAt: d20260302, Details: map[string]any{
 			"category": "Hospitality & Lodging", "description": "A small, family-run guesthouse a short walk from Cape Coast Castle, with a rooftop that catches the Atlantic breeze.",
 			"services": []map[string]any{{"name": "Standard room", "price": "GHS 250/night"}, {"name": "Sea-view room", "price": "GHS 380/night"}, {"name": "Airport pickup", "note": "On request"}},
 			"address":  "Victoria Road, near Cape Coast Castle", "openingHours": "Reception 24/7",
-			"contact": []domain.SocialLink{sl("Phone", "tel:+233000000000"), sl("WhatsApp", "https://wa.me/233000000000")},
+			"contact": []domain.SocialLink{sl("Phone", placeholderPhone), sl("WhatsApp", placeholderWhatsApp)},
 			// An active Supporter subscription (Phase 7) — badge + priority placement.
 			"subscribedUntil": time.Now().UTC().Add(21 * 24 * time.Hour).Format(time.RFC3339),
 		}},
-		{ID: "b-fish", Slug: "kotokuraba-fresh-fish", CoverImageURL: "https://res.cloudinary.com/demo/image/upload/samples/food/pot-mussels.jpg", Type: domain.TypeBusiness, OwnerID: "m-esi", Title: "Esi's Fresh Fish — Kotokuraba", Status: domain.StatusApproved, Tags: []string{"fishing", "market", "kotokuraba"}, TownID: "kotokuraba", CreatedAt: d20260312, SubmittedAt: d20260312, PublishedAt: d20260312, Details: map[string]any{
+		{ID: "b-fish", Slug: "kotokuraba-fresh-fish", CoverImageURL: seedImg("fishermen.jpg"), Type: domain.TypeBusiness, OwnerID: "m-esi", Title: "Esi's Fresh Fish — Kotokuraba", Status: domain.StatusApproved, Tags: []string{"fishing", "market", "kotokuraba"}, TownID: "kotokuraba", CreatedAt: d20260312, SubmittedAt: d20260312, PublishedAt: d20260312, Details: map[string]any{
 			"category": "Market & Fishing", "description": "Same-day catch from the Bakaano canoes, sold at Kotokuraba market. Tilapia, redfish, and the morning's best.",
 			"services": []map[string]any{{"name": "Fresh tilapia", "price": "by weight"}, {"name": "Smoked fish", "price": "by weight"}, {"name": "Bulk / event orders", "note": "Order a day ahead"}},
 			"address":  "Kotokuraba Market, Cape Coast", "openingHours": "Mon–Sat, 6:00 a.m.–4:00 p.m.",
-			"contact": []domain.SocialLink{sl("WhatsApp", "https://wa.me/233000000000")},
+			"contact": []domain.SocialLink{sl("WhatsApp", placeholderWhatsApp)},
 		}},
-		{ID: "b-kenkey", Slug: "bakaano-kenkey-junction", CoverImageURL: "https://res.cloudinary.com/demo/image/upload/samples/food/spices.jpg", Type: domain.TypeBusiness, OwnerID: memberEfua, Title: "Bakaano Kenkey Junction", Status: domain.StatusApproved, Featured: true, Tags: []string{"food", "bakaano"}, TownID: "bakaano", CreatedAt: d20260401, SubmittedAt: d20260401, PublishedAt: d20260401, Details: map[string]any{
+		{ID: "b-kenkey", Slug: "bakaano-kenkey-junction", CoverImageURL: seedImg("kenkey.jpg"), Type: domain.TypeBusiness, OwnerID: memberEfua, Title: "Bakaano Kenkey Junction", Status: domain.StatusApproved, Featured: true, Tags: []string{"food", "bakaano"}, TownID: "bakaano", CreatedAt: d20260401, SubmittedAt: d20260401, PublishedAt: d20260401, Details: map[string]any{
 			"category": "Food & Drink", "description": "Fante kenkey (dokonu) steamed in plantain leaves, with fresh fried fish, shito and ground pepper. The junction's been here longer than the bridge.",
 			"services": []map[string]any{{"name": "Kenkey & fish", "price": "GHS 20"}, {"name": "Kenkey & one-man-thousand", "price": "GHS 15"}},
 			"address":  "The junction, Bakaano", "openingHours": "Daily, 11:00 a.m.–9:00 p.m.",
 		}},
-		{ID: "b-pending-prints", Slug: "oguaa-prints", Type: domain.TypeBusiness, OwnerID: "m-yaw", Title: "Oguaa Prints & Textiles", Status: domain.StatusPending, Tags: []string{"textile", "craft"}, TownID: "oguaa", CreatedAt: "2026-05-30", SubmittedAt: "2026-05-30", Details: map[string]any{
+		{ID: "b-pending-prints", Slug: "oguaa-prints", CoverImageURL: seedImg("downtown.jpg"), Type: domain.TypeBusiness, OwnerID: "m-yaw", Title: "Oguaa Prints & Textiles", Status: domain.StatusPending, Tags: []string{"textile", "craft"}, TownID: "oguaa", CreatedAt: "2026-05-30", SubmittedAt: "2026-05-30", Details: map[string]any{
 			"category": "Craft & Textiles", "description": "Hand-finished prints and cloth inspired by the bold appliqué grammar of the coast. Submitted for review.",
 			"services": []map[string]any{{"name": "Custom cloth", "note": "By commission"}},
 		}},
+		{ID: "b-adjuah-tailor", Slug: "adjuah-and-daughters-dressmaking", CoverImageURL: seedImg(imgMarketWomen), Type: domain.TypeBusiness, OwnerID: "m-ama", Title: "Adjuah & Daughters Dressmaking", Status: domain.StatusApproved, Tags: []string{"fashion", "tailoring", "kotokuraba"}, TownID: "kotokuraba", CreatedAt: d20260410, SubmittedAt: d20260410, PublishedAt: d20260410, Details: map[string]any{
+			"category": "Fashion & Tailoring", "description": "A family dressmaking shop near the market — kaba and slit, funeral cloth, festival wear and school uniforms, sewn to fit and finished by hand.",
+			"services": []map[string]any{{"name": "Kaba & slit", "price": "from GHS 180"}, {"name": "School uniforms", "price": "from GHS 120"}, {"name": "Festival & occasion wear", "note": "Book ahead for Fetu season"}},
+			"address":  "Kotokuraba Market, the cloth row, Cape Coast", "openingHours": "Mon–Sat, 8:00 a.m.–6:00 p.m.",
+			"contact": []domain.SocialLink{sl("WhatsApp", placeholderWhatsApp)},
+		}},
+		{ID: "b-campus-bookshop", Slug: "amamoma-campus-bookshop", CoverImageURL: seedImg("ucc-library.jpg"), Type: domain.TypeBusiness, OwnerID: memberAkua, Title: "Amamoma Campus Bookshop", Status: domain.StatusApproved, Tags: []string{"books", "education", "ucc"}, TownID: "amamoma", CreatedAt: d20260420, SubmittedAt: d20260420, PublishedAt: d20260420, Details: map[string]any{
+			"category": "Books & Stationery", "description": "Textbooks, past questions, stationery and printing a short walk from the UCC gate. We order in course readers on request — ask at the counter.",
+			"services": []map[string]any{{"name": "Textbooks & readers", "note": "New and used"}, {"name": "Printing & binding", "price": "from GHS 0.50/page"}, {"name": "Past questions", "note": "WASSCE & UCC courses"}},
+			"address":  "Amamoma, near the UCC main gate, Cape Coast", "openingHours": "Mon–Sat, 7:30 a.m.–8:00 p.m.",
+			"contact": []domain.SocialLink{sl("Phone", placeholderPhone)},
+		}},
+		{ID: "b-tantri-beach", Slug: "tantri-beach-spot", CoverImageURL: seedImg("beach.jpg"), Type: domain.TypeBusiness, OwnerID: "m-yaw", Title: "Tantri Beach Spot", Status: domain.StatusApproved, Tags: []string{"food", "beach", "oguaa"}, TownID: "tantri", CreatedAt: d20260501, SubmittedAt: d20260501, PublishedAt: d20260501, Details: map[string]any{
+			"category": "Food & Drink", "description": "Grilled fish, kebabs and cold drinks on the sand at Tantri, with tables in the shade of the palms. Evenings are best — come for the sunset.",
+			"services": []map[string]any{{"name": "Grilled tilapia & banku", "price": "GHS 45"}, {"name": "Kebabs", "price": "GHS 15"}, {"name": "Private beach events", "note": "By arrangement"}},
+			"address":  "Tantri beachfront, Cape Coast", "openingHours": "Daily, 11:00 a.m.–10:00 p.m.",
+			"contact": []domain.SocialLink{sl("WhatsApp", placeholderWhatsApp)},
+		}},
+		{ID: "b-lagoon-view", Slug: "lagoon-view-guesthouse", CoverImageURL: seedImg("beach-boats.jpg"), Type: domain.TypeBusiness, OwnerID: memberNana, Title: "Lagoon View Guesthouse", Status: domain.StatusApproved, Tags: []string{"hospitality", "bakaano"}, TownID: "bakaano", CreatedAt: d20260505, SubmittedAt: d20260505, PublishedAt: d20260505, Details: map[string]any{
+			"category": "Hospitality & Lodging", "description": "A quiet guesthouse overlooking the Fosu Lagoon at Bakaano — ten rooms, breakfast with the herons, and the landing beach a minute's walk away.",
+			"services": []map[string]any{{"name": "Standard room", "price": "GHS 220/night"}, {"name": "Lagoon-view room", "price": "GHS 320/night"}, {"name": "Long-stay rates", "note": "For researchers & volunteers"}},
+			"address":  "Bakaano, by the Fosu Lagoon, Cape Coast", "openingHours": "Reception 6:00 a.m.–10:00 p.m.",
+			"contact": []domain.SocialLink{sl("Phone", placeholderPhone), sl("WhatsApp", placeholderWhatsApp)},
+		}},
 
 		// ── Events ───────────────────────────────────────────────────────────
-		{ID: "e-fetu", Slug: "fetu-afahye-2026", CoverImageURL: imgGroupPhoto, Type: domain.TypeEvent, OwnerID: memberNana, Title: "Oguaa Fetu Afahye 2026", Status: domain.StatusApproved, Featured: true, Tags: []string{"festival", "oguaa", "homecoming"}, TownID: "oguaa", PostedByOrgID: orgOguaaTraditional, CreatedAt: d20260301, SubmittedAt: d20260301, PublishedAt: d20260301, Details: map[string]any{
+		{ID: "e-fetu", Slug: "fetu-afahye-2026", CoverImageURL: seedImg(imgFetuProcession), Type: domain.TypeEvent, OwnerID: memberNana, Title: "Oguaa Fetu Afahye 2026", Status: domain.StatusApproved, Featured: true, Tags: []string{"festival", "oguaa", "homecoming"}, TownID: "oguaa", PostedByOrgID: orgOguaaTraditional, CreatedAt: d20260301, SubmittedAt: d20260301, PublishedAt: d20260301, Details: map[string]any{
 			"description": "The annual harvest and cleansing festival of Oguaa, giving thanks to the 77 gods and to the sea. A week of rites culminating in the grand durbar of chiefs — palanquins, state umbrellas, and the seven Asafo companies. The homecoming beat of the year.",
 			"startsAt":    "2026-09-05", "venue": venueVictoriaPark, "organiser": oguaaTraditionalCouncil, "anchorFestival": true,
 			"festival": festivalFetuAfahye, "edition": "2026",
@@ -201,15 +253,15 @@ func seedListings() []domain.Listing {
 				{"name": "Orange Friday carnival", "pricePesewas": int64(3_000), "capacity": 0},
 			},
 		}},
-		{ID: "e-bakaano-prize", Slug: "bakaano-prize-giving", Type: domain.TypeEvent, OwnerID: memberAidoo, Title: "68th Speech & Prize-Giving Day", Status: domain.StatusApproved, Tags: []string{"education", "bakaano"}, TownID: "bakaano", SchoolIDs: []string{schoolBakaanoBasic}, PostedByOrgID: schoolBakaanoBasic, CreatedAt: d20260515, SubmittedAt: d20260515, PublishedAt: d20260515, Details: map[string]any{
+		{ID: "e-bakaano-prize", Slug: "bakaano-prize-giving", CoverImageURL: seedImg(imgClassroomGhana), Type: domain.TypeEvent, OwnerID: memberAidoo, Title: "68th Speech & Prize-Giving Day", Status: domain.StatusApproved, Tags: []string{"education", "bakaano"}, TownID: "bakaano", SchoolIDs: []string{schoolBakaanoBasic}, PostedByOrgID: schoolBakaanoBasic, CreatedAt: d20260515, SubmittedAt: d20260515, PublishedAt: d20260515, Details: map[string]any{
 			"description": "Bakaano M/A Basic School warmly invites parents, old students, and well-wishers to its 68th Speech & Prize-Giving Day. Doors open 8:00 a.m.; pupils report 7:30 a.m. in full uniform.",
 			"startsAt":    "2026-11-22", "venue": "School park, Bakaano", "organiser": "Bakaano M/A Basic School",
 		}},
-		{ID: "e-funmatch", Slug: "mfantsipim-adisadel-fun-games", Type: domain.TypeEvent, OwnerID: memberKojo, Title: "Mfantsipim–Adisadel Fun Games", Status: domain.StatusApproved, Tags: []string{"education", "sports", "rivalry"}, TownID: "oguaa", SchoolIDs: []string{"mfantsipim", "adisadel"}, CreatedAt: d20260410, SubmittedAt: d20260410, PublishedAt: d20260410, Details: map[string]any{
+		{ID: "e-funmatch", Slug: "mfantsipim-adisadel-fun-games", CoverImageURL: seedImg("adisadel-campus.jpg"), Type: domain.TypeEvent, OwnerID: memberKojo, Title: "Mfantsipim–Adisadel Fun Games", Status: domain.StatusApproved, Tags: []string{"education", "sports", "rivalry"}, TownID: "oguaa", SchoolIDs: []string{"mfantsipim", "adisadel"}, CreatedAt: d20260410, SubmittedAt: d20260410, PublishedAt: d20260410, Details: map[string]any{
 			"description": "The friendly continuation of Ghana's oldest school rivalry, run since 1992 to turn competition into cooperation. Football, athletics, and brass bands.",
 			"startsAt":    "2026-07-18", "venue": "Cape Coast Sports Stadium", "organiser": "MOBA & Santaclausians",
 		}},
-		{ID: "e-soundlive", Slug: "the-oguaa-sound-live", CoverImageURL: imgBeachBoat, Type: domain.TypeEvent, OwnerID: memberAkua, Title: "The Oguaa Sound — Live at the Castle Gardens", Status: domain.StatusApproved, Featured: true, Tags: []string{"music", "oguaa"}, TownID: "oguaa", CreatedAt: d20260501, SubmittedAt: d20260501, PublishedAt: d20260501, Details: map[string]any{
+		{ID: "e-soundlive", Slug: "the-oguaa-sound-live", CoverImageURL: seedImg(imgFetuCrowd), Type: domain.TypeEvent, OwnerID: memberAkua, Title: "The Oguaa Sound — Live at the Castle Gardens", Status: domain.StatusApproved, Featured: true, Tags: []string{"music", "oguaa"}, TownID: "oguaa", CreatedAt: d20260501, SubmittedAt: d20260501, PublishedAt: d20260501, Details: map[string]any{
 			"description": "An evening of highlife, gospel and coastal fusion from the artists of the Oguaa Sound, in the gardens beside the Castle.",
 			"startsAt":    "2026-08-15", "venue": "Cape Coast Castle Gardens", "organiser": "Oguaa Music Curators",
 			"tiers": []map[string]any{
@@ -222,7 +274,7 @@ func seedListings() []domain.Listing {
 			"kind": "scholarship", "description": "Full fee support for promising students from Cape Coast entering senior high school, funded by the Mfantsipim Old Boys Association.", "eligibility": "JHS leavers from the Cape Coast Metro with demonstrated need and strong BECE results.", "deadline": "2026-07-31", "provider": "MOBA", "applyUrl": exampleApplyURL,
 		}},
 		{ID: "op-fisheries", Slug: "coastal-fisheries-apprenticeship", Type: domain.TypeOpportunity, OwnerID: "m-esi", Title: "Coastal Fisheries Apprenticeship", Status: domain.StatusApproved, Tags: []string{"apprenticeship", "fishing"}, TownID: "bakaano", CreatedAt: d20260505, SubmittedAt: d20260505, PublishedAt: d20260505, Details: map[string]any{
-			"kind": "apprenticeship", "description": "A six-month, hands-on apprenticeship in sustainable fishing, net-making and cold-chain handling with the Bakaano canoe community.", "eligibility": "Cape Coast residents aged 18+.", "deadline": "2026-06-30", "provider": "Bakaano Canoe Fishermen", "applyUrl": exampleApplyURL,
+			"kind": "apprenticeship", "description": "A six-month, hands-on apprenticeship in sustainable fishing, net-making and cold-chain handling with the Bakaano canoe community.", "eligibility": "Cape Coast residents aged 18+.", "deadline": "2026-06-30", "provider": bakaanCanoeFishermen, "applyUrl": exampleApplyURL,
 		}},
 		{ID: "op-coding", Slug: "ucc-summer-coding", Type: domain.TypeOpportunity, OwnerID: memberAkua, Title: "UCC Summer Coding Programme", Status: domain.StatusApproved, Tags: []string{"training", "youth"}, TownID: "oguaa", PostedByOrgID: "ucc", CreatedAt: d20260510, SubmittedAt: d20260510, PublishedAt: d20260510, Details: map[string]any{
 			"kind": "training", "description": "A free four-week introduction to web development for senior high students, held at the University of Cape Coast.", "eligibility": "SHS students from the Central Region, aged 16–19, with guardian consent.", "deadline": "2026-07-15", "provider": "University of Cape Coast", "applyUrl": exampleApplyURL,
@@ -235,27 +287,43 @@ func seedListings() []domain.Listing {
 		}},
 
 		// ── Memories ───────────────────────────────────────────────────────────
-		{ID: "my-dawn", Slug: "mfantsipim-dawn", CoverImageURL: "https://res.cloudinary.com/demo/image/upload/samples/landscapes/nature-mountains.jpg", Type: domain.TypeMemory, OwnerID: memberKojo, Title: "Dawn on the Mfantsipim hill", Status: domain.StatusApproved, Tags: []string{"school:mfantsipim", "era:1980s", "education"}, SchoolIDs: []string{"mfantsipim"}, TownID: "oguaa", CreatedAt: d20260320, SubmittedAt: d20260320, PublishedAt: d20260320, Details: map[string]any{
+		{ID: "my-dawn", Slug: "mfantsipim-dawn", CoverImageURL: seedImg("mfantsipim-campus.jpg"), Type: domain.TypeMemory, OwnerID: memberKojo, Title: "Dawn on the Mfantsipim hill", Status: domain.StatusApproved, Tags: []string{"school:mfantsipim", "era:1980s", "education"}, SchoolIDs: []string{"mfantsipim"}, TownID: "oguaa", CreatedAt: d20260320, SubmittedAt: d20260320, PublishedAt: d20260320, Details: map[string]any{
 			"text": "We rose before the sun for morning devotion, the whole hill singing, the sea a grey line below. You did not know then that those cold mornings were making you. Dwen Hwe Kan.", "era": "1980s",
 		}},
-		{ID: "my-fetu", Slug: "fetu-afahye-2019", CoverImageURL: imgGroupPhoto, Type: domain.TypeMemory, OwnerID: memberEfua, Title: "Fetu Afahye, the year everyone came home", Status: domain.StatusApproved, Tags: []string{"festival", "oguaa", "era:2019"}, TownID: "oguaa", CreatedAt: d20260322, SubmittedAt: d20260322, PublishedAt: d20260322, Details: map[string]any{
+		{ID: "my-fetu", Slug: "fetu-afahye-2019", CoverImageURL: seedImg("fetu-queenmother.jpg"), Type: domain.TypeMemory, OwnerID: memberEfua, Title: "Fetu Afahye, the year everyone came home", Status: domain.StatusApproved, Tags: []string{"festival", "oguaa", "era:2019"}, TownID: "oguaa", CreatedAt: d20260322, SubmittedAt: d20260322, PublishedAt: d20260322, Details: map[string]any{
 			"text": "2019, the Year of Return. Cousins we had never met flew in from Atlanta and London. We stood in the durbar dust together, strangers and family at once, and watched the palanquins go by.", "era": "2019",
 		}},
-		{ID: "my-lagoon", Slug: "the-lagoon-before-the-bridge", CoverImageURL: imgBeachBoat, Type: domain.TypeMemory, OwnerID: "m-ama", Title: "The lagoon before the bridge", Status: domain.StatusApproved, Tags: []string{"bakaano", "town:bakaano", "era:1990s"}, TownID: "bakaano", CreatedAt: d20260328, SubmittedAt: d20260328, PublishedAt: d20260328, Details: map[string]any{
+		{ID: "my-lagoon", Slug: "the-lagoon-before-the-bridge", CoverImageURL: seedImg("fosu-lagoon.jpg"), Type: domain.TypeMemory, OwnerID: "m-ama", Title: "The lagoon before the bridge", Status: domain.StatusApproved, Tags: []string{"bakaano", "town:bakaano", "era:1990s"}, TownID: "bakaano", CreatedAt: d20260328, SubmittedAt: d20260328, PublishedAt: d20260328, Details: map[string]any{
 			"text": "We swam in the Fosu before they built the new road. The fishermen would shout at us, but they always saved the small fish for the children on the bank.", "era": "1990s",
 		}},
-		{ID: "my-pending", Slug: "kakum-school-trip", Type: domain.TypeMemory, OwnerID: memberEfua, Title: "Our Kakum canopy-walk school trip", Status: domain.StatusPending, Tags: []string{"education", "visit"}, TownID: "oguaa", CreatedAt: "2026-06-02", SubmittedAt: "2026-06-02", Details: map[string]any{
+		{ID: "my-pending", Slug: "kakum-school-trip", CoverImageURL: seedImg("kakum-canopy.jpg"), Type: domain.TypeMemory, OwnerID: memberEfua, Title: "Our Kakum canopy-walk school trip", Status: domain.StatusPending, Tags: []string{"education", "visit"}, TownID: "oguaa", CreatedAt: "2026-06-02", SubmittedAt: "2026-06-02", Details: map[string]any{
 			"text": "Half the class would not cross the bridges. Submitted for review.", "era": "2000s",
 		}},
 
 		// ── Adopt-a-project (spec §4/§6/§15 Phase 2; money in pesewas) ─────────
-		{ID: "pr-bakaano-lib", Slug: "bakaano-basic-library-corner", Type: domain.TypeProject, OwnerID: memberAidoo, Title: "A library corner for Bakaano M/A Basic", Status: domain.StatusApproved, Tags: []string{"education", "bakaano", "adopt-a-project"}, TownID: "bakaano", SchoolIDs: []string{schoolBakaanoBasic}, PostedByOrgID: schoolBakaanoBasic, CreatedAt: d20260601, SubmittedAt: d20260601, PublishedAt: d20260601, Details: map[string]any{
+		{ID: "pr-bakaano-lib", Slug: "bakaano-basic-library-corner", CoverImageURL: seedImg(imgClassroomGhana), Type: domain.TypeProject, OwnerID: memberAidoo, Title: "A library corner for Bakaano M/A Basic", Status: domain.StatusApproved, Tags: []string{"education", "bakaano", tagAdoptAProject}, TownID: "bakaano", SchoolIDs: []string{schoolBakaanoBasic}, PostedByOrgID: schoolBakaanoBasic, CreatedAt: d20260601, SubmittedAt: d20260601, PublishedAt: d20260601, Details: map[string]any{
 			"description":   "Shelves, two hundred storybooks and a reading rug for the junior block — a quiet corner where the lagoon-side children can fall in love with reading. Costed with the headteacher; receipts published to backers.",
 			"goalPesewas":   int64(1_500_000), // GH₵ 15,000
 			"raisedPesewas": int64(0),
 			"backers":       0,
 			"organiser":     "Bakaano M/A Basic School (verified)",
 			"deadline":      "2026-09-30",
+		}},
+		{ID: "pr-fosu-cleanup", Slug: "fosu-lagoon-cleanup", CoverImageURL: seedImg("fosu-lagoon.jpg"), Type: domain.TypeProject, OwnerID: memberNana, Title: "Fosu Lagoon cleanup & mangrove watch", Status: domain.StatusApproved, Tags: []string{"environment", "bakaano", tagAdoptAProject}, TownID: "bakaano", CreatedAt: d20260620, SubmittedAt: d20260620, PublishedAt: d20260620, Details: map[string]any{
+			"description":   "Gloves, rakes, canoes and skips for monthly cleanups along the Fosu Lagoon, plus replanting mangroves on the degraded bank. Costed with the cleanup committee; receipts published to backers. Figures are indicative until the first exercise is done.",
+			"goalPesewas":   int64(4_000_000), // GH₵ 40,000
+			"raisedPesewas": int64(0),
+			"backers":       0,
+			"organiser":     "Bakaano community cleanup committee",
+			"deadline":      "2026-12-31",
+		}},
+		{ID: "pr-quaque-ict", Slug: "philip-quaque-ict-lab", CoverImageURL: seedImg("classroom-block-ghana.jpg"), Type: domain.TypeProject, OwnerID: memberAidoo, Title: "An ICT lab for Philip Quaque Boys' School", Status: domain.StatusApproved, Tags: []string{"education", "technology", tagAdoptAProject}, TownID: "oguaa", SchoolIDs: []string{"philip-quaque-boys"}, PostedByOrgID: "philip-quaque-boys", CreatedAt: d20260628, SubmittedAt: d20260628, PublishedAt: d20260628, Details: map[string]any{
+			"description":   "Thirty workstations, a projector and a term of internet for Ghana's oldest classroom — so the children learning beside the Castle can learn computing too. Costed with the headteacher and a supplier's quote; figures indicative until procurement.",
+			"goalPesewas":   int64(6_000_000), // GH₵ 60,000
+			"raisedPesewas": int64(0),
+			"backers":       0,
+			"organiser":     "Philip Quaque Boys' School (verified)",
+			"deadline":      "2026-11-30",
 		}},
 	}
 }
@@ -362,6 +430,7 @@ type festivalEdition struct {
 	venue     string
 	organiser string
 	desc      string
+	cover     string // seedImg file name; empty → no cover
 	recap     string
 	programme []map[string]any
 	featured  bool
@@ -375,16 +444,16 @@ func seedExtraListings() []domain.Listing {
 	person := func(slug, title, era string, living bool, tags []string, why string) domain.Listing {
 		return domain.Listing{ID: "p-" + slug, Slug: slug, Type: domain.TypePerson, OwnerID: memberNana, Title: title, Status: domain.StatusApproved, Tags: tags, TownID: "oguaa", CreatedAt: pdate, SubmittedAt: pdate, PublishedAt: pdate, Details: map[string]any{"whyNotable": why, "era": era, "living": living}}
 	}
-	event := func(slug, title, startsAt, venue, organiser, desc string, featured bool) domain.Listing {
-		d := map[string]any{"description": desc, "venue": venue, "organiser": organiser}
-		if startsAt != "" {
-			d["startsAt"] = startsAt
+	event := func(e festivalEdition) domain.Listing {
+		d := map[string]any{"description": e.desc, "venue": e.venue, "organiser": e.organiser}
+		if e.startsAt != "" {
+			d["startsAt"] = e.startsAt
 		}
-		return domain.Listing{ID: "e-" + slug, Slug: slug, Type: domain.TypeEvent, OwnerID: memberNana, Title: title, Status: domain.StatusApproved, Featured: featured, Tags: []string{"festival", "central-region"}, TownID: "oguaa", CreatedAt: pdate, SubmittedAt: pdate, PublishedAt: pdate, Details: d}
+		return domain.Listing{ID: "e-" + e.slug, Slug: e.slug, CoverImageURL: e.cover, Type: domain.TypeEvent, OwnerID: memberNana, Title: e.title, Status: domain.StatusApproved, Featured: e.featured, Tags: []string{"festival", "central-region"}, TownID: "oguaa", CreatedAt: pdate, SubmittedAt: pdate, PublishedAt: pdate, Details: d}
 	}
 	// fedition builds one yearly edition of a festival in the archive.
 	fedition := func(e festivalEdition) domain.Listing {
-		l := event(e.slug, e.title, e.startsAt, e.venue, e.organiser, e.desc, e.featured)
+		l := event(e)
 		l.Details["festival"] = e.festival
 		l.Details["edition"] = e.year
 		if e.recap != "" {
@@ -436,47 +505,47 @@ func seedExtraListings() []domain.Listing {
 		// ── The wider festival calendar of the coast ───────────────────────────
 		// Each festival below is a yearly-edition event carrying festival/edition
 		// keys, so the archive (/api/festivals) can group them by year.
-		fedition(festivalEdition{festival: festivalFetuAfahye, year: "2024", slug: "fetu-afahye-2024", title: "Oguaa Fetu Afahye 2024 — Fetu @60", startsAt: "2024-09-07", venue: venueVictoriaPark, organiser: oguaaTraditionalCouncil,
+		fedition(festivalEdition{festival: festivalFetuAfahye, year: "2024", slug: "fetu-afahye-2024", title: "Oguaa Fetu Afahye 2024 — Fetu @60", startsAt: "2024-09-07", venue: venueVictoriaPark, organiser: oguaaTraditionalCouncil, cover: seedImg(imgFetuCrowd),
 			desc:  "The sixtieth anniversary edition of Oguaa's paramount festival — a week of rites, the Asafo companies in full colour, and the grand durbar at Victoria Park.",
 			recap: "Fetu @60, and one for the ages: the Asantehene, Otumfuo Osei Tutu II, attended the grand durbar at Victoria Park for the first time, and the diaspora came home in their thousands. The Asafo companies paraded as their grandfathers did, and the whole coast drummed for a week."}),
-		fedition(festivalEdition{festival: festivalFetuAfahye, year: "2025", slug: "fetu-afahye-2025", title: "Oguaa Fetu Afahye 2025", startsAt: "2025-09-06", venue: venueVictoriaPark, organiser: oguaaTraditionalCouncil,
+		fedition(festivalEdition{festival: festivalFetuAfahye, year: "2025", slug: "fetu-afahye-2025", title: "Oguaa Fetu Afahye 2025", startsAt: "2025-09-06", venue: venueVictoriaPark, organiser: oguaaTraditionalCouncil, cover: seedImg(imgFetuProcession),
 			desc:  "The annual harvest and cleansing festival of Oguaa — a week of rites culminating in the grand durbar of chiefs at Victoria Park.",
 			recap: "A homecoming edition under clear skies: Orange Friday filled the streets till midnight, the seven Asafo companies answered the drums, and the durbar at Victoria Park drew families home from across the world."}),
-		fedition(festivalEdition{festival: festivalEdinaBakatue, year: "2025", slug: "edina-bakatue-2025", title: "Edina Bakatue 2025", startsAt: "2025-07-01", venue: "Benya Lagoon & Elmina town", organiser: edinaTraditionalCouncil,
+		fedition(festivalEdition{festival: festivalEdinaBakatue, year: "2025", slug: "edina-bakatue-2025", title: "Edina Bakatue 2025", startsAt: "2025-07-01", venue: "Benya Lagoon & Elmina town", organiser: edinaTraditionalCouncil, cover: seedImg("bakatue.jpg"),
 			desc:  "The festival of the chiefs and people of Elmina, marking the opening of the Benya Lagoon for the fishing season — the sacred net, the durbar and the regatta.",
 			recap: "A generous first casting — the chief priest's net came up full, and the fishermen read a good season in it. The regatta ran the length of the lagoon before the durbar, and Elmina feasted."}),
-		fedition(festivalEdition{festival: festivalEdinaBakatue, year: "2026", slug: festivalEdinaBakatue, title: "Edina Bakatue 2026", startsAt: "2026-07-07", venue: "Benya Lagoon & Elmina town", organiser: edinaTraditionalCouncil,
+		fedition(festivalEdition{festival: festivalEdinaBakatue, year: "2026", slug: festivalEdinaBakatue, title: "Edina Bakatue 2026", startsAt: "2026-07-07", venue: "Benya Lagoon & Elmina town", organiser: edinaTraditionalCouncil, cover: seedImg(imgBakatue2016),
 			desc: "The festival of the chiefs and people of Elmina — its name means the draining of the lagoon — marking the opening of the fishing season. The chief priest casts a sacred net three times into the Benya Lagoon, the state offers mashed yam to the river god Nana Benya, and a grand durbar and regatta follow. Documented since at least 1847; held on the first Tuesday of July.",
 			programme: []map[string]any{
 				{"day": "Tuesday 7 July", "title": "Casting of the sacred net into the Benya Lagoon — three casts, the catch read for the season", "time": "morning"},
 				{"day": "Tuesday 7 July", "title": "Offering of mashed yam to Nana Benya; grand durbar & lagoon regatta", "time": "afternoon"},
 			}}),
-		fedition(festivalEdition{festival: "panafest", year: "2025", slug: "panafest", title: "PANAFEST 2025 — Pan-African Historical Theatre Festival", startsAt: "2025-07-26", venue: "Cape Coast & Elmina (opening at Cape Coast Castle)", organiser: "National Commission on Culture · Ghana Tourism Authority",
+		fedition(festivalEdition{festival: "panafest", year: "2025", slug: "panafest", title: "PANAFEST 2025 — Pan-African Historical Theatre Festival", startsAt: "2025-07-26", venue: "Cape Coast & Elmina (opening at Cape Coast Castle)", organiser: "National Commission on Culture · Ghana Tourism Authority", cover: seedImg("castle-exterior.jpg"),
 			desc:     "The biennial Pan-African festival of arts and remembrance, grown from Efua Sutherland's 1980 proposal and first staged in 1992. It gathers the continent and the diaspora for historical drama, music, dance, colloquia and a candlelit emancipation vigil, alongside the Emancipation Day commemorations.",
 			recap:    "PANAFEST 2025 brought the diaspora home for days of historical theatre, music and colloquia between the two castles, closing with the candlelit emancipation vigil at the Door of Return. The next edition is PANAFEST 2027.",
 			featured: true}),
-		fedition(festivalEdition{festival: festivalEmancipationDay, year: "2026", slug: festivalEmancipationDay, title: "Emancipation Day 2026", startsAt: "2026-08-01", venue: "Assin Manso Slave River · Cape Coast & Elmina Castles", organiser: "Government of Ghana · Ghana Tourism Authority",
+		fedition(festivalEdition{festival: festivalEmancipationDay, year: "2026", slug: festivalEmancipationDay, title: "Emancipation Day 2026", startsAt: "2026-08-01", venue: "Assin Manso Slave River · Cape Coast & Elmina Castles", organiser: "Government of Ghana · Ghana Tourism Authority", cover: seedImg("castle-courtyard.jpg"),
 			desc: "Ghana's annual commemoration of the abolition of slavery in the British Empire — Ghana was the first African nation to observe it, from 1998. The Central Region is its heart: a grand durbar at Assin Manso, where captives took their last bath in the Slave River, with wreath-laying, libation and remembrance at the Cape Coast and Elmina castles. Climaxes on 1 August.",
 			programme: []map[string]any{
 				{"day": "Friday 31 July", "title": "Reverential Night vigil — Cape Coast Castle", "time": "from dusk"},
 				{"day": "Saturday 1 August", "title": "Durbar at Assin Manso, the 'Last Bath' river site", "time": "morning"},
 				{"day": "Saturday 1 August", "title": "Wreath-laying & libation at Cape Coast and Elmina Castles", "time": "afternoon"},
 			}, featured: true}),
-		fedition(festivalEdition{festival: festivalEmancipationDay, year: "2026", slug: "reverential-night", title: "Reverential Night at the Castle", startsAt: "2026-07-31", venue: "Cape Coast Castle", organiser: "Government of Ghana · Ghana Tourism Authority",
+		fedition(festivalEdition{festival: festivalEmancipationDay, year: "2026", slug: "reverential-night", title: "Reverential Night at the Castle", startsAt: "2026-07-31", venue: "Cape Coast Castle", organiser: "Government of Ghana · Ghana Tourism Authority", cover: seedImg("castle-museum.jpg"),
 			desc: "A solemn vigil on the eve of Emancipation Day. Government, traditional rulers and the diaspora process through the dungeons to the Door of No Return — now also the Door of Return — where libation is poured, the ancestors' names are called, three wreaths laid and seven candles lit. Held each 31 July."}),
-		fedition(festivalEdition{festival: "akwambo", year: "2026", slug: "akwambo-festival", title: "Akwambo (Path-Clearing) Festival 2026", startsAt: "2026-08-29", venue: "Agona & Gomoa traditional areas, Central Region", organiser: "Agona & Gomoa traditional authorities",
+		fedition(festivalEdition{festival: "akwambo", year: "2026", slug: "akwambo-festival", title: "Akwambo (Path-Clearing) Festival 2026", startsAt: "2026-08-29", venue: "Agona & Gomoa traditional areas, Central Region", organiser: "Agona & Gomoa traditional authorities", cover: seedImg("fetu-flagbearer.jpg"),
 			desc: "A path-clearing festival of the Fante communities of the Agona and Gomoa areas, distinct from Oguaa's Fetu Afahye. Townspeople weed and clear the footpaths to the sacred streams and shrines, honouring their founders' journeys, with Asafo drumming and a durbar of chiefs in palanquins. Kept town by town across August and September.",
 			programme: []map[string]any{
 				{"day": "August–September", "title": "Clearing of the footpaths to the sacred streams and shrines"},
 				{"day": "August–September", "title": "Asafo drumming and durbar of chiefs in palanquins"},
 			}}),
-		fedition(festivalEdition{festival: "edina-bronya", year: "2027", slug: "edina-bronya", title: "Edina Bronya 2027", startsAt: "2027-01-07", venue: "Elmina town & St. George's Castle", organiser: edinaTraditionalCouncil,
+		fedition(festivalEdition{festival: "edina-bronya", year: "2027", slug: "edina-bronya", title: "Edina Bronya 2027", startsAt: "2027-01-07", venue: "Elmina town & St. George's Castle", organiser: edinaTraditionalCouncil, cover: seedImg("elmina-castle.jpg"),
 			desc: "Elmina's own 'Christmas' — a harvest and thanksgiving festival inherited from the Dutch era and made wholly Fante. At midnight the Paramount Chief fires musketry to usher in the new year; the next day he rides in palanquin, sheep are slaughtered before Elmina Castle, and families feast. Held on the first Thursday of January.",
 			programme: []map[string]any{
 				{"day": "Thursday 7 January", "title": "Midnight musketry to usher in the new year", "time": "12:00 a.m."},
 				{"day": "Thursday 7 January", "title": "Palanquin procession, slaughter before Elmina Castle, family feasting", "time": "daytime"},
 			}}),
-		event("mfantsipim-at-150-durbar", "Mfantsipim @150 Grand Durbar & Speech Day", "2026-11-14", "Kwabotwe Hill, Mfantsipim School, Cape Coast", "Mfantsipim School & MOBA",
-			"Mfantsipim — founded in 1876, Ghana's pioneer secondary school — marks its sesquicentenary with a Grand Anniversary Durbar and Speech Day on Kwabotwe Hill, the high point of a year of celebration. Speech and Prize-Giving has been a Cape Coast tradition here since 1908; in 2026 it carries 150 years of looking ahead.", false),
+		event(festivalEdition{slug: "mfantsipim-at-150-durbar", title: "Mfantsipim @150 Grand Durbar & Speech Day", startsAt: "2026-11-14", venue: "Kwabotwe Hill, Mfantsipim School, Cape Coast", organiser: "Mfantsipim School & MOBA",
+			desc: "Mfantsipim — founded in 1876, Ghana's pioneer secondary school — marks its sesquicentenary with a Grand Anniversary Durbar and Speech Day on Kwabotwe Hill, the high point of a year of celebration. Speech and Prize-Giving has been a Cape Coast tradition here since 1908; in 2026 it carries 150 years of looking ahead.", cover: seedImg(imgMfantsipimEntrance)}),
 	}
 }

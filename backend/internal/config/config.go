@@ -20,19 +20,9 @@ type Config struct {
 	AIDailyBudget int // global daily cap across the whole instance
 	AIPerMember   int // per-member (per-admin) daily cap
 
-	// Auth (spec §8.1, §9). Passwordless phone/email OTP → JWT sessions.
+	// Auth (spec §8.1, §9). Password-based sign-in → JWT sessions.
 	JWTSecret    string
-	OTPTTLMin    int
 	AuthRequired bool // when false (dev default), unauthenticated writes fall back to a demo identity
-
-	// OTP delivery. OTPProvider selects the channel: "log" (dev — prints the code)
-	// or "hubtel" (real SMS for Ghana). Hubtel needs client id + secret + an
-	// approved sender id.
-	OTPProvider        string
-	HubtelClientID     string
-	HubtelClientSecret string
-	HubtelSenderID     string
-	HubtelEndpoint     string // optional override; defaults to Hubtel's send endpoint
 
 	// Image uploads (first-party). Files are written to UploadDir and served at
 	// /uploads/*. PublicBaseURL is prefixed onto returned URLs; empty = derive the
@@ -64,14 +54,7 @@ func Load() Config {
 		AIDailyBudget: envInt("OGUAA_AI_DAILY_BUDGET", 60),
 		AIPerMember:   envInt("OGUAA_AI_PER_MEMBER", 20),
 		JWTSecret:     env("JWT_SECRET", "oguaa-dev-secret-change-me"),
-		OTPTTLMin:     envInt("OTP_TTL_MIN", 10),
 		AuthRequired:  os.Getenv("AUTH_REQUIRED") == "true",
-
-		OTPProvider:        env("OTP_PROVIDER", "log"),
-		HubtelClientID:     os.Getenv("HUBTEL_CLIENT_ID"),
-		HubtelClientSecret: os.Getenv("HUBTEL_CLIENT_SECRET"),
-		HubtelSenderID:     env("HUBTEL_SENDER_ID", "Oguaa"),
-		HubtelEndpoint:     os.Getenv("HUBTEL_SMS_ENDPOINT"),
 
 		UploadDir:     env("UPLOAD_DIR", "./uploads"),
 		PublicBaseURL: os.Getenv("PUBLIC_API_URL"),

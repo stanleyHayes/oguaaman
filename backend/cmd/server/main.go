@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/oguaa/backend/internal/config"
+	"github.com/oguaa/backend/internal/domain"
 	gqlx "github.com/oguaa/backend/internal/infra/graphql"
 	grpcx "github.com/oguaa/backend/internal/infra/grpcapi"
 	httpx "github.com/oguaa/backend/internal/infra/http"
@@ -50,7 +51,7 @@ func main() {
 		Timeline: mongox.NewTimelineRepo(db),
 	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db))
-	auth := newAuthService(db, cfg, log)
+	auth := newAuthService(memberRepo, cfg)
 	ensureUploadDir(log, cfg)
 	payments, tickets, subs, promotions, revenue := moneyServices(db, cfg, log)
 
@@ -95,25 +96,8 @@ func connectMongo(ctx context.Context, log *slog.Logger, cfg config.Config) (*mo
 	return client, db
 }
 
-// otpSenderFor picks the OTP delivery: real SMS via Hubtel when configured,
-// else the dev log sender.
-func otpSenderFor(cfg config.Config, log *slog.Logger) service.OTPSender {
-	if !strings.EqualFold(cfg.OTPProvider, "hubtel") {
-		return service.LogOTPSender{Log: log}
-	}
-	if cfg.HubtelClientID == "" || cfg.HubtelClientSecret == "" {
-		log.Warn("OTP_PROVIDER=hubtel but HUBTEL_CLIENT_ID/HUBTEL_CLIENT_SECRET are missing — using the dev log sender")
-		return service.LogOTPSender{Log: log}
-	}
-	log.Info("OTP delivery via Hubtel SMS", "sender", cfg.HubtelSenderID)
-	return service.NewHubtelOTPSender(cfg.HubtelClientID, cfg.HubtelClientSecret, cfg.HubtelSenderID, cfg.HubtelEndpoint, log)
-}
-
-func newAuthService(db *mongo.Database, cfg config.Config, log *slog.Logger) *service.AuthService {
-	return service.NewAuthService(
-		mongox.NewMemberRepo(db), mongox.NewOtpRepo(db), otpSenderFor(cfg, log),
-		cfg.JWTSecret, cfg.OTPTTLMin, !cfg.AuthRequired,
-	)
+func newAuthService(members domain.MemberRepository, cfg config.Config) *service.AuthService {
+	return service.NewAuthService(members, cfg.JWTSecret)
 }
 
 func ensureUploadDir(log *slog.Logger, cfg config.Config) {

@@ -23,7 +23,7 @@ import (
 // only after VERIFYING the transaction server-side (redirect callback and/or
 // webhook), then atomically add to the project's raised total. Amounts are
 // integer pesewas. Without keys a labelled simulation drives the same loop so
-// the flow is testable end-to-end in dev (house pattern: LogOTPSender, AI bar).
+// the flow is testable end-to-end in dev (house pattern: the AI bar).
 
 // ErrPledgeAmount is returned for out-of-range pledge amounts.
 var ErrPledgeAmount = errors.New("pledge amount out of range")

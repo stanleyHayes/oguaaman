@@ -215,6 +215,8 @@ func (stubMembers) SetSchooling(context.Context, string, []domain.SchoolStint) e
 func (stubMembers) SetDiaspora(context.Context, string, *domain.Diaspora) error      { return nil }
 func (stubMembers) SetPhoto(context.Context, string, string) error                   { return nil }
 func (stubMembers) SetProfile(context.Context, string, string, string, string) error { return nil }
+func (stubMembers) SetPasswordHash(context.Context, string, string) error            { return nil }
+func (stubMembers) SetDateOfBirth(context.Context, string, string) error             { return nil }
 
 type stubOrgs struct{}
 

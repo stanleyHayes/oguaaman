@@ -3,6 +3,8 @@ package http
 import (
 	"log/slog"
 	"net/http"
+
+	"github.com/oguaa/backend/internal/infra/http/seedimg"
 )
 
 // NewRouter wires the routes (Go 1.22+ method+pattern ServeMux) and middleware.
@@ -15,14 +17,18 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 		mux.Handle("/graphql", gql)
 	}
 
+	// Curated seed imagery (embedded — see internal/infra/http/seedimg). The more
+	// specific pattern wins over the disk-served uploads below.
+	mux.Handle("GET /uploads/seed/", http.StripPrefix("/uploads/seed/", http.FileServerFS(seedimg.FS)))
+
 	// First-party uploaded images, served statically.
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(h.uploadDir))))
 
 	mux.HandleFunc("GET /api/health", h.Health)
 	mux.HandleFunc("GET /api/home", h.Home)
 
-	mux.HandleFunc("POST /api/auth/request-otp", h.AuthRequestOTP)
-	mux.HandleFunc("POST /api/auth/verify-otp", h.AuthVerifyOTP)
+	mux.HandleFunc("POST /api/auth/register", h.AuthRegister)
+	mux.HandleFunc("POST /api/auth/login", h.AuthLogin)
 	mux.HandleFunc("GET /api/auth/me", h.AuthMe)
 
 	mux.HandleFunc("GET /api/artists", h.Artists)

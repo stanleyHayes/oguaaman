@@ -49,6 +49,9 @@ type Member struct {
 	// DateOfBirth — private; captured at signup for the 18+ self-registration gate
 	// (spec §14.4). Never serialised to any client.
 	DateOfBirth string `json:"-" bson:"dateOfBirth,omitempty"`
+	// PasswordHash — private; bcrypt hash of the member's password. Empty means
+	// the account predates password sign-in and can be claimed via the Join flow.
+	PasswordHash string `json:"-" bson:"passwordHash,omitempty"`
 }
 
 // Diaspora is a member's location away from Cape Coast (spec §4/§5/§15).
@@ -71,6 +74,8 @@ type MemberRepository interface {
 	SetAffiliations(ctx context.Context, id, townID, asafoID string) error
 	SetPhoto(ctx context.Context, id, photoURL string) error
 	SetProfile(ctx context.Context, id, displayName, initials, bio string) error
+	SetPasswordHash(ctx context.Context, id, hash string) error
+	SetDateOfBirth(ctx context.Context, id, dateOfBirth string) error
 	SetSchooling(ctx context.Context, id string, stints []SchoolStint) error
 	SetDiaspora(ctx context.Context, id string, d *Diaspora) error
 }

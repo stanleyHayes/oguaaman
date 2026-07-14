@@ -2,132 +2,81 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/oguaa/backend/internal/domain"
 )
 
-// ErrInvalidOTP is returned for a wrong/expired/missing code.
-var ErrInvalidOTP = errors.New("invalid or expired code")
-
 // ErrUnderage is returned when a new self-registration is under 18 (spec §14.4).
 var ErrUnderage = errors.New("you must be 18 or older to join")
+
+// ErrInvalidCredentials is returned for an unknown identifier or wrong password.
+var ErrInvalidCredentials = errors.New("invalid identifier or password")
+
+// ErrIdentifierTaken is returned when registering an identifier whose account
+// already has a password.
+var ErrIdentifierTaken = errors.New("an account already exists for that identifier")
+
+// ErrNoPassword is returned when the account exists but has no password yet —
+// pre-password accounts are claimed through the Join/Register flow.
+var ErrNoPassword = errors.New("this account has no password yet")
 
 // minSignupAge is the self-registration floor; minors join only via a guardian
 // (a deferred flow). See spec §14.4.
 const minSignupAge = 18
 
-// OTPSender delivers a code to a phone/email. The dev impl logs it; a real
-// provider (Twilio, Hubtel for Ghana, WhatsApp Business) implements this.
-type OTPSender interface {
-	Send(ctx context.Context, identifier, code string) error
-}
+// minPasswordLen is the floor for password sign-up.
+const minPasswordLen = 8
 
-type LogOTPSender struct{ Log *slog.Logger }
-
-func (s LogOTPSender) Send(_ context.Context, identifier, code string) error {
-	s.Log.Info("OTP issued (dev — no SMS provider configured)", "identifier", identifier, "code", code)
-	return nil
-}
-
-// AuthService implements passwordless phone/email OTP → JWT sessions (spec §8.1, §9).
+// AuthService implements password-based sign-in → JWT sessions (spec §8.1, §9).
 type AuthService struct {
 	members domain.MemberRepository
-	otps    domain.OtpRepository
-	sender  OTPSender
 	secret  []byte
-	ttl     time.Duration
-	devMode bool // when true, RequestOTP returns the code (no real delivery in dev)
 }
 
-func NewAuthService(members domain.MemberRepository, otps domain.OtpRepository, sender OTPSender, secret string, ttlMin int, devMode bool) *AuthService {
-	return &AuthService{
-		members: members, otps: otps, sender: sender,
-		secret: []byte(secret), ttl: time.Duration(ttlMin) * time.Minute, devMode: devMode,
-	}
+func NewAuthService(members domain.MemberRepository, secret string) *AuthService {
+	return &AuthService{members: members, secret: []byte(secret)}
 }
 
-// RequestOTP generates and "sends" a code for the identifier. Returns the code
-// itself only in dev mode (so the UI/curl can complete the flow without SMS).
+// Register signs up a new member — or lets a pre-existing passwordless account
+// (e.g. an invited one) claim itself — and returns a signed JWT plus the member.
 // dateOfBirth ("YYYY-MM-DD") is required for first-time sign-ups and enforces the
-// 18+ self-registration gate (spec §14.4); returning members may omit it.
-func (a *AuthService) RequestOTP(ctx context.Context, identifier, displayName, dateOfBirth string) (string, error) {
+// 18+ self-registration gate (spec §14.4).
+func (a *AuthService) Register(ctx context.Context, identifier, displayName, dateOfBirth, password string) (string, *domain.Member, error) {
 	identifier = normalizeIdentifier(identifier)
 	if identifier == "" {
-		return "", fmt.Errorf("a phone number or email is required")
+		return "", nil, fmt.Errorf("a phone number or email is required")
 	}
-	dateOfBirth = strings.TrimSpace(dateOfBirth)
-	if err := a.checkSignupAge(ctx, identifier, dateOfBirth); err != nil {
-		return "", err
+	if len(password) < minPasswordLen {
+		return "", nil, fmt.Errorf("password must be at least %d characters", minPasswordLen)
 	}
-	code := random6()
-	o := domain.OTP{
-		Identifier:  identifier,
-		CodeHash:    sha256hex(code),
-		DisplayName: strings.TrimSpace(displayName),
-		DateOfBirth: dateOfBirth,
-		ExpiresAt:   time.Now().Add(a.ttl).UTC().Format(time.RFC3339),
-		CreatedAt:   time.Now().UTC().Format(time.RFC3339),
-	}
-	if err := a.otps.Upsert(ctx, o); err != nil {
-		return "", err
-	}
-	if err := a.sender.Send(ctx, identifier, code); err != nil {
-		return "", err
-	}
-	if a.devMode {
-		return code, nil
-	}
-	return "", nil
-}
-
-// checkSignupAge enforces the 18+ gate for first-time sign-ups (spec §14.4).
-// Returning members already exist and don't re-supply their date of birth.
-func (a *AuthService) checkSignupAge(ctx context.Context, identifier, dateOfBirth string) error {
-	if _, err := a.members.ByIdentifier(ctx, identifier); err != nil {
-		var nf *domain.NotFoundError
-		if errors.As(err, &nf) {
-			if dateOfBirth == "" {
-				return fmt.Errorf("please enter your date of birth to join")
-			}
-			if !isAdult(dateOfBirth, time.Now().UTC()) {
-				return ErrUnderage
-			}
-		}
-	}
-	return nil
-}
-
-// VerifyOTP checks the code, finds or creates the member, marks the phone
-// verified, and returns a signed JWT plus the member.
-func (a *AuthService) VerifyOTP(ctx context.Context, identifier, code string) (string, *domain.Member, error) {
-	identifier = normalizeIdentifier(identifier)
-	o, err := a.otps.Get(ctx, identifier)
-	if err != nil {
-		return "", nil, ErrInvalidOTP
-	}
-	if o.ExpiresAt < time.Now().UTC().Format(time.RFC3339) {
-		return "", nil, ErrInvalidOTP
-	}
-	if sha256hex(strings.TrimSpace(code)) != o.CodeHash {
-		return "", nil, ErrInvalidOTP
-	}
-
-	member, err := a.memberFor(ctx, identifier, o)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", nil, err
 	}
 
-	_ = a.otps.Delete(ctx, identifier)
+	member, err := a.members.ByIdentifier(ctx, identifier)
+	var nf *domain.NotFoundError
+	switch {
+	case errors.As(err, &nf):
+		member, err = a.registerNew(ctx, identifier, displayName, strings.TrimSpace(dateOfBirth), string(hash))
+	case err != nil:
+		return "", nil, err
+	case member.PasswordHash != "":
+		return "", nil, ErrIdentifierTaken
+	default:
+		member, err = a.claimAccount(ctx, member, displayName, strings.TrimSpace(dateOfBirth), string(hash))
+	}
+	if err != nil {
+		return "", nil, err
+	}
+
 	token, err := a.issue(member)
 	if err != nil {
 		return "", nil, err
@@ -135,34 +84,73 @@ func (a *AuthService) VerifyOTP(ctx context.Context, identifier, code string) (s
 	return token, member, nil
 }
 
-// memberFor resolves the member behind an identifier: it creates the account
-// from the OTP's sign-up details on first verification (defence in depth on the
-// 18+ gate, spec §14.4), and otherwise enforces the suspension check and marks
-// the phone verified.
-func (a *AuthService) memberFor(ctx context.Context, identifier string, o *domain.OTP) (*domain.Member, error) {
-	member, err := a.members.ByIdentifier(ctx, identifier)
-	var nf *domain.NotFoundError
-	if errors.As(err, &nf) {
-		if o.DateOfBirth == "" || !isAdult(o.DateOfBirth, time.Now().UTC()) {
-			return nil, ErrUnderage
-		}
-		member = newMember(identifier, o.DisplayName, o.DateOfBirth)
-		if err := a.members.Insert(ctx, *member); err != nil {
-			return nil, err
-		}
-		return member, nil
+// registerNew creates a brand-new account, enforcing the 18+ gate.
+func (a *AuthService) registerNew(ctx context.Context, identifier, displayName, dateOfBirth, hash string) (*domain.Member, error) {
+	if dateOfBirth == "" {
+		return nil, fmt.Errorf("please enter your date of birth to join")
 	}
-	if err != nil {
+	if !isAdult(dateOfBirth, time.Now().UTC()) {
+		return nil, ErrUnderage
+	}
+	member := newMember(identifier, displayName, dateOfBirth)
+	member.PasswordHash = hash
+	if err := a.members.Insert(ctx, *member); err != nil {
 		return nil, err
 	}
-	if member.Suspended {
-		return nil, fmt.Errorf("this account is suspended")
+	return member, nil
+}
+
+// claimAccount sets a first password on a pre-existing passwordless account
+// (e.g. an invited one), filling in name/DOB when supplied.
+func (a *AuthService) claimAccount(ctx context.Context, member *domain.Member, displayName, dateOfBirth, hash string) (*domain.Member, error) {
+	if dateOfBirth != "" && !isAdult(dateOfBirth, time.Now().UTC()) {
+		return nil, ErrUnderage
 	}
-	if !member.PhoneVerified {
-		_ = a.members.SetPhoneVerified(ctx, member.ID, true)
-		member.PhoneVerified = true
+	if err := a.members.SetPasswordHash(ctx, member.ID, hash); err != nil {
+		return nil, err
+	}
+	member.PasswordHash = hash
+	if name := strings.TrimSpace(displayName); name != "" && name != member.DisplayName {
+		if err := a.members.SetProfile(ctx, member.ID, name, initialsOf(name), member.Bio); err != nil {
+			return nil, err
+		}
+		member.DisplayName = name
+		member.Initials = initialsOf(name)
+	}
+	if dateOfBirth != "" && dateOfBirth != member.DateOfBirth {
+		if err := a.members.SetDateOfBirth(ctx, member.ID, dateOfBirth); err != nil {
+			return nil, err
+		}
+		member.DateOfBirth = dateOfBirth
 	}
 	return member, nil
+}
+
+// Login authenticates an existing member and returns a signed JWT plus the member.
+func (a *AuthService) Login(ctx context.Context, identifier, password string) (string, *domain.Member, error) {
+	identifier = normalizeIdentifier(identifier)
+	member, err := a.members.ByIdentifier(ctx, identifier)
+	if err != nil {
+		var nf *domain.NotFoundError
+		if errors.As(err, &nf) {
+			return "", nil, ErrInvalidCredentials
+		}
+		return "", nil, err
+	}
+	if member.Suspended {
+		return "", nil, fmt.Errorf("this account is suspended")
+	}
+	if member.PasswordHash == "" {
+		return "", nil, ErrNoPassword
+	}
+	if bcrypt.CompareHashAndPassword([]byte(member.PasswordHash), []byte(password)) != nil {
+		return "", nil, ErrInvalidCredentials
+	}
+	token, err := a.issue(member)
+	if err != nil {
+		return "", nil, err
+	}
+	return token, member, nil
 }
 
 func (a *AuthService) issue(m *domain.Member) (string, error) {
@@ -208,20 +196,6 @@ func normalizeIdentifier(s string) string {
 	return s
 }
 
-func sha256hex(s string) string {
-	sum := sha256.Sum256([]byte(s))
-	return hex.EncodeToString(sum[:])
-}
-
-func random6() string {
-	b := make([]byte, 3)
-	if _, err := rand.Read(b); err != nil {
-		return "000000"
-	}
-	n := (int(b[0])<<16 | int(b[1])<<8 | int(b[2])) % 1000000
-	return fmt.Sprintf("%06d", n)
-}
-
 // isAdult reports whether someone born on dob ("YYYY-MM-DD") is at least
 // minSignupAge as of now. A malformed/empty date is treated as not-adult so the
 // gate fails closed (spec §14.4).
@@ -250,12 +224,14 @@ func newMember(identifier, displayName, dateOfBirth string) *domain.Member {
 	}
 	id := "usr-" + base + "-" + fmt.Sprintf("%d", time.Now().UnixNano()%1_000_000)
 	m := &domain.Member{
-		ID:            id,
-		Slug:          base + "-" + fmt.Sprintf("%d", time.Now().UnixNano()%10_000),
-		DisplayName:   name,
-		Initials:      initialsOf(name),
-		SchoolIDs:     []string{},
-		PhoneVerified: true,
+		ID:          id,
+		Slug:        base + "-" + fmt.Sprintf("%d", time.Now().UnixNano()%10_000),
+		DisplayName: name,
+		Initials:    initialsOf(name),
+		SchoolIDs:   []string{},
+		// Password signups haven't verified a phone; the field stays for a
+		// future phone-verification flow.
+		PhoneVerified: false,
 		Role:          domain.RoleMember,
 		JoinedAt:      time.Now().UTC().Format("2006-01-02"),
 		DateOfBirth:   strings.TrimSpace(dateOfBirth),

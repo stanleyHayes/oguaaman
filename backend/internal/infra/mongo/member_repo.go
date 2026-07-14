@@ -87,6 +87,16 @@ func (r *MemberRepo) SetProfile(ctx context.Context, id, displayName, initials, 
 	return err
 }
 
+func (r *MemberRepo) SetPasswordHash(ctx context.Context, id, hash string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"passwordHash": hash}})
+	return err
+}
+
+func (r *MemberRepo) SetDateOfBirth(ctx context.Context, id, dateOfBirth string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"dateOfBirth": dateOfBirth}})
+	return err
+}
+
 func (r *MemberRepo) SetDiaspora(ctx context.Context, id string, d *domain.Diaspora) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"diaspora": d}})
 	return err

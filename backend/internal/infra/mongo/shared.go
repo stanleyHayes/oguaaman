@@ -15,7 +15,6 @@ const (
 	collPlaces        = "places"
 	collListings      = "listings"
 	collModeration    = "moderation_records"
-	collOtps          = "otps"
 	collNotifications = "notifications"
 	collFollows       = "follows"
 	collMemberFollows = "member_follows"

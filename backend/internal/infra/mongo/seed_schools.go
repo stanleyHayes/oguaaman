@@ -19,10 +19,10 @@ import (
 // name/motto/founded/classification so prose and profile can never drift.
 //
 // All content is demo data: figures are indicative (never presented as official
-// records), media URLs are Cloudinary-demo placeholders in the pattern already
-// used across the seed, and office holders without a named person use the
-// "(office)" placeholder convention. Claimed schools replace it all from the
-// admin dashboard.
+// records), and media URLs point at the curated seed photography served from
+// /uploads/seed/ (see seed.go's seedImg). Office holders without a named person
+// use the "(office)" placeholder convention. Claimed schools replace it all
+// from the admin dashboard.
 
 type schoolLevel int
 
@@ -63,20 +63,30 @@ type schoolPage struct {
 	address        string // full address line incl. the school name
 	phone          string // placeholder office line, "+233 33 000 0NNN" pattern
 	facilities     [4]string
+	photos         [4]string // per-school photo set; empty → the generic pool below
 }
 
-// schoolPhotoPool holds the Cloudinary-demo sample URLs already used across the
-// seed (see seed_listings.go). School galleries draw from it deterministically,
-// so every photo renders until a claimed school uploads its own photography.
+// schoolPhotoPool is the generic set of school-scene photographs drawn from
+// the curated seed imagery. Schools with their own photos set schoolPage.photos;
+// all others draw from this pool deterministically, so every photo renders
+// until a claimed school uploads its own photography.
 var schoolPhotoPool = []string{
-	"https://res.cloudinary.com/demo/image/upload/samples/imagecon-group.jpg",
-	"https://res.cloudinary.com/demo/image/upload/samples/landscapes/nature-mountains.jpg",
-	"https://res.cloudinary.com/demo/image/upload/samples/landscapes/beach-boat.jpg",
-	"https://res.cloudinary.com/demo/image/upload/samples/food/spices.jpg",
-	"https://res.cloudinary.com/demo/image/upload/samples/food/pot-mussels.jpg",
+	seedImg("classroom-ghana.jpg"),
+	seedImg("classroom-block-ghana.jpg"),
+	seedImg("school-girl-ghana.jpg"),
+	seedImg("outdoor-classroom-ghana.jpg"),
 }
 
-func schoolPhoto(key string) string {
+// photoPool returns the school's own photo set, or the generic pool when the
+// school has none of its own yet.
+func (p schoolPage) photoPool() []string {
+	if p.photos[0] == "" {
+		return schoolPhotoPool
+	}
+	return p.photos[:]
+}
+
+func schoolPhoto(key string, pool []string) string {
 	h := 0
 	for _, r := range key {
 		h = h*31 + int(r)
@@ -84,7 +94,7 @@ func schoolPhoto(key string) string {
 	if h < 0 {
 		h = -h
 	}
-	return schoolPhotoPool[h%len(schoolPhotoPool)]
+	return pool[h%len(pool)]
 }
 
 // schoolGallery builds the institution's top-level photo library — generic
@@ -101,7 +111,7 @@ func schoolGallery(p schoolPage) []domain.MediaAsset {
 	for i, caption := range captions[p.level] {
 		out = append(out, domain.MediaAsset{
 			ID:         fmt.Sprintf("med-%s-%d", p.key, i+1),
-			URL:        schoolPhoto(p.key + caption),
+			URL:        schoolPhoto(p.key+caption, p.photoPool()),
 			Kind:       "photo",
 			Alt:        caption + " at " + p.name,
 			Caption:    caption,
@@ -151,7 +161,7 @@ func schoolOfficialSections(p schoolPage, offices []domain.Office) []domain.Prof
 	for i, facility := range p.facilities {
 		media = append(media, domain.MediaAsset{
 			ID:         fmt.Sprintf("med-%s-fac-%d", p.key, i+1),
-			URL:        schoolPhoto(p.key + facility),
+			URL:        schoolPhoto(p.key+facility, p.photoPool()),
 			Kind:       "photo",
 			Alt:        facility + ", " + p.name,
 			Caption:    facility,
@@ -287,6 +297,7 @@ var adisadelPage = schoolPage{
 	address:    "Adisadel College, Adisadel Estate, Cape Coast, Central Region, Ghana.",
 	phone:      "+233 33 000 0114",
 	facilities: [4]string{"The school chapel", "Science laboratories", "The library", "The sports field"},
+	photos:     [4]string{seedImg("adisadel-campus.jpg"), seedImg("adisadel-gates.jpg"), seedImg("classroom-ghana.jpg"), seedImg("classroom-block-ghana.jpg")},
 }
 
 var wesleyGirlsPage = schoolPage{
@@ -325,6 +336,7 @@ var wesleyGirlsPage = schoolPage{
 	address:    "Wesley Girls' High School, Cape Coast, Central Region, Ghana.",
 	phone:      "+233 33 000 0111",
 	facilities: [4]string{"The school chapel", "The library", "The ICT laboratory", "The dormitories"},
+	photos:     [4]string{seedImg("wesley-girls-gate.jpg"), seedImg("school-girl-ghana.jpg"), seedImg("classroom-ghana.jpg"), seedImg("classroom-block-ghana.jpg")},
 }
 
 var stAugustinesPage = schoolPage{
@@ -400,6 +412,7 @@ var holyChildPage = schoolPage{
 	address:    "Holy Child School, Cape Coast, Central Region, Ghana.",
 	phone:      "+233 33 000 0112",
 	facilities: [4]string{"The school chapel", "The library", "The ICT laboratory", "The dining hall"},
+	photos:     [4]string{seedImg("holy-child.jpg"), seedImg("classroom-ghana.jpg"), seedImg("school-girl-ghana.jpg"), seedImg("classroom-block-ghana.jpg")},
 }
 
 var ghanaNationalPage = schoolPage{
@@ -437,6 +450,7 @@ var ghanaNationalPage = schoolPage{
 	address:    "Ghana National College, Cape Coast, Central Region, Ghana.",
 	phone:      "+233 33 000 0117",
 	facilities: [4]string{"The library", "Science laboratories", "The assembly hall", "The dormitories"},
+	photos:     [4]string{seedImg("ghanasco.jpg"), seedImg("classroom-block-ghana.jpg"), seedImg("classroom-ghana.jpg"), seedImg("outdoor-classroom-ghana.jpg")},
 }
 
 var aggreyPage = schoolPage{
@@ -581,6 +595,7 @@ var uccPage = schoolPage{
 	address:    "University of Cape Coast, Cape Coast, Central Region, Ghana.",
 	phone:      "+233 33 000 0116",
 	facilities: [4]string{"Sam Jonah Library", "The lecture theatres", "The science complex", "The sports stadium"},
+	photos:     [4]string{seedImg("ucc-library.jpg"), seedImg("classroom-block-ghana.jpg"), seedImg("classroom-ghana.jpg"), seedImg("outdoor-classroom-ghana.jpg")},
 }
 
 var cctuPage = schoolPage{
