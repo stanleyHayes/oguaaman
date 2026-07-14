@@ -3,6 +3,7 @@ import type { Listing, Organization } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container, Pill, SampleNote } from "@/components/ui";
 import { Thumb } from "@/components/cards";
+import { cldCover } from "@/lib/cloudinary";
 import { ReportButton } from "@/components/report-button";
 import { initials } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
@@ -58,18 +59,32 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark relative overflow-hidden bg-green text-cream">
-        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#3B473D,#0C2C1F)" }} aria-hidden />
+      <section className="on-dark relative overflow-hidden text-cream">
+        {/* Cover art washes the hero; a clay gradient + scrim keep it legible */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(140deg,#B0503C 0%,#7C2D2D 45%,#0C2C1F 100%)" }} aria-hidden />
+        {artist.coverImageUrl && (
+          <img src={cldCover(artist.coverImageUrl, 1400)} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-25" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+        )}
+        <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
         <Container size="wide" className="relative py-12 sm:py-16">
           <Link to="/music" className="text-sm text-cream/70 hover:text-gold">← All artists</Link>
           <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end">
-            <Thumb seed={artist.slug} label={initials(d.actName ?? artist.title)} src={artist.coverImageUrl} className="h-32 w-32 shrink-0 border border-cream/15" />
-            <div>
-              {d.spotlight && <span className="rounded-full bg-clay px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-cream">Spotlight</span>}
-              <h1 className="mt-2 font-display text-4xl font-semibold sm:text-6xl">{d.actName ?? artist.title}</h1>
+            <Thumb seed={artist.slug} label={initials(d.actName ?? artist.title)} src={artist.coverImageUrl} className="h-36 w-36 shrink-0 border-2 border-gold/50 shadow-xl sm:h-44 sm:w-44" coverWidth={400} />
+            <div className="min-w-0">
+              {d.spotlight && <span className="rounded-full bg-gold-brand px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-green-900">★ This week's spotlight</span>}
+              <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05] sm:text-6xl">{d.actName ?? artist.title}</h1>
               <div className="mt-3 flex flex-wrap gap-2">
-                {(d.genres ?? []).map((g) => <span key={g} className="rounded-full border border-cream/25 px-3 py-1 text-xs text-cream/90">{g}</span>)}
+                {(d.genres ?? []).map((g) => <span key={g} className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs text-cream/90 backdrop-blur-sm">{g}</span>)}
               </div>
+              {(d.streamingLinks ?? []).length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {(d.streamingLinks ?? []).map((l) => (
+                    <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-cream/15 px-3.5 py-1.5 text-xs font-semibold text-cream backdrop-blur-sm transition-colors hover:bg-gold-brand hover:text-green-900">
+                      Listen on {l.label} <span aria-hidden>↗</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </Container>
@@ -78,9 +93,10 @@ export function Component() {
       <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
         <div>
           <h2 className="eyebrow mb-3 text-clay-text">About</h2>
-          <p className="font-serif text-lg leading-relaxed text-ink">{d.bio}</p>
+          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-clay-text">{d.bio}</p>
           {d.latestRelease && (
-            <div className="mt-8 rounded-[var(--radius-card)] border border-sand bg-cream p-5">
+            <div className="relative mt-8 overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)]">
+              <span className="absolute inset-y-0 left-0 w-1 bg-gold-brand" aria-hidden />
               <p className="eyebrow text-gold-text">Latest release</p>
               <p className="mt-2 font-display text-2xl text-ink">
                 {d.latestRelease.title}

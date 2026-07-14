@@ -31,6 +31,12 @@ function fmtDate(iso?: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function roleLabel(role: string): string {
+  if (role === "curator") return "Curator";
+  if (role === "steward") return "Steward";
+  return "Member";
+}
+
 // Event tickets bought via Paystack — the gate code is shown here and at the door.
 function MyTickets() {
   const { data, error, loading } = useApi<Ticket[]>(() => api.myTickets(), "me:tickets");
@@ -214,7 +220,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
           ? <Thumb seed={m.slug} src={photo} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
           : <View style={s.avatar}><Text style={s.avatarText}>{m.initials || initials(m.displayName)}</Text></View>}
         <Text style={s.name}>{m.displayName}</Text>
-        <Text style={s.role}>{m.role === "curator" ? "Curator" : m.role === "steward" ? "Steward" : "Member"}</Text>
+        <Text style={s.role}>{roleLabel(m.role)}{m.joinedAt ? ` · joined ${fmtDate(m.joinedAt)}` : ""}</Text>
         <View style={s.chipRow}>
           {quarter ? <View style={s.darkChip}><Text style={s.darkChipText}>{quarter.name}</Text></View> : null}
           {asafo ? <View style={s.darkChip}><Text style={s.darkChipText}>{asafo.name}</Text></View> : null}
@@ -222,58 +228,67 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
       </View>
 
       <View style={s.body}>
-        {/* profile photo */}
-        <Text style={s.kicker}>YOUR PHOTO</Text>
-        <Text style={s.help}>Put a face to your name. It shows on your profile and across the community.</Text>
-        <ImageField value={photo} onChange={savePhoto} />
-        {photoSave === "saving" && <Text style={[s.help, { marginTop: 8 }]}>Saving…</Text>}
-        {photoSave === "saved" && <Text style={[s.savedNote, { marginTop: 8 }]}>Saved ✓</Text>}
-        {photoSave === "error" && <Text style={[s.errNote, { marginTop: 8 }]}>Couldn&apos;t save your photo</Text>}
+        <Section title="Your photo" help="Put a face to your name. It shows on your profile and across the community.">
+          <ImageField value={photo} onChange={savePhoto} />
+          {photoSave === "saving" && <Text style={[s.help, { marginTop: 8 }]}>Saving…</Text>}
+          {photoSave === "saved" && <Text style={[s.savedNote, { marginTop: 8 }]}>Saved ✓</Text>}
+          {photoSave === "error" && <Text style={[s.errNote, { marginTop: 8 }]}>Couldn&apos;t save your photo</Text>}
+        </Section>
 
-        {/* rep your quarter */}
-        <Text style={[s.kicker, { marginTop: 28 }]}>REP YOUR QUARTER</Text>
-        <Text style={s.help}>Wear your community pride.{quarter ? ` You rep ${quarter.name}.` : ""}</Text>
-        <RepChips places={quarters} selectedId={townId} variant="green" onChoose={chooseQuarter} />
+        <Section title="Rep your town" help={"Wear your community pride — your quarter and your Asafo company." + (quarter ? ` You rep ${quarter.name}.` : "")}>
+          <Text style={s.subLabel}>Quarter</Text>
+          <RepChips places={quarters} selectedId={townId} variant="green" onChoose={chooseQuarter} />
+          <Text style={[s.subLabel, { marginTop: 14 }]}>Asafo company</Text>
+          <RepChips places={asafos} selectedId={asafoId} variant="clay" onChoose={chooseAsafo} />
+        </Section>
 
-        {/* rep your Asafo */}
-        <Text style={[s.kicker, { marginTop: 28 }]}>REP YOUR ASAFO</Text>
-        <Text style={s.help}>Oguaa&apos;s seven companies — choose the one you belong to.</Text>
-        <RepChips places={asafos} selectedId={asafoId} variant="clay" onChoose={chooseAsafo} />
+        <Section title="Your birthday" help="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
+          <BirthdayCard member={m} />
+        </Section>
 
-        <BirthdayCard member={m} />
+        <Section title="Oguaa abroad" help="A son or daughter of the Castle living away from home? Add yourself to the diaspora — the bridge for homecomings and giving back. Off by default.">
+          <DiasporaCard member={m} />
+        </Section>
 
-        <DiasporaCard member={m} />
+        <Section title="Your schooling" help="Add the schools you attended and the years you were there. Classmates who overlapped with you appear below.">
+          <SchoolingEditor member={m} schools={view.schools ?? []} onSaved={() => setConnKey((k) => k + 1)} />
+        </Section>
 
-        <SchoolingEditor member={m} schools={view.schools ?? []} onSaved={() => setConnKey((k) => k + 1)} />
+        <Section title="People you may know" help="Classmates, neighbours from your quarter, and members of your Asafo.">
+          <PeopleYouMayKnow refreshKey={connKey} />
+        </Section>
 
-        {/* people you may know */}
-        <Text style={[s.kicker, { marginTop: 28 }]}>PEOPLE YOU MAY KNOW</Text>
-        <Text style={s.help}>Classmates, neighbours from your quarter, and members of your Asafo.</Text>
-        <PeopleYouMayKnow refreshKey={connKey} />
+        <Section title="My tickets" help="Your event tickets and gate codes. Show the code at the entrance.">
+          <MyTickets />
+        </Section>
 
-        {/* my tickets */}
-        <Text style={[s.kicker, { marginTop: 28 }]}>MY TICKETS</Text>
-        <Text style={s.help}>Your event tickets and gate codes. Show the code at the entrance.</Text>
-        <MyTickets />
+        <Section title="My subscriptions" help="Your Supporter subscriptions — each payment adds a month to the business.">
+          <MySubscriptions />
+        </Section>
 
-        {/* my subscriptions */}
-        <Text style={[s.kicker, { marginTop: 28 }]}>MY SUBSCRIPTIONS</Text>
-        <Text style={s.help}>Your Supporter subscriptions — each payment adds a month to the business.</Text>
-        <MySubscriptions />
+        <Section title="Your listings" help="Everything you've contributed, with its review status. Promote an approved listing to feature it on the front pages — GH₵ 10 per day.">
+          <MyListings listings={view.listings ?? []} />
+        </Section>
 
-        {/* your listings + moderation status */}
-        <Text style={[s.kicker, { marginTop: 28 }]}>YOUR LISTINGS</Text>
-        <Text style={s.help}>Everything you&apos;ve contributed, with its review status. Promote an approved listing to feature it on the front pages — GH₵ 10 per day.</Text>
-        <MyListings listings={view.listings ?? []} />
-
-        {/* quick actions */}
-        <Text style={[s.kicker, { marginTop: 28 }]}>ACCOUNT</Text>
-        <Pressable onPress={() => router.push("/notifications")} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><Text style={s.chevron}>›</Text></Pressable>
-        <Pressable onPress={() => router.push("/submit")} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><Text style={s.chevron}>›</Text></Pressable>
-        <Pressable onPress={() => router.push(`/members/${m.slug}`)} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><Text style={s.chevron}>›</Text></Pressable>
-        <Pressable onPress={onSignOut} style={s.signOut}><Text style={s.signOutText}>Sign out</Text></Pressable>
+        <Section title="Account">
+          <Pressable onPress={() => router.push("/notifications")} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><Text style={s.chevron}>›</Text></Pressable>
+          <Pressable onPress={() => router.push("/submit")} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><Text style={s.chevron}>›</Text></Pressable>
+          <Pressable onPress={() => router.push(`/members/${m.slug}`)} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><Text style={s.chevron}>›</Text></Pressable>
+          <Pressable onPress={onSignOut} style={s.signOut}><Text style={s.signOutText}>Sign out</Text></Pressable>
+        </Section>
       </View>
     </ScrollView>
+  );
+}
+
+// Dashboard section card — serif title + optional help text wrapping a body slot.
+function Section({ title, help, children }: Readonly<{ title: string; help?: string; children: React.ReactNode }>) {
+  return (
+    <View style={s.section}>
+      <Text style={s.sectionTitle}>{title}</Text>
+      {help ? <Text style={s.help}>{help}</Text> : <View style={{ height: 8 }} />}
+      {children}
+    </View>
   );
 }
 
@@ -305,8 +320,6 @@ function BirthdayCard({ member: m }: Readonly<{ member: Member }>) {
   }
   return (
     <>
-      <Text style={[s.kicker, { marginTop: 28 }]}>YOUR BIRTHDAY</Text>
-      <Text style={s.help}>If you turn this on, your followers get a gentle note on your day. Off by default — it&apos;s yours to choose.</Text>
       <TextInput
         style={s.diaInput}
         value={birthday}
@@ -347,8 +360,6 @@ function DiasporaCard({ member: m }: Readonly<{ member: Member }>) {
 
   return (
     <>
-      <Text style={[s.kicker, { marginTop: 28 }]}>OGUAA ABROAD</Text>
-      <Text style={s.help}>A son or daughter of the Castle living away from home? Add yourself to the diaspora — the bridge for homecomings and giving back. Off by default.</Text>
       <View style={s.diaRow}>
         <Text style={s.diaLabel}>I live abroad / outside Cape Coast</Text>
         <Switch value={abroad} onValueChange={(v) => { setAbroad(v); setDiaSave("idle"); }} trackColor={{ true: C.teal, false: C.sand }} thumbColor={C.cream} />
@@ -397,9 +408,6 @@ function SchoolingEditor({ member: m, schools, onSaved }: Readonly<{ member: Mem
 
   return (
     <>
-      <Text style={[s.kicker, { marginTop: 28 }]}>YOUR SCHOOLING</Text>
-      <Text style={s.help}>Add the schools you attended and the years you were there. Classmates who overlapped with you appear below.</Text>
-
       {stints.map((st, i) => (
         <View key={`${st.schoolId}-${i}`} style={s.stint}>
           <View style={{ flex: 1 }}>
@@ -571,7 +579,7 @@ const s = StyleSheet.create({
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
   primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
 
-  header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20 },
+  header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
   avatarText: { color: C.cream, fontFamily: serif, fontSize: 30, fontWeight: "700" },
   name: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.cream, marginTop: 12 },
@@ -580,12 +588,15 @@ const s = StyleSheet.create({
   darkChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.3)", backgroundColor: "rgba(246,241,231,0.1)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   darkChipText: { color: C.cream, fontSize: 12 },
 
-  body: { padding: 20 },
+  body: { padding: 16, gap: 16 },
+  section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  sectionTitle: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink, marginBottom: 4 },
+  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginBottom: 8 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 6 },
   help: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginBottom: 12 },
   empty: { color: C.inkFaint, fontSize: 13, lineHeight: 19, fontStyle: "italic" },
 
-  stint: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
+  stint: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
   stintName: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink },
   yearRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
   yearInput: { width: 78, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, color: C.ink, fontSize: 14 },
@@ -599,12 +610,12 @@ const s = StyleSheet.create({
   addChip: { borderWidth: 1, borderStyle: "dashed", borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   addChipText: { color: C.goldText, fontSize: 13, fontWeight: "600" },
 
-  diaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  diaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   diaLabel: { color: C.ink, fontSize: 14, flex: 1 },
-  diaInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14 },
+  diaInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14 },
   diaSaveBtn: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
 
-  repChip: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  repChip: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   repChipOnGreen: { backgroundColor: C.green, borderColor: C.green },
   repChipOnClay: { backgroundColor: C.clay, borderColor: C.clay },
   repChipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
@@ -612,7 +623,7 @@ const s = StyleSheet.create({
   asafoDot: { width: 9, height: 9, borderRadius: 5 },
   bdaySaveBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
 
-  listingRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11 },
+  listingRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11 },
   listingWrap: { gap: 6 },
   promoSlot: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 10, paddingRight: 4 },
   promoBtn: { borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },
@@ -643,7 +654,7 @@ const s = StyleSheet.create({
   savedNote: { color: C.tealText, fontSize: 13, fontWeight: "600" },
   errNote: { color: C.clayText, fontSize: 13 },
 
-  connCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12 },
+  connCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12 },
   connAvatar: { borderRadius: 22 },
   connAvatarBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
   connAvatarText: { color: C.cream, fontFamily: serif, fontSize: 16, fontWeight: "700" },
@@ -656,7 +667,7 @@ const s = StyleSheet.create({
   followChipText: { color: C.green, fontWeight: "700", fontSize: 13 },
   followChipTextOn: { color: C.cream },
 
-  linkRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 8 },
+  linkRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 8 },
   linkRowText: { color: C.ink, fontSize: 15, fontWeight: "600" },
   chevron: { color: C.inkFaint, fontSize: 20, fontWeight: "700" },
   signOut: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 12, alignItems: "center", marginTop: 8 },
