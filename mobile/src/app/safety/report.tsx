@@ -5,7 +5,9 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { IncidentCategory, IncidentSeverity } from "@/lib/types";
 import { INCIDENT_CATEGORIES, INCIDENT_SEVERITIES, SEVERITY_COLOR } from "@/lib/incidents";
-import { C, serif } from "@/theme";
+import { HeroBand } from "@/ui";
+import { formStyles } from "@/components/form-styles";
+import { C } from "@/theme";
 
 export default function ReportIncident() {
   const { member } = useAuth();
@@ -55,10 +57,9 @@ export default function ReportIncident() {
   }
 
   return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
-      <Text style={s.title}>Report an incident</Text>
-      <Text style={s.lede}>Floods, fires, accidents, hazards — post what is happening so responders and neighbours can act. It goes live immediately; a curator verifies afterwards.</Text>
-
+    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
+      <HeroBand tone={C.maroon} kicker="Safety board" title="Report an incident" lede="Floods, fires, accidents, hazards — post what is happening so responders and neighbours can act. It goes live immediately; a curator verifies afterwards." />
+      <View style={s.formCard}>
       <Text style={s.label}>CATEGORY</Text>
       <View style={s.chips}>
         {INCIDENT_CATEGORIES.map((c) => (
@@ -111,27 +112,16 @@ export default function ReportIncident() {
         <Text style={s.btnText}>{busy ? "Posting…" : "Post the report"}</Text>
       </Pressable>
       <Text style={s.note}>Posted as {member.displayName}. In a life-threatening emergency, call the emergency services first.</Text>
+      </View>
     </ScrollView>
   );
 }
 
-const s = StyleSheet.create({
-  title: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink },
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 6 },
-  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 22, marginBottom: 8 },
-  hint: { color: C.inkFaint, fontSize: 12, marginTop: -4, marginBottom: 8, lineHeight: 17 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  chipOn: { borderColor: C.green, backgroundColor: C.green },
-  chipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
-  chipTextOn: { color: C.cream },
-  input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
-  area: { minHeight: 110, textAlignVertical: "top", fontFamily: serif },
-  error: { color: C.clayText, marginTop: 12, fontSize: 13 },
-  btn: { backgroundColor: C.maroon, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
-  btnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
-  note: { color: C.inkFaint, fontSize: 12, textAlign: "center", marginTop: 12, lineHeight: 18 },
-  gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
-  gateTitle: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
-  gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
-});
+const s = {
+  ...formStyles,
+  ...StyleSheet.create({
+    chipOn: { borderColor: C.green, backgroundColor: C.green },
+    chipTextOn: { color: C.cream },
+    btn: { backgroundColor: C.maroon, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
+  }),
+};

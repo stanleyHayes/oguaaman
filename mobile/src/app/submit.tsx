@@ -4,7 +4,9 @@ import { router } from "expo-router";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ImageField } from "@/components/image-field";
-import { C, serif } from "@/theme";
+import { HeroBand } from "@/ui";
+import { formStyles } from "@/components/form-styles";
+import { C } from "@/theme";
 
 const TYPES = [
   { id: "memory", label: "Memory" },
@@ -164,10 +166,9 @@ export default function Submit() {
   }
 
   return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
-      <Text style={s.title}>Contribute to Oguaa</Text>
-      <Text style={s.lede}>Add an artist, a memory, an event, or someone to remember. A curator reviews every entry.</Text>
-
+    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
+      <HeroBand tone={C.green} kicker="One engine · many listings" title="Contribute to Oguaa" lede="Add an artist, a memory, an event, or someone to remember. A curator reviews every entry." />
+      <View style={s.formCard}>
       <Text style={s.label}>WHAT IS IT?</Text>
       <View style={s.chips}>
         {TYPES.map((x) => (
@@ -278,28 +279,18 @@ export default function Submit() {
         <Text style={s.btnText}>{busy ? "Submitting…" : "Submit for review"}</Text>
       </Pressable>
       <Text style={s.note}>Submitted as {member.displayName}. Your phone number stays private.</Text>
+      </View>
     </ScrollView>
   );
 }
 
-const s = StyleSheet.create({
-  title: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink },
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 6 },
-  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 22, marginBottom: 8 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  chipOn: { borderColor: C.green, backgroundColor: C.green },
-  chipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
-  chipTextOn: { color: C.cream },
-  input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
-  area: { minHeight: 110, textAlignVertical: "top", fontFamily: serif },
-  error: { color: C.clayText, marginTop: 12, fontSize: 13 },
-  btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
-  btnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
-  btnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 12 },
-  btnOutlineText: { color: C.ink, fontWeight: "600" },
-  note: { color: C.inkFaint, fontSize: 12, textAlign: "center", marginTop: 12 },
-  gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
-  gateTitle: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
-  gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
-});
+const s = {
+  ...formStyles,
+  ...StyleSheet.create({
+    chipOn: { borderColor: C.green, backgroundColor: C.green },
+    chipTextOn: { color: C.cream },
+    btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
+    btnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 12 },
+    btnOutlineText: { color: C.ink, fontWeight: "600" },
+  }),
+};

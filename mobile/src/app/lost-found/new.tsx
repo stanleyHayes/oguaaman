@@ -5,7 +5,9 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { LostFoundKind } from "@/lib/types";
 import { KIND_COLOR, LOST_FOUND_KINDS } from "@/lib/lostfound";
-import { C, serif } from "@/theme";
+import { HeroBand } from "@/ui";
+import { formStyles } from "@/components/form-styles";
+import { C } from "@/theme";
 
 export default function NewLostFound() {
   const { member } = useAuth();
@@ -57,10 +59,9 @@ export default function NewLostFound() {
   }
 
   return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
-      <Text style={s.title}>Post a notice</Text>
-      <Text style={s.lede}>Lost something, found something, or searching for someone? Notices go live immediately — the town helps.</Text>
-
+    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
+      <HeroBand tone={C.teal} kicker="Lost & found" title="Post a notice" lede="Lost something, found something, or searching for someone? Notices go live immediately — the town helps." />
+      <View style={s.formCard}>
       <Text style={s.label}>WHAT KIND?</Text>
       <View style={s.chips}>
         {LOST_FOUND_KINDS.map((k) => {
@@ -106,25 +107,14 @@ export default function NewLostFound() {
         <Text style={s.btnText}>{busy ? "Posting…" : "Post the notice"}</Text>
       </Pressable>
       <Text style={s.note}>Posted as {member.displayName}. You can mark it reunited once it works out.</Text>
+      </View>
     </ScrollView>
   );
 }
 
-const s = StyleSheet.create({
-  title: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink },
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 6 },
-  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 22, marginBottom: 8 },
-  hint: { color: C.inkFaint, fontSize: 12, marginTop: -4, marginBottom: 8, lineHeight: 17 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  chipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
-  input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
-  area: { minHeight: 110, textAlignVertical: "top", fontFamily: serif },
-  error: { color: C.clayText, marginTop: 12, fontSize: 13 },
-  btn: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
-  btnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
-  note: { color: C.inkFaint, fontSize: 12, textAlign: "center", marginTop: 12, lineHeight: 18 },
-  gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
-  gateTitle: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
-  gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
-});
+const s = {
+  ...formStyles,
+  ...StyleSheet.create({
+    btn: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
+  }),
+};

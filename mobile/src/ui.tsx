@@ -38,6 +38,17 @@ export function Pill({ label, color = C.inkMuted, bg = C.cream, border = C.sand 
   );
 }
 
+/** Toned page-top hero band shared by the contribution forms (rounded base, gold kicker). */
+export function HeroBand({ tone, kicker, title, lede }: Readonly<{ tone: string; kicker: string; title: string; lede: string }>) {
+  return (
+    <View style={[s.heroBand, { backgroundColor: tone }]}>
+      <Text style={s.heroKicker}>{kicker}</Text>
+      <Text style={s.heroTitle}>{title}</Text>
+      <Text style={s.heroLede}>{lede}</Text>
+    </View>
+  );
+}
+
 /**
  * A cover thumbnail: shows the contributor's image when present, otherwise a
  * warm deterministic tint with initials. Falls back to the tint if the image
@@ -163,4 +174,8 @@ const s = StyleSheet.create({
   errHint: { color: C.inkFaint, fontSize: 12, marginTop: 4 },
   pill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   pillText: { fontSize: 12, fontWeight: "600" },
+  heroBand: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
+  heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 28, fontWeight: "700", marginTop: 6 },
+  heroLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
 });
