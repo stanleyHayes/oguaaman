@@ -257,8 +257,80 @@ export function Component() {
           {QUICK_ACTIONS.map((a, i) => <StaggerItem key={a.to} index={i}><QuickAction {...a} /></StaggerItem>)}
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.7fr_1fr] lg:items-start">
-          {/* Main column — activity */}
+        <div className="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
+          {/* Left — identity & settings */}
+          <div className="space-y-6">
+            <Panel title="Your photo" lede="Put a face to your name. It shows on your profile and across the community.">
+              <ImageUpload
+                value={photo}
+                onChange={savePhoto}
+                label="Profile photo"
+                hint="A clear headshot works best. Square images look best in the circle."
+              />
+              {photoState === "saving" && <p className="mt-2 text-sm text-ink-faint">Saving…</p>}
+              {photoState === "saved" && <p className="mt-2 text-sm text-teal-text">Saved ✓</p>}
+              {photoState === "error" && <p className="mt-2 text-sm text-clay-text">Could not save your photo. Try again.</p>}
+            </Panel>
+
+            <Panel title="Rep your town" lede="Wear your community pride — your quarter and your Asafo company.">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Quarter{town && <> · you rep <b className="text-ink-muted">{town.name}</b></>}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {quarters.map((p) => (
+                  <button key={p.id} type="button" onClick={() => chooseQuarter(p.id)} className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === townId ? "border-green bg-green text-cream" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>{p.name}</button>
+                ))}
+              </div>
+              <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-faint">Asafo company</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {asafos.map((p) => (
+                  <button key={p.id} type="button" onClick={() => chooseAsafo(p.id)} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === asafoId ? "border-clay bg-clay text-cream" : "border-sand bg-paper text-ink-muted hover:border-clay/40"}`}>
+                    {p.colors?.[0] && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.colors[0] }} aria-hidden />}
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel title="Your birthday" lede="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
+              <div className="flex flex-wrap items-center gap-3">
+                <DatePicker
+                  value={birthday.length >= 10 ? birthday.slice(0, 10) : birthday}
+                  onChange={(v) => { setBirthday(v); setBdayState("idle"); }}
+                  className="min-w-[13rem]"
+                />
+                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
+                  <input type="checkbox" checked={broadcast} onChange={(e) => { setBroadcast(e.target.checked); setBdayState("idle"); }} className="h-4 w-4 accent-green" />Let my followers know
+                </label>
+                <button type="button" onClick={saveBirthday} disabled={bdayState === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+                  {bdayState === "saving" ? "Saving…" : "Save"}
+                </button>
+                {bdayState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
+                {bdayState === "error" && <span className="text-sm text-clay-text">Add a valid date first.</span>}
+              </div>
+            </Panel>
+
+            <Panel title="Oguaa abroad" lede="Living away from home? Add yourself to the diaspora — the bridge for homecomings, projects, and giving back. Off by default.">
+              <div className="space-y-3">
+                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
+                  <input type="checkbox" checked={abroad} onChange={(e) => { setAbroad(e.target.checked); setDiaState("idle"); }} className="h-4 w-4 accent-teal" />I live abroad / outside Cape Coast
+                </label>
+                {abroad && (
+                  <div className="flex flex-wrap gap-3">
+                    <input value={city} onChange={(e) => { setCity(e.target.value); setDiaState("idle"); }} placeholder="City (e.g. London)" className="rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
+                    <input value={country} onChange={(e) => { setCountry(e.target.value); setDiaState("idle"); }} placeholder="Country (e.g. United Kingdom)" className="rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={saveDiaspora} disabled={diaState === "saving"} className="rounded-full bg-teal px-5 py-2 text-sm font-semibold text-cream hover:bg-teal-text disabled:opacity-60">
+                    {diaState === "saving" ? "Saving…" : "Save"}
+                  </button>
+                  {diaState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
+                  {diaState === "error" && <span className="text-sm text-clay-text">Could not save. Try again.</span>}
+                </div>
+              </div>
+            </Panel>
+          </div>
+
+          {/* Right — activity */}
           <div className="space-y-6">
             <Panel
               title="Your listings"
@@ -355,90 +427,20 @@ export function Component() {
               </ul>
             </Panel>
           </div>
+        </div>
 
-          {/* Side rail — identity & settings */}
-          <div className="space-y-6">
-            <Panel title="Your photo" lede="Put a face to your name. It shows on your profile and across the community.">
-              <ImageUpload
-                value={photo}
-                onChange={savePhoto}
-                label="Profile photo"
-                hint="A clear headshot works best. Square images look best in the circle."
-              />
-              {photoState === "saving" && <p className="mt-2 text-sm text-ink-faint">Saving…</p>}
-              {photoState === "saved" && <p className="mt-2 text-sm text-teal-text">Saved ✓</p>}
-              {photoState === "error" && <p className="mt-2 text-sm text-clay-text">Could not save your photo. Try again.</p>}
-            </Panel>
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <Panel title="Your schooling" lede="Add the schools you attended and the years you were there. Classmates who overlapped with you will show up below — the powerhouse of Oguaa's networks.">
+            <SchoolingEditor
+              schools={schools}
+              initial={me.schooling ?? []}
+              onSaved={() => setConnKey((k) => k + 1)}
+            />
+          </Panel>
 
-            <Panel title="Rep your town" lede="Wear your community pride — your quarter and your Asafo company.">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Quarter{town && <> · you rep <b className="text-ink-muted">{town.name}</b></>}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {quarters.map((p) => (
-                  <button key={p.id} type="button" onClick={() => chooseQuarter(p.id)} className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === townId ? "border-green bg-green text-cream" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>{p.name}</button>
-                ))}
-              </div>
-              <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-faint">Asafo company</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {asafos.map((p) => (
-                  <button key={p.id} type="button" onClick={() => chooseAsafo(p.id)} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === asafoId ? "border-clay bg-clay text-cream" : "border-sand bg-paper text-ink-muted hover:border-clay/40"}`}>
-                    {p.colors?.[0] && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.colors[0] }} aria-hidden />}
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-            </Panel>
-
-            <Panel title="Your birthday" lede="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
-              <div className="flex flex-wrap items-center gap-3">
-                <DatePicker
-                  value={birthday.length >= 10 ? birthday.slice(0, 10) : birthday}
-                  onChange={(v) => { setBirthday(v); setBdayState("idle"); }}
-                  className="min-w-[13rem]"
-                />
-                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                  <input type="checkbox" checked={broadcast} onChange={(e) => { setBroadcast(e.target.checked); setBdayState("idle"); }} className="h-4 w-4 accent-green" />Let my followers know
-                </label>
-                <button type="button" onClick={saveBirthday} disabled={bdayState === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
-                  {bdayState === "saving" ? "Saving…" : "Save"}
-                </button>
-                {bdayState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
-                {bdayState === "error" && <span className="text-sm text-clay-text">Add a valid date first.</span>}
-              </div>
-            </Panel>
-
-            <Panel title="Oguaa abroad" lede="Living away from home? Add yourself to the diaspora — the bridge for homecomings, projects, and giving back. Off by default.">
-              <div className="space-y-3">
-                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                  <input type="checkbox" checked={abroad} onChange={(e) => { setAbroad(e.target.checked); setDiaState("idle"); }} className="h-4 w-4 accent-teal" />I live abroad / outside Cape Coast
-                </label>
-                {abroad && (
-                  <div className="flex flex-wrap gap-3">
-                    <input value={city} onChange={(e) => { setCity(e.target.value); setDiaState("idle"); }} placeholder="City (e.g. London)" className="rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
-                    <input value={country} onChange={(e) => { setCountry(e.target.value); setDiaState("idle"); }} placeholder="Country (e.g. United Kingdom)" className="rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={saveDiaspora} disabled={diaState === "saving"} className="rounded-full bg-teal px-5 py-2 text-sm font-semibold text-cream hover:bg-teal-text disabled:opacity-60">
-                    {diaState === "saving" ? "Saving…" : "Save"}
-                  </button>
-                  {diaState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
-                  {diaState === "error" && <span className="text-sm text-clay-text">Could not save. Try again.</span>}
-                </div>
-              </div>
-            </Panel>
-
-            <Panel title="Your schooling" lede="Add the schools you attended and the years you were there. Classmates who overlapped with you will show up below — the powerhouse of Oguaa's networks.">
-              <SchoolingEditor
-                schools={schools}
-                initial={me.schooling ?? []}
-                onSaved={() => setConnKey((k) => k + 1)}
-              />
-            </Panel>
-
-            <Panel title="People you may know" lede="Classmates, neighbours from your quarter, and members of your Asafo.">
-              <PeopleYouMayKnow key={connKey} />
-            </Panel>
-          </div>
+          <Panel title="People you may know" lede="Classmates, neighbours from your quarter, and members of your Asafo.">
+            <PeopleYouMayKnow key={connKey} />
+          </Panel>
         </div>
       </Container>
     </>
