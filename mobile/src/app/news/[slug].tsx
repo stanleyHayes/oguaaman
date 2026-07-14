@@ -23,13 +23,25 @@ export default function Article() {
 
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-      {data.coverImageUrl
-        ? <Image source={{ uri: cldCover(data.coverImageUrl, 700) }} resizeMode="cover" style={s.cover} />
-        : <View style={[s.strip, { backgroundColor: data.coverColor ?? "#123F2D" }]} />}
+      <View style={s.hero}>
+        {data.coverImageUrl ? (
+          <Image source={{ uri: cldCover(data.coverImageUrl, 800) }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: data.coverColor ?? "#123F2D" }]} />
+        )}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(12,44,31,0.68)" }]} />
+        <View style={s.heroInner}>
+          <Text style={s.kicker}>The Oguaa Newsroom</Text>
+          <Text style={s.title}>{data.title}</Text>
+          <View style={s.bylineRow}>
+            <View style={s.bylineDot} />
+            <Text style={s.byline}>By {data.authorName} · {newsDate(data)}</Text>
+          </View>
+        </View>
+      </View>
+
       <View style={s.body}>
-        <Text style={s.title}>{data.title}</Text>
         {data.summary ? <Text style={s.summary}>{data.summary}</Text> : null}
-        <Text style={s.byline}>By {data.authorName} · {newsDate(data)}</Text>
         <View style={s.divider} />
         <Markdown>{data.body}</Markdown>
       </View>
@@ -38,11 +50,14 @@ export default function Article() {
 }
 
 const s = StyleSheet.create({
-  strip: { height: 10 },
-  cover: { width: "100%", height: 220, backgroundColor: C.sand },
+  hero: { minHeight: 260, justifyContent: "flex-end" },
+  heroInner: { padding: 20, paddingBottom: 24 },
+  kicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  title: { color: C.cream, fontFamily: serif, fontSize: 30, fontWeight: "700", lineHeight: 38, marginTop: 8 },
+  bylineRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
+  bylineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.gold },
+  byline: { color: "rgba(246,241,231,0.85)", fontSize: 13 },
   body: { padding: 20 },
-  title: { fontFamily: serif, fontSize: 30, fontWeight: "700", color: C.ink, lineHeight: 38 },
-  summary: { fontFamily: serif, fontStyle: "italic", fontSize: 17, lineHeight: 25, color: C.inkMuted, marginTop: 10 },
-  byline: { color: C.goldText, fontSize: 13, marginTop: 12 },
+  summary: { fontFamily: serif, fontStyle: "italic", fontSize: 18, lineHeight: 27, color: C.inkMuted },
   divider: { height: 1, backgroundColor: C.sand, marginVertical: 20 },
 });

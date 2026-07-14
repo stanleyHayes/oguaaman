@@ -4,9 +4,9 @@ import type { EventView, Ticket } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill } from "@/components/ui";
-import { Thumb } from "@/components/cards";
+import { DetailHero } from "@/components/detail-hero";
 import { ReportButton } from "@/components/report-button";
-import { formatDate, initials } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { cedis } from "./Projects";
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -60,17 +60,39 @@ export function Component() {
     }
   }
 
+  const d = event.details;
+
   return (
     <>
-      <Container size="wide" className="py-10">
-        <Link to="/events" className="text-sm text-teal-text hover:underline">← All events</Link>
-      </Container>
-      <Container size="wide" className="grid gap-10 pb-12 lg:grid-cols-[1.6fr_1fr]">
+      <DetailHero
+        tone="green"
+        backTo="/events"
+        backLabel="All events"
+        coverImageUrl={event.coverImageUrl}
+        title={event.title}
+        meta={
+          <p className="font-medium text-gold">
+            {d.startsAt && formatDate(d.startsAt)}{d.venue ? ` · ${d.venue}` : ""}{d.organiser ? ` · ${d.organiser}` : ""}
+          </p>
+        }
+      >
+        <span className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs font-medium text-cream backdrop-blur-sm">
+          Event{d.anchorFestival ? " · homecoming" : ""}
+        </span>
+        {d.festival && (
+          <Link to={`/festivals/${d.festival}`} className="rounded-full border border-gold/50 bg-gold/15 px-3 py-1 text-xs font-semibold text-gold transition-colors hover:bg-gold/25">
+            Part of a festival →
+          </Link>
+        )}
+      </DetailHero>
+
+      <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
         <EventInfo event={event} />
 
         <aside className="space-y-6">
-          <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-6">
-            <h2 className="font-display text-xl font-semibold text-ink">Tickets</h2>
+          <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-20">
+            <p className="eyebrow text-gold-text">Admission</p>
+            <h2 className="mt-1 font-display text-xl font-semibold text-ink">Tickets</h2>
             <TicketPanel
               confirming={confirming}
               confirmed={confirmed}
@@ -97,27 +119,23 @@ function EventInfo({ event }: Readonly<{ event: EventView["event"] }>) {
   const d = event.details;
   return (
     <div>
-      <Pill tone="gold">Event{d.anchorFestival ? " · homecoming" : ""}</Pill>
-      <h1 className="mt-3 font-display text-4xl font-semibold text-ink sm:text-5xl">{event.title}</h1>
-      <p className="mt-2 text-sm font-medium text-gold-text">
-        {d.startsAt && formatDate(d.startsAt)}{d.venue ? ` · ${d.venue}` : ""}{d.organiser ? ` · ${d.organiser}` : ""}
-      </p>
-      <Thumb seed={event.slug} src={event.coverImageUrl} label={initials(event.title)} className="mt-6 aspect-[16/7] w-full" />
-      {d.description && <p className="mt-6 font-serif text-lg leading-relaxed text-ink">{d.description}</p>}
+      {d.description && <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green">{d.description}</p>}
       {event.tags.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-2">{event.tags.map((t) => <Pill key={t}>#{t}</Pill>)}</div>
       )}
       {d.programme && d.programme.length > 0 && (
-        <div className="mt-8">
+        <div className="mt-10">
           <h2 className="font-display text-2xl font-semibold text-ink">Programme</h2>
-          <ul className="mt-4 space-y-3">
-            {d.programme.map((p, i) => (
-              <li key={i} className="rounded-[var(--radius-card)] border border-sand bg-cream p-4">
+          <div className="mt-4 h-[3px] w-14 rounded-full bg-gold-brand" aria-hidden />
+          <ol className="mt-6 space-y-5 border-l-2 border-gold-brand/30 pl-5">
+            {d.programme.map((p) => (
+              <li key={`${p.day}-${p.time ?? ""}-${p.title}`} className="relative">
+                <span className="absolute -left-[1.6rem] top-1.5 h-2.5 w-2.5 rounded-full bg-gold-brand" aria-hidden />
                 <p className="text-xs font-semibold uppercase tracking-wide text-gold-text">{p.day}{p.time ? ` · ${p.time}` : ""}</p>
                 <p className="mt-1 text-sm text-ink">{p.title}</p>
               </li>
             ))}
-          </ul>
+          </ol>
         </div>
       )}
       {d.festival && (

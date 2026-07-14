@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
+import { useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import type { Listing, Pledge } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill } from "@/components/ui";
-import { Thumb } from "@/components/cards";
+import { DetailHero } from "@/components/detail-hero";
 import { ReportButton } from "@/components/report-button";
-import { initials } from "@/lib/format";
 import { ProgressBar, cedis } from "./Projects";
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -62,30 +61,47 @@ export function Component() {
     }
   }
 
+  const goalReached = d.goalPesewas ? Math.min(100, Math.round(((d.raisedPesewas ?? 0) / d.goalPesewas) * 100)) : 0;
+
   return (
     <>
-      <Container size="wide" className="py-10">
-        <Link to="/projects" className="text-sm text-teal-text hover:underline">← All projects</Link>
-      </Container>
-      <Container size="wide" className="grid gap-10 pb-12 lg:grid-cols-[1.6fr_1fr]">
+      <DetailHero
+        tone="green"
+        backTo="/projects"
+        backLabel="All projects"
+        coverImageUrl={project.coverImageUrl}
+        title={project.title}
+        meta={
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            {d.organiser && <span>{d.organiser}</span>}
+            <span className="font-semibold text-gold">
+              {cedis(d.raisedPesewas ?? 0)} raised{d.goalPesewas ? ` of ${cedis(d.goalPesewas)}` : ""}
+              {d.goalPesewas ? ` · ${goalReached}%` : ""}
+            </span>
+            <span className="text-cream/70">{d.backers ?? 0} backers{d.deadline ? ` · closes ${d.deadline}` : ""}</span>
+          </div>
+        }
+      >
+        <span className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs font-medium text-cream backdrop-blur-sm">Adopt a project</span>
+      </DetailHero>
+
+      <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
         <div>
-          <Pill tone="green">Adopt a project</Pill>
-          <h1 className="mt-3 font-display text-4xl font-semibold text-ink sm:text-5xl">{project.title}</h1>
-          {d.organiser && <p className="mt-2 text-sm font-medium text-gold-text">{d.organiser}</p>}
-          <Thumb seed={project.slug} src={project.coverImageUrl} label={initials(project.title)} className="mt-6 aspect-[16/7] w-full" />
-          <p className="mt-6 font-serif text-lg leading-relaxed text-ink">{d.description}</p>
+          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green">{d.description}</p>
           {project.tags.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-2">{project.tags.map((t) => <Pill key={t}>#{t}</Pill>)}</div>
           )}
-          <div className="mt-8 rounded-[var(--radius-card)] border border-sand bg-cream p-5 text-sm text-ink-muted">
+          <div className="relative mt-8 overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5 text-sm text-ink-muted shadow-[var(--shadow-card)]">
+            <span className="absolute inset-y-0 left-0 w-1 bg-gold-brand" aria-hidden />
             <p className="font-semibold text-ink">Where the money goes</p>
             <p className="mt-1.5">Funds are held for the named institution and released against receipts, which are published to backers. Oguaa takes nothing.</p>
           </div>
         </div>
 
         <aside className="space-y-6">
-          <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-6">
-            <ProgressBar raised={d.raisedPesewas} goal={d.goalPesewas} />
+          <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-20">
+            <p className="eyebrow text-gold-text">Fund this project</p>
+            <div className="mt-3"><ProgressBar raised={d.raisedPesewas} goal={d.goalPesewas} /></div>
             <p className="mt-2 text-xs text-ink-faint">{d.backers ?? 0} backers{d.deadline ? ` · closes ${d.deadline}` : ""}</p>
 
             {confirming && <p className="mt-5 text-sm text-ink-muted">Confirming your payment…</p>}

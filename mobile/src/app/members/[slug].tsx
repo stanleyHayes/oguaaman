@@ -48,6 +48,12 @@ function FollowButton({ slug }: { slug: string }) {
   );
 }
 
+function roleLabel(role: string): string {
+  if (role === "curator") return "Curator";
+  if (role === "steward") return "Steward";
+  return "Member";
+}
+
 export default function MemberProfile() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<MemberView>(() => api.member(slug), `member:${slug}`);
@@ -69,7 +75,7 @@ export default function MemberProfile() {
   return (
     <>
       <Stack.Screen options={{ title: m.displayName }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={s.header}>
           {m.photoUrl ? (
             <Thumb seed={m.slug} src={m.photoUrl} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
@@ -77,57 +83,61 @@ export default function MemberProfile() {
             <View style={s.avatar}><Text style={s.avatarText}>{m.initials || initials(m.displayName)}</Text></View>
           )}
           <Text style={s.name}>{m.displayName}</Text>
-          <Text style={s.role}>{m.role === "curator" ? "Curator" : m.role === "steward" ? "Steward" : "Member"}</Text>
+          <Text style={s.role}>{roleLabel(m.role)}{m.joinedAt ? ` · joined ${m.joinedAt}` : ""}</Text>
           {m.bio ? <Text style={s.bio}>{m.bio}</Text> : null}
           {(quarter || asafo || stints.length > 0) && (
             <View style={s.chipRow}>
               {quarter ? <View style={s.chip}><Text style={s.chipText}>{quarter.name}</Text></View> : null}
-              {asafo ? <View style={[s.chip, s.chipClay]}><Text style={[s.chipText, { color: C.clayText }]}>{asafo.name}</Text></View> : null}
+              {asafo ? <View style={s.chip}><Text style={s.chipText}>{asafo.name}</Text></View> : null}
               {stints.map((label) => (
-                <View key={label} style={[s.chip, s.chipMaroon]}><Text style={[s.chipText, { color: C.maroon }]}>{label}</Text></View>
+                <View key={label} style={s.chip}><Text style={s.chipText}>{label}</Text></View>
               ))}
             </View>
           )}
-          {m.joinedAt ? <Text style={s.joined}>Joined {m.joinedAt}</Text> : null}
           <FollowButton slug={m.slug} />
         </View>
 
-        <Text style={s.kicker}>CONTRIBUTIONS</Text>
-        {published.length === 0 && <Text style={s.empty}>No public contributions yet.</Text>}
-        {published.map((l) => (
-          <View key={l.id} style={s.card}>
-            <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cardThumb} labelStyle={s.cardThumbInit} />
-            <View style={{ flex: 1 }}>
-              <Text style={s.cardType}>{l.type}</Text>
-              <Text style={s.cardTitle}>{l.title}</Text>
-            </View>
+        <View style={s.body}>
+          <View style={s.sectionCard}>
+            <Text style={s.sectionTitle}>Contributions</Text>
+            <Text style={s.sectionHelp}>Everything {m.displayName.split(" ")[0]} has shared with the town.</Text>
+            {published.length === 0 && <Text style={s.empty}>No public contributions yet.</Text>}
+            {published.map((l) => (
+              <View key={l.id} style={s.card}>
+                <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cardThumb} labelStyle={s.cardThumbInit} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.cardType}>{l.type}</Text>
+                  <Text style={s.cardTitle}>{l.title}</Text>
+                </View>
+              </View>
+            ))}
           </View>
-        ))}
+        </View>
       </ScrollView>
     </>
   );
 }
 
 const s = StyleSheet.create({
-  header: { alignItems: "center", marginBottom: 22 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.green, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
-  avatarText: { color: C.cream, fontFamily: serif, fontSize: 30, fontWeight: "700" },
-  name: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.ink, marginTop: 12 },
-  role: { color: C.goldText, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
-  bio: { color: C.inkMuted, fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: 8, maxWidth: 320 },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10, justifyContent: "center" },
-  chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  chipClay: { borderColor: "rgba(176,80,60,0.35)" },
-  chipMaroon: { borderColor: "rgba(124,45,45,0.3)" },
-  chipText: { color: C.green, fontSize: 12, fontWeight: "600" },
-  joined: { color: C.inkFaint, fontSize: 12, marginTop: 8 },
-  follow: { marginTop: 14, borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 24 },
+  header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 28, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
+  avatarText: { color: C.cream, fontFamily: serif, fontSize: 32, fontWeight: "700" },
+  name: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.cream, marginTop: 12 },
+  role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
+  bio: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: 8, maxWidth: 320 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, justifyContent: "center" },
+  chip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.3)", backgroundColor: "rgba(246,241,231,0.1)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  chipText: { color: C.cream, fontSize: 12, fontWeight: "600" },
+  follow: { marginTop: 16, borderWidth: 1, borderColor: "rgba(246,241,231,0.5)", borderRadius: 999, paddingVertical: 9, paddingHorizontal: 26 },
   followOn: { backgroundColor: C.gold, borderColor: C.gold },
-  followText: { color: C.green, fontWeight: "700" },
+  followText: { color: C.cream, fontWeight: "700" },
   followTextOn: { color: C.green900 },
-  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 10 },
+  body: { padding: 16 },
+  sectionCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  sectionTitle: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink },
+  sectionHelp: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 12 },
   empty: { color: C.inkFaint, fontStyle: "italic" },
-  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, marginBottom: 10 },
+  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
   cardThumb: { width: 48, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   cardThumbInit: { color: C.cream, fontFamily: serif, fontSize: 18, fontWeight: "700" },
   cardType: { color: C.goldText, fontSize: 10, letterSpacing: 1, fontWeight: "700", textTransform: "uppercase" },

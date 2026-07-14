@@ -14,7 +14,10 @@ function openURL(url?: string) {
 
 interface BrowseView {
   title: string;
+  kicker: string;
   lede: string;
+  tone: string;
+  countNoun: string;
   fetch: () => Promise<Listing[]>;
   sub: (l: Listing) => string;
   /** Route for a card tap; undefined = not navigable. */
@@ -24,34 +27,49 @@ interface BrowseView {
 const VIEWS: Record<string, BrowseView> = {
   people: {
     title: "People",
+    kicker: "The wall of pride",
     lede: "Sons and daughters of Oguaa — icons past and living.",
+    tone: C.green,
+    countNoun: "people",
     fetch: () => api.people(),
     sub: (l) => [l.details.era, l.details.whyNotable].filter(Boolean).join(" · ") || "Cape Coast",
     href: (l) => `/people/${l.slug}`,
   },
   business: {
     title: "Business",
+    kicker: "The working city",
     lede: "The working city — markets, fishing, trade and the people behind them.",
+    tone: C.teal,
+    countNoun: "businesses",
     fetch: () => api.businesses(),
     sub: (l) => l.details.category || l.details.address || "Cape Coast",
     href: (l) => `/business/${l.slug}`,
   },
   events: {
     title: "Events",
+    kicker: "The town calendar",
     lede: "From Fetu Afahye to school speech days and homecomings.",
+    tone: C.green900,
+    countNoun: "events",
     fetch: () => api.events(),
     sub: (l) => [l.details.startsAt, l.details.venue].filter(Boolean).join(" · ") || "Cape Coast",
     href: (l) => `/events/${l.slug}`,
   },
   opportunities: {
     title: "Opportunities",
+    kicker: "Youth & opportunity",
     lede: "Jobs, scholarships and mentorship shared within the community.",
+    tone: C.teal,
+    countNoun: "opportunities",
     fetch: () => api.opportunities(),
     sub: (l) => [l.details.kind, l.details.deadline ? `closes ${l.details.deadline}` : ""].filter(Boolean).join(" · ") || "Open",
   },
   memories: {
     title: "Memories",
+    kicker: "Old Cape Coast",
     lede: "Photos and stories of old Cape Coast, preserved.",
+    tone: C.clay,
+    countNoun: "memories",
     fetch: () => api.memories(),
     sub: (l) => l.details.text?.slice(0, 80) ?? "",
   },
@@ -150,30 +168,41 @@ export default function Browse() {
   return (
     <>
       <Stack.Screen options={{ title: view.title }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 12 }}>
-        <Text style={s.lede}>{view.lede}</Text>
-        {anchor && <Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable>}
-        {data.length === 0 && <Text style={s.empty}>Nothing here yet — be the first to contribute.</Text>}
-        {isEvents
-          ? sections.map((sec) => (
-            <View key={sec.key} style={s.section}>
-              <Text style={s.sectionHeader}>{sec.label}</Text>
-              {sec.items.map(renderCard)}
-            </View>
-          ))
-          : rest.map(renderCard)}
+      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View style={[s.catHero, { backgroundColor: view.tone }]}>
+          <Text style={s.catKicker}>{view.kicker}</Text>
+          <Text style={s.catTitle}>{view.title}</Text>
+          <Text style={s.catLede}>{view.lede}</Text>
+          <Text style={s.catCount}>{data.length} {view.countNoun}</Text>
+        </View>
+        <View style={{ padding: 16, gap: 12 }}>
+          {anchor && <Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable>}
+          {data.length === 0 && <Text style={s.empty}>Nothing here yet — be the first to contribute.</Text>}
+          {isEvents
+            ? sections.map((sec) => (
+              <View key={sec.key} style={s.section}>
+                <Text style={s.sectionHeader}>{sec.label}</Text>
+                {sec.items.map(renderCard)}
+              </View>
+            ))
+            : rest.map(renderCard)}
+        </View>
       </ScrollView>
     </>
   );
 }
 
 const s = StyleSheet.create({
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
+  catHero: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
+  catKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  catTitle: { color: C.cream, fontFamily: serif, fontSize: 32, fontWeight: "700", marginTop: 6 },
+  catLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
+  catCount: { color: "rgba(246,241,231,0.55)", fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },
   section: { gap: 12 },
   sectionHeader: { color: C.goldText, fontFamily: serif, fontSize: 15, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
   empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 20 },
-  card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
-  thumb: { width: 56, height: 56, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  thumb: { width: 60, height: 60, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, fontFamily: serif, fontSize: 20, fontWeight: "700" },
   title: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
   sub: { color: C.goldText, fontSize: 12, marginTop: 3 },

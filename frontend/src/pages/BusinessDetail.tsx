@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
+import { useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import type { Listing, Subscription } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { Container, Pill, SampleNote } from "@/components/ui";
-import { Thumb } from "@/components/cards";
+import { Container, SampleNote } from "@/components/ui";
+import { DetailHero } from "@/components/detail-hero";
 import { LocationMap } from "@/components/location-map";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { formatDate } from "@/lib/format";
@@ -60,26 +60,36 @@ export function Component() {
 
   return (
     <>
-      <Container size="wide" className="py-10">
-        <Link to="/business" className="text-sm text-teal-text hover:underline">← Business directory</Link>
-      </Container>
-      <Container size="wide" className="grid gap-10 pb-12 lg:grid-cols-[1.6fr_1fr]">
+      <DetailHero
+        tone="teal"
+        backTo="/business"
+        backLabel="Business directory"
+        coverImageUrl={b.coverImageUrl}
+        title={b.title}
+        meta={
+          <p>
+            {d.address && <span>📍 {d.address}</span>}
+            {d.address && d.openingHours ? <span className="mx-2 text-cream/40">·</span> : null}
+            {d.openingHours && <span>{d.openingHours}</span>}
+          </p>
+        }
+      >
+        <span className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs font-medium text-cream backdrop-blur-sm">{d.category}</span>
+        {b.supporter && <span className="rounded-full bg-gold-brand px-3 py-1 text-xs font-bold text-green-900">★ Supporter</span>}
+      </DetailHero>
+
+      <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Pill tone="teal">{d.category}</Pill>
-            {b.supporter && <Pill tone="gold">★ Supporter</Pill>}
-          </div>
-          <h1 className="mt-3 font-display text-4xl font-semibold text-ink sm:text-5xl">{b.title}</h1>
-          <Thumb seed={b.slug} src={b.coverImageUrl} className="mt-6 aspect-[16/7] w-full" />
-          <p className="mt-6 font-serif text-lg leading-relaxed text-ink">{d.description}</p>
+          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-teal-text">{d.description}</p>
           {d.services && d.services.length > 0 && (
-            <section className="mt-8">
-              <h2 className="font-display text-xl font-semibold text-ink">Services</h2>
-              <ul className="mt-3 divide-y divide-sand overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream">
-                {d.services.map((s) => (
-                  <li key={s.name} className="flex items-center justify-between gap-3 px-4 py-3">
-                    <span className="text-ink">{s.name}{s.note && <span className="ml-2 text-xs text-ink-faint">{s.note}</span>}</span>
-                    {s.price && <span className="shrink-0 font-medium text-teal-text">{s.price}</span>}
+            <section className="mt-10">
+              <h2 className="font-display text-2xl font-semibold text-ink">Services</h2>
+              <div className="mt-4 h-[3px] w-14 rounded-full bg-teal" aria-hidden />
+              <ul className="mt-5 divide-y divide-sand overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]">
+                {d.services.map((svc) => (
+                  <li key={svc.name} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <span className="text-ink">{svc.name}{svc.note && <span className="ml-2 text-xs text-ink-faint">{svc.note}</span>}</span>
+                    {svc.price && <span className="shrink-0 font-medium text-teal-text">{svc.price}</span>}
                   </li>
                 ))}
               </ul>
@@ -87,16 +97,16 @@ export function Component() {
           )}
         </div>
         <aside className="space-y-6">
-          <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
+          <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)] lg:sticky lg:top-20">
             <p className="eyebrow text-teal-text">Find them</p>
             <dl className="mt-3 space-y-3 text-sm">
-              {d.address && <div><dt className="text-ink-faint">Location</dt><dd className="text-ink">📍 {d.address}</dd></div>}
+              {d.address && <div><dt className="text-ink-faint">Location</dt><dd className="text-ink">{d.address}</dd></div>}
               {d.openingHours && <div><dt className="text-ink-faint">Hours</dt><dd className="text-ink">{d.openingHours}</dd></div>}
             </dl>
             {d.contact && d.contact.length > 0 && (
               <div className="mt-4 grid gap-2">
                 {d.contact.map((c) => (
-                  <a key={c.label} href={c.url} className="flex items-center justify-between rounded-lg border border-teal px-4 py-2.5 text-sm font-semibold text-teal-text hover:bg-teal/[0.06]">{c.label} <span aria-hidden>↗</span></a>
+                  <a key={c.label} href={c.url} className="group flex items-center justify-between rounded-full border border-teal/50 px-4 py-2.5 text-sm font-semibold text-teal-text transition-colors hover:bg-teal hover:text-cream">{c.label} <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>↗</span></a>
                 ))}
               </div>
             )}
