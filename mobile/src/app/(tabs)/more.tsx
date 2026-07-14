@@ -16,6 +16,7 @@ const SECTIONS: { label: string; blurb: string; href?: string }[] = [
   { label: "News", blurb: "Festivals, scholarships, homecomings and notices from Cape Coast.", href: "/news" },
   { label: "Events", blurb: "From Fetu Afahye to school speech days and homecomings.", href: "/browse/events" },
   { label: "Opportunities", blurb: "Jobs, scholarships and mentorship shared within the community.", href: "/browse/opportunities" },
+  { label: "Youth", blurb: "Opportunities board and a spotlight on the young talents coming up in Cape Coast.", href: "/youth" },
   { label: "Memories", blurb: "Photos and stories of old Cape Coast, preserved.", href: "/browse/memories" },
   { label: "Heritage", blurb: "The Castle and the Door of No Return, the Fante Confederacy, the Asafo.", href: "/explore/heritage" },
   { label: "Culture", blurb: "Fetu Afahye, the durbar, the 77 gods of Oguaa, and the seven Asafo companies.", href: "/explore/culture" },

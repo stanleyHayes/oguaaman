@@ -51,6 +51,7 @@ const (
 	// Shared seed listing values.
 	noteIncidentReported    = "Incident reported"
 	tagLostFound            = "lost-found"
+	tagYoungTalent          = "young-talent"
 	imgGroupPhoto           = "https://res.cloudinary.com/demo/image/upload/samples/imagecon-group.jpg"
 	imgBeachBoat            = "https://res.cloudinary.com/demo/image/upload/samples/landscapes/beach-boat.jpg"
 	exampleApplyURL         = "https://example.org/apply"
@@ -119,6 +120,18 @@ func seedListings() []domain.Listing {
 		}},
 		{ID: "p-sarbah", Slug: "john-mensah-sarbah", Type: domain.TypePerson, OwnerID: memberKojo, Title: "John Mensah Sarbah", Status: domain.StatusApproved, Tags: []string{"law", "heritage", "arps"}, TownID: "oguaa", CreatedAt: d20260218, SubmittedAt: d20260218, PublishedAt: d20260218, Details: map[string]any{
 			"whyNotable": "Pioneering lawyer and a founder of the Aborigines' Rights Protection Society in Cape Coast (1897); an early architect of Gold Coast self-determination.", "era": "1864–1910", "living": false,
+		}},
+
+		// Young-talent spotlight (spec §8.8) — public celebration only; no
+		// contact details are attached to these profiles, by safeguarding design.
+		{ID: "p-ama-sampson", Slug: "ama-sampson", Type: domain.TypePerson, OwnerID: memberAidoo, Title: "Ama Sampson", Status: domain.StatusApproved, Tags: []string{tagYoungTalent, "athletics", "mfantsipim"}, TownID: "oguaa", SchoolIDs: []string{"mfantsipim"}, CreatedAt: d20260505, SubmittedAt: d20260505, PublishedAt: d20260505, Details: map[string]any{
+			"whyNotable": "National schools 400 metres champion — her junior time this season is the fastest in the Central Region, trained on the Mfantsipim hill track.", "era": "b. 2009 · 17", "living": true,
+		}},
+		{ID: "p-efia-grant", Slug: "efia-grant", Type: domain.TypePerson, OwnerID: memberAkua, Title: "Efia Grant", Status: domain.StatusApproved, Tags: []string{tagYoungTalent, "robotics", schoolWesleyGirls}, TownID: "oguaa", SchoolIDs: []string{schoolWesleyGirls}, CreatedAt: d20260510, SubmittedAt: d20260510, PublishedAt: d20260510, Details: map[string]any{
+			"whyNotable": "Captains the Wey-Gey-Hey robotics team — back-to-back national finals, and a line-following rover built from parts salvaged at Kotokuraba.", "era": "b. 2010 · 16", "living": true,
+		}},
+		{ID: "p-kwame-aborampa", Slug: "kwame-aborampa", Type: domain.TypePerson, OwnerID: memberAkua, Title: "Kwame Aborampa", Status: domain.StatusApproved, Tags: []string{tagYoungTalent, "music", "highlife"}, TownID: "oguaa", SchoolIDs: []string{"ucc"}, CreatedAt: d20260515, SubmittedAt: d20260515, PublishedAt: d20260515, Details: map[string]any{
+			"whyNotable": "A UCC sophomore singing highlife with the old osode swing — his acoustic sessions in the Science market hostels have built a quiet following across campus.", "era": "b. 2007 · 19", "living": true,
 		}},
 
 		// ── Memorials ──────────────────────────────────────────────────────────
@@ -213,6 +226,12 @@ func seedListings() []domain.Listing {
 		}},
 		{ID: "op-coding", Slug: "ucc-summer-coding", Type: domain.TypeOpportunity, OwnerID: memberAkua, Title: "UCC Summer Coding Programme", Status: domain.StatusApproved, Tags: []string{"training", "youth"}, TownID: "oguaa", PostedByOrgID: "ucc", CreatedAt: d20260510, SubmittedAt: d20260510, PublishedAt: d20260510, Details: map[string]any{
 			"kind": "training", "description": "A free four-week introduction to web development for senior high students, held at the University of Cape Coast.", "eligibility": "SHS students from the Central Region, aged 16–19, with guardian consent.", "deadline": "2026-07-15", "provider": "University of Cape Coast", "applyUrl": exampleApplyURL,
+		}},
+		{ID: "op-telecel-intern", Slug: "telecel-data-analyst-internship", Type: domain.TypeOpportunity, OwnerID: memberKojo, Title: "Telecel Data Analyst Internship — Cape Coast", Status: domain.StatusApproved, Tags: []string{"internship", "technology"}, TownID: "oguaa", CreatedAt: d20260515, SubmittedAt: d20260515, PublishedAt: d20260515, Details: map[string]any{
+			"kind": "internship", "description": "A three-month paid internship with the Telecel network-analytics team in Cape Coast — real dashboards, mentorship, and a recommendation letter at the end.", "eligibility": "UCC or CCTU students in their final year, or recent graduates under 24, with basic spreadsheet skills.", "deadline": "2026-07-20", "provider": "Telecel Ghana — Cape Coast branch", "applyUrl": exampleApplyURL,
+		}},
+		{ID: "op-metro-ict", Slug: "metro-assembly-junior-ict-officer", Type: domain.TypeOpportunity, OwnerID: memberAidoo, Title: "Junior ICT Officer — Metropolitan Assembly", Status: domain.StatusApproved, Tags: []string{"job", "public-service"}, TownID: "oguaa", PostedByOrgID: "ccma", CreatedAt: d20260601, SubmittedAt: d20260601, PublishedAt: d20260601, Details: map[string]any{
+			"kind": "job", "description": "A permanent junior officer post keeping the Assembly's systems and the public Wi-Fi at Victoria Park running, with structured civil-service training.", "eligibility": "Cape Coast Metro residents aged 18–30 with an HND or degree in a computing field.", "deadline": "2026-08-14", "provider": "Cape Coast Metropolitan Assembly", "applyUrl": exampleApplyURL,
 		}},
 
 		// ── Memories ───────────────────────────────────────────────────────────

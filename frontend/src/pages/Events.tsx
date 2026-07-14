@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -5,6 +6,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { EventCard } from "@/components/cards";
+import { EventCalendar } from "@/components/event-calendar";
 import { formatDate } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { cldCover } from "@/lib/cloudinary";
@@ -15,8 +17,33 @@ export async function loader() {
   return api.events();
 }
 
+type EventsView = "list" | "calendar";
+
+function ViewToggle({ view, onChange }: Readonly<{ view: EventsView; onChange: (v: EventsView) => void }>) {
+  const options: { id: EventsView; label: string }[] = [
+    { id: "list", label: "List" },
+    { id: "calendar", label: "Calendar" },
+  ];
+  return (
+    <fieldset aria-label="Events view" className="m-0 inline-flex rounded-full border border-sand bg-paper p-1">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          aria-pressed={view === o.id}
+          onClick={() => onChange(o.id)}
+          className={`rounded-full px-4 py-1 text-sm font-semibold transition-colors ${view === o.id ? "bg-green text-cream" : "text-ink-muted hover:text-ink"}`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </fieldset>
+  );
+}
+
 export function Component() {
   const all = useLoaderData() as Listing[];
+  const [view, setView] = useState<EventsView>("list");
   const upcoming = all.filter((e) => (e.details.startsAt ?? "") >= TODAY);
   const anchor = all.find((e) => e.details.anchorFestival) ?? null;
   const rest = upcoming.filter((e) => e.id !== anchor?.id);
@@ -51,8 +78,15 @@ export function Component() {
           ? <Link to={`/festivals/${anchor.details.festival}`} className={anchorClass}>{anchorBody}</Link>
           : <article className={anchorClass}>{anchorBody}</article>
         )}
-        <h2 className="mb-5 font-display text-2xl font-semibold text-ink">Coming up</h2>
-        <div className="grid gap-4 sm:grid-cols-2">{rest.map((e) => <EventCard key={e.id} event={e} />)}</div>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-2xl font-semibold text-ink">{view === "list" ? "Coming up" : "Calendar"}</h2>
+          <ViewToggle view={view} onChange={setView} />
+        </div>
+        {view === "list" ? (
+          <div className="grid gap-4 sm:grid-cols-2">{rest.map((e) => <EventCard key={e.id} event={e} />)}</div>
+        ) : (
+          <EventCalendar events={all} />
+        )}
         <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>
     </>

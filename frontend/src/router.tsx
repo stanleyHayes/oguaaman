@@ -37,6 +37,7 @@ export const router = createBrowserRouter([
       { path: "lost-found/new", lazy: () => import("./pages/PostLostFound") },
       { path: "lost-found/:slug", lazy: () => import("./pages/LostFoundDetail") },
       { path: "community", lazy: () => import("./pages/Community") },
+      { path: "youth", lazy: () => import("./pages/Youth") },
       { path: "news", lazy: () => import("./pages/News") },
       { path: "news/:slug", lazy: () => import("./pages/NewsArticle") },
       { path: "heritage", lazy: () => import("./pages/Heritage") },

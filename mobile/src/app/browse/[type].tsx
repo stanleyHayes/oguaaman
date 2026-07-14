@@ -58,6 +58,36 @@ const VIEWS: Record<string, BrowseView> = {
 };
 
 // The anchor festival (Fetu Afahye) leads the events list, like the web page.
+const MONTHS_LONG = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+interface MonthSection {
+  key: string;
+  label: string;
+  items: Listing[];
+}
+
+function monthLabel(key: string): string {
+  if (key === "undated") return "Undated";
+  const month = Number(key.slice(5, 7)) - 1;
+  const name = MONTHS_LONG[month];
+  return name ? `${name} ${key.slice(0, 4)}` : "Undated";
+}
+
+/** Group events into ascending month sections (ISO date strings sort lexically). */
+function groupByMonth(list: Listing[]): MonthSection[] {
+  const sorted = list.slice().sort((a, b) => (a.details.startsAt ?? "").localeCompare(b.details.startsAt ?? ""));
+  const sections: MonthSection[] = [];
+  for (const l of sorted) {
+    const key = (l.details.startsAt ?? "").slice(0, 7) || "undated";
+    const last = sections.at(-1);
+    if (last?.key === key) last.items.push(l);
+    else sections.push({ key, label: monthLabel(key), items: [l] });
+  }
+  return sections;
+}
 function EventHero({ e }: { e: Listing }) {
   return (
     <View style={[s.hero, { backgroundColor: fillFor(e.slug) }]}>
@@ -88,6 +118,34 @@ export default function Browse() {
   const anchor = isEvents ? data.find((l) => l.details.anchorFestival) : undefined;
   const rest = anchor ? data.filter((l) => l.id !== anchor.id) : data;
   const isOpportunities = type === "opportunities";
+  const sections = isEvents ? groupByMonth(rest) : [];
+
+  const renderCard = (l: Listing) => {
+    const href = view.href?.(l);
+    const card = (
+      <View style={[s.card, isOpportunities && { alignItems: "flex-start" }]}>
+        <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.thumb} labelStyle={s.thumbInit} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={s.title}>{l.title}</Text>
+          <Text style={s.sub}>{view.sub(l)}</Text>
+          {isOpportunities && l.details.description ? (
+            <Text style={s.oppDesc} numberOfLines={3}>{l.details.description}</Text>
+          ) : null}
+          {isOpportunities && l.details.applyUrl ? (
+            <Pressable onPress={() => openURL(l.details.applyUrl)} style={s.applyBtn}>
+              <Text style={s.applyText}>How to apply ↗</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {href ? <Text style={s.chevron}>›</Text> : null}
+      </View>
+    );
+    return href ? (
+      <Pressable key={l.id} onPress={() => router.push(href as never)}>{card}</Pressable>
+    ) : (
+      <View key={l.id}>{card}</View>
+    );
+  };
 
   return (
     <>
@@ -96,32 +154,14 @@ export default function Browse() {
         <Text style={s.lede}>{view.lede}</Text>
         {anchor && <Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable>}
         {data.length === 0 && <Text style={s.empty}>Nothing here yet — be the first to contribute.</Text>}
-        {rest.map((l) => {
-          const href = view.href?.(l);
-          const card = (
-            <View style={[s.card, isOpportunities && { alignItems: "flex-start" }]}>
-              <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.thumb} labelStyle={s.thumbInit} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={s.title}>{l.title}</Text>
-                <Text style={s.sub}>{view.sub(l)}</Text>
-                {isOpportunities && l.details.description ? (
-                  <Text style={s.oppDesc} numberOfLines={3}>{l.details.description}</Text>
-                ) : null}
-                {isOpportunities && l.details.applyUrl ? (
-                  <Pressable onPress={() => openURL(l.details.applyUrl)} style={s.applyBtn}>
-                    <Text style={s.applyText}>How to apply ↗</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-              {href ? <Text style={s.chevron}>›</Text> : null}
+        {isEvents
+          ? sections.map((sec) => (
+            <View key={sec.key} style={s.section}>
+              <Text style={s.sectionHeader}>{sec.label}</Text>
+              {sec.items.map(renderCard)}
             </View>
-          );
-          return href ? (
-            <Pressable key={l.id} onPress={() => router.push(href as never)}>{card}</Pressable>
-          ) : (
-            <View key={l.id}>{card}</View>
-          );
-        })}
+          ))
+          : rest.map(renderCard)}
       </ScrollView>
     </>
   );
@@ -129,6 +169,8 @@ export default function Browse() {
 
 const s = StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
+  section: { gap: 12 },
+  sectionHeader: { color: C.goldText, fontFamily: serif, fontSize: 15, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
   empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 20 },
   card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   thumb: { width: 56, height: 56, borderRadius: 10, alignItems: "center", justifyContent: "center" },
