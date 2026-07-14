@@ -39,7 +39,7 @@ function BrandPanel({ mode }: Readonly<{ mode: Mode }>) {
       <div className="relative flex h-full flex-col">
         <Wordmark />
         <p className="mt-10 text-[0.72rem] font-bold uppercase tracking-[0.22em] text-gold">{isJoin ? "Join Oguaa" : "Member sign in"}</p>
-        <h1 className="mt-3 text-4xl font-semibold leading-tight">Welcome home to Oguaa.</h1>
+        <h1 className="mt-3 text-4xl font-semibold leading-tight text-cream">Welcome home to Oguaa.</h1>
         <p className="mt-3 max-w-sm text-sm leading-relaxed text-cream/75">
           {isJoin
             ? "Create your account with a phone or email. A one-time code verifies you — the spam gate that fits how Ghana already works."
