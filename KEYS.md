@@ -18,14 +18,11 @@ To take Oguaa from "runs locally" to "real users can sign in and use it," provid
 |---|-----|-----------------|-----------------|
 | 1 | **`MONGODB_URI`** | The production database connection string | [MongoDB Atlas](https://www.mongodb.com/atlas) free tier, or a self-hosted MongoDB |
 | 2 | **`JWT_SECRET`** | Signs members' sign-in sessions; must be long & random | Generate one: `openssl rand -base64 48` |
-| 3 | **`HUBTEL_CLIENT_ID`** + **`HUBTEL_CLIENT_SECRET`** | Sends the SMS sign-in code to Ghanaian phones | [Hubtel](https://hubtel.com) account → Dashboard → API keys |
-| 4 | **`HUBTEL_SENDER_ID`** | The "from" name on the SMS (e.g. `Oguaa`) | Register/approve a Sender ID in the Hubtel dashboard |
-| 5 | **`ANTHROPIC_API_KEY`** *(optional but recommended)* | Switches the AI writing bar from simulation to live Claude | [console.anthropic.com](https://console.anthropic.com) → API keys |
-| 6 | **`VITE_CLOUDINARY_CLOUD_NAME`** + **`VITE_CLOUDINARY_UPLOAD_PRESET`** | Enables image **upload** (profile photos, covers, crests) + on-the-fly transforms. Without them, image fields fall back to pasting a URL | [Cloudinary](https://cloudinary.com) → dashboard (cloud name) + Settings → Upload → an **unsigned** upload preset |
+| 3 | **`ANTHROPIC_API_KEY`** *(optional but recommended)* | Switches the AI writing bar from simulation to live Claude | [console.anthropic.com](https://console.anthropic.com) → API keys |
+| 4 | **`VITE_CLOUDINARY_CLOUD_NAME`** + **`VITE_CLOUDINARY_UPLOAD_PRESET`** | Enables image **upload** (profile photos, covers, crests) + on-the-fly transforms. Without them, image fields fall back to pasting a URL | [Cloudinary](https://cloudinary.com) → dashboard (cloud name) + Settings → Upload → an **unsigned** upload preset |
 
-Everything else has a working default. Items 3–4 are only needed if you want real SMS
-delivery (set `OTP_PROVIDER=hubtel`); without them the code is shown on screen (dev mode).
-Item 6 is what turns the "Your photo" URL box into a drag-and-drop uploader.
+Everything else has a working default. Item 4 is what turns the "Your photo" URL box
+into a drag-and-drop uploader.
 
 ---
 
@@ -42,12 +39,6 @@ Copy `backend/.env.example` → `backend/.env` and fill in. Required-for-product
 | `ALLOWED_ORIGIN` | `http://localhost:5173` | ★ | CORS origin = your **portal**'s public URL (e.g. `https://oguaa.gh`). Use the exact origin, or `*` only behind a trusted proxy. |
 | `JWT_SECRET` | `oguaa-dev-secret-change-me` | ★ | Secret that signs session tokens. **Must change for prod.** `openssl rand -base64 48`. |
 | `AUTH_REQUIRED` | `false` | ★ (`true`) | Set **`true`** in production. Enforces real sign-in: closes the open dev back-office and stops any unauthenticated/mis-attributed writes. |
-| `OTP_TTL_MIN` | `10` | | Minutes a sign-in code stays valid. |
-| `OTP_PROVIDER` | `log` | ★ (`hubtel`) | `log` = print the code to server logs/UI (dev). `hubtel` = real SMS. |
-| `HUBTEL_CLIENT_ID` | — | ★ if SMS | Hubtel API client id. Dashboard → API. |
-| `HUBTEL_CLIENT_SECRET` | — | ★ if SMS | Hubtel API client secret. |
-| `HUBTEL_SENDER_ID` | `Oguaa` | ★ if SMS | Approved alphanumeric SMS sender id (must be registered with Hubtel). |
-| `HUBTEL_SMS_ENDPOINT` | Hubtel default | | Override only if Hubtel changes the API path. |
 | `PAYSTACK_SECRET_KEY` | _(unset)_ | ★ for payments | Enables **live** adopt-a-project pledges (mobile money + cards, GHS). Without it the pledge flow runs a clearly-labelled simulation. [dashboard.paystack.com](https://dashboard.paystack.com) → Settings → API Keys. Use the test key first. Also set your webhook URL there to `https://<api>/api/payments/paystack/webhook`. |
 | `PUBLIC_PORTAL_URL` | `http://localhost:5173` | ★ for payments | The portal origin Paystack sends payers back to after paying. |
 | `UPLOAD_DIR` | `./uploads` | | Where first-party uploaded images are written (served at `/uploads/*`). Use a persistent disk/volume in prod. |
@@ -64,10 +55,6 @@ MONGODB_DB=oguaa
 ALLOWED_ORIGIN=https://app.oguaa.gh
 JWT_SECRET=<paste output of: openssl rand -base64 48>
 AUTH_REQUIRED=true
-OTP_PROVIDER=hubtel
-HUBTEL_CLIENT_ID=your_hubtel_client_id
-HUBTEL_CLIENT_SECRET=your_hubtel_client_secret
-HUBTEL_SENDER_ID=Oguaa
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
@@ -101,18 +88,43 @@ restart the dev server.
 
 ---
 
-## 5. Not needed yet (future features — for awareness)
+## 5. Seeded demo accounts
+
+`go run ./cmd/seed` (or the `seed` compose service) loads nine demo members. Sign-in is
+by email + password — password sign-in replaced the earlier one-time-code flow — and
+every seeded account shares the same demo password: **`Oguaa-2026!`**
+
+| Email | Role |
+|-------|------|
+| `ama-mensah@oguaa.test` | member |
+| `kojo-arthur@oguaa.test` | member |
+| `efua-sam@oguaa.test` | member |
+| `nana-essien@oguaa.test` | steward |
+| `samuel-aidoo@oguaa.test` | curator |
+| `akua-pratt@oguaa.test` | curator |
+| `yaw-ofori@oguaa.test` | member |
+| `esi-quayson@oguaa.test` | member |
+| `efia-quagraine@oguaa.test` | editor |
+
+Demo data only — never reuse this password for a real account. Pre-existing accounts
+without a password (e.g. invited members created before password sign-in) are claimed
+through the Join/Register flow: registering with their identifier sets their first
+password.
+
+---
+
+## 6. Not needed yet (future features — for awareness)
 
 You don't need these now; they unlock backlog items when we build them:
 
 | When we build… | You'll need | Likely provider |
 |----------------|-------------|-----------------|
 | Mobile push notifications | push credentials | Expo Push (FCM for Android, APNs for iOS) |
-| Email sign-in delivery (Hubtel is SMS-only) | email API key | Resend / Postmark |
+| Password-reset / account emails | email API key | Resend / Postmark |
 
 ---
 
-## 6. Security notes
+## 7. Security notes
 
 - **Never commit real secrets.** `backend/.env` and `*.local` env files are gitignored; keep keys there or in your host's secret manager.
 - **Rotate `JWT_SECRET` carefully** — changing it signs out all existing sessions.

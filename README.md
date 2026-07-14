@@ -84,8 +84,8 @@ admin: `GET /api/admin/reports`, `POST /api/admin/reports/:id/resolve`,
 
 ## Status
 
-Phase 1 is built and verified end-to-end (Go + MongoDB + React), plus passwordless
-OTP→JWT auth, a Newsroom CMS, member follows/connections, and the yearly-remembrance
+Phase 1 is built and verified end-to-end (Go + MongoDB + React), plus password
+sign-in → JWT auth, a Newsroom CMS, member follows/connections, and the yearly-remembrance
 scheduler. Recently added across all clients: **cross-listing search** (`/api/search`),
 a **notice-and-takedown report path** (steward-triaged, §14.3/§14.7), an **18+ age gate**
 at sign-up (§14.4), the **diaspora register** opt-in (Phase-2 foundation), portal **legal
@@ -107,6 +107,6 @@ supporter subscriptions, promotion, my tickets) with full typecheck + lint cover
 Quality: SonarQube gate green (0 bugs, 0 critical issues), `pnpm lint` clean across all
 three web apps, `go test ./...` green, mobile `tsc --noEmit` + `expo lint` clean.
 
-Deferred, with interfaces ready: a live SMS/WhatsApp OTP provider (the `OTPSender` seam),
+Deferred, with interfaces ready: password-reset/account email delivery,
 a live Claude key, push notifications, a PWA shell, and mobile (Expo) mirrors of the new
 sections. See `agent_plan.md`.
