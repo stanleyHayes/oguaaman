@@ -132,7 +132,7 @@ export function AdminLayout() {
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {NAV_GROUPS.map((g) => (
             <div key={g.title} className="mb-4 last:mb-0">
-              <p className={`px-3 pb-1.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-cream/40 ${collapsed ? "lg:hidden" : ""}`}>{g.title}</p>
+              <p className={`px-3 pb-1.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-cream/70 ${collapsed ? "lg:hidden" : ""}`}>{g.title}</p>
               <div className="space-y-0.5">
                 {g.items.map((n) => (
                   <NavLink

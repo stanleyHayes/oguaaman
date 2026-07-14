@@ -107,7 +107,7 @@
   }
 }
 
-@layer utilities {
+@layer components {
   .eyebrow {
     font-size: 0.72rem;
     letter-spacing: 0.22em;
@@ -115,6 +115,9 @@
     font-weight: 600;
     color: var(--color-ink-faint);
   }
+}
+
+@layer utilities {
   .bg-dotgrid {
     background-image: radial-gradient(rgba(199, 162, 74, 0.14) 1px, transparent 1px);
     background-size: 18px 18px;

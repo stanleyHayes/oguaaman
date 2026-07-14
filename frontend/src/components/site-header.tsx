@@ -272,7 +272,7 @@ export function SiteHeader() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 280, damping: 30 }}
-              className="fixed inset-y-0 right-0 z-50 flex w-[88vw] max-w-sm flex-col bg-green-900 shadow-2xl lg:hidden"
+              className="on-dark fixed inset-y-0 right-0 z-50 flex w-[88vw] max-w-sm flex-col bg-green-900 shadow-2xl lg:hidden"
             >
               <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
               <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-cream/10 px-5">

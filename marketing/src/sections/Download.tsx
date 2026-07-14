@@ -161,7 +161,7 @@ function StoreButton({ href, glyph, topLine, bottomLine, ariaLabel }: Readonly<S
         <span className="text-[0.62rem] font-medium uppercase tracking-wide text-cream/55">{topLine}</span>
         <span className="mt-1 text-lg font-semibold text-cream">{bottomLine}</span>
         {comingSoon && (
-          <Pill tone="gold" className="mt-1.5 self-start px-2 py-0.5 text-[0.6rem]">
+          <Pill tone="on-dark" className="mt-1.5 self-start px-2 py-0.5 text-[0.6rem]">
             Coming soon
           </Pill>
         )}

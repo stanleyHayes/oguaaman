@@ -32,7 +32,7 @@ export function Component() {
           {schools.map((s, i) => (
             <StaggerItem key={s.id} index={i} lift className="h-full">
             <Link to={`/education/${s.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
-              <div className="relative flex items-center gap-4 overflow-hidden p-5" style={{ background: `linear-gradient(135deg, ${s.houseColors?.[0]}, ${s.houseColors?.[0]}E6)` }}>
+              <div className="on-dark relative flex items-center gap-4 overflow-hidden p-5" style={{ background: `linear-gradient(135deg, ${s.houseColors?.[0]}, ${s.houseColors?.[0]}E6)` }}>
                 {SCHOOL_PHOTOS[s.slug] && (
                   <>
                     <img src={SCHOOL_PHOTOS[s.slug]} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover opacity-40" />

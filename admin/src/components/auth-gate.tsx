@@ -65,7 +65,7 @@ function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
             <span className="rounded bg-gold px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-green-900">Admin</span>
           </div>
           <p className="mt-8 text-[0.72rem] font-bold uppercase tracking-[0.22em] text-gold">Back office</p>
-          <h1 className="mt-3 text-3xl font-semibold leading-tight">Steward the town board.</h1>
+          <h1 className="mt-3 text-3xl font-semibold leading-tight text-cream">Steward the town board.</h1>
           <ul className="mt-7 space-y-3">
             {TRUST.map((t) => (
               <li key={t} className="flex items-start gap-3 text-sm text-cream/85">
