@@ -6,6 +6,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { LOST_FOUND_KINDS } from "@/lib/lostfound";
+import { DatePicker } from "@/components/date-picker";
 
 const inputCls = "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
 
@@ -72,7 +73,7 @@ export function Component() {
                   <input name="lastSeenLocation" className={inputCls} placeholder="e.g. Kotokuraba Market, main gate" />
                 </Field>
                 <Field label="Last seen when">
-                  <input name="lastSeenDate" type="date" className={inputCls} />
+                  <DatePicker name="lastSeenDate" className="w-full" />
                 </Field>
               </div>
               <Field label="Your contact" hint="A phone number people can reach you on — this is how you get it back.">

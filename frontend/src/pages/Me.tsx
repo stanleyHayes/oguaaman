@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import type { MemberView, Listing, ListingStatus, Ticket, Subscription, Promotion } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { DatePicker } from "@/components/date-picker";
 import { Container, CTA as Cta, Avatar } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { SchoolingEditor, PeopleYouMayKnow } from "@/components/connections";
@@ -389,11 +390,10 @@ export function Component() {
 
             <Panel title="Your birthday" lede="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
               <div className="flex flex-wrap items-center gap-3">
-                <input
-                  type="date"
+                <DatePicker
                   value={birthday.length >= 10 ? birthday.slice(0, 10) : birthday}
-                  onChange={(e) => { setBirthday(e.target.value); setBdayState("idle"); }}
-                  className="rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-gold-brand focus:outline-none"
+                  onChange={(v) => { setBirthday(v); setBdayState("idle"); }}
+                  className="min-w-[13rem]"
                 />
                 <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
                   <input type="checkbox" checked={broadcast} onChange={(e) => { setBroadcast(e.target.checked); setBdayState("idle"); }} className="h-4 w-4 accent-green" />Let my followers know

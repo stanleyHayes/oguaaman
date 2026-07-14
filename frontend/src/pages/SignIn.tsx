@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate, useSearchParams } from "react-route
 import { useAuth } from "@/lib/auth";
 import { Adinkra } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
+import { DatePicker } from "@/components/date-picker";
 
 const inputCls =
   "w-full rounded-xl border border-sand bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
@@ -137,11 +138,11 @@ function IdForm({
             <span className="mb-1.5 block text-sm font-medium text-ink">Your name <span className="font-normal text-ink-faint">(new members)</span></span>
             <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Display name" className={inputCls} />
           </label>
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth <span className="font-normal text-ink-faint">(new members)</span></span>
-            <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} required max="2010-01-01" className={inputCls} />
+            <DatePicker value={dob} onChange={setDob} max="2010-01-01" placeholder="dd/mm/yyyy" className="w-full" />
             <span className="mt-1.5 block text-xs text-ink-faint">Oguaa is for ages 18 and over.</span>
-          </label>
+          </div>
         </>
       )}
       {err && (
@@ -248,6 +249,11 @@ export function Component() {
   const send = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
+    if (mode === "join" && !dob) {
+      setErr("Please choose your date of birth.");
+      setBusy(false);
+      return;
+    }
     try {
       const dc = await requestOtp(
         identifier.trim(),

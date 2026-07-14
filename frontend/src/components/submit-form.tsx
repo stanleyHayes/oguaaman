@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ListingType } from "@/lib/types";
 import { api } from "@/lib/api";
 import { AiWritingBar } from "@/components/ai-writing-bar";
+import { DatePicker } from "@/components/date-picker";
 import { ImageUpload } from "@/components/image-upload";
 
 const TYPES: { value: ListingType; label: string; hint: string }[] = [
@@ -246,7 +247,7 @@ function TypeFields({ type }: Readonly<{ type: ListingType }>) {
         <Field label="Location / address"><input name="address" className={inputCls} placeholder="Kotokuraba, Cape Coast" /></Field>
       </>)}
       {type === "event" && (<>
-        <Field label="Date"><input name="startsAt" type="date" className={inputCls} /></Field>
+        <Field label="Date"><DatePicker name="startsAt" className="w-full" /></Field>
         <Field label="Venue / location"><input name="venue" className={inputCls} placeholder="Victoria Park, Cape Coast" /></Field>
       </>)}
       {type === "memory" && (
@@ -267,7 +268,7 @@ function TypeFields({ type }: Readonly<{ type: ListingType }>) {
             <Field label="Honorific (optional)" hint="e.g. Nana, Maame, Dr."><input name="honorific" className={inputCls} placeholder="Nana" /></Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Year of birth (optional)"><input name="bornYear" inputMode="numeric" className={inputCls} placeholder="1942" /></Field>
-              <Field label="Date of passing (optional)"><input name="diedDate" type="date" className={inputCls} /></Field>
+              <Field label="Date of passing (optional)"><DatePicker name="diedDate" className="w-full" /></Field>
             </div>
             <Field label="Birthday (optional)" hint="MM-DD, for yearly remembrance"><input name="birthday" className={inputCls} placeholder="03-21" /></Field>
             <Field label="Epitaph (optional)" hint="A short line of remembrance"><input name="epitaph" className={inputCls} /></Field>

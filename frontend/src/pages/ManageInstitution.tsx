@@ -4,6 +4,7 @@ import type { InstitutionView, MediaAsset, Office, Organization, ProfileSection,
 import { api } from "@/lib/api";
 import { Container } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
+import { DatePicker } from "@/components/date-picker";
 import type { Tone } from "@/lib/sections";
 
 interface Data {
@@ -224,7 +225,7 @@ function EventForm({ slug, verified }: Readonly<{ slug: string; verified: boolea
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="org-event-date" className={label}>Date</label>
-            <input id="org-event-date" type="date" className={`mt-1.5 ${field}`} value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+            <DatePicker id="org-event-date" className="mt-1.5 w-full" value={startsAt} onChange={setStartsAt} />
           </div>
           <div>
             <label htmlFor="org-event-venue" className={label}>Venue</label>
