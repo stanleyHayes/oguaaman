@@ -44,9 +44,9 @@ function SchoolCard({ school }: Readonly<{ school: SchoolOrg }>) {
       <Card className="flex h-full gap-5 p-6 transition-shadow duration-300 hover:shadow-[var(--shadow-lift)] sm:p-7">
         <SchoolCrest school={school} />
         <div className="min-w-0">
-          <h3 className="font-display text-xl font-semibold text-ink">{school.name}</h3>
+          <h3 className="text-xl font-semibold text-ink">{school.name}</h3>
           {meta && <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{meta}</p>}
-          {school.motto && <p className="mt-2 font-display text-base italic text-gold-text">{school.motto}</p>}
+          {school.motto && <p className="mt-2 text-base italic text-gold-text">{school.motto}</p>}
           {school.summary && <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-ink-muted">{school.summary}</p>}
           {school.osaName && <p className="mt-3 text-xs font-medium text-ink-faint">Old students: {school.osaName}</p>}
         </div>
@@ -126,7 +126,7 @@ export function Component() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {SCHOOLED.map((a) => (
               <div key={a.name} className="flex flex-col rounded-[var(--radius-card)] border border-cream/12 bg-green-900/30 p-6">
-                <h3 className="font-display text-xl font-semibold text-cream">{a.name}</h3>
+                <h3 className="text-xl font-semibold text-cream">{a.name}</h3>
                 <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-gold/80">{a.meta}</p>
                 <p className="mt-3 text-sm leading-relaxed text-cream/75">{a.body}</p>
               </div>

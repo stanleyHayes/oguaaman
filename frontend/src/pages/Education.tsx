@@ -39,12 +39,12 @@ export function Component() {
                 )}
                 <span className="relative shrink-0"><Crest colors={s.houseColors} label={initials(s.name)} size={56} src={s.crestUrl} /></span>
                 <div className="relative min-w-0">
-                  <h3 className="font-display text-xl font-semibold leading-tight text-cream">{s.name}</h3>
+                  <h3 className="text-xl font-semibold leading-tight text-cream">{s.name}</h3>
                   <p className="text-xs text-cream/75">Est. {s.founded}</p>
                 </div>
               </div>
               <div className="flex flex-1 flex-col p-5">
-                {s.motto && <p className="font-display text-sm italic text-gold-text">{s.motto}</p>}
+                {s.motto && <p className="text-sm italic text-gold-text">{s.motto}</p>}
                 <p className="mt-2 text-sm text-ink-muted">{s.classification}</p>
                 <div className="mt-4 flex items-center justify-between">
                   <VerifiedBadge label="Official" />
@@ -59,7 +59,7 @@ export function Component() {
       <section className="bg-cream py-14">
         <Container size="narrow" className="text-center">
           <Adinkra name="dwennimmen" size={34} className="mx-auto text-maroon-900" />
-          <h2 className="mt-5 font-display text-2xl font-semibold text-ink">The oldest rivalry, the deepest loyalty</h2>
+          <h2 className="mt-5 text-2xl font-semibold text-ink">The oldest rivalry, the deepest loyalty</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-muted">
             The Mfantsipim–Adisadel rivalry — Methodist against Anglican — is the oldest in Ghana, and since 1992 the Fun Games have turned it into cooperation. Here your school is a tribe you never leave. The OSA network is the natural source of mentors and funders for today's youth.
           </p>

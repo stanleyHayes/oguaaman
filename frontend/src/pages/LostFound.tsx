@@ -68,7 +68,7 @@ function NoticeCard({ notice: i }: Readonly<{ notice: LostFound }>) {
           {LF_STATUS_LABEL[d.lfStatus] ?? d.lfStatus}
         </span>
       </div>
-      <h3 className="mt-3 font-display text-xl font-semibold text-ink">{i.title}</h3>
+      <h3 className="mt-3 text-xl font-semibold text-ink">{i.title}</h3>
       {d.lastSeenLocation && (
         <p className="mt-1.5 text-sm text-ink-muted">
           {seenLabel} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${formatDate(d.lastSeenDate)}` : ""}

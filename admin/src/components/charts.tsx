@@ -123,7 +123,7 @@ export function Donut({ data, label }: Readonly<{ data: Datum[]; label?: string 
           })}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display text-2xl font-semibold leading-none text-ink">{sum}</span>
+          <span className="text-2xl font-semibold leading-none text-ink">{sum}</span>
           {label && <span className="mt-0.5 text-[0.55rem] uppercase tracking-wide text-ink-faint">{label}</span>}
         </div>
       </div>

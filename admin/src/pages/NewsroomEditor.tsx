@@ -140,7 +140,7 @@ function EditorHeader({ article, isNew, dirty, savedFlash, busy, onSave, onToggl
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
         <p className="eyebrow text-ai">{eyebrowLabel(isNew, article)}</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">{isNew ? "Write a new article" : "Edit article"}</h1>
+        <h1 className="mt-1 text-3xl font-semibold">{isNew ? "Write a new article" : "Edit article"}</h1>
         {article && <p className="mt-1 text-sm text-ink-faint">{article.authorName} · updated {formatDate(article.updatedAt)}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -202,7 +202,7 @@ function WritePane({ form, setForm, bodyRef }: Readonly<{
 
   return (
     <div className="space-y-3 p-5">
-      <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Headline" className="w-full rounded-lg border border-sand bg-cream px-3.5 py-2.5 font-display text-2xl font-semibold text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
+      <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Headline" className="w-full rounded-lg border border-sand bg-cream px-3.5 py-2.5 text-2xl font-semibold text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
       <input value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="One-line summary — shown on the news cards" className="w-full rounded-lg border border-sand bg-cream px-3.5 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
 
       <div className="flex flex-wrap items-center gap-1 rounded-lg border border-sand bg-paper px-2 py-1.5">
@@ -261,7 +261,7 @@ function PreviewPane({ form }: Readonly<{ form: NewsPayload }>) {
   return (
     <article className="px-5 py-6">
       <p className="text-[0.7rem] font-bold uppercase tracking-wider text-gold-text">Preview</p>
-      <h1 className="mt-1 font-display text-3xl font-semibold text-ink">{form.title || "Untitled"}</h1>
+      <h1 className="mt-1 text-3xl font-semibold text-ink">{form.title || "Untitled"}</h1>
       {form.summary && <p className="mt-2 text-lg text-ink-muted">{form.summary}</p>}
       {(form.tags ?? []).length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">

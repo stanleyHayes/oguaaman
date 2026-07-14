@@ -35,7 +35,7 @@ export function RootError() {
       <main className="flex-1">
         <Container size="narrow" className="py-24 text-center">
           <p className="eyebrow text-gold-text">{is404 ? "404" : "Something went wrong"}</p>
-          <h1 className="mt-4 font-display text-5xl font-semibold">
+          <h1 className="mt-4 text-5xl font-semibold">
             {is404 ? "This page isn't here yet" : "We hit a snag"}
           </h1>
           <p className="mx-auto mt-4 max-w-md text-ink-muted">

@@ -255,7 +255,7 @@ function HolderLine({ node }: Readonly<{ node: Node }>) {
     return (
       <p className="mt-2 flex items-center gap-2">
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
-        <span className="font-display text-lg font-semibold leading-tight text-cream">{node.holder}</span>
+        <span className="text-lg font-semibold leading-tight text-cream">{node.holder}</span>
       </p>
     );
   }
@@ -274,7 +274,7 @@ function NodeCard({ node, accent }: Readonly<{ node: Node; accent: Hierarchy["ac
             {node.role} · {node.body}
           </p>
           {node.holder && (
-            <h3 className="mt-2 font-display text-3xl font-semibold text-cream">{node.holder}</h3>
+            <h3 className="mt-2 text-3xl font-semibold text-cream">{node.holder}</h3>
           )}
           <p className="mt-3 max-w-2xl leading-relaxed text-cream/80">{node.note}</p>
         </div>
@@ -286,7 +286,7 @@ function NodeCard({ node, accent }: Readonly<{ node: Node; accent: Hierarchy["ac
       <div className="flex items-start gap-3">
         {node.seal && <Seal variant={node.seal} className="h-11 w-11 shrink-0" />}
         <div className="min-w-0">
-          <h4 className="font-display text-xl font-semibold leading-tight text-cream">
+          <h4 className="text-xl font-semibold leading-tight text-cream">
             {node.role}
             {node.ref && <sup className="ml-0.5 font-sans text-[0.6rem] text-gold/70">{node.ref}</sup>}
           </h4>
@@ -303,7 +303,7 @@ function Ladder({ hierarchy }: Readonly<{ hierarchy: Hierarchy }>) {
   return (
     <div>
       <p className="eyebrow text-gold/80">{hierarchy.eyebrow}</p>
-      <h3 className="mt-2 font-display text-3xl font-semibold text-cream sm:text-4xl">{hierarchy.title}</h3>
+      <h3 className="mt-2 text-3xl font-semibold text-cream sm:text-4xl">{hierarchy.title}</h3>
       <p className="mt-4 max-w-2xl leading-relaxed text-cream/80">{hierarchy.intro}</p>
 
       <ol className="mt-10">

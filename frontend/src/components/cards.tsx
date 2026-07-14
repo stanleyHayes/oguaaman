@@ -52,7 +52,7 @@ export function Thumb({
       {src && !failed ? (
         <img src={cldCover(src, coverWidth)} alt={label ?? ""} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : (
-        label && <span className="relative font-display text-3xl font-semibold text-cream/90">{label}</span>
+        label && <span className="relative text-3xl font-semibold text-cream/90">{label}</span>
       )}
     </div>
   );
@@ -66,7 +66,7 @@ export function ArtistCard({ artist }: Readonly<{ artist: Listing }>) {
         <Thumb seed={artist.slug} label={initials(d.actName ?? artist.title)} src={artist.coverImageUrl} rounded="rounded-none" className="aspect-[4/3] w-full" />
         <div className="p-4">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-display text-xl font-semibold text-ink group-hover:text-clay-text">{d.actName ?? artist.title}</h3>
+            <h3 className="text-xl font-semibold text-ink group-hover:text-clay-text">{d.actName ?? artist.title}</h3>
             {d.spotlight && (
               <span className="rounded-full bg-clay px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-cream">Spotlight</span>
             )}
@@ -94,7 +94,7 @@ export function EventCard({ event }: Readonly<{ event: Listing }>) {
         </div>
       ) : (
         <div className="flex w-14 shrink-0 flex-col items-center rounded-lg border border-sand bg-paper py-2">
-          <span className="font-display text-xl leading-none text-green">{day}</span>
+          <span className="text-xl leading-none text-green">{day}</span>
           <span className="mt-1 text-[0.6rem] font-bold uppercase tracking-wide text-gold-text">{mon}</span>
         </div>
       )}
@@ -129,8 +129,8 @@ export function SectionCard({ section }: Readonly<{ section: NavSection }>) {
           <span className="rounded-full border border-sand bg-paper px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-ink-faint">Coming soon</span>
         )}
       </div>
-      <h3 className="relative mt-3 font-display text-2xl font-semibold text-ink">{section.label}</h3>
-      {section.fanteName && <p className={`relative font-display text-sm italic ${t.text}`}>{section.fanteName}</p>}
+      <h3 className="relative mt-3 text-2xl font-semibold text-ink">{section.label}</h3>
+      {section.fanteName && <p className={`relative text-sm italic ${t.text}`}>{section.fanteName}</p>}
       <p className="relative mt-2 text-sm text-ink-muted">{section.tagline}</p>
       <span className={`relative mt-4 text-sm font-semibold ${t.text}`}>Explore →</span>
     </Link>
@@ -148,14 +148,14 @@ export function MemorialCard({ memorial }: Readonly<{ memorial: Listing }>) {
         <Thumb seed={memorial.slug} label={initials(memorial.title)} src={memorial.coverImageUrl} rounded="rounded-full" className="h-20 w-20 border border-gold-border/40" />
       ) : (
         <span
-          className="flex h-20 w-20 items-center justify-center rounded-full border border-gold-border/40 font-display text-2xl text-green"
+          className="flex h-20 w-20 items-center justify-center rounded-full border border-gold-border/40 text-2xl text-green"
           style={{ background: "radial-gradient(circle at 50% 38%, #F0E4CC, #E2D2AE)" }}
           aria-hidden
         >
           {initials(memorial.title)}
         </span>
       )}
-      <h3 className="mt-4 font-display text-2xl font-semibold text-ink group-hover:text-gold-text">
+      <h3 className="mt-4 text-2xl font-semibold text-ink group-hover:text-gold-text">
         {d.honorific ? `${d.honorific} ` : ""}{memorial.title}
       </h3>
       <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gold-text">{lifeDates(d.bornYear, d.diedDate)}</p>
@@ -179,7 +179,7 @@ export function BusinessCard({ business }: Readonly<{ business: Listing }>) {
             <Pill tone="teal">{d.category}</Pill>
             {business.supporter && <Pill tone="gold">★ Supporter</Pill>}
           </div>
-          <h3 className="mt-3 font-display text-xl font-semibold text-ink group-hover:text-teal-text">{business.title}</h3>
+          <h3 className="mt-3 text-xl font-semibold text-ink group-hover:text-teal-text">{business.title}</h3>
           <p className="mt-2 line-clamp-2 text-sm text-ink-muted">{d.description}</p>
           {d.address && <p className="mt-3 text-xs text-ink-faint">📍 {d.address}</p>}
         </div>
@@ -200,7 +200,7 @@ export function OpportunityCard({ opp }: Readonly<{ opp: Listing }>) {
         <Pill tone="teal">{OPP_LABEL[d.kind ?? ""] ?? d.kind}</Pill>
         {d.deadline && <span className="text-xs text-clay-text">Apply by {formatDate(d.deadline)}</span>}
       </div>
-      <h3 className="mt-3 font-display text-xl font-semibold text-ink">{opp.title}</h3>
+      <h3 className="mt-3 text-xl font-semibold text-ink">{opp.title}</h3>
       <p className="mt-2 text-sm text-ink-muted">{d.description}</p>
       <p className="mt-3 text-xs text-ink-faint"><span className="font-medium text-ink-muted">Eligibility:</span> {d.eligibility}</p>
       <div className="mt-auto pt-4">
@@ -222,7 +222,7 @@ export function PersonCard({ person }: Readonly<{ person: Listing }>) {
       <Link to={`/people/${person.slug}`} className="flex gap-4 p-5">
         <Thumb seed={person.slug} label={initials(person.title)} src={person.coverImageUrl} className="h-16 w-16 shrink-0" coverWidth={140} />
         <div className="min-w-0">
-          <h3 className="font-display text-lg font-semibold text-ink group-hover:text-gold-text">{person.title}</h3>
+          <h3 className="text-lg font-semibold text-ink group-hover:text-gold-text">{person.title}</h3>
           <p className="text-xs uppercase tracking-wide text-gold-text">{d.era}{d.living ? "" : " · in memory"}</p>
           <p className="mt-2 line-clamp-3 text-sm text-ink-muted">{d.whyNotable}</p>
         </div>
@@ -247,7 +247,7 @@ export function NewsCard({ article, lead = false }: Readonly<{ article: NewsArti
       )}
       <div className="flex flex-1 flex-col p-6">
         {lead && <p className="text-[0.66rem] font-bold uppercase tracking-wider text-gold-text">Latest</p>}
-        <h3 className={`font-display font-semibold text-ink group-hover:text-green ${lead ? "mt-1 text-2xl" : "text-xl"}`}>{article.title}</h3>
+        <h3 className={`font-semibold text-ink group-hover:text-green ${lead ? "mt-1 text-2xl" : "text-xl"}`}>{article.title}</h3>
         {article.summary && <p className="mt-2 line-clamp-3 text-sm text-ink-muted">{article.summary}</p>}
         <p className="mt-auto pt-4 text-xs text-ink-faint">{article.authorName} · {formatDate(article.publishedAt ?? article.createdAt)}</p>
       </div>
@@ -259,7 +259,7 @@ export function MemoryCard({ memory }: Readonly<{ memory: Listing }>) {
   return (
     <Card as="article" className="flex flex-col p-5">
       {memory.coverImageUrl && <Thumb seed={memory.title} src={memory.coverImageUrl} rounded="rounded-lg" className="mb-3 aspect-[4/3] w-full" />}
-      <h3 className="font-display text-lg font-semibold text-ink">{memory.title}</h3>
+      <h3 className="text-lg font-semibold text-ink">{memory.title}</h3>
       <p className="mt-2 font-serif text-sm leading-relaxed text-ink">{memory.details.text}</p>
       <div className="mt-4 flex flex-wrap gap-1.5">
         {memory.tags.slice(0, 4).map((t) => <Pill key={t}>{tagLabel(t)}</Pill>)}
@@ -335,7 +335,7 @@ export function FeaturedCard({ listing, hero = false, index = 0 }: Readonly<{ li
           <span className="inline-flex items-center gap-1 rounded-full bg-gold-brand px-2.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-green-900 shadow-[var(--shadow-card)]">★ Featured</span>
           <span className="rounded-full bg-cream/20 px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-cream backdrop-blur-sm">{FEATURED_LABEL[listing.type] ?? listing.type}</span>
         </div>
-        <h3 className={`mt-3 font-display font-semibold leading-[1.05] text-cream ${hero ? "text-4xl sm:text-5xl" : "text-2xl"}`}>{title}</h3>
+        <h3 className={`mt-3 font-semibold leading-[1.05] text-cream ${hero ? "text-4xl sm:text-5xl" : "text-2xl"}`}>{title}</h3>
         <p className={`mt-2 text-cream/85 ${hero ? "max-w-lg text-base line-clamp-3" : "line-clamp-2 text-sm"}`}>{featuredSubtitle(listing)}</p>
         <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-cream">
           {listing.type === "business" ? "Visit business" : "View"} <span className="transition-transform group-hover:translate-x-1">→</span>

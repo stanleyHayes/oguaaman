@@ -15,7 +15,7 @@ export function Component() {
       <Section tone="paper" size="prose">
         <p className="text-sm text-ink-muted">Last updated: June 2026</p>
 
-        <h2 className="mt-8 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-8 text-2xl font-semibold text-ink sm:text-3xl">
           The short version
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -26,7 +26,7 @@ export function Component() {
           spells it out.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           What we collect
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -36,7 +36,7 @@ export function Component() {
           what you send us so the community can read it.
         </p>
 
-        <h3 className="mt-6 font-display text-xl font-semibold text-ink">
+        <h3 className="mt-6 text-xl font-semibold text-ink">
           Your phone number and email are private
         </h3>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -46,7 +46,7 @@ export function Component() {
           see them.
         </p>
 
-        <h3 className="mt-6 font-display text-xl font-semibold text-ink">
+        <h3 className="mt-6 text-xl font-semibold text-ink">
           We do not store passwords
         </h3>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -55,7 +55,7 @@ export function Component() {
           anyone to lose, leak, or guess — including us.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           What is public and what is not
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -71,7 +71,7 @@ export function Component() {
           conversations for us to read or hold.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Curation and moderation
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -81,7 +81,7 @@ export function Component() {
           submitted, including drafts awaiting review.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           How long we keep things
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -91,7 +91,7 @@ export function Component() {
           while preserving the integrity of the wider archive.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Reaching us
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">

@@ -39,7 +39,7 @@ export function Sites() {
                   {p.classification && (
                     <Pill tone={TONES[i % TONES.length]} className="self-start">{p.classification}</Pill>
                   )}
-                  <h3 className="mt-3 font-display text-xl font-semibold text-ink">{p.name}</h3>
+                  <h3 className="mt-3 text-xl font-semibold text-ink">{p.name}</h3>
                   <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">{p.summary}</p>
                   <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-green opacity-0 transition-opacity group-hover:opacity-100">
                     Explore →

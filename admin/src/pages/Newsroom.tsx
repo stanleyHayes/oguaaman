@@ -87,7 +87,7 @@ export function Component() {
                 <Cover a={a} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="truncate font-display text-lg font-semibold text-ink">{a.title || "Untitled"}</h3>
+                    <h3 className="truncate text-lg font-semibold text-ink">{a.title || "Untitled"}</h3>
                     <StatusChip status={a.status} />
                   </div>
                   {a.summary && <p className="mt-0.5 line-clamp-1 text-sm text-ink-muted">{a.summary}</p>}

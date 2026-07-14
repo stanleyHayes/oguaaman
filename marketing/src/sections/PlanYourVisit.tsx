@@ -115,7 +115,7 @@ export function PlanYourVisit() {
           {SITES.map((s) => (
             <Card key={s.title} className="flex flex-col p-6 sm:p-7">
               <Pill tone={s.tone} className="self-start">{s.pill}</Pill>
-              <h3 className="mt-4 font-display text-2xl font-semibold text-ink">{s.title}</h3>
+              <h3 className="mt-4 text-2xl font-semibold text-ink">{s.title}</h3>
               <dl className="mt-4 space-y-2.5">
                 {s.facts.map((f) => (
                   <div key={f.label} className="grid grid-cols-[6.5rem_1fr] gap-3">
@@ -143,7 +143,7 @@ export function PlanYourVisit() {
         <div className="mt-12 grid gap-5 sm:grid-cols-2">
           {ROAD.map((c) => (
             <Card key={c.title} className="p-6 sm:p-7">
-              <h3 className="font-display text-xl font-semibold text-ink">{c.title}</h3>
+              <h3 className="text-xl font-semibold text-ink">{c.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-ink-muted">{c.body}</p>
             </Card>
           ))}
@@ -161,7 +161,7 @@ export function PlanYourVisit() {
           {WHEN.map((w) => (
             <Card key={w.title} className="flex flex-col p-6 sm:p-7">
               <Pill tone={w.tone} className="self-start">{w.pill}</Pill>
-              <h3 className="mt-4 font-display text-xl font-semibold text-ink">{w.title}</h3>
+              <h3 className="mt-4 text-xl font-semibold text-ink">{w.title}</h3>
               <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{w.meta}</p>
               <p className="mt-2 text-sm leading-relaxed text-ink-muted">{w.body}</p>
             </Card>

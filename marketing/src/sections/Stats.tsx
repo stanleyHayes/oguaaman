@@ -136,7 +136,7 @@ function StatFigure({
         strokeWidth={1.4}
         className="text-gold/70"
       />
-      <dd className="mt-3 font-display text-4xl font-semibold leading-none tabular-nums text-gradient-gold sm:text-5xl">
+      <dd className="mt-3 text-4xl font-semibold leading-none tabular-nums text-gradient-gold sm:text-5xl">
         {formatCount(value)}
       </dd>
       <dt className="mt-3 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-cream/70 sm:text-xs sm:tracking-[0.18em]">

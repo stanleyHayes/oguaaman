@@ -50,7 +50,7 @@ function Panel({ title, lede, action, children }: Readonly<{ title: string; lede
     <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)] sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-semibold text-ink">{title}</h2>
+          <h2 className="text-xl font-semibold text-ink">{title}</h2>
           {lede && <p className="mt-1 text-sm leading-relaxed text-ink-muted">{lede}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
@@ -73,7 +73,7 @@ function QuickAction({ to, label, desc, glyph }: Readonly<{ to: string; label: s
       to={to}
       className="group flex items-center gap-3 rounded-[var(--radius-card)] border border-sand bg-cream p-4 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-gold-border/50 hover:shadow-[var(--shadow-lift)]"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green/[0.08] font-display text-lg text-green transition-colors group-hover:bg-gold/20 group-hover:text-gold-text" aria-hidden>{glyph}</span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green/[0.08] text-lg text-green transition-colors group-hover:bg-gold/20 group-hover:text-gold-text" aria-hidden>{glyph}</span>
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-ink">{label}</span>
         <span className="block truncate text-xs text-ink-faint">{desc}</span>
@@ -228,7 +228,7 @@ export function Component() {
               <span className="rounded-full bg-gold/20 px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold">{roleLabel(me.role)}</span>
               <span className="text-xs text-cream/60">Joined {formatDate(me.joinedAt)}</span>
             </div>
-            <h1 className="mt-2 font-display text-4xl font-semibold text-cream sm:text-5xl">{me.displayName}</h1>
+            <h1 className="mt-2 text-4xl font-semibold text-cream sm:text-5xl">{me.displayName}</h1>
             {me.bio && <p className="mt-2 max-w-xl text-cream/80">{me.bio}</p>}
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {town && <span className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs text-cream/90">{town.name}</span>}

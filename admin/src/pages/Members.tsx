@@ -46,7 +46,7 @@ export function Component() {
       <PageHeader kicker={`${rows.length} members`} title="Members & roles" />
 
       <Card className="mb-5 p-5">
-        <h2 className="font-display text-lg font-semibold">Invite a team member</h2>
+        <h2 className="text-lg font-semibold">Invite a team member</h2>
         <p className="mt-1 text-sm text-ink-muted">Pre-assign a role by phone or email. They hold it the moment they sign in.</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <label className="flex flex-col text-xs text-ink-faint">Name{" "}

@@ -32,8 +32,8 @@ export function Component() {
         <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
         <Container className="relative py-12 text-center">
           <div className="mx-auto w-fit"><Crest colors={org.houseColors} label={initials(org.name)} size={88} src={org.crestUrl} /></div>
-          <h1 className="mt-4 font-display text-3xl font-semibold sm:text-4xl" style={{ color: "#F6F1E7" }}>{org.name}</h1>
-          {org.motto && <p className="mt-2 font-display italic" style={{ color: c2 }}>{org.motto}</p>}
+          <h1 className="mt-4 text-3xl font-semibold sm:text-4xl" style={{ color: "#F6F1E7" }}>{org.name}</h1>
+          {org.motto && <p className="mt-2 italic" style={{ color: c2 }}>{org.motto}</p>}
           <div className="mt-5"><VerifiedBadge label="Verified · Official profile" onDark /></div>
         </Container>
       </section>
@@ -46,7 +46,7 @@ export function Component() {
             {([["Established", org.founded ? String(org.founded) : "—"], ["Type", org.classification ?? "—"], ["Members", org.memberCount ? `${org.memberCount} on Oguaa` : "—"], ["Jurisdiction", org.jurisdiction ?? "Cape Coast"]] as const).map(([k, v]) => (
               <div key={k} className="px-3 py-4 text-center">
                 <dt className="text-[0.62rem] font-semibold uppercase tracking-wider text-ink-faint">{k}</dt>
-                <dd className="mt-1.5 font-display text-base text-green">{v}</dd>
+                <dd className="mt-1.5 text-base text-green">{v}</dd>
               </div>
             ))}
           </dl>
@@ -76,7 +76,7 @@ export function Component() {
               {(org.offices ?? []).map((o) => (
                 <div key={o.id} className="rounded-[var(--radius-card)] border border-sand bg-cream p-4">
                   <p className="text-[0.68rem] font-bold uppercase tracking-wider text-gold-text">{o.role}</p>
-                  <p className="mt-2 flex items-center gap-2 font-display text-lg text-ink">
+                  <p className="mt-2 flex items-center gap-2 text-lg text-ink">
                     {o.verified && (
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
                         <circle cx="12" cy="12" r="10" fill="#DFF0E5" /><path d="M8 12.4l2.6 2.6L16 9.4" stroke="#123F2D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -96,7 +96,7 @@ export function Component() {
             <SecHead>Official announcement</SecHead>
             <div className="rounded-[var(--radius-card)] border border-sand border-l-4 border-l-gold-brand bg-gradient-to-b from-[#FFFDF8] to-[#FBF8F0] p-6">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-maroon-900">Official notice</p>
-              <h3 className="mt-2 font-display text-2xl font-semibold text-ink">{announcement.title}</h3>
+              <h3 className="mt-2 text-2xl font-semibold text-ink">{announcement.title}</h3>
               <p className="mt-3 text-ink-muted">{announcement.details.description}</p>
               <div className="mt-4 flex items-center gap-3 border-t border-dashed border-sand pt-3">
                 <Avatar initials={initials((org.offices ?? [])[0]?.holderName ?? org.name)} size={34} />
@@ -127,7 +127,7 @@ export function Component() {
       </Container>
 
       <div className="on-dark bg-green-900 py-5 text-center text-sm text-cream/70">
-        An official profile on <Link to="/" className="font-display font-semibold text-gold">Oguaa</Link>
+        An official profile on <Link to="/" className="font-semibold text-gold">Oguaa</Link>
         {org.verifiedOn && ` · Verified ${formatDate(org.verifiedOn)}`}
       </div>
 
@@ -137,7 +137,7 @@ export function Component() {
 }
 
 function SecHead({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <h2 className="mb-4 flex items-center gap-3 font-display text-xl font-semibold text-ink">{children}<span className="h-px flex-1 bg-sand" /></h2>;
+  return <h2 className="mb-4 flex items-center gap-3 text-xl font-semibold text-ink">{children}<span className="h-px flex-1 bg-sand" /></h2>;
 }
 function Chip({ children }: Readonly<{ children: React.ReactNode }>) {
   return <span className="inline-flex items-center gap-2 rounded-full border border-sand bg-cream px-3.5 py-1.5 text-sm text-green"><span className="h-1.5 w-1.5 rounded-full bg-gold-brand" aria-hidden />{children}</span>;

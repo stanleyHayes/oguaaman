@@ -91,7 +91,7 @@ export function Download() {
           <div className="rise">
             <Eyebrow className="mb-4 text-gold/80">YƐNKAE — CARRY IT WITH YOU</Eyebrow>
 
-            <h2 className="font-display text-4xl font-semibold leading-[1.05] text-cream sm:text-5xl lg:text-6xl">
+            <h2 className="text-4xl font-semibold leading-[1.05] text-cream sm:text-5xl lg:text-6xl">
               Bring Oguaa with you.
             </h2>
 
@@ -158,7 +158,7 @@ function StoreButton({ href, glyph, topLine, bottomLine, ariaLabel }: Readonly<S
       <span className="text-cream/90 transition-colors group-hover:text-gold">{glyph}</span>
       <span className="flex flex-col leading-none">
         <span className="text-[0.62rem] font-medium uppercase tracking-wide text-cream/55">{topLine}</span>
-        <span className="mt-1 font-display text-lg font-semibold text-cream">{bottomLine}</span>
+        <span className="mt-1 text-lg font-semibold text-cream">{bottomLine}</span>
         {comingSoon && (
           <Pill tone="gold" className="mt-1.5 self-start px-2 py-0.5 text-[0.6rem]">
             Coming soon

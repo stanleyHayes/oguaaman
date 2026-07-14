@@ -47,7 +47,7 @@ export function DetailHero({
       <Container size="wide" className="relative py-10 sm:py-14">
         <Link to={backTo} className="text-sm text-cream/70 transition-colors hover:text-gold">← {backLabel}</Link>
         {children && <div className="mt-5 flex flex-wrap items-center gap-2">{children}</div>}
-        <h1 className="mt-3 max-w-3xl font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">{title}</h1>
+        <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-5xl">{title}</h1>
         {meta && <div className="mt-3 text-sm text-cream/85 sm:text-base">{meta}</div>}
       </Container>
     </section>

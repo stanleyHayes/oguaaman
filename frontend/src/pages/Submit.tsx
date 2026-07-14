@@ -22,7 +22,7 @@ export function Component() {
             <SubmitForm initialType={initialType} />
           ) : (
             <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-8 text-center">
-              <h2 className="font-display text-2xl font-semibold text-ink">Sign in to contribute</h2>
+              <h2 className="text-2xl font-semibold text-ink">Sign in to contribute</h2>
               <p className="mx-auto mt-3 max-w-md text-sm text-ink-muted">
                 Contributing needs a verified member account — the platform&apos;s spam gate. It takes a moment: sign in with your phone or email and you&apos;re in.
               </p>
@@ -32,7 +32,7 @@ export function Component() {
         </div>
         <aside className="space-y-6">
           <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
-            <h2 className="font-display text-lg font-semibold text-ink">How review works</h2>
+            <h2 className="text-lg font-semibold text-ink">How review works</h2>
             <ol className="mt-3 space-y-3 text-sm text-ink-muted">
               {[["Draft", "You build your listing."], ["Pending", "It enters the moderation queue."], ["Approved", "It goes live, and you're notified."]].map(([k, v], i) => (
                 <li key={k} className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green text-xs font-bold text-cream">{i + 1}</span><span><b className="text-ink">{k}.</b> {v}</span></li>
@@ -40,7 +40,7 @@ export function Component() {
             </ol>
           </div>
           <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
-            <h2 className="font-display text-lg font-semibold text-ink">The curator's checklist</h2>
+            <h2 className="text-lg font-semibold text-ink">The curator's checklist</h2>
             <ul className="mt-3 space-y-2 text-sm text-ink-muted">
               {["Real — a genuine entry", "Local — belongs to Oguaa / Cape Coast", "Correctly categorised", "Appropriate — nothing harmful"].map((c) => (
                 <li key={c} className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold-brand" aria-hidden />{c}</li>

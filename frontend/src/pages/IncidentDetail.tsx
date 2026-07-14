@@ -45,7 +45,7 @@ export function Component() {
           <KeyVal label="Reported">{formatDate(i.createdAt)}</KeyVal>
         </dl>
 
-        <h2 className="mb-5 mt-10 font-display text-2xl font-semibold text-ink">Status timeline</h2>
+        <h2 className="mb-5 mt-10 text-2xl font-semibold text-ink">Status timeline</h2>
         <ol className="space-y-0 border-l-2 border-sand pl-5">
           {history.map((e: IncidentStatusEntry, idx) => (
             <li key={`${e.status}-${e.at}`} className="relative pb-6 last:pb-0">

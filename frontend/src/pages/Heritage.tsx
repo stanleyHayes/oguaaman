@@ -32,13 +32,13 @@ export function Component() {
           <ol className="mt-8 space-y-1">
             {timeline.map((e) => (
               <li key={e.id} className="flex gap-5">
-                <span className="w-14 shrink-0 text-right font-display text-lg font-semibold text-gold-text">{e.year}</span>
+                <span className="w-14 shrink-0 text-right text-lg font-semibold text-gold-text">{e.year}</span>
                 <span className="relative flex flex-col items-center">
                   <span className="h-3 w-3 rounded-full border-2 border-gold-brand bg-cream" aria-hidden />
                   <span className="w-px flex-1 bg-sand" aria-hidden />
                 </span>
                 <span className="pb-6 pt-0.5">
-                  <span className="block font-display text-base font-semibold text-ink">{e.title}</span>
+                  <span className="block text-base font-semibold text-ink">{e.title}</span>
                   <span className="block text-ink-muted">{e.summary}</span>
                 </span>
               </li>
@@ -54,7 +54,7 @@ export function Component() {
             <Link key={h.id} to={`/education/${h.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
               <div className="h-1.5" style={{ backgroundColor: h.houseColors?.[0] ?? "#123F2D" }} aria-hidden />
               <div className="flex flex-1 flex-col p-5">
-                <h3 className="font-display text-lg font-semibold text-ink group-hover:text-gold-text">{h.name}</h3>
+                <h3 className="text-lg font-semibold text-ink group-hover:text-gold-text">{h.name}</h3>
                 {h.classification && <p className="text-xs uppercase tracking-wide text-gold-text">{h.classification}</p>}
                 <p className="mt-2 text-sm text-ink-muted">{excerpt(h.history || h.summary)}</p>
               </div>

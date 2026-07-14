@@ -51,13 +51,13 @@ export function Component() {
           <div className="space-y-10">
             {open.length > 0 && (
               <section>
-                <h2 className="mb-5 font-display text-2xl font-semibold text-ink">Active</h2>
+                <h2 className="mb-5 text-2xl font-semibold text-ink">Active</h2>
                 <div className="grid gap-4 sm:grid-cols-2">{open.map((i) => <IncidentCard key={i.id} incident={i} />)}</div>
               </section>
             )}
             {closed.length > 0 && (
               <section>
-                <h2 className="mb-5 font-display text-2xl font-semibold text-ink">Resolved & recovered</h2>
+                <h2 className="mb-5 text-2xl font-semibold text-ink">Resolved & recovered</h2>
                 <div className="grid gap-4 sm:grid-cols-2">{closed.map((i) => <IncidentCard key={i.id} incident={i} />)}</div>
               </section>
             )}
@@ -86,7 +86,7 @@ function IncidentCard({ incident: i }: Readonly<{ incident: Incident }>) {
           {STATUS_LABEL[i.details.incidentStatus] ?? i.details.incidentStatus}
         </span>
       </div>
-      <h3 className="mt-3 font-display text-xl font-semibold text-ink">{i.title}</h3>
+      <h3 className="mt-3 text-xl font-semibold text-ink">{i.title}</h3>
       <p className="mt-1.5 text-sm text-ink-muted">{i.details.location}</p>
       {i.details.description && <p className="mt-2 line-clamp-2 text-sm text-ink-faint">{i.details.description}</p>}
       <p className="mt-3 text-xs text-ink-faint">Reported {formatDate(i.createdAt)}</p>

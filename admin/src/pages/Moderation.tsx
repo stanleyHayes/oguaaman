@@ -50,7 +50,7 @@ export function Component() {
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-gold-text">Moderation · spec §8.10</p>
-          <h1 className="mt-1 font-display text-3xl font-semibold text-ink">Review queue</h1>
+          <h1 className="mt-1 text-3xl font-semibold text-ink">Review queue</h1>
         </div>
         <span className="rounded-full bg-gold/[0.16] px-3 py-1 text-sm font-semibold text-gold-text">{items.length} pending</span>
       </div>
@@ -75,7 +75,7 @@ export function Component() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <Pill tone="green">{titleCase(l.type)}</Pill>
-                      <h3 className="mt-2 font-display text-xl font-semibold">
+                      <h3 className="mt-2 text-xl font-semibold">
                         <Link to={`/listings/${l.id}`} className="hover:text-gold-text hover:underline">{l.title}</Link>
                       </h3>
                       <p className="text-xs text-ink-faint">by {nameOf(l.ownerId)} · submitted {l.submittedAt?.slice(0, 10)}</p>
@@ -112,7 +112,7 @@ export function Component() {
         </div>
 
         <div>
-          <h2 className="mb-3 font-display text-lg font-semibold">This session</h2>
+          <h2 className="mb-3 text-lg font-semibold">This session</h2>
           <Card className="p-5">
             {log.length === 0 ? <p className="text-sm text-ink-faint">Your moderation actions appear here and are written to the audit log.</p> : (
               <ul className="space-y-3">

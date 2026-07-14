@@ -24,7 +24,7 @@ export function EmptyState({
       <div className="oguaa-pulse-ring relative flex h-20 w-20 items-center justify-center rounded-full border border-sand bg-cream text-gold-brand">
         <span className="oguaa-float inline-flex">{icon ?? <CrabMark size={36} />}</span>
       </div>
-      <h3 className="mt-6 font-display text-2xl font-semibold text-ink">{title}</h3>
+      <h3 className="mt-6 text-2xl font-semibold text-ink">{title}</h3>
       {description && <p className="mt-2 max-w-sm leading-relaxed text-ink-muted">{description}</p>}
       {actions && <div className="mt-6 flex flex-wrap items-center justify-center gap-3">{actions}</div>}
     </div>

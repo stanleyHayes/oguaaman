@@ -76,7 +76,7 @@ function StatTile({ label, value, to, tone = "text-ink", accent = false }: Reado
         accent ? "border-gold-border/50 bg-gold/[0.08] hover:bg-gold/[0.14]" : "border-sand bg-cream hover:border-gold-border/50"
       }`}
     >
-      <div className={`font-display text-3xl font-semibold ${tone}`}>{value}</div>
+      <div className={`text-3xl font-semibold ${tone}`}>{value}</div>
       <div className="mt-1 flex items-center justify-between text-xs uppercase tracking-wide text-ink-faint">
         {label}
         <span className="opacity-0 transition-opacity group-hover:opacity-100">→</span>
@@ -89,7 +89,7 @@ function ChartCard({ title, hint, children }: Readonly<{ title: string; hint?: s
   return (
     <Card className="min-w-0 p-5">
       <div className="mb-4 flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
+        <h2 className="text-lg font-semibold text-ink">{title}</h2>
         {hint && <span className="text-xs text-ink-faint">{hint}</span>}
       </div>
       {children}
@@ -161,7 +161,7 @@ export function Component() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-gold-text">Back office · analytics</p>
-          <h1 className="mt-1 font-display text-3xl font-semibold text-ink">
+          <h1 className="mt-1 text-3xl font-semibold text-ink">
             Welcome{member ? `, ${member.displayName.split(" ")[0]}` : ""}.
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
@@ -223,7 +223,7 @@ export function Component() {
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         <Card className="min-w-0 overflow-hidden">
           <div className="flex items-center justify-between border-b border-sand px-5 py-3">
-            <h2 className="font-display text-lg font-semibold">Needs attention</h2>
+            <h2 className="text-lg font-semibold">Needs attention</h2>
             <Link to="/moderation" className="text-sm font-semibold text-gold-text hover:underline">Open queue →</Link>
           </div>
           {queue.length === 0 ? (
@@ -246,7 +246,7 @@ export function Component() {
         </Card>
 
         <Card className="min-w-0 p-5">
-          <h2 className="mb-3 font-display text-lg font-semibold">Quick actions</h2>
+          <h2 className="mb-3 text-lg font-semibold">Quick actions</h2>
           <div className="space-y-2">
             {QUICK.map((q) => (
               <Link key={q.to} to={q.to} className="group flex items-center justify-between gap-3 rounded-lg border border-sand px-3.5 py-2.5 transition-colors hover:border-gold-border/50 hover:bg-paper">

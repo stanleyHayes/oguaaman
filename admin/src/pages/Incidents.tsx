@@ -83,7 +83,7 @@ export function Component() {
                       <Pill tone="neutral">{i.details.category}</Pill>
                       <Pill tone="gold">{i.details.incidentStatus}</Pill>
                     </div>
-                    <h3 className="mt-2 font-display text-lg font-semibold text-ink">{i.title}</h3>
+                    <h3 className="mt-2 text-lg font-semibold text-ink">{i.title}</h3>
                     <p className="mt-1 text-sm text-ink-muted">{i.details.location}</p>
                     <p className="mt-1 text-xs text-ink-faint">
                       Reported {formatDate(i.createdAt)}{i.details.contact ? <> · contact: {i.details.contact}</> : null}

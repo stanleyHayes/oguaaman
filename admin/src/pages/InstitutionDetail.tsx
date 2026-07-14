@@ -20,7 +20,7 @@ function EventList({ title, items }: Readonly<{ title: string; items: Listing[] 
   if (!items || items.length === 0) return null;
   return (
     <Card className="overflow-hidden">
-      <h2 className="border-b border-sand px-5 py-3 font-display text-lg font-semibold">{title}</h2>
+      <h2 className="border-b border-sand px-5 py-3 text-lg font-semibold">{title}</h2>
       <ul>
         {items.map((l) => (
           <li key={l.id} className="border-b border-sand last:border-0">
@@ -64,9 +64,9 @@ export function Component() {
                 ? <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/[0.14] px-2.5 py-0.5 text-xs font-semibold text-gold-text"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2l2.4 1.8 3 .1 1 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-1 2.8-3 .1L12 22l-2.4-1.8-3-.1-1-2.8L3.2 15l.9-2.8L3.2 9.4 5.6 7.7l1-2.8 3-.1z" /></svg>Verified{o.verifiedOn ? ` · ${formatDate(o.verifiedOn)}` : ""}</span>
                 : <span className="rounded-full bg-sand px-2.5 py-0.5 text-xs font-semibold text-ink-muted">Unverified</span>}
             </div>
-            <h1 className="mt-2 font-display text-3xl font-semibold text-ink">{o.name}</h1>
+            <h1 className="mt-2 text-3xl font-semibold text-ink">{o.name}</h1>
             {o.officialTitle && <p className="mt-0.5 text-sm text-ink-muted">{o.officialTitle}</p>}
-            {o.motto && <p className="mt-1 font-display text-lg italic text-gold-text">“{o.motto}”</p>}
+            {o.motto && <p className="mt-1 text-lg italic text-gold-text">“{o.motto}”</p>}
             </div>
           </div>
           {o.houseColors && o.houseColors.length > 0 && (
@@ -79,7 +79,7 @@ export function Component() {
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
         <div className="space-y-5">
           <Card className="p-5">
-            <h2 className="mb-2 font-display text-lg font-semibold">Facts</h2>
+            <h2 className="mb-2 text-lg font-semibold">Facts</h2>
             <dl>
               <KeyVal label="Founded">{o.founded ? String(o.founded) : undefined}</KeyVal>
               <KeyVal label="Classification">{o.classification}</KeyVal>
@@ -96,7 +96,7 @@ export function Component() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-3 font-display text-lg font-semibold">Verification</h2>
+            <h2 className="mb-3 text-lg font-semibold">Verification</h2>
             <p className="mb-3 text-sm text-ink-muted">Grant the badge only after confirming standing through recognised channels. The platform documents — it does not adjudicate.</p>
             <button disabled={busy} onClick={toggleVerify} className={`w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${o.verified ? "border-sand text-ink-muted hover:bg-paper" : "border-gold-border/60 bg-gold/[0.08] text-gold-text hover:bg-gold/[0.16]"}`}>
               {o.verified ? "Revoke verification" : "Verify institution"}
@@ -106,7 +106,7 @@ export function Component() {
 
         <div className="space-y-5">
           <Card className="overflow-hidden">
-            <h2 className="border-b border-sand px-5 py-3 font-display text-lg font-semibold">Offices ({(o.offices ?? []).length})</h2>
+            <h2 className="border-b border-sand px-5 py-3 text-lg font-semibold">Offices ({(o.offices ?? []).length})</h2>
             {(o.offices ?? []).length === 0 ? (
               <p className="px-5 py-6 text-center text-sm text-ink-muted">No offices recorded.</p>
             ) : (
@@ -126,7 +126,7 @@ export function Component() {
 
           {((o.sections?.length ?? 0) > 0 || (o.gallery?.length ?? 0) > 0) && (
             <Card className="overflow-hidden">
-              <h2 className="border-b border-sand px-5 py-3 font-display text-lg font-semibold">
+              <h2 className="border-b border-sand px-5 py-3 text-lg font-semibold">
                 Official page <span className="text-sm font-normal text-ink-faint">· manager-published</span>
               </h2>
               <div className="px-5 py-3">
@@ -157,7 +157,7 @@ export function Component() {
       <section className="mt-6 border-t border-sand pt-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl font-semibold text-ink">Official page</h2>
+            <h2 className="text-xl font-semibold text-ink">Official page</h2>
             <p className="text-sm text-ink-muted">Configure this place's summary, history, sections and photos — it renders live on the public site.</p>
           </div>
           <button type="button" onClick={() => setEditing((v) => !v)} className="shrink-0 rounded-full border border-green/40 px-4 py-2 text-sm font-semibold text-green hover:border-green">

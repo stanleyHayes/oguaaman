@@ -60,7 +60,7 @@ export function Component() {
       <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
       <div className="relative">
         <p className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-gold"><Adinkra name="sankofa" size={15} labelled={false} /> The anchor · homecoming</p>
-        <h2 className="mt-3 font-display text-3xl font-semibold sm:text-4xl">{anchor.title}</h2>
+        <h2 className="mt-3 text-3xl font-semibold sm:text-4xl">{anchor.title}</h2>
         <p className="mt-2 text-gold">{formatDate(anchor.details.startsAt!)} · {anchor.details.venue}</p>
         <p className="mt-3 max-w-2xl text-cream/85">{anchor.details.description}</p>
         {anchor.details.festival && <p className="mt-4 text-sm font-semibold text-gold">See every edition in the festival archive →</p>}
@@ -79,7 +79,7 @@ export function Component() {
           : <article className={anchorClass}>{anchorBody}</article>
         )}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-2xl font-semibold text-ink">{view === "list" ? "Coming up" : "Calendar"}</h2>
+          <h2 className="text-2xl font-semibold text-ink">{view === "list" ? "Coming up" : "Calendar"}</h2>
           <ViewToggle view={view} onChange={setView} />
         </div>
         {view === "list" ? (

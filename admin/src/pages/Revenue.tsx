@@ -61,7 +61,7 @@ export function Component() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-card)] bg-green p-6 text-cream">
         <div>
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-cream/70">Platform income (confirmed)</p>
-          <p className="mt-1 font-display text-4xl font-semibold">{cedis(overview.totalPesewas)}</p>
+          <p className="mt-1 text-4xl font-semibold">{cedis(overview.totalPesewas)}</p>
         </div>
         <p className="max-w-xs text-sm text-cream/70">Pledge fees plus the full proceeds of ticket sales, subscriptions and promotions.</p>
       </div>
@@ -70,25 +70,25 @@ export function Component() {
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Crowdfunding fees</p>
-          <p className="mt-2 font-display text-2xl font-semibold text-green">{cedis(overview.pledges.feePesewas)}</p>
+          <p className="mt-2 text-2xl font-semibold text-green">{cedis(overview.pledges.feePesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">Platform fee on pledges</p>
           <p className="mt-1 text-xs text-ink-faint">{cedis(overview.pledges.grossPesewas)} pledged · {cedis(overview.pledges.netPesewas)} to projects</p>
         </Card>
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Ticket sales</p>
-          <p className="mt-2 font-display text-2xl font-semibold text-green">{cedis(overview.tickets.grossPesewas)}</p>
+          <p className="mt-2 text-2xl font-semibold text-green">{cedis(overview.tickets.grossPesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">{overview.tickets.count} confirmed sales</p>
           <p className="mt-1 text-xs text-ink-faint">Per-event ledgers under Tickets</p>
         </Card>
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Subscriptions</p>
-          <p className="mt-2 font-display text-2xl font-semibold text-green">{cedis(overview.subscriptions.grossPesewas)}</p>
+          <p className="mt-2 text-2xl font-semibold text-green">{cedis(overview.subscriptions.grossPesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">{overview.subscriptions.count} payments · {overview.subscriptions.active} active</p>
           <p className="mt-1 text-xs text-ink-faint">Supporter plan renewals</p>
         </Card>
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Promotions</p>
-          <p className="mt-2 font-display text-2xl font-semibold text-green">{cedis(overview.promotions.grossPesewas)}</p>
+          <p className="mt-2 text-2xl font-semibold text-green">{cedis(overview.promotions.grossPesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">{overview.promotions.count} featured placements</p>
           <p className="mt-1 text-xs text-ink-faint">GH₵ 10/day, owner self-serve</p>
         </Card>
@@ -103,7 +103,7 @@ export function Component() {
       </div>
 
       {/* recent activity across streams */}
-      <h2 className="mb-3 font-display text-lg font-semibold text-ink">Recent activity</h2>
+      <h2 className="mb-3 text-lg font-semibold text-ink">Recent activity</h2>
       {recent.length === 0 ? (
         <Empty title="No payments yet">Confirmed pledges, subscriptions and promotions will land here.</Empty>
       ) : (

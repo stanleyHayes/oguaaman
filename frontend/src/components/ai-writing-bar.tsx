@@ -241,7 +241,7 @@ export function AiWritingBar({
       {confirmOpen && (
         <dialog open className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-ink/40 p-5" aria-modal>
           <div className="w-full max-w-sm rounded-[var(--radius-card)] bg-white p-6 text-center shadow-[var(--shadow-lift)]">
-            <h3 className="font-display text-xl font-semibold text-ink">Replace current text?</h3>
+            <h3 className="text-xl font-semibold text-ink">Replace current text?</h3>
             <p className="mt-2 text-sm text-ink-muted">This will overwrite {sel.active ? "your selected text" : "what's in the field"}. This can't be undone.</p>
             <div className="mt-5 flex justify-center gap-3">
               <button onClick={() => setConfirmOpen(false)} className="rounded-lg border border-sand px-5 py-2 text-sm font-semibold text-ink">Cancel</button>

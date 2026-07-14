@@ -72,7 +72,7 @@ export function SectionHeading({
   return (
     <div className={center ? "text-center" : ""}>
       {kicker && <Eyebrow className={`mb-3 ${onDark ? "text-gold/80" : ""}`}>{kicker}</Eyebrow>}
-      <h2 className={`font-display text-3xl sm:text-[2.6rem] font-semibold ${onDark ? "text-cream" : "text-ink"}`}>
+      <h2 className={`text-3xl sm:text-[2.6rem] font-semibold ${onDark ? "text-cream" : "text-ink"}`}>
         {title}
       </h2>
       <div className={`mt-4 h-[3px] w-14 rounded-full ${accentClass} ${center ? "mx-auto" : ""}`} />

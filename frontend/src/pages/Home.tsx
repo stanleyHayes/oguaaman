@@ -42,7 +42,7 @@ export function Component() {
         <Container className="relative py-20 sm:py-28" size="wide">
           <div className="max-w-3xl">
             <Eyebrow className="text-gold/90">Cape Coast · Central Region · Ghana</Eyebrow>
-            <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.02] sm:text-7xl">This is <span className="text-gold">Oguaa.</span></h1>
+            <h1 className="mt-4 text-5xl font-semibold leading-[1.02] sm:text-7xl">This is <span className="text-gold">Oguaa.</span></h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-cream/85">
               The town that began as a market — the old Gold Coast capital, the Citadel of Education, home of the Asafo and Fetu Afahye. Its music, its people, its memory, gathered in one place. <span className="text-gold">Made by us, for us.</span>
             </p>
@@ -57,7 +57,7 @@ export function Component() {
             <dl className="grid grid-cols-2 divide-cream/10 sm:grid-cols-4 sm:divide-x">
               {([["Members", stats.members], ["Listings", stats.listings], ["Schools", stats.schools], ["Artists", stats.artists]] as const).map(([label, n]) => (
                 <div key={label} className="px-2 py-5 text-center">
-                  <dd className="font-display text-3xl font-semibold text-gold">{n}</dd>
+                  <dd className="text-3xl font-semibold text-gold">{n}</dd>
                   <dt className="mt-1 text-xs uppercase tracking-wide text-cream/60">{label}</dt>
                 </div>
               ))}
@@ -89,7 +89,7 @@ export function Component() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <Eyebrow className="text-gold/90">Rotating spotlight · the flagship</Eyebrow>
-              <h2 className="mt-2 font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">On the <span className="text-gold">bandstand</span></h2>
+              <h2 className="mt-2 text-4xl font-semibold leading-[1.05] sm:text-5xl">On the <span className="text-gold">bandstand</span></h2>
               <p className="mt-3 max-w-xl text-cream/75">Each week one act takes the stage — the sound of Oguaa, front and centre.</p>
             </div>
             <Link to="/music" className="hidden shrink-0 text-sm font-semibold text-gold hover:underline sm:inline">All artists →</Link>
@@ -102,7 +102,7 @@ export function Component() {
               </Link>
               <div className="min-w-0">
                 <span className="rounded-full bg-gold-brand px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-green-900">★ This week's spotlight</span>
-                <h3 className="mt-3 font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
+                <h3 className="mt-3 text-3xl font-semibold leading-[1.1] sm:text-4xl">
                   <Link to={`/music/${spotlight.slug}`} className="transition-colors hover:text-gold">{spotlight.details.actName ?? spotlight.title}</Link>
                 </h3>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -128,7 +128,7 @@ export function Component() {
                     <Link key={a.id} to={`/music/${a.slug}`} className="group flex items-center gap-4 rounded-[var(--radius-card)] border border-cream/10 bg-cream/[0.06] p-3 backdrop-blur-sm transition-colors hover:border-gold/40 hover:bg-cream/10">
                       <Thumb seed={a.slug} label={initials(a.details.actName ?? a.title)} src={a.coverImageUrl} rounded="rounded-lg" className="h-14 w-14 shrink-0" coverWidth={128} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-display text-lg font-semibold text-cream group-hover:text-gold">{a.details.actName ?? a.title}</p>
+                        <p className="truncate text-lg font-semibold text-cream group-hover:text-gold">{a.details.actName ?? a.title}</p>
                         <p className="truncate text-xs text-cream/60">{(a.details.genres ?? []).join(" · ")}</p>
                       </div>
                       <span className="pr-1 text-cream/40 transition-colors group-hover:text-gold" aria-hidden>→</span>
@@ -166,7 +166,7 @@ export function Component() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <Eyebrow className="text-teal-text">The working city · open for trade</Eyebrow>
-                <h2 className="mt-2 font-display text-4xl font-semibold leading-[1.05] text-ink sm:text-5xl">
+                <h2 className="mt-2 text-4xl font-semibold leading-[1.05] text-ink sm:text-5xl">
                   Featured <span className="text-teal-text">businesses</span>
                 </h2>
                 <p className="mt-3 max-w-xl text-ink-muted">The markets, kitchens and trades that keep Oguaa moving — front and centre.</p>
@@ -193,7 +193,7 @@ export function Component() {
       <section className="bg-cream py-16">
         <Container size="prose" className="text-center">
           <SymbolDivider name="crab" />
-          <h2 className="mt-6 font-display text-3xl font-semibold text-ink sm:text-4xl">The town that began as a market</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-ink sm:text-4xl">The town that began as a market</h2>
           <p className="mt-5 text-left font-serif text-lg leading-relaxed text-ink">{ABOUT_OGUAA}</p>
         </Container>
       </section>
@@ -230,7 +230,7 @@ export function Component() {
       <section className="on-dark bg-green py-16 text-cream">
         <Container size="narrow" className="text-center">
           <Adinkra name="funtunfunefu" size={36} className="mx-auto text-gold" />
-          <h2 className="mt-5 font-display text-3xl font-semibold sm:text-4xl">Rep your town. Rep your school.</h2>
+          <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">Rep your town. Rep your school.</h2>
           <p className="mx-auto mt-4 max-w-xl text-cream/80">Create your profile, share a memory, nominate an artist, list your business, or honour someone you love. The community is a participant, not an audience.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Cta to="/community" variant="gold">Join Oguaa</Cta>

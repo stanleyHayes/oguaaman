@@ -92,7 +92,7 @@ export function Component() {
         <aside className="space-y-6">
           <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-20">
             <p className="eyebrow text-gold-text">Admission</p>
-            <h2 className="mt-1 font-display text-xl font-semibold text-ink">Tickets</h2>
+            <h2 className="mt-1 text-xl font-semibold text-ink">Tickets</h2>
             <TicketPanel
               confirming={confirming}
               confirmed={confirmed}
@@ -119,13 +119,13 @@ function EventInfo({ event }: Readonly<{ event: EventView["event"] }>) {
   const d = event.details;
   return (
     <div>
-      {d.description && <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green">{d.description}</p>}
+      {d.description && <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green">{d.description}</p>}
       {event.tags.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-2">{event.tags.map((t) => <Pill key={t}>#{t}</Pill>)}</div>
       )}
       {d.programme && d.programme.length > 0 && (
         <div className="mt-10">
-          <h2 className="font-display text-2xl font-semibold text-ink">Programme</h2>
+          <h2 className="text-2xl font-semibold text-ink">Programme</h2>
           <div className="mt-4 h-[3px] w-14 rounded-full bg-gold-brand" aria-hidden />
           <ol className="mt-6 space-y-5 border-l-2 border-gold-brand/30 pl-5">
             {d.programme.map((p) => (
@@ -171,7 +171,7 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
   if (confirmed) {
     return (
       <div className="mt-4 rounded-lg border border-green/30 bg-green/[0.06] p-5 text-center">
-        <p className="font-display text-lg font-semibold text-green">Medaase! 🎟️</p>
+        <p className="text-lg font-semibold text-green">Medaase! 🎟️</p>
         <p className="mt-1 text-sm text-ink-muted">
           {confirmed.qty} × {confirmed.tier} for <b>{confirmed.eventTitle}</b> ({cedis(confirmed.amountPesewas)}).
         </p>
@@ -212,7 +212,7 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
                     {remainingLabel}
                   </span>
                 </span>
-                <span className="shrink-0 font-display text-lg font-semibold text-green">{cedis(t.pricePesewas)}</span>
+                <span className="shrink-0 text-lg font-semibold text-green">{cedis(t.pricePesewas)}</span>
               </button>
             );
           })}

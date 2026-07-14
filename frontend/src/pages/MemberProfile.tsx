@@ -103,7 +103,7 @@ export function Component() {
               <p className="text-xs uppercase tracking-wide text-gold/90">
                 {roleLabel} · joined {formatDate(me.joinedAt)}
               </p>
-              <h1 className="mt-1 font-display text-4xl font-semibold text-cream">{me.displayName}</h1>
+              <h1 className="mt-1 text-4xl font-semibold text-cream">{me.displayName}</h1>
               {me.bio && <p className="mt-2 max-w-xl text-cream/80">{me.bio}</p>}
               <div className="mt-3 flex flex-wrap gap-2">
                 {quarter && <DarkChip>{quarter.name}</DarkChip>}
@@ -118,7 +118,7 @@ export function Component() {
 
       <Container className="space-y-8 py-12">
         <section>
-          <h2 className="mb-4 flex items-center gap-3 font-display text-xl font-semibold text-ink">
+          <h2 className="mb-4 flex items-center gap-3 text-xl font-semibold text-ink">
             Contributions<span className="h-px flex-1 bg-sand" />
           </h2>
           {published.length === 0 ? (
@@ -130,7 +130,7 @@ export function Component() {
                 const body = (
                   <>
                     <span className="text-[0.66rem] font-bold uppercase tracking-wider text-gold-text">{l.type}</span>
-                    <span className="mt-1 block font-display text-lg text-ink">{l.title}</span>
+                    <span className="mt-1 block text-lg text-ink">{l.title}</span>
                   </>
                 );
                 return (

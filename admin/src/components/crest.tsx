@@ -24,7 +24,7 @@ export function Crest({
     <svg width={size} height={(size * 140) / 120} viewBox="0 0 120 140" fill="none" aria-hidden>
       <path d="M14 18 H106 V72 Q106 114 60 134 Q14 114 14 72 Z" fill={c1} stroke={c2} strokeWidth="2.5" />
       <path d="M21 25 H99 V71 Q99 108 60 126 Q21 108 21 71 Z" fill="none" stroke={c2} strokeWidth="1" opacity="0.55" />
-      <text x="60" y="64" textAnchor="middle" fontFamily="'Cormorant Garamond', serif" fontWeight="600" fontSize={fontSize} fill={c2}>
+      <text x="60" y="64" textAnchor="middle" fontFamily="'Fraunces', serif" fontWeight="600" fontSize={fontSize} fill={c2}>
         {label}
       </text>
       <circle cx="60" cy="84" r="6" fill="none" stroke={c2} strokeWidth="1.6" opacity="0.8" />

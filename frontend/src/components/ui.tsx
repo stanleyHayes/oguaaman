@@ -44,7 +44,7 @@ export function SectionHeading({
   return (
     <div className={center ? "text-center" : ""}>
       {kicker && <Eyebrow className="mb-3">{kicker}</Eyebrow>}
-      <h2 className="font-display text-3xl sm:text-4xl font-semibold text-ink">{title}</h2>
+      <h2 className="text-3xl sm:text-4xl font-semibold text-ink">{title}</h2>
       <div className={`mt-4 h-[3px] w-14 rounded-full ${accentClass} ${center ? "mx-auto" : ""}`} />
       {lede && <p className={`mt-5 max-w-2xl text-ink-muted leading-relaxed ${center ? "mx-auto" : ""}`}>{lede}</p>}
     </div>
@@ -91,7 +91,7 @@ export function Avatar({ initials, photoUrl, size = 40, className = "" }: Readon
   }
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-green text-cream font-display ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-green text-cream ${className}`}
       style={{ width: size, height: size, fontSize: size * 0.4 }}
       aria-hidden
     >

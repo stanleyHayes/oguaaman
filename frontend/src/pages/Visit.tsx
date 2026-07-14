@@ -24,7 +24,7 @@ export function Component() {
           {SPOTS.map((s) => (
             <Card key={s.t} as="article" className="overflow-hidden">
               <Thumb seed={s.seed} src={s.src} className="aspect-[16/7] w-full" rounded="rounded-none" coverWidth={500} />
-              <div className="p-5"><h3 className="font-display text-xl font-semibold text-ink">{s.t}</h3><p className="mt-2 text-sm text-ink-muted">{s.b}</p></div>
+              <div className="p-5"><h3 className="text-xl font-semibold text-ink">{s.t}</h3><p className="mt-2 text-sm text-ink-muted">{s.b}</p></div>
             </Card>
           ))}
         </div>

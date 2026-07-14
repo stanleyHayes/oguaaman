@@ -38,7 +38,7 @@ export function PageHero({
       <div className="absolute inset-0 bg-gradient-to-t from-green-900 via-green-900/85 to-green-900/40" aria-hidden />
       <Container className="relative py-24 sm:py-32" size="wide">
         <Eyebrow className="text-gold">{kicker}</Eyebrow>
-        <h1 className="mt-3 max-w-3xl font-display text-4xl font-semibold leading-[1.05] text-cream sm:text-6xl">{title}</h1>
+        <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] text-cream sm:text-6xl">{title}</h1>
         {lede && <p className="mt-5 max-w-2xl text-lg leading-relaxed text-cream/85">{lede}</p>}
         {children && <div className="mt-8">{children}</div>}
       </Container>

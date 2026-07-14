@@ -47,7 +47,7 @@ export function Component() {
 
       <section className="on-dark bg-green py-14 text-cream">
         <Container size="narrow" className="text-center">
-          <h2 className="font-display text-3xl font-semibold">Open for trade in Oguaa?</h2>
+          <h2 className="text-3xl font-semibold">Open for trade in Oguaa?</h2>
           <p className="mx-auto mt-3 max-w-lg text-cream/80">List your business free — or become a Supporter for the gold badge and priority placement across the directory.</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Cta to="/submit?type=business" variant="gold">List your business</Cta>

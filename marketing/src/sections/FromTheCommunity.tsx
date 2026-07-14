@@ -38,7 +38,7 @@ function CommunityRow({ row }: Readonly<{ row: Row }>) {
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="eyebrow">{row.eyebrow}</p>
-          <h3 className="mt-1 font-display text-2xl font-semibold text-ink">{row.title}</h3>
+          <h3 className="mt-1 text-2xl font-semibold text-ink">{row.title}</h3>
         </div>
         <a
           href={row.href}

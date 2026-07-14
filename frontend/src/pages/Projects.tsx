@@ -48,7 +48,7 @@ export function Component() {
               <Link key={p.id} to={`/projects/${p.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
                 <Thumb seed={p.slug} src={p.coverImageUrl} label={initials(p.title)} rounded="rounded-none" className="aspect-[16/9] w-full" />
                 <div className="flex flex-1 flex-col p-5">
-                  <h3 className="font-display text-xl font-semibold text-ink group-hover:text-green">{p.title}</h3>
+                  <h3 className="text-xl font-semibold text-ink group-hover:text-green">{p.title}</h3>
                   {p.details.organiser && <p className="mt-1 text-xs text-gold-text">{p.details.organiser}</p>}
                   <p className="mt-2 line-clamp-2 text-sm text-ink-muted">{p.details.description}</p>
                   <div className="mt-auto pt-4">

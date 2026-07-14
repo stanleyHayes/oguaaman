@@ -88,7 +88,7 @@ export function Component() {
             </form>
           ) : (
             <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-8 text-center">
-              <h2 className="font-display text-2xl font-semibold text-ink">Sign in to report</h2>
+              <h2 className="text-2xl font-semibold text-ink">Sign in to report</h2>
               <p className="mx-auto mt-3 max-w-md text-sm text-ink-muted">
                 Incidents are attributed to a verified member — that keeps the safety feed trustworthy when it matters most. It takes a moment: sign in with your phone or email and you&apos;re in.
               </p>
@@ -98,7 +98,7 @@ export function Component() {
         </div>
         <aside className="space-y-6">
           <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
-            <h2 className="font-display text-lg font-semibold text-ink">How it works</h2>
+            <h2 className="text-lg font-semibold text-ink">How it works</h2>
             <ol className="mt-3 space-y-3 text-sm text-ink-muted">
               {[
                 ["Reported", "Your report goes live immediately — time matters."],

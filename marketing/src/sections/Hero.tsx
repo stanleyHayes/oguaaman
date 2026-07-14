@@ -38,7 +38,7 @@ export function Hero() {
               Oguaa · Cape Coast, Ghana
             </Eyebrow>
 
-            <h1 className="rise rise-2 mt-4 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-cream sm:text-5xl lg:text-[3.75rem]">
+            <h1 className="rise rise-2 mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-cream sm:text-5xl lg:text-[3.75rem]">
               The home of{" "}
               <span className="text-gradient-gold">Cape Coast</span>.
             </h1>
@@ -149,7 +149,7 @@ export function Hero() {
                       <Adinkra name={row.name} size={20} labelled={false} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block font-display text-base font-semibold leading-tight text-cream">
+                      <span className="block text-base font-semibold leading-tight text-cream">
                         {row.title}
                       </span>
                       <span className="block text-xs text-cream/55">

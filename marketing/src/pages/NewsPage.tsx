@@ -48,7 +48,7 @@ function FeaturedStory({ a }: Readonly<{ a: NewsArticle }>) {
         </span>
       </div>
       <div className="flex flex-col p-7 sm:p-9">
-        <h2 className="font-display text-3xl font-semibold leading-tight text-ink group-hover:text-green sm:text-4xl">{a.title}</h2>
+        <h2 className="text-3xl font-semibold leading-tight text-ink group-hover:text-green sm:text-4xl">{a.title}</h2>
         {a.summary && <p className="mt-4 text-ink-muted">{a.summary}</p>}
         <div className="mt-auto flex items-center justify-between gap-4 border-t border-sand pt-5 text-sm">
           <Meta a={a} />
@@ -69,7 +69,7 @@ function CoverageCard({ a }: Readonly<{ a: NewsArticle }>) {
             {a.tags[0]}
           </span>
         )}
-        <h3 className="font-display text-xl font-semibold text-ink group-hover:text-green">{a.title}</h3>
+        <h3 className="text-xl font-semibold text-ink group-hover:text-green">{a.title}</h3>
         {a.summary && <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">{a.summary}</p>}
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-sand pt-4 text-xs">
           <Meta a={a} />
@@ -112,7 +112,7 @@ export function Component() {
           <>
             <div className="mb-5 mt-10">
               <p className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-gold-text">Latest coverage</p>
-              <h2 className="mt-1 font-display text-2xl font-semibold text-ink">From the newsroom</h2>
+              <h2 className="mt-1 text-2xl font-semibold text-ink">From the newsroom</h2>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {rest.map((a) => <CoverageCard key={a.id} a={a} />)}

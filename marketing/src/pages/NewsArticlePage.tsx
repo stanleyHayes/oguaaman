@@ -66,7 +66,7 @@ export function Component() {
     return (
       <div className="min-h-screen bg-paper">
         <Container size="narrow" className="flex min-h-screen flex-col items-center justify-center pt-20 text-center">
-          <h1 className="font-display text-3xl font-semibold text-ink">Article not found</h1>
+          <h1 className="text-3xl font-semibold text-ink">Article not found</h1>
           <Link to="/news" className="mt-5 rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">← Newsroom</Link>
         </Container>
       </div>
@@ -82,7 +82,7 @@ export function Component() {
           <Link to="/news" className="inline-flex items-center gap-1.5 rounded-full border border-sand bg-paper px-3.5 py-1.5 text-sm font-medium text-teal-text transition-colors hover:border-teal hover:bg-teal/[0.06]">
             ← Newsroom
           </Link>
-          <h1 className="mt-5 font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">{article.title}</h1>
+          <h1 className="mt-5 text-4xl font-semibold leading-tight text-ink sm:text-5xl">{article.title}</h1>
           {article.summary && <p className="mt-4 font-serif text-xl italic text-ink-muted">{article.summary}</p>}
           <p className="mt-6 border-t border-sand pt-5 text-sm text-ink-faint">By {article.authorName} · {fmt(article.publishedAt ?? article.createdAt)}</p>
         </div>

@@ -47,7 +47,7 @@ function FeaturedStory({ a }: Readonly<{ a: NewsArticle }>) {
         </span>
       </div>
       <div className="flex flex-col p-7 sm:p-9">
-        <h2 className="font-display text-3xl font-semibold leading-tight text-ink group-hover:text-green sm:text-4xl">{a.title}</h2>
+        <h2 className="text-3xl font-semibold leading-tight text-ink group-hover:text-green sm:text-4xl">{a.title}</h2>
         {a.summary && <p className="mt-4 text-ink-muted">{a.summary}</p>}
         <div className="mt-auto flex items-center justify-between gap-4 border-t border-sand pt-5 text-sm">
           <Meta a={a} />
@@ -63,7 +63,7 @@ function CoverageCard({ a }: Readonly<{ a: NewsArticle }>) {
     <Link to={`/news/${a.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
       <Cover a={a} sizes="sm" />
       <div className="flex flex-1 flex-col p-6">
-        <h3 className="font-display text-xl font-semibold text-ink group-hover:text-green">{a.title}</h3>
+        <h3 className="text-xl font-semibold text-ink group-hover:text-green">{a.title}</h3>
         {a.summary && <p className="mt-2 line-clamp-3 text-sm text-ink-muted">{a.summary}</p>}
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-sand pt-4 text-xs">
           <Meta a={a} />
@@ -109,7 +109,7 @@ export function Component() {
         <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-brand/[0.08] blur-3xl" />
         <Container className="relative">
           <p className="eyebrow text-gold/80">The Oguaa Newsroom</p>
-          <h1 className="mt-2 font-display text-4xl font-semibold sm:text-5xl">News &amp; notices</h1>
+          <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">News &amp; notices</h1>
           <p className="mt-3 max-w-2xl text-cream/80">Festivals, scholarships, homecomings and announcements — from the community and its institutions.</p>
         </Container>
       </section>
@@ -130,7 +130,7 @@ export function Component() {
                 <div className="mb-5 mt-10 flex items-end justify-between gap-4">
                   <div>
                     <p className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-gold-text">Latest coverage</p>
-                    <h2 className="mt-1 font-display text-2xl font-semibold text-ink">From the newsroom</h2>
+                    <h2 className="mt-1 text-2xl font-semibold text-ink">From the newsroom</h2>
                   </div>
                 </div>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

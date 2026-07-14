@@ -61,7 +61,7 @@ export function RootError() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-green-900 px-6 text-center text-cream">
       <p className="font-mono text-sm uppercase tracking-[0.2em] text-gold/80">{status ?? "Oops"}</p>
-      <h1 className="mt-3 font-display text-4xl font-semibold">This page wandered off.</h1>
+      <h1 className="mt-3 text-4xl font-semibold">This page wandered off.</h1>
       <p className="mt-3 max-w-md text-cream/75">
         {status === 404 ? "We couldn't find that corner of Oguaa." : "Something went wrong. The API may be offline."}
       </p>

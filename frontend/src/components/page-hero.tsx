@@ -34,9 +34,9 @@ export function PageHero({
           />
         )}
         <Eyebrow className={t.text}>{kicker}</Eyebrow>
-        <h1 className="mt-3 font-display text-4xl font-semibold text-ink sm:text-5xl">
+        <h1 className="mt-3 text-4xl font-semibold text-ink sm:text-5xl">
           {title}
-          {fanteName && <span className={`ml-3 font-display italic ${t.text}`}>{fanteName}</span>}
+          {fanteName && <span className={`ml-3 italic ${t.text}`}>{fanteName}</span>}
         </h1>
         {lede && <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-muted">{lede}</p>}
         {children && <div className="mt-7">{children}</div>}

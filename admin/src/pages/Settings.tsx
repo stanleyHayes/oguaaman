@@ -9,7 +9,7 @@ function Section({ title, description, children, className = "" }: Readonly<{ ti
   return (
     <Card className={`p-5 ${className}`}>
       <div className="border-l-2 border-gold-border/60 pl-3">
-        <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
+        <h2 className="text-lg font-semibold text-ink">{title}</h2>
         {description && <p className="mt-1 text-sm text-ink-muted">{description}</p>}
       </div>
       <div className="mt-4">{children}</div>

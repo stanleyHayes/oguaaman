@@ -51,13 +51,13 @@ export function ModerationQueue({ initial }: Readonly<{ initial: QueueItem[] }>)
     <div className="grid gap-8 lg:grid-cols-[1.7fr_1fr]">
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-2xl font-semibold text-ink">Review queue</h2>
+          <h2 className="text-2xl font-semibold text-ink">Review queue</h2>
           <span className="rounded-full bg-gold/[0.14] px-3 py-1 text-sm font-semibold text-gold-text">{items.length} pending</span>
         </div>
 
         {items.length === 0 ? (
           <div className="rounded-[var(--radius-card)] border border-dashed border-sand bg-cream p-10 text-center text-ink-muted">
-            <p className="font-display text-xl text-ink">Queue clear 🎉</p>
+            <p className="text-xl text-ink">Queue clear 🎉</p>
             <p className="mt-1 text-sm">Nothing waiting. Median time-to-approval looking healthy.</p>
           </div>
         ) : (
@@ -66,7 +66,7 @@ export function ModerationQueue({ initial }: Readonly<{ initial: QueueItem[] }>)
               <li key={item.id} className="rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)]">
                 <div>
                   <span className="rounded-full border border-sand bg-paper px-2.5 py-0.5 text-xs font-medium capitalize text-green">{item.type}</span>
-                  <h3 className="mt-2 font-display text-xl font-semibold text-ink">{item.title}</h3>
+                  <h3 className="mt-2 text-xl font-semibold text-ink">{item.title}</h3>
                   <p className="text-xs text-ink-faint">by {item.owner} · submitted {item.submittedAt}</p>
                 </div>
                 <p className="mt-3 text-sm text-ink-muted">{item.snippet}</p>
@@ -109,7 +109,7 @@ export function ModerationQueue({ initial }: Readonly<{ initial: QueueItem[] }>)
       </div>
 
       <aside>
-        <h2 className="mb-4 font-display text-2xl font-semibold text-ink">Audit log</h2>
+        <h2 className="mb-4 text-2xl font-semibold text-ink">Audit log</h2>
         <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
           {log.length === 0 ? (
             <p className="text-sm text-ink-faint">Every moderation action is recorded here — who, what, when, and why.</p>

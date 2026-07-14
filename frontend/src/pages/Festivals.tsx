@@ -28,7 +28,7 @@ export function Component() {
             >
               <Thumb seed={f.slug} label={f.name} src={f.nextEdition?.coverImageUrl} rounded="rounded-none" className="aspect-[16/9] w-full" />
               <div className="flex flex-1 flex-col p-5">
-                <h3 className="font-display text-2xl font-semibold text-ink group-hover:text-gold-text">{f.name}</h3>
+                <h3 className="text-2xl font-semibold text-ink group-hover:text-gold-text">{f.name}</h3>
                 {f.tagline && <p className="mt-2 text-sm text-ink-muted">{f.tagline}</p>}
                 <p className="mt-auto pt-4 text-xs text-ink-faint">
                   {f.nextEdition?.details.startsAt && (

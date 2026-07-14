@@ -63,7 +63,7 @@ export function Component() {
                     <span className="text-xs uppercase tracking-wide text-ink-faint">{r.listingType}</span>
                     {r.status !== "open" && <span className="text-xs font-semibold capitalize text-ink-muted">· {r.status}</span>}
                   </div>
-                  <Link to={`/listings/${r.listingId}`} className="mt-2 block font-display text-lg font-semibold text-green hover:underline">
+                  <Link to={`/listings/${r.listingId}`} className="mt-2 block text-lg font-semibold text-green hover:underline">
                     {r.listingTitle}
                   </Link>
                   {r.detail && <p className="mt-1.5 max-w-xl text-sm italic text-ink-faint">“{r.detail}”</p>}

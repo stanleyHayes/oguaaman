@@ -15,7 +15,7 @@ export function Component() {
       <Section tone="paper" size="prose">
         <p className="text-sm text-ink-muted">Last updated: June 2026</p>
 
-        <h2 className="mt-8 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-8 text-2xl font-semibold text-ink sm:text-3xl">
           Using Oguaa
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -26,7 +26,7 @@ export function Component() {
           honestly and only as yourself.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Contributions are reviewed before they appear
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -36,7 +36,7 @@ export function Component() {
           goes up. Review keeps the record trustworthy; it is not a judgement of you.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Acceptable use
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -58,7 +58,7 @@ export function Component() {
           back-and-forth.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Respectful conduct
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -68,7 +68,7 @@ export function Component() {
           works against that spirit.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Accuracy
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -78,7 +78,7 @@ export function Component() {
           tell the stewards so it can be put right.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Memorial and heritage content
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -88,7 +88,7 @@ export function Component() {
           give this content extra attention before it is published.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Your contributions
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">
@@ -98,7 +98,7 @@ export function Component() {
           words, and stories.
         </p>
 
-        <h2 className="mt-10 font-display text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 className="mt-10 text-2xl font-semibold text-ink sm:text-3xl">
           Changes and getting in touch
         </h2>
         <p className="mt-4 leading-relaxed text-ink-muted">

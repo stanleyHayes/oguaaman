@@ -34,7 +34,7 @@ function DrawerGroup({ heading, items, lang, onPick }: Readonly<{ heading: strin
             <span>
               <span className="block text-sm font-semibold text-cream">
                 {sectionLabel(s, lang)}
-                {lang === "en" && s.fanteName && <span className="ml-2 font-display italic text-gold">{s.fanteName}</span>}
+                {lang === "en" && s.fanteName && <span className="ml-2 italic text-gold">{s.fanteName}</span>}
               </span>
               <span className="block text-xs text-cream/60">{s.tagline}</span>
             </span>
@@ -106,7 +106,7 @@ function SectionMenuItem({ s, lang, onClick }: Readonly<{ s: NavSection; lang: R
       <span className="relative">
         <span className="block text-sm font-semibold text-ink">
           {sectionLabel(s, lang)}
-          {lang === "en" && s.fanteName && <span className="ml-2 font-display italic text-gold-text">{s.fanteName}</span>}
+          {lang === "en" && s.fanteName && <span className="ml-2 italic text-gold-text">{s.fanteName}</span>}
         </span>
         <span className="block text-xs leading-snug text-ink-muted">{s.tagline}</span>
       </span>

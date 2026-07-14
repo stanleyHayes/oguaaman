@@ -31,7 +31,7 @@ export function Component() {
             <div className="grid gap-6 p-7 sm:grid-cols-[1fr_auto] sm:items-center">
               <div>
                 <p className="eyebrow text-gold-text">The anchor festival</p>
-                <h2 className="mt-2 font-display text-3xl font-semibold text-ink">Oguaa Fetu Afahye</h2>
+                <h2 className="mt-2 text-3xl font-semibold text-ink">Oguaa Fetu Afahye</h2>
                 <p className="mt-3 text-ink-muted">The harvest and cleansing festival, climaxing the first Saturday of September — thanks to the 77 gods of Oguaa and to the sea, a ban on drumming that lets the spirits lead, and a grand durbar of chiefs in palanquins under state umbrellas.</p>
                 <div className="mt-5"><Cta to="/events" variant="gold">See the festival event →</Cta></div>
               </div>
@@ -46,7 +46,7 @@ export function Component() {
           {COMPANIES.map((c) => (
             <div key={c.name} className="flex items-center gap-3 rounded-[var(--radius-card)] border border-sand bg-cream p-4">
               <span className="h-8 w-8 shrink-0 rounded-full border border-sand" style={{ background: c.hex }} aria-hidden />
-              <div><p className="font-display text-lg text-ink">{c.name}</p><p className="text-xs text-ink-faint">{c.colour}</p></div>
+              <div><p className="text-lg text-ink">{c.name}</p><p className="text-xs text-ink-faint">{c.colour}</p></div>
             </div>
           ))}
         </div>
@@ -56,7 +56,7 @@ export function Component() {
         <Container>
           <SectionHeading kicker="The Traditional Council" title="Who holds authority" accentClass="bg-gold-brand" />
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {OFFICES.map((o) => (<Card key={o.role} className="p-5"><h3 className="font-display text-xl font-semibold text-ink">{o.role}</h3><p className="mt-1.5 text-sm text-ink-muted">{o.note}</p></Card>))}
+            {OFFICES.map((o) => (<Card key={o.role} className="p-5"><h3 className="text-xl font-semibold text-ink">{o.role}</h3><p className="mt-1.5 text-sm text-ink-muted">{o.note}</p></Card>))}
           </div>
           <p className="mt-6 text-sm text-ink-muted">See the <Link to="/education/oguaa-traditional-area" className="font-semibold text-gold-text hover:underline">Oguaa Traditional Area profile →</Link></p>
         </Container>

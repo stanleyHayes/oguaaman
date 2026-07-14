@@ -290,7 +290,7 @@ function SubmittedState({ title, onReset }: Readonly<{ title: string; onReset: (
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green/[0.08]">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#123F2D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
       </div>
-      <h2 className="mt-4 font-display text-2xl font-semibold text-ink">“{title}” is in the queue</h2>
+      <h2 className="mt-4 text-2xl font-semibold text-ink">“{title}” is in the queue</h2>
       <p className="mx-auto mt-3 max-w-md text-sm text-ink-muted">
         A curator will review it for the four things that matter: <b>real · local · correctly categorised · appropriate</b>. You'll be notified the moment it's approved.
       </p>

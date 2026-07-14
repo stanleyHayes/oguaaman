@@ -70,7 +70,7 @@ export function SiteFooter() {
           <div className="relative mb-14 overflow-hidden rounded-[var(--radius-card)] border border-cream/10 bg-cream/[0.05] p-7 backdrop-blur-sm sm:p-9">
             <Adinkra name="sankofa" size={140} labelled={false} className="pointer-events-none absolute -right-6 -top-8 text-gold/[0.08]" />
             <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-gold">Yɛn ara asaase ni</p>
-            <h2 className="mt-3 max-w-xl font-display text-2xl font-semibold text-cream sm:text-3xl">
+            <h2 className="mt-3 max-w-xl text-2xl font-semibold text-cream sm:text-3xl">
               This is our own land — and it grows by what each of us adds to it.
             </h2>
             <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -92,7 +92,7 @@ export function SiteFooter() {
                 The community home of Cape Coast, Ghana — its music, people, heritage,
                 schools and memories. An independent community initiative. Made by us, for us.
               </p>
-              <p className="mt-4 font-display text-lg italic text-gold">Yɛn ara asaase ni — this is our own land.</p>
+              <p className="mt-4 text-lg italic text-gold">Yɛn ara asaase ni — this is our own land.</p>
             </div>
 
             <FooterColumn title="Explore" links={EXPLORE} />

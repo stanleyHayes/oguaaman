@@ -146,7 +146,7 @@ export function EventCalendar({ events }: Readonly<{ events: Listing[] }>) {
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <button type="button" onClick={() => setView((v) => shiftMonth(v, -1))} aria-label="Previous month" className={navBtn}>←</button>
-        <h3 className="font-display text-xl font-semibold text-ink">{MONTHS_LONG[view.month]} {view.year}</h3>
+        <h3 className="text-xl font-semibold text-ink">{MONTHS_LONG[view.month]} {view.year}</h3>
         <button type="button" onClick={() => setView((v) => shiftMonth(v, 1))} aria-label="Next month" className={navBtn}>→</button>
       </div>
       <MonthGrid year={view.year} month={view.month} byDay={byDay} today={today} />

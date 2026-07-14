@@ -28,7 +28,7 @@ export function Component() {
               <span className="rounded-full bg-gold/20 px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-gold">
                 {d.living ? "Living icon" : "In legacy"}
               </span>
-              <h1 className="mt-2 font-display text-4xl font-semibold sm:text-6xl">{person.title}</h1>
+              <h1 className="mt-2 text-4xl font-semibold sm:text-6xl">{person.title}</h1>
               {d.era && <p className="mt-3 text-sm uppercase tracking-[0.18em] text-cream/70">{d.era}</p>}
             </div>
           </div>
@@ -38,7 +38,7 @@ export function Component() {
       <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
         <div>
           <h2 className="eyebrow mb-3 text-gold-text">Why Oguaa is proud</h2>
-          {d.whyNotable && <p className="font-display text-xl italic leading-relaxed text-ink">{d.whyNotable}</p>}
+          {d.whyNotable && <p className="text-xl italic leading-relaxed text-ink">{d.whyNotable}</p>}
           <div className="mt-6 space-y-4 font-serif text-lg leading-relaxed text-ink">
             {story.map((p) => <p key={p}>{p}</p>)}
           </div>

@@ -63,7 +63,7 @@ export function Component() {
     return (
       <Section tone="paper" size="narrow" className="min-h-[60vh] text-center">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold-text">Visit</p>
-        <h1 className="mt-3 font-display text-4xl font-semibold text-ink">We couldn't find that place.</h1>
+        <h1 className="mt-3 text-4xl font-semibold text-ink">We couldn't find that place.</h1>
         <p className="mt-3 text-ink-muted">It may have moved, or the name has changed.</p>
         <Link to="/visit" className="mt-7 inline-flex rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900">
           ← Back to Visit
@@ -122,7 +122,7 @@ export function Component() {
 
         {hasGallery && (
           <section className={hasSections ? "mt-12" : ""}>
-            <h2 className="mb-5 flex items-center gap-3 font-display text-2xl font-semibold text-ink">
+            <h2 className="mb-5 flex items-center gap-3 text-2xl font-semibold text-ink">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-gold-brand" aria-hidden />
               {"Photos"}
               <span className="h-px flex-1 bg-sand" />
@@ -133,7 +133,7 @@ export function Component() {
 
         {events.length > 0 && (
           <section className={hasSections || hasGallery ? "mt-12" : ""}>
-            <h2 className="mb-5 flex items-center gap-3 font-display text-2xl font-semibold text-ink">
+            <h2 className="mb-5 flex items-center gap-3 text-2xl font-semibold text-ink">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-teal" aria-hidden />
               {"What's on here"}
               <span className="h-px flex-1 bg-sand" />
@@ -142,7 +142,7 @@ export function Component() {
               {events.map((e) => (
                 <li key={e.id}>
                   <a href={portalHref(e)} target="_blank" rel="noopener noreferrer" className="block h-full rounded-[var(--radius-card)] border border-sand bg-cream p-5 transition-shadow hover:shadow-[var(--shadow-card)]">
-                    <h3 className="font-display text-lg font-semibold text-ink">{e.title}</h3>
+                    <h3 className="text-lg font-semibold text-ink">{e.title}</h3>
                     <p className="mt-1 text-sm text-ink-muted">{listingSubtitle(e)}</p>
                   </a>
                 </li>

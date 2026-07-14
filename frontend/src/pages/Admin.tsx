@@ -39,7 +39,7 @@ export function Component() {
         <Container className="flex flex-col gap-4 py-10 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-wide text-gold/90">Back office · curators &amp; stewards</p>
-            <h1 className="mt-1 font-display text-4xl font-semibold">Curator dashboard</h1>
+            <h1 className="mt-1 text-4xl font-semibold">Curator dashboard</h1>
           </div>
           <Link to="/admin/compose" className="inline-flex items-center gap-2 self-start rounded-full bg-ai px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 sm:self-auto">✦ Compose with AI</Link>
         </Container>
@@ -49,7 +49,7 @@ export function Component() {
         <Container>
           <dl className="grid grid-cols-2 divide-sand sm:grid-cols-4 sm:divide-x">
             {([["Pending", stats.pending], ["Live listings", stats.listings], ["Members", stats.members], ["Institutions", stats.institutions]] as const).map(([k, v]) => (
-              <div key={k} className="px-3 py-5 text-center"><dd className="font-display text-3xl font-semibold text-green">{v}</dd><dt className="mt-1 text-xs uppercase tracking-wide text-ink-faint">{k}</dt></div>
+              <div key={k} className="px-3 py-5 text-center"><dd className="text-3xl font-semibold text-green">{v}</dd><dt className="mt-1 text-xs uppercase tracking-wide text-ink-faint">{k}</dt></div>
             ))}
           </dl>
         </Container>

@@ -15,7 +15,7 @@ const ROLE_POWERS: Record<string, { summary: string; can: string[] }> = {
 function Section({ title, description, children, className = "" }: Readonly<{ title: string; description?: string; children: ReactNode; className?: string }>) {
   return (
     <Card className={`p-5 ${className}`}>
-      <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
+      <h2 className="text-lg font-semibold text-ink">{title}</h2>
       {description && <p className="mt-1 text-sm text-ink-muted">{description}</p>}
       <div className="mt-4">{children}</div>
     </Card>
@@ -68,7 +68,7 @@ export function Component() {
             {member.photoUrl ? <img src={member.photoUrl} alt="" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : avatarInitials}
           </span>
           <div className="min-w-0 pb-1">
-            <h2 className="font-display text-2xl font-semibold text-ink">{member.displayName}</h2>
+            <h2 className="text-2xl font-semibold text-ink">{member.displayName}</h2>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <RoleBadge role={member.role} />
               <span className="text-sm text-ink-faint">@{member.slug}</span>
@@ -135,7 +135,7 @@ export function Component() {
 
       {/* security */}
       <Card className="mt-5 p-5">
-        <h2 className="font-display text-lg font-semibold text-ink">Security</h2>
+        <h2 className="text-lg font-semibold text-ink">Security</h2>
         <p className="mt-1 text-sm text-ink-muted">Oguaa is <b>passwordless</b> — you sign in with a one-time code sent to your phone or email, so there&rsquo;s no password to manage. Sessions last 30 days; sign out to end this one.</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link to="/settings" className="rounded-full border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-gold-border hover:text-gold-text">Settings</Link>

@@ -44,7 +44,7 @@ function NewPlaceForm({ onClose }: Readonly<{ onClose: () => void }>) {
 
   return (
     <Card className="mb-6 p-5">
-      <h2 className="font-display text-lg font-semibold text-ink">New place</h2>
+      <h2 className="text-lg font-semibold text-ink">New place</h2>
       <p className="mt-1 text-sm text-ink-muted">Create a heritage / visitor place. You'll configure its history, sections and photos next; it appears on the public Visit grid once saved.</p>
       <div className="mt-4 space-y-3">
         <div>
@@ -102,7 +102,7 @@ export function Component() {
                 <div className="flex items-start gap-3">
                   <InstitutionLogo org={p} size={44} />
                   <div className="min-w-0">
-                    <h3 className="font-display text-lg font-semibold text-ink">{p.name}</h3>
+                    <h3 className="text-lg font-semibold text-ink">{p.name}</h3>
                     {p.classification && <p className="text-xs text-ink-faint">{p.classification}</p>}
                   </div>
                 </div>

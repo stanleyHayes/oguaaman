@@ -143,7 +143,7 @@ export function Component() {
                 <StatusBadge status={l.status} />
                 {l.featured && <Pill tone="gold">★ Featured</Pill>}
               </div>
-              <h1 className="mt-2 font-display text-3xl font-semibold text-ink">{l.title}</h1>
+              <h1 className="mt-2 text-3xl font-semibold text-ink">{l.title}</h1>
               <p className="mt-1 text-sm text-ink-faint">by {ownerName} · /{l.type}/{l.slug}</p>
             </div>
           </div>
@@ -165,7 +165,7 @@ export function Component() {
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.7fr_1fr]">
         <div className="space-y-5">
           <Card className="p-5 sm:p-6">
-            <h2 className="mb-3 font-display text-lg font-semibold">Details</h2>
+            <h2 className="mb-3 text-lg font-semibold">Details</h2>
             <dl>
               {knownDetails.map(([k, v]) => (
                 <KeyVal key={k} label={DETAIL_LABELS[k] ?? titleCase(k)}>{renderValue(v)}</KeyVal>
@@ -176,7 +176,7 @@ export function Component() {
 
           {gallery.length > 0 && (
             <Card className="p-5 sm:p-6">
-              <h2 className="mb-3 font-display text-lg font-semibold">Gallery</h2>
+              <h2 className="mb-3 text-lg font-semibold">Gallery</h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {gallery.map((g) => (
                   <figure key={g.url} className="overflow-hidden rounded-lg border border-sand">
@@ -191,7 +191,7 @@ export function Component() {
 
         <div className="space-y-5">
           <Card className="p-5">
-            <h2 className="mb-2 font-display text-lg font-semibold">Timeline</h2>
+            <h2 className="mb-2 text-lg font-semibold">Timeline</h2>
             <dl>
               <KeyVal label="Created">{formatDate(l.createdAt)}</KeyVal>
               <KeyVal label="Submitted">{formatDate(l.submittedAt)}</KeyVal>
@@ -200,7 +200,7 @@ export function Component() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-3 font-display text-lg font-semibold">Moderation</h2>
+            <h2 className="mb-3 text-lg font-semibold">Moderation</h2>
             {renderModeration()}
             <button onClick={() => nav("/moderation")} className="mt-3 w-full text-center text-xs text-ink-faint hover:text-ink">Go to the queue →</button>
           </Card>

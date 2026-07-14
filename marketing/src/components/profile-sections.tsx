@@ -92,7 +92,7 @@ function SectionBlock({ section }: Readonly<{ section: ProfileSection }>) {
   return (
     <section id={section.anchor || undefined}>
       {showTitle && (
-        <h2 className="mb-5 flex items-center gap-3 font-display text-2xl font-semibold text-ink">
+        <h2 className="mb-5 flex items-center gap-3 text-2xl font-semibold text-ink">
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${t.dot}`} aria-hidden />
           {section.title}
           <span className="h-px flex-1 bg-sand" />
@@ -175,7 +175,7 @@ export function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
             )}
             {m.caption && (
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-3 pt-8">
-                <span className="block font-display text-sm text-cream">{m.caption}</span>
+                <span className="block text-sm text-cream">{m.caption}</span>
               </span>
             )}
           </button>
@@ -237,7 +237,7 @@ function StatsBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone: T
     <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-sand bg-sand sm:grid-cols-4">
       {list.map((i, idx) => (
         <div key={i.id || idx} className="bg-cream px-4 py-5 text-center">
-          <dd className={`font-display text-3xl font-semibold ${t.text}`}>{i.value || "—"}</dd>
+          <dd className={`text-3xl font-semibold ${t.text}`}>{i.value || "—"}</dd>
           {i.label && <dt className="mt-1 text-[0.66rem] font-semibold uppercase tracking-wider text-ink-faint">{i.label}</dt>}
         </div>
       ))}
@@ -252,7 +252,7 @@ function TeamBlock({ items }: Readonly<{ items: SectionItem[] }>) {
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((i, idx) => (
         <div key={i.id || idx} className="flex items-start gap-3 rounded-[var(--radius-card)] border border-sand bg-cream p-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-green/10 font-display text-sm font-semibold text-green">
+          <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-green/10 text-sm font-semibold text-green">
             {i.image ? (
               <img src={i.image} alt={i.value ?? ""} loading="lazy" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             ) : (
@@ -260,7 +260,7 @@ function TeamBlock({ items }: Readonly<{ items: SectionItem[] }>) {
             )}
           </span>
           <div className="min-w-0">
-            {i.value && <p className="font-display text-base text-ink">{i.value}</p>}
+            {i.value && <p className="text-base text-ink">{i.value}</p>}
             {i.label && <p className="text-[0.66rem] font-bold uppercase tracking-wider text-gold-text">{i.label}</p>}
             {i.detail && <p className="mt-1 text-sm leading-relaxed text-ink-muted">{i.detail}</p>}
           </div>
@@ -279,8 +279,8 @@ function TimelineBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone
         <li key={i.id || idx} className="flex gap-4">
           <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full border-2 bg-paper ${t.border}`} aria-hidden />
           <div className="flex-1 border-b border-dashed border-sand pb-4">
-            {i.label && <p className={`font-display text-sm font-semibold ${t.text}`}>{i.label}</p>}
-            {i.value && <p className="font-display text-lg text-ink">{i.value}</p>}
+            {i.label && <p className={`text-sm font-semibold ${t.text}`}>{i.label}</p>}
+            {i.value && <p className="text-lg text-ink">{i.value}</p>}
             {i.detail && <p className="mt-1 text-sm leading-relaxed text-ink-muted">{i.detail}</p>}
           </div>
         </li>
@@ -341,7 +341,7 @@ function QuoteBlock({ section, tone: t }: Readonly<{ section: ProfileSection; to
   if (!section.body?.trim()) return null;
   return (
     <figure className={`border-l-4 pl-5 ${t.border}`}>
-      <blockquote className="font-display text-2xl italic leading-snug text-ink sm:text-3xl">“{section.body}”</blockquote>
+      <blockquote className="text-2xl italic leading-snug text-ink sm:text-3xl">“{section.body}”</blockquote>
       {section.title && <figcaption className={`mt-3 text-sm font-semibold uppercase tracking-wider ${t.text}`}>— {section.title}</figcaption>}
     </figure>
   );
@@ -352,7 +352,7 @@ function CtaBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone
   if (!section.title && !section.body && buttons.length === 0) return null;
   return (
     <div className={`rounded-[var(--radius-card)] border p-6 text-center sm:p-8 ${t.border} ${t.soft}`}>
-      {section.title && <h3 className="font-display text-2xl font-semibold text-ink sm:text-3xl">{section.title}</h3>}
+      {section.title && <h3 className="text-2xl font-semibold text-ink sm:text-3xl">{section.title}</h3>}
       {section.body && <p className="mx-auto mt-2 max-w-xl text-ink-muted">{section.body}</p>}
       {buttons.length > 0 && (
         <div className="mt-5 flex flex-wrap justify-center gap-3">
@@ -403,10 +403,10 @@ function GroupsBlock({ groups, tone: t }: Readonly<{ groups: SubEntity[]; tone: 
             {g.crestUrl ? (
               <img src={g.crestUrl} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-full border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             ) : (
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green font-display text-sm font-semibold text-cream" style={g.colors?.[0] ? { backgroundColor: g.colors[0] } : undefined}>{initials(g.name)}</span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green text-sm font-semibold text-cream" style={g.colors?.[0] ? { backgroundColor: g.colors[0] } : undefined}>{initials(g.name)}</span>
             )}
             <div className="min-w-0 flex-1">
-              <p className="font-display text-lg text-ink">{g.name}</p>
+              <p className="text-lg text-ink">{g.name}</p>
               <div className="mt-0.5 flex flex-wrap items-center gap-2">
                 {g.subtitle && <span className={`text-[0.66rem] font-bold uppercase tracking-wider ${t.text}`}>{g.subtitle}</span>}
                 {g.colors && g.colors.length > 0 && (
@@ -447,7 +447,7 @@ function HeroBlock({ section, tone: t }: Readonly<{ section: ProfileSection; ton
         </>
       )}
       <div className="relative px-6 py-12 text-center sm:px-10 sm:py-16">
-        {section.title && <h2 className={`font-display text-3xl font-semibold sm:text-4xl ${onImage ? "text-cream" : "text-ink"}`}>{section.title}</h2>}
+        {section.title && <h2 className={`text-3xl font-semibold sm:text-4xl ${onImage ? "text-cream" : "text-ink"}`}>{section.title}</h2>}
         {section.body && <p className={`mx-auto mt-3 max-w-xl ${onImage ? "text-cream/85" : "text-ink-muted"}`}>{section.body}</p>}
         {buttons.length > 0 && (
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -480,7 +480,7 @@ function TestimonialsBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; 
           {i.value && <blockquote className="font-serif text-lg italic leading-relaxed text-ink">{`“${i.value}”`}</blockquote>}
           {(i.label || i.detail || i.image) && (
             <figcaption className="mt-4 flex items-center gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-green/10 font-display text-xs font-semibold text-green">
+              <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-green/10 text-xs font-semibold text-green">
                 {i.image ? (
                   <img src={i.image} alt={i.label ?? ""} loading="lazy" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 ) : (
@@ -535,7 +535,7 @@ function MenuBlock({ items }: Readonly<{ items: SectionItem[] }>) {
             {i.label && <span className="font-medium text-ink">{i.label}</span>}
             {i.detail && <span className="block text-sm leading-snug text-ink-muted">{i.detail}</span>}
           </span>
-          {i.value && <span className="shrink-0 font-display text-base font-semibold tabular-nums text-gold-text">{i.value}</span>}
+          {i.value && <span className="shrink-0 text-base font-semibold tabular-nums text-gold-text">{i.value}</span>}
         </li>
       ))}
     </ul>
@@ -549,7 +549,7 @@ function ScheduleBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone
     <ul className="divide-y divide-sand overflow-hidden rounded-[var(--radius-card)] border border-sand">
       {list.map((i, idx) => (
         <li key={i.id || idx} className="flex flex-wrap items-baseline gap-x-4 bg-cream px-4 py-3">
-          {i.label && <span className={`w-32 shrink-0 font-display text-base ${t.text}`}>{i.label}</span>}
+          {i.label && <span className={`w-32 shrink-0 text-base ${t.text}`}>{i.label}</span>}
           <span className="min-w-0 flex-1">
             {i.value && <span className="font-medium text-ink">{i.value}</span>}
             {i.detail && <span className="block text-sm text-ink-muted">{i.detail}</span>}

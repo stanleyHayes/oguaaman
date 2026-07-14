@@ -41,9 +41,9 @@
   --color-ai-line: #e2dff4;
 
   /* Type — families loaded via Google Fonts <link> */
-  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --font-serif: "Spectral", Georgia, serif;
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-serif: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --radius-card: 14px;
@@ -69,9 +69,7 @@
     text-rendering: optimizeLegibility;
   }
   h1,
-  h2,
-  h3,
-  h4 {
+  h2 {
     font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.01em;

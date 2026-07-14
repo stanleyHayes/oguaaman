@@ -47,7 +47,7 @@ export function Component() {
       </div>
 
       {/* campaigns */}
-      <h2 className="mb-3 font-display text-lg font-semibold text-ink">Campaigns</h2>
+      <h2 className="mb-3 text-lg font-semibold text-ink">Campaigns</h2>
       {projects.length === 0 ? (
         <Empty title="No open campaigns">Approve a project listing and it appears here with its funding progress.</Empty>
       ) : (
@@ -60,7 +60,7 @@ export function Component() {
               <Card key={p.id} className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="truncate font-display text-lg font-semibold text-ink">{p.title}</h3>
+                    <h3 className="truncate text-lg font-semibold text-ink">{p.title}</h3>
                     {typeof p.details.organiser === "string" && <p className="text-xs text-gold-text">{p.details.organiser}</p>}
                   </div>
                   <Pill tone="green">{pct}%</Pill>
@@ -80,7 +80,7 @@ export function Component() {
 
       {/* pledge ledger */}
       <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold text-ink">Pledge ledger</h2>
+        <h2 className="text-lg font-semibold text-ink">Pledge ledger</h2>
         <div className="inline-flex rounded-full border border-sand bg-paper p-0.5 text-xs">
           {(["all", "success", "pending", "failed"] as const).map((f) => (
             <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-cream" : "text-ink-muted hover:text-ink"}`}>

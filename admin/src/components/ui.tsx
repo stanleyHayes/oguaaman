@@ -29,7 +29,7 @@ export function Card({ children, className = "" }: Readonly<{ children: ReactNod
 export function StatCard({ label, value, tone = "text-green" }: Readonly<{ label: string; value: number | string; tone?: string }>) {
   return (
     <Card className="px-4 py-5 text-center">
-      <div className={`font-display text-3xl font-semibold ${tone}`}>{value}</div>
+      <div className={`text-3xl font-semibold ${tone}`}>{value}</div>
       <div className="mt-1 text-xs uppercase tracking-wide text-ink-faint">{label}</div>
     </Card>
   );
@@ -71,7 +71,7 @@ export function PageHeader({ kicker, title, children }: Readonly<{ kicker: strin
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="eyebrow text-ai">{kicker}</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">{title}</h1>
+        <h1 className="mt-1 text-3xl font-semibold">{title}</h1>
       </div>
       {children}
     </div>
@@ -85,7 +85,7 @@ export function Empty({ title = "Nothing here yet", children, actions }: Readonl
         <span className="absolute inline-flex h-16 w-16 animate-ping rounded-full border border-gold-border/40 opacity-60" aria-hidden />
         <span className="text-2xl" aria-hidden>🦀</span>
       </div>
-      <h3 className="mt-5 font-display text-xl font-semibold text-ink">{title}</h3>
+      <h3 className="mt-5 text-xl font-semibold text-ink">{title}</h3>
       {children && <p className="mt-1.5 max-w-sm text-sm text-ink-muted">{children}</p>}
       {actions && <div className="mt-5 flex flex-wrap items-center justify-center gap-3">{actions}</div>}
     </Card>

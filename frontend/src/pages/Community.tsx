@@ -52,7 +52,7 @@ export function Component() {
       <section id="join" className="on-dark bg-green py-16 text-cream">
         <Container size="narrow" className="text-center">
           <Adinkra name="funtunfunefu" size={36} className="mx-auto text-gold" />
-          <h2 className="mt-5 font-display text-3xl font-semibold sm:text-4xl">Two crocodiles, one stomach</h2>
+          <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">Two crocodiles, one stomach</h2>
           <p className="mx-auto mt-4 max-w-xl text-cream/80">Funtunfunefu Denkyemfunefu — unity in diversity. Create a profile, rep your town and school, and help build the thing the people of Oguaa genuinely own.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Cta to="/me" variant="gold">Create your profile</Cta>

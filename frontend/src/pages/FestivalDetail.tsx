@@ -29,14 +29,14 @@ export function Component() {
         <Container size="wide" className="relative py-14 sm:py-20">
           <Link to="/festivals" className="text-sm text-gold hover:underline">← All festivals</Link>
           <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-gold">The living archive</p>
-          <h1 className="mt-2 font-display text-4xl font-semibold sm:text-6xl">{festival.name}</h1>
+          <h1 className="mt-2 text-4xl font-semibold sm:text-6xl">{festival.name}</h1>
           {festival.tagline && <p className="mt-3 text-lg text-gold">{festival.tagline}</p>}
           {festival.history && <p className="mt-5 max-w-3xl leading-relaxed text-cream/85">{festival.history}</p>}
         </Container>
       </section>
 
       <Container size="wide" className="py-12">
-        <h2 className="mb-6 font-display text-2xl font-semibold text-ink">Editions</h2>
+        <h2 className="mb-6 text-2xl font-semibold text-ink">Editions</h2>
         <ol className="space-y-10">
           {festival.editions.map((ed) => {
             const upcoming = ed.events.some((e) => (e.details.startsAt ?? "") >= TODAY);
@@ -47,7 +47,7 @@ export function Component() {
               <li key={ed.year} className="relative border-l-2 border-gold-border/50 pl-6">
                 <span className="absolute -left-[7px] top-2 h-3 w-3 rounded-full bg-gold-brand" aria-hidden />
                 <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="font-display text-2xl font-semibold text-ink">{ed.year}</h3>
+                  <h3 className="text-2xl font-semibold text-ink">{ed.year}</h3>
                   {badge}
                 </div>
                 {ed.events.map((e) => {

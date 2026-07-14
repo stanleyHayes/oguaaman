@@ -38,7 +38,7 @@ export function Component() {
           <Link to="/news" className="inline-flex items-center gap-1.5 rounded-full border border-sand bg-paper px-3.5 py-1.5 text-sm font-medium text-teal-text transition-colors hover:border-teal hover:bg-teal/[0.06]">
             ← Newsroom
           </Link>
-          <h1 className="mt-5 font-display text-4xl font-semibold leading-tight text-ink sm:text-5xl">{a.title}</h1>
+          <h1 className="mt-5 text-4xl font-semibold leading-tight text-ink sm:text-5xl">{a.title}</h1>
           {a.summary && <p className="mt-4 font-serif text-xl italic text-ink-muted">{a.summary}</p>}
           <p className="mt-6 border-t border-sand pt-5 text-sm text-ink-faint">
             By {a.authorName} · {formatDate(a.publishedAt ?? a.createdAt)}

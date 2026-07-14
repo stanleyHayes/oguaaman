@@ -74,7 +74,7 @@ export function Component() {
 
         {canResolve && lfStatus === "open" && (
           <div className="mt-8 rounded-[var(--radius-card)] border border-sand bg-cream p-6">
-            <h2 className="font-display text-lg font-semibold text-ink">Resolve this notice</h2>
+            <h2 className="text-lg font-semibold text-ink">Resolve this notice</h2>
             <p className="mt-1.5 text-sm text-ink-muted">
               {missing ? "Found them safe? Mark it reunited so the search can stand down." : "Back with its owner? Mark it reunited — or close the notice if it's run its course."}
             </p>

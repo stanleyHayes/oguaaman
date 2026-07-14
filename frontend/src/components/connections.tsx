@@ -179,7 +179,7 @@ export function PeopleYouMayKnow() {
             <Avatar initials={c.member.initials} photoUrl={c.member.photoUrl} size={44} className="border border-sand" />
           </Link>
           <div className="min-w-0 flex-1">
-            <Link to={`/members/${c.member.slug}`} className="block truncate font-display text-lg text-ink hover:text-green">
+            <Link to={`/members/${c.member.slug}`} className="block truncate text-lg text-ink hover:text-green">
               {c.member.displayName}
             </Link>
             <div className="mt-1 flex flex-wrap gap-1.5">

@@ -91,7 +91,7 @@ export function Footer() {
         {/* CTA card */}
         <div className="relative mb-14 overflow-hidden rounded-[var(--radius-card)] border border-cream/10 bg-cream/[0.05] p-7 backdrop-blur-sm sm:p-9">
           <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-gold">Yɛn ara asaase ni</p>
-          <h2 className="mt-3 max-w-xl font-display text-2xl font-semibold text-cream sm:text-3xl">
+          <h2 className="mt-3 max-w-xl text-2xl font-semibold text-cream sm:text-3xl">
             This is our own land — the app is where the town gathers.
           </h2>
           <div className="mt-6 flex flex-wrap items-center gap-3">

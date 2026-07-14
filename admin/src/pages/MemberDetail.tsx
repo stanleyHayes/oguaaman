@@ -49,7 +49,7 @@ export function Component() {
               {m.suspended && <span className="rounded-full bg-maroon-900/[0.1] px-2.5 py-0.5 text-xs font-semibold text-maroon-900">Suspended</span>}
               {m.phoneVerified && <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green">Verified</span>}
             </div>
-            <h1 className="mt-1.5 font-display text-3xl font-semibold text-ink">{m.displayName}</h1>
+            <h1 className="mt-1.5 text-3xl font-semibold text-ink">{m.displayName}</h1>
             {m.bio && <p className="mt-1 max-w-2xl text-sm text-ink-muted">{m.bio}</p>}
           </div>
         </div>
@@ -58,7 +58,7 @@ export function Component() {
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
         <div className="space-y-5">
           <Card className="p-5">
-            <h2 className="mb-2 font-display text-lg font-semibold">Profile</h2>
+            <h2 className="mb-2 text-lg font-semibold">Profile</h2>
             <dl>
               <KeyVal label="Joined">{formatDate(m.joinedAt)}</KeyVal>
               <KeyVal label="Quarter">{quarter?.name}</KeyVal>
@@ -74,7 +74,7 @@ export function Component() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-3 font-display text-lg font-semibold">Manage</h2>
+            <h2 className="mb-3 text-lg font-semibold">Manage</h2>
             <label className="block text-xs font-semibold uppercase tracking-wide text-ink-faint">Role{" "}
               <select disabled={busy} value={m.role} onChange={(e) => changeRole(e.target.value)} className="mt-1 w-full rounded-lg border border-sand bg-cream px-3 py-2 text-sm capitalize focus:border-gold-border focus:outline-none">
                 <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option>
@@ -89,7 +89,7 @@ export function Component() {
 
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-sand px-5 py-3">
-            <h2 className="font-display text-lg font-semibold">Contributions</h2>
+            <h2 className="text-lg font-semibold">Contributions</h2>
             <span className="text-xs text-ink-faint">{view.listings.length}</span>
           </div>
           {view.listings.length === 0 ? (

@@ -91,7 +91,7 @@ export function Component() {
 
       <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
         <div>
-          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green">{d.description}</p>
+          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green">{d.description}</p>
           {project.tags.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-2">{project.tags.map((t) => <Pill key={t}>#{t}</Pill>)}</div>
           )}
@@ -112,7 +112,7 @@ export function Component() {
 
             {confirmed ? (
               <div className="mt-5 rounded-lg border border-green/30 bg-green/[0.06] p-4">
-                <p className="font-display text-lg font-semibold text-green">Medaase! 🎉</p>
+                <p className="text-lg font-semibold text-green">Medaase! 🎉</p>
                 <p className="mt-1 text-sm text-ink-muted">
                   Your pledge of <b>{cedis(confirmed.amountPesewas)}</b> to {confirmed.projectTitle} is confirmed.
                   {confirmed.simulated && <span className="mt-1 block text-xs text-gold-text">Simulated — dev mode, no real money moved.</span>}

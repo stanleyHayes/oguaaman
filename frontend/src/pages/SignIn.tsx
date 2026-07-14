@@ -73,7 +73,7 @@ export function Component() {
           <div className="relative flex h-full flex-col">
             <Wordmark />
             <p className="mt-10 text-[0.72rem] font-bold uppercase tracking-[0.22em] text-gold">Member sign in</p>
-            <h1 className="mt-3 font-display text-4xl font-semibold leading-tight">Welcome home to Oguaa.</h1>
+            <h1 className="mt-3 text-4xl font-semibold leading-tight">Welcome home to Oguaa.</h1>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-cream/75">
               Sign in with your phone or email. A one-time code verifies you — the spam gate that fits
               how Ghana already works. New here? You&rsquo;ll create your profile in the same step.
@@ -86,7 +86,7 @@ export function Component() {
                 </li>
               ))}
             </ul>
-            <p className="mt-auto pt-10 font-display text-base italic text-gold/90">
+            <p className="mt-auto pt-10 text-base italic text-gold/90">
               Yɛn ara asaase ni — this is our own land.
             </p>
           </div>
@@ -103,7 +103,7 @@ export function Component() {
           {step === "id" ? (
             <form onSubmit={send} className="space-y-5">
               <div>
-                <h2 className="font-display text-2xl font-semibold text-ink">Join Oguaa</h2>
+                <h2 className="text-2xl font-semibold text-ink">Join Oguaa</h2>
                 <p className="mt-1 text-sm text-ink-muted">Step 1 of 2 — tell us where to send your code.</p>
               </div>
               <label className="block">
@@ -128,7 +128,7 @@ export function Component() {
           ) : (
             <form onSubmit={confirm} className="space-y-5">
               <div>
-                <h2 className="font-display text-2xl font-semibold text-ink">Check your messages</h2>
+                <h2 className="text-2xl font-semibold text-ink">Check your messages</h2>
                 <p className="mt-1 text-sm text-ink-muted">Step 2 of 2 — we sent a 6-digit code to <b className="text-ink">{identifier}</b>.</p>
               </div>
               {devCode && (

@@ -89,7 +89,7 @@ export function Identity() {
                 aria-hidden="true"
               />
               <span>
-                <span className="block font-display text-lg font-semibold text-cream">
+                <span className="block text-lg font-semibold text-cream">
                   {s.label}
                 </span>
                 <span className="mt-0.5 block font-mono text-[0.68rem] uppercase tracking-[0.18em] text-gold/80">
@@ -106,7 +106,7 @@ export function Identity() {
         <div className="mt-14">
           <div className="max-w-2xl">
             <p className="eyebrow text-gold/80">A vocabulary, not a reproduction</p>
-            <h3 className="mt-3 font-display text-2xl font-semibold text-cream sm:text-3xl">
+            <h3 className="mt-3 text-2xl font-semibold text-cream sm:text-3xl">
               The grammar of Adinkra.
             </h3>
             <p className="mt-4 leading-relaxed text-cream/80">
@@ -130,7 +130,7 @@ export function Identity() {
                   <Adinkra name={sym.name} size={28} labelled={false} strokeWidth={1.4} />
                 </span>
                 <div className="border-l border-cream/15 pl-4">
-                  <h4 className="font-display text-lg font-semibold text-cream">{sym.title}</h4>
+                  <h4 className="text-lg font-semibold text-cream">{sym.title}</h4>
                   <p className="mt-1.5 text-sm leading-relaxed text-cream/75">{sym.meaning}</p>
                 </div>
               </li>

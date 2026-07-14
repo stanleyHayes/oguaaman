@@ -61,11 +61,11 @@ function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
         <div className="relative flex h-full flex-col">
           <div className="flex items-center gap-2">
             <Mark />
-            <span className="font-display text-2xl font-semibold leading-none text-cream">Oguaa</span>
+            <span className="text-2xl font-semibold leading-none text-cream">Oguaa</span>
             <span className="rounded bg-gold px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-green-900">Admin</span>
           </div>
           <p className="mt-8 text-[0.72rem] font-bold uppercase tracking-[0.22em] text-gold">Back office</p>
-          <h1 className="mt-3 font-display text-3xl font-semibold leading-tight">Steward the town board.</h1>
+          <h1 className="mt-3 text-3xl font-semibold leading-tight">Steward the town board.</h1>
           <ul className="mt-7 space-y-3">
             {TRUST.map((t) => (
               <li key={t} className="flex items-start gap-3 text-sm text-cream/85">
@@ -74,7 +74,7 @@ function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
               </li>
             ))}
           </ul>
-          <p className="mt-auto pt-8 font-display text-sm italic text-gold/90">Yɛn ara asaase ni — this is our own land.</p>
+          <p className="mt-auto pt-8 text-sm italic text-gold/90">Yɛn ara asaase ni — this is our own land.</p>
         </div>
       </aside>
       <div className="p-8">{children}</div>
@@ -124,7 +124,7 @@ function SignIn() {
         {step === "id" ? (
           <form onSubmit={send} className="space-y-5">
             <div>
-              <h2 className="font-display text-2xl font-semibold text-ink">Curator sign in</h2>
+              <h2 className="text-2xl font-semibold text-ink">Curator sign in</h2>
               <p className="mt-1 text-sm text-ink-muted">Step 1 of 2 — where should we send your code?</p>
             </div>
             <label className="block">
@@ -138,7 +138,7 @@ function SignIn() {
         ) : (
           <form onSubmit={confirm} className="space-y-5">
             <div>
-              <h2 className="font-display text-2xl font-semibold text-ink">Check your messages</h2>
+              <h2 className="text-2xl font-semibold text-ink">Check your messages</h2>
               <p className="mt-1 text-sm text-ink-muted">Step 2 of 2 — enter the 6-digit code we sent to <b className="text-ink">{identifier}</b>.</p>
             </div>
             {devCode && <p className="rounded-lg border border-gold-border/40 bg-gold/[0.1] px-3 py-2 text-sm text-gold-text">Dev code: <b className="font-mono">{devCode}</b></p>}
@@ -162,7 +162,7 @@ function NotAuthorized({ name }: Readonly<{ name: string }>) {
     <Backdrop>
       <Shell>
         <div className="flex h-full flex-col justify-center text-center">
-          <h2 className="font-display text-3xl font-semibold text-ink">Not authorised</h2>
+          <h2 className="text-3xl font-semibold text-ink">Not authorised</h2>
           <p className="mt-3 text-sm text-ink-muted">Hi {name} — this back-office is for curators and stewards. Ask a steward to grant you a role.</p>
           <button onClick={signOut} className="mx-auto mt-6 rounded-full border border-gold-border/60 px-5 py-2 text-sm font-semibold text-gold-text transition-colors hover:bg-gold/10">Sign out</button>
         </div>

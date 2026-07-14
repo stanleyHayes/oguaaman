@@ -85,7 +85,7 @@ export function History() {
             <p className={`font-mono text-xs font-semibold uppercase tracking-[0.18em] ${m.sober ? "text-maroon-900" : "text-gold-text"}`}>
               {m.year}
             </p>
-            <h3 className="mt-1 font-display text-2xl font-semibold text-ink">{m.title}</h3>
+            <h3 className="mt-1 text-2xl font-semibold text-ink">{m.title}</h3>
             <p className="mt-2 max-w-2xl leading-relaxed text-ink-muted">{m.text}</p>
           </li>
         ))}

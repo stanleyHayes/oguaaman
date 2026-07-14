@@ -50,14 +50,14 @@ export function Component() {
 
       <div className="mx-auto max-w-[44rem] px-4 pb-24 sm:px-6">
         <header className="pt-12 text-center">
-          <span className="relative mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-gold-border/40 font-display text-5xl text-green" style={{ background: "radial-gradient(circle at 50% 38%, #F0E4CC, #E2D2AE)" }} aria-hidden>
+          <span className="relative mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-gold-border/40 text-5xl text-green" style={{ background: "radial-gradient(circle at 50% 38%, #F0E4CC, #E2D2AE)" }} aria-hidden>
             {initials(m.title)}
             {m.coverImageUrl && <img src={m.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
           </span>
-          <h1 className="mt-7 font-display text-5xl font-medium leading-none text-ink sm:text-6xl">{d.honorific ? `${d.honorific} ` : ""}{m.title}</h1>
+          <h1 className="mt-7 text-5xl font-medium leading-none text-ink sm:text-6xl">{d.honorific ? `${d.honorific} ` : ""}{m.title}</h1>
           {place && <p className="mt-3 font-serif text-lg italic text-ink-muted">{place.name}</p>}
           <p className="mt-5 text-sm font-medium uppercase tracking-[0.18em] text-gold-text">{lifeDates(d.bornYear, d.diedDate)}</p>
-          {d.epitaph && <p className="mx-auto mt-5 max-w-[30ch] font-display text-2xl font-medium italic leading-snug text-ink">“{d.epitaph}”</p>}
+          {d.epitaph && <p className="mx-auto mt-5 max-w-[30ch] text-2xl font-medium italic leading-snug text-ink">“{d.epitaph}”</p>}
 
           <div className="mt-7 flex flex-wrap justify-center gap-2">
             {place && <span className="rounded-full border border-sand bg-paper px-3 py-1.5 text-xs text-green">{place.name}</span>}
@@ -77,7 +77,7 @@ export function Component() {
           <p className="mb-4 text-center text-xs uppercase tracking-[0.32em] text-ink-faint">Celebration of a life</p>
           <div className="font-serif text-lg leading-relaxed text-ink">
             {story.map((p, i) => (
-              <p key={p} className={i === 0 ? "[&::first-letter]:float-left [&::first-letter]:mr-3 [&::first-letter]:font-display [&::first-letter]:text-6xl [&::first-letter]:leading-[0.8] [&::first-letter]:text-gold-brand" : "mt-5"}>{p}</p>
+              <p key={p} className={i === 0 ? "[&::first-letter]:float-left [&::first-letter]:mr-3 [&::first-letter]:[&::first-letter]:text-6xl [&::first-letter]:leading-[0.8] [&::first-letter]:text-gold-brand" : "mt-5"}>{p}</p>
             ))}
           </div>
         </section>
@@ -107,7 +107,7 @@ export function Component() {
 
         <div className="mt-16 text-center">
           <Adinkra name="nyame-nwu-na-mawu" size={26} className="mx-auto text-gold-brand" />
-          <p className="mt-3 font-display text-2xl text-gold-text">Yɛnkae</p>
+          <p className="mt-3 text-2xl text-gold-text">Yɛnkae</p>
           <p className="mt-1 text-xs uppercase tracking-[0.26em] text-ink-faint">Kept in remembrance</p>
           <Link to="/memoriam" className="mt-6 inline-block text-sm text-ink-muted hover:text-gold-text">← All who we remember</Link>
           <div className="mt-8 border-t border-sand pt-5">

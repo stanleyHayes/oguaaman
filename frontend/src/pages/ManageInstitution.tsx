@@ -28,7 +28,7 @@ export function Component() {
   if (!manages) {
     return (
       <Container className="py-16 text-center" size="narrow">
-        <h1 className="font-display text-3xl font-semibold text-ink">Not your institution to manage</h1>
+        <h1 className="text-3xl font-semibold text-ink">Not your institution to manage</h1>
         <p className="mt-3 text-ink-muted">
           You don’t manage {org.name} yet. Open its page to request management — a steward reviews each claim.
         </p>
@@ -43,7 +43,7 @@ export function Component() {
     <Container className="space-y-10 py-10" size="narrow">
       <header>
         <p className="eyebrow mb-2">Managing · {org.verified ? "Verified institution" : "Pending verification"}</p>
-        <h1 className="font-display text-3xl font-semibold text-ink sm:text-4xl">{org.name}</h1>
+        <h1 className="text-3xl font-semibold text-ink sm:text-4xl">{org.name}</h1>
         <p className="mt-2 text-ink-muted">
           Keep the official profile current, manage your offices, and post events.{" "}
           <Link to={`/education/${slug}`} className="text-green underline">View public page →</Link>
@@ -62,7 +62,7 @@ export function Component() {
 function Panel({ title, children }: Readonly<{ title: string; children: React.ReactNode }>) {
   return (
     <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-6">
-      <h2 className="mb-4 font-display text-xl font-semibold text-ink">{title}</h2>
+      <h2 className="mb-4 text-xl font-semibold text-ink">{title}</h2>
       {children}
     </section>
   );

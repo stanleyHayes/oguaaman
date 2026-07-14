@@ -124,7 +124,7 @@ export function AdminLayout() {
       >
         <div className={`flex h-16 shrink-0 items-center gap-2 border-b border-cream/10 ${collapsed ? "lg:justify-center lg:px-0" : ""} px-5`}>
           <Mark />
-          <span className={`font-display text-xl font-semibold leading-none text-cream ${collapsed ? "lg:hidden" : ""}`}>Oguaa</span>
+          <span className={`text-xl font-semibold leading-none text-cream ${collapsed ? "lg:hidden" : ""}`}>Oguaa</span>
           <span className={`rounded bg-gold px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-green-900 ${collapsed ? "lg:hidden" : ""}`}>Admin</span>
         </div>
 
@@ -194,7 +194,7 @@ export function AdminLayout() {
 
           <div className="min-w-0 flex-1">
             <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-ink-faint">Admin</p>
-            <h2 className="truncate font-display text-lg font-semibold leading-none text-ink">{current.label}</h2>
+            <h2 className="truncate text-lg font-semibold leading-none text-ink">{current.label}</h2>
           </div>
 
           <NavLink to="/notifications" className="relative rounded-lg p-2 text-ink-muted hover:bg-sand" aria-label="Notifications" title="Notifications">
@@ -225,7 +225,7 @@ export function AdminError() {
   return (
     <div className="flex min-h-screen items-center justify-center p-8 text-center">
       <div>
-        <h1 className="font-display text-4xl font-semibold">Something went wrong</h1>
+        <h1 className="text-4xl font-semibold">Something went wrong</h1>
         <p className="mt-3 text-ink-muted">{msg}</p>
         <p className="mt-2 text-sm text-ink-faint">Is the Go API running on :8080?</p>
         <a href="/" className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">Reload</a>

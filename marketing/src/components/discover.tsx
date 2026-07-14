@@ -34,7 +34,7 @@ export function Discover() {
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-green-900/85 via-green-900/30 to-transparent" />
             <div className="on-dark absolute bottom-0 left-0 p-6 text-cream">
-              <h3 className="font-display text-2xl font-semibold sm:text-3xl">{title}</h3>
+              <h3 className="text-2xl font-semibold sm:text-3xl">{title}</h3>
               <p className="mt-1 max-w-md text-sm text-cream/85">{text}</p>
               <span className="mt-2 inline-block text-sm font-semibold text-gold">Explore →</span>
             </div>

@@ -26,7 +26,7 @@ export function InstitutionEditor({ slug, org }: Readonly<{ slug: string; org: O
 function Panel({ title, hint, children }: Readonly<{ title: string; hint?: string; children: React.ReactNode }>) {
   return (
     <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
-      <h3 className="font-display text-lg font-semibold text-ink">{title}</h3>
+      <h3 className="text-lg font-semibold text-ink">{title}</h3>
       {hint && <p className="mt-1 mb-3 text-sm text-ink-muted">{hint}</p>}
       <div className={hint ? "" : "mt-4"}>{children}</div>
     </section>

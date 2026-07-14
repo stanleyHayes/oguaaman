@@ -49,7 +49,7 @@ export function Component() {
             <Link to="/admin" className="hover:text-gold">Dashboard</Link>
             <span className="px-2 text-cream/40">›</span>Newsroom<span className="px-2 text-cream/40">›</span><span className="text-cream">Compose</span>
           </p>
-          <h1 className="mt-2 font-display text-3xl font-semibold">Compose</h1>
+          <h1 className="mt-2 text-3xl font-semibold">Compose</h1>
           <p className="mt-1 text-sm text-cream/70">Draft with the AI writing bar, then publish straight to the Newsroom — you keep full control of the final words.</p>
         </Container>
       </section>
@@ -57,7 +57,7 @@ export function Component() {
       <Container size="narrow" className="py-10">
         {done ? (
           <div className="rounded-[var(--radius-card)] border border-green/30 bg-green/[0.06] p-6 text-center">
-            <p className="font-display text-2xl font-semibold text-green">{done.published ? "Published to the Newsroom" : "Saved as a draft"}</p>
+            <p className="text-2xl font-semibold text-green">{done.published ? "Published to the Newsroom" : "Saved as a draft"}</p>
             <p className="mt-2 text-sm text-ink-muted">
               {done.published
                 ? "Your article is live for the community."

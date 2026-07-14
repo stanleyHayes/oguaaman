@@ -43,7 +43,7 @@ export function CultureContent() {
           <Card key={s.title} className="flex gap-5 p-7">
             <Adinkra name={s.symbol} size={40} labelled={false} strokeWidth={1.4} className="shrink-0 text-gold-brand" />
             <div>
-              <h3 className="font-display text-2xl font-semibold text-ink">{s.title}</h3>
+              <h3 className="text-2xl font-semibold text-ink">{s.title}</h3>
               <p className="mt-2 leading-relaxed text-ink-muted">{s.body}</p>
             </div>
           </Card>

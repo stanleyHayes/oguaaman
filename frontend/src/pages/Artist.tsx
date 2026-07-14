@@ -72,7 +72,7 @@ export function Component() {
             <Thumb seed={artist.slug} label={initials(d.actName ?? artist.title)} src={artist.coverImageUrl} className="h-36 w-36 shrink-0 border-2 border-gold/50 shadow-xl sm:h-44 sm:w-44" coverWidth={400} />
             <div className="min-w-0">
               {d.spotlight && <span className="rounded-full bg-gold-brand px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-green-900">★ This week's spotlight</span>}
-              <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05] sm:text-6xl">{d.actName ?? artist.title}</h1>
+              <h1 className="mt-2 text-4xl font-semibold leading-[1.05] sm:text-6xl">{d.actName ?? artist.title}</h1>
               <div className="mt-3 flex flex-wrap gap-2">
                 {(d.genres ?? []).map((g) => <span key={g} className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs text-cream/90 backdrop-blur-sm">{g}</span>)}
               </div>
@@ -93,12 +93,12 @@ export function Component() {
       <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
         <div>
           <h2 className="eyebrow mb-3 text-clay-text">About</h2>
-          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-clay-text">{d.bio}</p>
+          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-clay-text">{d.bio}</p>
           {d.latestRelease && (
             <div className="relative mt-8 overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)]">
               <span className="absolute inset-y-0 left-0 w-1 bg-gold-brand" aria-hidden />
               <p className="eyebrow text-gold-text">Latest release</p>
-              <p className="mt-2 font-display text-2xl text-ink">
+              <p className="mt-2 text-2xl text-ink">
                 {d.latestRelease.title}
                 {d.latestRelease.year ? <span className="ml-2 text-base text-ink-faint">{d.latestRelease.year}</span> : null}
               </p>

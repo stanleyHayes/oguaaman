@@ -35,7 +35,7 @@ export function ListingCard({ listing }: Readonly<{ listing: Listing }>) {
           />
         ) : (
           <div className="flex aspect-[16/9] w-full items-center justify-center border-b border-sand bg-sand/60" aria-hidden>
-            <span className="font-display text-4xl font-semibold text-green/30">
+            <span className="text-4xl font-semibold text-green/30">
               {listing.title.charAt(0)}
             </span>
           </div>
@@ -44,7 +44,7 @@ export function ListingCard({ listing }: Readonly<{ listing: Listing }>) {
           <Pill tone={tone} className="self-start">
             {TYPE_LABEL[listing.type] ?? listing.type}
           </Pill>
-          <h3 className="mt-4 font-display text-xl font-semibold leading-snug text-ink">
+          <h3 className="mt-4 text-xl font-semibold leading-snug text-ink">
             {listing.title}
           </h3>
           <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">{listingSubtitle(listing)}</p>

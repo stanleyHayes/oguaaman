@@ -114,7 +114,7 @@ export function Stories() {
                 <Adinkra name={s.symbol} size={26} labelled={false} className="text-gold" />
                 <span className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold/90">{s.kind}</span>
               </div>
-              <h3 className="mt-4 font-display text-2xl font-semibold text-cream">{s.title}</h3>
+              <h3 className="mt-4 text-2xl font-semibold text-cream">{s.title}</h3>
               <p className="mt-3 leading-relaxed text-cream/80">{s.text}</p>
               <p className="mt-4 text-xs italic text-cream/45">{s.note}</p>
             </div>

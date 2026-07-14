@@ -125,7 +125,7 @@ export function Component() {
 
       {/* check-in box */}
       <Card className="mb-6 p-5">
-        <h2 className="font-display text-lg font-semibold text-ink">Gate check-in</h2>
+        <h2 className="text-lg font-semibold text-ink">Gate check-in</h2>
         <p className="mt-1 text-sm text-ink-muted">Enter or paste the 8-letter code from the buyer&rsquo;s ticket.</p>
         <div className="mt-3 flex gap-2">
           <input

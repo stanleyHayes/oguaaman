@@ -24,7 +24,7 @@ function ItemCard({ item, dark = false }: Readonly<{ item: Item; dark?: boolean 
       <Pill tone={dark ? "on-dark" : item.tone} className="self-start">
         {item.pill}
       </Pill>
-      <h3 className={`mt-4 font-display text-xl font-semibold ${dark ? "text-cream" : "text-ink"}`}>{item.title}</h3>
+      <h3 className={`mt-4 text-xl font-semibold ${dark ? "text-cream" : "text-ink"}`}>{item.title}</h3>
       {item.meta && (
         <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-gold-text">{item.meta}</p>
       )}
