@@ -1,0 +1,30 @@
+# golangci-lint v2 configuration for the Oguaa backend.
+# Run locally with `golangci-lint run` (from backend/) or `make lint` from root.
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  # "standard" = errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+  enable:
+    - misspell    # catch common spelling mistakes in comments/strings
+    - unconvert   # flag redundant type conversions
+    - bodyclose   # ensure HTTP response bodies are closed (AI client)
+  exclusions:
+    generated: lax  # skip generated code (gen/, *_grpc.pb.go, *.pb.go)
+    rules:
+      # Test files may ignore errors freely for brevity.
+      - path: _test\.go
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/oguaa/backend

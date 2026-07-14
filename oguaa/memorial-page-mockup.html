@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yɛnkae — Madam Adwoa Mensah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Spectral:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F1E7;
+    --surface:#FCFAF4;
+    --ink:#2A2521;
+    --muted:#6F675C;
+    --faint:#A79E8E;
+    --line:#E6DDCD;
+    --gold:#B07D32;
+    --gold-soft:#E9D8B6;
+    --green:#3B473D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Spectral",Georgia,serif;
+    font-weight:400;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:740px;margin:0 auto;padding:0 22px 90px;}
+
+  /* top brand bar */
+  .brand{
+    text-align:center;
+    padding:26px 0 14px;
+    letter-spacing:.38em;
+    text-transform:uppercase;
+    font-size:.72rem;
+    color:var(--faint);
+    font-weight:500;
+  }
+  .brand b{color:var(--gold);font-weight:600;letter-spacing:.34em;}
+  .rule{height:1px;background:var(--line);max-width:740px;margin:0 auto;}
+
+  /* hero */
+  .hero{text-align:center;padding:46px 0 8px;}
+  .portrait{
+    width:128px;height:128px;border-radius:50%;
+    margin:0 auto 26px;
+    background:radial-gradient(circle at 50% 38%, #F0E4CC, #E2D2AE);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--green);
+    font-family:"Cormorant Garamond",serif;font-size:3rem;font-weight:500;
+    box-shadow:0 1px 0 #fff inset, 0 10px 30px rgba(60,45,20,.10);
+    border:1px solid #EAD9B8;
+    letter-spacing:.02em;
+  }
+  .name{
+    font-family:"Cormorant Garamond",serif;
+    font-weight:500;
+    font-size:3.4rem;
+    line-height:1.02;
+    letter-spacing:.005em;
+  }
+  .role{
+    font-style:italic;color:var(--muted);
+    font-size:1.18rem;margin-top:8px;
+  }
+  .dates{
+    margin:20px 0 4px;
+    letter-spacing:.18em;color:var(--gold);
+    font-size:.95rem;font-weight:500;
+    text-transform:uppercase;
+  }
+  .epitaph{
+    font-family:"Cormorant Garamond",serif;
+    font-style:italic;font-size:1.5rem;line-height:1.45;
+    color:var(--ink);max-width:30ch;margin:18px auto 0;font-weight:500;
+  }
+  .tags{
+    margin-top:26px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+  }
+  .tag{
+    font-size:.78rem;letter-spacing:.04em;color:var(--green);
+    background:var(--surface);border:1px solid var(--line);
+    padding:5px 13px;border-radius:999px;
+  }
+  .tag.link{cursor:pointer;}
+  .tag.link:hover{border-color:var(--gold);color:var(--gold);}
+
+  /* actions */
+  .actions{
+    display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+    margin-top:34px;align-items:center;
+  }
+  .candle-btn{
+    display:inline-flex;align-items:center;gap:11px;
+    background:var(--ink);color:#F6F1E7;border:none;cursor:pointer;
+    font-family:"Spectral",serif;font-size:.95rem;
+    padding:12px 20px;border-radius:999px;
+    transition:transform .2s ease, background .2s ease;
+  }
+  .candle-btn:hover{background:#000;transform:translateY(-1px);}
+  .candle-btn .flame{width:13px;height:18px;}
+  .remember-btn{
+    display:inline-flex;align-items:center;gap:9px;
+    background:transparent;color:var(--ink);cursor:pointer;
+    border:1px solid var(--ink);
+    font-family:"Spectral",serif;font-size:.95rem;
+    padding:11px 19px;border-radius:999px;
+    transition:all .2s ease;
+  }
+  .remember-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .remember-btn.on{background:var(--gold);border-color:var(--gold);color:#fff;}
+  .remind{
+    margin-top:16px;font-size:.86rem;color:var(--muted);font-style:italic;
+  }
+  .remind b{color:var(--gold);font-style:normal;font-weight:500;}
+
+  /* candle illustration in hero */
+  .lamp{margin:38px auto 0;width:46px;}
+
+  /* divider symbol */
+  .sym{display:flex;align-items:center;gap:18px;margin:54px auto;max-width:240px;}
+  .sym span{flex:1;height:1px;background:var(--line);}
+  .sym svg{width:22px;height:22px;color:var(--gold);opacity:.85;}
+
+  /* section */
+  .sec-label{
+    text-align:center;text-transform:uppercase;letter-spacing:.32em;
+    font-size:.72rem;color:var(--faint);font-weight:500;margin-bottom:18px;
+  }
+  .story p{margin-bottom:18px;font-size:1.08rem;color:#332e28;}
+  .story p:first-of-type::first-letter{
+    font-family:"Cormorant Garamond",serif;
+    font-size:3.4rem;line-height:.8;float:left;
+    padding:6px 10px 0 0;color:var(--gold);font-weight:500;
+  }
+
+  /* gallery */
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .frame{position:relative;aspect-ratio:1/1;border-radius:4px;overflow:hidden;border:1px solid var(--line);}
+  .frame i{position:absolute;inset:0;display:block;}
+  .g1 i{background:linear-gradient(135deg,#D9C8A6,#C2A878);}
+  .g2 i{background:linear-gradient(135deg,#C7D0C2,#9DAE96);}
+  .g3 i{background:linear-gradient(135deg,#E0CDBE,#C7A98E);}
+  .g4 i{background:linear-gradient(135deg,#CFC2AC,#AE9E80);}
+  .g5 i{background:linear-gradient(135deg,#D3CBBE,#B0A48F);}
+  .g6 i{background:linear-gradient(135deg,#D8C6A2,#BBA06F);}
+  .frame em{
+    position:absolute;left:0;right:0;bottom:0;
+    font-style:normal;font-size:.72rem;letter-spacing:.03em;
+    color:#fff;background:linear-gradient(transparent,rgba(40,30,15,.55));
+    padding:18px 10px 7px;
+  }
+
+  /* tributes */
+  .t-count{text-align:center;color:var(--muted);font-style:italic;margin-bottom:26px;font-size:.95rem;}
+  .tribute{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:8px;padding:20px 22px;margin-bottom:14px;
+  }
+  .tribute p{font-size:1.06rem;color:#332e28;margin-bottom:12px;}
+  .tribute .who{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;}
+  .tribute .who b{font-weight:500;color:var(--green);font-size:.95rem;}
+  .tribute .who .rel{color:var(--faint);font-size:.8rem;letter-spacing:.02em;}
+  .tribute .who .when{color:var(--faint);font-size:.8rem;font-style:italic;}
+
+  .leave{
+    margin-top:26px;border:1px dashed var(--line);border-radius:8px;
+    padding:22px;text-align:center;background:transparent;
+  }
+  .leave textarea{
+    width:100%;border:1px solid var(--line);border-radius:6px;
+    background:var(--surface);padding:12px 14px;resize:none;
+    font-family:"Spectral",serif;font-size:1rem;color:var(--ink);
+    margin-bottom:12px;
+  }
+  .leave textarea::placeholder{color:var(--faint);font-style:italic;}
+  .leave button{
+    background:var(--green);color:#F6F1E7;border:none;cursor:pointer;
+    font-family:"Spectral",serif;font-size:.92rem;padding:11px 26px;border-radius:999px;
+  }
+
+  /* footer */
+  .foot{text-align:center;margin-top:60px;color:var(--faint);}
+  .foot .mark{
+    font-family:"Cormorant Garamond",serif;font-size:1.7rem;color:var(--gold);
+    font-weight:500;letter-spacing:.02em;
+  }
+  .foot .sub{font-size:.78rem;letter-spacing:.26em;text-transform:uppercase;margin-top:6px;}
+  .note{
+    text-align:center;font-size:.74rem;color:var(--faint);font-style:italic;
+    margin-top:30px;letter-spacing:.02em;
+  }
+
+  /* gentle entrance */
+  .fade{opacity:0;transform:translateY(10px);animation:rise 1.1s ease forwards;}
+  @keyframes rise{to{opacity:1;transform:none;}}
+
+  @media (max-width:560px){
+    .name{font-size:2.5rem;}
+    .epitaph{font-size:1.3rem;}
+    .gallery{grid-template-columns:repeat(2,1fr);}
+    .wrap{padding:0 16px 70px;}
+  }
+</style>
+</head>
+<body>
+  <div class="brand fade" style="animation-delay:.05s">Yɛn<b>kae</b> &nbsp;·&nbsp; In Memoriam</div>
+  <div class="rule"></div>
+
+  <div class="wrap">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="portrait fade" style="animation-delay:.15s">AM</div>
+      <h1 class="name fade" style="animation-delay:.25s">Madam Adwoa Mensah</h1>
+      <div class="role fade" style="animation-delay:.32s">Teacher · Mother · Friend</div>
+      <div class="dates fade" style="animation-delay:.4s">1951 &nbsp;—&nbsp; 2025</div>
+      <p class="epitaph fade" style="animation-delay:.48s">"She taught half of Bakaano to read, and all of us to be kind."</p>
+
+      <div class="tags fade" style="animation-delay:.56s">
+        <span class="tag link">Bakaano, Cape Coast</span>
+        <span class="tag link">Wesley Girls' High School</span>
+        <span class="tag">Oguaa</span>
+      </div>
+
+      <div class="actions fade" style="animation-delay:.64s">
+        <button class="candle-btn" id="candle">
+          <svg class="flame" viewBox="0 0 24 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C12 2 4 9 4 17a8 8 0 0 0 16 0c0-4-2-6-4-9-1.5 2-3 2.5-3 5 0 1.6-1 2.4-1 4" fill="#E9A23B"/>
+            <path d="M12 8c0 0-4 4-4 9a4 4 0 0 0 8 0c0-2.5-2-3.5-2-6-1 1-2 1.5-2 3" fill="#FBD46A"/>
+          </svg>
+          <span>Light a candle · <b id="ccount">142</b></span>
+        </button>
+        <button class="remember-btn" id="remember">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
+          <span id="rlabel">Remember</span>
+        </button>
+      </div>
+      <p class="remind fade" style="animation-delay:.7s">Remembered each year on <b>14 March</b> and her birthday, <b>3 June</b> — the dates her family chose.</p>
+    </section>
+
+    <div class="sym"><span></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3v18M7 6h10M6 10h12M7 14h10M8 18h8"/></svg>
+      <span></span>
+    </div>
+
+    <!-- LIFE STORY -->
+    <section class="story">
+      <div class="sec-label">Celebration of a life</div>
+      <p>Madam Adwoa Mensah was born in Bakaano in 1951, the eldest of six, and never really left the sea air she loved. After Wesley Girls', she came home to teach — first at the primary school by the lagoon, then for thirty-one years in classrooms across Cape Coast.</p>
+      <p>Generations of Oguaa children passed through her care. She is remembered for her patience, her quick humour, and the way she could quiet a noisy room with a single raised eyebrow. On Saturdays she sold kenkey at the junction, and no child who was hungry ever paid.</p>
+      <p>She passed peacefully at home, surrounded by family, on 14 March 2025. She leaves her husband, four children, eleven grandchildren, and a town that is kinder for having known her.</p>
+    </section>
+
+    <div class="sym"><span></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3v18M7 6h10M6 10h12M7 14h10M8 18h8"/></svg>
+      <span></span>
+    </div>
+
+    <!-- GALLERY -->
+    <section>
+      <div class="sec-label">Moments</div>
+      <div class="gallery">
+        <div class="frame g1"><i></i><em>Her classroom, 1985</em></div>
+        <div class="frame g2"><i></i><em>By the lagoon</em></div>
+        <div class="frame g3"><i></i><em>Speech &amp; prize day</em></div>
+        <div class="frame g4"><i></i><em>The junction stall</em></div>
+        <div class="frame g5"><i></i><em>Family, 2019</em></div>
+        <div class="frame g6"><i></i><em>Fetu Afahye, 2022</em></div>
+      </div>
+    </section>
+
+    <div class="sym"><span></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3v18M7 6h10M6 10h12M7 14h10M8 18h8"/></svg>
+      <span></span>
+    </div>
+
+    <!-- TRIBUTES -->
+    <section>
+      <div class="sec-label">Tributes</div>
+      <p class="t-count">38 people have left a tribute</p>
+
+      <div class="tribute">
+        <p>"Aunty Adwoa was my class three teacher. I am a teacher today because of her. Rest well, Madam."</p>
+        <div class="who"><b>Kojo Arthur <span class="rel">· Mfantsipim '88</span></b><span class="when">2 weeks ago</span></div>
+      </div>
+      <div class="tribute">
+        <p>"She fed half the junction. Heaven has a good cook now. We will miss your kenkey and your laugh."</p>
+        <div class="who"><b>Efua Sam <span class="rel">· Bakaano</span></b><span class="when">3 weeks ago</span></div>
+      </div>
+      <div class="tribute">
+        <p>"My mother. There are no words big enough. We will remember you every single day, da yie."</p>
+        <div class="who"><b>Ama Mensah <span class="rel">· Family</span></b><span class="when">1 month ago</span></div>
+      </div>
+
+      <div class="leave">
+        <textarea rows="3" placeholder="Share a memory of Madam Adwoa…"></textarea>
+        <button>Leave a tribute</button>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <div class="foot">
+      <div class="mark">Yɛnkae</div>
+      <div class="sub">Kept in remembrance</div>
+    </div>
+
+    <p class="note">Sample content for layout — names, dates, and story are illustrative.</p>
+
+  </div>
+
+<script>
+  (function(){
+    var btn=document.getElementById('candle');
+    var count=document.getElementById('ccount');
+    var lit=false;
+    btn.addEventListener('click',function(){
+      if(lit) return;
+      lit=true;
+      count.textContent=parseInt(count.textContent,10)+1;
+      btn.style.background='#000';
+      btn.querySelector('span').innerHTML='Candle lit · <b>'+count.textContent+'</b>';
+    });
+    var rem=document.getElementById('remember');
+    var rlabel=document.getElementById('rlabel');
+    var on=false;
+    rem.addEventListener('click',function(){
+      on=!on;
+      rem.classList.toggle('on',on);
+      rlabel.textContent=on?'Remembering':'Remember';
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.expo/
+*.tsbuildinfo
+
+# Go
+backend/server
+backend/seed
+*.out
+coverage.out
+
+# First-party uploaded images (local dev store)
+backend/uploads/
+
+# Env & secrets (credentials.txt holds DEV credentials only — see its header)
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+*.log
+
+# NOTE: backend/gen/ (generated gRPC code) is intentionally committed so CI can
+# verify it is up to date (`buf generate` + git diff). Do not ignore it.

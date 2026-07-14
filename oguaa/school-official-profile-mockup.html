@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bakaano M/A Basic School — Official Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#123F2D;
+    --green-d:#0C2C1F;
+    --gold:#C7A24A;
+    --gold-l:#E4CF94;
+    --paper:#F4F1EA;
+    --surface:#FFFFFF;
+    --ink:#23211C;
+    --muted:#675F52;
+    --faint:#A89F8E;
+    --line:#E3DBCB;
+    --maroon:#7C2D2D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Archivo",system-ui,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:780px;margin:0 auto;background:var(--surface);
+    box-shadow:0 30px 80px rgba(18,40,28,.12);}
+
+  /* ===== CREST BAND ===== */
+  .crest-band{
+    background:
+      radial-gradient(120% 140% at 80% -20%, #1b5a3f 0%, var(--green) 45%, var(--green-d) 100%);
+    color:#F4F1EA;
+    padding:38px 30px 30px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .crest-band::after{
+    content:"";position:absolute;inset:0;
+    background-image:radial-gradient(rgba(199,162,74,.12) 1px, transparent 1px);
+    background-size:18px 18px;opacity:.5;pointer-events:none;
+  }
+  .crest{width:96px;height:auto;margin:0 auto 16px;display:block;position:relative;}
+  .sch-name{
+    font-family:"Libre Baskerville",Georgia,serif;font-weight:700;
+    font-size:2.15rem;line-height:1.12;letter-spacing:.01em;position:relative;
+  }
+  .motto{
+    font-family:"Libre Baskerville",serif;font-style:italic;
+    color:var(--gold-l);font-size:1rem;margin-top:8px;position:relative;
+  }
+  .verified{
+    display:inline-flex;align-items:center;gap:8px;position:relative;
+    margin-top:18px;background:rgba(199,162,74,.16);
+    border:1px solid rgba(199,162,74,.5);color:var(--gold-l);
+    padding:6px 15px;border-radius:999px;font-size:.78rem;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;
+  }
+  .verified svg{width:15px;height:15px;}
+
+  /* ===== FACT STRIP ===== */
+  .facts{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    border-bottom:1px solid var(--line);background:var(--paper);
+  }
+  .fact{padding:16px 14px;text-align:center;border-right:1px solid var(--line);}
+  .fact:last-child{border-right:none;}
+  .fact .k{font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .fact .v{font-family:"Libre Baskerville",serif;font-size:1.05rem;color:var(--green);margin-top:5px;}
+
+  /* ===== BODY ===== */
+  .body{padding:30px;}
+  .sec{margin-bottom:34px;}
+  .sec-h{
+    font-family:"Libre Baskerville",serif;font-size:1.18rem;color:var(--ink);
+    display:flex;align-items:center;gap:12px;margin-bottom:16px;
+  }
+  .sec-h::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  /* offices */
+  .offices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .office{
+    border:1px solid var(--line);border-radius:10px;padding:16px;background:var(--paper);
+  }
+  .office .role{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;}
+  .office .holder{font-family:"Libre Baskerville",serif;font-size:1.02rem;color:var(--ink);margin-top:8px;display:flex;align-items:center;gap:7px;}
+  .tick{display:inline-flex;width:15px;height:15px;color:var(--green);flex:none;}
+
+  /* official notice */
+  .notice{
+    border:1px solid var(--line);border-left:5px solid var(--gold);
+    border-radius:8px;background:linear-gradient(180deg,#FFFDF8,#FBF8F0);
+    padding:22px 24px;position:relative;
+  }
+  .notice .lbl{font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--maroon);font-weight:700;}
+  .notice h3{font-family:"Libre Baskerville",serif;font-size:1.3rem;margin:8px 0 12px;color:var(--ink);font-weight:700;}
+  .notice p{color:#3a362e;font-size:.98rem;margin-bottom:14px;}
+  .posted{display:flex;align-items:center;gap:10px;border-top:1px dashed var(--line);padding-top:13px;}
+  .posted .av{width:34px;height:34px;border-radius:50%;background:var(--green);color:var(--gold-l);
+    display:flex;align-items:center;justify-content:center;font-family:"Libre Baskerville",serif;font-size:.85rem;flex:none;}
+  .posted .meta{font-size:.82rem;color:var(--muted);line-height:1.4;}
+  .posted .meta b{color:var(--ink);font-weight:600;}
+  .posted .meta .v{color:var(--green);font-weight:600;}
+
+  /* events */
+  .ev{display:flex;align-items:center;gap:16px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .ev:last-child{border-bottom:none;}
+  .ev .date{
+    flex:none;width:56px;text-align:center;border:1px solid var(--line);border-radius:8px;padding:7px 0;background:var(--paper);
+  }
+  .ev .date .d{font-family:"Libre Baskerville",serif;font-size:1.2rem;color:var(--green);line-height:1;}
+  .ev .date .m{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-top:3px;}
+  .ev .t{font-size:.96rem;color:var(--ink);font-weight:500;}
+  .ev .t small{display:block;color:var(--faint);font-weight:400;font-size:.8rem;}
+
+  /* affiliations */
+  .chips{display:flex;flex-wrap:wrap;gap:9px;}
+  .chip{
+    font-size:.82rem;color:var(--green);background:var(--paper);
+    border:1px solid var(--line);padding:7px 14px;border-radius:999px;
+    display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  }
+  .chip:hover{border-color:var(--gold);}
+  .chip .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);}
+
+  /* footer */
+  .foot{background:var(--green-d);color:#B9C7BD;padding:20px 30px;text-align:center;
+    font-size:.78rem;letter-spacing:.04em;}
+  .foot b{color:var(--gold-l);font-family:"Libre Baskerville",serif;font-weight:700;letter-spacing:.06em;}
+  .note{text-align:center;font-size:.72rem;color:var(--faint);font-style:italic;padding:16px;}
+
+  .rise{opacity:0;transform:translateY(12px);animation:r .9s ease forwards;}
+  @keyframes r{to{opacity:1;transform:none;}}
+
+  @media (max-width:600px){
+    .sch-name{font-size:1.6rem;}
+    .facts{grid-template-columns:repeat(2,1fr);}
+    .fact:nth-child(2){border-right:none;}
+    .fact{border-bottom:1px solid var(--line);}
+    .offices{grid-template-columns:1fr;}
+    .body{padding:22px 18px;}
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- CREST BAND -->
+    <div class="crest-band">
+      <svg class="crest rise" style="animation-delay:.05s" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 18 H106 V72 Q106 114 60 134 Q14 114 14 72 Z" fill="#0C2C1F" stroke="#C7A24A" stroke-width="2.5"/>
+        <path d="M21 25 H99 V71 Q99 108 60 126 Q21 108 21 71 Z" fill="none" stroke="#C7A24A" stroke-width="1" opacity=".6"/>
+        <!-- sun -->
+        <circle cx="60" cy="42" r="9" fill="none" stroke="#E4CF94" stroke-width="2"/>
+        <g stroke="#E4CF94" stroke-width="2" stroke-linecap="round">
+          <path d="M60 26v-6M60 64v-3M44 42h-5M81 42h-5M48 30l-4-4M76 30l4-4"/>
+        </g>
+        <!-- open book -->
+        <path d="M34 78 Q47 72 60 78 Q73 72 86 78 L86 96 Q73 90 60 96 Q47 90 34 96 Z" fill="none" stroke="#E4CF94" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M60 78 V96" stroke="#E4CF94" stroke-width="2"/>
+        <!-- waves -->
+        <path d="M36 108 q6 -5 12 0 t12 0 t12 0 t12 0" fill="none" stroke="#C7A24A" stroke-width="2" stroke-linecap="round"/>
+        <path d="M40 116 q5 -4 10 0 t10 0 t10 0" fill="none" stroke="#C7A24A" stroke-width="1.6" stroke-linecap="round" opacity=".75"/>
+      </svg>
+      <h1 class="sch-name rise" style="animation-delay:.15s">Bakaano M/A Basic School</h1>
+      <div class="motto rise" style="animation-delay:.22s">"Knowledge and Service"</div>
+      <div class="verified rise" style="animation-delay:.3s">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 1.8 3 .1 1 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-1 2.8-3 .1L12 22l-2.4-1.8-3-.1-1-2.8L3.2 15l.9-2.8L3.2 9.4 5.6 7.7l1-2.8 3-.1z" fill="#C7A24A"/><path d="M8.5 12.2l2.3 2.3 4.5-4.7" stroke="#0C2C1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Verified · Official profile
+      </div>
+    </div>
+
+    <!-- FACT STRIP -->
+    <div class="facts">
+      <div class="fact"><div class="k">Established</div><div class="v">1957</div></div>
+      <div class="fact"><div class="k">Levels</div><div class="v">KG · Primary · JHS</div></div>
+      <div class="fact"><div class="k">Pupils</div><div class="v">~620</div></div>
+      <div class="fact"><div class="k">Under</div><div class="v">CC Metro Education</div></div>
+    </div>
+
+    <div class="body">
+
+      <!-- ABOUT -->
+      <div class="sec">
+        <div class="sec-h">About the school</div>
+        <p style="color:#3a362e;">A public basic school in Bakaano, Cape Coast, serving the lagoon-side community for over six decades. Recognised by the Ghana Education Service under the Cape Coast Metropolitan Education Directorate. Languages of instruction: English and Fante.</p>
+      </div>
+
+      <!-- OFFICES -->
+      <div class="sec">
+        <div class="sec-h">Offices &amp; office-holders</div>
+        <div class="offices">
+          <div class="office">
+            <div class="role">Headteacher</div>
+            <div class="holder"><svg class="tick" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#DFF0E5"/><path d="M8 12.4l2.6 2.6L16 9.4" stroke="#123F2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Mr. Samuel Aidoo</div>
+          </div>
+          <div class="office">
+            <div class="role">Assistant Head</div>
+            <div class="holder"><svg class="tick" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#DFF0E5"/><path d="M8 12.4l2.6 2.6L16 9.4" stroke="#123F2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Mrs. Grace Otoo</div>
+          </div>
+          <div class="office">
+            <div class="role">PTA Chairperson</div>
+            <div class="holder"><svg class="tick" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#DFF0E5"/><path d="M8 12.4l2.6 2.6L16 9.4" stroke="#123F2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Nana Kweku Essien</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OFFICIAL NOTICE -->
+      <div class="sec">
+        <div class="sec-h">Official announcement</div>
+        <div class="notice">
+          <div class="lbl">Official notice</div>
+          <h3>68th Speech &amp; Prize-Giving Day</h3>
+          <p>The school warmly invites all parents, old students, and well-wishers to our 68th Speech &amp; Prize-Giving Day on <b>Saturday, 22 November 2025</b>, at the school park, Bakaano. Doors open at 8:00 a.m.; pupils report by 7:30 a.m. in full uniform. Come and celebrate our pupils' achievements with us.</p>
+          <div class="posted">
+            <div class="av">SA</div>
+            <div class="meta">Posted by <b>Mr. Samuel Aidoo</b> · Headteacher <span class="v">· verified</span><br>3 days ago · official channel</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EVENTS -->
+      <div class="sec">
+        <div class="sec-h">Upcoming official events</div>
+        <div class="ev"><div class="date"><div class="d">22</div><div class="m">Nov</div></div><div class="t">Speech &amp; Prize-Giving Day<small>School park, Bakaano · 8:00 a.m.</small></div></div>
+        <div class="ev"><div class="date"><div class="d">05</div><div class="m">Dec</div></div><div class="t">Inter-house Athletics<small>Cape Coast Sports Stadium</small></div></div>
+        <div class="ev"><div class="date"><div class="d">12</div><div class="m">Dec</div></div><div class="t">PTA General Meeting<small>School assembly hall · 3:00 p.m.</small></div></div>
+        <div class="ev"><div class="date"><div class="d">19</div><div class="m">Dec</div></div><div class="t">End of First Term<small>Vacation begins</small></div></div>
+      </div>
+
+      <!-- AFFILIATIONS -->
+      <div class="sec" style="margin-bottom:8px;">
+        <div class="sec-h">Affiliations</div>
+        <div class="chips">
+          <span class="chip"><span class="dot"></span>Bakaano Basic Old Students (OSA)</span>
+          <span class="chip"><span class="dot"></span>Oguaa Traditional Area</span>
+          <span class="chip"><span class="dot"></span>Cape Coast Metro Education Directorate</span>
+          <span class="chip"><span class="dot"></span>412 old students on Oguaa</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="foot">An official profile on <b>Oguaa</b> &nbsp;·&nbsp; Verified 14 May 2026</div>
+    <div class="note">Sample content for layout — school, names, and notice are illustrative.</div>
+
+  </div>
+</body>
+</html>

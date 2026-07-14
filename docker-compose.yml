@@ -1,0 +1,105 @@
+# Oguaa — one command brings up the whole platform:
+#
+#   docker compose up --build
+#
+# Then: marketing http://localhost:3003 · web (portal) http://localhost:3000 ·
+#       admin http://localhost:3001 · mobile-web http://localhost:3002 ·
+#       REST http://localhost:8080/api/health · GraphQL http://localhost:8080/graphql ·
+#       gRPC localhost:50051
+#
+# Set ANTHROPIC_API_KEY in your shell (or a .env next to this file) to switch the
+# AI writing bar from simulation to live Claude output.
+
+services:
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    volumes:
+      - oguaa_mongo:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: load the fact-checked Cape Coast seed data, then exit.
+  seed:
+    build: ./backend
+    command: ["seed"]
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: oguaa
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: ./backend
+    command: ["server"]
+    environment:
+      PORT: "8080"
+      GRPC_PORT: "50051"
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: oguaa
+      ALLOWED_ORIGIN: "*"
+      JWT_SECRET: ${JWT_SECRET:-oguaa-dev-secret-change-me}
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-}
+      OTP_PROVIDER: ${OTP_PROVIDER:-log}
+      HUBTEL_CLIENT_ID: ${HUBTEL_CLIENT_ID:-}
+      HUBTEL_CLIENT_SECRET: ${HUBTEL_CLIENT_SECRET:-}
+      HUBTEL_SENDER_ID: ${HUBTEL_SENDER_ID:-Oguaa}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OGUAA_AI_MODEL: ${OGUAA_AI_MODEL:-claude-haiku-4-5-20251001}
+      PLATFORM_FEE_PERCENT: ${PLATFORM_FEE_PERCENT:-5}
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Marketing site — the public brochure (separate from the portal). Its CTAs
+  # point at the portal (web:3000) and the mobile stores.
+  marketing:
+    build:
+      context: ./marketing
+      args:
+        VITE_PORTAL_URL: "http://localhost:3000"
+    ports:
+      - "3003:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  admin:
+    build: ./admin
+    ports:
+      - "3001:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  mobileweb:
+    build: ./mobile
+    ports:
+      - "3002:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  oguaa_mongo:

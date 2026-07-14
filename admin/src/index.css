@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* Oguaa admin — utilitarian back-office on the shared "Castle, Canopy, Canoe" tokens. */
+@theme {
+  --color-paper: #fbf8f1;
+  --color-cream: #f6f1e7;
+  --color-sand: #ece4d3;
+  --color-ink: #1a2e22;
+  --color-ink-muted: #4a5a50;
+  --color-ink-faint: #6e7a70;
+  --color-green-900: #0c2c1f;
+  --color-green: #123f2d;
+  --color-green-slate: #3b473d;
+  --color-gold: #c7a24a;
+  --color-gold-brand: #b07d32;
+  --color-gold-border: #b8862f;
+  --color-gold-text: #8a5e1f;
+  --color-clay: #b0503c;
+  --color-clay-text: #9a4030;
+  --color-maroon-900: #7c2d2d;
+  --color-teal: #0e7c6b;
+  --color-teal-text: #0b6557;
+  --color-ai: #4c40a8;
+  --color-ai-tint: #f6f5fd;
+  --color-ai-line: #e2dff4;
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-card: 12px;
+}
+
+@layer base {
+  :root { color-scheme: light; }
+  body {
+    margin: 0;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-display); margin: 0; color: var(--color-ink); }
+  a { color: inherit; text-decoration: none; }
+  :focus-visible { outline: 2px solid var(--color-ai); outline-offset: 2px; border-radius: 3px; }
+}
+
+@layer utilities {
+  .eyebrow {
+    font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
+    font-weight: 700; color: var(--color-ink-faint);
+  }
+}
+
+/* Respect reduced-motion preferences (WCAG 2.3.3) — web apps already gate their
+   entrance animations; admin only uses micro-transitions, disabled globally here. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

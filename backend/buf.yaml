@@ -1,0 +1,16 @@
+version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - STANDARD
+  # We intentionally share a single Empty request and reuse reply messages across
+  # related RPCs. The Google-API "one dedicated Request/Response per RPC" rules
+  # add ceremony without value for this small internal contract.
+  except:
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_REQUEST_STANDARD_NAME
+    - RPC_RESPONSE_STANDARD_NAME
+breaking:
+  use:
+    - FILE

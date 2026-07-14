@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oguaa Admin — AI Writing Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --app:#F1F2EF; --surface:#FFFFFF; --ink:#1A1C18; --muted:#6A6F68;
+    --line:#E4E6E1; --line2:#EEF0EC; --teal:#0E7C6B; --teal-d:#0A5F52;
+    --ai:#4C40A8; --ai-tint:#F6F5FD; --ai-line:#E2DFF4;
+    --danger:#B0503C; --ok:#0E7C6B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--app);color:var(--ink);font-family:"Figtree",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:"JetBrains Mono",monospace;}
+
+  /* top bar */
+  .topbar{background:var(--surface);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;padding:12px 20px;position:sticky;top:0;z-index:5;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;}
+  .brand .dot{width:22px;height:22px;border-radius:7px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;}
+  .topbar .right{display:flex;align-items:center;gap:14px;}
+  .usage{font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:7px;background:var(--app);border:1px solid var(--line);padding:5px 11px;border-radius:999px;}
+  .usage b{color:var(--teal);}
+  .ava{width:30px;height:30px;border-radius:50%;background:#D9D3C6;color:#5b554a;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:600;}
+
+  main{max-width:720px;margin:0 auto;padding:24px 18px 80px;}
+  .crumb{font-size:.78rem;color:var(--muted);margin-bottom:16px;}
+  .crumb b{color:var(--ink);font-weight:600;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(26,28,24,.05);}
+  .editor{padding:22px;}
+  label{display:block;font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:7px;}
+  input#title{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px 13px;font-family:inherit;font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:20px;}
+  input#title:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,107,.12);}
+
+  .rt{display:flex;gap:4px;border:1px solid var(--line);border-bottom:none;border-radius:9px 9px 0 0;padding:7px 9px;background:#FaFbFa;}
+  .rt button{width:30px;height:30px;border:none;background:transparent;border-radius:6px;cursor:pointer;color:var(--muted);font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .rt button:hover{background:var(--line2);color:var(--ink);}
+  textarea#body{width:100%;min-height:150px;border:1px solid var(--line);border-radius:0 0 9px 9px;padding:13px;font-family:inherit;font-size:1rem;line-height:1.65;color:var(--ink);resize:vertical;}
+
+  .efoot{display:flex;align-items:center;justify-content:space-between;margin-top:13px;gap:10px;flex-wrap:wrap;}
+  .working{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:7px;}
+  .working .pip{width:7px;height:7px;border-radius:50%;background:var(--muted);}
+  .working.sel .pip{background:var(--ai);}
+  .working.sel{color:var(--ai);font-weight:500;}
+  .ai-trigger{display:inline-flex;align-items:center;gap:8px;background:var(--ai);color:#fff;border:none;cursor:pointer;
+    font-family:inherit;font-weight:600;font-size:.9rem;padding:9px 16px;border-radius:9px;transition:transform .15s,background .15s;}
+  .ai-trigger:hover{background:#3f349a;transform:translateY(-1px);}
+  .ai-trigger svg{width:15px;height:15px;}
+
+  /* panel */
+  .panel{margin-top:14px;border:1px solid var(--ai-line);background:var(--ai-tint);border-radius:14px;overflow:hidden;
+    animation:drop .25s ease;}
+  @keyframes drop{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+  .ahead{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--ai-line);}
+  .atitle{display:flex;align-items:center;gap:9px;font-weight:700;color:var(--ai);}
+  .atitle svg{width:16px;height:16px;}
+  .scope{font-family:"JetBrains Mono",monospace;font-size:.68rem;font-weight:500;color:#fff;background:var(--ai);padding:3px 8px;border-radius:6px;letter-spacing:0;}
+  .x{border:none;background:transparent;font-size:1.4rem;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px;}
+  .x:hover{color:var(--ink);}
+
+  .actions{padding:16px 18px;}
+  .grp{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 9px;}
+  .grp:not(:first-child){margin-top:16px;}
+  .row{display:flex;flex-wrap:wrap;gap:8px;}
+  .act{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--ai-line);color:var(--ink);
+    cursor:pointer;font-family:inherit;font-size:.86rem;font-weight:500;padding:8px 13px;border-radius:8px;transition:all .15s;}
+  .act:hover{border-color:var(--ai);color:var(--ai);background:#fff;}
+  .act:disabled{opacity:.45;cursor:not-allowed;}
+  .act .ic{font-size:.95rem;}
+
+  .subinput{padding:0 18px 16px;display:flex;gap:8px;flex-wrap:wrap;}
+  .subinput input,.subinput select{flex:1;min-width:160px;border:1px solid var(--ai-line);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:.92rem;}
+  .subinput input:focus,.subinput select:focus{outline:none;border-color:var(--ai);}
+  .go{background:var(--ai);color:#fff;border:none;cursor:pointer;font-family:inherit;font-weight:600;padding:9px 16px;border-radius:8px;}
+
+  .loading{padding:30px 18px;text-align:center;color:var(--ai);font-weight:500;display:flex;align-items:center;justify-content:center;gap:11px;}
+  .spin{width:18px;height:18px;border:2.5px solid var(--ai-line);border-top-color:var(--ai);border-radius:50%;animation:sp .7s linear infinite;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+
+  .errbox{margin:0 18px 16px;background:#FCEEEA;border:1px solid #F0D2C9;border-radius:10px;padding:14px 16px;color:var(--danger);font-size:.9rem;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .errbox button{background:none;border:1px solid var(--danger);color:var(--danger);border-radius:7px;padding:5px 12px;cursor:pointer;font-family:inherit;font-weight:600;font-size:.82rem;}
+
+  .result{border-top:1px solid var(--ai-line);}
+  .rhead{display:flex;align-items:center;justify-content:space-between;padding:13px 18px 0;}
+  .rhead .lbl{font-weight:700;color:var(--ink);font-size:.92rem;}
+  .rhead .meta{font-size:.72rem;color:var(--muted);}
+  .rbody{margin:10px 18px;background:var(--surface);border:1px solid var(--ai-line);border-radius:10px;padding:15px;
+    white-space:pre-wrap;font-size:.96rem;line-height:1.6;max-height:260px;overflow:auto;color:#26241f;}
+  .ractions{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 18px;}
+  .ractions button{font-family:inherit;font-weight:600;font-size:.86rem;padding:9px 15px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);}
+  .ractions .primary{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .ractions .primary:hover{background:var(--teal-d);}
+  .ractions .ghost:hover{border-color:var(--ink);}
+  .ractions .discard{color:var(--danger);border-color:#EAD7D1;}
+  .ractions .discard:hover{background:#FCEEEA;}
+
+  .limitbox{margin:16px 18px;background:#FFF7E8;border:1px solid #F0E0BB;border-radius:10px;padding:16px;text-align:center;color:#8a6a1f;font-size:.9rem;}
+
+  .foot-note{text-align:center;font-size:.74rem;color:var(--muted);margin-top:22px;line-height:1.6;}
+
+  /* confirm + toast */
+  .overlay{position:fixed;inset:0;background:rgba(26,28,24,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:20;}
+  .overlay.show{display:flex;}
+  .confirm{background:var(--surface);border-radius:14px;max-width:380px;padding:24px;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.25);}
+  .confirm h3{font-size:1.1rem;margin-bottom:8px;}
+  .confirm p{color:var(--muted);font-size:.92rem;margin-bottom:20px;}
+  .confirm .btns{display:flex;gap:10px;justify-content:center;}
+  .confirm button{font-family:inherit;font-weight:600;padding:10px 20px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:var(--surface);}
+  .confirm .danger{background:var(--danger);border-color:var(--danger);color:#fff;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:.86rem;font-weight:500;opacity:0;transition:all .25s;z-index:30;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:560px){
+    main{padding:18px 14px 70px;}
+    .editor{padding:16px;}
+    .usage{display:none;}
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="dot">O</span> Oguaa · Admin</div>
+    <div class="right">
+      <div class="usage">AI actions · <b id="usage">32</b> left today</div>
+      <div class="ava">SA</div>
+    </div>
+  </div>
+
+  <main>
+    <div class="crumb">Announcements <b>›</b> New announcement</div>
+
+    <div class="card editor">
+      <label for="title">Title</label>
+      <input id="title" type="text" value="speech and prize giving day">
+
+      <label for="body">Body</label>
+      <div class="rt">
+        <button title="Bold">B</button>
+        <button title="Italic" style="font-style:italic;font-family:serif">I</button>
+        <button title="List">☰</button>
+        <button title="Link">🔗</button>
+      </div>
+      <textarea id="body">hi all, we r having our speech and prize giving day on 22nd nov 2025 at the school park. pls all parents old students and well wishers should come. doors open 8am, kids should be there by 730 in uniform. come celebrate the children with us</textarea>
+
+      <div class="efoot">
+        <div class="working" id="working"><span class="pip"></span><span id="workingTxt">Working on the whole field</span></div>
+        <button class="ai-trigger" id="askai">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z"/><path d="M19 14l.8 2.6L22 17l-2.2.4L19 20l-.8-2.6L16 17l2.2-.4z"/></svg>
+          Ask AI
+        </button>
+      </div>
+    </div>
+
+    <!-- AI PANEL -->
+    <div class="panel card" id="panel" hidden>
+      <div class="ahead">
+        <div class="atitle">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z"/></svg>
+          AI assistant <span class="scope" id="scope">whole field</span>
+        </div>
+        <button class="x" id="close">×</button>
+      </div>
+
+      <div class="actions" id="actionsWrap">
+        <div class="grp">Rewrite</div>
+        <div class="row">
+          <button class="act" data-a="formalize"><span class="ic">◆</span>Formalize</button>
+          <button class="act" data-a="casual"><span class="ic">☺</span>Make casual</button>
+          <button class="act" data-a="clarity"><span class="ic">✦</span>Improve clarity</button>
+          <button class="act" data-a="grammar"><span class="ic">✓</span>Fix grammar</button>
+          <button class="act" data-a="expand"><span class="ic">⤢</span>Expand</button>
+          <button class="act" data-a="summarize"><span class="ic">≣</span>Summarize</button>
+        </div>
+        <div class="grp">Generate</div>
+        <div class="row">
+          <button class="act" data-a="title"><span class="ic">𝐇</span>Title / headline</button>
+          <button class="act" data-a="email"><span class="ic">✉</span>Email / message</button>
+          <button class="act" data-a="prompt"><span class="ic">✎</span>Create from prompt</button>
+        </div>
+        <div class="grp">Translate</div>
+        <div class="row">
+          <button class="act" data-a="translate"><span class="ic">⇄</span>Translate</button>
+        </div>
+      </div>
+
+      <div class="subinput" id="promptbox" hidden>
+        <input id="promptInput" type="text" placeholder="Describe what you want, e.g. 'a short invite to the prize-giving day'…">
+        <button class="go" id="promptGo">Generate</button>
+      </div>
+      <div class="subinput" id="langbox" hidden>
+        <select id="langSel">
+          <option value="Fante">Fante</option>
+          <option value="Twi" selected>Twi</option>
+          <option value="Ga">Ga</option>
+          <option value="Ewe">Ewe</option>
+          <option value="French">French</option>
+        </select>
+        <button class="go" id="langGo">Translate</button>
+      </div>
+
+      <div class="loading" id="loading" hidden><span class="spin"></span> Writing…</div>
+
+      <div class="errbox" id="errbox" hidden><span>Something went wrong generating that. Your text is unchanged.</span><button id="retry">Try again</button></div>
+
+      <div class="result" id="result" hidden>
+        <div class="rhead"><span class="lbl">Preview</span><span class="meta" id="resMeta"></span></div>
+        <div class="rbody" id="resBody"></div>
+        <div class="ractions">
+          <button class="primary" id="bReplace">Replace</button>
+          <button class="ghost" id="bInsert">Insert below</button>
+          <button class="ghost" id="bCopy">Copy</button>
+          <button class="discard" id="bDiscard">Discard</button>
+        </div>
+      </div>
+
+      <div class="limitbox" id="limitbox" hidden>You've reached today's AI limit. It resets at midnight.</div>
+    </div>
+
+    <p class="foot-note">Prototype — AI responses are simulated for this demo.<br>In production the bar calls the model server-side, with keys never exposed to the browser (§8.12).</p>
+  </main>
+
+  <!-- confirm overlay -->
+  <div class="overlay" id="overlay">
+    <div class="confirm">
+      <h3>Replace current text?</h3>
+      <p id="confirmMsg">This will overwrite what's in the field. This can't be undone.</p>
+      <div class="btns">
+        <button id="cCancel">Cancel</button>
+        <button class="danger" id="cConfirm">Replace</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var body=document.getElementById('body');
+  var panel=document.getElementById('panel');
+  var working=document.getElementById('working'), workingTxt=document.getElementById('workingTxt');
+  var scope=document.getElementById('scope');
+  var loading=document.getElementById('loading'), result=document.getElementById('result'),
+      resBody=document.getElementById('resBody'), resMeta=document.getElementById('resMeta'),
+      errbox=document.getElementById('errbox'), limitbox=document.getElementById('limitbox'),
+      actionsWrap=document.getElementById('actionsWrap');
+  var promptbox=document.getElementById('promptbox'), langbox=document.getElementById('langbox');
+  var usageEl=document.getElementById('usage');
+  var usage=32, sel={start:0,end:0,active:false}, lastResult='';
+
+  // ---- simulated outputs ----
+  var OUT={
+    formalize:"Dear Parents, Old Students, and Well-Wishers,\n\nIt is our pleasure to invite you to Bakaano M/A Basic School's 68th Speech & Prize-Giving Day on Saturday, 22 November 2025, at the school park. Doors open at 8:00 a.m., and pupils are kindly asked to arrive by 7:30 a.m. in full school uniform. We look forward to celebrating our pupils' achievements together.",
+    grammar:"Hi all, we are having our Speech and Prize-Giving Day on 22 November 2025 at the school park. Please, all parents, old students, and well-wishers should come. Doors open at 8 a.m.; children should be there by 7:30 in uniform. Come and celebrate the children with us.",
+    casual:"Hey everyone! Our Speech & Prize-Giving Day is almost here — Saturday, 22 Nov, at the school park. Bring the whole family! Doors open at 8am and the children should be in by 7:30 in their uniforms. Come and cheer them on!",
+    clarity:"You are invited to Bakaano M/A Basic School's 68th Speech & Prize-Giving Day.\n\nDate: Saturday, 22 November 2025\nVenue: The school park, Bakaano\nDoors open: 8:00 a.m.\nPupils arrive: 7:30 a.m., in full uniform\n\nAll parents, old students, and well-wishers are welcome. Come and celebrate our pupils' achievements.",
+    summarize:"Speech & Prize-Giving Day — Sat 22 Nov 2025, school park, 8:00 a.m. Parents, old students and well-wishers welcome; pupils arrive 7:30 a.m. in uniform.",
+    expand:"Dear Parents, Old Students, and Well-Wishers,\n\nBakaano M/A Basic School cordially invites you to our 68th Speech & Prize-Giving Day on Saturday, 22 November 2025, at the school park, Bakaano. The ceremony opens at 8:00 a.m.; pupils should arrive by 7:30 a.m. in full school uniform.\n\nThis year's programme features prize presentations for academic and co-curricular excellence, cultural performances by our pupils, and an address from our guest of honour. Light refreshments will be served, and old students are especially encouraged to attend and reconnect.\n\nFor enquiries, please contact the school office. We look forward to celebrating with the whole community.",
+    title:"68th Speech & Prize-Giving Day — Saturday, 22 November 2025\n\nAlternatives:\n• Celebrating Our Pupils: Speech & Prize-Giving Day 2025\n• You're Invited: Bakaano Basic's Prize-Giving Day",
+    email:"Subject: You're invited — Speech & Prize-Giving Day, 22 November\n\nDear Parents and Friends of Bakaano M/A Basic School,\n\nWe warmly invite you to our 68th Speech & Prize-Giving Day on Saturday, 22 November 2025, at the school park. Doors open at 8:00 a.m.; pupils should arrive by 7:30 a.m. in full uniform.\n\nWe hope to see you there.\n\nWarm regards,\nThe Headteacher, Bakaano M/A Basic School",
+    prompt:"You are warmly invited to Bakaano M/A Basic School's Speech & Prize-Giving Day on Saturday, 22 November 2025, at the school park. The celebration begins at 8:00 a.m. Come and share in our pupils' achievements — all parents, old students, and well-wishers are welcome."
+  };
+  var TRANSLATE={
+    Twi:"[Twi · machine translation — review with a fluent speaker before publishing]\n\nYɛto nsa frɛ awofoɔ, sukuufoɔ dada, ne adɔfoɔ nyinaa sɛ mommra yɛn Speech & Prize-Giving Day a ɛtɔ Memeneda, November 22, 2025, wɔ sukuu no park so. Ɛbɛfiri aseɛ anɔpa nnɔn 8:00.",
+    Fante:"[Fante · machine translation — review with a fluent speaker before publishing]\n\nYɛrohyia awofo, sukuufo dadaw, na adɔfo nyinaa dɛ hom mbra hɛn Speech & Prize-Giving Day wɔ Memeneda, November 22, 2025, wɔ sukuu park no do. Ɔbɛhyɛ ase anɔpa dɔn 8:00.",
+    Ga:"[Ga · machine translation — review with a fluent speaker before publishing]\n\nWɔfɔ̃ɔ fɔlɔi, skul bii momoi, kɛ suɔlɔi fɛɛ akɛ amɛba wɔ Speech & Prize-Giving Day yɛ November 22, 2025…",
+    Ewe:"[Ewe · machine translation — review with a fluent speaker before publishing]\n\nMíekpe dzila wo, suku-vi tsãwo, kple lɔlɔ̃tɔwo katã be miava míaƒe Speech & Prize-Giving Day le November 22, 2025…",
+    French:"Chers parents, anciens élèves et amis,\n\nNous vous invitons chaleureusement à la 68e Journée de remise des prix de l'école Bakaano M/A, le samedi 22 novembre 2025, au parc de l'école. Ouverture des portes à 8h00 ; les élèves doivent arriver à 7h30 en uniforme."
+  };
+
+  function updateUsage(){ usageEl.textContent=usage; }
+  function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},1600); }
+
+  // selection awareness
+  function refreshScope(){
+    var s=body.selectionStart, e=body.selectionEnd;
+    if(e>s){
+      var words=body.value.slice(s,e).trim().split(/\s+/).filter(Boolean).length;
+      sel={start:s,end:e,active:true};
+      workingTxt.textContent='Working on your selection · '+words+(words===1?' word':' words');
+      working.classList.add('sel'); scope.textContent='selection';
+    } else {
+      sel.active=false;
+      workingTxt.textContent='Working on the whole field';
+      working.classList.remove('sel'); scope.textContent='whole field';
+    }
+  }
+  ['keyup','mouseup','select','input'].forEach(function(ev){ body.addEventListener(ev,refreshScope); });
+
+  function openPanel(){ panel.hidden=false; refreshScope(); resetViews(); panel.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  function closePanel(){ panel.hidden=true; }
+  function resetViews(){ result.hidden=true; loading.hidden=true; errbox.hidden=true; limitbox.hidden=true; promptbox.hidden=true; langbox.hidden=true; actionsWrap.style.display=''; }
+
+  document.getElementById('askai').addEventListener('click',openPanel);
+  document.getElementById('close').addEventListener('click',closePanel);
+
+  // action buttons
+  document.querySelectorAll('.act').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var a=btn.getAttribute('data-a');
+      if(a==='prompt'){ promptbox.hidden=false; langbox.hidden=true; result.hidden=true; document.getElementById('promptInput').focus(); return; }
+      if(a==='translate'){ langbox.hidden=false; promptbox.hidden=true; result.hidden=true; return; }
+      generate(a);
+    });
+  });
+  document.getElementById('promptGo').addEventListener('click',function(){ generate('prompt'); });
+  document.getElementById('langGo').addEventListener('click',function(){ generate('translate'); });
+  document.getElementById('retry').addEventListener('click',function(){ if(lastAction) generate(lastAction); });
+
+  var lastAction=null;
+  function generate(a){
+    if(usage<=0){ resetViews(); limitbox.hidden=false; return; }
+    lastAction=a;
+    resetViews(); loading.hidden=false;
+    // simulate latency + success
+    setTimeout(function(){
+      loading.hidden=true;
+      var text;
+      if(a==='translate'){ text=TRANSLATE[document.getElementById('langSel').value]; }
+      else { text=OUT[a]; }
+      lastResult=text;
+      resBody.textContent=text;
+      resMeta.textContent=(sel.active?'from your selection':'from the whole field')+' · '+labelFor(a);
+      result.hidden=false;
+      usage--; updateUsage();
+    }, 900);
+  }
+  function labelFor(a){
+    return {formalize:'Formalize',grammar:'Fix grammar',casual:'Make casual',clarity:'Improve clarity',
+      summarize:'Summarize',expand:'Expand',title:'Title / headline',email:'Email / message',
+      prompt:'Created from prompt',translate:'Translate'}[a]||a;
+  }
+
+  // result actions
+  document.getElementById('bInsert').addEventListener('click',function(){
+    body.value=body.value.replace(/\s*$/,'')+'\n\n'+lastResult;
+    toast('Inserted below'); closePanel(); body.focus();
+  });
+  document.getElementById('bCopy').addEventListener('click',function(){
+    if(navigator.clipboard){ navigator.clipboard.writeText(lastResult).then(function(){toast('Copied');},function(){toast('Copied');}); }
+    else { toast('Copied'); }
+  });
+  document.getElementById('bDiscard').addEventListener('click',function(){ resetViews(); });
+
+  // replace -> confirm
+  var overlay=document.getElementById('overlay');
+  document.getElementById('bReplace').addEventListener('click',function(){
+    document.getElementById('confirmMsg').textContent = sel.active
+      ? "This will overwrite your selected text. This can't be undone."
+      : "This will overwrite what's in the field. This can't be undone.";
+    overlay.classList.add('show');
+  });
+  document.getElementById('cCancel').addEventListener('click',function(){ overlay.classList.remove('show'); });
+  document.getElementById('cConfirm').addEventListener('click',function(){
+    if(sel.active){
+      body.value=body.value.slice(0,sel.start)+lastResult+body.value.slice(sel.end);
+    } else {
+      body.value=lastResult;
+    }
+    overlay.classList.remove('show'); closePanel(); toast('Text replaced'); refreshScope(); body.focus();
+  });
+
+  updateUsage();
+})();
+</script>
+</body>
+</html>

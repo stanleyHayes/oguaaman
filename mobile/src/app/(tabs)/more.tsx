@@ -1,0 +1,134 @@
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { C, serif } from "@/theme";
+import { Mark } from "@/ui";
+import { useAuth } from "@/lib/auth";
+import { useLang, LANGS } from "@/lib/i18n";
+
+const SECTIONS: { label: string; blurb: string; href?: string }[] = [
+  { label: "Adopt a project", blurb: "Concrete, costed improvements — proposed by verified institutions, funded by us together.", href: "/projects" },
+  { label: "Safety", blurb: "Floods, fires, accidents and hazards — reported by neighbours, followed through to recovery.", href: "/safety" },
+  { label: "Lost & Found", blurb: "Lost a phone, found some keys, searching for someone? The town helps.", href: "/lost-found" },
+  { label: "Festivals", blurb: "Fetu Afahye, Edina Bakatue, PANAFEST — every edition, year by year.", href: "/festivals" },
+  { label: "People", blurb: "Sons & daughters — icons past and living, from Kofi Annan to the grandfathers of highlife.", href: "/browse/people" },
+  { label: "Institutions", blurb: "Schools, the traditional council, churches and the Asafo companies — official, verified pages.", href: "/institutions" },
+  { label: "Business", blurb: "The working city — markets, fishing, trade and the people behind them.", href: "/browse/business" },
+  { label: "News", blurb: "Festivals, scholarships, homecomings and notices from Cape Coast.", href: "/news" },
+  { label: "Events", blurb: "From Fetu Afahye to school speech days and homecomings.", href: "/browse/events" },
+  { label: "Opportunities", blurb: "Jobs, scholarships and mentorship shared within the community.", href: "/browse/opportunities" },
+  { label: "Memories", blurb: "Photos and stories of old Cape Coast, preserved.", href: "/browse/memories" },
+  { label: "Heritage", blurb: "The Castle and the Door of No Return, the Fante Confederacy, the Asafo.", href: "/explore/heritage" },
+  { label: "Culture", blurb: "Fetu Afahye, the durbar, the 77 gods of Oguaa, and the seven Asafo companies.", href: "/explore/culture" },
+  { label: "Visit", blurb: "The Castle, the Kakum canopy walkway, Kotokuraba — and when to come.", href: "/explore/visit" },
+];
+
+export default function More() {
+  const { member, signOut } = useAuth();
+  const { lang, setLang } = useLang();
+  return (
+    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <View style={{ alignItems: "center", marginBottom: 8 }}>
+        <Mark size={40} color={C.goldBrand} />
+      </View>
+      <Text style={s.title}>The town that began as a market</Text>
+      <Text style={s.body}>
+        Oguaa — Cape Coast — is one of the richest places in Ghana: the old colonial capital, the global symbol of the diaspora homecoming, the Citadel of Education, home of the Fante Confederacy and the Asafo. This app leads with local pride; investment and the diaspora follow.
+      </Text>
+
+      {/* Auth */}
+      <View style={s.authCard}>
+        {member ? (
+          <>
+            <Text style={s.authName}>Signed in as {member.displayName}</Text>
+            <Text style={s.authRole}>{member.role} · phone verified</Text>
+            <Pressable onPress={() => router.push("/me")} style={s.authBtn}><Text style={s.authBtnText}>My profile &amp; connections</Text></Pressable>
+            <View style={s.authBtnRow}>
+              <Pressable onPress={() => router.push("/submit")} style={[s.authBtnOutline, { flex: 1 }]}><Text style={s.authBtnOutlineText}>Contribute</Text></Pressable>
+              <Pressable onPress={() => router.push("/notifications")} style={[s.authBtnOutline, { flex: 1 }]}><Text style={s.authBtnOutlineText}>Notifications</Text></Pressable>
+            </View>
+            <Pressable onPress={signOut}><Text style={s.signOutLink}>Sign out</Text></Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={s.authName}>Rep your town</Text>
+            <Text style={s.authRole}>Sign in to contribute, follow memorials, and rep your school.</Text>
+            <Pressable onPress={() => router.push("/signin")} style={s.authBtn}><Text style={s.authBtnText}>Sign in / create account</Text></Pressable>
+          </>
+        )}
+      </View>
+
+      <Text style={s.kicker}>LANGUAGE</Text>
+      <View style={s.langRow}>
+        {LANGS.map((l) => (
+          <Pressable key={l.code} onPress={() => setLang(l.code)} style={[s.langChip, lang === l.code && s.langChipOn]}>
+            <Text style={[s.langChipText, lang === l.code && s.langChipTextOn]}>{l.native}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Pressable onPress={() => router.push("/search")} style={s.searchBtn}>
+        <Text style={s.searchText}>🔍  Search people, places & memories</Text>
+      </Pressable>
+
+      <Text style={s.kicker}>MORE OF OGUAA</Text>
+      {SECTIONS.map((x) =>
+        x.href ? (
+          <Pressable key={x.label} onPress={() => router.push(x.href as never)} style={s.card}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={s.cardTitle}>{x.label}</Text>
+              <Text style={s.chevron}>›</Text>
+            </View>
+            <Text style={s.cardBlurb}>{x.blurb}</Text>
+          </Pressable>
+        ) : (
+          <View key={x.label} style={s.card}>
+            <Text style={s.cardTitle}>{x.label}</Text>
+            <Text style={s.cardBlurb}>{x.blurb}</Text>
+          </View>
+        ),
+      )}
+
+      <View style={s.legalRow}>
+        <Pressable onPress={() => router.push("/legal/privacy" as never)}><Text style={s.legalLink}>Privacy</Text></Pressable>
+        <Text style={s.legalDot}>·</Text>
+        <Pressable onPress={() => router.push("/legal/terms" as never)}><Text style={s.legalLink}>Terms</Text></Pressable>
+        <Text style={s.legalDot}>·</Text>
+        <Pressable onPress={() => router.push("/legal/acceptable-use" as never)}><Text style={s.legalLink}>Acceptable Use</Text></Pressable>
+      </View>
+
+      <Text style={s.foot}>Yɛn ara asaase ni — this is our own land.</Text>
+      <Text style={s.note}>An independent community initiative. Made by us, for us. For ages 18+.</Text>
+    </ScrollView>
+  );
+}
+
+const s = StyleSheet.create({
+  title: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
+  body: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 10, textAlign: "center" },
+  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 24, marginBottom: 10 },
+  searchBtn: { marginTop: 18, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 18, alignItems: "center" },
+  searchText: { color: C.inkMuted, fontSize: 14, fontWeight: "600" },
+  card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, marginBottom: 10 },
+  cardTitle: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
+  chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
+  langRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  langChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
+  langChipOn: { borderColor: C.green, backgroundColor: C.green },
+  langChipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
+  langChipTextOn: { color: C.cream },
+  cardBlurb: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
+  legalRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 22 },
+  legalLink: { color: C.tealText, fontSize: 13, fontWeight: "600" },
+  legalDot: { color: C.inkFaint },
+  foot: { fontFamily: serif, fontStyle: "italic", color: C.goldText, textAlign: "center", marginTop: 24, fontSize: 16 },
+  note: { color: C.inkFaint, fontSize: 12, textAlign: "center", marginTop: 6 },
+  authCard: { backgroundColor: C.green, borderRadius: 14, padding: 18, marginTop: 18, alignItems: "center" },
+  authName: { fontFamily: serif, fontSize: 20, fontWeight: "600", color: C.cream },
+  authRole: { color: "rgba(246,241,231,0.75)", fontSize: 13, textAlign: "center", marginTop: 4, textTransform: "capitalize" },
+  authBtn: { backgroundColor: C.goldBrand, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20, marginTop: 12 },
+  authBtnText: { color: C.green900, fontWeight: "700" },
+  authBtnOutline: { borderWidth: 1, borderColor: "rgba(246,241,231,0.4)", borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20, marginTop: 12, alignItems: "center" },
+  authBtnOutlineText: { color: C.cream, fontWeight: "600" },
+  authBtnRow: { flexDirection: "row", gap: 8 },
+  signOutLink: { color: "rgba(246,241,231,0.7)", fontWeight: "600", textDecorationLine: "underline", marginTop: 14 },
+});

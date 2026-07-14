@@ -1,0 +1,150 @@
+import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { Container } from "@/components/ui";
+import { Adinkra, SymbolDivider } from "@/components/adinkra";
+import { Wordmark } from "@/components/wordmark";
+import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL } from "@/config";
+
+interface FooterLink {
+  label: string;
+  to?: string;   // internal route
+  href?: string; // external / mailto
+  external?: boolean;
+}
+
+interface FooterColumn {
+  heading: string;
+  links: FooterLink[];
+}
+
+const COLUMNS: FooterColumn[] = [
+  {
+    heading: "Discover",
+    links: [
+      { label: "History", to: "/history" },
+      { label: "Culture", to: "/culture" },
+      { label: "Festivals", to: "/festivals" },
+      { label: "Education", to: "/education" },
+      { label: "Visit", to: "/visit" },
+      { label: "Leadership", to: "/leadership" },
+      { label: "News", to: "/news" },
+    ],
+  },
+  {
+    heading: "The app",
+    links: [
+      { label: "Open the web app", href: PORTAL_APP_URL, external: true },
+      { label: "Sign in", href: PORTAL_JOIN_URL, external: true },
+    ],
+  },
+  {
+    heading: "Connect",
+    links: [{ label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` }],
+  },
+];
+
+function FooterLinkItem({ link }: { link: FooterLink }) {
+  const cls = "inline-block py-0.5 text-cream/70 transition-colors hover:text-gold";
+  return (
+    <li>
+      {link.to ? (
+        <Link to={link.to} className={cls}>{link.label}</Link>
+      ) : (
+        <a href={link.href} className={cls} {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+          {link.label}
+        </a>
+      )}
+    </li>
+  );
+}
+
+function LinkColumn({ column }: { column: FooterColumn }) {
+  return (
+    <div>
+      <h3 className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-gold/80">
+        {column.heading}
+      </h3>
+      <ul className="mt-4 space-y-1 text-sm">
+        {column.links.map((link) => (
+          <FooterLinkItem key={link.label} link={link} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SocialLine({ children }: { children: ReactNode }) {
+  return <p className="text-sm text-cream/55">{children}</p>;
+}
+
+export function Footer() {
+  const connect = COLUMNS[2];
+
+  return (
+    <footer className="on-dark relative overflow-hidden bg-green-900 text-cream/80">
+      <span aria-hidden className="pointer-events-none absolute inset-0 bg-contours opacity-[0.06]" />
+
+      <Container className="relative py-16 sm:py-20" size="wide">
+        {/* Top row */}
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.2fr_2fr]">
+          <div className="max-w-sm">
+            <Wordmark size="text-3xl" />
+            <p className="mt-5 font-serif text-lg leading-relaxed text-cream/75">
+              The community home of Cape Coast — made by us, for us.
+            </p>
+            <p className="mt-4 text-sm leading-relaxed text-cream/55">
+              For Oguaa at home and the diaspora — celebrating our music, people,
+              heritage and institutions, and remembering those who have gone before us.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+            {COLUMNS.slice(0, 2).map((column) => (
+              <LinkColumn key={column.heading} column={column} />
+            ))}
+
+            <div>
+              <h3 className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-gold/80">
+                {connect.heading}
+              </h3>
+              <ul className="mt-4 space-y-1 text-sm">
+                {connect.links.map((link) => (
+                  <FooterLinkItem key={link.label} link={link} />
+                ))}
+              </ul>
+              <div className="mt-4 space-y-1">
+                <SocialLine>Find us on Instagram &amp; Facebook</SocialLine>
+                <SocialLine>@oguaa — coming soon</SocialLine>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Hairline / motif divider */}
+        <div className="my-10 sm:my-12">
+          <SymbolDivider name="crab" tone="text-gold/70" className="max-w-full" />
+        </div>
+
+        {/* Bottom row */}
+        <div className="flex flex-col gap-6 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-serif text-base italic text-gold/80">Da yie.</p>
+
+          <p className="inline-flex items-center gap-2 text-cream/60">
+            <Adinkra name="crab" size={18} labelled={false} className="text-gold/70" />
+            <span>© Oguaa. Made in Cape Coast, Ghana.</span>
+          </p>
+
+          <nav aria-label="Legal" className="flex items-center gap-5 text-cream/55">
+            <Link to="/privacy" className="transition-colors hover:text-gold">
+              Privacy
+            </Link>
+            <span aria-hidden className="h-3 w-px bg-cream/20" />
+            <Link to="/terms" className="transition-colors hover:text-gold">
+              Terms
+            </Link>
+          </nav>
+        </div>
+      </Container>
+    </footer>
+  );
+}

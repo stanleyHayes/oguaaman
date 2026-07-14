@@ -1,0 +1,183 @@
+syntax = "proto3";
+
+// Package oguaa.v1 is the gRPC contract for the Oguaa platform's read API
+// (plus a couple of community write actions). It mirrors the REST/GraphQL
+// surfaces and is served alongside them, wired to the same service core.
+package oguaa.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/oguaa/backend/gen/oguaa/v1;oguaav1";
+
+// ── value types ───────────────────────────────────────────────────────────────
+
+message SocialLink {
+  string label = 1;
+  string url = 2;
+}
+
+message Tribute {
+  string id = 1;
+  string author_name = 2;
+  string relation = 3;
+  string message = 4;
+  string created_at = 5;
+}
+
+message Office {
+  string id = 1;
+  string role = 2;
+  string holder_id = 3;
+  string holder_name = 4;
+  bool verified = 5;
+}
+
+message Listing {
+  string id = 1;
+  string slug = 2;
+  string type = 3;
+  string owner_id = 4;
+  string title = 5;
+  string status = 6;
+  repeated string tags = 7;
+  string town_id = 8;
+  repeated string school_ids = 9;
+  string posted_by_org_id = 10;
+  string cover_image_url = 11;
+  google.protobuf.Struct details = 12; // free-form, type-specific fields
+  repeated Tribute tributes = 13;
+  string created_at = 14;
+  string submitted_at = 15;
+  string published_at = 16;
+}
+
+message Member {
+  string id = 1;
+  string slug = 2;
+  string display_name = 3;
+  string initials = 4;
+  string photo_url = 5;
+  string bio = 6;
+  string town_id = 7;
+  repeated string school_ids = 8;
+  repeated SocialLink links = 9;
+  bool phone_verified = 10;
+  string role = 11;
+  bool suspended = 12;
+  string joined_at = 13;
+  // phone/email are private (spec §11) and intentionally absent.
+}
+
+message Organization {
+  string id = 1;
+  string slug = 2;
+  string kind = 3;
+  string name = 4;
+  string official_title = 5;
+  string motto = 6;
+  string crest_url = 7;
+  string summary = 8;
+  string history = 9;
+  int32 founded = 10;
+  string classification = 11;
+  string jurisdiction = 12;
+  repeated SocialLink contact = 13;
+  repeated Office offices = 14;
+  repeated string related_org_ids = 15;
+  bool verified = 16;
+  string verified_on = 17;
+  repeated string house_colors = 18;
+  string osa_name = 19;
+  int32 member_count = 20;
+}
+
+message Place {
+  string id = 1;
+  string slug = 2;
+  string name = 3;
+  string parent_id = 4;
+  string blurb = 5;
+}
+
+message Stats {
+  int32 members = 1;
+  int32 listings = 2;
+  int32 schools = 3;
+  int32 institutions = 4;
+  int32 artists = 5;
+  int32 memorials = 6;
+  int32 memories = 7;
+  int32 pending = 8;
+}
+
+// ── requests / replies ────────────────────────────────────────────────────────
+
+message Empty {}
+
+// ListingsRequest selects approved listings by type ("artist", "person",
+// "memorial", "business", "event", "opportunity", "memory").
+message ListingsRequest {
+  string type = 1;
+}
+
+message ListingReply {
+  Listing listing = 1;
+}
+
+message ListingsReply {
+  repeated Listing listings = 1;
+}
+
+// SlugRequest keys a single entity by slug (and listing type, where relevant).
+message SlugRequest {
+  string type = 1;
+  string slug = 2;
+}
+
+message GenresReply {
+  repeated string genres = 1;
+}
+
+message MembersReply {
+  repeated Member members = 1;
+}
+
+message MemberReply {
+  Member member = 1;
+}
+
+message OrganizationsReply {
+  repeated Organization organizations = 1;
+}
+
+message OrganizationReply {
+  Organization organization = 1;
+}
+
+message PlacesReply {
+  repeated Place places = 1;
+}
+
+message CandleReply {
+  int32 candles = 1;
+}
+
+// ── service ───────────────────────────────────────────────────────────────────
+
+service OguaaService {
+  // Reads
+  rpc GetStats(Empty) returns (Stats);
+  rpc ListListings(ListingsRequest) returns (ListingsReply);
+  rpc GetListing(SlugRequest) returns (ListingReply);
+  rpc GetSpotlightArtist(Empty) returns (ListingReply);
+  rpc ListGenres(Empty) returns (GenresReply);
+  rpc ListMembers(Empty) returns (MembersReply);
+  rpc GetMember(SlugRequest) returns (MemberReply);
+  rpc ListInstitutions(Empty) returns (OrganizationsReply);
+  rpc ListSchools(Empty) returns (OrganizationsReply);
+  rpc GetInstitution(SlugRequest) returns (OrganizationReply);
+  rpc ListPlaces(Empty) returns (PlacesReply);
+
+  // Community write actions
+  rpc LightCandle(SlugRequest) returns (CandleReply);
+}

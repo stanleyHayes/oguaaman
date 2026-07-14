@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oguaa — The Three-Pillar Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F1EC;
+    --ink:#1E1C19;
+    --muted:#6B6458;
+    --line:#D9D3C6;
+    --card:#FFFFFF;
+    --teal:#0E7C6B;     /* members */
+    --gold:#B8862F;     /* institutions */
+    --clay:#B0503C;     /* listings */
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    background-image:radial-gradient(rgba(30,28,25,.06) 1px, transparent 1px);
+    background-size:22px 22px;
+    color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    padding:40px 20px 60px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+
+  .head{text-align:center;margin-bottom:8px;}
+  .eyebrow{font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:2.5rem;letter-spacing:-.02em;line-height:1.05;margin:8px 0 6px;}
+  .sub{color:var(--muted);max-width:54ch;margin:0 auto;font-size:1rem;}
+
+  /* pillars */
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:38px 0 8px;}
+  .pillar{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:0 0 18px;overflow:hidden;
+    box-shadow:0 12px 30px rgba(30,28,25,.05);
+    display:flex;flex-direction:column;
+  }
+  .cap{height:6px;}
+  .p-m .cap{background:var(--teal);}
+  .p-i .cap{background:var(--gold);}
+  .p-l .cap{background:var(--clay);}
+  .pillar .inner{padding:18px 18px 0;}
+  .ptag{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;}
+  .p-m .ptag{color:var(--teal);}
+  .p-i .ptag{color:var(--gold);}
+  .p-l .ptag{color:var(--clay);}
+  .pname{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.45rem;margin:7px 0 4px;letter-spacing:-.01em;}
+  .prole{font-size:.86rem;color:var(--muted);min-height:42px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}
+  .chip{font-size:.74rem;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:4px 9px;color:#43403a;}
+
+  /* relationships */
+  .rel-h{text-align:center;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:34px 0 16px;}
+  .rels{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .rel{
+    background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:16px;text-align:center;
+  }
+  .rel .edge{display:flex;align-items:center;justify-content:center;gap:8px;font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:.92rem;flex-wrap:wrap;}
+  .pin{display:inline-block;padding:3px 9px;border-radius:6px;font-size:.78rem;color:#fff;}
+  .pin.m{background:var(--teal);}
+  .pin.i{background:var(--gold);}
+  .pin.l{background:var(--clay);}
+  .arrow{color:var(--muted);font-weight:700;}
+  .rel .verb{margin-top:9px;font-family:"IBM Plex Sans";font-size:.82rem;color:var(--muted);font-weight:500;}
+
+  /* foundation */
+  .foundation{
+    margin-top:18px;background:var(--ink);color:#EDEAE3;border-radius:14px;
+    padding:22px 24px;text-align:center;position:relative;
+  }
+  .foundation .fk{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:#9a948a;font-weight:600;}
+  .foundation .fmain{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.2rem;margin:8px 0 4px;}
+  .foundation .fsub{font-size:.86rem;color:#b8b2a8;}
+  .stack{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .stack span{font-size:.74rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 10px;color:#d6d1c8;}
+
+  .note{text-align:center;font-size:.78rem;color:var(--muted);margin-top:22px;}
+  .note b{color:var(--ink);font-weight:600;}
+
+  .rise{opacity:0;transform:translateY(12px);animation:r .8s ease forwards;}
+  @keyframes r{to{opacity:1;transform:none;}}
+
+  @media (max-width:680px){
+    h1{font-size:1.9rem;}
+    .pillars{grid-template-columns:1fr;}
+    .rels{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="head">
+      <div class="eyebrow rise" style="animation-delay:.05s">Oguaa platform · architecture</div>
+      <h1 class="rise" style="animation-delay:.12s">The three-pillar model</h1>
+      <p class="sub rise" style="animation-delay:.2s">Everything on the platform is one of three things — a person, a body, or a piece of content — and they all sit on one shared foundation.</p>
+    </div>
+
+    <!-- PILLARS -->
+    <div class="pillars">
+      <div class="pillar p-m rise" style="animation-delay:.28s">
+        <div class="cap"></div>
+        <div class="inner">
+          <div class="ptag">Pillar 1</div>
+          <div class="pname">Members</div>
+          <div class="prole">People. The identity layer — who you are, the town and institutions you rep.</div>
+          <div class="chips"><span class="chip">residents</span><span class="chip">old students</span><span class="chip">artists</span><span class="chip">office-holders</span></div>
+        </div>
+      </div>
+
+      <div class="pillar p-i rise" style="animation-delay:.36s">
+        <div class="cap"></div>
+        <div class="inner">
+          <div class="ptag">Pillar 2</div>
+          <div class="pname">Institutions</div>
+          <div class="prole">The bodies. Official, verified profiles — with offices held by members.</div>
+          <div class="chips"><span class="chip">schools</span><span class="chip">traditional councils</span><span class="chip">associations</span><span class="chip">faith &amp; civic bodies</span></div>
+        </div>
+      </div>
+
+      <div class="pillar p-l rise" style="animation-delay:.44s">
+        <div class="cap"></div>
+        <div class="inner">
+          <div class="ptag">Pillar 3</div>
+          <div class="pname">Listings</div>
+          <div class="prole">The content. Every contributed entry, one shared lifecycle.</div>
+          <div class="chips"><span class="chip">businesses</span><span class="chip">memorials</span><span class="chip">events</span><span class="chip">memories</span><span class="chip">opportunities</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RELATIONSHIPS -->
+    <div class="rel-h rise" style="animation-delay:.5s">How they connect</div>
+    <div class="rels">
+      <div class="rel rise" style="animation-delay:.56s">
+        <div class="edge"><span class="pin m">Members</span><span class="arrow">→</span><span class="pin i">Institutions</span></div>
+        <div class="verb">affiliate with · hold office in</div>
+      </div>
+      <div class="rel rise" style="animation-delay:.62s">
+        <div class="edge"><span class="pin m">Members</span><span class="arrow">→</span><span class="pin l">Listings</span></div>
+        <div class="verb">create &amp; own</div>
+      </div>
+      <div class="rel rise" style="animation-delay:.68s">
+        <div class="edge"><span class="pin i">Institutions</span><span class="arrow">→</span><span class="pin l">Listings</span></div>
+        <div class="verb">post officially (announcements, events)</div>
+      </div>
+    </div>
+
+    <!-- FOUNDATION -->
+    <div class="foundation rise" style="animation-delay:.74s">
+      <div class="fk">The shared foundation</div>
+      <div class="fmain">One submit → review → publish engine</div>
+      <div class="fsub">plus accounts, verification &amp; moderation — built once, used by all three pillars</div>
+      <div class="stack"><span>accounts</span><span>moderation queue</span><span>verification</span><span>notifications</span><span>scheduled remembrances</span></div>
+    </div>
+
+    <p class="note">The payoff: every new feature is either a <b>new listing type</b>, a <b>profile attribute</b>, an <b>institution kind</b>, or a <b>view</b> over data that already exists — not a new system.</p>
+
+  </div>
+</body>
+</html>

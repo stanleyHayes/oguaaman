@@ -1,0 +1,142 @@
+package mongo
+
+import (
+	"context"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+
+	"github.com/oguaa/backend/internal/domain"
+)
+
+type ListingRepo struct{ c *mongo.Collection }
+
+func NewListingRepo(db *mongo.Database) *ListingRepo {
+	return &ListingRepo{db.Collection(collListings)}
+}
+
+func (r *ListingRepo) Find(ctx context.Context, f domain.ListingFilter) ([]domain.Listing, error) {
+	q := bson.M{}
+	if f.Type != "" {
+		q["type"] = f.Type
+	}
+	if f.Status != "" {
+		q["status"] = f.Status
+	}
+	if f.Slug != "" {
+		q["slug"] = f.Slug
+	}
+	if f.OwnerID != "" {
+		q["ownerId"] = f.OwnerID
+	}
+	if f.PostedByOrgID != "" {
+		q["postedByOrgId"] = f.PostedByOrgID
+	}
+	if f.SchoolID != "" {
+		q["schoolIds"] = f.SchoolID // array-contains match
+	}
+	if f.FeaturedOnly {
+		q["featured"] = true
+		if f.Now != "" {
+			// Exclude lapsed placements: keep those with no expiry or an expiry still in the future.
+			q["$or"] = []bson.M{
+				{"featuredUntil": ""},
+				{"featuredUntil": bson.M{"$exists": false}},
+				{"featuredUntil": bson.M{"$gte": f.Now}},
+			}
+		}
+	}
+	cur, err := r.c.Find(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	out := []domain.Listing{}
+	if err := cur.All(ctx, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (r *ListingRepo) GetBySlug(ctx context.Context, typ, slug string) (*domain.Listing, error) {
+	var l domain.Listing
+	if err := r.c.FindOne(ctx, bson.M{"type": typ, "slug": slug}).Decode(&l); err != nil {
+		return nil, notFound("listing", err)
+	}
+	return &l, nil
+}
+
+func (r *ListingRepo) GetByID(ctx context.Context, id string) (*domain.Listing, error) {
+	var l domain.Listing
+	if err := r.c.FindOne(ctx, bson.M{"_id": id}).Decode(&l); err != nil {
+		return nil, notFound("listing", err)
+	}
+	return &l, nil
+}
+
+func (r *ListingRepo) Insert(ctx context.Context, l domain.Listing) error {
+	_, err := r.c.InsertOne(ctx, l)
+	return err
+}
+
+func (r *ListingRepo) UpdateStatus(ctx context.Context, id, status, reviewedBy, reason, at string) error {
+	set := bson.M{"status": status, "reviewedById": reviewedBy, "reviewedAt": at}
+	if status == domain.StatusApproved {
+		set["publishedAt"] = at
+	}
+	if reason != "" {
+		set["rejectionReason"] = reason
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": set})
+	return err
+}
+
+func (r *ListingRepo) AddTribute(ctx context.Context, listingID string, t domain.Tribute) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$push": bson.M{"tributes": t}})
+	return err
+}
+
+func (r *ListingRepo) SetFeatured(ctx context.Context, id string, featured bool, until string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"featured": featured, "featuredUntil": until}})
+	return err
+}
+
+// UpdateIncidentStatus advances an incident's operational lifecycle: sets the
+// current status and appends the audit entry to the history array.
+func (r *ListingRepo) UpdateIncidentStatus(ctx context.Context, id, status string, entry map[string]any) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{
+		"$set":  bson.M{"details.incidentStatus": status},
+		"$push": bson.M{"details.statusHistory": entry},
+	})
+	return err
+}
+
+// SetLostFoundStatus resolves a lost & found notice (open → reunited | closed).
+func (r *ListingRepo) SetLostFoundStatus(ctx context.Context, id, status string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"details.lfStatus": status}})
+	return err
+}
+
+// SetSubscribedUntil records a business's Supporter paid-until date (Phase 7).
+func (r *ListingRepo) SetSubscribedUntil(ctx context.Context, id, until string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"details.subscribedUntil": until}})
+	return err
+}
+
+func (r *ListingRepo) IncrementRaised(ctx context.Context, listingID string, deltaPesewas int64) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{
+		"details.raisedPesewas": deltaPesewas,
+		"details.backers":       1,
+	}})
+	return err
+}
+
+func (r *ListingRepo) IncrementCandles(ctx context.Context, listingID string) (int, error) {
+	if _, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{"details.candles": 1}}); err != nil {
+		return 0, err
+	}
+	var l domain.Listing
+	if err := r.c.FindOne(ctx, bson.M{"_id": listingID}).Decode(&l); err != nil {
+		return 0, notFound("listing", err)
+	}
+	return toInt(l.Details["candles"]), nil
+}
