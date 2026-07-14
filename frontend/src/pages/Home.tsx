@@ -3,10 +3,11 @@ import type { HomeData, NewsArticle, Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container, CTA as Cta, Eyebrow, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
-import { ArtistCard, EventCard, SectionCard, MemorialCard, NewsCard, FeaturedCard } from "@/components/cards";
+import { Thumb, EventCard, SectionCard, MemorialCard, NewsCard, FeaturedCard } from "@/components/cards";
 import { SHOWCASE_SECTIONS } from "@/lib/sections";
 import { ABOUT_OGUAA, SAMPLE_NOTICE } from "@/lib/content";
 import { cldCover } from "@/lib/cloudinary";
+import { initials } from "@/lib/format";
 
 type HomeLoaderData = HomeData & { news: NewsArticle[]; businesses: Listing[]; featured: Listing[] };
 
@@ -27,7 +28,6 @@ export function Component() {
   const { spotlight, artists, events, memorial, stats, news, businesses, featured } = useLoaderData() as HomeLoaderData;
   const featuredSpots = featured.slice(0, 6);
   const moreArtists = artists.filter((a) => a.id !== spotlight.id).slice(0, 3);
-  const initials = (spotlight.details.actName ?? spotlight.title).split(/\s+/).slice(0, 2).map((w) => w[0]).join("");
   const headlines = news.slice(0, 3);
   // Featured businesses: prefer real paid placements (spec §8.14), fall back to
   // the latest approved businesses so the showcase is never empty in dev/seed.
@@ -77,36 +77,68 @@ export function Component() {
         </section>
       )}
 
-      <section className="py-16 sm:py-20">
-        <Container size="wide">
+      <section className="on-dark relative overflow-hidden text-cream">
+        {/* The stage: clay-to-green wash, gold footlight glow, this week's cover bleeding through */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(140deg,#B0503C 0%,#7C2D2D 45%,#0C2C1F 100%)" }} aria-hidden />
+        {spotlight.coverImageUrl && (
+          <img src={cldCover(spotlight.coverImageUrl, 1400)} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-15" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+        )}
+        <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
+        <div className="absolute inset-0" style={{ background: "radial-gradient(55% 45% at 50% -10%, rgba(199,162,74,0.22), transparent 70%)" }} aria-hidden />
+        <Container size="wide" className="relative py-16 sm:py-20">
           <div className="flex items-end justify-between gap-4">
-            <SectionHeading kicker="Rotating spotlight · the flagship" title="On the bandstand" accentClass="bg-clay" />
-            <Link to="/music" className="shrink-0 text-sm font-semibold text-clay-text hover:underline">All artists →</Link>
-          </div>
-          <div className="mt-8 grid gap-6 lg:grid-cols-2">
-            <article className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]">
-              <Link to={`/music/${spotlight.slug}`} className="group block sm:flex">
-                <div className="relative flex aspect-[4/3] items-center justify-center sm:aspect-auto sm:w-2/5" style={{ background: "linear-gradient(135deg,#B0503C,#7C2D2D)" }}>
-                  <span className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
-                  {spotlight.coverImageUrl ? (
-                    <img src={cldCover(spotlight.coverImageUrl, 700)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" />
-                  ) : (
-                    <span className="relative font-display text-5xl font-semibold text-cream">{initials}</span>
-                  )}
-                </div>
-                <div className="flex-1 p-6">
-                  <span className="rounded-full bg-clay px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-cream">This week's spotlight</span>
-                  <h3 className="mt-3 font-display text-3xl font-semibold text-ink group-hover:text-clay-text">{spotlight.details.actName}</h3>
-                  <p className="mt-1 text-sm text-gold-text">{(spotlight.details.genres ?? []).join(" · ")}</p>
-                  <p className="mt-3 text-sm leading-relaxed text-ink-muted">{spotlight.details.bio}</p>
-                  <span className="mt-4 inline-block text-sm font-semibold text-clay-text">Open profile & streaming →</span>
-                </div>
-              </Link>
-            </article>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              {moreArtists.map((a) => <ArtistCard key={a.id} artist={a} />)}
+            <div>
+              <Eyebrow className="text-gold/90">Rotating spotlight · the flagship</Eyebrow>
+              <h2 className="mt-2 font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">On the <span className="text-gold">bandstand</span></h2>
+              <p className="mt-3 max-w-xl text-cream/75">Each week one act takes the stage — the sound of Oguaa, front and centre.</p>
             </div>
+            <Link to="/music" className="hidden shrink-0 text-sm font-semibold text-gold hover:underline sm:inline">All artists →</Link>
           </div>
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1.5fr_1fr]">
+            {/* The headliner */}
+            <article className="flex flex-col gap-6 sm:flex-row sm:items-end">
+              <Link to={`/music/${spotlight.slug}`} className="group block shrink-0">
+                <Thumb seed={spotlight.slug} label={initials(spotlight.details.actName ?? spotlight.title)} src={spotlight.coverImageUrl} className="aspect-square w-full border-2 border-gold/40 shadow-xl transition-transform group-hover:-translate-y-0.5 sm:h-52 sm:w-52" coverWidth={500} />
+              </Link>
+              <div className="min-w-0">
+                <span className="rounded-full bg-gold-brand px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-green-900">★ This week's spotlight</span>
+                <h3 className="mt-3 font-display text-3xl font-semibold leading-[1.1] sm:text-4xl">
+                  <Link to={`/music/${spotlight.slug}`} className="transition-colors hover:text-gold">{spotlight.details.actName ?? spotlight.title}</Link>
+                </h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(spotlight.details.genres ?? []).map((g) => <span key={g} className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs text-cream/90 backdrop-blur-sm">{g}</span>)}
+                </div>
+                <p className="mt-4 line-clamp-3 max-w-md text-sm leading-relaxed text-cream/80">{spotlight.details.bio}</p>
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <Cta to={`/music/${spotlight.slug}`} variant="gold">Open profile</Cta>
+                  {(spotlight.details.streamingLinks ?? []).map((l) => (
+                    <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-cream/15 px-3.5 py-2 text-xs font-semibold text-cream backdrop-blur-sm transition-colors hover:bg-gold-brand hover:text-green-900">
+                      {l.label} <span aria-hidden>↗</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </article>
+            {/* Also on the bill */}
+            {moreArtists.length > 0 && (
+              <div>
+                <p className="eyebrow text-gold/80">Also on the bill</p>
+                <div className="mt-3 space-y-3">
+                  {moreArtists.map((a) => (
+                    <Link key={a.id} to={`/music/${a.slug}`} className="group flex items-center gap-4 rounded-[var(--radius-card)] border border-cream/10 bg-cream/[0.06] p-3 backdrop-blur-sm transition-colors hover:border-gold/40 hover:bg-cream/10">
+                      <Thumb seed={a.slug} label={initials(a.details.actName ?? a.title)} src={a.coverImageUrl} rounded="rounded-lg" className="h-14 w-14 shrink-0" coverWidth={128} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-display text-lg font-semibold text-cream group-hover:text-gold">{a.details.actName ?? a.title}</p>
+                        <p className="truncate text-xs text-cream/60">{(a.details.genres ?? []).join(" · ")}</p>
+                      </div>
+                      <span className="pr-1 text-cream/40 transition-colors group-hover:text-gold" aria-hidden>→</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <Link to="/music" className="mt-8 inline-block text-sm font-semibold text-gold hover:underline sm:hidden">All artists →</Link>
         </Container>
       </section>
 
