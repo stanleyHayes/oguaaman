@@ -5,22 +5,46 @@ import { Mark } from "@/ui";
 import { useAuth } from "@/lib/auth";
 import { useLang, LANGS } from "@/lib/i18n";
 
-const SECTIONS: { label: string; blurb: string; href?: string }[] = [
-  { label: "Adopt a project", blurb: "Concrete, costed improvements — proposed by verified institutions, funded by us together.", href: "/projects" },
-  { label: "Safety", blurb: "Floods, fires, accidents and hazards — reported by neighbours, followed through to recovery.", href: "/safety" },
-  { label: "Lost & Found", blurb: "Lost a phone, found some keys, searching for someone? The town helps.", href: "/lost-found" },
-  { label: "Festivals", blurb: "Fetu Afahye, Edina Bakatue, PANAFEST — every edition, year by year.", href: "/festivals" },
-  { label: "People", blurb: "Sons & daughters — icons past and living, from Kofi Annan to the grandfathers of highlife.", href: "/browse/people" },
-  { label: "Institutions", blurb: "Schools, the traditional council, churches and the Asafo companies — official, verified pages.", href: "/institutions" },
-  { label: "Business", blurb: "The working city — markets, fishing, trade and the people behind them.", href: "/browse/business" },
-  { label: "News", blurb: "Festivals, scholarships, homecomings and notices from Cape Coast.", href: "/news" },
-  { label: "Events", blurb: "From Fetu Afahye to school speech days and homecomings.", href: "/browse/events" },
-  { label: "Opportunities", blurb: "Jobs, scholarships and mentorship shared within the community.", href: "/browse/opportunities" },
-  { label: "Youth", blurb: "Opportunities board and a spotlight on the young talents coming up in Cape Coast.", href: "/youth" },
-  { label: "Memories", blurb: "Photos and stories of old Cape Coast, preserved.", href: "/browse/memories" },
-  { label: "Heritage", blurb: "The Castle and the Door of No Return, the Fante Confederacy, the Asafo.", href: "/explore/heritage" },
-  { label: "Culture", blurb: "Fetu Afahye, the durbar, the 77 gods of Oguaa, and the seven Asafo companies.", href: "/explore/culture" },
-  { label: "Visit", blurb: "The Castle, the Kakum canopy walkway, Kotokuraba — and when to come.", href: "/explore/visit" },
+type MoreItem = { label: string; blurb: string; href: string };
+
+// Mirrors the web navbar grouping: Discover · City · Notices, plus the
+// funding board.
+const GROUPS: { heading: string; items: MoreItem[] }[] = [
+  {
+    heading: "DISCOVER",
+    items: [
+      { label: "Heritage", blurb: "The Castle and the Door of No Return, the Fante Confederacy, the Asafo.", href: "/explore/heritage" },
+      { label: "Culture", blurb: "Fetu Afahye, the durbar, the 77 gods of Oguaa, and the seven Asafo companies.", href: "/explore/culture" },
+      { label: "People", blurb: "Sons & daughters — icons past and living, from Kofi Annan to the grandfathers of highlife.", href: "/browse/people" },
+      { label: "Visit", blurb: "The Castle, the Kakum canopy walkway, Kotokuraba — and when to come.", href: "/explore/visit" },
+    ],
+  },
+  {
+    heading: "CITY",
+    items: [
+      { label: "Institutions", blurb: "Schools, the traditional council, churches and the Asafo companies — official, verified pages.", href: "/institutions" },
+      { label: "Business", blurb: "The working city — markets, fishing, trade and the people behind them.", href: "/browse/business" },
+      { label: "Youth", blurb: "Opportunities board and a spotlight on the young talents coming up in Cape Coast.", href: "/youth" },
+      { label: "Memories", blurb: "Photos and stories of old Cape Coast, preserved.", href: "/browse/memories" },
+    ],
+  },
+  {
+    heading: "NOTICES",
+    items: [
+      { label: "News", blurb: "Festivals, scholarships, homecomings and notices from Cape Coast.", href: "/news" },
+      { label: "Events", blurb: "From Fetu Afahye to school speech days and homecomings.", href: "/browse/events" },
+      { label: "Safety", blurb: "Floods, fires, accidents and hazards — reported by neighbours, followed through to recovery.", href: "/safety" },
+      { label: "Lost & Found", blurb: "Lost a phone, found some keys, searching for someone? The town helps.", href: "/lost-found" },
+    ],
+  },
+  {
+    heading: "GET INVOLVED",
+    items: [
+      { label: "Festivals", blurb: "Fetu Afahye, Edina Bakatue, PANAFEST — every edition, year by year.", href: "/festivals" },
+      { label: "Adopt a project", blurb: "Concrete, costed improvements — proposed by verified institutions, funded by us together.", href: "/projects" },
+      { label: "Opportunities", blurb: "Jobs, scholarships and mentorship shared within the community.", href: "/browse/opportunities" },
+    ],
+  },
 ];
 
 export default function More() {
@@ -71,23 +95,20 @@ export default function More() {
         <Text style={s.searchText}>🔍  Search people, places & memories</Text>
       </Pressable>
 
-      <Text style={s.kicker}>MORE OF OGUAA</Text>
-      {SECTIONS.map((x) =>
-        x.href ? (
-          <Pressable key={x.label} onPress={() => router.push(x.href as never)} style={s.card}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Text style={s.cardTitle}>{x.label}</Text>
-              <Text style={s.chevron}>›</Text>
-            </View>
-            <Text style={s.cardBlurb}>{x.blurb}</Text>
-          </Pressable>
-        ) : (
-          <View key={x.label} style={s.card}>
-            <Text style={s.cardTitle}>{x.label}</Text>
-            <Text style={s.cardBlurb}>{x.blurb}</Text>
-          </View>
-        ),
-      )}
+      {GROUPS.map((g) => (
+        <View key={g.heading}>
+          <Text style={s.kicker}>{g.heading}</Text>
+          {g.items.map((x) => (
+            <Pressable key={x.label} onPress={() => router.push(x.href as never)} style={s.card}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Text style={s.cardTitle}>{x.label}</Text>
+                <Text style={s.chevron}>›</Text>
+              </View>
+              <Text style={s.cardBlurb}>{x.blurb}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ))}
 
       <View style={s.legalRow}>
         <Pressable onPress={() => router.push("/legal/privacy" as never)}><Text style={s.legalLink}>Privacy</Text></Pressable>

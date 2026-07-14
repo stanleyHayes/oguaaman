@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Wordmark } from "@/components/wordmark";
-import { CTA } from "@/components/ui";
+import { CTA as Cta } from "@/components/ui";
 import { PORTAL_APP_URL } from "@/config";
 
 const LINKS = [
@@ -10,13 +10,62 @@ const LINKS = [
   { to: "/festivals", label: "Festivals" },
   { to: "/education", label: "Education" },
   { to: "/visit", label: "Visit" },
-  { to: "/leadership", label: "Leadership" },
-  { to: "/news", label: "News" },
 ] as const;
+
+const MORE_LINKS = [
+  { to: "/leadership", label: "Leadership", note: "The Omanhene and the Traditional Council." },
+  { to: "/news", label: "News", note: "Notices and stories from Cape Coast." },
+] as const;
+
+function MoreMenu({ onLight }: Readonly<{ onLight: boolean }>) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+
+  const triggerCls = onLight
+    ? "text-ink-muted hover:text-green"
+    : "text-cream/85 hover:bg-cream/10 hover:text-cream";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm font-medium tracking-tight transition-colors ${triggerCls}`}
+      >
+        More
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`transition-transform ${open ? "rotate-180" : ""}`}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]">
+          {MORE_LINKS.map((l) => (
+            <Link key={l.to} to={l.to} role="menuitem" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 transition-colors hover:bg-paper">
+              <span className="block text-sm font-semibold text-ink">{l.label}</span>
+              <span className="block text-xs leading-snug text-ink-muted">{l.note}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * Multi-page nav. Transparent over the dark page-hero/landing; settles into a
- * solid bar once the visitor scrolls. Links route to dedicated pages.
+ * solid bar once the visitor scrolls. Six top-level entries: five sections and
+ * a "More" menu for the rest — the track itself is one pill.
  */
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -30,12 +79,14 @@ export function Nav() {
   }, []);
 
   const onLight = scrolled || open;
-  const linkCls = (active: boolean) =>
-    `text-sm font-medium tracking-tight transition-colors ${
-      onLight
-        ? active ? "text-green" : "text-ink-muted hover:text-green"
-        : active ? "text-gold" : "text-cream/85 hover:text-gold"
-    }`;
+  const linkCls = (active: boolean) => {
+    const base = "inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium tracking-tight transition-colors";
+    if (onLight) return `${base} ${active ? "bg-green text-cream" : "text-ink-muted hover:text-green"}`;
+    return `${base} ${active ? "bg-gold-brand font-semibold text-green-900" : "text-cream/85 hover:bg-cream/10 hover:text-cream"}`;
+  };
+  const trackCls = onLight
+    ? "hidden items-center gap-0.5 rounded-full border border-gold-border/20 bg-cream/70 p-1 lg:flex"
+    : "hidden items-center gap-0.5 rounded-full border border-cream/15 bg-cream/[0.06] p-1 lg:flex";
 
   return (
     <header
@@ -48,16 +99,15 @@ export function Nav() {
           <Wordmark tone={onLight ? "text-ink" : "text-cream"} markTone="text-gold" size="text-2xl" />
         </Link>
 
-        <ul className="hidden items-center gap-5 lg:flex">
+        <div className={trackCls}>
           {LINKS.map((link) => (
-            <li key={link.to}>
-              <NavLink to={link.to} className={({ isActive }) => linkCls(isActive)}>{link.label}</NavLink>
-            </li>
+            <NavLink key={link.to} to={link.to} className={({ isActive }) => linkCls(isActive)}>{link.label}</NavLink>
           ))}
-        </ul>
+          <MoreMenu onLight={onLight} />
+        </div>
 
         <div className="hidden lg:block">
-          <CTA href={PORTAL_APP_URL} external variant={onLight ? "primary" : "outline-dark"}>Open the app</CTA>
+          <Cta href={PORTAL_APP_URL} external variant={onLight ? "primary" : "outline-dark"}>Open the app</Cta>
         </div>
 
         <button
@@ -79,7 +129,7 @@ export function Nav() {
         <div className="border-t border-gold-border/15 bg-paper/95 backdrop-blur lg:hidden">
           <div className="mx-auto w-full max-w-6xl px-5 py-5 sm:px-6">
             <ul className="flex flex-col gap-1">
-              {LINKS.map((link) => (
+              {[...LINKS, ...MORE_LINKS].map((link) => (
                 <li key={link.to}>
                   <Link to={link.to} onClick={() => setOpen(false)} className="block rounded-[var(--radius-card)] px-3 py-3 text-base font-medium text-ink transition-colors hover:bg-cream">
                     {link.label}
@@ -87,7 +137,7 @@ export function Nav() {
                 </li>
               ))}
             </ul>
-            <CTA href={PORTAL_APP_URL} external variant="primary" className="mt-4 w-full">Open the app</CTA>
+            <Cta href={PORTAL_APP_URL} external variant="primary" className="mt-4 w-full">Open the app</Cta>
           </div>
         </div>
       )}

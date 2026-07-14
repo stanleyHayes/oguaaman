@@ -1,7 +1,8 @@
+import { useMemo, useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import type { NewsArticle } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container, CTA } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { EmptyState } from "@/components/empty-state";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
@@ -10,14 +11,103 @@ export async function loader() {
   return api.news();
 }
 
+function Cover({ a, sizes }: Readonly<{ a: NewsArticle; sizes: "lg" | "sm" }>) {
+  const h = sizes === "lg" ? "h-64 sm:h-full sm:min-h-[22rem]" : "h-40";
+  if (a.coverImageUrl) {
+    return (
+      <div className={`relative ${h} w-full overflow-hidden`}>
+        <img src={cldCover(a.coverImageUrl, sizes === "lg" ? 1000 : 600)} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-green-900/70 via-green-900/10 to-transparent" />
+      </div>
+    );
+  }
+  return (
+    <div className={`relative ${h} w-full overflow-hidden`} style={{ backgroundColor: a.coverColor ?? "#123F2D" }}>
+      <div aria-hidden className="bg-dotgrid absolute inset-0 opacity-40" />
+      <div aria-hidden className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold-brand/20 blur-2xl" />
+    </div>
+  );
+}
+
+function Meta({ a }: Readonly<{ a: NewsArticle }>) {
+  return (
+    <p className="text-xs text-ink-faint">
+      {a.authorName} · {formatDate(a.publishedAt ?? a.createdAt)}
+    </p>
+  );
+}
+
+function FeaturedStory({ a }: Readonly<{ a: NewsArticle }>) {
+  return (
+    <Link to={`/news/${a.slug}`} className="group grid overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="relative">
+        <Cover a={a} sizes="lg" />
+        <span className="absolute left-4 top-4 rounded-full bg-gold-brand px-3 py-1 text-[0.66rem] font-bold uppercase tracking-wider text-green-900 shadow-sm">
+          Featured story
+        </span>
+      </div>
+      <div className="flex flex-col p-7 sm:p-9">
+        <h2 className="font-display text-3xl font-semibold leading-tight text-ink group-hover:text-green sm:text-4xl">{a.title}</h2>
+        {a.summary && <p className="mt-4 text-ink-muted">{a.summary}</p>}
+        <div className="mt-auto flex items-center justify-between gap-4 border-t border-sand pt-5 text-sm">
+          <Meta a={a} />
+          <span className="font-semibold text-green transition-transform group-hover:translate-x-0.5">Read story →</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function CoverageCard({ a }: Readonly<{ a: NewsArticle }>) {
+  return (
+    <Link to={`/news/${a.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+      <Cover a={a} sizes="sm" />
+      <div className="flex flex-1 flex-col p-6">
+        <h3 className="font-display text-xl font-semibold text-ink group-hover:text-green">{a.title}</h3>
+        {a.summary && <p className="mt-2 line-clamp-3 text-sm text-ink-muted">{a.summary}</p>}
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-sand pt-4 text-xs">
+          <Meta a={a} />
+          <span className="font-semibold text-green">Read →</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function TagChips({ tags, active, onPick }: Readonly<{ tags: string[]; active: string | null; onPick: (t: string | null) => void }>) {
+  if (tags.length === 0) return null;
+  const chip = (on: boolean) =>
+    `rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+      on ? "bg-green text-cream" : "border border-sand bg-cream text-ink-muted hover:border-green hover:text-green"
+    }`;
+  return (
+    <div className="mb-8 flex flex-wrap gap-2">
+      <button type="button" onClick={() => onPick(null)} className={chip(active === null)}>All</button>
+      {tags.map((t) => (
+        <button key={t} type="button" onClick={() => onPick(active === t ? null : t)} className={chip(active === t)}>
+          #{t}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Component() {
   const articles = useLoaderData() as NewsArticle[];
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [lead, ...rest] = articles;
+  const tags = useMemo(
+    () => [...new Set(articles.flatMap((a) => a.tags ?? []))].sort((x, y) => x.localeCompare(y)),
+    [articles],
+  );
+  const visible = activeTag ? rest.filter((a) => a.tags?.includes(activeTag)) : rest;
+  const leadMatches = lead && (!activeTag || lead.tags?.includes(activeTag));
 
   return (
     <>
-      <section className="on-dark bg-green-900 py-14 text-cream">
-        <Container>
+      <section className="on-dark relative overflow-hidden bg-green-900 py-14 text-cream">
+        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-brand/[0.08] blur-3xl" />
+        <Container className="relative">
           <p className="eyebrow text-gold/80">The Oguaa Newsroom</p>
           <h1 className="mt-2 font-display text-4xl font-semibold sm:text-5xl">News &amp; notices</h1>
           <p className="mt-3 max-w-2xl text-cream/80">Festivals, scholarships, homecomings and announcements — from the community and its institutions.</p>
@@ -29,42 +119,29 @@ export function Component() {
           <EmptyState
             title="No news yet"
             description="When the community and its institutions post, the latest from Oguaa will appear here."
-            actions={<CTA to="/" variant="outline">Back to home</CTA>}
+            actions={<Cta to="/" variant="outline">Back to home</Cta>}
           />
         ) : (
           <>
-            {lead && (
-              <Link to={`/news/${lead.slug}`} className="group block overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]">
-                {lead.coverImageUrl ? (
-                  <img src={cldCover(lead.coverImageUrl, 1000)} alt="" loading="lazy" className="h-56 w-full object-cover sm:h-72" />
-                ) : (
-                  <div className="h-3 w-full" style={{ backgroundColor: lead.coverColor ?? "#123F2D" }} />
-                )}
-                <div className="p-7">
-                  <p className="text-[0.66rem] font-bold uppercase tracking-wider text-gold-text">Latest</p>
-                  <h2 className="mt-2 font-display text-3xl font-semibold text-ink group-hover:text-green">{lead.title}</h2>
-                  {lead.summary && <p className="mt-3 max-w-2xl text-ink-muted">{lead.summary}</p>}
-                  <p className="mt-4 text-sm text-ink-faint">{lead.authorName} · {formatDate(lead.publishedAt ?? lead.createdAt)}</p>
+            <TagChips tags={tags} active={activeTag} onPick={setActiveTag} />
+            {leadMatches && <FeaturedStory a={lead} />}
+            {visible.length > 0 && (
+              <>
+                <div className="mb-5 mt-10 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-gold-text">Latest coverage</p>
+                    <h2 className="mt-1 font-display text-2xl font-semibold text-ink">From the newsroom</h2>
+                  </div>
                 </div>
-              </Link>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {visible.map((a) => <CoverageCard key={a.id} a={a} />)}
+                </div>
+              </>
             )}
-            {rest.length > 0 && (
-              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {rest.map((a) => (
-                  <Link key={a.id} to={`/news/${a.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]">
-                    {a.coverImageUrl ? (
-                      <img src={cldCover(a.coverImageUrl, 600)} alt="" loading="lazy" className="h-40 w-full object-cover" />
-                    ) : (
-                      <div className="h-2.5 w-full" style={{ backgroundColor: a.coverColor ?? "#123F2D" }} />
-                    )}
-                    <div className="flex flex-1 flex-col p-6">
-                      <h3 className="font-display text-xl font-semibold text-ink group-hover:text-green">{a.title}</h3>
-                      {a.summary && <p className="mt-2 text-sm text-ink-muted">{a.summary}</p>}
-                      <p className="mt-4 text-xs text-ink-faint">{a.authorName} · {formatDate(a.publishedAt ?? a.createdAt)}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+            {!leadMatches && visible.length === 0 && (
+              <p className="rounded-[var(--radius-card)] border border-sand bg-cream p-10 text-center text-sm text-ink-muted">
+                Nothing filed under #{activeTag} yet — try another tag.
+              </p>
             )}
           </>
         )}

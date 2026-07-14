@@ -1,23 +1,68 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Wordmark } from "./wordmark";
 import { NotificationsBell } from "./notifications-bell";
 import { LanguageSwitcher } from "./language-switcher";
-import { SECTIONS, SHOWCASE_SECTIONS, TONES, type NavSection } from "@/lib/sections";
+import { SECTIONS, TONES, type NavSection } from "@/lib/sections";
 import { useAuth } from "@/lib/auth";
 import { useLang, sectionLabel } from "@/lib/i18n";
 import { SectionIcon } from "./section-icon";
 
 const byId = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<string, NavSection>;
-const DISCOVER = ["heritage", "culture", "visit", "people"].map((id) => byId[id]).filter(Boolean);
-const CITY = ["education", "business", "community"].map((id) => byId[id]).filter(Boolean);
+const DISCOVER = ["heritage", "culture", "people", "visit"].map((id) => byId[id]).filter(Boolean);
+const CITY = ["education", "business", "youth", "community"].map((id) => byId[id]).filter(Boolean);
 
-function Chevron({ open }: { open: boolean }) {
+// Time-sensitive postings get their own group; the section entries below are
+// not in SECTIONS, so they carry a minimal NavSection-shaped literal.
+const NOTICES: NavSection[] = [
+  { id: "news", href: "/news", label: "News", tagline: "Notices and stories from Cape Coast.", tone: "gold", depth: "live" },
+  { id: "events", href: "/events", label: "Events", tagline: "The town's calendar, anchored on Fetu Afahye.", tone: "gold", depth: "live" },
+  { id: "safety", href: "/safety", label: "Safety", tagline: "Incidents, rescue & recovery.", tone: "maroon", depth: "live" },
+  { id: "lostfound", href: "/lost-found", label: "Lost & Found", tagline: "Lost items, found items, missing people.", tone: "teal", depth: "live" },
+];
+
+function DrawerGroup({ heading, items, lang, onPick }: Readonly<{ heading: string; items: NavSection[]; lang: ReturnType<typeof useLang>["lang"]; onPick: () => void }>) {
+  return (
+    <div className="mb-3">
+      <p className="px-3 pb-1 text-[0.66rem] font-bold uppercase tracking-[0.18em] text-cream/45">{heading}</p>
+      <div className="grid gap-1">
+        {items.map((s) => (
+          <Link key={s.id} to={s.href} onClick={onPick} className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-cream/5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cream/10 text-gold">
+              <SectionIcon id={s.id} className="h-[18px] w-[18px]" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-cream">
+                {sectionLabel(s, lang)}
+                {lang === "en" && s.fanteName && <span className="ml-2 font-display italic text-gold">{s.fanteName}</span>}
+              </span>
+              <span className="block text-xs text-cream/60">{s.tagline}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Chevron({ open }: Readonly<{ open: boolean }>) {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`transition-transform ${open ? "rotate-180" : ""}`}>
       <path d="M6 9l6 6 6-6" />
     </svg>
   );
+}
+
+/** Closes on outside click or Escape while open. Shared by all dropdowns. */
+function useDismiss(open: boolean, close: () => void, ref: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) close(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+  }, [open, close, ref]);
 }
 
 /** A click-/escape-dismissed dropdown. `align` controls panel side. */
@@ -26,23 +71,15 @@ function Dropdown({
   children,
   align = "left",
   width = "w-72",
-}: {
+}: Readonly<{
   trigger: (open: boolean) => ReactNode;
   children: (close: () => void) => ReactNode;
   align?: "left" | "right";
   width?: string;
-}) {
+}>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
-  }, [open]);
+  useDismiss(open, () => setOpen(false), ref);
 
   return (
     <div ref={ref} className="relative">
@@ -58,7 +95,7 @@ function Dropdown({
   );
 }
 
-function SectionMenuItem({ s, lang, onClick }: { s: NavSection; lang: ReturnType<typeof useLang>["lang"]; onClick: () => void }) {
+function SectionMenuItem({ s, lang, onClick }: Readonly<{ s: NavSection; lang: ReturnType<typeof useLang>["lang"]; onClick: () => void }>) {
   const t = TONES[s.tone];
   return (
     <Link to={s.href} onClick={onClick} role="menuitem" className="group relative flex items-start gap-3 overflow-hidden rounded-lg px-3 py-2.5 transition-colors hover:bg-paper">
@@ -77,6 +114,31 @@ function SectionMenuItem({ s, lang, onClick }: { s: NavSection; lang: ReturnType
   );
 }
 
+const navPill = (active: boolean) =>
+  `inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm transition-colors ${
+    active ? "bg-gold-brand font-semibold text-green-900" : "text-cream/85 hover:bg-cream/10 hover:text-cream"
+  }`;
+
+/** One grouped entry in the desktop pill nav: trigger + menu of sections. */
+function NavDropdown({ label, active, items, lang }: Readonly<{ label: string; active: boolean; items: NavSection[]; lang: ReturnType<typeof useLang>["lang"] }>) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useDismiss(open, () => setOpen(false), ref);
+
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu">
+        <span className={navPill(active || open)}>{label} <Chevron open={open} /></span>
+      </button>
+      {open && (
+        <div className="absolute left-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]" role="menu">
+          {items.map((s) => <SectionMenuItem key={s.id} s={s} lang={lang} onClick={() => setOpen(false)} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -87,9 +149,6 @@ export function SiteHeader() {
   const firstName = member?.displayName.split(/\s+/)[0];
   const initials = member ? member.displayName.split(/\s+/).slice(0, 2).map((w) => w[0]).join("") : "";
 
-  const navPill = (active: boolean) =>
-    `inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-cream/10 ${active ? "text-gold" : "text-cream/85"}`;
-
   return (
     <header className="on-dark sticky top-0 z-40 border-b border-cream/10 bg-green text-cream">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
@@ -97,23 +156,14 @@ export function SiteHeader() {
           <Wordmark />
         </Link>
 
-        {/* desktop nav with dropdowns */}
-        <nav className="hidden items-center gap-0.5 lg:flex">
+        {/* desktop nav — one pill track, six top-level entries max */}
+        <nav className="hidden items-center gap-0.5 rounded-full border border-cream/15 bg-cream/[0.06] p-1 lg:flex">
           <Link to="/music" className={navPill(isActive("/music"))}>{sectionLabel(byId.music, lang)}</Link>
           <Link to="/festivals" className={navPill(isActive("/festivals"))}>{sectionLabel(byId.festivals, lang)}</Link>
-
-          <Dropdown trigger={(o) => <span className={navPill(groupActive(DISCOVER) || o)}>Discover <Chevron open={o} /></span>}>
-            {(close) => DISCOVER.map((s) => <SectionMenuItem key={s.id} s={s} lang={lang} onClick={close} />)}
-          </Dropdown>
-
-          <Dropdown trigger={(o) => <span className={navPill(groupActive(CITY) || o)}>City <Chevron open={o} /></span>}>
-            {(close) => CITY.map((s) => <SectionMenuItem key={s.id} s={s} lang={lang} onClick={close} />)}
-          </Dropdown>
-
+          <NavDropdown label="Discover" active={groupActive(DISCOVER)} items={DISCOVER} lang={lang} />
+          <NavDropdown label="City" active={groupActive(CITY)} items={CITY} lang={lang} />
+          <NavDropdown label="Notices" active={groupActive(NOTICES)} items={NOTICES} lang={lang} />
           <Link to="/memoriam" className={navPill(isActive("/memoriam"))}>{sectionLabel(byId.memoriam, lang)}</Link>
-          <Link to="/news" className={navPill(isActive("/news"))}>News</Link>
-          <Link to="/safety" className={navPill(isActive("/safety"))}>Safety</Link>
-          <Link to="/lost-found" className={navPill(isActive("/lost-found"))}>Lost &amp; Found</Link>
         </nav>
 
         {/* right cluster */}
@@ -179,33 +229,19 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* mobile drawer */}
+      {/* mobile drawer — same groups as the desktop pill nav */}
       {open && (
         <div className="border-t border-cream/10 bg-green-900 lg:hidden">
-          <nav className="mx-auto grid w-full max-w-6xl gap-1 px-4 py-4 sm:px-6">
-            {SHOWCASE_SECTIONS.map((s) => (
-              <Link key={s.id} to={s.href} onClick={() => setOpen(false)} className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-cream/5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cream/10 text-gold">
-                  <SectionIcon id={s.id} className="h-[18px] w-[18px]" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold text-cream">
-                    {sectionLabel(s, lang)}
-                    {lang === "en" && s.fanteName && <span className="ml-2 font-display italic text-gold">{s.fanteName}</span>}
-                  </span>
-                  <span className="block text-xs text-cream/60">{s.tagline}</span>
-                </span>
-              </Link>
-            ))}
-            <Link to="/news" onClick={() => setOpen(false)} className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-cream/5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cream/10 text-gold">
-                <SectionIcon id="news" className="h-[18px] w-[18px]" />
-              </span>
-              <span>
-                <span className="block text-sm font-semibold text-cream">News</span>
-                <span className="block text-xs text-cream/60">Notices and stories from Cape Coast.</span>
-              </span>
-            </Link>
+          <nav className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6">
+            <DrawerGroup
+              heading="Top picks"
+              items={[byId.music, byId.festivals, byId.memoriam].filter(Boolean)}
+              lang={lang}
+              onPick={() => setOpen(false)}
+            />
+            <DrawerGroup heading="Discover" items={DISCOVER} lang={lang} onPick={() => setOpen(false)} />
+            <DrawerGroup heading="City" items={CITY} lang={lang} onPick={() => setOpen(false)} />
+            <DrawerGroup heading="Notices" items={NOTICES} lang={lang} onPick={() => setOpen(false)} />
 
             <div className="mt-3 px-3"><LanguageSwitcher /></div>
 

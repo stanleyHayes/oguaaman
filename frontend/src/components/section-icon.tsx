@@ -16,6 +16,8 @@ const PATHS: Record<string, ReactNode> = {
   news: <><path d="M4 5h12v14H5a1 1 0 0 1-1-1Z" /><path d="M16 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1" /><path d="M7 8h6M7 11h6M7 14h4" /></>,
   safety: <><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6Z" /><path d="M12 8v4" /><path d="M12 15.5v.5" /></>,
   lostfound: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /><path d="M11 8v3l2 2" /></>,
+  events: <><rect x="3.5" y="5" width="17" height="16" rx="2" /><path d="M3.5 9.5h17M8 3v4M16 3v4" /><path d="M8 14h.01M12 14h.01M16 14h.01" /></>,
+  youth: <><circle cx="12" cy="8" r="3.2" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /><path d="m19 4 .8 2 2 .8-2 .8L19 10l-.8-2-2-.8 2-.8Z" /></>,
 };
 
 export function SectionIcon({ id, className = "" }: { id: string; className?: string }) {
