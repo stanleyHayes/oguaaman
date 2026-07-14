@@ -106,7 +106,7 @@ export function PlanYourVisit() {
   return (
     <>
       {/* Practical fact cards */}
-      <Section tone="cream" size="wide">
+      <Section tone="cream" size="wide" className="pt-10 sm:pt-14">
         <SectionHeading
           kicker="PLAN YOUR VISIT"
           title="What you need to know."

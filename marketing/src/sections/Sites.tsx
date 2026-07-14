@@ -18,7 +18,7 @@ export function Sites() {
   const places = useHeritage(HERITAGE_FALLBACK);
 
   return (
-    <Section id="visit" tone="paper" size="wide">
+    <Section id="visit" tone="paper" size="wide" className="pb-10 sm:pb-14">
       <SectionHeading
         kicker="SEE CAPE COAST"
         title="Castle, canopy and shore."
