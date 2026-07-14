@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
 import { router } from "expo-router";
 import { C, serif } from "@/theme";
 import { Mark } from "@/ui";
@@ -9,7 +11,8 @@ import { RevealView, StaggerIn } from "@/components/anim";
 type MoreItem = { label: string; blurb: string; href: string };
 
 // Mirrors the web navbar grouping: Discover · City · Notices, plus the
-// funding board.
+// funding board. These are the secondary links that live in the drawer while
+// the primary destinations stay on the bottom navbar.
 const GROUPS: { heading: string; items: MoreItem[] }[] = [
   {
     heading: "DISCOVER",
@@ -51,83 +54,132 @@ const GROUPS: { heading: string; items: MoreItem[] }[] = [
 export default function More() {
   const { member, signOut } = useAuth();
   const { lang, setLang } = useLang();
+  const reduced = useReducedMotion();
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = reduced ? 1 : withSpring(1, { damping: 22, stiffness: 160 });
+  }, [progress, reduced]);
+
+  const panelStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: (1 - progress.value) * 360 }],
+  }));
+
+  const close = () => router.replace("/");
+
   return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-      <View style={{ alignItems: "center", marginBottom: 8 }}>
-        <Mark size={40} color={C.goldBrand} />
-      </View>
-      <Text style={s.title}>The town that began as a market</Text>
-      <Text style={s.body}>
-        Oguaa — Cape Coast — is one of the richest places in Ghana: the old colonial capital, the global symbol of the diaspora homecoming, the Citadel of Education, home of the Fante Confederacy and the Asafo. This app leads with local pride; investment and the diaspora follow.
-      </Text>
-
-      {/* Auth */}
-      <RevealView style={s.authCard}>
-        {member ? (
-          <>
-            <Text style={s.authName}>Signed in as {member.displayName}</Text>
-            <Text style={s.authRole}>{member.role} · phone verified</Text>
-            <Pressable onPress={() => router.push("/me")} style={s.authBtn}><Text style={s.authBtnText}>My profile &amp; connections</Text></Pressable>
-            <View style={s.authBtnRow}>
-              <Pressable onPress={() => router.push("/submit")} style={[s.authBtnOutline, { flex: 1 }]}><Text style={s.authBtnOutlineText}>Contribute</Text></Pressable>
-              <Pressable onPress={() => router.push("/notifications")} style={[s.authBtnOutline, { flex: 1 }]}><Text style={s.authBtnOutlineText}>Notifications</Text></Pressable>
-            </View>
-            <Pressable onPress={signOut}><Text style={s.signOutLink}>Sign out</Text></Pressable>
-          </>
-        ) : (
-          <>
-            <Text style={s.authName}>Rep your town</Text>
-            <Text style={s.authRole}>Sign in to contribute, follow memorials, and rep your school.</Text>
-            <Pressable onPress={() => router.push("/signin")} style={s.authBtn}><Text style={s.authBtnText}>Sign in / create account</Text></Pressable>
-          </>
-        )}
-      </RevealView>
-
-      <Text style={s.kicker}>LANGUAGE</Text>
-      <View style={s.langRow}>
-        {LANGS.map((l) => (
-          <Pressable key={l.code} onPress={() => setLang(l.code)} style={[s.langChip, lang === l.code && s.langChipOn]}>
-            <Text style={[s.langChipText, lang === l.code && s.langChipTextOn]}>{l.native}</Text>
+    <View style={s.root}>
+      <Pressable style={s.backdrop} onPress={close} />
+      <Animated.View style={[s.panel, panelStyle]}>
+        <View style={s.handleRow}>
+          <View style={s.handle} />
+          <Pressable onPress={close} hitSlop={12} style={s.closeBtn}>
+            <Text style={s.closeText}>✕</Text>
           </Pressable>
-        ))}
-      </View>
-
-      <Pressable onPress={() => router.push("/search")} style={s.searchBtn}>
-        <Text style={s.searchText}>🔍  Search people, places & memories</Text>
-      </Pressable>
-
-      {GROUPS.map((g, gi) => (
-        <View key={g.heading}>
-          <Text style={s.kicker}>{g.heading}</Text>
-          {g.items.map((x, xi) => (
-            <StaggerIn key={x.label} index={gi * 4 + xi}>
-              <Pressable onPress={() => router.push(x.href as never)} style={s.card}>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                  <Text style={s.cardTitle}>{x.label}</Text>
-                  <Text style={s.chevron}>›</Text>
-                </View>
-                <Text style={s.cardBlurb}>{x.blurb}</Text>
-              </Pressable>
-            </StaggerIn>
-          ))}
         </View>
-      ))}
 
-      <View style={s.legalRow}>
-        <Pressable onPress={() => router.push("/legal/privacy" as never)}><Text style={s.legalLink}>Privacy</Text></Pressable>
-        <Text style={s.legalDot}>·</Text>
-        <Pressable onPress={() => router.push("/legal/terms" as never)}><Text style={s.legalLink}>Terms</Text></Pressable>
-        <Text style={s.legalDot}>·</Text>
-        <Pressable onPress={() => router.push("/legal/acceptable-use" as never)}><Text style={s.legalLink}>Acceptable Use</Text></Pressable>
-      </View>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={{ alignItems: "center", marginBottom: 8 }}>
+            <Mark size={40} color={C.goldBrand} />
+          </View>
+          <Text style={s.title}>The town that began as a market</Text>
+          <Text style={s.body}>
+            Oguaa — Cape Coast — is one of the richest places in Ghana: the old colonial capital, the global symbol of the diaspora homecoming, the Citadel of Education, home of the Fante Confederacy and the Asafo. This app leads with local pride; investment and the diaspora follow.
+          </Text>
 
-      <Text style={s.foot}>Yɛn ara asaase ni — this is our own land.</Text>
-      <Text style={s.note}>An independent community initiative. Made by us, for us. For ages 18+.</Text>
-    </ScrollView>
+          {/* Auth */}
+          <RevealView style={s.authCard}>
+            {member ? (
+              <>
+                <Text style={s.authName}>Signed in as {member.displayName}</Text>
+                <Text style={s.authRole}>{member.role} · phone verified</Text>
+                <Pressable onPress={() => router.push("/me")} style={s.authBtn}><Text style={s.authBtnText}>My profile &amp; connections</Text></Pressable>
+                <View style={s.authBtnRow}>
+                  <Pressable onPress={() => router.push("/submit")} style={[s.authBtnOutline, { flex: 1 }]}><Text style={s.authBtnOutlineText}>Contribute</Text></Pressable>
+                  <Pressable onPress={() => router.push("/notifications")} style={[s.authBtnOutline, { flex: 1 }]}><Text style={s.authBtnOutlineText}>Notifications</Text></Pressable>
+                </View>
+                <Pressable onPress={signOut}><Text style={s.signOutLink}>Sign out</Text></Pressable>
+              </>
+            ) : (
+              <>
+                <Text style={s.authName}>Rep your town</Text>
+                <Text style={s.authRole}>Sign in to contribute, follow memorials, and rep your school.</Text>
+                <Pressable onPress={() => router.push("/signin")} style={s.authBtn}><Text style={s.authBtnText}>Sign in / create account</Text></Pressable>
+              </>
+            )}
+          </RevealView>
+
+          <Text style={s.kicker}>LANGUAGE</Text>
+          <View style={s.langRow}>
+            {LANGS.map((l) => (
+              <Pressable key={l.code} onPress={() => setLang(l.code)} style={[s.langChip, lang === l.code && s.langChipOn]}>
+                <Text style={[s.langChipText, lang === l.code && s.langChipTextOn]}>{l.native}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Pressable onPress={() => router.push("/search")} style={s.searchBtn}>
+            <Text style={s.searchText}>🔍  Search people, places & memories</Text>
+          </Pressable>
+
+          {GROUPS.map((g, gi) => (
+            <View key={g.heading}>
+              <Text style={s.kicker}>{g.heading}</Text>
+              {g.items.map((x, xi) => (
+                <StaggerIn key={x.label} index={gi * 4 + xi}>
+                  <Pressable onPress={() => router.push(x.href as never)} style={s.card}>
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <Text style={s.cardTitle}>{x.label}</Text>
+                      <Text style={s.chevron}>›</Text>
+                    </View>
+                    <Text style={s.cardBlurb}>{x.blurb}</Text>
+                  </Pressable>
+                </StaggerIn>
+              ))}
+            </View>
+          ))}
+
+          <View style={s.legalRow}>
+            <Pressable onPress={() => router.push("/legal/privacy" as never)}><Text style={s.legalLink}>Privacy</Text></Pressable>
+            <Text style={s.legalDot}>·</Text>
+            <Pressable onPress={() => router.push("/legal/terms" as never)}><Text style={s.legalLink}>Terms</Text></Pressable>
+            <Text style={s.legalDot}>·</Text>
+            <Pressable onPress={() => router.push("/legal/acceptable-use" as never)}><Text style={s.legalLink}>Acceptable Use</Text></Pressable>
+          </View>
+
+          <Text style={s.foot}>Yɛn ara asaase ni — this is our own land.</Text>
+          <Text style={s.note}>An independent community initiative. Made by us, for us. For ages 18+.</Text>
+        </ScrollView>
+      </Animated.View>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.green900 },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(12,44,31,0.55)" },
+  panel: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: "88%",
+    maxWidth: 400,
+    backgroundColor: C.paper,
+    borderTopLeftRadius: 24,
+    borderBottomLeftRadius: 24,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.28,
+    shadowRadius: 24,
+    shadowOffset: { width: -8, height: 0 },
+    elevation: 12,
+  },
+  handleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 },
+  handle: { width: 44, height: 5, borderRadius: 999, backgroundColor: C.sand, alignSelf: "center" },
+  closeBtn: { width: 36, height: 36, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: C.cream },
+  closeText: { color: C.inkMuted, fontSize: 15, fontWeight: "700" },
+  scrollContent: { padding: 20, paddingTop: 8, paddingBottom: 48 },
   title: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
   body: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 10, textAlign: "center" },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 24, marginBottom: 10 },

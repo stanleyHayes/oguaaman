@@ -50,7 +50,7 @@ export function Component() {
   const anchor = all.find((e) => e.details.anchorFestival) ?? null;
   const rest = upcoming.filter((e) => e.id !== anchor?.id);
 
-  const anchorClass = "on-dark relative mb-10 block overflow-hidden rounded-[var(--radius-card)] bg-green p-8 text-cream";
+  const anchorClass = "on-dark relative mb-10 block overflow-hidden rounded-[var(--radius-card)] bg-green p-6 text-cream sm:p-8";
   const anchorBody = anchor && (
     <>
       {anchor.coverImageUrl && (

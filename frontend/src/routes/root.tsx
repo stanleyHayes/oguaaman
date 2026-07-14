@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Outlet, isRouteErrorResponse, useLocation, useRouteError } from "react-router-dom";
+import { Outlet, isRouteErrorResponse, useLocation, useNavigation, useRouteError } from "react-router-dom";
+import { motion } from "motion/react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageTransition } from "@/components/page-transition";
@@ -14,10 +15,26 @@ function ScrollToTop() {
   return null;
 }
 
+function NavigationProgress() {
+  const nav = useNavigation();
+  if (nav.state === "idle") return null;
+  return (
+    <div className="fixed inset-x-0 top-0 z-[60] h-0.5 overflow-hidden bg-gold/15" aria-hidden>
+      <motion.div
+        className="h-full bg-gold-brand"
+        initial={{ x: "-100%" }}
+        animate={{ x: "100%" }}
+        transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity }}
+      />
+    </div>
+  );
+}
+
 export function RootLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
       <ScrollToTop />
+      <NavigationProgress />
       <SiteHeader />
       <main className="flex-1">
         <PageTransition>
