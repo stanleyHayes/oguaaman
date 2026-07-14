@@ -25,12 +25,12 @@ const NOTICES: NavSection[] = [
 
 function DrawerGroup({ heading, items, lang, onPick }: Readonly<{ heading: string; items: NavSection[]; lang: ReturnType<typeof useLang>["lang"]; onPick: () => void }>) {
   return (
-    <div className="mb-3">
-      <p className="px-3 pb-1 text-[0.66rem] font-bold uppercase tracking-[0.18em] text-cream/45">{heading}</p>
-      <div className="grid gap-1">
+    <motion.div variants={drawerItemVariants} className="mb-3 rounded-2xl border border-cream/10 bg-cream/[0.04] p-2">
+      <p className="px-2 pb-1.5 pt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-gold/90">{heading}</p>
+      <div className="grid gap-0.5">
         {items.map((s) => (
-          <Link key={s.id} to={s.href} onClick={onPick} className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-cream/5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cream/10 text-gold">
+          <Link key={s.id} to={s.href} onClick={onPick} className="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-cream/10">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cream/10 text-gold transition-colors group-hover:bg-gold-brand group-hover:text-green-900">
               <SectionIcon id={s.id} className="h-[18px] w-[18px]" />
             </span>
             <span>
@@ -38,12 +38,12 @@ function DrawerGroup({ heading, items, lang, onPick }: Readonly<{ heading: strin
                 {sectionLabel(s, lang)}
                 {lang === "en" && s.fanteName && <span className="ml-2 italic text-gold">{s.fanteName}</span>}
               </span>
-              <span className="block text-xs text-cream/60">{s.tagline}</span>
+              <span className="block text-xs leading-snug text-cream/60">{s.tagline}</span>
             </span>
           </Link>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -252,53 +252,99 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* mobile drawer — same groups as the desktop pill nav */}
+      {/* mobile drawer — full-screen slide-in overlay */}
       <AnimatePresence initial={false}>
-      {open && (
-        <motion.div
-          key="mobile-drawer"
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="overflow-hidden border-t border-cream/10 bg-green-900 lg:hidden"
-        >
-          <nav className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6">
-            <DrawerGroup
-              heading="Top picks"
-              items={[byId.music, byId.festivals, byId.memoriam].filter(Boolean)}
-              lang={lang}
-              onPick={() => setOpen(false)}
+        {open && (
+          <>
+            <motion.div
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-green-950/80 backdrop-blur-sm lg:hidden"
+              onClick={() => setOpen(false)}
+              aria-hidden
             />
-            <DrawerGroup heading="Discover" items={DISCOVER} lang={lang} onPick={() => setOpen(false)} />
-            <DrawerGroup heading="City" items={CITY} lang={lang} onPick={() => setOpen(false)} />
-            <DrawerGroup heading="Notices" items={NOTICES} lang={lang} onPick={() => setOpen(false)} />
-
-            <div className="mt-3 px-3"><LanguageSwitcher /></div>
-
-            <div className="mt-3 flex gap-2 px-3">
-              <Link to="/submit" onClick={() => setOpen(false)} className="flex-1 rounded-full bg-gold-brand py-2.5 text-center text-sm font-semibold text-green-900">
-                Contribute
-              </Link>
-              {member ? (
-                <Link to="/me" onClick={() => setOpen(false)} className="flex-1 rounded-full border border-cream/25 py-2.5 text-center text-sm font-semibold text-cream">
-                  {firstName}
+            <motion.div
+              key="mobile-drawer"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 280, damping: 30 }}
+              className="fixed inset-y-0 right-0 z-50 flex w-[88vw] max-w-sm flex-col bg-green-900 shadow-2xl lg:hidden"
+            >
+              <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
+              <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-cream/10 px-5">
+                <Link to="/" onClick={() => setOpen(false)} className="text-cream">
+                  <Wordmark />
                 </Link>
-              ) : (
-                <Link to="/signin" onClick={() => setOpen(false)} className="flex-1 rounded-full border border-cream/25 py-2.5 text-center text-sm font-semibold text-cream">
-                  Sign in
-                </Link>
-              )}
-            </div>
-            {member && (
-              <button type="button" onClick={() => { setOpen(false); signOut(); }} className="mx-3 mt-2 rounded-full border border-cream/25 py-2.5 text-center text-sm font-semibold text-cream/85">
-                Sign out
-              </button>
-            )}
-          </nav>
-        </motion.div>
-      )}
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close menu"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-cream hover:bg-cream/10"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <motion.nav
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                variants={{ visible: { transition: { staggerChildren: 0.04, delayChildren: 0.08 } }, hidden: {} }}
+                className="relative flex-1 overflow-y-auto px-5 py-5"
+              >
+                <DrawerGroup
+                  heading="Top picks"
+                  items={[byId.music, byId.festivals, byId.memoriam].filter(Boolean)}
+                  lang={lang}
+                  onPick={() => setOpen(false)}
+                />
+                <DrawerGroup heading="Discover" items={DISCOVER} lang={lang} onPick={() => setOpen(false)} />
+                <DrawerGroup heading="City" items={CITY} lang={lang} onPick={() => setOpen(false)} />
+                <DrawerGroup heading="Notices" items={NOTICES} lang={lang} onPick={() => setOpen(false)} />
+
+                <motion.div variants={drawerItemVariants} className="mt-5 px-1">
+                  <LanguageSwitcher />
+                </motion.div>
+              </motion.nav>
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 16 }}
+                transition={{ delay: 0.15, duration: 0.25 }}
+                className="relative border-t border-cream/10 p-5"
+              >
+                <div className="grid gap-2">
+                  <Link to="/submit" onClick={() => setOpen(false)} className="rounded-full bg-gold-brand py-3 text-center text-sm font-semibold text-green-900">
+                    Contribute
+                  </Link>
+                  {member ? (
+                    <Link to="/me" onClick={() => setOpen(false)} className="rounded-full border border-cream/25 py-3 text-center text-sm font-semibold text-cream">
+                      {firstName}
+                    </Link>
+                  ) : (
+                    <Link to="/signin" onClick={() => setOpen(false)} className="rounded-full border border-cream/25 py-3 text-center text-sm font-semibold text-cream">
+                      Sign in
+                    </Link>
+                  )}
+                  {member && (
+                    <button type="button" onClick={() => { setOpen(false); signOut(); }} className="rounded-full border border-cream/25 py-3 text-center text-sm font-semibold text-cream/85">
+                      Sign out
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
       </AnimatePresence>
     </header>
   );
 }
+
+const drawerItemVariants = {
+  hidden: { opacity: 0, x: 12 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const } },
+};
