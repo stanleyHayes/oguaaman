@@ -6,7 +6,10 @@ import { C, serif } from "@/theme";
 import { Mark } from "@/ui";
 import { useAuth } from "@/lib/auth";
 import { useLang, LANGS } from "@/lib/i18n";
-import { RevealView, StaggerIn } from "@/components/anim";
+
+// NOTE: no StaggerIn/RevealView here — reanimated entering animations misfire
+// on web once the drawer scrolls (cards re-animate at wrong offsets). The panel
+// slide-in above is the drawer's one motion; content renders still.
 
 type MoreItem = { label: string; blurb: string; href: string };
 
@@ -88,7 +91,7 @@ export default function More() {
           </Text>
 
           {/* Auth */}
-          <RevealView style={s.authCard}>
+          <View style={s.authCard}>
             {member ? (
               <>
                 <Text style={s.authName}>Signed in as {member.displayName}</Text>
@@ -107,7 +110,7 @@ export default function More() {
                 <Pressable onPress={() => router.push("/signin")} style={s.authBtn}><Text style={s.authBtnText}>Sign in / create account</Text></Pressable>
               </>
             )}
-          </RevealView>
+          </View>
 
           <Text style={s.kicker}>LANGUAGE</Text>
           <View style={s.langRow}>
@@ -122,11 +125,11 @@ export default function More() {
             <Text style={s.searchText}>🔍  Search people, places & memories</Text>
           </Pressable>
 
-          {GROUPS.map((g, gi) => (
+          {GROUPS.map((g) => (
             <View key={g.heading}>
               <Text style={s.kicker}>{g.heading}</Text>
-              {g.items.map((x, xi) => (
-                <StaggerIn key={x.label} index={gi * 4 + xi}>
+              {g.items.map((x) => (
+                <View key={x.label}>
                   <Pressable onPress={() => router.push(x.href as never)} style={s.card}>
                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                       <Text style={s.cardTitle}>{x.label}</Text>
@@ -134,7 +137,7 @@ export default function More() {
                     </View>
                     <Text style={s.cardBlurb}>{x.blurb}</Text>
                   </Pressable>
-                </StaggerIn>
+                </View>
               ))}
             </View>
           ))}
