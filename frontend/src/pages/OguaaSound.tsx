@@ -2,7 +2,7 @@ import { useLoaderData } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { PersonCard } from "@/components/cards";
 import { OGUAA_SOUND, SAMPLE_NOTICE } from "@/lib/content";
@@ -20,15 +20,15 @@ export function Component() {
       <Container size="prose" className="py-12 sm:py-16">
         <article className="font-serif text-lg leading-relaxed text-ink">
           {paragraphs.map((p, i) => (
-            <p key={i} className={i === 0 ? "[&::first-letter]:float-left [&::first-letter]:mr-3 [&::first-letter]:font-display [&::first-letter]:text-6xl [&::first-letter]:leading-[0.8] [&::first-letter]:text-clay-text" : "mt-5"}>{p}</p>
+            <p key={p} className={i === 0 ? "[&::first-letter]:float-left [&::first-letter]:mr-3 [&::first-letter]:font-display [&::first-letter]:text-6xl [&::first-letter]:leading-[0.8] [&::first-letter]:text-clay-text" : "mt-5"}>{p}</p>
           ))}
         </article>
         <SymbolDivider name="sankofa" className="my-12" />
         <h2 className="text-center font-display text-3xl font-semibold text-ink">The grandfathers</h2>
         <div className="mt-8 grid gap-5 sm:grid-cols-2">{legacy.map((p) => <PersonCard key={p.id} person={p} />)}</div>
         <div className="mt-12 flex flex-wrap justify-center gap-3">
-          <CTA to="/music" variant="primary">Browse the artists →</CTA>
-          <CTA to="/submit?type=artist" variant="outline">Nominate an artist</CTA>
+          <Cta to="/music" variant="primary">Browse the artists →</Cta>
+          <Cta to="/submit?type=artist" variant="outline">Nominate an artist</Cta>
         </div>
         <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>

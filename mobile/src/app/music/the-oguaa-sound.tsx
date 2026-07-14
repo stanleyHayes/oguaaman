@@ -32,7 +32,7 @@ export default function OguaaSound() {
 
         <View style={s.body}>
           {STORY.map((b, i) => (
-            <View key={i} style={{ marginTop: i === 0 ? 0 : 18 }}>
+            <View key={`${b.h ?? ""}-${i}`} style={{ marginTop: i === 0 ? 0 : 18 }}>
               {b.h ? <Text style={s.h}>{b.h}</Text> : null}
               <Text style={s.p}>{b.p}</Text>
             </View>

@@ -30,7 +30,7 @@ export default function Person() {
           <Text style={s.kicker}>WHY OGUAA IS PROUD</Text>
           {d.whyNotable ? <Text style={s.pull}>{d.whyNotable}</Text> : null}
           {story.map((p, i) => (
-            <Text key={i} style={[s.story, { marginTop: i === 0 ? 12 : 14 }]}>{p}</Text>
+            <Text key={`${p.slice(0, 20)}-${i}`} style={[s.story, { marginTop: i === 0 ? 12 : 14 }]}>{p}</Text>
           ))}
 
           {data.tags.length > 0 && (

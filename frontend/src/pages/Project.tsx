@@ -48,7 +48,7 @@ export function Component() {
 
   async function startPledge() {
     setError(null);
-    const cedisNum = parseFloat(amount);
+    const cedisNum = Number.parseFloat(amount);
     if (!Number.isFinite(cedisNum) || cedisNum < 1) { setError("Enter an amount of at least GH₵ 1."); return; }
     if (!member) { navigate("/signin", { state: { from: `/projects/${project.slug}` } }); return; }
     setBusy(true);
@@ -62,6 +62,10 @@ export function Component() {
   }
 
   const goalReached = d.goalPesewas ? Math.min(100, Math.round(((d.raisedPesewas ?? 0) / d.goalPesewas) * 100)) : 0;
+
+  let pledgeLabel = "Sign in to pledge";
+  if (busy) pledgeLabel = "Starting payment…";
+  else if (member) pledgeLabel = "Pledge with Paystack";
 
   return (
     <>
@@ -133,7 +137,7 @@ export function Component() {
                 />
                 {error && <p className="mt-2 text-sm text-clay-text">{error}</p>}
                 <button type="button" onClick={startPledge} disabled={busy} className="mt-4 w-full rounded-full bg-green py-3 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
-                  {busy ? "Starting payment…" : member ? "Pledge with Paystack" : "Sign in to pledge"}
+                  {pledgeLabel}
                 </button>
                 <p className="mt-2 text-center text-xs text-ink-faint">Mobile money &amp; cards via Paystack. You&rsquo;ll get a receipt by email.</p>
               </div>

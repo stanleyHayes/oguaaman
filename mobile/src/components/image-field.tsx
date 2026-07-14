@@ -44,7 +44,7 @@ async function uploadImage(uri: string, name?: string, type?: string): Promise<s
  * chosen image (Cloudinary or first-party), and stores the returned URL — or
  * paste a URL. The value is always a URL string.
  */
-export function ImageField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+export function ImageField({ value, onChange }: Readonly<{ value: string; onChange: (url: string) => void }>) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 

@@ -97,12 +97,16 @@ function SignIn() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function send(e: React.FormEvent) {
+  async function send(e: React.SubmitEvent) {
     e.preventDefault(); setBusy(true); setErr(null);
-    try { const dc = await requestOtp(identifier.trim()); setDevCode(dc); if (dc) setCode(dc); setStep("code"); }
-    catch { setErr("Could not send a code."); } finally { setBusy(false); }
+    try {
+      const dc = await requestOtp(identifier.trim());
+      setDevCode(dc);
+      if (dc) { setCode(dc); }
+      setStep("code");
+    } catch { setErr("Could not send a code."); } finally { setBusy(false); }
   }
-  async function confirm(e: React.FormEvent) {
+  async function confirm(e: React.SubmitEvent) {
     e.preventDefault(); setBusy(true); setErr(null);
     try { await verify(identifier.trim(), code.trim()); }
     catch { setErr("That code is invalid or has expired."); } finally { setBusy(false); }

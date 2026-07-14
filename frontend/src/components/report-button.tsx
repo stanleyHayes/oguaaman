@@ -10,6 +10,12 @@ const REASONS: { value: string; label: string }[] = [
   { value: "other", label: "Something else" },
 ];
 
+function bereavementFirst(a: { value: string }, b: { value: string }): number {
+  if (a.value === "bereavement") return -1;
+  if (b.value === "bereavement") return 1;
+  return 0;
+}
+
 /**
  * The member-facing notice-and-takedown affordance (spec §14.3/§14.4/§14.7).
  * Anyone can quietly flag a listing for a steward to review. `memorial` floats
@@ -19,18 +25,18 @@ export function ReportButton({
   listingId,
   memorial = false,
   className = "",
-}: {
+}: Readonly<{
   listingId: string;
   memorial?: boolean;
   className?: string;
-}) {
+}>) {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState(memorial ? "bereavement" : "inaccurate");
   const [detail, setDetail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
 
-  const reasons = memorial ? [...REASONS].sort((a, b) => (a.value === "bereavement" ? -1 : b.value === "bereavement" ? 1 : 0)) : REASONS;
+  const reasons = memorial ? [...REASONS].sort(bereavementFirst) : REASONS;
 
   useEffect(() => {
     if (!open) return;
@@ -41,7 +47,7 @@ export function ReportButton({
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.SubmitEvent) {
     e.preventDefault();
     setState("sending");
     try {

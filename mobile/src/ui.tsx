@@ -11,7 +11,7 @@ export function Loading() {
   );
 }
 
-export function ErrorView({ message }: { message: string }) {
+export function ErrorView({ message }: Readonly<{ message: string }>) {
   return (
     <View style={s.center}>
       <Text style={s.errTitle}>Couldn&apos;t load</Text>
@@ -22,15 +22,15 @@ export function ErrorView({ message }: { message: string }) {
 }
 
 /** The Oguaa crab mark — Kotokuraba, the crab market behind the town's name. */
-export function Mark({ size = 28 }: { size?: number; color?: string }) {
+export function Mark({ size = 28, color }: Readonly<{ size?: number; color?: string }>) {
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontSize: size * 0.92 }}>🦀</Text>
+      <Text style={{ fontSize: size * 0.92, color }}>🦀</Text>
     </View>
   );
 }
 
-export function Pill({ label, color = C.inkMuted, bg = C.cream, border = C.sand }: { label: string; color?: string; bg?: string; border?: string }) {
+export function Pill({ label, color = C.inkMuted, bg = C.cream, border = C.sand }: Readonly<{ label: string; color?: string; bg?: string; border?: string }>) {
   return (
     <View style={[s.pill, { backgroundColor: bg, borderColor: border }]}>
       <Text style={[s.pillText, { color }]}>{label}</Text>
@@ -61,13 +61,13 @@ export function Thumb({
   src,
   style,
   labelStyle,
-}: {
+}: Readonly<{
   seed: string;
   label?: string;
   src?: string;
   style?: StyleProp<ViewStyle>;
   labelStyle?: StyleProp<TextStyle>;
-}) {
+}>) {
   const [failed, setFailed] = useState(false);
   const bg = fillFor(seed);
   if (src && !failed) {
@@ -81,29 +81,29 @@ export function Thumb({
 }
 
 // ── A tiny Markdown renderer for news bodies (headings, lists, quotes, bold) ──
-function Inline({ text, style }: { text: string; style?: StyleProp<TextStyle> }) {
+function Inline({ text, style }: Readonly<{ text: string; style?: StyleProp<TextStyle> }>) {
   // Split on **bold** spans.
   const parts = text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
   return (
     <Text style={style}>
       {parts.map((p, i) =>
         p.startsWith("**") && p.endsWith("**")
-          ? <Text key={i} style={{ fontWeight: "700" }}>{p.slice(2, -2)}</Text>
-          : <Text key={i}>{p}</Text>,
+          ? <Text key={`${p}-${i}`} style={{ fontWeight: "700" }}>{p.slice(2, -2)}</Text>
+          : <Text key={`${p}-${i}`}>{p}</Text>,
       )}
     </Text>
   );
 }
 
-export function Markdown({ children }: { children: string }) {
-  const blocks = children.replace(/\r\n/g, "\n").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+export function Markdown({ children }: Readonly<{ children: string }>) {
+  const blocks = children.replaceAll("\r\n", "\n").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   return (
     <View style={{ gap: 12 }}>
       {blocks.map((block, i) => {
-        if (block.startsWith("### ")) return <Text key={i} style={md.h3}>{block.slice(4)}</Text>;
-        if (block.startsWith("## ")) return <Text key={i} style={md.h2}>{block.slice(3)}</Text>;
-        if (block.startsWith("# ")) return <Text key={i} style={md.h1}>{block.slice(2)}</Text>;
-        if (block.startsWith("> ")) return <Inline key={i} text={block.replace(/^> ?/gm, "")} style={md.quote} />;
+        if (block.startsWith("### ")) return <Text key={`${block.slice(0, 24)}-${i}`} style={md.h3}>{block.slice(4)}</Text>;
+        if (block.startsWith("## ")) return <Text key={`${block.slice(0, 24)}-${i}`} style={md.h2}>{block.slice(3)}</Text>;
+        if (block.startsWith("# ")) return <Text key={`${block.slice(0, 24)}-${i}`} style={md.h1}>{block.slice(2)}</Text>;
+        if (block.startsWith("> ")) return <Inline key={`${block.slice(0, 24)}-${i}`} text={block.replace(/^> ?/gm, "")} style={md.quote} />;
         // GFM table: a header row with pipes + a separator row whose every cell is
         // a dash-run (optionally colon-aligned) and whose column count matches the
         // header. Outer pipes are optional (matches the web react-markdown+gfm
@@ -121,13 +121,13 @@ export function Markdown({ children }: { children: string }) {
           const header = cells(lines[0]);
           const rows = lines.slice(2).filter((l) => l.trim()).map(cells);
           return (
-            <View key={i} style={md.table}>
+            <View key={`${block.slice(0, 24)}-${i}`} style={md.table}>
               <View style={[md.trow, md.thead]}>
-                {header.map((c, j) => <Inline key={j} text={c} style={[md.cell, md.th]} />)}
+                {header.map((c, j) => <Inline key={`${c}-${j}`} text={c} style={[md.cell, md.th]} />)}
               </View>
               {rows.map((r, ri) => (
-                <View key={ri} style={[md.trow, ri < rows.length - 1 && md.trowBorder]}>
-                  {header.map((_, j) => <Inline key={j} text={r[j] ?? ""} style={md.cell} />)}
+                <View key={`${r.join("|")}-${ri}`} style={[md.trow, ri < rows.length - 1 && md.trowBorder]}>
+                  {header.map((_, j) => <Inline key={`${r[j] ?? ""}-${j}`} text={r[j] ?? ""} style={md.cell} />)}
                 </View>
               ))}
             </View>
@@ -136,9 +136,9 @@ export function Markdown({ children }: { children: string }) {
         if (/^[-*] /.test(block)) {
           const items = block.split("\n").map((l) => l.replace(/^[-*] /, ""));
           return (
-            <View key={i} style={{ gap: 6 }}>
+            <View key={`${block.slice(0, 24)}-${i}`} style={{ gap: 6 }}>
               {items.map((it, j) => (
-                <View key={j} style={{ flexDirection: "row", gap: 8 }}>
+                <View key={`${it}-${j}`} style={{ flexDirection: "row", gap: 8 }}>
                   <Text style={md.bullet}>•</Text>
                   <Inline text={it} style={md.body} />
                 </View>
@@ -146,7 +146,7 @@ export function Markdown({ children }: { children: string }) {
             </View>
           );
         }
-        return <Inline key={i} text={block} style={md.body} />;
+        return <Inline key={`${block.slice(0, 24)}-${i}`} text={block} style={md.body} />;
       })}
     </View>
   );

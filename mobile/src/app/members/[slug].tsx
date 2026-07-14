@@ -8,7 +8,7 @@ import type { MemberView } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 
-function FollowButton({ slug }: { slug: string }) {
+function FollowButton({ slug }: Readonly<{ slug: string }>) {
   const { member } = useAuth();
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState<number | null>(null); // known after a toggle

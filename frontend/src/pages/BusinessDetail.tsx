@@ -20,7 +20,7 @@ export function Component() {
   const revalidator = useRevalidator();
   const [params, setParams] = useSearchParams();
   const d = b.details;
-  const isOwner = member != null && member.id === b.ownerId;
+  const isOwner = member?.id === b.ownerId;
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +57,10 @@ export function Component() {
       setBusy(false);
     }
   }
+
+  let subscribeLabel = "Subscribe with Paystack";
+  if (busy) subscribeLabel = "Starting payment…";
+  else if (b.supporter) subscribeLabel = "Renew — add another month";
 
   return (
     <>
@@ -136,7 +140,7 @@ export function Component() {
                 <div className="mt-4">
                   {error && <p className="mb-2 text-sm text-clay-text">{error}</p>}
                   <button type="button" onClick={subscribe} disabled={busy} className="w-full rounded-full bg-gold-brand py-3 text-sm font-semibold text-green-900 transition-colors hover:bg-gold disabled:opacity-60">
-                    {busy ? "Starting payment…" : b.supporter ? "Renew — add another month" : "Subscribe with Paystack"}
+                    {subscribeLabel}
                   </button>
                   <p className="mt-2 text-center text-xs text-ink-faint">Mobile money &amp; cards via Paystack. GH₵ 50 per month.</p>
                 </div>

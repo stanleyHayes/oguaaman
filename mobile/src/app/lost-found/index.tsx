@@ -20,10 +20,11 @@ function fmtDate(iso?: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-function NoticeCard({ i }: { i: LostFound }) {
+function NoticeCard({ i }: Readonly<{ i: LostFound }>) {
   const d = i.details;
   const missing = d.kind === "missing_person";
   const stColor = LF_STATUS_COLOR[d.lfStatus] ?? C.inkMuted;
+  const whereLabel = d.kind === "lost_item" ? "Lost" : "Found";
   return (
     <Pressable onPress={() => router.push(`/lost-found/${i.slug}` as never)} style={[s.card, missing && s.cardMissing]}>
       <View style={s.chipRow}>
@@ -35,7 +36,7 @@ function NoticeCard({ i }: { i: LostFound }) {
       <Text style={s.title}>{i.title}</Text>
       {d.lastSeenLocation ? (
         <Text style={s.where}>
-          {missing ? "Last seen" : d.kind === "lost_item" ? "Lost" : "Found"} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${fmtDate(d.lastSeenDate)}` : ""}
+          {missing ? "Last seen" : whereLabel} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${fmtDate(d.lastSeenDate)}` : ""}
         </Text>
       ) : null}
       {d.description ? <Text style={s.desc} numberOfLines={2}>{d.description}</Text> : null}

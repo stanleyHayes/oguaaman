@@ -59,7 +59,7 @@ export function Component() {
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({ title, children }: Readonly<{ title: string; children: React.ReactNode }>) {
   return (
     <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-6">
       <h2 className="mb-4 font-display text-xl font-semibold text-ink">{title}</h2>
@@ -71,7 +71,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 const field = "w-full rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-brand focus:outline-none";
 const label = "block text-xs font-semibold uppercase tracking-wide text-ink-faint";
 
-function Saver({ state }: { state: SaveState }) {
+function Saver({ state }: Readonly<{ state: SaveState }>) {
   if (state === "saving") return <span className="text-sm text-ink-faint">Saving…</span>;
   if (state === "saved") return <span className="text-sm text-teal-text">Saved ✓</span>;
   if (state === "error") return <span className="text-sm text-clay-text">Couldn’t save — try again.</span>;
@@ -80,7 +80,7 @@ function Saver({ state }: { state: SaveState }) {
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-function ProfileForm({ slug, org }: { slug: string; org: Organization }) {
+function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }>) {
   const [summary, setSummary] = useState(org.summary ?? "");
   const [motto, setMotto] = useState(org.motto ?? "");
   const [history, setHistory] = useState(org.history ?? "");
@@ -108,16 +108,16 @@ function ProfileForm({ slug, org }: { slug: string; org: Organization }) {
           hint="The institution's official crest or logo — shown on its public page."
         />
         <div>
-          <label className={label}>Motto</label>
-          <input className={`mt-1.5 ${field}`} value={motto} onChange={(e) => setMotto(e.target.value)} placeholder="e.g. Dwen Hwe Kan" />
+          <label htmlFor="org-motto" className={label}>Motto</label>
+          <input id="org-motto" className={`mt-1.5 ${field}`} value={motto} onChange={(e) => setMotto(e.target.value)} placeholder="e.g. Dwen Hwe Kan" />
         </div>
         <div>
-          <label className={label}>Summary</label>
-          <textarea rows={3} className={`mt-1.5 resize-none ${field}`} value={summary} onChange={(e) => setSummary(e.target.value)} />
+          <label htmlFor="org-summary" className={label}>Summary</label>
+          <textarea id="org-summary" rows={3} className={`mt-1.5 resize-none ${field}`} value={summary} onChange={(e) => setSummary(e.target.value)} />
         </div>
         <div>
-          <label className={label}>History</label>
-          <textarea rows={4} className={`mt-1.5 resize-none ${field}`} value={history} onChange={(e) => setHistory(e.target.value)} />
+          <label htmlFor="org-history" className={label}>History</label>
+          <textarea id="org-history" rows={4} className={`mt-1.5 resize-none ${field}`} value={history} onChange={(e) => setHistory(e.target.value)} />
         </div>
         <div className="flex items-center gap-3">
           <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
@@ -130,7 +130,7 @@ function ProfileForm({ slug, org }: { slug: string; org: Organization }) {
   );
 }
 
-function RosterForm({ slug, initial }: { slug: string; initial?: Office[] }) {
+function RosterForm({ slug, initial }: Readonly<{ slug: string; initial?: Office[] }>) {
   const [offices, setOffices] = useState<Office[]>((initial ?? []).length ? (initial ?? []) : [{ id: "", role: "", holderName: "", verified: false }]);
   const [state, setState] = useState<SaveState>("idle");
 
@@ -191,7 +191,7 @@ function RosterForm({ slug, initial }: { slug: string; initial?: Office[] }) {
   );
 }
 
-function EventForm({ slug, verified }: { slug: string; verified: boolean }) {
+function EventForm({ slug, verified }: Readonly<{ slug: string; verified: boolean }>) {
   const [title, setTitle] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [venue, setVenue] = useState("");
@@ -218,22 +218,22 @@ function EventForm({ slug, verified }: { slug: string; verified: boolean }) {
     <Panel title="Post an official event">
       <div className="space-y-4">
         <div>
-          <label className={label}>Title</label>
-          <input className={`mt-1.5 ${field}`} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Speech & Prize-Giving Day" />
+          <label htmlFor="org-event-title" className={label}>Title</label>
+          <input id="org-event-title" className={`mt-1.5 ${field}`} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Speech & Prize-Giving Day" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={label}>Date</label>
-            <input type="date" className={`mt-1.5 ${field}`} value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+            <label htmlFor="org-event-date" className={label}>Date</label>
+            <input id="org-event-date" type="date" className={`mt-1.5 ${field}`} value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
           </div>
           <div>
-            <label className={label}>Venue</label>
-            <input className={`mt-1.5 ${field}`} value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="e.g. Botwe Hall" />
+            <label htmlFor="org-event-venue" className={label}>Venue</label>
+            <input id="org-event-venue" className={`mt-1.5 ${field}`} value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="e.g. Botwe Hall" />
           </div>
         </div>
         <div>
-          <label className={label}>Details</label>
-          <textarea rows={3} className={`mt-1.5 resize-none ${field}`} value={description} onChange={(e) => setDescription(e.target.value)} />
+          <label htmlFor="org-event-details" className={label}>Details</label>
+          <textarea id="org-event-details" rows={3} className={`mt-1.5 resize-none ${field}`} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <div className="flex items-center gap-3">
           <button type="button" onClick={post} disabled={state === "saving" || !title.trim()} className="rounded-full bg-gold-brand px-5 py-2.5 text-sm font-semibold text-green-900 hover:bg-gold disabled:opacity-60">
@@ -254,7 +254,7 @@ function EventForm({ slug, verified }: { slug: string; verified: boolean }) {
 // canonical ids (sec-/med-/itm-).
 let _tmpSeq = 0;
 const nextTmpId = () => `tmp-${++_tmpSeq}`;
-const stripTmp = (id?: string) => (id && id.startsWith("tmp-") ? "" : id ?? "");
+const stripTmp = (id?: string) => (id?.startsWith("tmp-") ? "" : id ?? "");
 
 const SECTION_TYPES: { type: ProfileSectionType; label: string; hint: string }[] = [
   { type: "richtext", label: "Text", hint: "A heading + rich text (Markdown, incl. tables)." },
@@ -367,7 +367,7 @@ function sectionForSave(s: ProfileSection): ProfileSection {
   };
 }
 
-function SectionBuilderForm({ slug, initial }: { slug: string; initial?: ProfileSection[] }) {
+function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; initial?: ProfileSection[] }>) {
   const [sections, setSections] = useState<ProfileSection[]>(initial ?? []);
   const [state, setState] = useState<SaveState>("idle");
 
@@ -424,14 +424,12 @@ function SectionBuilderForm({ slug, initial }: { slug: string; initial?: Profile
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-1.5 text-xs text-ink-muted">
-                Accent
-                <select className="rounded-md border border-sand bg-paper px-2 py-1 text-sm text-ink" value={s.tone ?? "green"} onChange={(e) => update(i, { tone: e.target.value })}>
+                Accent<select className="rounded-md border border-sand bg-paper px-2 py-1 text-sm text-ink" value={s.tone ?? "green"} onChange={(e) => update(i, { tone: e.target.value })}>
                   {TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </label>
               <label className="flex items-center gap-1.5 text-xs text-ink-muted">
-                <input type="checkbox" checked={!s.hidden} onChange={(e) => update(i, { hidden: !e.target.checked })} />
-                Visible on page
+                <input type="checkbox" checked={!s.hidden} onChange={(e) => update(i, { hidden: !e.target.checked })} />Visible on page
               </label>
             </div>
             <div className="mt-3">
@@ -501,7 +499,7 @@ function SectionBuilderForm({ slug, initial }: { slug: string; initial?: Profile
   );
 }
 
-function ItemsEditor({ type, items, onChange }: { type: ProfileSectionType; items: SectionItem[]; onChange: (items: SectionItem[]) => void }) {
+function ItemsEditor({ type, items, onChange }: Readonly<{ type: ProfileSectionType; items: SectionItem[]; onChange: (items: SectionItem[]) => void }>) {
   const fields = ITEM_FIELDS[type] ?? [];
   const showImage = type === "team" || type === "logos" || type === "testimonials";
   function update(i: number, patch: Partial<SectionItem>) {
@@ -533,7 +531,7 @@ function ItemsEditor({ type, items, onChange }: { type: ProfileSectionType; item
   );
 }
 
-function MediaItemsEditor({ media, onChange }: { media: MediaAsset[]; onChange: (media: MediaAsset[]) => void }) {
+function MediaItemsEditor({ media, onChange }: Readonly<{ media: MediaAsset[]; onChange: (media: MediaAsset[]) => void }>) {
   function update(i: number, patch: Partial<MediaAsset>) {
     onChange(media.map((m, idx) => (idx === i ? { ...m, ...patch } : m)));
   }
@@ -556,7 +554,7 @@ function MediaItemsEditor({ media, onChange }: { media: MediaAsset[]; onChange: 
 
 // Sub-entity cards (houses, departments, Asafo companies, year groups, lineage):
 // name + subtitle + colours + crest + summary + key/value facts.
-function GroupsEditor({ groups, onChange }: { groups: SubEntity[]; onChange: (groups: SubEntity[]) => void }) {
+function GroupsEditor({ groups, onChange }: Readonly<{ groups: SubEntity[]; onChange: (groups: SubEntity[]) => void }>) {
   function update(i: number, patch: Partial<SubEntity>) {
     onChange(groups.map((g, idx) => (idx === i ? { ...g, ...patch } : g)));
   }
@@ -585,7 +583,7 @@ function GroupsEditor({ groups, onChange }: { groups: SubEntity[]; onChange: (gr
   );
 }
 
-function AttrsEditor({ attrs, onChange }: { attrs: SectionItem[]; onChange: (attrs: SectionItem[]) => void }) {
+function AttrsEditor({ attrs, onChange }: Readonly<{ attrs: SectionItem[]; onChange: (attrs: SectionItem[]) => void }>) {
   function update(i: number, patch: Partial<SectionItem>) { onChange(attrs.map((a, idx) => (idx === i ? { ...a, ...patch } : a))); }
   function add() { onChange([...attrs, { id: nextTmpId() }]); }
   function remove(i: number) { onChange(attrs.filter((_, idx) => idx !== i)); }
@@ -603,7 +601,7 @@ function AttrsEditor({ attrs, onChange }: { attrs: SectionItem[]; onChange: (att
   );
 }
 
-function GalleryForm({ slug, initial }: { slug: string; initial?: MediaAsset[] }) {
+function GalleryForm({ slug, initial }: Readonly<{ slug: string; initial?: MediaAsset[] }>) {
   const [items, setItems] = useState<MediaAsset[]>(initial ?? []);
   const [state, setState] = useState<SaveState>("idle");
 

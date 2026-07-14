@@ -42,7 +42,7 @@ func newHistoryService() *Service {
 		{ID: "tl-1482", Year: "1482", Title: "The Portuguese reach the Gold Coast"},
 		{ID: "tl-1876", Year: "1876", Title: "Mfantsipim is founded"},
 	}}
-	return New(f, stubMembers{}, heritageOrgs{}, stubPlaces{}, modRepo{f}, stubNotifs{}, stubFollows{}, stubClaims{}, stubNews{}, stubReports{}, tl)
+	return New(Deps{Listings: f, Members: stubMembers{}, Orgs: heritageOrgs{}, Places: stubPlaces{}, Mod: modRepo{f}, Notifs: stubNotifs{}, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: tl})
 }
 
 func TestHistory_timelineSortedAscending(t *testing.T) {

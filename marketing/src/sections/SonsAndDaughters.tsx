@@ -66,7 +66,7 @@ const SCHOOLED: Figure[] = [
   },
 ];
 
-function FigureCard({ figure, accent }: { figure: Figure; accent: "gold" | "clay" }) {
+function FigureCard({ figure, accent }: Readonly<{ figure: Figure; accent: "gold" | "clay" }>) {
   const border = accent === "gold" ? "border-l-gold-brand/60" : "border-l-clay/55";
   return (
     <Card className={`flex flex-col border-l-2 ${border} p-6`}>

@@ -20,7 +20,7 @@ const PATHS: Record<string, ReactNode> = {
   youth: <><circle cx="12" cy="8" r="3.2" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /><path d="m19 4 .8 2 2 .8-2 .8L19 10l-.8-2-2-.8 2-.8Z" /></>,
 };
 
-export function SectionIcon({ id, className = "" }: { id: string; className?: string }) {
+export function SectionIcon({ id, className = "" }: Readonly<{ id: string; className?: string }>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
       {PATHS[id] ?? PATHS.home}

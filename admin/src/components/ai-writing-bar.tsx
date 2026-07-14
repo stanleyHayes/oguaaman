@@ -12,7 +12,7 @@ const GENERATE: { a: Action; label: string }[] = [
 ];
 const LANGS = ["Fante", "Twi", "Ga", "Ewe", "French"];
 
-export function AiWritingBar({ initialTitle = "", initialBody = "" }: { initialTitle?: string; initialBody?: string }) {
+export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{ initialTitle?: string; initialBody?: string }>) {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState(initialBody);
@@ -56,15 +56,16 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: { initialT
     } finally { setLoading(false); }
   }
 
-  const scope = sel.active ? `selection · ${sel.words} ${sel.words === 1 ? "word" : "words"}` : "whole field";
+  const scopeWord = sel.words === 1 ? "word" : "words";
+  const scope = sel.active ? `selection · ${sel.words} ${scopeWord}` : "whole field";
 
   return (
     <div>
       <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
-        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Title</label>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} className="mb-4 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-lg font-semibold focus:border-ai focus:outline-none" />
-        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Body</label>
-        <textarea ref={bodyRef} value={body} onChange={(e) => setBody(e.target.value)} onSelect={refreshScope} onKeyUp={refreshScope} onMouseUp={refreshScope} rows={7}
+        <label htmlFor="aiw-title" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Title</label>
+        <input id="aiw-title" value={title} onChange={(e) => setTitle(e.target.value)} className="mb-4 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-lg font-semibold focus:border-ai focus:outline-none" />
+        <label htmlFor="aiw-body" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Body</label>
+        <textarea id="aiw-body" ref={bodyRef} value={body} onChange={(e) => setBody(e.target.value)} onSelect={refreshScope} onKeyUp={refreshScope} onMouseUp={refreshScope} rows={7}
           className="w-full resize-y rounded-lg border border-sand bg-paper p-3.5 leading-relaxed focus:border-ai focus:outline-none" />
         <div className="mt-3 flex items-center justify-between">
           <span className={`text-sm ${sel.active ? "font-medium text-ai" : "text-ink-faint"}`}>Working on the {scope}</span>
@@ -101,7 +102,7 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: { initialT
             <div className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-white p-4 text-sm leading-relaxed">{result}</div>
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => { setBody(sel.active ? body.slice(0, sel.start) + result + body.slice(sel.end) : result); setResult(null); }} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-cream">Replace</button>
-              <button onClick={() => { setBody(body.replace(/\s*$/, "") + "\n\n" + result); setResult(null); }} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold">Insert below</button>
+              <button onClick={() => { setBody(body.trimEnd() + "\n\n" + result); setResult(null); }} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold">Insert below</button>
               <button onClick={() => { navigator.clipboard?.writeText(result).catch(() => {}); }} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold">Copy</button>
               <button onClick={() => setResult(null)} className="rounded-lg border border-[#EAD7D1] px-4 py-2 text-sm font-semibold text-clay-text">Discard</button>
             </div>
@@ -113,6 +114,6 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: { initialT
   );
 }
 
-function Btn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function Btn({ onClick, children }: Readonly<{ onClick: () => void; children: React.ReactNode }>) {
   return <button type="button" onClick={onClick} className="rounded-lg border border-ai-line bg-white px-3 py-2 text-sm font-medium hover:border-ai hover:text-ai">{children}</button>;
 }

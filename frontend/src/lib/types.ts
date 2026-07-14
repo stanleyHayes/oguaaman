@@ -1,5 +1,8 @@
 // TypeScript mirror of the Go API's JSON shapes (backend/internal/domain).
 
+/** Lifecycle of a payment (pledge / ticket / subscription / promotion). */
+export type PaymentStatus = "pending" | "success" | "failed";
+
 export type ListingStatus =
   | "draft" | "pending" | "approved" | "rejected" | "unpublished";
 
@@ -16,7 +19,7 @@ export interface Pledge {
   memberId?: string;
   amountPesewas: number;
   currency: string;
-  status: "pending" | "success" | "failed";
+  status: PaymentStatus;
   simulated?: boolean;
   createdAt: string;
   confirmedAt?: string;
@@ -52,7 +55,7 @@ export interface Ticket {
   tier: string;
   qty: number;
   amountPesewas: number;
-  status: "pending" | "success" | "failed";
+  status: PaymentStatus;
   code?: string;        // issued on confirmation; shown at the gate
   checkedInAt?: string; // set once, at the gate
   simulated?: boolean;
@@ -70,7 +73,7 @@ export interface Subscription {
   listingTitle: string;
   plan: "business-supporter";
   amountPesewas: number;
-  status: "pending" | "success" | "failed";
+  status: PaymentStatus;
   periodEnd?: string; // RFC3339; set on success
   simulated?: boolean;
   createdAt: string;
@@ -87,7 +90,7 @@ export interface Promotion {
   memberId?: string;
   days: number;
   amountPesewas: number;
-  status: "pending" | "success" | "failed";
+  status: PaymentStatus;
   simulated?: boolean;
   createdAt: string;
   confirmedAt?: string;

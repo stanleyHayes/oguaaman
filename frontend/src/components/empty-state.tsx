@@ -12,13 +12,13 @@ export function EmptyState({
   description,
   actions,
   className = "",
-}: {
+}: Readonly<{
   icon?: ReactNode;
   title: string;
   description?: string;
   actions?: ReactNode;
   className?: string;
-}) {
+}>) {
   return (
     <div className={`flex flex-col items-center px-6 py-16 text-center ${className}`}>
       <div className="oguaa-pulse-ring relative flex h-20 w-20 items-center justify-center rounded-full border border-sand bg-cream text-gold-brand">

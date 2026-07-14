@@ -36,25 +36,28 @@ func main() {
 	}()
 
 	memberRepo := mongox.NewMemberRepo(db)
-	svc := service.New(
-		mongox.NewListingRepo(db),
-		memberRepo,
-		mongox.NewOrgRepo(db),
-		mongox.NewPlaceRepo(db),
-		mongox.NewModerationRepo(db),
-		mongox.NewNotificationRepo(db),
-		mongox.NewFollowRepo(db),
-		mongox.NewOrgClaimRepo(db),
-		mongox.NewNewsRepo(db),
-		mongox.NewReportRepo(db),
-		mongox.NewTimelineRepo(db),
-	)
+	svc := service.New(service.Deps{
+		Listings: mongox.NewListingRepo(db),
+		Members:  memberRepo,
+		Orgs:     mongox.NewOrgRepo(db),
+		Places:   mongox.NewPlaceRepo(db),
+		Mod:      mongox.NewModerationRepo(db),
+		Notifs:   mongox.NewNotificationRepo(db),
+		Follows:  mongox.NewFollowRepo(db),
+		Claims:   mongox.NewOrgClaimRepo(db),
+		News:     mongox.NewNewsRepo(db),
+		Reports:  mongox.NewReportRepo(db),
+		Timeline: mongox.NewTimelineRepo(db),
+	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db))
 	auth := newAuthService(db, cfg, log)
 	ensureUploadDir(log, cfg)
 	payments, tickets, subs, promotions, revenue := moneyServices(db, cfg, log)
 
-	handler := httpx.NewHandler(svc, ai, auth, payments, tickets, subs, promotions, revenue, cfg.PaystackSecretKey, cfg.AuthRequired, cfg.UploadDir, cfg.PublicBaseURL, log)
+	handler := httpx.NewHandler(httpx.HandlerDeps{
+		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Revenue: revenue,
+		PaystackSecret: cfg.PaystackSecretKey, AuthRequired: cfg.AuthRequired, UploadDir: cfg.UploadDir, UploadBase: cfg.PublicBaseURL, Log: log,
+	})
 	router := newRouter(log, cfg, svc, handler)
 
 	srv := &http.Server{

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { api } from "@/lib/api";
 
 /**
@@ -39,7 +39,7 @@ export function AiWritingBar({
   rows = 7,
   value,
   onChange,
-}: {
+}: Readonly<{
   label?: string;
   initialTitle?: string;
   initialBody?: string;
@@ -50,7 +50,7 @@ export function AiWritingBar({
   value?: string;
   /** Called whenever the body changes (typing or applying an AI result). */
   onChange?: (next: string) => void;
-}) {
+}>) {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [title, setTitle] = useState(initialTitle);
   const controlled = value !== undefined;
@@ -74,6 +74,8 @@ export function AiWritingBar({
   const [language, setLanguage] = useState("Twi");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const titleId = useId();
+  const bodyId = useId();
 
   function flashToast(m: string) {
     setToast(m);
@@ -125,7 +127,7 @@ export function AiWritingBar({
   }
   function applyInsert() {
     if (result == null) return;
-    setBody(body.replace(/\s*$/, "") + "\n\n" + result);
+    setBody(body.trimEnd() + "\n\n" + result);
     setOpen(false); flashToast("Inserted below");
   }
   function copyResult() {
@@ -134,17 +136,19 @@ export function AiWritingBar({
     flashToast("Copied");
   }
 
-  const scopeLabel = sel.active ? `selection · ${sel.words} ${sel.words === 1 ? "word" : "words"}` : "whole field";
+  const wordLabel = sel.words === 1 ? "word" : "words";
+  const scopeLabel = sel.active ? `selection · ${sel.words} ${wordLabel}` : "whole field";
 
   return (
     <div className="relative">
       <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)]">
         {showTitle && (<>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Title</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mb-5 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-lg font-semibold text-ink focus:border-green focus:outline-none" />
+          <label htmlFor={titleId} className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Title</label>
+          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} className="mb-5 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-lg font-semibold text-ink focus:border-green focus:outline-none" />
         </>)}
-        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">{label}</label>
+        <label htmlFor={bodyId} className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">{label}</label>
         <textarea
+          id={bodyId}
           ref={bodyRef} value={body} onChange={(e) => setBody(e.target.value)}
           onSelect={refreshScope} onKeyUp={refreshScope} onMouseUp={refreshScope} rows={rows}
           className="w-full resize-y rounded-lg border border-sand bg-paper p-3.5 leading-relaxed text-ink focus:border-green focus:outline-none"
@@ -235,7 +239,7 @@ export function AiWritingBar({
       <p className="mt-3 text-center text-xs text-ink-faint">The bar calls the model server-side — keys never reach the browser. Every output is a draft; you always decide what is kept.</p>
 
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-5" role="dialog" aria-modal>
+        <dialog open className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-ink/40 p-5" aria-modal>
           <div className="w-full max-w-sm rounded-[var(--radius-card)] bg-white p-6 text-center shadow-[var(--shadow-lift)]">
             <h3 className="font-display text-xl font-semibold text-ink">Replace current text?</h3>
             <p className="mt-2 text-sm text-ink-muted">This will overwrite {sel.active ? "your selected text" : "what's in the field"}. This can't be undone.</p>
@@ -244,7 +248,7 @@ export function AiWritingBar({
               <button onClick={applyReplace} className="rounded-lg bg-maroon-900 px-5 py-2 text-sm font-semibold text-white">Replace</button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
 
       {toast && <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-cream shadow-lg">{toast}</div>}
@@ -260,7 +264,7 @@ function Sparkle() {
     </svg>
   );
 }
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
+function Group({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
   return (
     <div className="mb-4 last:mb-0">
       <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-ink-faint">{label}</p>
@@ -268,7 +272,7 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-function ActBtn({ onClick, ic, label }: { onClick: () => void; ic: string; label: string }) {
+function ActBtn({ onClick, ic, label }: Readonly<{ onClick: () => void; ic: string; label: string }>) {
   return (
     <button type="button" onClick={onClick} className="inline-flex items-center gap-2 rounded-lg border border-ai-line bg-white px-3 py-2 text-sm font-medium text-ink transition-colors hover:border-ai hover:text-ai">
       <span aria-hidden>{ic}</span>{label}

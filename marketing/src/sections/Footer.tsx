@@ -45,12 +45,13 @@ const COLUMNS: FooterColumn[] = [
 
 function FooterLinkItem({ link }: Readonly<{ link: FooterLink }>) {
   const cls = "inline-block py-0.5 text-cream/70 transition-colors hover:text-gold";
+  const externalProps = link.external ? { target: "_blank", rel: "noopener noreferrer" } : {};
   return (
     <li>
       {link.to ? (
         <Link to={link.to} className={cls}>{link.label}</Link>
       ) : (
-        <a href={link.href} className={cls} {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+        <a href={link.href} className={cls} {...externalProps}>
           {link.label}
         </a>
       )}

@@ -9,6 +9,12 @@ import { cldCover } from "@/lib/cloudinary";
 interface Data { queue: Listing[]; members: Member[] }
 interface Log { action: string; title: string; reason?: string; tone: "ok" | "bad" | "warn" }
 
+function toneClass(tone: Log["tone"]): string {
+  if (tone === "ok") return "text-green";
+  if (tone === "bad") return "text-maroon-900";
+  return "text-gold-text";
+}
+
 export async function loader(): Promise<Data> {
   const [queue, members] = await Promise.all([api.queue(), api.members()]);
   return { queue, members };
@@ -110,9 +116,9 @@ export function Component() {
           <Card className="p-5">
             {log.length === 0 ? <p className="text-sm text-ink-faint">Your moderation actions appear here and are written to the audit log.</p> : (
               <ul className="space-y-3">
-                {log.map((e, i) => (
-                  <li key={i} className="border-b border-sand pb-3 text-sm last:border-0 last:pb-0">
-                    <span className={`font-semibold ${e.tone === "ok" ? "text-green" : e.tone === "bad" ? "text-maroon-900" : "text-gold-text"}`}>{e.action}</span> “{e.title}”
+                {log.map((e) => (
+                  <li key={`${e.action}-${e.title}-${e.reason ?? ""}`} className="border-b border-sand pb-3 text-sm last:border-0 last:pb-0">
+                    <span className={`font-semibold ${toneClass(e.tone)}`}>{e.action}</span> “{e.title}”
                     {e.reason && <span className="block text-xs text-ink-muted">“{e.reason}”</span>}
                   </li>
                 ))}

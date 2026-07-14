@@ -1,4 +1,4 @@
-import { Container, CTA, Eyebrow } from "@/components/ui";
+import { Container, CTA as Cta, Eyebrow } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
 import { PORTAL_APP_URL } from "@/config";
@@ -50,7 +50,7 @@ export function Hero() {
             </p>
 
             <div className="rise rise-3 mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <CTA href={PORTAL_APP_URL} variant="gold" external>
+              <Cta href={PORTAL_APP_URL} variant="gold" external>
                 Open the web app
                 <svg
                   width={16}
@@ -65,10 +65,10 @@ export function Hero() {
                 >
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
-              </CTA>
-              <CTA href="#get" variant="outline-dark">
+              </Cta>
+              <Cta href="#get" variant="outline-dark">
                 Get the mobile app
-              </CTA>
+              </Cta>
             </div>
 
             <p className="rise rise-4 mt-6 font-mono text-xs tracking-wide text-cream/55">
@@ -94,7 +94,7 @@ export function Hero() {
                 const r2 = 30;
                 return (
                   <line
-                    key={i}
+                    key={a}
                     x1={60 + r1 * Math.cos(a)}
                     y1={44 + r1 * Math.sin(a)}
                     x2={60 + r2 * Math.cos(a)}
@@ -118,7 +118,7 @@ export function Hero() {
                 <Wordmark size="text-lg" markTone="text-gold" />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-[0.65rem] font-medium uppercase tracking-wider text-gold/90">
                   <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-                  Verified
+                  {"Verified"}
                 </span>
               </div>
 

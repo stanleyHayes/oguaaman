@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageHero } from "@/components/page-hero";
-import { Section, CTA } from "@/components/ui";
+import { Section, CTA as Cta } from "@/components/ui";
 import { sceneForSlug } from "@/components/scenes";
 import { SectionRenderer, Gallery } from "@/components/profile-sections";
 import { fetchPlace, type Organization } from "@/lib/org";
@@ -112,7 +112,7 @@ export function Component() {
             <p className="eyebrow mb-3">The story</p>
             <div className="font-serif text-lg leading-relaxed text-ink">
               {history.map((p, i) => (
-                <p key={i} className={i === 0 ? "" : "mt-5"}>{p}</p>
+                <p key={p} className={i === 0 ? "" : "mt-5"}>{p}</p>
               ))}
             </div>
           </div>
@@ -124,7 +124,7 @@ export function Component() {
           <section className={hasSections ? "mt-12" : ""}>
             <h2 className="mb-5 flex items-center gap-3 font-display text-2xl font-semibold text-ink">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-gold-brand" aria-hidden />
-              Photos
+              {"Photos"}
               <span className="h-px flex-1 bg-sand" />
             </h2>
             <Gallery media={org.gallery ?? []} />
@@ -135,7 +135,7 @@ export function Component() {
           <section className={hasSections || hasGallery ? "mt-12" : ""}>
             <h2 className="mb-5 flex items-center gap-3 font-display text-2xl font-semibold text-ink">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-teal" aria-hidden />
-              What's on here
+              {"What's on here"}
               <span className="h-px flex-1 bg-sand" />
             </h2>
             <ul className="grid gap-4 sm:grid-cols-2">
@@ -158,9 +158,9 @@ export function Component() {
           <Link to="/visit" className="inline-flex items-center gap-1.5 text-sm font-semibold text-green transition-colors hover:text-green-900">
             ← More of Cape Coast to see
           </Link>
-          <CTA href={PORTAL_APP_URL} variant="primary" external>
+          <Cta href={PORTAL_APP_URL} variant="primary" external>
             Open the app
-          </CTA>
+          </Cta>
         </div>
       </Section>
     </>

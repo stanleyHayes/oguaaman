@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Member } from "./types";
 import { api, getToken, setToken } from "./api";
 
@@ -14,7 +14,11 @@ interface AuthState {
 
 const Ctx = createContext<AuthState | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+async function requestOtp(identifier: string) {
+  return (await api.requestOtp(identifier)).devCode;
+}
+
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [member, setMember] = useState<Member | null>(null);
   // Only "loading" if there's a token to verify — initialised here so the effect
   // never has to setState synchronously (which would trigger a cascading render).
@@ -25,20 +29,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.me().then(setMember).catch(() => setToken(null)).finally(() => setLoading(false));
   }, []);
 
-  async function requestOtp(identifier: string) {
-    return (await api.requestOtp(identifier)).devCode;
-  }
-  async function verify(identifier: string, code: string) {
+  const verify = useCallback(async (identifier: string, code: string) => {
     const { token, member } = await api.verifyOtp(identifier, code);
     setToken(token);
     setMember(member);
-  }
-  function signOut() {
+  }, []);
+  const signOut = useCallback(() => {
     setToken(null);
     setMember(null);
-  }
+  }, []);
 
-  return <Ctx.Provider value={{ member, loading, requestOtp, verify, signOut, setMember }}>{children}</Ctx.Provider>;
+  const value = useMemo(() => ({ member, loading, requestOtp, verify, signOut, setMember }), [member, loading, verify, signOut]);
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useAuth(): AuthState {

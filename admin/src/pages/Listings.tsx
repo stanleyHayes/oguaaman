@@ -92,7 +92,7 @@ export function Component() {
                         {l.featured ? (
                           <span className="inline-flex items-center gap-2">
                             <span className="inline-flex items-center gap-1 rounded-full border border-gold-border/60 bg-gold/[0.14] px-3 py-1 text-xs font-semibold text-gold-text" title={l.featuredUntil ? `Featured until ${formatDate(l.featuredUntil)}` : "Featured with no expiry"}>
-                              ★ Featured
+                              ★ Featured{" "}
                               <span className="font-normal text-ink-faint">{l.featuredUntil ? `until ${formatDate(l.featuredUntil)}` : "no expiry"}</span>
                             </span>
                             <button disabled={busy === l.id} onClick={() => unfeature(l)} className="rounded-full border border-maroon-900/40 px-3 py-1 text-xs font-semibold text-maroon-900 hover:bg-maroon-900/[0.06] disabled:opacity-50">Unfeature</button>

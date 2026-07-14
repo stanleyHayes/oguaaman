@@ -2,7 +2,7 @@ import { useLoaderData } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA, SectionHeading, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { PersonCard } from "@/components/cards";
 import { SAMPLE_NOTICE } from "@/lib/content";
@@ -18,7 +18,7 @@ export function Component() {
   return (
     <>
       <PageHero tone="gold" kicker="The sons & daughters wall" title="People of Oguaa" symbol="dwennimmen" lede="The icons, the personalities, the quietly remarkable — historical and living. A wall of pride for the people this town has given the world.">
-        <CTA to="/submit?type=person" variant="primary">Nominate someone</CTA>
+        <Cta to="/submit?type=person" variant="primary">Nominate someone</Cta>
       </PageHero>
 
       {living.length > 0 && (

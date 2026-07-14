@@ -40,12 +40,15 @@ export function Component() {
         <ol className="space-y-10">
           {festival.editions.map((ed) => {
             const upcoming = ed.events.some((e) => (e.details.startsAt ?? "") >= TODAY);
+            let badge: React.ReactNode = null;
+            if (upcoming) badge = <Pill tone="gold">Upcoming</Pill>;
+            else if (ed.recap) badge = <Pill tone="green">Recap</Pill>;
             return (
               <li key={ed.year} className="relative border-l-2 border-gold-border/50 pl-6">
                 <span className="absolute -left-[7px] top-2 h-3 w-3 rounded-full bg-gold-brand" aria-hidden />
                 <div className="flex flex-wrap items-center gap-3">
                   <h3 className="font-display text-2xl font-semibold text-ink">{ed.year}</h3>
-                  {upcoming ? <Pill tone="gold">Upcoming</Pill> : ed.recap ? <Pill tone="green">Recap</Pill> : null}
+                  {badge}
                 </div>
                 {ed.events.map((e) => {
                   const programme = e.details.programme ?? [];
@@ -59,8 +62,8 @@ export function Component() {
                       {e.details.description && <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-muted">{e.details.description}</p>}
                       {programme.length > 0 && (
                         <ul className="mt-3 max-w-2xl space-y-2">
-                          {programme.map((p, i) => (
-                            <li key={i} className="flex flex-col gap-1 rounded-lg border border-sand bg-cream px-4 py-2.5 text-sm sm:flex-row sm:gap-4">
+                          {programme.map((p) => (
+                            <li key={`${p.day}-${p.time ?? ""}-${p.title}`} className="flex flex-col gap-1 rounded-lg border border-sand bg-cream px-4 py-2.5 text-sm sm:flex-row sm:gap-4">
                               <span className="shrink-0 font-medium text-ink sm:w-48">
                                 {p.day}
                                 {p.time && <span className="block text-xs font-normal text-ink-faint">{p.time}</span>}

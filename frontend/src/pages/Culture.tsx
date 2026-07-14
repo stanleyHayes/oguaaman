@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { PageHero } from "@/components/page-hero";
-import { Container, Card, SectionHeading, CTA } from "@/components/ui";
+import { Container, Card, SectionHeading, CTA as Cta } from "@/components/ui";
 import { CULTURE_BLURB } from "@/lib/content";
 
 const COMPANIES = [
@@ -33,7 +33,7 @@ export function Component() {
                 <p className="eyebrow text-gold-text">The anchor festival</p>
                 <h2 className="mt-2 font-display text-3xl font-semibold text-ink">Oguaa Fetu Afahye</h2>
                 <p className="mt-3 text-ink-muted">The harvest and cleansing festival, climaxing the first Saturday of September — thanks to the 77 gods of Oguaa and to the sea, a ban on drumming that lets the spirits lead, and a grand durbar of chiefs in palanquins under state umbrellas.</p>
-                <div className="mt-5"><CTA to="/events" variant="gold">See the festival event →</CTA></div>
+                <div className="mt-5"><Cta to="/events" variant="gold">See the festival event →</Cta></div>
               </div>
             </div>
           </Card>

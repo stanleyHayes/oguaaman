@@ -2,24 +2,29 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { cldAvatar } from "@/lib/cloudinary";
 
+type ContainerSize = "default" | "narrow" | "wide" | "prose";
+
+function containerMax(size: ContainerSize): string {
+  if (size === "narrow") return "max-w-3xl";
+  if (size === "prose") return "max-w-[44rem]";
+  if (size === "wide") return "max-w-6xl";
+  return "max-w-5xl";
+}
+
 export function Container({
   children,
   className = "",
   size = "default",
-}: {
+}: Readonly<{
   children: ReactNode;
   className?: string;
-  size?: "default" | "narrow" | "wide" | "prose";
-}) {
-  const max =
-    size === "narrow" ? "max-w-3xl"
-    : size === "prose" ? "max-w-[44rem]"
-    : size === "wide" ? "max-w-6xl"
-    : "max-w-5xl";
+  size?: ContainerSize;
+}>) {
+  const max = containerMax(size);
   return <div className={`mx-auto w-full ${max} px-4 sm:px-6 ${className}`}>{children}</div>;
 }
 
-export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Eyebrow({ children, className = "" }: Readonly<{ children: ReactNode; className?: string }>) {
   return <p className={`eyebrow ${className}`}>{children}</p>;
 }
 
@@ -29,13 +34,13 @@ export function SectionHeading({
   lede,
   accentClass = "bg-gold-brand",
   center = false,
-}: {
+}: Readonly<{
   kicker?: string;
   title: ReactNode;
   lede?: ReactNode;
   accentClass?: string;
   center?: boolean;
-}) {
+}>) {
   return (
     <div className={center ? "text-center" : ""}>
       {kicker && <Eyebrow className="mb-3">{kicker}</Eyebrow>}
@@ -50,11 +55,11 @@ export function Pill({
   children,
   tone = "neutral",
   className = "",
-}: {
+}: Readonly<{
   children: ReactNode;
   tone?: "neutral" | "green" | "gold" | "clay" | "teal";
   className?: string;
-}) {
+}>) {
   const tones: Record<string, string> = {
     neutral: "border-sand bg-cream text-ink-muted",
     green: "border-green/30 bg-green/[0.06] text-green",
@@ -69,7 +74,7 @@ export function Pill({
   );
 }
 
-export function Avatar({ initials, photoUrl, size = 40, className = "" }: { initials: string; photoUrl?: string; size?: number; className?: string }) {
+export function Avatar({ initials, photoUrl, size = 40, className = "" }: Readonly<{ initials: string; photoUrl?: string; size?: number; className?: string }>) {
   const [failed, setFailed] = useState(false);
   if (photoUrl && !failed) {
     return (
@@ -95,7 +100,7 @@ export function Avatar({ initials, photoUrl, size = 40, className = "" }: { init
   );
 }
 
-export function VerifiedBadge({ label = "Verified", onDark = false }: { label?: string; onDark?: boolean }) {
+export function VerifiedBadge({ label = "Verified", onDark = false }: Readonly<{ label?: string; onDark?: boolean }>) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-wide ${
@@ -117,13 +122,13 @@ export function CTA({
   variant = "primary",
   className = "",
   external = false,
-}: {
+}: Readonly<{
   to: string;
   children: ReactNode;
   variant?: "primary" | "gold" | "outline" | "outline-dark";
   className?: string;
   external?: boolean;
-}) {
+}>) {
   const styles: Record<string, string> = {
     primary: "bg-green text-cream hover:bg-green-900",
     gold: "bg-gold-brand text-green-900 hover:bg-gold",
@@ -141,11 +146,11 @@ export function Card({
   children,
   className = "",
   as: Tag = "div",
-}: {
+}: Readonly<{
   children: ReactNode;
   className?: string;
   as?: "div" | "article" | "li";
-}) {
+}>) {
   return (
     <Tag className={`rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] ${className}`}>
       {children}
@@ -153,6 +158,6 @@ export function Card({
   );
 }
 
-export function SampleNote({ children }: { children: ReactNode }) {
+export function SampleNote({ children }: Readonly<{ children: ReactNode }>) {
   return <p className="mt-10 text-center text-xs italic text-ink-faint">{children}</p>;
 }

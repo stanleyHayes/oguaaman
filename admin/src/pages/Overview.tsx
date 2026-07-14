@@ -35,7 +35,7 @@ function monthlyCounts(dates: (string | undefined)[]): { key: string; label: str
   const tally: Record<string, number> = {};
   keys.forEach((k) => (tally[k] = (tally[k] ?? 0) + 1));
   const [sy, sm] = keys[0].split("-").map(Number);
-  const [ey, em] = keys[keys.length - 1].split("-").map(Number);
+  const [ey, em] = keys.at(-1)!.split("-").map(Number);
   const out: { key: string; label: string; value: number }[] = [];
   let y = sy, m = sm, guard = 0;
   while ((y < ey || (y === ey && m <= em)) && guard++ < 60) {
@@ -68,7 +68,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 // ── small presentational pieces ──────────────────────────────────────────────
 interface Tile { label: string; value: number; to: string; tone?: string; accent?: boolean }
-function StatTile({ label, value, to, tone = "text-ink", accent = false }: Tile) {
+function StatTile({ label, value, to, tone = "text-ink", accent = false }: Readonly<Tile>) {
   return (
     <Link
       to={to}
@@ -85,7 +85,7 @@ function StatTile({ label, value, to, tone = "text-ink", accent = false }: Tile)
   );
 }
 
-function ChartCard({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+function ChartCard({ title, hint, children }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
   return (
     <Card className="min-w-0 p-5">
       <div className="mb-4 flex items-baseline justify-between gap-3">

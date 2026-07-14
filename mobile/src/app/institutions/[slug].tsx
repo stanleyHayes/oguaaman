@@ -98,7 +98,7 @@ export default function Institution() {
 
 // "Claim this institution" — a member's request to manage the official page
 // (spec §8.13). A steward reviews it; editing itself stays on the desktop admin.
-function ClaimPanel({ slug, orgName }: { slug: string; orgName: string }) {
+function ClaimPanel({ slug, orgName }: Readonly<{ slug: string; orgName: string }>) {
   const { member } = useAuth();
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState("");
@@ -157,7 +157,7 @@ function ClaimPanel({ slug, orgName }: { slug: string; orgName: string }) {
   );
 }
 
-function SecTitle({ children, color = C.ink }: { children: ReactNode; color?: string }) {
+function SecTitle({ children, color = C.ink }: Readonly<{ children: ReactNode; color?: string }>) {
   return (
     <View style={s.secTitleRow}>
       <Text style={[s.secTitle, { color }]}>{children}</Text>
@@ -166,7 +166,7 @@ function SecTitle({ children, color = C.ink }: { children: ReactNode; color?: st
   );
 }
 
-function SectionView({ section }: { section: ProfileSection }) {
+function SectionView({ section }: Readonly<{ section: ProfileSection }>) {
   const t = toneColor(section.tone);
   const items = section.items ?? [];
   const media = section.media ?? [];
@@ -202,7 +202,7 @@ function SectionView({ section }: { section: ProfileSection }) {
   );
 }
 
-function Gallery({ media }: { media: MediaAsset[] }) {
+function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
   const items = media.filter((m) => m.url || m.caption);
   if (!items.length) return null;
   return (
@@ -219,7 +219,7 @@ function Gallery({ media }: { media: MediaAsset[] }) {
   );
 }
 
-function StatsBlock({ items, color }: { items: SectionItem[]; color: string }) {
+function StatsBlock({ items, color }: Readonly<{ items: SectionItem[]; color: string }>) {
   const list = items.filter((i) => i.value || i.label);
   if (!list.length) return null;
   return (
@@ -234,7 +234,7 @@ function StatsBlock({ items, color }: { items: SectionItem[]; color: string }) {
   );
 }
 
-function TeamBlock({ items }: { items: SectionItem[] }) {
+function TeamBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.value || i.label);
   if (!list.length) return null;
   return (
@@ -253,7 +253,7 @@ function TeamBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function TimelineBlock({ items, color }: { items: SectionItem[]; color: string }) {
+function TimelineBlock({ items, color }: Readonly<{ items: SectionItem[]; color: string }>) {
   const list = items.filter((i) => i.label || i.value || i.detail);
   if (!list.length) return null;
   return (
@@ -272,7 +272,7 @@ function TimelineBlock({ items, color }: { items: SectionItem[]; color: string }
   );
 }
 
-function FaqBlock({ items }: { items: SectionItem[] }) {
+function FaqBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.value);
   if (!list.length) return null;
   return (
@@ -287,7 +287,7 @@ function FaqBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function DocsBlock({ items }: { items: SectionItem[] }) {
+function DocsBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.url);
   if (!list.length) return null;
   return (
@@ -305,7 +305,7 @@ function DocsBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function QuoteBlock({ section, color }: { section: ProfileSection; color: string }) {
+function QuoteBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
   if (!section.body?.trim()) return null;
   return (
     <View style={[s.quote, { borderLeftColor: color }]}>
@@ -315,7 +315,7 @@ function QuoteBlock({ section, color }: { section: ProfileSection; color: string
   );
 }
 
-function CtaBlock({ section, color }: { section: ProfileSection; color: string }) {
+function CtaBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
   const buttons = (section.items ?? []).filter((i) => i.label);
   if (!section.title && !section.body && !buttons.length) return null;
   return (
@@ -335,7 +335,7 @@ function CtaBlock({ section, color }: { section: ProfileSection; color: string }
   );
 }
 
-function LogosBlock({ items }: { items: SectionItem[] }) {
+function LogosBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.image || i.label);
   if (!list.length) return null;
   return (
@@ -350,7 +350,7 @@ function LogosBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function GroupsBlock({ groups, color }: { groups: SubEntity[]; color: string }) {
+function GroupsBlock({ groups, color }: Readonly<{ groups: SubEntity[]; color: string }>) {
   const list = groups.filter((g) => g.name);
   if (!list.length) return null;
   return (
@@ -367,14 +367,14 @@ function GroupsBlock({ groups, color }: { groups: SubEntity[]; color: string }) 
                 {g.subtitle ? <Text style={[s.groupSubtitle, { color }]}>{g.subtitle}</Text> : null}
                 {g.colors && g.colors.length > 0 ? (
                   <View style={{ flexDirection: "row", gap: 4 }}>
-                    {g.colors.map((c, ci) => <View key={ci} style={[s.colorDot, { backgroundColor: c }]} />)}
+                    {g.colors.map((c) => <View key={c} style={[s.colorDot, { backgroundColor: c }]} />)}
                   </View>
                 ) : null}
               </View>
             </View>
           </View>
           {g.summary ? <Text style={s.groupSummary}>{g.summary}</Text> : null}
-          {g.attrs && g.attrs.some((a) => a.label || a.value) ? (
+          {g.attrs?.some((a) => a.label || a.value) ? (
             <View style={{ marginTop: 8, gap: 3 }}>
               {g.attrs.filter((a) => a.label || a.value).map((a, ai) => (
                 <View key={a.id || ai} style={{ flexDirection: "row", gap: 6 }}>
@@ -390,7 +390,7 @@ function GroupsBlock({ groups, color }: { groups: SubEntity[]; color: string }) 
   );
 }
 
-function HeroBlock({ section, color }: { section: ProfileSection; color: string }) {
+function HeroBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
   const bg = section.media?.[0]?.url;
   const buttons = (section.items ?? []).filter((i) => i.label);
   return (
@@ -406,11 +406,15 @@ function HeroBlock({ section, color }: { section: ProfileSection; color: string 
         {section.body ? <Text style={[s.heroBody, { color: bg ? "rgba(246,241,231,0.85)" : C.inkMuted }]}>{section.body}</Text> : null}
         {buttons.length ? (
           <View style={s.heroButtons}>
-            {buttons.map((b, i) => (
-              <Pressable key={b.id || i} onPress={() => openURL(b.url)} style={[s.ctaBtn, i === 0 ? s.ctaBtnPrimary : (bg ? s.heroBtnLight : s.ctaBtnOutline)]}>
-                <Text style={i === 0 ? s.ctaBtnPrimaryText : (bg ? s.heroBtnLightText : s.ctaBtnOutlineText)}>{b.label}</Text>
-              </Pressable>
-            ))}
+            {buttons.map((b, i) => {
+              const btnStyle = bg ? s.heroBtnLight : s.ctaBtnOutline;
+              const btnTextStyle = bg ? s.heroBtnLightText : s.ctaBtnOutlineText;
+              return (
+                <Pressable key={b.id || i} onPress={() => openURL(b.url)} style={[s.ctaBtn, i === 0 ? s.ctaBtnPrimary : btnStyle]}>
+                  <Text style={i === 0 ? s.ctaBtnPrimaryText : btnTextStyle}>{b.label}</Text>
+                </Pressable>
+              );
+            })}
           </View>
         ) : null}
       </View>
@@ -418,7 +422,7 @@ function HeroBlock({ section, color }: { section: ProfileSection; color: string 
   );
 }
 
-function TestimonialsBlock({ items, color }: { items: SectionItem[]; color: string }) {
+function TestimonialsBlock({ items, color }: Readonly<{ items: SectionItem[]; color: string }>) {
   const list = items.filter((i) => i.value || i.label);
   if (!list.length) return null;
   return (
@@ -441,7 +445,7 @@ function TestimonialsBlock({ items, color }: { items: SectionItem[]; color: stri
   );
 }
 
-function ContactBlock({ section, color }: { section: ProfileSection; color: string }) {
+function ContactBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
   const rows = (section.items ?? []).filter((i) => i.label || i.value);
   if (!section.body?.trim() && !rows.length) return null;
   return (
@@ -449,21 +453,24 @@ function ContactBlock({ section, color }: { section: ProfileSection; color: stri
       {section.body ? <Text style={s.contactAddress}>{section.body}</Text> : null}
       {rows.length ? (
         <View style={[{ gap: 6 }, section.body ? s.contactRowsTop : null]}>
-          {rows.map((i, idx) => (
-            <View key={i.id || idx} style={{ flexDirection: "row", gap: 10 }}>
-              {i.label ? <Text style={[s.contactLabel, { color }]}>{i.label}</Text> : null}
-              {i.url
-                ? <Text style={[s.contactValue, s.contactLink, { flex: 1 }]} onPress={() => openURL(i.url)}>{i.value || i.url}</Text>
-                : i.value ? <Text style={[s.contactValue, { flex: 1 }]}>{i.value}</Text> : null}
-            </View>
-          ))}
+          {rows.map((i, idx) => {
+            const valueText = i.value ? <Text style={[s.contactValue, { flex: 1 }]}>{i.value}</Text> : null;
+            return (
+              <View key={i.id || idx} style={{ flexDirection: "row", gap: 10 }}>
+                {i.label ? <Text style={[s.contactLabel, { color }]}>{i.label}</Text> : null}
+                {i.url
+                  ? <Text style={[s.contactValue, s.contactLink, { flex: 1 }]} onPress={() => openURL(i.url)}>{i.value || i.url}</Text>
+                  : valueText}
+              </View>
+            );
+          })}
         </View>
       ) : null}
     </View>
   );
 }
 
-function MenuBlock({ items }: { items: SectionItem[] }) {
+function MenuBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.value);
   if (!list.length) return null;
   return (
@@ -481,7 +488,7 @@ function MenuBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function ScheduleBlock({ items, color }: { items: SectionItem[]; color: string }) {
+function ScheduleBlock({ items, color }: Readonly<{ items: SectionItem[]; color: string }>) {
   const list = items.filter((i) => i.label || i.value);
   if (!list.length) return null;
   return (
@@ -499,7 +506,7 @@ function ScheduleBlock({ items, color }: { items: SectionItem[]; color: string }
   );
 }
 
-function MapBlock({ section, color }: { section: ProfileSection; color: string }) {
+function MapBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
   const addr = section.body?.trim();
   if (!addr) return null;
   const href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;

@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { EventCard } from "@/components/cards";
 import { EventCalendar } from "@/components/event-calendar";
@@ -71,7 +71,7 @@ export function Component() {
   return (
     <>
       <PageHero tone="gold" kicker="The connective tissue" title="Events & calendar" symbol="sankofa" lede="School reunions, youth workshops, music gigs and the festival itself — the calendar of the town, anchored on Fetu Afahye as the annual homecoming beat.">
-        <CTA to="/submit?type=event" variant="primary">Post an event</CTA>
+        <Cta to="/submit?type=event" variant="primary">Post an event</Cta>
       </PageHero>
       <Container size="wide" className="py-12">
         {anchor && (anchor.details.festival

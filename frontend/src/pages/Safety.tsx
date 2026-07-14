@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import type { Incident, IncidentCategory } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { INCIDENT_CATEGORIES, CATEGORY_LABEL, SEVERITY_CLASS, STATUS_LABEL } from "@/lib/incidents";
@@ -22,7 +22,7 @@ export function Component() {
   return (
     <>
       <PageHero tone="maroon" kicker="Rescue & early recovery" title="Safety" symbol="dwennimmen" lede="Floods, fires, accidents and hazards across Cape Coast — reported by neighbours, verified by curators, and followed through to recovery. In an emergency, call the services first, then post here so the town can help.">
-        <CTA to="/safety/report" variant="primary">Report an incident</CTA>
+        <Cta to="/safety/report" variant="primary">Report an incident</Cta>
       </PageHero>
       <Container size="wide" className="py-12">
         <div className="mb-8 flex flex-wrap gap-2">
@@ -69,7 +69,7 @@ export function Component() {
   );
 }
 
-function IncidentCard({ incident: i }: { incident: Incident }) {
+function IncidentCard({ incident: i }: Readonly<{ incident: Incident }>) {
   return (
     <Link
       to={`/safety/${i.slug}`}

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { PageHero } from "@/components/page-hero";
 import { DurbarScene } from "@/components/scenes";
-import { Section, SectionHeading, Card, Pill, CTA } from "@/components/ui";
+import { Section, SectionHeading, Card, Pill, CTA as Cta } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { LiveCollection } from "@/components/live-collection";
 import { ARTISTS_FALLBACK, BUSINESSES_FALLBACK } from "@/lib/fallbacks";
@@ -18,7 +18,7 @@ interface Item {
 }
 
 /** A card carrying a festival, a rite or a dish — pill, optional meta, title, body. */
-function ItemCard({ item, dark = false }: { item: Item; dark?: boolean }) {
+function ItemCard({ item, dark = false }: Readonly<{ item: Item; dark?: boolean }>) {
   return (
     <Card className="flex h-full flex-col p-6 sm:p-7">
       <Pill tone={dark ? "on-dark" : item.tone} className="self-start">
@@ -185,9 +185,9 @@ export function Component() {
             that made him does not forget a voice.
           </p>
           <div className="mt-8">
-            <CTA href={`${PORTAL_APP_URL}/music`} variant="gold" external>
+            <Cta href={`${PORTAL_APP_URL}/music`} variant="gold" external>
               Hear the living sound →
-            </CTA>
+            </Cta>
           </div>
         </div>
       </Section>

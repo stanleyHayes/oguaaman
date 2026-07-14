@@ -106,7 +106,7 @@ function groupByMonth(list: Listing[]): MonthSection[] {
   }
   return sections;
 }
-function EventHero({ e }: { e: Listing }) {
+function EventHero({ e }: Readonly<{ e: Listing }>) {
   return (
     <View style={[s.hero, { backgroundColor: fillFor(e.slug) }]}>
       {e.coverImageUrl ? <Thumb seed={e.slug} src={cldCover(e.coverImageUrl, 400)} style={s.heroImg} /> : null}

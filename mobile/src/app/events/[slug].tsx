@@ -55,8 +55,8 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
             <>
               <Text style={s.kicker}>PROGRAMME</Text>
               <View style={{ gap: 8, marginTop: 10 }}>
-                {(d.programme ?? []).map((p, i) => (
-                  <View key={i} style={s.progRow}>
+                {(d.programme ?? []).map((p) => (
+                  <View key={`${p.day ?? ""}-${p.time ?? ""}-${p.title}`} style={s.progRow}>
                     <View style={s.progDay}>
                       <Text style={s.progDayText}>{p.day ?? ""}</Text>
                       {p.time ? <Text style={s.progTime}>{p.time}</Text> : null}
@@ -249,6 +249,7 @@ function TicketVerify({ err, busy, verify }: Readonly<{ err: string; busy: boole
 
 function TierRow({ tier: t, on, onPress }: Readonly<{ tier: TicketTierView; on: boolean; onPress: () => void }>) {
   const out = t.remaining !== null && t.remaining <= 0;
+  const remainingText = out ? "Sold out" : `${t.remaining} left`;
   return (
     <Pressable
       disabled={out}
@@ -257,7 +258,7 @@ function TierRow({ tier: t, on, onPress }: Readonly<{ tier: TicketTierView; on: 
     >
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={s.tierName}>{t.name}</Text>
-        <Text style={s.tierAvail}>{t.remaining === null ? "Unlimited" : out ? "Sold out" : `${t.remaining} left`}</Text>
+        <Text style={s.tierAvail}>{t.remaining === null ? "Unlimited" : remainingText}</Text>
       </View>
       <Text style={s.tierPrice}>{cedis(t.pricePesewas)}</Text>
     </Pressable>

@@ -37,8 +37,9 @@ export function Component() {
   const shown = new Set<string>([place?.name, ...memSchools.map((s) => s.name)].filter(Boolean) as string[]);
   const extraAssociations = (d.associations ?? []).filter((a) => !shown.has(a));
 
+  const birthdayNote = d.observeBirthday && d.birthday ? ` and the birthday, ${formatDayMonth(d.birthday)}` : "";
   const remembrance = d.remindersEnabled
-    ? `Remembered each year on ${formatDayMonth(d.diedDate!)}${d.observeBirthday && d.birthday ? ` and the birthday, ${formatDayMonth(d.birthday)}` : ""} — the dates the family chose.`
+    ? `Remembered each year on ${formatDayMonth(d.diedDate!)}${birthdayNote} — the dates the family chose.`
     : null;
 
   return (
@@ -76,7 +77,7 @@ export function Component() {
           <p className="mb-4 text-center text-xs uppercase tracking-[0.32em] text-ink-faint">Celebration of a life</p>
           <div className="font-serif text-lg leading-relaxed text-ink">
             {story.map((p, i) => (
-              <p key={i} className={i === 0 ? "[&::first-letter]:float-left [&::first-letter]:mr-3 [&::first-letter]:font-display [&::first-letter]:text-6xl [&::first-letter]:leading-[0.8] [&::first-letter]:text-gold-brand" : "mt-5"}>{p}</p>
+              <p key={p} className={i === 0 ? "[&::first-letter]:float-left [&::first-letter]:mr-3 [&::first-letter]:font-display [&::first-letter]:text-6xl [&::first-letter]:leading-[0.8] [&::first-letter]:text-gold-brand" : "mt-5"}>{p}</p>
             ))}
           </div>
         </section>
@@ -88,7 +89,7 @@ export function Component() {
               <p className="mb-5 text-center text-xs uppercase tracking-[0.32em] text-ink-faint">Moments</p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {d.gallery.map((g, i) => (
-                  <div key={i} className="relative aspect-square overflow-hidden rounded border border-sand" style={{ background: GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length] }}>
+                  <div key={`${g.url ?? ""}-${g.caption}`} className="relative aspect-square overflow-hidden rounded border border-sand" style={{ background: GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length] }}>
                     <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-2.5 pb-1.5 pt-4 text-xs text-cream">{g.caption}</span>
                   </div>
                 ))}

@@ -12,7 +12,7 @@ export function PageHero({
   title,
   lede,
   children,
-}: {
+}: Readonly<{
   scene: ComponentType<{ className?: string }>;
   /** When present, a real photo is shown behind the wash instead of the scene. */
   coverUrl?: string;
@@ -20,7 +20,7 @@ export function PageHero({
   title: ReactNode;
   lede?: string;
   children?: ReactNode;
-}) {
+}>) {
   return (
     <header className="on-dark relative isolate overflow-hidden bg-green-900 text-cream">
       <div className="absolute inset-0" aria-hidden>

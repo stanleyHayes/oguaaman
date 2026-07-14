@@ -16,7 +16,7 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<Institutio
   return api.institution(params.slug!);
 }
 
-function EventList({ title, items }: { title: string; items: Listing[] }) {
+function EventList({ title, items }: Readonly<{ title: string; items: Listing[] }>) {
   if (!items || items.length === 0) return null;
   return (
     <Card className="overflow-hidden">

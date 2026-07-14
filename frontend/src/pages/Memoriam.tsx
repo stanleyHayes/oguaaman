@@ -1,7 +1,7 @@
 import { useLoaderData } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container, CTA } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { MemorialCard } from "@/components/cards";
 import { YENKAE_DESCRIPTION } from "@/lib/content";
@@ -36,7 +36,7 @@ export function Component() {
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-muted">
             A memorial may be created by a family member, friend, or association on behalf of the departed. Memorials are kept permanently; the family can always claim, correct, or guide them. Each is reviewed with heightened care and dignity before it appears.
           </p>
-          <div className="mt-7"><CTA to="/submit?type=memorial" variant="gold">Create a memorial</CTA></div>
+          <div className="mt-7"><Cta to="/submit?type=memorial" variant="gold">Create a memorial</Cta></div>
         </Container>
       </section>
     </>

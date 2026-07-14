@@ -18,7 +18,7 @@ function dayMonth(date?: string): string {
 }
 
 // Remember/stop-remembering — the yearly-remembrance follow (spec §8.11).
-function RememberButton({ slug, initialCount }: { slug: string; initialCount: number }) {
+function RememberButton({ slug, initialCount }: Readonly<{ slug: string; initialCount: number }>) {
   const { member } = useAuth();
   const [following, setFollowing] = useState(false);
   const [count, setCount] = useState(initialCount);
@@ -64,10 +64,12 @@ function lifeDates(bornYear?: number, diedDate?: string) {
 export default function Memorial() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Listing>(() => api.memorial(slug), `memorial:${slug}`);
-  return loading ? <Loading /> : error || !data ? <ErrorView message={error ?? "Not found"} /> : <Detail m={data} slug={slug} />;
+  if (loading) return <Loading />;
+  if (error || !data) return <ErrorView message={error ?? "Not found"} />;
+  return <Detail m={data} slug={slug} />;
 }
 
-function Detail({ m, slug }: { m: Listing; slug: string }) {
+function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
   const d = m.details;
   const [candles, setCandles] = useState(d.candles ?? 0);
   const [lit, setLit] = useState(false);
@@ -129,16 +131,16 @@ function Detail({ m, slug }: { m: Listing; slug: string }) {
 
       <Text style={s.sectionLabel}>CELEBRATION OF A LIFE</Text>
       {story.map((p, i) => (
-        <Text key={i} style={[s.story, i > 0 && { marginTop: 14 }]}>{p}</Text>
+        <Text key={`${p.slice(0, 20)}-${i}`} style={[s.story, i > 0 && { marginTop: 14 }]}>{p}</Text>
       ))}
 
-      {(d.gallery ?? []).filter((g) => g.url).length > 0 && (
+      {(d.gallery ?? []).some((g) => g.url) && (
         <>
           <View style={s.divider} />
           <Text style={s.sectionLabel}>MOMENTS</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             {(d.gallery ?? []).filter((g) => g.url).map((g, i) => (
-              <View key={i} style={s.moment}>
+              <View key={g.url} style={s.moment}>
                 <Thumb seed={`${m.slug}-g${i}`} src={cldCover(g.url, 220)} style={s.momentImg} />
                 {g.caption ? <Text style={s.momentCaption} numberOfLines={2}>{g.caption}</Text> : null}
               </View>

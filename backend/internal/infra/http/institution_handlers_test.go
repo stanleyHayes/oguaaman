@@ -33,7 +33,7 @@ func TestInstitutionsHandler_kindFilter(t *testing.T) {
 		{ID: "3", Slug: "kakum", Kind: "heritage", Name: "Kakum National Park"},
 	}}
 	// Only s.orgs is touched by Institutions; the other repos can be nil.
-	svc := service.New(nil, nil, orgs, nil, nil, nil, nil, nil, nil, nil, nil)
+	svc := service.New(service.Deps{Orgs: orgs})
 	h := &Handler{svc: svc}
 
 	decode := func(url string) []domain.Organization {

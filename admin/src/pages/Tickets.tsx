@@ -75,6 +75,50 @@ export function Component() {
     }
   }
 
+  function renderLedger() {
+    if (loading) {
+      return <p className="py-8 text-center text-sm text-ink-muted">Loading sales…</p>;
+    }
+    if (tickets.length === 0) {
+      return <Empty title="No sales yet">When members buy tickets for this event, every transaction lands here.</Empty>;
+    }
+    return (
+            <Card className="overflow-x-auto">
+              <table className="w-full min-w-[48rem] text-sm">
+                <thead>
+                  <tr className="border-b border-sand text-left text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">
+                    <th className="px-4 py-3">Buyer</th>
+                    <th className="px-4 py-3">Tier</th>
+                    <th className="px-4 py-3">Qty</th>
+                    <th className="px-4 py-3">Amount</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Code</th>
+                    <th className="px-4 py-3">Checked in</th>
+                    <th className="px-4 py-3">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-sand">
+                  {tickets.map((t) => (
+                    <tr key={t.id} className="hover:bg-paper">
+                      <td className="px-4 py-3 text-ink-muted">{t.memberId || <span className="text-ink-faint">—</span>}</td>
+                      <td className="px-4 py-3 font-medium text-ink">{t.tier}</td>
+                      <td className="px-4 py-3 text-ink-muted">{t.qty}</td>
+                      <td className="px-4 py-3 font-semibold text-green">{cedis(t.amountPesewas)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold capitalize ${STATUS_TONE[t.status]}`}>{t.status}</span>
+                        {t.simulated && <span className="ml-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">sim</span>}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs tracking-widest text-ink">{t.code || <span className="font-sans text-ink-faint">—</span>}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{t.checkedInAt ? formatDate(t.checkedInAt) : "—"}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{formatDate(t.confirmedAt ?? t.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+    );
+  }
+
   return (
     <>
       <PageHeader kicker="Event ticketing" title="Tickets & gate" />
@@ -122,45 +166,7 @@ export function Component() {
             <StatCard label="Admitted" value={totals.admitted} tone="text-gold-text" />
           </div>
 
-          {loading ? (
-            <p className="py-8 text-center text-sm text-ink-muted">Loading sales…</p>
-          ) : tickets.length === 0 ? (
-            <Empty title="No sales yet">When members buy tickets for this event, every transaction lands here.</Empty>
-          ) : (
-            <Card className="overflow-x-auto">
-              <table className="w-full min-w-[48rem] text-sm">
-                <thead>
-                  <tr className="border-b border-sand text-left text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">
-                    <th className="px-4 py-3">Buyer</th>
-                    <th className="px-4 py-3">Tier</th>
-                    <th className="px-4 py-3">Qty</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Code</th>
-                    <th className="px-4 py-3">Checked in</th>
-                    <th className="px-4 py-3">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-sand">
-                  {tickets.map((t) => (
-                    <tr key={t.id} className="hover:bg-paper">
-                      <td className="px-4 py-3 text-ink-muted">{t.memberId || <span className="text-ink-faint">—</span>}</td>
-                      <td className="px-4 py-3 font-medium text-ink">{t.tier}</td>
-                      <td className="px-4 py-3 text-ink-muted">{t.qty}</td>
-                      <td className="px-4 py-3 font-semibold text-green">{cedis(t.amountPesewas)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold capitalize ${STATUS_TONE[t.status]}`}>{t.status}</span>
-                        {t.simulated && <span className="ml-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">sim</span>}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs tracking-widest text-ink">{t.code || <span className="font-sans text-ink-faint">—</span>}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{t.checkedInAt ? formatDate(t.checkedInAt) : "—"}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{formatDate(t.confirmedAt ?? t.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
-          )}
+          {renderLedger()}
         </>
       )}
     </>

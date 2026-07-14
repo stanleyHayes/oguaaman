@@ -65,7 +65,7 @@ export function Component() {
           {doc.sections.map((s) => (
             <section key={s.h}>
               <h2 className="font-display text-2xl font-semibold text-ink">{s.h}</h2>
-              {s.p.map((p, i) => <p key={i} className="mt-3 leading-relaxed text-ink-muted">{p}</p>)}
+              {s.p.map((p) => <p key={p} className="mt-3 leading-relaxed text-ink-muted">{p}</p>)}
             </section>
           ))}
         </article>

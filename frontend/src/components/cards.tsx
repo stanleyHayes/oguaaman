@@ -19,7 +19,7 @@ const GRADIENTS: [string, string][] = [
 ];
 function hash(s: string): number {
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  for (let i = 0; i < s.length; i++) h = Math.trunc(h * 31 + (s.codePointAt(i) ?? 0));
   return Math.abs(h);
 }
 export function Thumb({
@@ -29,7 +29,7 @@ export function Thumb({
   className = "",
   rounded = "rounded-[var(--radius-card)]",
   coverWidth = 600,
-}: {
+}: Readonly<{
   seed: string;
   label?: string;
   /** A contributor-supplied cover image. Falls back to the gradient if it fails to load. */
@@ -38,7 +38,7 @@ export function Thumb({
   rounded?: string;
   /** Target CSS width for Cloudinary delivery sizing; small slots can pass less. */
   coverWidth?: number;
-}) {
+}>) {
   const [a, b] = GRADIENTS[hash(seed) % GRADIENTS.length];
   const [failed, setFailed] = useState(false);
   // The gradient is always the backdrop, so it shows while the image loads or if it 404s.
@@ -58,7 +58,7 @@ export function Thumb({
   );
 }
 
-export function ArtistCard({ artist }: { artist: Listing }) {
+export function ArtistCard({ artist }: Readonly<{ artist: Listing }>) {
   const d = artist.details;
   return (
     <Card as="article" className="group overflow-hidden">
@@ -81,7 +81,7 @@ export function ArtistCard({ artist }: { artist: Listing }) {
   );
 }
 
-export function EventCard({ event }: { event: Listing }) {
+export function EventCard({ event }: Readonly<{ event: Listing }>) {
   const { day, mon } = dayMonth(event.details.startsAt ?? event.createdAt);
   return (
     <Link to={`/events/${event.slug}`} className="block">
@@ -113,7 +113,7 @@ export function EventCard({ event }: { event: Listing }) {
   );
 }
 
-export function SectionCard({ section }: { section: NavSection }) {
+export function SectionCard({ section }: Readonly<{ section: NavSection }>) {
   const t = TONES[section.tone];
   return (
     <Link
@@ -137,7 +137,7 @@ export function SectionCard({ section }: { section: NavSection }) {
   );
 }
 
-export function MemorialCard({ memorial }: { memorial: Listing }) {
+export function MemorialCard({ memorial }: Readonly<{ memorial: Listing }>) {
   const d = memorial.details;
   return (
     <Link
@@ -168,7 +168,7 @@ export function MemorialCard({ memorial }: { memorial: Listing }) {
   );
 }
 
-export function BusinessCard({ business }: { business: Listing }) {
+export function BusinessCard({ business }: Readonly<{ business: Listing }>) {
   const d = business.details;
   return (
     <Card as="article" className="overflow-hidden">
@@ -191,7 +191,7 @@ export function BusinessCard({ business }: { business: Listing }) {
 const OPP_LABEL: Record<string, string> = {
   scholarship: "Scholarship", internship: "Internship", apprenticeship: "Apprenticeship", training: "Training", job: "Job",
 };
-export function OpportunityCard({ opp }: { opp: Listing }) {
+export function OpportunityCard({ opp }: Readonly<{ opp: Listing }>) {
   const d = opp.details;
   return (
     <Card as="article" className="flex flex-col p-5">
@@ -215,7 +215,7 @@ export function OpportunityCard({ opp }: { opp: Listing }) {
   );
 }
 
-export function PersonCard({ person }: { person: Listing }) {
+export function PersonCard({ person }: Readonly<{ person: Listing }>) {
   const d = person.details;
   return (
     <Card as="article" className="group overflow-hidden">
@@ -231,7 +231,7 @@ export function PersonCard({ person }: { person: Listing }) {
   );
 }
 
-export function NewsCard({ article, lead = false }: { article: NewsArticle; lead?: boolean }) {
+export function NewsCard({ article, lead = false }: Readonly<{ article: NewsArticle; lead?: boolean }>) {
   return (
     <Link
       to={`/news/${article.slug}`}
@@ -255,7 +255,7 @@ export function NewsCard({ article, lead = false }: { article: NewsArticle; lead
   );
 }
 
-export function MemoryCard({ memory }: { memory: Listing }) {
+export function MemoryCard({ memory }: Readonly<{ memory: Listing }>) {
   return (
     <Card as="article" className="flex flex-col p-5">
       {memory.coverImageUrl && <Thumb seed={memory.title} src={memory.coverImageUrl} rounded="rounded-lg" className="mb-3 aspect-[4/3] w-full" />}
@@ -316,7 +316,7 @@ const FEATURED_FALLBACK = [
  * colour (or cover image) with white text over a legibility scrim. `hero` makes it
  * the oversized lead card. Drives the homepage's "Featured" showcase.
  */
-export function FeaturedCard({ listing, hero = false, index = 0 }: { listing: Listing; hero?: boolean; index?: number }) {
+export function FeaturedCard({ listing, hero = false, index = 0 }: Readonly<{ listing: Listing; hero?: boolean; index?: number }>) {
   const title = listing.details.actName ?? listing.title;
   const grad = FEATURED_GRADIENTS[listing.type] ?? FEATURED_FALLBACK[index % FEATURED_FALLBACK.length];
   return (

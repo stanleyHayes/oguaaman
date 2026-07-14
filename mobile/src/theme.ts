@@ -28,7 +28,7 @@ export const serif = Platform.select({ ios: "Georgia", android: "serif", default
 const FILLS = [C.green, C.goldBrand, C.clay, C.teal, C.greenSlate, C.maroon];
 export function fillFor(seed: string): string {
   let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  for (let i = 0; i < seed.length; i++) h = Math.trunc(h * 31 + (seed.codePointAt(i) ?? 0));
   return FILLS[Math.abs(h) % FILLS.length];
 }
 

@@ -28,7 +28,7 @@ function tone(t?: string): ToneClasses {
 
 function initials(name: string): string {
   const w = name.split(/\s+/).filter(Boolean);
-  return ((w[0]?.[0] ?? "") + (w.length > 1 ? w[w.length - 1][0] : "")).toUpperCase() || "?";
+  return ((w[0]?.[0] ?? "") + (w.length > 1 ? (w.at(-1)?.[0] ?? "") : "")).toUpperCase() || "?";
 }
 
 // Allow only web-safe link schemes; React does NOT sanitize href.
@@ -72,7 +72,7 @@ function hasContent(s: ProfileSection): boolean {
 
 const TITLED = new Set(["richtext", "gallery", "stats", "team", "timeline", "faq", "docs", "logos", "groups", "testimonials", "contact", "menu", "schedule"]);
 
-export function SectionRenderer({ sections }: { sections?: ProfileSection[] }) {
+export function SectionRenderer({ sections }: Readonly<{ sections?: ProfileSection[] }>) {
   const visible = (sections ?? []).filter((s) => !s.hidden && hasContent(s));
   if (visible.length === 0) return null;
   return (
@@ -84,7 +84,7 @@ export function SectionRenderer({ sections }: { sections?: ProfileSection[] }) {
   );
 }
 
-function SectionBlock({ section }: { section: ProfileSection }) {
+function SectionBlock({ section }: Readonly<{ section: ProfileSection }>) {
   const t = tone(section.tone);
   const body = renderBody(section, t);
   if (!body) return null;
@@ -148,7 +148,7 @@ function renderBody(section: ProfileSection, t: ToneClasses) {
 
 // ── gallery (lightbox) ───────────────────────────────────────────────────────
 
-export function Gallery({ media }: { media: MediaAsset[] }) {
+export function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
   const [open, setOpen] = useState<MediaAsset | null>(null);
   const items = (media ?? []).filter((m) => m && (m.url || m.caption));
   if (items.length === 0) return null;
@@ -186,7 +186,7 @@ export function Gallery({ media }: { media: MediaAsset[] }) {
   );
 }
 
-function Lightbox({ asset, onClose }: { asset: MediaAsset; onClose: () => void }) {
+function Lightbox({ asset, onClose }: Readonly<{ asset: MediaAsset; onClose: () => void }>) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const prevFocus = document.activeElement as HTMLElement | null;
@@ -202,11 +202,11 @@ function Lightbox({ asset, onClose }: { asset: MediaAsset; onClose: () => void }
     };
   }, [onClose]);
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-label={asset.alt ?? asset.caption ?? "Image"}
-      className="on-dark fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      className="on-dark fixed inset-0 z-50 m-0 flex h-full w-full max-w-none items-center justify-center border-0 bg-black/80 p-4"
     >
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 h-full w-full cursor-default" />
       <figure className="relative max-h-full max-w-3xl">
@@ -224,13 +224,13 @@ function Lightbox({ asset, onClose }: { asset: MediaAsset; onClose: () => void }
         )}
       </figure>
       <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 rounded-full bg-white/10 px-3 py-1.5 text-cream hover:bg-white/20">✕</button>
-    </div>
+    </dialog>
   );
 }
 
 // ── list blocks ──────────────────────────────────────────────────────────────
 
-function StatsBlock({ items, tone: t }: { items: SectionItem[]; tone: ToneClasses }) {
+function StatsBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone: ToneClasses }>) {
   const list = items.filter((i) => i.value || i.label);
   if (list.length === 0) return null;
   return (
@@ -245,7 +245,7 @@ function StatsBlock({ items, tone: t }: { items: SectionItem[]; tone: ToneClasse
   );
 }
 
-function TeamBlock({ items }: { items: SectionItem[] }) {
+function TeamBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.value || i.label);
   if (list.length === 0) return null;
   return (
@@ -270,7 +270,7 @@ function TeamBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function TimelineBlock({ items, tone: t }: { items: SectionItem[]; tone: ToneClasses }) {
+function TimelineBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone: ToneClasses }>) {
   const list = items.filter((i) => i.label || i.value || i.detail);
   if (list.length === 0) return null;
   return (
@@ -289,7 +289,7 @@ function TimelineBlock({ items, tone: t }: { items: SectionItem[]; tone: ToneCla
   );
 }
 
-function FaqBlock({ items }: { items: SectionItem[] }) {
+function FaqBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.value);
   if (list.length === 0) return null;
   return (
@@ -307,7 +307,7 @@ function FaqBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function DocsBlock({ items }: { items: SectionItem[] }) {
+function DocsBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.url);
   if (list.length === 0) return null;
   return (
@@ -337,7 +337,7 @@ function DocsBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function QuoteBlock({ section, tone: t }: { section: ProfileSection; tone: ToneClasses }) {
+function QuoteBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone: ToneClasses }>) {
   if (!section.body?.trim()) return null;
   return (
     <figure className={`border-l-4 pl-5 ${t.border}`}>
@@ -347,7 +347,7 @@ function QuoteBlock({ section, tone: t }: { section: ProfileSection; tone: ToneC
   );
 }
 
-function CtaBlock({ section, tone: t }: { section: ProfileSection; tone: ToneClasses }) {
+function CtaBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone: ToneClasses }>) {
   const buttons = (section.items ?? []).filter((i) => i.label);
   if (!section.title && !section.body && buttons.length === 0) return null;
   return (
@@ -371,7 +371,7 @@ function CtaBlock({ section, tone: t }: { section: ProfileSection; tone: ToneCla
   );
 }
 
-function LogosBlock({ items }: { items: SectionItem[] }) {
+function LogosBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.image || i.label);
   if (list.length === 0) return null;
   return (
@@ -392,7 +392,7 @@ function LogosBlock({ items }: { items: SectionItem[] }) {
 
 // ── sub-entity, hero, testimonials & contact blocks ──────────────────────────
 
-function GroupsBlock({ groups, tone: t }: { groups: SubEntity[]; tone: ToneClasses }) {
+function GroupsBlock({ groups, tone: t }: Readonly<{ groups: SubEntity[]; tone: ToneClasses }>) {
   const list = groups.filter((g) => g.name);
   if (list.length === 0) return null;
   return (
@@ -411,7 +411,7 @@ function GroupsBlock({ groups, tone: t }: { groups: SubEntity[]; tone: ToneClass
                 {g.subtitle && <span className={`text-[0.66rem] font-bold uppercase tracking-wider ${t.text}`}>{g.subtitle}</span>}
                 {g.colors && g.colors.length > 0 && (
                   <span className="flex gap-1">
-                    {g.colors.map((c, ci) => <span key={ci} className="h-3 w-3 rounded-full border border-sand" style={{ backgroundColor: c }} aria-hidden />)}
+                    {g.colors.map((c) => <span key={c} className="h-3 w-3 rounded-full border border-sand" style={{ backgroundColor: c }} aria-hidden />)}
                   </span>
                 )}
               </div>
@@ -434,7 +434,7 @@ function GroupsBlock({ groups, tone: t }: { groups: SubEntity[]; tone: ToneClass
   );
 }
 
-function HeroBlock({ section, tone: t }: { section: ProfileSection; tone: ToneClasses }) {
+function HeroBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone: ToneClasses }>) {
   const bg = section.media?.[0]?.url;
   const onImage = !!bg;
   const buttons = (section.items ?? []).filter((i) => i.label);
@@ -453,11 +453,12 @@ function HeroBlock({ section, tone: t }: { section: ProfileSection; tone: ToneCl
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             {buttons.map((b, i) => {
               const href = safeHref(b.url);
+              const secondaryCls = onImage
+                ? "inline-flex items-center rounded-full border border-cream/40 px-5 py-2.5 text-sm font-semibold text-cream hover:border-gold"
+                : "inline-flex items-center rounded-full border border-green/30 px-5 py-2.5 text-sm font-semibold text-green hover:border-green";
               const cls = i === 0
                 ? "inline-flex items-center rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900"
-                : onImage
-                  ? "inline-flex items-center rounded-full border border-cream/40 px-5 py-2.5 text-sm font-semibold text-cream hover:border-gold"
-                  : "inline-flex items-center rounded-full border border-green/30 px-5 py-2.5 text-sm font-semibold text-green hover:border-green";
+                : secondaryCls;
               return href
                 ? <a key={b.id || i} href={href} target="_blank" rel="noreferrer" className={cls}>{b.label}</a>
                 : <span key={b.id || i} className={cls}>{b.label}</span>;
@@ -469,7 +470,7 @@ function HeroBlock({ section, tone: t }: { section: ProfileSection; tone: ToneCl
   );
 }
 
-function TestimonialsBlock({ items, tone: t }: { items: SectionItem[]; tone: ToneClasses }) {
+function TestimonialsBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone: ToneClasses }>) {
   const list = items.filter((i) => i.value || i.label);
   if (list.length === 0) return null;
   return (
@@ -498,7 +499,7 @@ function TestimonialsBlock({ items, tone: t }: { items: SectionItem[]; tone: Ton
   );
 }
 
-function ContactBlock({ section, tone: t }: { section: ProfileSection; tone: ToneClasses }) {
+function ContactBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone: ToneClasses }>) {
   const rows = (section.items ?? []).filter((i) => i.label || i.value);
   if (!section.body?.trim() && rows.length === 0) return null;
   return (
@@ -523,7 +524,7 @@ function ContactBlock({ section, tone: t }: { section: ProfileSection; tone: Ton
   );
 }
 
-function MenuBlock({ items }: { items: SectionItem[] }) {
+function MenuBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.value);
   if (list.length === 0) return null;
   return (
@@ -541,7 +542,7 @@ function MenuBlock({ items }: { items: SectionItem[] }) {
   );
 }
 
-function ScheduleBlock({ items, tone: t }: { items: SectionItem[]; tone: ToneClasses }) {
+function ScheduleBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone: ToneClasses }>) {
   const list = items.filter((i) => i.label || i.value);
   if (list.length === 0) return null;
   return (
@@ -559,7 +560,7 @@ function ScheduleBlock({ items, tone: t }: { items: SectionItem[]; tone: ToneCla
   );
 }
 
-function MapBlock({ section, tone: t }: { section: ProfileSection; tone: ToneClasses }) {
+function MapBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone: ToneClasses }>) {
   const addr = section.body?.trim();
   if (!addr) return null;
   const href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;

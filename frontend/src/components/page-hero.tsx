@@ -12,7 +12,7 @@ export function PageHero({
   lede,
   symbol,
   children,
-}: {
+}: Readonly<{
   tone: Tone;
   kicker: string;
   title: ReactNode;
@@ -20,7 +20,7 @@ export function PageHero({
   lede?: ReactNode;
   symbol?: AdinkraName;
   children?: ReactNode;
-}) {
+}>) {
   const t = TONES[tone];
   return (
     <section className={`relative border-t-4 ${t.border} bg-cream`}>

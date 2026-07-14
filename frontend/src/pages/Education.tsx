@@ -2,7 +2,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import type { Organization } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA, SectionHeading, VerifiedBadge, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SectionHeading, VerifiedBadge, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Crest } from "@/components/crest";
 import { initials } from "@/lib/format";
@@ -18,7 +18,7 @@ export function Component() {
   return (
     <>
       <PageHero tone="maroon" kicker="Rep your school · the powerhouse" title="The Citadel of Education" symbol="dwennimmen" lede="Within a few square miles sit the oldest and most decorated schools in Ghana. We don't build communities from scratch — we give existing, loyal Old Students networks a home.">
-        <CTA to="/me" variant="primary">Rep your school →</CTA>
+        <Cta to="/me" variant="primary">Rep your school →</Cta>
       </PageHero>
 
       <Container size="prose" className="py-12">

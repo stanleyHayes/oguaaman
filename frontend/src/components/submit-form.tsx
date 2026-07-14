@@ -41,7 +41,7 @@ const ICONS: Record<ListingType, React.ReactNode> = {
   business: <><path d="M3 9l1.5-5h15L21 9" /><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9" /><path d="M3 9h18M9 20v-6h6v6" /></>,
   event: <><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 2.5v4M16 2.5v4" /></>,
   memory: <><path d="M4 5a2 2 0 0 1 2-2h12a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2Z" /><path d="M8 7h7M8 11h7M8 15h4" /></>,
-  opportunity: <><path d="M12 3l2.3 4.7 5.2.8-3.7 3.6.9 5.1L12 14.8 7.3 17.3l.9-5.1L4.5 8.5l5.2-.8Z" /></>,
+  opportunity: <path d="M12 3l2.3 4.7 5.2.8-3.7 3.6.9 5.1L12 14.8 7.3 17.3l.9-5.1L4.5 8.5l5.2-.8Z" />,
   person: <><circle cx="12" cy="8" r="3.6" /><path d="M5 20a7 7 0 0 1 14 0" /></>,
   memorial: <><path d="M12 3c1.6 1.4 1.6 3.2 0 4.6-1.6-1.4-1.6-3.2 0-4.6Z" /><path d="M12 7.6V13" /><rect x="7" y="13" width="10" height="7" rx="1.5" /></>,
   project: <><path d="M3 21h18" /><path d="M5 21V8l7-5 7 5v13" /><path d="M9 21v-6h6v6" /></>,
@@ -134,11 +134,12 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
 
   if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); }} />;
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
-    const title = String(fd.get("title") ?? "").trim();
+    const s = (k: string) => { const v = fd.get(k); return typeof v === "string" ? v : ""; };
+    const title = s("title").trim();
     const details = collectDetails(fd, type, aiText);
     if (type === "artist") details.actName = title;
     const cover = coverImageUrl.trim();
@@ -203,6 +204,7 @@ function TypePicker({ type, onChange }: Readonly<{ type: ListingType; onChange: 
         {TYPES.map((t) => {
           const on = type === t.value;
           const a = ACCENT[t.value];
+          const chipCls = `${a.chip} ${a.icon}`;
           return (
             <button
               key={t.value}
@@ -213,7 +215,7 @@ function TypePicker({ type, onChange }: Readonly<{ type: ListingType; onChange: 
             >
               {/* faint oversized watermark decoration */}
               <TypeIcon type={t.value} className={`pointer-events-none absolute -right-3 -top-3 h-16 w-16 opacity-[0.06] ${a.icon}`} />
-              <span className={`relative flex h-9 w-9 items-center justify-center rounded-lg ${on ? "bg-green text-cream" : `${a.chip} ${a.icon}`}`}>
+              <span className={`relative flex h-9 w-9 items-center justify-center rounded-lg ${on ? "bg-green text-cream" : chipCls}`}>
                 <TypeIcon type={t.value} className="h-[18px] w-[18px]" />
               </span>
               <span className="relative mt-2.5 block text-sm font-semibold text-ink">{t.label}</span>
@@ -255,9 +257,9 @@ function TypeFields({ type }: Readonly<{ type: ListingType }>) {
         <Field label="Description"><textarea name="description" rows={2} className={inputCls} /></Field>
         <Field label="How to apply (link)" hint="Information and outbound links only."><input name="applyUrl" className={inputCls} placeholder="https://…" /></Field>
       </>)}
-      {type === "person" && (<>
+      {type === "person" && (
         <Field label="Era" hint="e.g. Colonial era, 1950s, contemporary"><input name="era" className={inputCls} placeholder="Contemporary" /></Field>
-      </>)}
+      )}
       {type === "memorial" && (
         <div className="rounded-lg border border-gold-border/40 bg-gold/[0.08] p-4">
           <p className="text-sm text-ink-muted">Memorials are handled with heightened care. Please create one only with the family's awareness. It will be reviewed sensitively and kept permanently.</p>

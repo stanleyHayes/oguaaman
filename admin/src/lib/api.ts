@@ -51,7 +51,10 @@ export const api = {
   listings: () => get<Listing[]>("/api/admin/listings"),
   audit: () => get<ModerationRecord[]>("/api/admin/audit"),
   members: () => get<Member[]>("/api/members"),
-  institutions: (kind?: string) => get<Organization[]>(`/api/institutions${kind ? `?kind=${encodeURIComponent(kind)}` : ""}`),
+  institutions: (kind?: string) => {
+    const q = kind ? `?kind=${encodeURIComponent(kind)}` : "";
+    return get<Organization[]>(`/api/institutions${q}`);
+  },
 
   // Detail views reuse the public read endpoints (rich, ready-made views).
   member: (slug: string) => get<MemberView>(`/api/members/${slug}`),
@@ -113,8 +116,10 @@ export const api = {
 
   // Steward-only: fan out yearly remembrance notices (spec §8.11). Optional
   // "MM-DD" date overrides today (for back-fills / testing).
-  runRemembrance: (date?: string) =>
-    post<{ created: number }>(`/api/admin/run-remembrance${date ? `?date=${encodeURIComponent(date)}` : ""}`),
+  runRemembrance: (date?: string) => {
+    const q = date ? `?date=${encodeURIComponent(date)}` : "";
+    return post<{ created: number }>(`/api/admin/run-remembrance${q}`);
+  },
 
   // Steward-only: institution-management claims (spec §8.13).
   claims: () => get<OrgClaim[]>("/api/admin/claims"),

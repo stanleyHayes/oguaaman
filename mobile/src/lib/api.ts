@@ -124,7 +124,8 @@ export const api = {
   // Community safety — incidents (auto-published on submit).
   incidents: (f?: { status?: string; category?: string }) => {
     const qs = f ? Object.entries(f).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v as string)}`).join("&") : "";
-    return get<Incident[]>(`/api/incidents${qs ? `?${qs}` : ""}`);
+    const query = qs ? `?${qs}` : "";
+    return get<Incident[]>(`/api/incidents${query}`);
   },
   incident: (slug: string) => get<Incident>(`/api/incidents/${slug}`),
   reportIncident: (body: { title: string; category: string; severity: string; location: string; contact?: string; description?: string }) =>
@@ -133,7 +134,8 @@ export const api = {
   // Lost & found — lost items, found items, missing people.
   lostFoundList: (f?: { kind?: string; status?: string }) => {
     const qs = f ? Object.entries(f).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v as string)}`).join("&") : "";
-    return get<LostFound[]>(`/api/lost-found${qs ? `?${qs}` : ""}`);
+    const query = qs ? `?${qs}` : "";
+    return get<LostFound[]>(`/api/lost-found${query}`);
   },
   lostFound: (slug: string) => get<LostFound>(`/api/lost-found/${slug}`),
   postLostFound: (body: { title: string; kind: string; description: string; lastSeenLocation?: string; lastSeenDate?: string; contact: string }) =>

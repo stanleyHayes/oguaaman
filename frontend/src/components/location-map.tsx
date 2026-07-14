@@ -8,7 +8,7 @@ const CAPE_COAST = { lat: 5.1053, lon: -1.2466 };
 const BBOX = "-1.300,5.075,-1.185,5.135";
 const MAP_SRC = `https://www.openstreetmap.org/export/embed.html?bbox=${BBOX}&layer=mapnik&marker=${CAPE_COAST.lat},${CAPE_COAST.lon}`;
 
-export function LocationMap({ address, query, className = "" }: { address?: string; query?: string; className?: string }) {
+export function LocationMap({ address, query, className = "" }: Readonly<{ address?: string; query?: string; className?: string }>) {
   const q = encodeURIComponent([query ?? address, "Cape Coast", "Ghana"].filter(Boolean).join(", "));
   const directions = `https://www.google.com/maps/search/?api=1&query=${q}`;
   return (

@@ -57,7 +57,7 @@ func TestSearch_attachesEntityImages(t *testing.T) {
 	orgs := searchOrgs{items: []domain.Organization{
 		{Slug: "mfantsipim", Name: "Mfantsipim School", CrestURL: "https://img/crest.jpg"},
 	}}
-	svc := New(f, members, orgs, stubPlaces{}, modRepo{f}, stubNotifs{}, stubFollows{}, stubClaims{}, stubNews{}, stubReports{}, stubTimeline{})
+	svc := New(Deps{Listings: f, Members: members, Orgs: orgs, Places: stubPlaces{}, Mod: modRepo{f}, Notifs: stubNotifs{}, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
 
 	// Each query is chosen to match exactly one entity by a distinctive term.
 	cases := []struct {
@@ -104,7 +104,7 @@ func TestSetMemberPhoto_trimsAndPersists(t *testing.T) {
 	ctx := context.Background()
 	f := &fakeRepo{}
 	rec := &recordPhotoMembers{}
-	svc := New(f, rec, stubOrgs{}, stubPlaces{}, modRepo{f}, stubNotifs{}, stubFollows{}, stubClaims{}, stubNews{}, stubReports{}, stubTimeline{})
+	svc := New(Deps{Listings: f, Members: rec, Orgs: stubOrgs{}, Places: stubPlaces{}, Mod: modRepo{f}, Notifs: stubNotifs{}, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
 
 	if err := svc.SetMemberPhoto(ctx, "m-1", "  https://img/p.jpg  "); err != nil {
 		t.Fatalf("SetMemberPhoto failed: %v", err)

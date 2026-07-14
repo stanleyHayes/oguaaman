@@ -48,7 +48,7 @@ export function Component() {
         <h2 className="mb-5 mt-10 font-display text-2xl font-semibold text-ink">Status timeline</h2>
         <ol className="space-y-0 border-l-2 border-sand pl-5">
           {history.map((e: IncidentStatusEntry, idx) => (
-            <li key={idx} className="relative pb-6 last:pb-0">
+            <li key={`${e.status}-${e.at}`} className="relative pb-6 last:pb-0">
               <span className={`absolute -left-[1.83rem] h-3.5 w-3.5 rounded-full border-2 border-cream ${idx === history.length - 1 ? "bg-gold-brand" : "bg-green"}`} aria-hidden />
               <p className="font-semibold capitalize text-ink">{STATUS_LABEL[e.status] ?? e.status}</p>
               {e.note && <p className="mt-0.5 text-sm text-ink-muted">{e.note}</p>}
@@ -66,7 +66,7 @@ export function Component() {
   );
 }
 
-function KeyVal({ label, children }: { label: string; children: ReactNode }) {
+function KeyVal({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-sand py-3 last:border-0 sm:flex-row sm:gap-4">
       <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-ink-faint">{label}</dt>

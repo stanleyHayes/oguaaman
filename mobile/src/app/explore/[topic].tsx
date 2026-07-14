@@ -71,7 +71,7 @@ export default function Explore() {
         </View>
         <View style={s.body}>
           {t.blocks.map((b, i) => (
-            <View key={i} style={{ marginTop: i === 0 ? 0 : 22 }}>
+            <View key={`${b.h ?? ""}-${i}`} style={{ marginTop: i === 0 ? 0 : 22 }}>
               {b.h ? <Text style={s.h}>{b.h}</Text> : null}
               {b.p ? <Text style={s.p}>{b.p}</Text> : null}
               {b.items ? (
@@ -80,7 +80,7 @@ export default function Explore() {
                     <View key={it.label} style={s.itemRow}>
                       {it.colors ? (
                         <View style={{ flexDirection: "row", gap: 4 }}>
-                          {it.colors.map((c, ci) => <View key={ci} style={[s.colorDot, { backgroundColor: c }]} />)}
+                          {it.colors.map((c) => <View key={c} style={[s.colorDot, { backgroundColor: c }]} />)}
                         </View>
                       ) : (
                         <Text style={[s.itemLabel, { color: t.tone }]}>{it.label}</Text>
@@ -105,7 +105,7 @@ export default function Explore() {
 
 // Heritage is the living record: the town's timeline plus heritage sites,
 // people and memories — all served by /api/history (the history hub).
-function HeritageScreen({ topic: t }: { topic: Topic }) {
+function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
   const { data, error, loading } = useApi<HistoryView>(() => api.history(), "history");
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;

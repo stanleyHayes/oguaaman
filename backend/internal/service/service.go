@@ -21,6 +21,21 @@ type Service struct {
 	timeline domain.TimelineRepository
 }
 
-func New(l domain.ListingRepository, m domain.MemberRepository, o domain.OrganizationRepository, p domain.PlaceRepository, md domain.ModerationRepository, n domain.NotificationRepository, f domain.FollowRepository, oc domain.OrgClaimRepository, nw domain.NewsRepository, rp domain.ReportRepository, tl domain.TimelineRepository) *Service {
-	return &Service{listings: l, members: m, orgs: o, places: p, mod: md, notifs: n, follows: f, claims: oc, news: nw, reports: rp, timeline: tl}
+// Deps are the repositories the Service core is built from.
+type Deps struct {
+	Listings domain.ListingRepository
+	Members  domain.MemberRepository
+	Orgs     domain.OrganizationRepository
+	Places   domain.PlaceRepository
+	Mod      domain.ModerationRepository
+	Notifs   domain.NotificationRepository
+	Follows  domain.FollowRepository
+	Claims   domain.OrgClaimRepository
+	News     domain.NewsRepository
+	Reports  domain.ReportRepository
+	Timeline domain.TimelineRepository
+}
+
+func New(d Deps) *Service {
+	return &Service{listings: d.Listings, members: d.Members, orgs: d.Orgs, places: d.Places, mod: d.Mod, notifs: d.Notifs, follows: d.Follows, claims: d.Claims, news: d.News, reports: d.Reports, timeline: d.Timeline}
 }

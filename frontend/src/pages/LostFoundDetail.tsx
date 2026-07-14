@@ -31,8 +31,11 @@ export function Component() {
   const d = notice.details;
   const missing = d.kind === "missing_person";
   const town = places.find((p) => p.id === notice.townId);
-  const isOwner = member != null && member.id === notice.ownerId;
+  const isOwner = member?.id === notice.ownerId;
   const canResolve = isOwner || member?.role === "curator" || member?.role === "steward";
+  let seenLabel = "Found at";
+  if (missing) seenLabel = "Last seen at";
+  else if (d.kind === "lost_item") seenLabel = "Lost at";
 
   async function resolve(status: LostFoundStatus) {
     setBusy(true);
@@ -63,7 +66,7 @@ export function Component() {
         )}
 
         <dl className="rounded-[var(--radius-card)] border border-sand bg-cream p-6">
-          {d.lastSeenLocation && <KeyVal label={missing ? "Last seen at" : d.kind === "lost_item" ? "Lost at" : "Found at"}>{d.lastSeenLocation}</KeyVal>}
+          {d.lastSeenLocation && <KeyVal label={seenLabel}>{d.lastSeenLocation}</KeyVal>}
           {d.lastSeenDate && <KeyVal label="When">{formatDate(d.lastSeenDate)}</KeyVal>}
           <KeyVal label="Contact">{d.contact}</KeyVal>
           <KeyVal label="Posted">{formatDate(notice.createdAt)}</KeyVal>
@@ -102,7 +105,7 @@ export function Component() {
   );
 }
 
-function KeyVal({ label, children }: { label: string; children: ReactNode }) {
+function KeyVal({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-sand py-3 last:border-0 sm:flex-row sm:gap-4">
       <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-ink-faint">{label}</dt>

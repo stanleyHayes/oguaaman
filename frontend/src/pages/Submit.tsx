@@ -1,17 +1,17 @@
 import { useSearchParams } from "react-router-dom";
 import type { ListingType } from "@/lib/types";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { SubmitForm } from "@/components/submit-form";
 import { useAuth } from "@/lib/auth";
 
-const VALID: ListingType[] = ["artist", "business", "event", "memory", "opportunity", "person", "memorial"];
+const VALID = new Set<ListingType>(["artist", "business", "event", "memory", "opportunity", "person", "memorial"]);
 
 export function Component() {
   const [params] = useSearchParams();
   const { member } = useAuth();
   const t = params.get("type");
-  const initialType = t && VALID.includes(t as ListingType) ? (t as ListingType) : undefined;
+  const initialType = t && VALID.has(t as ListingType) ? (t as ListingType) : undefined;
 
   return (
     <>
@@ -26,7 +26,7 @@ export function Component() {
               <p className="mx-auto mt-3 max-w-md text-sm text-ink-muted">
                 Contributing needs a verified member account — the platform&apos;s spam gate. It takes a moment: sign in with your phone or email and you&apos;re in.
               </p>
-              <div className="mt-6"><CTA to="/signin" variant="gold">Sign in / create account</CTA></div>
+              <div className="mt-6"><Cta to="/signin" variant="gold">Sign in / create account</Cta></div>
             </div>
           )}
         </div>

@@ -5,7 +5,7 @@ import { LANGS, useLang, type Lang } from "@/lib/i18n";
  * styled for an on-dark surface. English is the default; picking another
  * language translates the strings that have a translation (others stay English).
  */
-export function LanguageSwitcher({ className = "" }: { className?: string }) {
+export function LanguageSwitcher({ className = "" }: Readonly<{ className?: string }>) {
   const { lang, setLang } = useLang();
   return (
     <label className={`relative inline-flex items-center ${className}`}>

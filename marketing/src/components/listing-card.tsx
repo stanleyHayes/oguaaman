@@ -13,7 +13,7 @@ import {
  * The cover image is optional — most seed content is text-first — and falls back
  * to a tinted monogram band so a row never looks broken.
  */
-export function ListingCard({ listing }: { listing: Listing }) {
+export function ListingCard({ listing }: Readonly<{ listing: Listing }>) {
   const tone = TYPE_TONE[listing.type] ?? "neutral";
   return (
     <a

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Section, Container, Eyebrow, Pill, CTA } from "@/components/ui";
+import { Section, Container, Eyebrow, Pill, CTA as Cta } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { PORTAL_APP_URL, IOS_URL, ANDROID_URL } from "@/config";
 
@@ -79,6 +79,8 @@ const QR_GRID: number[][] = [
   [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
 ];
 
+const QR_CELLS = QR_GRID.flat().map((cell, i) => ({ id: `cell-${i}`, cell }));
+
 export function Download() {
   return (
     <Section id="get" tone="deep" size="wide" className="relative overflow-hidden">
@@ -101,7 +103,7 @@ export function Download() {
             </p>
 
             <div className="mt-9 flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
-              <CTA href={PORTAL_APP_URL} variant="gold" external className="px-6 py-3 text-base">
+              <Cta href={PORTAL_APP_URL} variant="gold" external className="px-6 py-3 text-base">
                 Open the web app
                 <svg
                   viewBox="0 0 24 24"
@@ -116,7 +118,7 @@ export function Download() {
                   <path d="M5 12h14" />
                   <path d="m13 6 6 6-6 6" />
                 </svg>
-              </CTA>
+              </Cta>
 
               <p className="text-sm text-cream/55">
                 No download needed — open it right in your browser.
@@ -144,7 +146,7 @@ export function Download() {
   );
 }
 
-function StoreButton({ href, glyph, topLine, bottomLine, ariaLabel }: StoreBadge) {
+function StoreButton({ href, glyph, topLine, bottomLine, ariaLabel }: Readonly<StoreBadge>) {
   const comingSoon = href === "#";
   return (
     <a
@@ -180,9 +182,9 @@ function ScanPanel() {
           className="mx-auto mt-5 grid aspect-square w-44 max-w-full gap-[2px] rounded-xl bg-cream p-3 shadow-[var(--shadow-card)]"
           style={{ gridTemplateColumns: `repeat(${QR_GRID[0].length}, minmax(0, 1fr))` }}
         >
-          {QR_GRID.flat().map((cell, i) => (
+          {QR_CELLS.map(({ id, cell }) => (
             <span
-              key={i}
+              key={id}
               className={`aspect-square rounded-[1px] ${cell ? "bg-green-900" : "bg-transparent"}`}
             />
           ))}

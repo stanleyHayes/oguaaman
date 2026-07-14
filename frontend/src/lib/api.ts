@@ -140,7 +140,8 @@ export const api = {
     if (f?.category) q.set("category", f.category);
     if (f?.town) q.set("town", f.town);
     const qs = q.toString();
-    return get<Incident[]>(`/api/incidents${qs ? `?${qs}` : ""}`);
+    const suffix = qs ? `?${qs}` : "";
+    return get<Incident[]>(`/api/incidents${suffix}`);
   },
   incident: (slug: string) => get<Incident>(`/api/incidents/${slug}`),
   reportIncident: (body: { title: string; category: IncidentCategory; severity: IncidentSeverity; location: string; contact?: string; description?: string }) =>
@@ -155,7 +156,8 @@ export const api = {
     if (f?.kind) q.set("kind", f.kind);
     if (f?.status) q.set("status", f.status);
     const qs = q.toString();
-    return get<LostFound[]>(`/api/lost-found${qs ? `?${qs}` : ""}`);
+    const suffix = qs ? `?${qs}` : "";
+    return get<LostFound[]>(`/api/lost-found${suffix}`);
   },
   lostFound: (slug: string) => get<LostFound>(`/api/lost-found/${slug}`),
   createLostFound: (body: { title: string; kind: LostFoundKind; description: string; lastSeenLocation?: string; lastSeenDate?: string; contact: string }) =>

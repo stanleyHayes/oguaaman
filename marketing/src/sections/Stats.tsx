@@ -118,11 +118,11 @@ function StatFigure({
   figure,
   value,
   index,
-}: {
+}: Readonly<{
   figure: Figure;
   value: number;
   index: number;
-}) {
+}>) {
   const riseClass =
     ["rise", "rise rise-2", "rise rise-3", "rise rise-4", "rise rise-3", "rise rise-2"][index] ??
     "rise";

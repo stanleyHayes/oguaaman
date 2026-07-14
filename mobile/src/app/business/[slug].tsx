@@ -120,11 +120,12 @@ function SupportVerify({ err, busy, verify }: Readonly<{ err: string; busy: bool
 }
 
 function SupportSubscribe({ business, err, busy, subscribe }: Readonly<{ business: Listing; err: string; busy: boolean; subscribe: () => void }>) {
+  const label = business.supporter ? "Renew — add another month" : "Subscribe with Paystack";
   return (
     <>
       {err !== "" && <Text style={sub.err}>{err}</Text>}
       <Pressable onPress={subscribe} disabled={busy} style={[sub.btn, busy && { opacity: 0.6 }]}>
-        <Text style={sub.btnText}>{busy ? "Starting…" : business.supporter ? "Renew — add another month" : "Subscribe with Paystack"}</Text>
+        <Text style={sub.btnText}>{busy ? "Starting…" : label}</Text>
       </Pressable>
       <Text style={sub.note}>Mobile money &amp; cards via Paystack. GH₵ 50 per month.</Text>
     </>

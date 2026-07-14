@@ -350,6 +350,23 @@ func seedLostFound() []domain.Listing {
 	}
 }
 
+// festivalEdition describes one yearly edition of a festival: an event listing
+// tagged with its festival slug and year, plus a recap (past editions) or a
+// programme (upcoming ones).
+type festivalEdition struct {
+	festival  string
+	year      string
+	slug      string
+	title     string
+	startsAt  string
+	venue     string
+	organiser string
+	desc      string
+	recap     string
+	programme []map[string]any
+	featured  bool
+}
+
 // seedExtraListings is batch 2: more REAL, fact-checked Cape Coast data — the
 // town's notable sons & daughters (honest about born-here vs schooled-here) and
 // the wider festival calendar of the coast. Appended to seedListings() in Seed().
@@ -365,18 +382,16 @@ func seedExtraListings() []domain.Listing {
 		}
 		return domain.Listing{ID: "e-" + slug, Slug: slug, Type: domain.TypeEvent, OwnerID: memberNana, Title: title, Status: domain.StatusApproved, Featured: featured, Tags: []string{"festival", "central-region"}, TownID: "oguaa", CreatedAt: pdate, SubmittedAt: pdate, PublishedAt: pdate, Details: d}
 	}
-	// fedition is one yearly edition of a festival in the archive: an event listing
-	// tagged with its festival slug and year, plus a recap (past editions) or a
-	// programme (upcoming ones).
-	fedition := func(festival, year, slug, title, startsAt, venue, organiser, desc, recap string, programme []map[string]any, featured bool) domain.Listing {
-		l := event(slug, title, startsAt, venue, organiser, desc, featured)
-		l.Details["festival"] = festival
-		l.Details["edition"] = year
-		if recap != "" {
-			l.Details["recap"] = recap
+	// fedition builds one yearly edition of a festival in the archive.
+	fedition := func(e festivalEdition) domain.Listing {
+		l := event(e.slug, e.title, e.startsAt, e.venue, e.organiser, e.desc, e.featured)
+		l.Details["festival"] = e.festival
+		l.Details["edition"] = e.year
+		if e.recap != "" {
+			l.Details["recap"] = e.recap
 		}
-		if len(programme) > 0 {
-			l.Details["programme"] = programme
+		if len(e.programme) > 0 {
+			l.Details["programme"] = e.programme
 		}
 		return l
 	}
@@ -421,45 +436,46 @@ func seedExtraListings() []domain.Listing {
 		// ── The wider festival calendar of the coast ───────────────────────────
 		// Each festival below is a yearly-edition event carrying festival/edition
 		// keys, so the archive (/api/festivals) can group them by year.
-		fedition(festivalFetuAfahye, "2024", "fetu-afahye-2024", "Oguaa Fetu Afahye 2024 — Fetu @60", "2024-09-07", venueVictoriaPark, oguaaTraditionalCouncil,
-			"The sixtieth anniversary edition of Oguaa's paramount festival — a week of rites, the Asafo companies in full colour, and the grand durbar at Victoria Park.",
-			"Fetu @60, and one for the ages: the Asantehene, Otumfuo Osei Tutu II, attended the grand durbar at Victoria Park for the first time, and the diaspora came home in their thousands. The Asafo companies paraded as their grandfathers did, and the whole coast drummed for a week.", nil, false),
-		fedition(festivalFetuAfahye, "2025", "fetu-afahye-2025", "Oguaa Fetu Afahye 2025", "2025-09-06", venueVictoriaPark, oguaaTraditionalCouncil,
-			"The annual harvest and cleansing festival of Oguaa — a week of rites culminating in the grand durbar of chiefs at Victoria Park.",
-			"A homecoming edition under clear skies: Orange Friday filled the streets till midnight, the seven Asafo companies answered the drums, and the durbar at Victoria Park drew families home from across the world.", nil, false),
-		fedition(festivalEdinaBakatue, "2025", "edina-bakatue-2025", "Edina Bakatue 2025", "2025-07-01", "Benya Lagoon & Elmina town", edinaTraditionalCouncil,
-			"The festival of the chiefs and people of Elmina, marking the opening of the Benya Lagoon for the fishing season — the sacred net, the durbar and the regatta.",
-			"A generous first casting — the chief priest's net came up full, and the fishermen read a good season in it. The regatta ran the length of the lagoon before the durbar, and Elmina feasted.", nil, false),
-		fedition(festivalEdinaBakatue, "2026", festivalEdinaBakatue, "Edina Bakatue 2026", "2026-07-07", "Benya Lagoon & Elmina town", edinaTraditionalCouncil,
-			"The festival of the chiefs and people of Elmina — its name means the draining of the lagoon — marking the opening of the fishing season. The chief priest casts a sacred net three times into the Benya Lagoon, the state offers mashed yam to the river god Nana Benya, and a grand durbar and regatta follow. Documented since at least 1847; held on the first Tuesday of July.", "",
-			[]map[string]any{
+		fedition(festivalEdition{festival: festivalFetuAfahye, year: "2024", slug: "fetu-afahye-2024", title: "Oguaa Fetu Afahye 2024 — Fetu @60", startsAt: "2024-09-07", venue: venueVictoriaPark, organiser: oguaaTraditionalCouncil,
+			desc:  "The sixtieth anniversary edition of Oguaa's paramount festival — a week of rites, the Asafo companies in full colour, and the grand durbar at Victoria Park.",
+			recap: "Fetu @60, and one for the ages: the Asantehene, Otumfuo Osei Tutu II, attended the grand durbar at Victoria Park for the first time, and the diaspora came home in their thousands. The Asafo companies paraded as their grandfathers did, and the whole coast drummed for a week."}),
+		fedition(festivalEdition{festival: festivalFetuAfahye, year: "2025", slug: "fetu-afahye-2025", title: "Oguaa Fetu Afahye 2025", startsAt: "2025-09-06", venue: venueVictoriaPark, organiser: oguaaTraditionalCouncil,
+			desc:  "The annual harvest and cleansing festival of Oguaa — a week of rites culminating in the grand durbar of chiefs at Victoria Park.",
+			recap: "A homecoming edition under clear skies: Orange Friday filled the streets till midnight, the seven Asafo companies answered the drums, and the durbar at Victoria Park drew families home from across the world."}),
+		fedition(festivalEdition{festival: festivalEdinaBakatue, year: "2025", slug: "edina-bakatue-2025", title: "Edina Bakatue 2025", startsAt: "2025-07-01", venue: "Benya Lagoon & Elmina town", organiser: edinaTraditionalCouncil,
+			desc:  "The festival of the chiefs and people of Elmina, marking the opening of the Benya Lagoon for the fishing season — the sacred net, the durbar and the regatta.",
+			recap: "A generous first casting — the chief priest's net came up full, and the fishermen read a good season in it. The regatta ran the length of the lagoon before the durbar, and Elmina feasted."}),
+		fedition(festivalEdition{festival: festivalEdinaBakatue, year: "2026", slug: festivalEdinaBakatue, title: "Edina Bakatue 2026", startsAt: "2026-07-07", venue: "Benya Lagoon & Elmina town", organiser: edinaTraditionalCouncil,
+			desc: "The festival of the chiefs and people of Elmina — its name means the draining of the lagoon — marking the opening of the fishing season. The chief priest casts a sacred net three times into the Benya Lagoon, the state offers mashed yam to the river god Nana Benya, and a grand durbar and regatta follow. Documented since at least 1847; held on the first Tuesday of July.",
+			programme: []map[string]any{
 				{"day": "Tuesday 7 July", "title": "Casting of the sacred net into the Benya Lagoon — three casts, the catch read for the season", "time": "morning"},
 				{"day": "Tuesday 7 July", "title": "Offering of mashed yam to Nana Benya; grand durbar & lagoon regatta", "time": "afternoon"},
-			}, false),
-		fedition("panafest", "2025", "panafest", "PANAFEST 2025 — Pan-African Historical Theatre Festival", "2025-07-26", "Cape Coast & Elmina (opening at Cape Coast Castle)", "National Commission on Culture · Ghana Tourism Authority",
-			"The biennial Pan-African festival of arts and remembrance, grown from Efua Sutherland's 1980 proposal and first staged in 1992. It gathers the continent and the diaspora for historical drama, music, dance, colloquia and a candlelit emancipation vigil, alongside the Emancipation Day commemorations.",
-			"PANAFEST 2025 brought the diaspora home for days of historical theatre, music and colloquia between the two castles, closing with the candlelit emancipation vigil at the Door of Return. The next edition is PANAFEST 2027.", nil, true),
-		fedition(festivalEmancipationDay, "2026", festivalEmancipationDay, "Emancipation Day 2026", "2026-08-01", "Assin Manso Slave River · Cape Coast & Elmina Castles", "Government of Ghana · Ghana Tourism Authority",
-			"Ghana's annual commemoration of the abolition of slavery in the British Empire — Ghana was the first African nation to observe it, from 1998. The Central Region is its heart: a grand durbar at Assin Manso, where captives took their last bath in the Slave River, with wreath-laying, libation and remembrance at the Cape Coast and Elmina castles. Climaxes on 1 August.", "",
-			[]map[string]any{
+			}}),
+		fedition(festivalEdition{festival: "panafest", year: "2025", slug: "panafest", title: "PANAFEST 2025 — Pan-African Historical Theatre Festival", startsAt: "2025-07-26", venue: "Cape Coast & Elmina (opening at Cape Coast Castle)", organiser: "National Commission on Culture · Ghana Tourism Authority",
+			desc:     "The biennial Pan-African festival of arts and remembrance, grown from Efua Sutherland's 1980 proposal and first staged in 1992. It gathers the continent and the diaspora for historical drama, music, dance, colloquia and a candlelit emancipation vigil, alongside the Emancipation Day commemorations.",
+			recap:    "PANAFEST 2025 brought the diaspora home for days of historical theatre, music and colloquia between the two castles, closing with the candlelit emancipation vigil at the Door of Return. The next edition is PANAFEST 2027.",
+			featured: true}),
+		fedition(festivalEdition{festival: festivalEmancipationDay, year: "2026", slug: festivalEmancipationDay, title: "Emancipation Day 2026", startsAt: "2026-08-01", venue: "Assin Manso Slave River · Cape Coast & Elmina Castles", organiser: "Government of Ghana · Ghana Tourism Authority",
+			desc: "Ghana's annual commemoration of the abolition of slavery in the British Empire — Ghana was the first African nation to observe it, from 1998. The Central Region is its heart: a grand durbar at Assin Manso, where captives took their last bath in the Slave River, with wreath-laying, libation and remembrance at the Cape Coast and Elmina castles. Climaxes on 1 August.",
+			programme: []map[string]any{
 				{"day": "Friday 31 July", "title": "Reverential Night vigil — Cape Coast Castle", "time": "from dusk"},
 				{"day": "Saturday 1 August", "title": "Durbar at Assin Manso, the 'Last Bath' river site", "time": "morning"},
 				{"day": "Saturday 1 August", "title": "Wreath-laying & libation at Cape Coast and Elmina Castles", "time": "afternoon"},
-			}, true),
-		fedition(festivalEmancipationDay, "2026", "reverential-night", "Reverential Night at the Castle", "2026-07-31", "Cape Coast Castle", "Government of Ghana · Ghana Tourism Authority",
-			"A solemn vigil on the eve of Emancipation Day. Government, traditional rulers and the diaspora process through the dungeons to the Door of No Return — now also the Door of Return — where libation is poured, the ancestors' names are called, three wreaths laid and seven candles lit. Held each 31 July.", "", nil, false),
-		fedition("akwambo", "2026", "akwambo-festival", "Akwambo (Path-Clearing) Festival 2026", "2026-08-29", "Agona & Gomoa traditional areas, Central Region", "Agona & Gomoa traditional authorities",
-			"A path-clearing festival of the Fante communities of the Agona and Gomoa areas, distinct from Oguaa's Fetu Afahye. Townspeople weed and clear the footpaths to the sacred streams and shrines, honouring their founders' journeys, with Asafo drumming and a durbar of chiefs in palanquins. Kept town by town across August and September.", "",
-			[]map[string]any{
+			}, featured: true}),
+		fedition(festivalEdition{festival: festivalEmancipationDay, year: "2026", slug: "reverential-night", title: "Reverential Night at the Castle", startsAt: "2026-07-31", venue: "Cape Coast Castle", organiser: "Government of Ghana · Ghana Tourism Authority",
+			desc: "A solemn vigil on the eve of Emancipation Day. Government, traditional rulers and the diaspora process through the dungeons to the Door of No Return — now also the Door of Return — where libation is poured, the ancestors' names are called, three wreaths laid and seven candles lit. Held each 31 July."}),
+		fedition(festivalEdition{festival: "akwambo", year: "2026", slug: "akwambo-festival", title: "Akwambo (Path-Clearing) Festival 2026", startsAt: "2026-08-29", venue: "Agona & Gomoa traditional areas, Central Region", organiser: "Agona & Gomoa traditional authorities",
+			desc: "A path-clearing festival of the Fante communities of the Agona and Gomoa areas, distinct from Oguaa's Fetu Afahye. Townspeople weed and clear the footpaths to the sacred streams and shrines, honouring their founders' journeys, with Asafo drumming and a durbar of chiefs in palanquins. Kept town by town across August and September.",
+			programme: []map[string]any{
 				{"day": "August–September", "title": "Clearing of the footpaths to the sacred streams and shrines"},
 				{"day": "August–September", "title": "Asafo drumming and durbar of chiefs in palanquins"},
-			}, false),
-		fedition("edina-bronya", "2027", "edina-bronya", "Edina Bronya 2027", "2027-01-07", "Elmina town & St. George's Castle", edinaTraditionalCouncil,
-			"Elmina's own 'Christmas' — a harvest and thanksgiving festival inherited from the Dutch era and made wholly Fante. At midnight the Paramount Chief fires musketry to usher in the new year; the next day he rides in palanquin, sheep are slaughtered before Elmina Castle, and families feast. Held on the first Thursday of January.", "",
-			[]map[string]any{
+			}}),
+		fedition(festivalEdition{festival: "edina-bronya", year: "2027", slug: "edina-bronya", title: "Edina Bronya 2027", startsAt: "2027-01-07", venue: "Elmina town & St. George's Castle", organiser: edinaTraditionalCouncil,
+			desc: "Elmina's own 'Christmas' — a harvest and thanksgiving festival inherited from the Dutch era and made wholly Fante. At midnight the Paramount Chief fires musketry to usher in the new year; the next day he rides in palanquin, sheep are slaughtered before Elmina Castle, and families feast. Held on the first Thursday of January.",
+			programme: []map[string]any{
 				{"day": "Thursday 7 January", "title": "Midnight musketry to usher in the new year", "time": "12:00 a.m."},
 				{"day": "Thursday 7 January", "title": "Palanquin procession, slaughter before Elmina Castle, family feasting", "time": "daytime"},
-			}, false),
+			}}),
 		event("mfantsipim-at-150-durbar", "Mfantsipim @150 Grand Durbar & Speech Day", "2026-11-14", "Kwabotwe Hill, Mfantsipim School, Cape Coast", "Mfantsipim School & MOBA",
 			"Mfantsipim — founded in 1876, Ghana's pioneer secondary school — marks its sesquicentenary with a Grand Anniversary Durbar and Speech Day on Kwabotwe Hill, the high point of a year of celebration. Speech and Prize-Giving has been a Cape Coast tradition here since 1908; in 2026 it carries 150 years of looking ahead.", false),
 	}

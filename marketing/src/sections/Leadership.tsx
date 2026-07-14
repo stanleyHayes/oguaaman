@@ -250,7 +250,7 @@ const ACCENT_BORDER: Record<Hierarchy["accent"], string> = {
   clay: "border-clay/55",
 };
 
-function HolderLine({ node }: { node: Node }) {
+function HolderLine({ node }: Readonly<{ node: Node }>) {
   if (node.holder) {
     return (
       <p className="mt-2 flex items-center gap-2">
@@ -264,7 +264,7 @@ function HolderLine({ node }: { node: Node }) {
   );
 }
 
-function NodeCard({ node, accent }: { node: Node; accent: Hierarchy["accent"] }) {
+function NodeCard({ node, accent }: Readonly<{ node: Node; accent: Hierarchy["accent"] }>) {
   if (node.feature) {
     return (
       <div className={`flex flex-col gap-5 rounded-[var(--radius-card)] border-l-2 ${ACCENT_BORDER[accent]} border-y border-r border-cream/12 bg-green-900/45 p-7 sm:flex-row sm:items-start`}>
@@ -299,7 +299,7 @@ function NodeCard({ node, accent }: { node: Node; accent: Hierarchy["accent"] })
   );
 }
 
-function Ladder({ hierarchy }: { hierarchy: Hierarchy }) {
+function Ladder({ hierarchy }: Readonly<{ hierarchy: Hierarchy }>) {
   return (
     <div>
       <p className="eyebrow text-gold/80">{hierarchy.eyebrow}</p>
@@ -357,7 +357,7 @@ export function Leadership() {
           </p>
           <ol className="mt-3 max-w-3xl space-y-1.5">
             {FOOTNOTES.map((f, i) => (
-              <li key={i} className="flex gap-2 text-xs leading-relaxed text-cream/50">
+              <li key={f} className="flex gap-2 text-xs leading-relaxed text-cream/50">
                 <span className="text-gold/60">{i + 1}.</span>
                 <span>{f}</span>
               </li>

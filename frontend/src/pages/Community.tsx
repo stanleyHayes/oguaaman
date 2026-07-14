@@ -2,7 +2,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA, SectionHeading, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { OpportunityCard, MemoryCard, EventCard } from "@/components/cards";
 import { SAMPLE_NOTICE } from "@/lib/content";
@@ -23,7 +23,7 @@ export function Component() {
   return (
     <>
       <PageHero tone="teal" kicker="Get involved · training the youth" title="The community" symbol="funtunfunefu" lede="The platform leads with local pride, and pride is downstream of participation. Share a memory, follow the calendar, and open doors for the next generation.">
-        <CTA to="/community#join" variant="primary">Join the community</CTA>
+        <Cta to="/community#join" variant="primary">Join the community</Cta>
       </PageHero>
 
       <Container size="wide" className="py-12">
@@ -55,8 +55,8 @@ export function Component() {
           <h2 className="mt-5 font-display text-3xl font-semibold sm:text-4xl">Two crocodiles, one stomach</h2>
           <p className="mx-auto mt-4 max-w-xl text-cream/80">Funtunfunefu Denkyemfunefu — unity in diversity. Create a profile, rep your town and school, and help build the thing the people of Oguaa genuinely own.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <CTA to="/me" variant="gold">Create your profile</CTA>
-            <CTA to="/submit" variant="outline-dark">Submit a listing</CTA>
+            <Cta to="/me" variant="gold">Create your profile</Cta>
+            <Cta to="/submit" variant="outline-dark">Submit a listing</Cta>
           </div>
         </Container>
       </section>

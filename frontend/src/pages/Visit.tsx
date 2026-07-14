@@ -1,5 +1,5 @@
 import { PageHero } from "@/components/page-hero";
-import { Container, Card, SectionHeading, CTA } from "@/components/ui";
+import { Container, Card, SectionHeading, CTA as Cta } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { VISIT_BLURB } from "@/lib/content";
 import { PHOTOS } from "@/lib/cape-coast-photos";
@@ -15,7 +15,7 @@ export function Component() {
   return (
     <>
       <PageHero tone="teal" kicker="Tourism · the coast" title="Visit Oguaa" symbol="crab" lede="Come for the Castle and stay for the coast — the canopy, the beaches, the markets, the food, and a festival in September.">
-        <CTA to="/culture" variant="primary">Time it for Fetu Afahye →</CTA>
+        <Cta to="/culture" variant="primary">Time it for Fetu Afahye →</Cta>
       </PageHero>
       <Container size="prose" className="py-12"><p className="font-serif text-lg leading-relaxed text-ink">{VISIT_BLURB}</p></Container>
       <Container size="wide" className="pb-14">

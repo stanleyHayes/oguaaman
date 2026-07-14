@@ -13,7 +13,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 const field = "w-full rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-brand focus:outline-none";
 const labelCls = "block text-xs font-semibold uppercase tracking-wide text-ink-faint";
 
-export function InstitutionEditor({ slug, org }: { slug: string; org: Organization }) {
+export function InstitutionEditor({ slug, org }: Readonly<{ slug: string; org: Organization }>) {
   return (
     <div className="space-y-5">
       <ProfileForm slug={slug} org={org} />
@@ -23,7 +23,7 @@ export function InstitutionEditor({ slug, org }: { slug: string; org: Organizati
   );
 }
 
-function Panel({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Panel({ title, hint, children }: Readonly<{ title: string; hint?: string; children: React.ReactNode }>) {
   return (
     <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
       <h3 className="font-display text-lg font-semibold text-ink">{title}</h3>
@@ -33,14 +33,14 @@ function Panel({ title, hint, children }: { title: string; hint?: string; childr
   );
 }
 
-function Saver({ state }: { state: SaveState }) {
+function Saver({ state }: Readonly<{ state: SaveState }>) {
   if (state === "saving") return <span className="text-sm text-ink-faint">Saving…</span>;
   if (state === "saved") return <span className="text-sm text-teal-text">Saved ✓</span>;
   if (state === "error") return <span className="text-sm text-clay-text">Couldn't save — try again.</span>;
   return null;
 }
 
-function ProfileForm({ slug, org }: { slug: string; org: Organization }) {
+function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }>) {
   const [summary, setSummary] = useState(org.summary ?? "");
   const [motto, setMotto] = useState(org.motto ?? "");
   const [history, setHistory] = useState(org.history ?? "");
@@ -62,16 +62,16 @@ function ProfileForm({ slug, org }: { slug: string; org: Organization }) {
       <div className="space-y-4">
         <ImageUpload value={crestUrl} onChange={(url) => { setCrestUrl(url); setState("idle"); }} label="Crest / emblem (optional)" hint="An emblem or cover, shown on the page." />
         <div>
-          <label className={labelCls}>Tagline / motto</label>
-          <input className={`mt-1.5 ${field}`} value={motto} onChange={(e) => setMotto(e.target.value)} placeholder="e.g. UNESCO World Heritage" />
+          <label htmlFor="org-motto" className={labelCls}>Tagline / motto</label>
+          <input id="org-motto" className={`mt-1.5 ${field}`} value={motto} onChange={(e) => setMotto(e.target.value)} placeholder="e.g. UNESCO World Heritage" />
         </div>
         <div>
-          <label className={labelCls}>Summary</label>
-          <textarea rows={3} className={`mt-1.5 resize-none ${field}`} value={summary} onChange={(e) => setSummary(e.target.value)} />
+          <label htmlFor="org-summary" className={labelCls}>Summary</label>
+          <textarea id="org-summary" rows={3} className={`mt-1.5 resize-none ${field}`} value={summary} onChange={(e) => setSummary(e.target.value)} />
         </div>
         <div>
-          <label className={labelCls}>History</label>
-          <textarea rows={5} className={`mt-1.5 resize-y ${field}`} value={history} onChange={(e) => setHistory(e.target.value)} placeholder="The story of this place. Separate paragraphs with a blank line." />
+          <label htmlFor="org-history" className={labelCls}>History</label>
+          <textarea id="org-history" rows={5} className={`mt-1.5 resize-y ${field}`} value={history} onChange={(e) => setHistory(e.target.value)} placeholder="The story of this place. Separate paragraphs with a blank line." />
         </div>
         <div className="flex items-center gap-3">
           <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">Save summary & history</button>
@@ -86,7 +86,7 @@ function ProfileForm({ slug, org }: { slug: string; org: Organization }) {
 
 let _tmpSeq = 0;
 const nextTmpId = () => `tmp-${++_tmpSeq}`;
-const stripTmp = (id?: string) => (id && id.startsWith("tmp-") ? "" : id ?? "");
+const stripTmp = (id?: string) => (id?.startsWith("tmp-") ? "" : id ?? "");
 
 const SECTION_TYPES: { type: ProfileSectionType; label: string; hint: string }[] = [
   { type: "richtext", label: "Text", hint: "A heading + rich text (Markdown, incl. tables)." },
@@ -198,7 +198,7 @@ function sectionForSave(s: ProfileSection): ProfileSection {
   };
 }
 
-function SectionBuilderForm({ slug, initial }: { slug: string; initial?: ProfileSection[] }) {
+function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; initial?: ProfileSection[] }>) {
   const [sections, setSections] = useState<ProfileSection[]>(initial ?? []);
   const [state, setState] = useState<SaveState>("idle");
 
@@ -252,13 +252,13 @@ function SectionBuilderForm({ slug, initial }: { slug: string; initial?: Profile
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-1.5 text-xs text-ink-muted">
-                Accent
+                Accent{" "}
                 <select className="rounded-md border border-sand bg-paper px-2 py-1 text-sm text-ink" value={s.tone ?? "green"} onChange={(e) => update(i, { tone: e.target.value })}>
                   {TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </label>
               <label className="flex items-center gap-1.5 text-xs text-ink-muted">
-                <input type="checkbox" checked={!s.hidden} onChange={(e) => update(i, { hidden: !e.target.checked })} />
+                <input type="checkbox" checked={!s.hidden} onChange={(e) => update(i, { hidden: !e.target.checked })} />{" "}
                 Visible on page
               </label>
             </div>
@@ -329,7 +329,7 @@ function SectionBuilderForm({ slug, initial }: { slug: string; initial?: Profile
   );
 }
 
-function ItemsEditor({ type, items, onChange }: { type: ProfileSectionType; items: SectionItem[]; onChange: (items: SectionItem[]) => void }) {
+function ItemsEditor({ type, items, onChange }: Readonly<{ type: ProfileSectionType; items: SectionItem[]; onChange: (items: SectionItem[]) => void }>) {
   const fields = ITEM_FIELDS[type] ?? [];
   const showImage = type === "team" || type === "logos" || type === "testimonials";
   function update(i: number, patch: Partial<SectionItem>) {
@@ -361,7 +361,7 @@ function ItemsEditor({ type, items, onChange }: { type: ProfileSectionType; item
   );
 }
 
-function MediaItemsEditor({ media, onChange }: { media: MediaAsset[]; onChange: (media: MediaAsset[]) => void }) {
+function MediaItemsEditor({ media, onChange }: Readonly<{ media: MediaAsset[]; onChange: (media: MediaAsset[]) => void }>) {
   function update(i: number, patch: Partial<MediaAsset>) {
     onChange(media.map((m, idx) => (idx === i ? { ...m, ...patch } : m)));
   }
@@ -383,7 +383,7 @@ function MediaItemsEditor({ media, onChange }: { media: MediaAsset[]; onChange: 
 }
 
 // Sub-entity cards (houses, departments, Asafo companies, year groups, lineage).
-function GroupsEditor({ groups, onChange }: { groups: SubEntity[]; onChange: (groups: SubEntity[]) => void }) {
+function GroupsEditor({ groups, onChange }: Readonly<{ groups: SubEntity[]; onChange: (groups: SubEntity[]) => void }>) {
   function update(i: number, patch: Partial<SubEntity>) {
     onChange(groups.map((g, idx) => (idx === i ? { ...g, ...patch } : g)));
   }
@@ -412,7 +412,7 @@ function GroupsEditor({ groups, onChange }: { groups: SubEntity[]; onChange: (gr
   );
 }
 
-function AttrsEditor({ attrs, onChange }: { attrs: SectionItem[]; onChange: (attrs: SectionItem[]) => void }) {
+function AttrsEditor({ attrs, onChange }: Readonly<{ attrs: SectionItem[]; onChange: (attrs: SectionItem[]) => void }>) {
   function update(i: number, patch: Partial<SectionItem>) { onChange(attrs.map((a, idx) => (idx === i ? { ...a, ...patch } : a))); }
   function add() { onChange([...attrs, { id: nextTmpId() }]); }
   function remove(i: number) { onChange(attrs.filter((_, idx) => idx !== i)); }
@@ -430,7 +430,7 @@ function AttrsEditor({ attrs, onChange }: { attrs: SectionItem[]; onChange: (att
   );
 }
 
-function GalleryForm({ slug, initial }: { slug: string; initial?: MediaAsset[] }) {
+function GalleryForm({ slug, initial }: Readonly<{ slug: string; initial?: MediaAsset[] }>) {
   const [items, setItems] = useState<MediaAsset[]>(initial ?? []);
   const [state, setState] = useState<SaveState>("idle");
 

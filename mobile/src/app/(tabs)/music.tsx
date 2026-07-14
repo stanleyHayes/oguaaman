@@ -8,7 +8,7 @@ import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 
 // Genre filter chips (client-side filtering, like the web directory).
-function GenreChips({ active, onPick }: { active: string; onPick: (g: string) => void }) {
+function GenreChips({ active, onPick }: Readonly<{ active: string; onPick: (g: string) => void }>) {
   const { data } = useApi<string[]>(() => api.genres(), "genres");
   const genres = data ?? [];
   if (genres.length === 0) return null;

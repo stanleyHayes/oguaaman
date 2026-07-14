@@ -13,13 +13,13 @@ export function Crest({
   label,
   size = 96,
   src,
-}: {
+}: Readonly<{
   colors?: string[];
   label: string;
   size?: number;
   /** A real, uploaded crest/logo URL. Falls back to the placeholder shield when absent. */
   src?: string;
-}) {
+}>) {
   const [failed, setFailed] = useState(false);
   const c1 = colors[0] ?? "#123F2D";
   const c2 = colors[1] ?? "#C7A24A";

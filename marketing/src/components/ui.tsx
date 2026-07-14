@@ -6,17 +6,18 @@ export function Container({
   children,
   className = "",
   size = "default",
-}: {
+}: Readonly<{
   children: ReactNode;
   className?: string;
   size?: "default" | "narrow" | "wide" | "prose";
-}) {
-  const max =
-    size === "narrow" ? "max-w-3xl"
-    : size === "prose" ? "max-w-[46rem]"
-    : size === "wide" ? "max-w-6xl"
-    : "max-w-5xl";
-  return <div className={`mx-auto w-full ${max} px-5 sm:px-6 ${className}`}>{children}</div>;
+}>) {
+  const maxes: Record<string, string> = {
+    narrow: "max-w-3xl",
+    prose: "max-w-[46rem]",
+    wide: "max-w-6xl",
+    default: "max-w-5xl",
+  };
+  return <div className={`mx-auto w-full ${maxes[size]} px-5 sm:px-6 ${className}`}>{children}</div>;
 }
 
 type Tone = "paper" | "cream" | "sand" | "green" | "deep";
@@ -28,13 +29,13 @@ export function Section({
   className = "",
   tone = "paper",
   size = "default",
-}: {
+}: Readonly<{
   id?: string;
   children: ReactNode;
   className?: string;
   tone?: Tone;
   size?: "default" | "narrow" | "wide" | "prose";
-}) {
+}>) {
   const tones: Record<Tone, string> = {
     paper: "bg-paper text-ink",
     cream: "bg-cream text-ink",
@@ -49,7 +50,7 @@ export function Section({
   );
 }
 
-export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Eyebrow({ children, className = "" }: Readonly<{ children: ReactNode; className?: string }>) {
   return <p className={`eyebrow ${className}`}>{children}</p>;
 }
 
@@ -60,14 +61,14 @@ export function SectionHeading({
   accentClass = "bg-gold-brand",
   center = false,
   onDark = false,
-}: {
+}: Readonly<{
   kicker?: string;
   title: ReactNode;
   lede?: ReactNode;
   accentClass?: string;
   center?: boolean;
   onDark?: boolean;
-}) {
+}>) {
   return (
     <div className={center ? "text-center" : ""}>
       {kicker && <Eyebrow className={`mb-3 ${onDark ? "text-gold/80" : ""}`}>{kicker}</Eyebrow>}
@@ -88,11 +89,11 @@ export function Pill({
   children,
   tone = "neutral",
   className = "",
-}: {
+}: Readonly<{
   children: ReactNode;
   tone?: "neutral" | "green" | "gold" | "clay" | "teal" | "on-dark";
   className?: string;
-}) {
+}>) {
   const tones: Record<string, string> = {
     neutral: "border-sand bg-cream text-ink-muted",
     green: "border-green/30 bg-green/[0.06] text-green",
@@ -112,11 +113,11 @@ export function Card({
   children,
   className = "",
   as: Tag = "div",
-}: {
+}: Readonly<{
   children: ReactNode;
   className?: string;
   as?: "div" | "article" | "li";
-}) {
+}>) {
   return (
     <Tag className={`rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] ${className}`}>
       {children}
@@ -130,13 +131,13 @@ export function CTA({
   variant = "primary",
   className = "",
   external = false,
-}: {
+}: Readonly<{
   href: string;
   children: ReactNode;
   variant?: "primary" | "gold" | "outline" | "outline-dark";
   className?: string;
   external?: boolean;
-}) {
+}>) {
   const styles: Record<string, string> = {
     primary: "bg-green text-cream hover:bg-green-900",
     gold: "bg-gold-brand text-green-900 hover:bg-gold",

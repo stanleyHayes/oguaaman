@@ -10,7 +10,7 @@ const MARKER = "/image/upload/";
 
 /** Inject a transform string into a Cloudinary delivery URL. No-op otherwise. */
 export function cld(url: string | undefined, transform: string): string | undefined {
-  if (!url || !url.includes("res.cloudinary.com")) return url;
+  if (!url?.includes("res.cloudinary.com")) return url;
   const i = url.indexOf(MARKER);
   if (i === -1) return url;
   const head = url.slice(0, i + MARKER.length);

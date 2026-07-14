@@ -33,6 +33,7 @@ export default function NewLostFound() {
   }
 
   const missing = kind === "missing_person";
+  const whereLabel = kind === "lost_item" ? "LOST WHERE" : "FOUND WHERE";
 
   async function submit() {
     const t = title.trim();
@@ -91,7 +92,7 @@ export default function NewLostFound() {
         multiline
       />
 
-      <Text style={s.label}>{missing ? "LAST SEEN WHERE" : kind === "lost_item" ? "LOST WHERE" : "FOUND WHERE"}</Text>
+      <Text style={s.label}>{missing ? "LAST SEEN WHERE" : whereLabel}</Text>
       <TextInput style={s.input} value={lastSeenLocation} onChangeText={setLastSeenLocation} placeholder="e.g. Kotokuraba Market, the main gate" placeholderTextColor={C.inkFaint} />
 
       <Text style={s.label}>{missing ? "LAST SEEN WHEN" : "WHEN (OPTIONAL)"}</Text>

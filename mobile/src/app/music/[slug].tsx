@@ -9,7 +9,7 @@ import { ReportButton } from "@/report-button";
 
 // "Reps <school>" — resolves the artist's first school affiliation to its
 // institution page, hiding itself if the lookup fails (mirrors the web page).
-function SchoolLink({ orgId }: { orgId: string }) {
+function SchoolLink({ orgId }: Readonly<{ orgId: string }>) {
   const { data } = useApi(() => api.institution(orgId), `artist-school:${orgId}`);
   if (!data) return null;
   return (

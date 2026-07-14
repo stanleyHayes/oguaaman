@@ -54,7 +54,7 @@ function NotifLoaded() {
   return <NotifList initial={data ?? []} />;
 }
 
-function NotifList({ initial }: { initial: Notification[] }) {
+function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
   const [items, setItems] = useState<Notification[]>(initial);
   const [busy, setBusy] = useState(false);
   const unread = items.filter((n) => !n.read).length;

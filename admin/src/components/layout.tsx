@@ -49,7 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
 
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
-export function Mark({ size = 26 }: { size?: number }) {
+export function Mark({ size = 26 }: Readonly<{ size?: number }>) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#C7A24A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M4.6 13.4c0-3 3.3-4.6 7.4-4.6s7.4 1.6 7.4 4.6c0 2.4-3.3 3.9-7.4 3.9s-7.4-1.5-7.4-3.9Z" />
@@ -67,7 +67,7 @@ type IconName =
   | "grid" | "inbox" | "list" | "history" | "users" | "landmark"
   | "shield" | "news" | "sparkles" | "bell" | "user" | "gear" | "menu" | "chevrons" | "flag" | "pin" | "coins" | "ticket";
 
-function Icon({ name, className = "" }: { name: IconName; className?: string }) {
+function Icon({ name, className = "" }: Readonly<{ name: IconName; className?: string }>) {
   const p: Record<IconName, ReactNode> = {
     grid: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>,
     inbox: <><path d="M3 13h4l1.5 3h7L17 13h4" /><path d="M5 5h14l2 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6Z" /></>,

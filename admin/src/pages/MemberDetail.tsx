@@ -21,6 +21,7 @@ export function Component() {
   const schooling = m.schooling?.length
     ? m.schooling.map((s) => (s.fromYear || s.toYear ? `${schoolName(s.schoolId)} (${s.fromYear ?? "?"}–${s.toYear ?? "?"})` : schoolName(s.schoolId)))
     : m.schoolIds.map(schoolName);
+  const birthdayBroadcast = m.broadcastBirthday ? " · broadcast" : "";
 
   async function changeRole(role: string) {
     setBusy(true);
@@ -63,7 +64,7 @@ export function Component() {
               <KeyVal label="Quarter">{quarter?.name}</KeyVal>
               <KeyVal label="Asafo">{asafo?.name}</KeyVal>
               <KeyVal label="Schooling">{schooling.length ? schooling.join(", ") : undefined}</KeyVal>
-              <KeyVal label="Birthday">{m.birthday ? `${m.birthday}${m.broadcastBirthday ? " · broadcast" : ""}` : undefined}</KeyVal>
+              <KeyVal label="Birthday">{m.birthday ? `${m.birthday}${birthdayBroadcast}` : undefined}</KeyVal>
             </dl>
             {m.links && m.links.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -74,7 +75,7 @@ export function Component() {
 
           <Card className="p-5">
             <h2 className="mb-3 font-display text-lg font-semibold">Manage</h2>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-ink-faint">Role
+            <label className="block text-xs font-semibold uppercase tracking-wide text-ink-faint">Role{" "}
               <select disabled={busy} value={m.role} onChange={(e) => changeRole(e.target.value)} className="mt-1 w-full rounded-lg border border-sand bg-cream px-3 py-2 text-sm capitalize focus:border-gold-border focus:outline-none">
                 <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option>
               </select>

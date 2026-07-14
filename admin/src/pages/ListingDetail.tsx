@@ -35,7 +35,10 @@ function renderValue(v: unknown): string {
   if (Array.isArray(v)) return v.map((x) => (typeof x === "object" ? JSON.stringify(x) : String(x))).join(", ");
   if (typeof v === "boolean") return v ? "Yes" : "No";
   if (v == null) return "";
-  return String(v);
+  if (typeof v === "object") return JSON.stringify(v);
+  if (typeof v === "string") return v;
+  if (typeof v === "bigint") return String(v);
+  return JSON.stringify(v) ?? "";
 }
 
 export function Component() {
@@ -75,6 +78,52 @@ export function Component() {
   }
 
   const knownDetails = Object.entries(d).filter(([k, v]) => !HIDDEN_KEYS.has(k) && v !== "" && v != null && !(Array.isArray(v) && v.length === 0));
+
+  function renderModeration() {
+    if (l.status === "pending" || l.status === "rejected") {
+      return (
+              <div className="space-y-2.5">
+                <button disabled={busy} onClick={() => moderate("approve")} className="w-full rounded-lg bg-green px-4 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-50">Approve & publish</button>
+                {rejecting ? (
+                  <div className="space-y-2">
+                    <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason for rejection (sent to the contributor)…" className="w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm focus:border-maroon-900 focus:outline-none" />
+                    <div className="flex gap-2">
+                      <button disabled={busy || !reason.trim()} onClick={() => moderate("reject")} className="flex-1 rounded-lg bg-maroon-900 px-4 py-2 text-sm font-semibold text-cream disabled:opacity-50">Confirm reject</button>
+                      <button onClick={() => { setRejecting(false); setReason(""); }} className="rounded-lg border border-sand px-4 py-2 text-sm">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button disabled={busy} onClick={() => setRejecting(true)} className="w-full rounded-lg border border-maroon-900/40 px-4 py-2.5 text-sm font-semibold text-maroon-900 hover:bg-maroon-900/[0.06] disabled:opacity-50">Reject…</button>
+                )}
+              </div>
+      );
+    }
+    if (l.status === "approved") {
+      return (
+              <div className="space-y-2.5">
+                {l.featured ? (
+                  <div className="rounded-lg border border-gold-border/60 bg-gold/[0.1] p-3">
+                    <p className="text-sm font-semibold text-gold-text">★ Featured placement</p>
+                    <p className="mt-0.5 text-xs text-ink-muted">{l.featuredUntil ? `Runs until ${formatDate(l.featuredUntil)}` : "No expiry (editorial)"}</p>
+                    <button disabled={busy} onClick={unfeature} className="mt-2 rounded-full border border-maroon-900/40 px-3 py-1 text-xs font-semibold text-maroon-900 hover:bg-maroon-900/[0.06] disabled:opacity-50">Unfeature</button>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-sand p-3">
+                    <p className="text-sm font-semibold text-ink">Feature on front pages</p>
+                    <p className="mt-0.5 text-xs text-ink-muted">Paid placement — pick a duration.</p>
+                    <div className="mt-2 flex gap-2">
+                      {[7, 14, 30].map((days) => (
+                        <button key={days} disabled={busy} onClick={() => feature(days)} className="flex-1 rounded-lg bg-green px-2 py-1.5 text-xs font-semibold text-cream hover:bg-green-900 disabled:opacity-50">{days} days</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button disabled={busy} onClick={unpublish} className="w-full rounded-lg border border-maroon-900/40 px-4 py-2.5 text-sm font-semibold text-maroon-900 hover:bg-maroon-900/[0.06] disabled:opacity-50">Unpublish</button>
+              </div>
+      );
+    }
+    return <p className="text-sm text-ink-muted">Status is <b className="capitalize">{l.status}</b>. No actions available.</p>;
+  }
 
   return (
     <>
@@ -129,8 +178,8 @@ export function Component() {
             <Card className="p-5 sm:p-6">
               <h2 className="mb-3 font-display text-lg font-semibold">Gallery</h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {gallery.map((g, i) => (
-                  <figure key={i} className="overflow-hidden rounded-lg border border-sand">
+                {gallery.map((g) => (
+                  <figure key={g.url} className="overflow-hidden rounded-lg border border-sand">
                     <img src={g.url} alt={g.caption} className="aspect-square w-full object-cover" />
                     {g.caption && <figcaption className="px-2 py-1 text-xs text-ink-faint">{g.caption}</figcaption>}
                   </figure>
@@ -152,45 +201,7 @@ export function Component() {
 
           <Card className="p-5">
             <h2 className="mb-3 font-display text-lg font-semibold">Moderation</h2>
-            {l.status === "pending" || l.status === "rejected" ? (
-              <div className="space-y-2.5">
-                <button disabled={busy} onClick={() => moderate("approve")} className="w-full rounded-lg bg-green px-4 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-50">Approve & publish</button>
-                {rejecting ? (
-                  <div className="space-y-2">
-                    <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason for rejection (sent to the contributor)…" className="w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm focus:border-maroon-900 focus:outline-none" />
-                    <div className="flex gap-2">
-                      <button disabled={busy || !reason.trim()} onClick={() => moderate("reject")} className="flex-1 rounded-lg bg-maroon-900 px-4 py-2 text-sm font-semibold text-cream disabled:opacity-50">Confirm reject</button>
-                      <button onClick={() => { setRejecting(false); setReason(""); }} className="rounded-lg border border-sand px-4 py-2 text-sm">Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <button disabled={busy} onClick={() => setRejecting(true)} className="w-full rounded-lg border border-maroon-900/40 px-4 py-2.5 text-sm font-semibold text-maroon-900 hover:bg-maroon-900/[0.06] disabled:opacity-50">Reject…</button>
-                )}
-              </div>
-            ) : l.status === "approved" ? (
-              <div className="space-y-2.5">
-                {l.featured ? (
-                  <div className="rounded-lg border border-gold-border/60 bg-gold/[0.1] p-3">
-                    <p className="text-sm font-semibold text-gold-text">★ Featured placement</p>
-                    <p className="mt-0.5 text-xs text-ink-muted">{l.featuredUntil ? `Runs until ${formatDate(l.featuredUntil)}` : "No expiry (editorial)"}</p>
-                    <button disabled={busy} onClick={unfeature} className="mt-2 rounded-full border border-maroon-900/40 px-3 py-1 text-xs font-semibold text-maroon-900 hover:bg-maroon-900/[0.06] disabled:opacity-50">Unfeature</button>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-sand p-3">
-                    <p className="text-sm font-semibold text-ink">Feature on front pages</p>
-                    <p className="mt-0.5 text-xs text-ink-muted">Paid placement — pick a duration.</p>
-                    <div className="mt-2 flex gap-2">
-                      {[7, 14, 30].map((days) => (
-                        <button key={days} disabled={busy} onClick={() => feature(days)} className="flex-1 rounded-lg bg-green px-2 py-1.5 text-xs font-semibold text-cream hover:bg-green-900 disabled:opacity-50">{days} days</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <button disabled={busy} onClick={unpublish} className="w-full rounded-lg border border-maroon-900/40 px-4 py-2.5 text-sm font-semibold text-maroon-900 hover:bg-maroon-900/[0.06] disabled:opacity-50">Unpublish</button>
-              </div>
-            ) : (
-              <p className="text-sm text-ink-muted">Status is <b className="capitalize">{l.status}</b>. No actions available.</p>
-            )}
+            {renderModeration()}
             <button onClick={() => nav("/moderation")} className="mt-3 w-full text-center text-xs text-ink-faint hover:text-ink">Go to the queue →</button>
           </Card>
         </div>

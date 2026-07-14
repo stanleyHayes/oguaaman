@@ -2,7 +2,7 @@ import { Link, useLoaderData, useSearchParams } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA, SectionHeading, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { ArtistCard, PersonCard } from "@/components/cards";
 import { SAMPLE_NOTICE } from "@/lib/content";
@@ -34,8 +34,8 @@ export function Component() {
         lede="Local artists are the most starved of a spotlight and the most motivated to share. Give a musician a real profile and they push it to their own following — reach money cannot buy. Music goes through the door first."
       >
         <div className="flex flex-wrap gap-3">
-          <CTA to="/music/the-oguaa-sound" variant="primary">Read “The Oguaa Sound”</CTA>
-          <CTA to="/submit?type=artist" variant="outline">Nominate an artist</CTA>
+          <Cta to="/music/the-oguaa-sound" variant="primary">Read “The Oguaa Sound”</Cta>
+          <Cta to="/submit?type=artist" variant="outline">Nominate an artist</Cta>
         </div>
       </PageHero>
 
@@ -75,7 +75,7 @@ export function Component() {
   );
 }
 
-function GenreChip({ label, to, active }: { label: string; to: string; active: boolean }) {
+function GenreChip({ label, to, active }: Readonly<{ label: string; to: string; active: boolean }>) {
   return (
     <Link to={to} className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${active ? "border-clay bg-clay text-cream" : "border-sand bg-cream text-ink-muted hover:border-clay"}`}>
       {label}

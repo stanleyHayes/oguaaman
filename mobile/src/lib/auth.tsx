@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Member } from "./types";
 import { api } from "./api";
 import { getToken, setToken, hydrateToken } from "./storage";
@@ -13,7 +13,11 @@ interface AuthState {
 
 const Ctx = createContext<AuthState | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+async function requestOtp(identifier: string, displayName?: string, dateOfBirth?: string) {
+  return (await api.requestOtp(identifier, displayName, dateOfBirth)).devCode;
+}
+
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [member, setMember] = useState<Member | null>(null);
   // A persisted token might exist on native, so start in loading and resolve after
   // hydrating the secure store.
@@ -32,20 +36,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { alive = false; };
   }, []);
 
-  async function requestOtp(identifier: string, displayName?: string, dateOfBirth?: string) {
-    return (await api.requestOtp(identifier, displayName, dateOfBirth)).devCode;
-  }
-  async function verify(identifier: string, code: string) {
+  const verify = useCallback(async (identifier: string, code: string) => {
     const { token, member } = await api.verifyOtp(identifier, code);
     setToken(token);
     setMember(member);
-  }
-  function signOut() {
+  }, []);
+  const signOut = useCallback(() => {
     setToken(null);
     setMember(null);
-  }
+  }, []);
 
-  return <Ctx.Provider value={{ member, loading, requestOtp, verify, signOut }}>{children}</Ctx.Provider>;
+  const value = useMemo(() => ({ member, loading, requestOtp, verify, signOut }), [member, loading, verify, signOut]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useAuth(): AuthState {

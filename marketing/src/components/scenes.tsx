@@ -18,7 +18,7 @@ const C = {
 type SceneProps = { className?: string };
 
 /** Cape Coast Castle — white battlements on the rock above the Atlantic, at dawn. */
-export function CastleScene({ className }: SceneProps) {
+export function CastleScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Cape Coast Castle by the sea" className={className} style={wrap}>
       <defs>
@@ -60,7 +60,7 @@ export function CastleScene({ className }: SceneProps) {
 }
 
 /** Kakum National Park — the rope canopy walkway above the rainforest. */
-export function CanopyScene({ className }: SceneProps) {
+export function CanopyScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Kakum canopy walkway above the rainforest" className={className} style={wrap}>
       <defs>
@@ -90,7 +90,7 @@ export function CanopyScene({ className }: SceneProps) {
         {Array.from({ length: 16 }).map((_, i) => {
           const x = 60 + i * 13;
           const y = 132 - Math.sin((i / 15) * Math.PI) * 22;
-          return <line key={i} x1={x} y1={y} x2={x} y2={y - 12} />;
+          return <line key={x} x1={x} y1={y} x2={x} y2={y - 12} />;
         })}
       </g>
       {/* suspension verticals */}
@@ -99,7 +99,7 @@ export function CanopyScene({ className }: SceneProps) {
           const x = 66 + i * 24;
           const top = 102 - Math.sin((i / 8) * Math.PI) * 6;
           const bot = 130 - Math.sin((i / 8) * Math.PI) * 22;
-          return <line key={i} x1={x} y1={top} x2={x} y2={bot} />;
+          return <line key={x} x1={x} y1={top} x2={x} y2={bot} />;
         })}
       </g>
     </svg>
@@ -107,7 +107,7 @@ export function CanopyScene({ className }: SceneProps) {
 }
 
 /** The coast — fishing canoes drawn up on the shore. */
-export function CoastScene({ className }: SceneProps) {
+export function CoastScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Fishing canoes on the Cape Coast shore" className={className} style={wrap}>
       <rect width="320" height="200" fill={C.cream} />
@@ -140,7 +140,7 @@ export function CoastScene({ className }: SceneProps) {
 }
 
 /** Fosu Lagoon — calm water, mangroves and a wading bird. */
-export function LagoonScene({ className }: SceneProps) {
+export function LagoonScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Fosu Lagoon with mangroves and a heron" className={className} style={wrap}>
       <defs>
@@ -172,7 +172,7 @@ export function LagoonScene({ className }: SceneProps) {
 }
 
 /** Kotokuraba Market — stalls and the crab the market is named for. */
-export function MarketScene({ className }: SceneProps) {
+export function MarketScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Kotokuraba market stalls" className={className} style={wrap}>
       <rect width="320" height="200" fill={C.cream} />
@@ -201,7 +201,7 @@ export function MarketScene({ className }: SceneProps) {
 }
 
 /** Fort William — the 19th-century lighthouse fort on its hill. */
-export function LighthouseScene({ className }: SceneProps) {
+export function LighthouseScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Fort William lighthouse on the hill" className={className} style={wrap}>
       <defs>
@@ -249,7 +249,7 @@ export function sceneForSlug(slug: string): ComponentType<SceneProps> {
 }
 
 /** The schools on the hills — a hilltop college with a clock/bell tower above the sea. */
-export function CollegeScene({ className }: SceneProps) {
+export function CollegeScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A Cape Coast college on its hill above the sea" className={className} style={wrap}>
       <defs>
@@ -292,7 +292,7 @@ export function CollegeScene({ className }: SceneProps) {
 }
 
 /** Fetu Afahye — the grand durbar: a state umbrella, a palanquin and Asafo flags. */
-export function DurbarScene({ className }: SceneProps) {
+export function DurbarScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="The Fetu Afahye durbar — a chief's palanquin under a state umbrella" className={className} style={wrap}>
       <defs>
@@ -315,7 +315,10 @@ export function DurbarScene({ className }: SceneProps) {
       ))}
       {/* crowd suggestion */}
       <g fill={C.green900} opacity="0.35">
-        {Array.from({ length: 16 }).map((_, i) => <circle key={i} cx={24 + i * 18} cy={158} r="6" />)}
+        {Array.from({ length: 16 }).map((_, i) => {
+          const cx = 24 + i * 18;
+          return <circle key={cx} cx={cx} cy={158} r="6" />;
+        })}
       </g>
       {/* the great state umbrella */}
       <g>
@@ -339,7 +342,7 @@ export function DurbarScene({ className }: SceneProps) {
 }
 
 /** The coast to stay for — palms, golden sand and the Atlantic. */
-export function BeachScene({ className }: SceneProps) {
+export function BeachScene({ className }: Readonly<SceneProps>) {
   return (
     <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A Cape Coast beach with palms and the Atlantic" className={className} style={wrap}>
       <defs>
@@ -386,7 +389,7 @@ export function BeachScene({ className }: SceneProps) {
  * A regalia seal medallion used for leadership where we have no photograph — a
  * gold ring with a stool/Adinkra motif. variant changes the inner mark.
  */
-export function Seal({ variant = "stool", className }: { variant?: "stool" | "asafo" | "civic" | "school"; className?: string }) {
+export function Seal({ variant = "stool", className }: Readonly<{ variant?: "stool" | "asafo" | "civic" | "school"; className?: string }>) {
   return (
     <svg viewBox="0 0 96 96" role="img" aria-label="Oguaa regalia seal" className={className} style={{ display: "block" }}>
       <circle cx="48" cy="48" r="46" fill={C.green900} />

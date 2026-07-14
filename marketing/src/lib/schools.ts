@@ -57,7 +57,7 @@ export function useSchools(fallback: SchoolOrg[]): SchoolOrg[] {
 export function schoolInitials(name: string): string {
   const words = name.split(/\s+/).filter((w) => /[A-Za-z]/.test(w.charAt(0)));
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return ((words[0]?.[0] ?? "") + (words[words.length - 1]?.[0] ?? "")).toUpperCase();
+  return ((words[0]?.[0] ?? "") + (words.at(-1)?.[0] ?? "")).toUpperCase();
 }
 
 // The verified core set (mirrors backend seed_listings.go orgs), used as the

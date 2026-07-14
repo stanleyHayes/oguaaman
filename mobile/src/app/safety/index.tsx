@@ -14,7 +14,7 @@ function fmtDate(iso?: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-function IncidentCard({ i }: { i: Incident }) {
+function IncidentCard({ i }: Readonly<{ i: Incident }>) {
   const sev = SEVERITY_COLOR[i.details.severity] ?? C.inkMuted;
   const st = STATUS_COLOR[i.details.incidentStatus] ?? C.inkMuted;
   return (

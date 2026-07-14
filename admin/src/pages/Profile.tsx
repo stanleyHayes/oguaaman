@@ -12,7 +12,7 @@ const ROLE_POWERS: Record<string, { summary: string; can: string[] }> = {
   steward: { summary: "Full platform stewardship.", can: ["Assign roles, suspend and verify members", "Moderate listings and run the newsroom", "Trigger remembrance and manage platform operations"] },
 };
 
-function Section({ title, description, children, className = "" }: { title: string; description?: string; children: ReactNode; className?: string }) {
+function Section({ title, description, children, className = "" }: Readonly<{ title: string; description?: string; children: ReactNode; className?: string }>) {
   return (
     <Card className={`p-5 ${className}`}>
       <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>

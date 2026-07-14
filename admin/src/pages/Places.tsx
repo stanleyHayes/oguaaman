@@ -20,7 +20,7 @@ function count(n: number | undefined, one: string, many: string): string {
 const field = "w-full rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-brand focus:outline-none";
 const labelCls = "block text-xs font-semibold uppercase tracking-wide text-ink-faint";
 
-function NewPlaceForm({ onClose }: { onClose: () => void }) {
+function NewPlaceForm({ onClose }: Readonly<{ onClose: () => void }>) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [classification, setClassification] = useState("");
@@ -48,16 +48,16 @@ function NewPlaceForm({ onClose }: { onClose: () => void }) {
       <p className="mt-1 text-sm text-ink-muted">Create a heritage / visitor place. You'll configure its history, sections and photos next; it appears on the public Visit grid once saved.</p>
       <div className="mt-4 space-y-3">
         <div>
-          <label className={labelCls}>Name</label>
-          <input className={`mt-1.5 ${field}`} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Brenu Beach" autoFocus />
+          <label htmlFor="place-name" className={labelCls}>Name</label>
+          <input id="place-name" className={`mt-1.5 ${field}`} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Brenu Beach" autoFocus />
         </div>
         <div>
-          <label className={labelCls}>Classification</label>
-          <input className={`mt-1.5 ${field}`} value={classification} onChange={(e) => setClassification(e.target.value)} placeholder="e.g. Beach · museum · waterfall · fort" />
+          <label htmlFor="place-classification" className={labelCls}>Classification</label>
+          <input id="place-classification" className={`mt-1.5 ${field}`} value={classification} onChange={(e) => setClassification(e.target.value)} placeholder="e.g. Beach · museum · waterfall · fort" />
         </div>
         <div>
-          <label className={labelCls}>Summary</label>
-          <textarea rows={2} className={`mt-1.5 resize-none ${field}`} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="One or two sentences shown on the card and the page hero." />
+          <label htmlFor="place-summary" className={labelCls}>Summary</label>
+          <textarea id="place-summary" rows={2} className={`mt-1.5 resize-none ${field}`} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="One or two sentences shown on the card and the page hero." />
         </div>
         <div className="flex items-center gap-3">
           <button type="button" onClick={create} disabled={busy || !name.trim()} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">

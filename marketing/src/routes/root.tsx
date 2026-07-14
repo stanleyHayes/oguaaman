@@ -18,7 +18,7 @@ function useRouteMeta() {
     const handle = [...matches]
       .reverse()
       .map((m) => m.handle as RouteMeta | undefined)
-      .find((h) => h && h.title);
+      .find((h) => h?.title);
 
     const title = handle?.title ?? DEFAULT_TITLE;
     document.title = title;

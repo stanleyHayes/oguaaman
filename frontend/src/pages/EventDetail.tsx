@@ -194,6 +194,10 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
         <div className="mt-4 space-y-3">
           {tiers.map((t, i) => {
             const out = t.remaining !== null && t.remaining <= 0;
+            let remainingLabel: string;
+            if (t.remaining === null) remainingLabel = "Unlimited";
+            else if (out) remainingLabel = "Sold out";
+            else remainingLabel = `${t.remaining} left`;
             return (
               <button
                 key={t.name}
@@ -205,7 +209,7 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
                 <span className="min-w-0">
                   <span className="block font-medium text-ink">{t.name}</span>
                   <span className="text-xs text-ink-faint">
-                    {t.remaining === null ? "Unlimited" : out ? "Sold out" : `${t.remaining} left`}
+                    {remainingLabel}
                   </span>
                 </span>
                 <span className="shrink-0 font-display text-lg font-semibold text-green">{cedis(t.pricePesewas)}</span>

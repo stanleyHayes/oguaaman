@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 
 export interface QueueItem {
@@ -17,10 +17,17 @@ interface LogEntry {
   tone: "ok" | "bad" | "warn";
 }
 
+function toneClass(tone: LogEntry["tone"]): string {
+  if (tone === "ok") return "text-green";
+  if (tone === "bad") return "text-maroon-900";
+  return "text-gold-text";
+}
+
 /** Moderation queue (spec §8.10) — actions persist to MongoDB via the Go API. */
-export function ModerationQueue({ initial }: { initial: QueueItem[] }) {
+export function ModerationQueue({ initial }: Readonly<{ initial: QueueItem[] }>) {
   const [items, setItems] = useState(initial);
-  const [log, setLog] = useState<LogEntry[]>([]);
+  const [log, setLog] = useState<(LogEntry & { id: number })[]>([]);
+  const logSeq = useRef(0);
   const [rejecting, setRejecting] = useState<{ id: string; mode: "reject" | "changes" } | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -30,9 +37,9 @@ export function ModerationQueue({ initial }: { initial: QueueItem[] }) {
     try {
       await api.moderate({ listingId: item.id, action, reason: why });
       setItems((cur) => cur.filter((i) => i.id !== item.id));
-      setLog((cur) => [entry, ...cur]);
+      setLog((cur) => [{ ...entry, id: logSeq.current++ }, ...cur]);
     } catch {
-      setLog((cur) => [{ action: "Failed to moderate", title: item.title, tone: "bad" }, ...cur]);
+      setLog((cur) => [{ action: "Failed to moderate", title: item.title, tone: "bad", id: logSeq.current++ }, ...cur]);
     } finally {
       setBusy(null);
       setRejecting(null);
@@ -108,9 +115,9 @@ export function ModerationQueue({ initial }: { initial: QueueItem[] }) {
             <p className="text-sm text-ink-faint">Every moderation action is recorded here — who, what, when, and why.</p>
           ) : (
             <ul className="space-y-3">
-              {log.map((e, i) => (
-                <li key={i} className="border-b border-sand pb-3 text-sm last:border-0 last:pb-0">
-                  <span className={`font-semibold ${e.tone === "ok" ? "text-green" : e.tone === "bad" ? "text-maroon-900" : "text-gold-text"}`}>{e.action}</span>{" "}
+              {log.map((e) => (
+                <li key={e.id} className="border-b border-sand pb-3 text-sm last:border-0 last:pb-0">
+                  <span className={`font-semibold ${toneClass(e.tone)}`}>{e.action}</span>{" "}
                   <span className="text-ink">“{e.title}”</span>
                   {e.reason && <span className="block text-xs text-ink-muted">“{e.reason}”</span>}
                   <span className="block text-xs text-ink-faint">by you · just now</span>

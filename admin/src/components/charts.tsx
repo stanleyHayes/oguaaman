@@ -18,7 +18,7 @@ export interface Datum {
 }
 
 /** Horizontal bars — categorical comparisons (content mix, institutions by kind). */
-export function BarsH({ data }: { data: Datum[] }) {
+export function BarsH({ data }: Readonly<{ data: Datum[] }>) {
   const max = Math.max(1, ...data.map((d) => d.value));
   if (!data.length) return <EmptyChart />;
   return (
@@ -40,7 +40,7 @@ export function BarsH({ data }: { data: Datum[] }) {
 }
 
 /** Vertical bars over a time axis — submissions/activity per month. */
-export function Histogram({ data, color = PALETTE.gold }: { data: Datum[]; color?: string }) {
+export function Histogram({ data, color = PALETTE.gold }: Readonly<{ data: Datum[]; color?: string }>) {
   const max = Math.max(1, ...data.map((d) => d.value));
   if (!data.length) return <EmptyChart />;
   return (
@@ -67,7 +67,7 @@ export function Histogram({ data, color = PALETTE.gold }: { data: Datum[]; color
 }
 
 /** Smooth area/line — cumulative growth over time. */
-export function AreaLine({ points, color = PALETTE.green }: { points: Datum[]; color?: string }) {
+export function AreaLine({ points, color = PALETTE.green }: Readonly<{ points: Datum[]; color?: string }>) {
   const id = useId();
   if (points.length < 2) return <EmptyChart label="Not enough history yet" />;
   const W = 600, H = 200, pad = 6;
@@ -98,7 +98,7 @@ export function AreaLine({ points, color = PALETTE.green }: { points: Datum[]; c
 }
 
 /** Donut with centre total + legend — proportional breakdowns (status, kind). */
-export function Donut({ data, label }: { data: Datum[]; label?: string }) {
+export function Donut({ data, label }: Readonly<{ data: Datum[]; label?: string }>) {
   const sum = data.reduce((s, d) => s + d.value, 0);
   const R = 42, C = 2 * Math.PI * R;
   let offset = 0;
@@ -140,6 +140,6 @@ export function Donut({ data, label }: { data: Datum[]; label?: string }) {
   );
 }
 
-function EmptyChart({ label = "No data yet" }: { label?: string }) {
+function EmptyChart({ label = "No data yet" }: Readonly<{ label?: string }>) {
   return <div className="flex h-40 items-center justify-center text-sm text-ink-faint">{label}</div>;
 }

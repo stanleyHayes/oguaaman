@@ -33,7 +33,7 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
   const d = notice.details;
   const missing = d.kind === "missing_person";
   const [lfStatus, setLfStatus] = useState<LostFoundStatus>(d.lfStatus);
-  const isOwner = member != null && member.id === notice.ownerId;
+  const isOwner = member?.id === notice.ownerId;
   const canResolve = isOwner || member?.role === "curator" || member?.role === "steward";
 
   return (

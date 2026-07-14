@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { ListingStatus } from "@/lib/types";
 
-export function BackLink({ to, children }: { to: string; children: ReactNode }) {
+export function BackLink({ to, children }: Readonly<{ to: string; children: ReactNode }>) {
   return (
     <Link to={to} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-gold-text">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
@@ -12,7 +12,7 @@ export function BackLink({ to, children }: { to: string; children: ReactNode }) 
 }
 
 /** A labelled key/value row for detail pages. */
-export function KeyVal({ label, children }: { label: string; children: ReactNode }) {
+export function KeyVal({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   if (children === undefined || children === null || children === "") return null;
   return (
     <div className="flex flex-col gap-0.5 border-b border-sand py-2.5 last:border-0 sm:flex-row sm:gap-4">
@@ -22,11 +22,11 @@ export function KeyVal({ label, children }: { label: string; children: ReactNode
   );
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Card({ children, className = "" }: Readonly<{ children: ReactNode; className?: string }>) {
   return <div className={`rounded-[var(--radius-card)] border border-sand bg-cream ${className}`}>{children}</div>;
 }
 
-export function StatCard({ label, value, tone = "text-green" }: { label: string; value: number | string; tone?: string }) {
+export function StatCard({ label, value, tone = "text-green" }: Readonly<{ label: string; value: number | string; tone?: string }>) {
   return (
     <Card className="px-4 py-5 text-center">
       <div className={`font-display text-3xl font-semibold ${tone}`}>{value}</div>
@@ -42,11 +42,11 @@ const STATUS_STYLE: Record<ListingStatus, string> = {
   draft: "bg-sand text-ink-muted",
   unpublished: "bg-sand text-ink-muted",
 };
-export function StatusBadge({ status }: { status: ListingStatus }) {
+export function StatusBadge({ status }: Readonly<{ status: ListingStatus }>) {
   return <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${STATUS_STYLE[status]}`}>{status}</span>;
 }
 
-export function RoleBadge({ role }: { role: string }) {
+export function RoleBadge({ role }: Readonly<{ role: string }>) {
   const m: Record<string, string> = {
     steward: "bg-maroon-900/[0.1] text-maroon-900",
     curator: "bg-ai/[0.1] text-ai",
@@ -56,7 +56,7 @@ export function RoleBadge({ role }: { role: string }) {
   return <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${m[role] ?? m.member}`}>{role}</span>;
 }
 
-export function Pill({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "green" | "gold" | "clay" }) {
+export function Pill({ children, tone = "neutral" }: Readonly<{ children: ReactNode; tone?: "neutral" | "green" | "gold" | "clay" }>) {
   const m: Record<string, string> = {
     neutral: "border-sand bg-paper text-ink-muted",
     green: "border-green/30 bg-green/[0.06] text-green",
@@ -66,7 +66,7 @@ export function Pill({ children, tone = "neutral" }: { children: ReactNode; tone
   return <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${m[tone]}`}>{children}</span>;
 }
 
-export function PageHeader({ kicker, title, children }: { kicker: string; title: string; children?: ReactNode }) {
+export function PageHeader({ kicker, title, children }: Readonly<{ kicker: string; title: string; children?: ReactNode }>) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -78,7 +78,7 @@ export function PageHeader({ kicker, title, children }: { kicker: string; title:
   );
 }
 
-export function Empty({ title = "Nothing here yet", children, actions }: { title?: string; children?: ReactNode; actions?: ReactNode }) {
+export function Empty({ title = "Nothing here yet", children, actions }: Readonly<{ title?: string; children?: ReactNode; actions?: ReactNode }>) {
   return (
     <Card className="flex flex-col items-center px-6 py-14 text-center">
       <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-sand bg-paper">

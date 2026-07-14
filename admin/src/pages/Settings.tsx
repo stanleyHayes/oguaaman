@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader, Card, KeyVal, RoleBadge } from "@/components/ui";
 
 /** A titled section card with an optional description and a gold accent bar. */
-function Section({ title, description, children, className = "" }: { title: string; description?: string; children: ReactNode; className?: string }) {
+function Section({ title, description, children, className = "" }: Readonly<{ title: string; description?: string; children: ReactNode; className?: string }>) {
   return (
     <Card className={`p-5 ${className}`}>
       <div className="border-l-2 border-gold-border/60 pl-3">
@@ -26,7 +26,8 @@ function RemembranceCard() {
     setBusy(true); setResult(null);
     try {
       const { created } = await api.runRemembrance(date.trim() || undefined);
-      setResult(created === 0 ? "No anniversaries today — no notices sent." : `Sent ${created} remembrance ${created === 1 ? "notice" : "notices"}.`);
+      const noun = created === 1 ? "notice" : "notices";
+      setResult(created === 0 ? "No anniversaries today — no notices sent." : `Sent ${created} remembrance ${noun}.`);
     } catch (e) { setResult((e as Error).message); } finally { setBusy(false); }
   }
   return (

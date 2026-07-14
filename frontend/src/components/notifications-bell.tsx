@@ -96,6 +96,31 @@ export function NotificationsBell() {
     if (n.link) navigate(n.link);
   }
 
+  const inbox = items.length === 0 ? (
+    <p className="px-4 py-10 text-center text-sm italic text-ink-faint">No notifications yet.</p>
+  ) : (
+    <ul className="divide-y divide-sand">
+      {items.map((n) => (
+        <li key={n.id}>
+          <button
+            type="button"
+            onClick={() => openItem(n)}
+            className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-cream ${n.read ? "" : "bg-cream/60"}`}
+          >
+            <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-sand" : KIND_DOT[n.kind]}`} aria-hidden />
+            <span className="min-w-0 flex-1">
+              <span className="flex items-baseline justify-between gap-2">
+                <span className={`truncate text-sm ${n.read ? "text-ink-muted" : "font-semibold text-ink"}`}>{n.title}</span>
+                <span className="shrink-0 text-[0.7rem] text-ink-faint">{ago(n.createdAt)}</span>
+              </span>
+              <span className="mt-0.5 block text-xs leading-snug text-ink-muted">{n.body}</span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -136,30 +161,7 @@ export function NotificationsBell() {
                   </div>
                 ))}
               </output>
-            ) : items.length === 0 ? (
-              <p className="px-4 py-10 text-center text-sm italic text-ink-faint">No notifications yet.</p>
-            ) : (
-              <ul className="divide-y divide-sand">
-                {items.map((n) => (
-                  <li key={n.id}>
-                    <button
-                      type="button"
-                      onClick={() => openItem(n)}
-                      className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-cream ${n.read ? "" : "bg-cream/60"}`}
-                    >
-                      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-sand" : KIND_DOT[n.kind]}`} aria-hidden />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-baseline justify-between gap-2">
-                          <span className={`truncate text-sm ${n.read ? "text-ink-muted" : "font-semibold text-ink"}`}>{n.title}</span>
-                          <span className="shrink-0 text-[0.7rem] text-ink-faint">{ago(n.createdAt)}</span>
-                        </span>
-                        <span className="mt-0.5 block text-xs leading-snug text-ink-muted">{n.body}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            ) : inbox}
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 /** The Oguaa crab mark — Kotokuraba, the crab market that gave the town its name. */
-export function CrabMark({ size = 24, className = "", strokeWidth = 1.6 }: { size?: number; className?: string; strokeWidth?: number }) {
+export function CrabMark({ size = 24, className = "", strokeWidth = 1.6 }: Readonly<{ size?: number; className?: string; strokeWidth?: number }>) {
   return (
     <svg
       width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -27,12 +27,12 @@ export function Wordmark({
   tone = "text-cream",
   markTone = "text-gold",
   size = "text-2xl",
-}: {
+}: Readonly<{
   className?: string;
   tone?: string;
   markTone?: string;
   size?: string;
-}) {
+}>) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
       <CrabMark size={26} className={markTone} />

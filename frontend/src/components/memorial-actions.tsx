@@ -14,11 +14,11 @@ export function CandleRemember({
   slug,
   initialCandles,
   initialRemembered = 0,
-}: {
+}: Readonly<{
   slug: string;
   initialCandles: number;
   initialRemembered?: number;
-}) {
+}>) {
   const { member } = useAuth();
   const navigate = useNavigate();
   const [lit, setLit] = useState(false);
@@ -106,13 +106,13 @@ export function CandleRemember({
 }
 
 /** Tributes — posts to the Go API (lightly moderated for dignity in production). */
-export function Tributes({ slug, initial }: { slug: string; initial: Tribute[] }) {
+export function Tributes({ slug, initial }: Readonly<{ slug: string; initial: Tribute[] }>) {
   const [list, setList] = useState<Tribute[]>(initial);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!message.trim()) return;
     setBusy(true);

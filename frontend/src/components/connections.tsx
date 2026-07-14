@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Connection, Organization, SchoolStint } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -15,12 +15,15 @@ export function SchoolingEditor({
   schools,
   initial,
   onSaved,
-}: {
+}: Readonly<{
   schools: Organization[];
   initial: SchoolStint[];
   onSaved?: () => void;
-}) {
-  const [rows, setRows] = useState<SchoolStint[]>(initial.length ? initial : []);
+}>) {
+  const [rows, setRows] = useState<(SchoolStint & { _key: string })[]>(() =>
+    (initial.length ? initial : []).map((r, i) => ({ ...r, _key: `init-${i}` }))
+  );
+  const seq = useRef(initial.length);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   function update(i: number, patch: Partial<SchoolStint>) {
@@ -28,7 +31,7 @@ export function SchoolingEditor({
     setState("idle");
   }
   function addRow() {
-    setRows((rs) => [...rs, { schoolId: "", fromYear: undefined, toYear: undefined }]);
+    setRows((rs) => [...rs, { schoolId: "", fromYear: undefined, toYear: undefined, _key: `row-${seq.current++}` }]);
     setState("idle");
   }
   function removeRow(i: number) {
@@ -57,7 +60,7 @@ export function SchoolingEditor({
   return (
     <div className="mt-4 space-y-3">
       {rows.map((row, i) => (
-        <div key={i} className="flex flex-wrap items-center gap-2 rounded-[var(--radius-card)] border border-sand bg-cream p-3">
+        <div key={row._key} className="flex flex-wrap items-center gap-2 rounded-[var(--radius-card)] border border-sand bg-cream p-3">
           <select
             value={row.schoolId}
             onChange={(e) => update(i, { schoolId: e.target.value })}
@@ -108,7 +111,7 @@ export function SchoolingEditor({
 }
 
 /** A compact Follow toggle for the suggestions panel (light background). */
-function FollowChip({ slug, name }: { slug: string; name: string }) {
+function FollowChip({ slug, name }: Readonly<{ slug: string; name: string }>) {
   const [following, setFollowing] = useState(false);
   const [busy, setBusy] = useState(false);
 

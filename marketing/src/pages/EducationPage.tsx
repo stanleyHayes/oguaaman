@@ -23,7 +23,7 @@ const SCHOOLED: Alum[] = [
 ];
 
 /** A small house-colour crest from the school's own colours. */
-function SchoolCrest({ school }: { school: SchoolOrg }) {
+function SchoolCrest({ school }: Readonly<{ school: SchoolOrg }>) {
   const bg = school.houseColors?.[0] ?? "#123F2D";
   return (
     <span
@@ -37,7 +37,7 @@ function SchoolCrest({ school }: { school: SchoolOrg }) {
 }
 
 /** One school, read live from /api/schools — opens its profile in the portal. */
-function SchoolCard({ school }: { school: SchoolOrg }) {
+function SchoolCard({ school }: Readonly<{ school: SchoolOrg }>) {
   const meta = [school.founded ? `Est. ${school.founded}` : null, school.classification].filter(Boolean).join(" · ");
   return (
     <a href={`${PORTAL_APP_URL}/education/${school.slug}`} target="_blank" rel="noopener noreferrer" className="group block">

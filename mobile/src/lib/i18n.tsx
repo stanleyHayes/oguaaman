@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
@@ -61,22 +61,23 @@ interface LangState {
 
 const Ctx = createContext<LangState | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => readLang());
+export function LanguageProvider({ children }: Readonly<{ children: ReactNode }>) {
+  const [lang, setLang] = useState<Lang>(() => readLang());
   // On native, hydrate the persisted choice once at startup.
   useEffect(() => {
     if (Platform.OS === "web") return;
     let alive = true;
     SecureStore.getItemAsync(KEY)
-      .then((v) => { if (alive && isLang(v)) { mem = v; setLangState(v); } })
+      .then((v) => { if (alive && isLang(v)) { mem = v; setLang(v); } })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
-  function setLang(l: Lang) {
-    setLangState(l);
+  const changeLang = useCallback((l: Lang) => {
+    setLang(l);
     writeLang(l);
-  }
-  return <Ctx.Provider value={{ lang, setLang }}>{children}</Ctx.Provider>;
+  }, []);
+  const value = useMemo(() => ({ lang, setLang: changeLang }), [lang, changeLang]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useLang() {

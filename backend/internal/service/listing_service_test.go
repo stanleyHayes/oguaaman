@@ -149,7 +149,7 @@ func (m modRepo) All(_ context.Context) ([]domain.ModerationRecord, error) { ret
 
 func newTestService(f *fakeRepo) *Service {
 	// members/orgs/places aren't used by the tested methods; pass nil-safe stubs.
-	return New(f, stubMembers{}, stubOrgs{}, stubPlaces{}, modRepo{f}, stubNotifs{}, stubFollows{}, stubClaims{}, stubNews{}, stubReports{}, stubTimeline{})
+	return New(Deps{Listings: f, Members: stubMembers{}, Orgs: stubOrgs{}, Places: stubPlaces{}, Mod: modRepo{f}, Notifs: stubNotifs{}, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
 }
 
 type stubReports struct{}

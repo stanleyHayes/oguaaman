@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 /**
  * Lightweight i18n (spec §11). English is the BASE: every wired string has an
@@ -47,17 +47,18 @@ interface LangState {
 
 const Ctx = createContext<LangState | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => readLang());
-  function setLang(l: Lang) {
-    setLangState(l);
+export function LanguageProvider({ children }: Readonly<{ children: ReactNode }>) {
+  const [lang, setLang] = useState<Lang>(() => readLang());
+  const setLangAndPersist = useCallback((l: Lang) => {
+    setLang(l);
     try {
       localStorage.setItem(KEY, l);
     } catch {
       /* private mode / no storage — keep in-memory */
     }
-  }
-  return <Ctx.Provider value={{ lang, setLang }}>{children}</Ctx.Provider>;
+  }, []);
+  const value = useMemo(() => ({ lang, setLang: setLangAndPersist }), [lang, setLangAndPersist]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useLang() {

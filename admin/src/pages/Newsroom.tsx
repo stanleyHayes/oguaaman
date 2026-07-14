@@ -12,7 +12,7 @@ export async function loader() {
 
 type Filter = "all" | "published" | "draft";
 
-function StatusChip({ status }: { status: NewsArticle["status"] }) {
+function StatusChip({ status }: Readonly<{ status: NewsArticle["status"] }>) {
   const cls = status === "published" ? "bg-green/[0.1] text-green" : "bg-gold/[0.16] text-gold-text";
   const dot = status === "published" ? "bg-green" : "bg-gold-brand";
   return (
@@ -23,7 +23,7 @@ function StatusChip({ status }: { status: NewsArticle["status"] }) {
   );
 }
 
-function Cover({ a }: { a: Pick<NewsArticle, "coverImageUrl" | "coverColor"> }) {
+function Cover({ a }: Readonly<{ a: Pick<NewsArticle, "coverImageUrl" | "coverColor"> }>) {
   if (a.coverImageUrl) {
     return <img src={cldCover(a.coverImageUrl, 160)} alt="" className="h-16 w-24 shrink-0 rounded-lg border border-sand object-cover sm:h-20 sm:w-32" onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />;
   }

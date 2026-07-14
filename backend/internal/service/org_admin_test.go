@@ -57,7 +57,7 @@ func (m roleMembers) ByID(_ context.Context, _ string) (*domain.Member, error) {
 
 func svcWith(orgs domain.OrganizationRepository, members domain.MemberRepository, claims domain.OrgClaimRepository) *Service {
 	f := &fakeRepo{}
-	return New(f, members, orgs, stubPlaces{}, modRepo{f}, stubNotifs{}, stubFollows{}, claims, stubNews{}, stubReports{}, stubTimeline{})
+	return New(Deps{Listings: f, Members: members, Orgs: orgs, Places: stubPlaces{}, Mod: modRepo{f}, Notifs: stubNotifs{}, Follows: stubFollows{}, Claims: claims, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
 }
 
 func TestCreateOrg_defaultsAndSlug(t *testing.T) {

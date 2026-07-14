@@ -10,7 +10,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return api.member(params.slug!);
 }
 
-function DarkChip({ children }: { children: ReactNode }) {
+function DarkChip({ children }: Readonly<{ children: ReactNode }>) {
   return <span className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs text-cream/90">{children}</span>;
 }
 
@@ -24,7 +24,7 @@ function linkFor(l: Listing): string | null {
 
 /** Follow toggle — enrols the viewer as a follower (the audience for this
  *  member's remembrances and birthday, spec §8.11). */
-function FollowButton({ slug }: { slug: string }) {
+function FollowButton({ slug }: Readonly<{ slug: string }>) {
   const { member } = useAuth();
   const [following, setFollowing] = useState(false);
   const [count, setCount] = useState<number | null>(null);
@@ -38,7 +38,7 @@ function FollowButton({ slug }: { slug: string }) {
   }, [member, slug]);
 
   // Don't show a follow button on your own profile.
-  if (member && member.slug === slug) {
+  if (member?.slug === slug) {
     return <Pill tone="gold">This is you</Pill>;
   }
 
@@ -89,6 +89,9 @@ export function Component() {
           : schoolName(st.schoolId),
       }))
     : schools.filter((s) => me.schoolIds.includes(s.id)).map((s) => ({ id: s.id, label: s.name })));
+  let roleLabel = "Member";
+  if (me.role === "curator") roleLabel = "Curator";
+  else if (me.role === "steward") roleLabel = "Steward";
 
   return (
     <>
@@ -98,7 +101,7 @@ export function Component() {
             <Avatar initials={me.initials} photoUrl={me.photoUrl} size={72} className="border-2 border-gold/40" />
             <div>
               <p className="text-xs uppercase tracking-wide text-gold/90">
-                {me.role === "curator" ? "Curator" : me.role === "steward" ? "Steward" : "Member"} · joined {formatDate(me.joinedAt)}
+                {roleLabel} · joined {formatDate(me.joinedAt)}
               </p>
               <h1 className="mt-1 font-display text-4xl font-semibold text-cream">{me.displayName}</h1>
               {me.bio && <p className="mt-2 max-w-xl text-cream/80">{me.bio}</p>}

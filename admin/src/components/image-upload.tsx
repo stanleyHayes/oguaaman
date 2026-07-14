@@ -49,12 +49,12 @@ export function ImageUpload({
   onChange,
   label = "Cover image (optional)",
   hint = "JPG, PNG or WebP, up to 8 MB.",
-}: {
+}: Readonly<{
   value: string;
   onChange: (url: string) => void;
   label?: string;
   hint?: string;
-}) {
+}>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -77,11 +77,9 @@ export function ImageUpload({
     }
   }
 
-  return (
-    <div>
-      <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
-
-      {value ? (
+  let picker: React.ReactNode;
+  if (value) {
+    picker = (
         <div className="flex items-center gap-3">
           <img src={value} alt="" className="h-20 w-28 shrink-0 rounded-lg border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
           <div className="flex flex-wrap gap-2">
@@ -93,9 +91,13 @@ export function ImageUpload({
             </button>
           </div>
         </div>
-      ) : manual ? (
+    );
+  } else if (manual) {
+    picker = (
         <input type="url" value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://…" className={inputCls} />
-      ) : (
+    );
+  } else {
+    picker = (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -119,7 +121,14 @@ export function ImageUpload({
             </>
           )}
         </button>
-      )}
+    );
+  }
+
+  return (
+    <div>
+      <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
+
+      {picker}
 
       <input ref={inputRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
 

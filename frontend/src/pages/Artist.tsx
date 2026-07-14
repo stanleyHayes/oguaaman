@@ -31,14 +31,14 @@ const STREAM: Record<string, { chip: string; icon: Svc }> = {
   YouTube: { chip: "bg-maroon-900/15 text-maroon-900", icon: "youtube" },
 };
 
-function Headphones({ className = "" }: { className?: string }) {
+function Headphones({ className = "" }: Readonly<{ className?: string }>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
       <path d="M4 14v-2a8 8 0 0 1 16 0v2" /><rect x="3" y="13.5" width="4.5" height="6.5" rx="1.6" /><rect x="16.5" y="13.5" width="4.5" height="6.5" rx="1.6" />
     </svg>
   );
 }
-function SvcIcon({ name, className = "" }: { name: Svc; className?: string }) {
+function SvcIcon({ name, className = "" }: Readonly<{ name: Svc; className?: string }>) {
   const body = {
     spotify: <><circle cx="12" cy="12" r="9" /><path d="M7.5 10c3-1 6-.7 8.5 1" /><path d="M8 13c2.2-.7 4.6-.5 6.6.8" /><path d="M8.6 15.6c1.6-.5 3.3-.3 4.8.6" /></>,
     youtube: <><rect x="3" y="6" width="18" height="12" rx="3.5" /><path d="M11 9.5l4.2 2.5-4.2 2.5Z" fill="currentColor" stroke="none" /></>,

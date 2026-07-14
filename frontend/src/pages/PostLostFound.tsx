@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import type { LostFoundKind } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { LOST_FOUND_KINDS } from "@/lib/lostfound";
 
 const inputCls = "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
 
-function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+function Field({ label, children, hint }: Readonly<{ label: string; children: React.ReactNode; hint?: string }>) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
@@ -25,19 +25,20 @@ export function Component() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setBusy(true);
     const fd = new FormData(e.currentTarget);
+    const s = (k: string) => { const v = fd.get(k); return typeof v === "string" ? v : ""; };
     try {
       const created = await api.createLostFound({
-        title: String(fd.get("title") ?? "").trim(),
-        kind: String(fd.get("kind")) as LostFoundKind,
-        description: String(fd.get("description") ?? "").trim(),
-        lastSeenLocation: String(fd.get("lastSeenLocation") ?? "").trim(),
-        lastSeenDate: String(fd.get("lastSeenDate") ?? "").trim(),
-        contact: String(fd.get("contact") ?? "").trim(),
+        title: s("title").trim(),
+        kind: s("kind") as LostFoundKind,
+        description: s("description").trim(),
+        lastSeenLocation: s("lastSeenLocation").trim(),
+        lastSeenDate: s("lastSeenDate").trim(),
+        contact: s("contact").trim(),
       });
       navigate(`/lost-found/${created.slug}`);
     } catch (err) {
@@ -88,7 +89,7 @@ export function Component() {
               <p className="mx-auto mt-3 max-w-md text-sm text-ink-muted">
                 Notices are attributed to a verified member — that keeps the board trustworthy when it matters most. It takes a moment: sign in with your phone or email and you&apos;re in.
               </p>
-              <div className="mt-6"><CTA to="/signin" variant="gold">Sign in / create account</CTA></div>
+              <div className="mt-6"><Cta to="/signin" variant="gold">Sign in / create account</Cta></div>
             </div>
           )}
         </div>

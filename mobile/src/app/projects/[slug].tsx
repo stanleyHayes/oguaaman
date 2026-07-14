@@ -69,7 +69,7 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
 
   async function startPledge() {
     setErr("");
-    const cedisNum = parseFloat(amount);
+    const cedisNum = Number.parseFloat(amount);
     if (!Number.isFinite(cedisNum) || cedisNum < 1) { setErr("Enter an amount of at least GH₵ 1."); return; }
     if (!member) { router.push("/signin"); return; }
     setBusy(true);
@@ -126,6 +126,8 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
     );
   }
 
+  const pledgeLabel = member ? "Pledge with Paystack" : "Sign in to pledge";
+
   return (
     <View style={s.pledgeBox}>
       <Text style={s.pledgeLabel}>PLEDGE AN AMOUNT (GH₵)</Text>
@@ -146,7 +148,7 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
       />
       {err !== "" && <Text style={s.err}>{err}</Text>}
       <Pressable onPress={startPledge} disabled={busy} style={[s.pledgeBtn, busy && { opacity: 0.6 }]}>
-        <Text style={s.pledgeBtnText}>{busy ? "Starting…" : member ? "Pledge with Paystack" : "Sign in to pledge"}</Text>
+        <Text style={s.pledgeBtnText}>{busy ? "Starting…" : pledgeLabel}</Text>
       </Pressable>
       <Text style={s.note}>Mobile money &amp; cards via Paystack. You&apos;ll get a receipt by email.</Text>
     </View>

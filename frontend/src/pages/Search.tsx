@@ -56,6 +56,34 @@ export function Component() {
   // Below 2 chars we show no results (the effect doesn't search then).
   const grouped = useMemo(() => (q.trim().length < 2 ? [] : (hits ?? [])), [hits, q]);
 
+  let results: React.ReactNode;
+  if (q.trim().length < 2) {
+    results = <p className="text-center text-sm text-ink-faint">Type at least two letters to search.</p>;
+  } else if (loading && !hits) {
+    results = <p className="text-center text-sm text-ink-faint">Searching…</p>;
+  } else if (grouped.length === 0) {
+    results = <p className="text-center text-sm text-ink-muted">No matches for “{q.trim()}”. Try another spelling.</p>;
+  } else {
+    results = (
+      <ul className="divide-y divide-sand overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream">
+        {grouped.map((h) => (
+          <li key={`${h.kind}-${h.type ?? ""}-${h.slug}`}>
+            <Link to={hrefFor(h)} className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-paper">
+              <span className="flex min-w-0 items-center gap-3">
+                {h.imageUrl && <img src={cldAvatar(h.imageUrl, 40)} alt="" loading="lazy" className={`h-10 w-10 shrink-0 border border-sand object-cover ${h.kind === "listing" && h.type !== "memorial" ? "rounded-lg" : "rounded-full"}`} />}
+                <span className="min-w-0">
+                  <span className="block truncate font-medium text-ink">{h.title}</span>
+                  {h.subtitle && <span className="mt-0.5 block truncate text-sm text-ink-muted">{h.subtitle}</span>}
+                </span>
+              </span>
+              <span className="shrink-0 rounded-full border border-sand bg-paper px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-wide text-ink-faint">{kindLabel(h)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <>
       <PageHero tone="teal" kicker="Search" title="Find your people, places & memories" symbol="funtunfunefu" lede="Search across the sons & daughters of Oguaa, the listings, and the institutions of Cape Coast." />
@@ -69,30 +97,7 @@ export function Component() {
         />
 
         <div className="mt-8">
-          {q.trim().length < 2 ? (
-            <p className="text-center text-sm text-ink-faint">Type at least two letters to search.</p>
-          ) : loading && !hits ? (
-            <p className="text-center text-sm text-ink-faint">Searching…</p>
-          ) : grouped.length === 0 ? (
-            <p className="text-center text-sm text-ink-muted">No matches for “{q.trim()}”. Try another spelling.</p>
-          ) : (
-            <ul className="divide-y divide-sand overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream">
-              {grouped.map((h) => (
-                <li key={`${h.kind}-${h.type ?? ""}-${h.slug}`}>
-                  <Link to={hrefFor(h)} className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-paper">
-                    <span className="flex min-w-0 items-center gap-3">
-                      {h.imageUrl && <img src={cldAvatar(h.imageUrl, 40)} alt="" loading="lazy" className={`h-10 w-10 shrink-0 border border-sand object-cover ${h.kind === "listing" && h.type !== "memorial" ? "rounded-lg" : "rounded-full"}`} />}
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium text-ink">{h.title}</span>
-                        {h.subtitle && <span className="mt-0.5 block truncate text-sm text-ink-muted">{h.subtitle}</span>}
-                      </span>
-                    </span>
-                    <span className="shrink-0 rounded-full border border-sand bg-paper px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-wide text-ink-faint">{kindLabel(h)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+          {results}
         </div>
       </Container>
     </>

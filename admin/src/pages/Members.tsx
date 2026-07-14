@@ -49,13 +49,13 @@ export function Component() {
         <h2 className="font-display text-lg font-semibold">Invite a team member</h2>
         <p className="mt-1 text-sm text-ink-muted">Pre-assign a role by phone or email. They hold it the moment they sign in.</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="flex flex-col text-xs text-ink-faint">Name
+          <label className="flex flex-col text-xs text-ink-faint">Name{" "}
             <input value={inv.displayName} onChange={(e) => setInv({ ...inv, displayName: e.target.value })} placeholder="Full name" className="mt-1 w-44 rounded-lg border border-sand bg-cream px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none" />
           </label>
-          <label className="flex flex-col text-xs text-ink-faint">Phone or email
+          <label className="flex flex-col text-xs text-ink-faint">Phone or email{" "}
             <input value={inv.identifier} onChange={(e) => setInv({ ...inv, identifier: e.target.value })} placeholder="name@oguaa.test" className="mt-1 w-52 rounded-lg border border-sand bg-cream px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none" />
           </label>
-          <label className="flex flex-col text-xs text-ink-faint">Role
+          <label className="flex flex-col text-xs text-ink-faint">Role{" "}
             <select value={inv.role} onChange={(e) => setInv({ ...inv, role: e.target.value })} className="mt-1 rounded-lg border border-sand bg-cream px-3 py-2 text-sm capitalize focus:border-ai focus:outline-none">
               <option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option><option value="member">member</option>
             </select>

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Outlet, isRouteErrorResponse, useLocation, useRouteError } from "react-router-dom";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Container, CTA } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 
 /** Reset scroll to the top on every route change (instant, loader-safe). */
 function ScrollToTop() {
@@ -44,7 +44,7 @@ export function RootError() {
               : "Please try again. If it keeps happening, the API may be offline."}
           </p>
           <div className="mt-8">
-            <CTA to="/" variant="gold">Back to Oguaa</CTA>
+            <Cta to="/" variant="gold">Back to Oguaa</Cta>
           </div>
         </Container>
       </main>

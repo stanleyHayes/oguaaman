@@ -192,7 +192,9 @@ function WritePane({ form, setForm, bodyRef }: Readonly<{
   }
 
   function addTag() {
-    const t = tagDraft.trim().replace(/,+$/, "").trim();
+    let t = tagDraft.trim();
+    while (t.endsWith(",")) t = t.slice(0, -1);
+    t = t.trim();
     if (t && !(form.tags ?? []).includes(t)) setForm((f) => ({ ...f, tags: [...(f.tags ?? []), t] }));
     setTagDraft("");
   }

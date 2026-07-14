@@ -140,7 +140,7 @@ func TestSubmitLostFound_missingPersonNotifiesCurators(t *testing.T) {
 		{ID: "m-s", Role: domain.RoleSteward},
 		{ID: "m-9", Role: domain.RoleMember},
 	}}
-	svc := New(f, members, stubOrgs{}, stubPlaces{}, modRepo{f}, notifs, stubFollows{}, stubClaims{}, stubNews{}, stubReports{}, stubTimeline{})
+	svc := New(Deps{Listings: f, Members: members, Orgs: stubOrgs{}, Places: stubPlaces{}, Mod: modRepo{f}, Notifs: notifs, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
 	m := &domain.Member{ID: "m-9", Role: domain.RoleMember}
 
 	if _, err := svc.SubmitLostFound(context.Background(), m, LostFoundInput{
@@ -165,7 +165,7 @@ func TestSubmitLostFound_lostItemDoesNotNotifyCurators(t *testing.T) {
 	f := &fakeRepo{}
 	notifs := &lfNotifs{}
 	members := lfMembers{members: []domain.Member{{ID: "m-c", Role: domain.RoleCurator}}}
-	svc := New(f, members, stubOrgs{}, stubPlaces{}, modRepo{f}, notifs, stubFollows{}, stubClaims{}, stubNews{}, stubReports{}, stubTimeline{})
+	svc := New(Deps{Listings: f, Members: members, Orgs: stubOrgs{}, Places: stubPlaces{}, Mod: modRepo{f}, Notifs: notifs, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
 	m := &domain.Member{ID: "m-9", Role: domain.RoleMember}
 
 	if _, err := svc.SubmitLostFound(context.Background(), m, LostFoundInput{

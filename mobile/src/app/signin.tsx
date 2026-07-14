@@ -26,7 +26,9 @@ export default function SignIn() {
     setBusy(true); setErr(null);
     try {
       const dc = await requestOtp(identifier.trim(), name.trim() || undefined, dob.trim() || undefined);
-      setDevCode(dc); if (dc) setCode(dc); setStep("code");
+      setDevCode(dc);
+      if (dc) { setCode(dc); }
+      setStep("code");
     } catch (e) { setErr(e instanceof Error ? e.message : "Could not send a code."); } finally { setBusy(false); }
   }
   async function confirm() {

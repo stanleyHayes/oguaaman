@@ -1,4 +1,4 @@
-import { Section, SectionHeading, CTA } from "@/components/ui";
+import { Section, SectionHeading, CTA as Cta } from "@/components/ui";
 import { ListingCard } from "@/components/listing-card";
 import { useListings } from "@/lib/listings";
 import { FEATURED_FALLBACK } from "@/lib/fallbacks";
@@ -29,9 +29,9 @@ export function HappeningNow() {
       </div>
 
       <div className="mt-12 text-center">
-        <CTA href={PORTAL_APP_URL} variant="primary" external>
+        <Cta href={PORTAL_APP_URL} variant="primary" external>
           See everything in the app
-        </CTA>
+        </Cta>
       </div>
     </Section>
   );

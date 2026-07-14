@@ -31,7 +31,7 @@ const ROWS: Row[] = [
   { eyebrow: "Yɛnkae — we remember", title: "Held in memory", endpoint: "/api/memorials", fallback: MEMORIALS_FALLBACK, href: `${PORTAL_APP_URL}/memoriam` },
 ];
 
-function CommunityRow({ row }: { row: Row }) {
+function CommunityRow({ row }: Readonly<{ row: Row }>) {
   const items = useListings(row.endpoint, row.fallback, 3);
   return (
     <div>

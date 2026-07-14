@@ -98,8 +98,8 @@ export function Component() {
                   <div className="mt-4 border-t border-sand pt-4">
                     {i.details.description && <p className="mb-4 max-w-2xl text-sm text-ink-muted">{i.details.description}</p>}
                     <ol className="mb-5 space-y-3 border-l-2 border-sand pl-4">
-                      {(i.details.statusHistory ?? []).map((e, idx) => (
-                        <li key={idx} className="text-sm">
+                      {(i.details.statusHistory ?? []).map((e) => (
+                        <li key={`${e.at}-${e.status}`} className="text-sm">
                           <span className="font-semibold capitalize text-ink">{e.status}</span>
                           {e.note && <span className="text-ink-muted"> — {e.note}</span>}
                           <span className="ml-2 text-xs text-ink-faint">{formatDate(e.at)}{e.at.includes("T") ? ` · ${e.at.slice(11, 16)} GMT` : ""}</span>

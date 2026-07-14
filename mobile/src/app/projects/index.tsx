@@ -9,7 +9,7 @@ import { Loading, ErrorView, Thumb } from "@/ui";
 export const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
 
-export function Progress({ raised, goal }: { raised?: number; goal?: number }) {
+export function Progress({ raised, goal }: Readonly<{ raised?: number; goal?: number }>) {
   const pct = goal ? Math.min(100, Math.round(((raised ?? 0) / goal) * 100)) : 0;
   return (
     <View>

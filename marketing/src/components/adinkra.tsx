@@ -71,14 +71,13 @@ interface AdinkraProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
   labelled?: boolean;
 }
 
-export function Adinkra({ name, size = 22, labelled = true, strokeWidth = 1.5, className, ...rest }: AdinkraProps) {
+export function Adinkra({ name, size = 22, labelled = true, strokeWidth = 1.5, className, ...rest }: Readonly<AdinkraProps>) {
   const def = ADINKRA[name];
   const title = `${def.name} — ${def.meaning}`;
   return (
     <svg
       width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
-      role={labelled ? "img" : "presentation"}
       aria-label={labelled ? title : undefined}
       aria-hidden={labelled ? undefined : true}
       className={className}
@@ -90,7 +89,7 @@ export function Adinkra({ name, size = 22, labelled = true, strokeWidth = 1.5, c
   );
 }
 
-export function SymbolDivider({ name = "adinkrahene", className = "", tone = "text-gold-brand" }: { name?: AdinkraName; className?: string; tone?: string }) {
+export function SymbolDivider({ name = "adinkrahene", className = "", tone = "text-gold-brand" }: Readonly<{ name?: AdinkraName; className?: string; tone?: string }>) {
   return (
     <div className={`mx-auto flex max-w-[260px] items-center gap-4 ${className}`} aria-hidden>
       <span className="h-px flex-1 bg-sand" />

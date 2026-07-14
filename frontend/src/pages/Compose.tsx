@@ -47,8 +47,7 @@ export function Component() {
         <Container className="py-8">
           <p className="text-sm text-cream/70">
             <Link to="/admin" className="hover:text-gold">Dashboard</Link>
-            <span className="px-2 text-cream/40">›</span>Newsroom
-            <span className="px-2 text-cream/40">›</span><span className="text-cream">Compose</span>
+            <span className="px-2 text-cream/40">›</span>Newsroom<span className="px-2 text-cream/40">›</span><span className="text-cream">Compose</span>
           </p>
           <h1 className="mt-2 font-display text-3xl font-semibold">Compose</h1>
           <p className="mt-1 text-sm text-cream/70">Draft with the AI writing bar, then publish straight to the Newsroom — you keep full control of the final words.</p>
@@ -72,11 +71,11 @@ export function Component() {
         ) : (
           <>
             <div className="mb-5 rounded-[var(--radius-card)] border border-sand bg-cream p-5">
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Headline</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className="mb-4 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-lg font-semibold text-ink focus:border-green focus:outline-none" />
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Summary <span className="font-normal normal-case text-ink-faint">(optional)</span></label>
-              <input value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="One line that appears on the news cards" className="mb-4 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink focus:border-green focus:outline-none" />
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Cover colour</label>
+              <label htmlFor="compose-headline" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Headline</label>
+              <input id="compose-headline" value={title} onChange={(e) => setTitle(e.target.value)} className="mb-4 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-lg font-semibold text-ink focus:border-green focus:outline-none" />
+              <label htmlFor="compose-summary" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Summary <span className="font-normal normal-case text-ink-faint">(optional)</span></label>
+              <input id="compose-summary" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="One line that appears on the news cards" className="mb-4 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink focus:border-green focus:outline-none" />
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Cover colour</span>
               <div className="flex gap-2">
                 {COVER_COLORS.map((c) => (
                   <button key={c} type="button" onClick={() => setCoverColor(c)} aria-label={`Cover ${c}`} className={`h-8 w-8 rounded-full border-2 ${coverColor === c ? "border-ink" : "border-transparent"}`} style={{ backgroundColor: c }} />

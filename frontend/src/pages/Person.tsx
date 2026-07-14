@@ -40,7 +40,7 @@ export function Component() {
           <h2 className="eyebrow mb-3 text-gold-text">Why Oguaa is proud</h2>
           {d.whyNotable && <p className="font-display text-xl italic leading-relaxed text-ink">{d.whyNotable}</p>}
           <div className="mt-6 space-y-4 font-serif text-lg leading-relaxed text-ink">
-            {story.map((p, i) => <p key={i}>{p}</p>)}
+            {story.map((p) => <p key={p}>{p}</p>)}
           </div>
           {person.tags.length > 0 && (
             <div className="mt-8 flex flex-wrap gap-2">{person.tags.map((t) => <Pill key={t} tone="gold">#{t}</Pill>)}</div>

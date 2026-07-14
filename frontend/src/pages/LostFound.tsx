@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import type { LostFound, LostFoundKind } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { LOST_FOUND_KINDS, KIND_LABEL, LF_STATUS_CLASS, LF_STATUS_LABEL } from "@/lib/lostfound";
@@ -21,7 +21,7 @@ export function Component() {
   return (
     <>
       <PageHero tone="teal" kicker="Lost & found" title="Lost & Found" symbol="crab" lede="Lost a phone, found a bunch of keys, searching for someone? Post here — notices go live immediately, and the town helps. When it works out, mark it reunited and share the good news.">
-        <CTA to="/lost-found/new" variant="primary">Post a notice</CTA>
+        <Cta to="/lost-found/new" variant="primary">Post a notice</Cta>
       </PageHero>
       <Container size="wide" className="py-12">
         <div className="mb-8 flex flex-wrap gap-2">
@@ -49,9 +49,12 @@ export function Component() {
   );
 }
 
-function NoticeCard({ notice: i }: { notice: LostFound }) {
+function NoticeCard({ notice: i }: Readonly<{ notice: LostFound }>) {
   const d = i.details;
   const missing = d.kind === "missing_person";
+  let seenLabel = "Found";
+  if (missing) seenLabel = "Last seen";
+  else if (d.kind === "lost_item") seenLabel = "Lost";
   return (
     <Link
       to={`/lost-found/${i.slug}`}
@@ -68,7 +71,7 @@ function NoticeCard({ notice: i }: { notice: LostFound }) {
       <h3 className="mt-3 font-display text-xl font-semibold text-ink">{i.title}</h3>
       {d.lastSeenLocation && (
         <p className="mt-1.5 text-sm text-ink-muted">
-          {missing ? "Last seen" : d.kind === "lost_item" ? "Lost" : "Found"} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${formatDate(d.lastSeenDate)}` : ""}
+          {seenLabel} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${formatDate(d.lastSeenDate)}` : ""}
         </p>
       )}
       {d.description && <p className="mt-2 line-clamp-2 text-sm text-ink-faint">{d.description}</p>}

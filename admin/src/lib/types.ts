@@ -214,6 +214,9 @@ export interface NewsArticle {
   publishedAt?: string;
 }
 
+// Shared Paystack-style payment lifecycle used by pledges, tickets, subscriptions and promotions.
+export type PaymentStatus = "pending" | "success" | "failed";
+
 // A pledge toward an adopt-a-project campaign (amounts in pesewas).
 export interface Pledge {
   id: string;
@@ -226,7 +229,7 @@ export interface Pledge {
   feePesewas?: number; // platform fee kept on confirmation
   netPesewas?: number; // credited to the project
   currency: string;
-  status: "pending" | "success" | "failed";
+  status: PaymentStatus;
   simulated?: boolean;
   createdAt: string;
   confirmedAt?: string;
@@ -257,7 +260,7 @@ export interface Ticket {
   tier: string;
   qty: number;
   amountPesewas: number;
-  status: "pending" | "success" | "failed";
+  status: PaymentStatus;
   code?: string;
   checkedInAt?: string;
   simulated?: boolean;
@@ -275,7 +278,7 @@ export interface Subscription {
   listingTitle: string;
   plan: string;
   amountPesewas: number;
-  status: "pending" | "success" | "failed";
+  status: PaymentStatus;
   periodEnd?: string;
   simulated?: boolean;
   createdAt: string;
@@ -292,7 +295,7 @@ export interface Promotion {
   memberId?: string;
   days: number;
   amountPesewas: number;
-  status: "pending" | "success" | "failed";
+  status: PaymentStatus;
   simulated?: boolean;
   createdAt: string;
   confirmedAt?: string;

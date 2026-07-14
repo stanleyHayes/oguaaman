@@ -14,7 +14,7 @@ function fmtDate(iso?: string): string {
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
-function ProgrammeList({ e }: { e: Listing }) {
+function ProgrammeList({ e }: Readonly<{ e: Listing }>) {
   const programme = e.details.programme ?? [];
   return (
     <View style={{ marginTop: 4 }}>
@@ -24,8 +24,8 @@ function ProgrammeList({ e }: { e: Listing }) {
       {e.details.description ? <Text style={s.evDesc}>{e.details.description}</Text> : null}
       {programme.length > 0 && (
         <View style={{ gap: 6, marginTop: 8 }}>
-          {programme.map((p, i) => (
-            <View key={i} style={s.progRow}>
+          {programme.map((p) => (
+            <View key={`${p.day ?? ""}-${p.time ?? ""}-${p.title}`} style={s.progRow}>
               <View style={s.progDay}>
                 <Text style={s.progDayText}>{p.day ?? ""}</Text>
                 {p.time ? <Text style={s.progTime}>{p.time}</Text> : null}
@@ -71,6 +71,7 @@ export default function Festival() {
             {data.editions.map((ed, idx) => {
               const upcoming = ed.events.some((e) => (e.details.startsAt ?? "") >= TODAY);
               const last = idx === data.editions.length - 1;
+              const recapPill = ed.recap ? <Pill label="Recap" color={C.green} bg={C.cream} border={C.green} /> : null;
               return (
                 <View key={ed.year} style={s.tlRow}>
                   <View style={s.tlRail}>
@@ -80,7 +81,7 @@ export default function Festival() {
                   <View style={[s.tlBody, last && { paddingBottom: 0 }]}>
                     <View style={s.yearRow}>
                       <Text style={s.year}>{ed.year}</Text>
-                      {upcoming ? <Pill label="Upcoming" color={C.goldText} bg={C.cream} border={C.gold} /> : ed.recap ? <Pill label="Recap" color={C.green} bg={C.cream} border={C.green} /> : null}
+                      {upcoming ? <Pill label="Upcoming" color={C.goldText} bg={C.cream} border={C.gold} /> : recapPill}
                     </View>
                     {ed.events.map((e) => <ProgrammeList key={e.id} e={e} />)}
                     {ed.recap ? <Text style={s.recap}>{ed.recap}</Text> : null}

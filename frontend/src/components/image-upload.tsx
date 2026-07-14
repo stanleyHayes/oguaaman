@@ -53,12 +53,12 @@ export function ImageUpload({
   onChange,
   label = "Cover image (optional)",
   hint = "A photo — JPG, PNG or WebP, up to 8 MB.",
-}: {
+}: Readonly<{
   value: string;
   onChange: (url: string) => void;
   label?: string;
   hint?: string;
-}) {
+}>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -81,6 +81,34 @@ export function ImageUpload({
     }
   }
 
+  const picker = manual ? (
+    <input type="url" value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://…" className={inputCls} />
+  ) : (
+    <button
+      type="button"
+      onClick={() => inputRef.current?.click()}
+      disabled={busy}
+      className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-sand bg-paper px-4 py-7 text-center transition-colors hover:border-green/40 disabled:opacity-70"
+    >
+      {busy ? (
+        <>
+          <span className="text-sm font-medium text-ink">Uploading… {progress}%</span>
+          <span className="h-1.5 w-40 overflow-hidden rounded-full bg-sand">
+            <span className="block h-full rounded-full bg-green transition-all" style={{ width: `${progress}%` }} />
+          </span>
+        </>
+      ) : (
+        <>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-green" aria-hidden>
+            <path d="M12 16V4M7 9l5-5 5 5" /><path d="M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3" />
+          </svg>
+          <span className="text-sm font-medium text-ink">Click to upload an image</span>
+          <span className="text-xs text-ink-faint">JPG, PNG or WebP, up to 8 MB</span>
+        </>
+      )}
+    </button>
+  );
+
   return (
     <div>
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
@@ -97,33 +125,7 @@ export function ImageUpload({
             </button>
           </div>
         </div>
-      ) : manual ? (
-        <input type="url" value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://…" className={inputCls} />
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={busy}
-          className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-sand bg-paper px-4 py-7 text-center transition-colors hover:border-green/40 disabled:opacity-70"
-        >
-          {busy ? (
-            <>
-              <span className="text-sm font-medium text-ink">Uploading… {progress}%</span>
-              <span className="h-1.5 w-40 overflow-hidden rounded-full bg-sand">
-                <span className="block h-full rounded-full bg-green transition-all" style={{ width: `${progress}%` }} />
-              </span>
-            </>
-          ) : (
-            <>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-green" aria-hidden>
-                <path d="M12 16V4M7 9l5-5 5 5" /><path d="M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3" />
-              </svg>
-              <span className="text-sm font-medium text-ink">Click to upload an image</span>
-              <span className="text-xs text-ink-faint">JPG, PNG or WebP, up to 8 MB</span>
-            </>
-          )}
-        </button>
-      )}
+      ) : picker}
 
       <input ref={inputRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
 

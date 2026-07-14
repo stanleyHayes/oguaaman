@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 
 const icon = (glyph: string) => {
   // Named so it has a display name (react/display-name) for the tab bar.
-  function TabBarIcon({ color }: { color: ColorValue }) {
+  function TabBarIcon({ color }: Readonly<{ color: ColorValue }>) {
     return <Text style={{ fontSize: 17, color }}>{glyph}</Text>;
   }
   return TabBarIcon;
@@ -34,6 +34,7 @@ function useUnreadCount(): number {
 export default function TabsLayout() {
   const { t } = useLang();
   const unread = useUnreadCount();
+  const badgeText = unread > 9 ? "9+" : unread;
   return (
     <Tabs
       screenOptions={{
@@ -54,7 +55,7 @@ export default function TabsLayout() {
         options={{
           title: t("nav.more"),
           tabBarIcon: icon("≡"),
-          tabBarBadge: unread > 0 ? (unread > 9 ? "9+" : unread) : undefined,
+          tabBarBadge: unread > 0 ? badgeText : undefined,
         }}
       />
     </Tabs>

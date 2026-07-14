@@ -21,6 +21,8 @@ const STATUS_STYLE: Record<ListingStatus, string> = {
   unpublished: "bg-sand text-ink-muted",
 };
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
 function linkFor(l: Listing): string | null {
   if (l.status !== "approved") return null;
   if (l.type === "artist") return `/music/${l.slug}`;
@@ -85,18 +87,18 @@ export function Component() {
   const [view, setView] = useState<MemberView | null>(null);
   // Profile photo (seeded from the loaded profile).
   const [photo, setPhoto] = useState("");
-  const [photoState, setPhotoState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [photoState, setPhotoState] = useState<SaveState>("idle");
   // Editable affiliations + birthday (seeded from the loaded profile).
   const [townId, setTownId] = useState("");
   const [asafoId, setAsafoId] = useState("");
   const [birthday, setBirthday] = useState("");
   const [broadcast, setBroadcast] = useState(false);
-  const [bdayState, setBdayState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [bdayState, setBdayState] = useState<SaveState>("idle");
   // Diaspora opt-in (Phase 2 foundation).
   const [abroad, setAbroad] = useState(false);
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
-  const [diaState, setDiaState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [diaState, setDiaState] = useState<SaveState>("idle");
   // Bumped after saving schooling so "people you may know" refetches.
   const [connKey, setConnKey] = useState(0);
   // Event tickets (Phase 6).
@@ -393,8 +395,7 @@ export function Component() {
                   className="rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-gold-brand focus:outline-none"
                 />
                 <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                  <input type="checkbox" checked={broadcast} onChange={(e) => { setBroadcast(e.target.checked); setBdayState("idle"); }} className="h-4 w-4 accent-green" />
-                  Let my followers know
+                  <input type="checkbox" checked={broadcast} onChange={(e) => { setBroadcast(e.target.checked); setBdayState("idle"); }} className="h-4 w-4 accent-green" />Let my followers know
                 </label>
                 <button type="button" onClick={saveBirthday} disabled={bdayState === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
                   {bdayState === "saving" ? "Saving…" : "Save"}
@@ -407,8 +408,7 @@ export function Component() {
             <Panel title="Oguaa abroad" lede="Living away from home? Add yourself to the diaspora — the bridge for homecomings, projects, and giving back. Off by default.">
               <div className="space-y-3">
                 <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                  <input type="checkbox" checked={abroad} onChange={(e) => { setAbroad(e.target.checked); setDiaState("idle"); }} className="h-4 w-4 accent-teal" />
-                  I live abroad / outside Cape Coast
+                  <input type="checkbox" checked={abroad} onChange={(e) => { setAbroad(e.target.checked); setDiaState("idle"); }} className="h-4 w-4 accent-teal" />I live abroad / outside Cape Coast
                 </label>
                 {abroad && (
                   <div className="flex flex-wrap gap-3">

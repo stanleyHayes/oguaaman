@@ -12,11 +12,11 @@ export function Crest({
   colors = ["#123F2D", "#C7A24A"],
   label,
   size = 40,
-}: {
+}: Readonly<{
   colors?: string[];
   label: string;
   size?: number;
-}) {
+}>) {
   const c1 = colors[0] ?? "#123F2D";
   const c2 = colors[1] ?? "#C7A24A";
   const fontSize = label.length > 2 ? 26 : 34;
@@ -42,10 +42,10 @@ export function Crest({
 export function InstitutionLogo({
   org,
   size = 40,
-}: {
+}: Readonly<{
   org: { slug: string; name: string; houseColors?: string[]; crestUrl?: string };
   size?: number;
-}) {
+}>) {
   // Prefer the institution's own uploaded crest, then the bundled logo map, then
   // the generated house-colour placeholder.
   const src = org.crestUrl ?? LOGOS[org.slug];

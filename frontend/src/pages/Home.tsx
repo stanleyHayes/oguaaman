@@ -1,7 +1,7 @@
 import { Link, useLoaderData } from "react-router-dom";
 import type { HomeData, NewsArticle, Listing } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container, CTA, Eyebrow, SectionHeading, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, Eyebrow, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { ArtistCard, EventCard, SectionCard, MemorialCard, NewsCard, FeaturedCard } from "@/components/cards";
 import { SHOWCASE_SECTIONS } from "@/lib/sections";
@@ -47,8 +47,8 @@ export function Component() {
               The town that began as a market — the old Gold Coast capital, the Citadel of Education, home of the Asafo and Fetu Afahye. Its music, its people, its memory, gathered in one place. <span className="text-gold">Made by us, for us.</span>
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <CTA to="/music" variant="gold">Hear the Oguaa Sound</CTA>
-              <CTA to="/community" variant="outline-dark">Join the community</CTA>
+              <Cta to="/music" variant="gold">Hear the Oguaa Sound</Cta>
+              <Cta to="/community" variant="outline-dark">Join the community</Cta>
             </div>
           </div>
         </Container>
@@ -121,7 +121,7 @@ export function Component() {
               {headlines.map((a, i) => <NewsCard key={a.id} article={a} lead={i === 0} />)}
             </div>
             <div className="mt-10 text-center">
-              <CTA to="/news" variant="primary">Read all the news →</CTA>
+              <Cta to="/news" variant="primary">Read all the news →</Cta>
             </div>
           </Container>
         </section>
@@ -152,7 +152,7 @@ export function Component() {
               )}
             </div>
             <div className="mt-10 text-center sm:hidden">
-              <CTA to="/business" variant="primary">All businesses →</CTA>
+              <Cta to="/business" variant="primary">All businesses →</Cta>
             </div>
           </Container>
         </section>
@@ -201,8 +201,8 @@ export function Component() {
           <h2 className="mt-5 font-display text-3xl font-semibold sm:text-4xl">Rep your town. Rep your school.</h2>
           <p className="mx-auto mt-4 max-w-xl text-cream/80">Create your profile, share a memory, nominate an artist, list your business, or honour someone you love. The community is a participant, not an audience.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <CTA to="/community" variant="gold">Join Oguaa</CTA>
-            <CTA to="/submit" variant="outline-dark">Submit a listing</CTA>
+            <Cta to="/community" variant="gold">Join Oguaa</Cta>
+            <Cta to="/submit" variant="outline-dark">Submit a listing</Cta>
           </div>
         </Container>
       </section>

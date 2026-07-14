@@ -139,6 +139,17 @@ function NavDropdown({ label, active, items, lang }: Readonly<{ label: string; a
   );
 }
 
+/** Trigger content for the signed-in member dropdown. */
+function MemberMenuTrigger({ open, initials, firstName }: Readonly<{ open: boolean; initials: string; firstName: string | undefined }>) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2 text-sm transition-colors hover:bg-cream/10">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gold/20 text-xs font-bold text-gold">{initials}</span>
+      <span className="max-w-[7rem] truncate font-semibold text-gold">{firstName}</span>
+      <Chevron open={open} />
+    </span>
+  );
+}
+
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -187,13 +198,7 @@ export function SiteHeader() {
                 <Dropdown
                   align="right"
                   width="w-56"
-                  trigger={(o) => (
-                    <span className="inline-flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2 text-sm transition-colors hover:bg-cream/10">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gold/20 text-xs font-bold text-gold">{initials}</span>
-                      <span className="max-w-[7rem] truncate font-semibold text-gold">{firstName}</span>
-                      <Chevron open={o} />
-                    </span>
-                  )}
+                  trigger={(o) => MemberMenuTrigger({ open: o, initials, firstName })}
                 >
                   {(close) => (
                     <div role="none">

@@ -10,6 +10,8 @@ import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ImageField } from "@/components/image-field";
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
 export default function Me() {
   const { member, loading, signOut } = useAuth();
   if (loading) return <Loading />;
@@ -74,19 +76,23 @@ function MySubscriptions() {
   if (list.length === 0) return <Text style={s.empty}>No subscriptions yet.</Text>;
   return (
     <View style={{ gap: 8 }}>
-      {list.map((sub) => (
-        <Pressable key={sub.id} onPress={() => router.push(`/business/${sub.listingSlug}` as never)} style={s.listingRow}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={s.listingTitle} numberOfLines={1}>{sub.listingTitle}</Text>
-            <Text style={s.listingType}>
-              GH₵ {(sub.amountPesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}{sub.periodEnd ? ` · until ${fmtDate(sub.periodEnd)}` : ""}
-            </Text>
-          </View>
-          <View style={[s.statusChip, sub.status === "success" ? s.statusOk : sub.status === "pending" ? s.statusPending : s.statusBad]}>
-            <Text style={[s.statusText, sub.status === "success" ? { color: C.green } : sub.status === "pending" ? { color: C.goldText } : { color: C.maroon }]}>{sub.status}</Text>
-          </View>
-        </Pressable>
-      ))}
+      {list.map((sub) => {
+        const subChip = sub.status === "pending" ? s.statusPending : s.statusBad;
+        const subColor = sub.status === "pending" ? { color: C.goldText } : { color: C.maroon };
+        return (
+          <Pressable key={sub.id} onPress={() => router.push(`/business/${sub.listingSlug}` as never)} style={s.listingRow}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.listingTitle} numberOfLines={1}>{sub.listingTitle}</Text>
+              <Text style={s.listingType}>
+                GH₵ {(sub.amountPesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}{sub.periodEnd ? ` · until ${fmtDate(sub.periodEnd)}` : ""}
+              </Text>
+            </View>
+            <View style={[s.statusChip, sub.status === "success" ? s.statusOk : subChip]}>
+              <Text style={[s.statusText, sub.status === "success" ? { color: C.green } : subColor]}>{sub.status}</Text>
+            </View>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -202,7 +208,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
 
   // Profile photo.
   const [photo, setPhoto] = useState(m.photoUrl ?? "");
-  const [photoSave, setPhotoSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [photoSave, setPhotoSave] = useState<SaveState>("idle");
   async function savePhoto(url: string) {
     setPhoto(url);
     setPhotoSave("saving");
@@ -310,7 +316,7 @@ function RepChips({ places, selectedId, variant, onChoose }: Readonly<{ places: 
 function BirthdayCard({ member: m }: Readonly<{ member: Member }>) {
   const [birthday, setBirthday] = useState(m.birthday ? m.birthday.slice(0, 10) : "");
   const [broadcast, setBroadcast] = useState(!!m.broadcastBirthday);
-  const [bdaySave, setBdaySave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [bdaySave, setBdaySave] = useState<SaveState>("idle");
   async function saveBirthday() {
     setBdaySave("saving");
     try {
@@ -348,7 +354,7 @@ function DiasporaCard({ member: m }: Readonly<{ member: Member }>) {
   const [abroad, setAbroad] = useState(!!m.diaspora?.abroad);
   const [city, setCity] = useState(m.diaspora?.city ?? "");
   const [country, setCountry] = useState(m.diaspora?.country ?? "");
-  const [diaSave, setDiaSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [diaSave, setDiaSave] = useState<SaveState>("idle");
 
   async function saveDiaspora() {
     setDiaSave("saving");
@@ -385,12 +391,12 @@ function DiasporaCard({ member: m }: Readonly<{ member: Member }>) {
 // so onSaved bumps the refresh key in the parent.
 function SchoolingEditor({ member: m, schools, onSaved }: Readonly<{ member: Member; schools: Organization[]; onSaved: () => void }>) {
   const [stints, setStints] = useState<SchoolStint[]>(m.schooling ?? []);
-  const [save, setSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [save, setSave] = useState<SaveState>("idle");
   const schoolName = (id: string) => schools.find((x) => x.id === id)?.name ?? id;
   const available = schools.filter((sc) => !stints.some((st) => st.schoolId === sc.id));
 
   function setYear(i: number, key: "fromYear" | "toYear", val: string) {
-    const n = val ? parseInt(val, 10) : undefined;
+    const n = val ? Number.parseInt(val, 10) : undefined;
     setStints((cur) => cur.map((st, idx) => (idx === i ? { ...st, [key]: Number.isFinite(n) ? n : undefined } : st)));
     setSave("idle");
   }

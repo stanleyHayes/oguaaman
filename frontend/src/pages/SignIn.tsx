@@ -30,7 +30,7 @@ export function Component() {
 
   if (member) return <Navigate to={from} replace />;
 
-  async function send(e: React.FormEvent) {
+  async function send(e: React.SubmitEvent) {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
@@ -42,7 +42,7 @@ export function Component() {
       setErr(e instanceof Error ? e.message : "Could not send a code.");
     } finally { setBusy(false); }
   }
-  async function confirm(e: React.FormEvent) {
+  async function confirm(e: React.SubmitEvent) {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {

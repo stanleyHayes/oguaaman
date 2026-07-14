@@ -40,10 +40,27 @@ type Handler struct {
 	uploadBase     string // public base URL for uploaded files ("" → derive from request)
 }
 
-func NewHandler(svc *service.Service, ai *service.AIService, auth *service.AuthService, payments *service.PaymentsService, tickets *service.TicketsService, subs *service.SubscriptionsService, promotions *service.PromotionsService, revenue *service.RevenueService, paystackSecret string, authRequired bool, uploadDir, uploadBase string, log *slog.Logger) *Handler {
+// HandlerDeps are the application services and settings NewHandler wires into a Handler.
+type HandlerDeps struct {
+	Svc            *service.Service
+	AI             *service.AIService
+	Auth           *service.AuthService
+	Payments       *service.PaymentsService
+	Tickets        *service.TicketsService
+	Subs           *service.SubscriptionsService
+	Promotions     *service.PromotionsService
+	Revenue        *service.RevenueService
+	PaystackSecret string // webhook signature verification; "" in dev simulation
+	AuthRequired   bool
+	UploadDir      string // where uploaded images are written
+	UploadBase     string // public base URL for uploaded files ("" → derive from request)
+	Log            *slog.Logger
+}
+
+func NewHandler(d HandlerDeps) *Handler {
 	return &Handler{
-		svc: svc, ai: ai, auth: auth, payments: payments, tickets: tickets, subs: subs, promotions: promotions, revenue: revenue, paystackSecret: paystackSecret, authRequired: authRequired,
-		uploadDir: uploadDir, uploadBase: uploadBase, log: log, limiter: newRateLimiter(),
+		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, revenue: d.Revenue, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
+		uploadDir: d.UploadDir, uploadBase: d.UploadBase, log: d.Log, limiter: newRateLimiter(),
 	}
 }
 

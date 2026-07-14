@@ -67,7 +67,7 @@ export default function Legal() {
         {d.sections.map((sec) => (
           <View key={sec.h} style={{ marginTop: 22 }}>
             <Text style={s.h}>{sec.h}</Text>
-            {sec.p.map((p, i) => <Text key={i} style={s.p}>{p}</Text>)}
+            {sec.p.map((p) => <Text key={p} style={s.p}>{p}</Text>)}
           </View>
         ))}
         <Text style={s.updated}>{UPDATED}</Text>
