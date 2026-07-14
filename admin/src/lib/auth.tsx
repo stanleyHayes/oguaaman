@@ -5,18 +5,13 @@ import { api, getToken, setToken } from "./api";
 interface AuthState {
   member: Member | null;
   loading: boolean;
-  requestOtp: (identifier: string) => Promise<string | undefined>;
-  verify: (identifier: string, code: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
   signOut: () => void;
   /** Update the cached member (e.g. after editing your profile). */
   setMember: (m: Member) => void;
 }
 
 const Ctx = createContext<AuthState | null>(null);
-
-async function requestOtp(identifier: string) {
-  return (await api.requestOtp(identifier)).devCode;
-}
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [member, setMember] = useState<Member | null>(null);
@@ -29,8 +24,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     api.me().then(setMember).catch(() => setToken(null)).finally(() => setLoading(false));
   }, []);
 
-  const verify = useCallback(async (identifier: string, code: string) => {
-    const { token, member } = await api.verifyOtp(identifier, code);
+  const signIn = useCallback(async (identifier: string, password: string) => {
+    const { token, member } = await api.login(identifier, password);
     setToken(token);
     setMember(member);
   }, []);
@@ -39,7 +34,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setMember(null);
   }, []);
 
-  const value = useMemo(() => ({ member, loading, requestOtp, verify, signOut, setMember }), [member, loading, verify, signOut]);
+  const value = useMemo(() => ({ member, loading, signIn, signOut, setMember }), [member, loading, signIn, signOut]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

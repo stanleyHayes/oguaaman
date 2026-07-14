@@ -137,10 +137,8 @@ export const api = {
   ai: (body: { action: string; text?: string; language?: string; prompt?: string }) =>
     post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body),
 
-  requestOtp: (identifier: string) =>
-    post<{ sent: boolean; devCode?: string }>("/api/auth/request-otp", { identifier }),
-  verifyOtp: (identifier: string, code: string) =>
-    post<{ token: string; member: Member }>("/api/auth/verify-otp", { identifier, code }),
+  login: (identifier: string, password: string) =>
+    post<{ token: string; member: Member }>("/api/auth/login", { identifier, password }),
   me: () => get<Member>("/api/auth/me"),
 
   // Your own account.

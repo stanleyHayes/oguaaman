@@ -174,9 +174,9 @@ export const api = {
   stats: () => get<Stats>("/api/stats"),
 
   // auth (spec §8.1). dateOfBirth gates 18+ self-registration (spec §14.4).
-  requestOtp: (identifier: string, displayName?: string, dateOfBirth?: string) =>
-    post<{ sent: boolean; devCode?: string }>("/api/auth/request-otp", { identifier, displayName, dateOfBirth }),
-  verifyOtp: (identifier: string, code: string) =>
-    post<{ token: string; member: Member }>("/api/auth/verify-otp", { identifier, code }),
+  login: (identifier: string, password: string) =>
+    post<{ token: string; member: Member }>("/api/auth/login", { identifier, password }),
+  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string }) =>
+    post<{ token: string; member: Member }>("/api/auth/register", input),
   me: () => get<Member>("/api/auth/me"),
 };

@@ -13,7 +13,7 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
 
 const TRUST = [
   "Curators and stewards only",
-  "One-time code — no passwords to leak",
+  "Password sign-in — no codes to wait for",
   "Every back-office action is audited",
 ];
 
@@ -89,68 +89,38 @@ const primaryBtn =
   "w-full rounded-full bg-green py-3 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
 
 function SignIn() {
-  const { requestOtp, verify } = useAuth();
-  const [step, setStep] = useState<"id" | "code">("id");
+  const { signIn } = useAuth();
   const [identifier, setIdentifier] = useState("");
-  const [code, setCode] = useState("");
-  const [devCode, setDevCode] = useState<string | undefined>();
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function send(e: React.SubmitEvent) {
+  async function submit(e: React.SubmitEvent) {
     e.preventDefault(); setBusy(true); setErr(null);
-    try {
-      const dc = await requestOtp(identifier.trim());
-      setDevCode(dc);
-      if (dc) { setCode(dc); }
-      setStep("code");
-    } catch { setErr("Could not send a code."); } finally { setBusy(false); }
-  }
-  async function confirm(e: React.SubmitEvent) {
-    e.preventDefault(); setBusy(true); setErr(null);
-    try { await verify(identifier.trim(), code.trim()); }
-    catch { setErr("That code is invalid or has expired."); } finally { setBusy(false); }
+    try { await signIn(identifier.trim(), password); }
+    catch (e) { setErr(e instanceof Error ? e.message : "Sign in failed."); } finally { setBusy(false); }
   }
 
   return (
     <Backdrop>
       <Shell>
-        {/* Step indicator */}
-        <div className="mb-7 flex items-center gap-3" aria-hidden>
-          <span className="h-1.5 flex-1 rounded-full bg-gold-brand" />
-          <span className={`h-1.5 flex-1 rounded-full ${step === "code" ? "bg-gold-brand" : "bg-sand"}`} />
-        </div>
-
-        {step === "id" ? (
-          <form onSubmit={send} className="space-y-5">
-            <div>
-              <h2 className="text-2xl font-semibold text-ink">Curator sign in</h2>
-              <p className="mt-1 text-sm text-ink-muted">Step 1 of 2 — where should we send your code?</p>
-            </div>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
-              <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="+233… or you@email" className={inputCls} />
-            </label>
-            {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-            <button disabled={busy} className={primaryBtn}>{busy ? "Sending…" : "Send my code →"}</button>
-            <p className="text-center text-xs text-ink-faint">Seeded steward: <code className="font-mono">nana-essien@oguaa.test</code></p>
-          </form>
-        ) : (
-          <form onSubmit={confirm} className="space-y-5">
-            <div>
-              <h2 className="text-2xl font-semibold text-ink">Check your messages</h2>
-              <p className="mt-1 text-sm text-ink-muted">Step 2 of 2 — enter the 6-digit code we sent to <b className="text-ink">{identifier}</b>.</p>
-            </div>
-            {devCode && <p className="rounded-lg border border-gold-border/40 bg-gold/[0.1] px-3 py-2 text-sm text-gold-text">Dev code: <b className="font-mono">{devCode}</b></p>}
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink">Verification code</span>
-              <input value={code} onChange={(e) => setCode(e.target.value)} required inputMode="numeric" placeholder="000000" className={`${inputCls} text-center font-mono text-lg tracking-[0.35em]`} />
-            </label>
-            {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-            <button disabled={busy} className={primaryBtn}>{busy ? "Verifying…" : "Sign in"}</button>
-            <button type="button" onClick={() => setStep("id")} className="w-full text-center text-sm text-ink-muted transition-colors hover:text-ink">← Use a different number</button>
-          </form>
-        )}
+        <form onSubmit={submit} className="space-y-5">
+          <div>
+            <h2 className="text-2xl font-semibold text-ink">Curator sign in</h2>
+            <p className="mt-1 text-sm text-ink-muted">Enter your phone or email and your password.</p>
+          </div>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
+            <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="username" placeholder="+233… or you@email" className={inputCls} />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" placeholder="Your password" className={inputCls} />
+          </label>
+          {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
+          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Signing in…" : "Sign in"}</button>
+          <p className="text-center text-xs text-ink-faint">Seeded steward: <code className="font-mono">nana-essien@oguaa.test</code></p>
+        </form>
       </Shell>
     </Backdrop>
   );

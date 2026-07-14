@@ -136,7 +136,7 @@ export function Component() {
       {/* security */}
       <Card className="mt-5 p-5">
         <h2 className="text-lg font-semibold text-ink">Security</h2>
-        <p className="mt-1 text-sm text-ink-muted">Oguaa is <b>passwordless</b> — you sign in with a one-time code sent to your phone or email, so there&rsquo;s no password to manage. Sessions last 30 days; sign out to end this one.</p>
+        <p className="mt-1 text-sm text-ink-muted">You sign in with your phone or email and a password. Sessions last 30 days; sign out to end this one.</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link to="/settings" className="rounded-full border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-gold-border hover:text-gold-text">Settings</Link>
           <Link to="/notifications" className="rounded-full border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-gold-border hover:text-gold-text">Notifications</Link>

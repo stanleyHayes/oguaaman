@@ -3,19 +3,22 @@ import type { Member } from "./types";
 import { api } from "./api";
 import { getToken, setToken, hydrateToken } from "./storage";
 
+export interface JoinInput {
+  identifier: string;
+  displayName: string;
+  dateOfBirth: string;
+  password: string;
+}
+
 interface AuthState {
   member: Member | null;
   loading: boolean;
-  requestOtp: (identifier: string, displayName?: string, dateOfBirth?: string) => Promise<string | undefined>;
-  verify: (identifier: string, code: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
+  join: (input: JoinInput) => Promise<void>;
   signOut: () => void;
 }
 
 const Ctx = createContext<AuthState | null>(null);
-
-async function requestOtp(identifier: string, displayName?: string, dateOfBirth?: string) {
-  return (await api.requestOtp(identifier, displayName, dateOfBirth)).devCode;
-}
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [member, setMember] = useState<Member | null>(null);
@@ -36,8 +39,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     return () => { alive = false; };
   }, []);
 
-  const verify = useCallback(async (identifier: string, code: string) => {
-    const { token, member } = await api.verifyOtp(identifier, code);
+  const signIn = useCallback(async (identifier: string, password: string) => {
+    const { token, member } = await api.login(identifier, password);
+    setToken(token);
+    setMember(member);
+  }, []);
+  const join = useCallback(async (input: JoinInput) => {
+    const { token, member } = await api.register(input);
     setToken(token);
     setMember(member);
   }, []);
@@ -46,7 +54,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setMember(null);
   }, []);
 
-  const value = useMemo(() => ({ member, loading, requestOtp, verify, signOut }), [member, loading, verify, signOut]);
+  const value = useMemo(() => ({ member, loading, signIn, join, signOut }), [member, loading, signIn, join, signOut]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

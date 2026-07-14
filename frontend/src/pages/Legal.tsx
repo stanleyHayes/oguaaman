@@ -19,7 +19,7 @@ const DOCS: Record<string, Doc> = {
     sections: [
       { h: "Who we are", p: ["Oguaa is an independent community initiative for Cape Coast (Oguaa), Central Region, Ghana. This policy explains how we handle your information."] },
       { h: "What we collect", p: [
-        "A phone number or email, used only to send your one-time sign-in code and to contact you about your contributions.",
+        "A phone number or email, used to sign you in and to contact you about your contributions. Your password is stored only as a salted hash.",
         "Your date of birth, used once to confirm you are 18 or older. It is never shown to anyone and never published.",
         "A display name and any profile details you choose to add (quarter, Asafo, schools, bio).",
         "The listings, tributes, and reports you submit.",

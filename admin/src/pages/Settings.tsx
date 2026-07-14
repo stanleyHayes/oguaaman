@@ -62,8 +62,7 @@ export function Component() {
               {member && <RoleBadge role={member.role} />}
             </div>
             <p className="mt-2 text-sm text-ink-muted">
-              Oguaa is <b>passwordless</b> — there is no password to set. You sign in with a one-time code sent to your phone or email,
-              which is the spam-and-account-takeover guard that fits how Ghana already works (spec §8.1). Sessions last 30 days.
+              You sign in with your phone or email and a password (spec §8.1). Sessions last 30 days.
             </p>
             <p className="mt-2 text-xs text-ink-faint">To change your name, bio or photo, use your <Link to="/profile" className="font-medium text-ai underline">Profile</Link>.</p>
           </div>
@@ -80,7 +79,7 @@ export function Component() {
           <dl>
             <KeyVal label="AI daily limit (global)">OGUAA_AI_DAILY_BUDGET · 60/day</KeyVal>
             <KeyVal label="AI per-member limit">OGUAA_AI_PER_MEMBER · 20/day</KeyVal>
-            <KeyVal label="Sign-in">Passwordless OTP → JWT (AUTH_REQUIRED toggles enforcement)</KeyVal>
+            <KeyVal label="Sign-in">Password → JWT (AUTH_REQUIRED toggles enforcement)</KeyVal>
             <KeyVal label="SMS provider">OTP_PROVIDER · Hubtel (or dev log sender)</KeyVal>
             <KeyVal label="Image uploads">Cloudinary, or first-party /api/uploads</KeyVal>
             <KeyVal label="Languages">English (base) · Fante · Twi · Ga · Ewe</KeyVal>

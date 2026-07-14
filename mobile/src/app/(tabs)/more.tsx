@@ -92,7 +92,7 @@ export default function More() {
             {member ? (
               <>
                 <Text style={s.authName}>Signed in as {member.displayName}</Text>
-                <Text style={s.authRole}>{member.role} · phone verified</Text>
+                <Text style={s.authRole}>{member.role}</Text>
                 <Pressable onPress={() => router.push("/me")} style={s.authBtn}><Text style={s.authBtnText}>My profile &amp; connections</Text></Pressable>
                 <View style={s.authBtnRow}>
                   <Pressable onPress={() => router.push("/submit")} style={[s.authBtnOutline, { flex: 1 }]}><Text style={s.authBtnOutlineText}>Contribute</Text></Pressable>
@@ -157,7 +157,7 @@ export default function More() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.green900 },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(12,44,31,0.55)" },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(12,44,31,0.55)" },
   panel: {
     position: "absolute",
     top: 0,

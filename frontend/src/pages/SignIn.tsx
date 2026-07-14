@@ -9,7 +9,7 @@ const inputCls =
   "w-full rounded-xl border border-sand bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
 
 const TRUST_COMMON = [
-  "No passwords — a one-time code by SMS or email",
+  "One account across web & mobile",
   "Free to use, built for the people of Oguaa",
 ];
 
@@ -43,8 +43,8 @@ function BrandPanel({ mode }: Readonly<{ mode: Mode }>) {
         <h1 className="mt-3 text-4xl font-semibold leading-tight text-cream">Welcome home to Oguaa.</h1>
         <p className="mt-3 max-w-sm text-sm leading-relaxed text-cream/75">
           {isJoin
-            ? "Create your account with a phone or email. A one-time code verifies you — the spam gate that fits how Ghana already works."
-            : "Sign in with your phone or email. A one-time code verifies you — quick, passwordless, and built for Oguaa."}
+            ? "Create your account with a phone or email and a password — one account for the whole of Oguaa, on web and mobile."
+            : "Sign in with your phone or email and your password — one account across web & mobile, built for Oguaa."}
         </p>
         <ul className="mt-8 space-y-3">
           {trust.map((t) => (
@@ -83,133 +83,139 @@ function ModeTabs({ mode, onChange }: Readonly<{ mode: Mode; onChange: (m: Mode)
   );
 }
 
-function StepIndicator({ step }: Readonly<{ step: "id" | "code" }>) {
+const submitBtnCls =
+  "w-full rounded-full bg-green py-3 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
+
+function SignInForm({
+  identifier,
+  setIdentifier,
+  password,
+  setPassword,
+  busy,
+  err,
+  onSubmit,
+  onSwitchMode,
+}: Readonly<{
+  identifier: string;
+  setIdentifier: (v: string) => void;
+  password: string;
+  setPassword: (v: string) => void;
+  busy: boolean;
+  err: string | null;
+  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
+  onSwitchMode: (m: Mode) => void;
+}>) {
+  // The backend's specific 401 when the account exists but was never given a
+  // password — it must be claimed through Join.
+  const claimable = err != null && /no password yet/i.test(err);
   return (
-    <div className="mb-7 flex items-center gap-3" aria-hidden>
-      <span className="h-1.5 flex-1 rounded-full bg-gold-brand" />
-      <span className={`h-1.5 flex-1 rounded-full ${step === "code" ? "bg-gold-brand" : "bg-sand"}`} />
-    </div>
+    <form onSubmit={onSubmit} className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-semibold text-ink">Sign in</h2>
+        <p className="mt-1 text-sm text-ink-muted">Enter your phone or email and your password.</p>
+      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
+        <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="username" placeholder="+233… or you@email" className={inputCls} />
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" placeholder="Your password" className={inputCls} />
+      </label>
+      {err && (
+        <div className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">
+          <p>{err}</p>
+          {claimable && (
+            <button type="button" onClick={() => onSwitchMode("join")} className="mt-1 font-medium underline hover:text-clay">
+              Join to claim it →
+            </button>
+          )}
+        </div>
+      )}
+      <button type="submit" disabled={busy} className={submitBtnCls}>
+        {busy ? "Signing in…" : "Sign in"}
+      </button>
+      <p className="text-center text-xs text-ink-faint">
+        New here?{" "}
+        <button type="button" onClick={() => onSwitchMode("join")} className="font-medium text-ink-muted underline hover:text-ink">
+          Join instead
+        </button>
+      </p>
+    </form>
   );
 }
 
-function IdForm({
-  mode,
+function JoinForm({
   identifier,
   setIdentifier,
   name,
   setName,
   dob,
   setDob,
+  password,
+  setPassword,
   busy,
   err,
-  onSend,
+  onSubmit,
   onSwitchMode,
 }: Readonly<{
-  mode: Mode;
   identifier: string;
   setIdentifier: (v: string) => void;
   name: string;
   setName: (v: string) => void;
   dob: string;
   setDob: (v: string) => void;
+  password: string;
+  setPassword: (v: string) => void;
   busy: boolean;
   err: string | null;
-  onSend: (e: SubmitEvent<HTMLFormElement>) => void;
+  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   onSwitchMode: (m: Mode) => void;
 }>) {
-  const isJoin = mode === "join";
   return (
-    <form onSubmit={onSend} className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-5">
       <div>
-        <h2 className="text-2xl font-semibold text-ink">{isJoin ? "Join Oguaa" : "Sign in"}</h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          {isJoin
-            ? "Step 1 of 2 — tell us where to send your code."
-            : "Step 1 of 2 — enter your phone or email and we'll send a one-time code."}
-        </p>
+        <h2 className="text-2xl font-semibold text-ink">Join Oguaa</h2>
+        <p className="mt-1 text-sm text-ink-muted">Create your account — one password for web & mobile.</p>
       </div>
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink">Your name</span>
+        <input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" placeholder="Display name" className={inputCls} />
+      </label>
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
         <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="+233… or you@email" className={inputCls} />
       </label>
-      {isJoin && (
-        <>
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-ink">Your name <span className="font-normal text-ink-faint">(new members)</span></span>
-            <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Display name" className={inputCls} />
-          </label>
-          <div className="block">
-            <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth <span className="font-normal text-ink-faint">(new members)</span></span>
-            <DatePicker value={dob} onChange={setDob} max="2010-01-01" placeholder="dd/mm/yyyy" className="w-full" />
-            <span className="mt-1.5 block text-xs text-ink-faint">Oguaa is for ages 18 and over.</span>
-          </div>
-        </>
-      )}
+      <div className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth</span>
+        <DatePicker value={dob} onChange={setDob} max="2010-01-01" placeholder="dd/mm/yyyy" className="w-full" />
+        <span className="mt-1.5 block text-xs text-ink-faint">Oguaa is for ages 18 and over.</span>
+      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Choose a password" className={inputCls} />
+        <span className="mt-1.5 block text-xs text-ink-faint">At least 8 characters</span>
+      </label>
       {err && (
         <div className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">
           <p>{err}</p>
-          {!isJoin && /join|recognise|recognize/i.test(err) && (
-            <button type="button" onClick={() => onSwitchMode("join")} className="mt-1 font-medium underline hover:text-clay">
-              Join instead
+          {/already exists/i.test(err) && (
+            <button type="button" onClick={() => onSwitchMode("signin")} className="mt-1 font-medium underline hover:text-clay">
+              Sign in instead →
             </button>
           )}
         </div>
       )}
-      <button type="submit" disabled={busy} className="w-full rounded-full bg-green py-3 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60">
-        {busy ? "Sending…" : "Send my code →"}
+      <button type="submit" disabled={busy} className={submitBtnCls}>
+        {busy ? "Creating…" : "Create my account →"}
       </button>
-      {isJoin && (
-        <p className="text-center text-xs text-ink-faint">Try a seeded account: <code className="font-mono">akua-pratt@oguaa.test</code> (curator)</p>
-      )}
-    </form>
-  );
-}
-
-function CodeForm({
-  identifier,
-  code,
-  setCode,
-  devCode,
-  busy,
-  err,
-  onConfirm,
-  onBack,
-}: Readonly<{
-  identifier: string;
-  code: string;
-  setCode: (v: string) => void;
-  devCode: string | undefined;
-  busy: boolean;
-  err: string | null;
-  onConfirm: (e: SubmitEvent<HTMLFormElement>) => void;
-  onBack: () => void;
-}>) {
-  return (
-    <form onSubmit={onConfirm} className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-semibold text-ink">Check your messages</h2>
-        <p className="mt-1 text-sm text-ink-muted">Step 2 of 2 — we sent a 6-digit code to <b className="text-ink">{identifier}</b>.</p>
-      </div>
-      {devCode && (
-        <p className="rounded-lg border border-gold-border/40 bg-gold/[0.1] px-3 py-2 text-sm text-gold-text">
-          Dev mode — no SMS provider configured. Your code is <b className="font-mono">{devCode}</b>.
-        </p>
-      )}
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Verification code</span>
-        <input value={code} onChange={(e) => setCode(e.target.value)} required inputMode="numeric" placeholder="000000" className={`${inputCls} text-center font-mono text-lg tracking-[0.35em]`} />
-      </label>
-      {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-      <button type="submit" disabled={busy} className="w-full rounded-full bg-green py-3 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60">
-        {busy ? "Verifying…" : "Verify & sign in"}
-      </button>
-      <button type="button" onClick={onBack} className="w-full text-center text-sm text-ink-muted transition-colors hover:text-ink">← Use a different number</button>
+      <p className="text-center text-xs text-ink-faint">Try a seeded account: <code className="font-mono">akua-pratt@oguaa.test</code> (curator)</p>
     </form>
   );
 }
 
 export function Component() {
-  const { member, requestOtp, verify } = useAuth();
+  const { member, signIn, join } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
   const [params, setParams] = useSearchParams();
@@ -223,63 +229,50 @@ export function Component() {
     setParams(next, { replace: true });
   };
 
-  const [step, setStep] = useState<"id" | "code">("id");
   const [identifier, setIdentifier] = useState("");
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
-  const [code, setCode] = useState("");
-  const [devCode, setDevCode] = useState<string | undefined>();
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   if (member) return <Navigate to={from} replace />;
 
-  const resetStep = () => {
-    setStep("id");
-    setErr(null);
-    setDevCode(undefined);
-    setCode("");
-  };
-
   const switchMode = (m: Mode) => {
     setMode(m);
-    resetStep();
+    setErr(null);
+    setPassword("");
   };
 
-  const send = async (e: SubmitEvent<HTMLFormElement>) => {
+  const submitSignIn = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
-    if (mode === "join" && !dob) {
+    try {
+      await signIn(identifier.trim(), password);
+      nav(from, { replace: true });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Sign in failed.");
+    } finally { setBusy(false); }
+  };
+
+  const submitJoin = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setBusy(true); setErr(null);
+    if (!dob) {
       setErr("Please choose your date of birth.");
       setBusy(false);
       return;
     }
+    if (password.length < 8) {
+      setErr("Your password must be at least 8 characters.");
+      setBusy(false);
+      return;
+    }
     try {
-      const dc = await requestOtp(
-        identifier.trim(),
-        mode === "join" ? name.trim() || undefined : undefined,
-        mode === "join" ? dob || undefined : undefined,
-      );
-      setDevCode(dc);
-      if (dc) setCode(dc);
-      setStep("code");
-    } catch (e) {
-      let msg = e instanceof Error ? e.message : "Could not send a code.";
-      if (mode === "signin" && /date of birth to join/i.test(msg)) {
-        msg = "We don't recognise that email or phone. Join to create an account.";
-      }
-      setErr(msg);
-    } finally { setBusy(false); }
-  };
-
-  const confirm = async (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setBusy(true); setErr(null);
-    try {
-      await verify(identifier.trim(), code.trim());
+      await join({ identifier: identifier.trim(), displayName: name.trim(), dateOfBirth: dob, password });
       nav(from, { replace: true });
-    } catch {
-      setErr("That code is invalid or has expired.");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not create your account.");
     } finally { setBusy(false); }
   };
 
@@ -288,32 +281,32 @@ export function Component() {
       <div className="grid overflow-hidden rounded-[var(--radius-card)] border border-sand bg-paper shadow-[var(--shadow-card)] lg:grid-cols-2">
         <BrandPanel mode={mode} />
         <div className="p-8 lg:p-10">
-          <StepIndicator step={step} />
           <ModeTabs mode={mode} onChange={switchMode} />
-          {step === "id" ? (
-            <IdForm
-              mode={mode}
+          {mode === "signin" ? (
+            <SignInForm
+              identifier={identifier}
+              setIdentifier={setIdentifier}
+              password={password}
+              setPassword={setPassword}
+              busy={busy}
+              err={err}
+              onSubmit={submitSignIn}
+              onSwitchMode={switchMode}
+            />
+          ) : (
+            <JoinForm
               identifier={identifier}
               setIdentifier={setIdentifier}
               name={name}
               setName={setName}
               dob={dob}
               setDob={setDob}
+              password={password}
+              setPassword={setPassword}
               busy={busy}
               err={err}
-              onSend={send}
+              onSubmit={submitJoin}
               onSwitchMode={switchMode}
-            />
-          ) : (
-            <CodeForm
-              identifier={identifier}
-              code={code}
-              setCode={setCode}
-              devCode={devCode}
-              busy={busy}
-              err={err}
-              onConfirm={confirm}
-              onBack={resetStep}
             />
           )}
         </div>
