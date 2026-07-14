@@ -1,5 +1,6 @@
 import { Section, SectionHeading } from "@/components/ui";
 import { ListingCard } from "@/components/listing-card";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { useListings, type Listing } from "@/lib/listings";
 import {
   ARTISTS_FALLBACK,
@@ -49,11 +50,13 @@ function CommunityRow({ row }: Readonly<{ row: Row }>) {
           See all →
         </a>
       </div>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((listing) => (
-          <ListingCard key={listing.id} listing={listing} />
+      <Stagger className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((listing, i) => (
+          <StaggerItem key={listing.id} index={i} className="h-full">
+            <ListingCard listing={listing} />
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </div>
   );
 }

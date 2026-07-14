@@ -1,5 +1,6 @@
 import { NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation } from "react-router-dom";
 import { useEffect, useState, type ReactNode } from "react";
+import { motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
 
 interface NavItem { to: string; label: string; icon: IconName; end?: boolean }
@@ -142,14 +143,22 @@ export function AdminLayout() {
                     title={collapsed ? n.label : undefined}
                     className={({ isActive }) =>
                       [
-                        "group relative flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors",
+                        "group relative isolate flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors",
                         collapsed ? "lg:justify-center lg:px-0 px-3" : "px-3",
-                        isActive ? "bg-cream/[0.08] text-gold" : "text-cream/75 hover:bg-cream/10 hover:text-cream",
+                        isActive ? "text-gold" : "text-cream/75 hover:bg-cream/10 hover:text-cream",
                       ].join(" ")
                     }
                   >
                     {({ isActive }) => (
                       <>
+                        {isActive && (
+                          <motion.span
+                            layoutId="admin-nav-active"
+                            className="absolute inset-0 -z-10 rounded-lg bg-cream/[0.08]"
+                            transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                            aria-hidden
+                          />
+                        )}
                         {/* gold active indicator bar */}
                         <span className={`absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r bg-gold transition-opacity ${isActive ? "opacity-100" : "opacity-0"}`} aria-hidden />
                         <Icon name={n.icon} className={isActive ? "text-gold" : ""} />

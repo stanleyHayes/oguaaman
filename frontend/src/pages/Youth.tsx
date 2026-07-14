@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { OpportunityCard, PersonCard } from "@/components/cards";
+import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
@@ -56,14 +57,16 @@ function Spotlight({ talents }: Readonly<{ talents: Listing[] }>) {
   if (talents.length === 0) return null;
   return (
     <Container size="wide" className="py-12">
-      <SectionHeading
-        kicker="The next generation"
-        title="Young-talent spotlight"
-        lede="Bright young Oguaa minds and talents, celebrated publicly. Their profiles carry no contact details, by design."
-        accentClass="bg-teal"
-      />
+      <Reveal>
+        <SectionHeading
+          kicker="The next generation"
+          title="Young-talent spotlight"
+          lede="Bright young Oguaa minds and talents, celebrated publicly. Their profiles carry no contact details, by design."
+          accentClass="bg-teal"
+        />
+      </Reveal>
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {talents.map((p) => <PersonCard key={p.id} person={p} />)}
+        {talents.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}
       </div>
     </Container>
   );
@@ -75,12 +78,14 @@ function Board({ opps }: Readonly<{ opps: Listing[] }>) {
   return (
     <section className="bg-cream py-12">
       <Container size="wide">
-        <SectionHeading
-          kicker="Information & links only"
-          title="Opportunities board"
-          lede="Browse, then follow the outbound link to apply directly with the organisation. Oguaa does not handle applications, payments or interviews."
-          accentClass="bg-teal"
-        />
+        <Reveal>
+          <SectionHeading
+            kicker="Information & links only"
+            title="Opportunities board"
+            lede="Browse, then follow the outbound link to apply directly with the organisation. Oguaa does not handle applications, payments or interviews."
+            accentClass="bg-teal"
+          />
+        </Reveal>
         <FilterBar opps={opps} filter={filter} onChange={setFilter} />
         {shown.length === 0 ? (
           <p className="rounded-[var(--radius-card)] border border-dashed border-sand p-10 text-center text-sm text-ink-faint">
@@ -88,7 +93,7 @@ function Board({ opps }: Readonly<{ opps: Listing[] }>) {
           </p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((o) => <OpportunityCard key={o.id} opp={o} />)}
+            {shown.map((o, i) => <StaggerItem key={o.id} index={i} lift><OpportunityCard opp={o} /></StaggerItem>)}
           </div>
         )}
       </Container>
@@ -110,14 +115,15 @@ function FilterBar({ opps, filter, onChange }: Readonly<{ opps: Listing[]; filte
 
 function Chip({ label, active, onSelect }: Readonly<{ label: string; active: boolean; onSelect: () => void }>) {
   const cls = active
-    ? "border-teal bg-teal text-cream"
+    ? "border-teal text-cream"
     : "border-sand bg-cream text-ink-muted hover:border-teal/40";
   return (
     <button
       onClick={onSelect}
-      className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cls}`}
+      className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cls}`}
     >
-      {label}
+      {active && <LayoutPill layoutId="youth-kind" className="absolute inset-0 rounded-full bg-teal" />}
+      <span className="relative">{label}</span>
     </button>
   );
 }

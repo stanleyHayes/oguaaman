@@ -5,6 +5,7 @@ import { useApi } from "@/lib/use-api";
 import type { FestivalView, Listing } from "@/lib/types";
 import { C, serif, fillFor } from "@/theme";
 import { Loading, ErrorView, Thumb, Pill } from "@/ui";
+import { RevealView, StaggerIn } from "@/components/anim";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -54,14 +55,14 @@ export default function Festival() {
     <>
       <Stack.Screen options={{ title: data.name }} />
       <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-        <View style={s.hero}>
+        <RevealView style={s.hero}>
           {cover ? <Thumb seed={data.slug} src={cover} style={StyleSheet.absoluteFill} /> : null}
           <View style={s.heroShade}>
             <Text style={s.heroKicker}>THE LIVING ARCHIVE</Text>
             <Text style={s.heroTitle}>{data.name}</Text>
             {data.tagline ? <Text style={s.heroTagline}>{data.tagline}</Text> : null}
           </View>
-        </View>
+        </RevealView>
 
         <View style={s.body}>
           {data.history ? <Text style={s.history}>{data.history}</Text> : null}
@@ -73,7 +74,7 @@ export default function Festival() {
               const last = idx === data.editions.length - 1;
               const recapPill = ed.recap ? <Pill label="Recap" color={C.green} bg={C.cream} border={C.green} /> : null;
               return (
-                <View key={ed.year} style={s.tlRow}>
+                <StaggerIn key={ed.year} index={idx} style={s.tlRow}>
                   <View style={s.tlRail}>
                     <View style={s.tlDot} />
                     {!last && <View style={s.tlLine} />}
@@ -86,7 +87,7 @@ export default function Festival() {
                     {ed.events.map((e) => <ProgrammeList key={e.id} e={e} />)}
                     {ed.recap ? <Text style={s.recap}>{ed.recap}</Text> : null}
                   </View>
-                </View>
+                </StaggerIn>
               );
             })}
           </View>

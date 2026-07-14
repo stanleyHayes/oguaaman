@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Member } from "@/lib/types";
 import { PageHeader, Card, RoleBadge } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate, initials } from "@/lib/format";
 import { cldAvatar } from "@/lib/cloudinary";
 
@@ -70,9 +71,9 @@ export function Component() {
           <thead className="border-b border-sand bg-paper text-left text-xs uppercase tracking-wide text-ink-faint">
             <tr><th className="px-4 py-3">Member</th><th className="px-4 py-3 hidden sm:table-cell">Joined</th><th className="px-4 py-3">Role</th><th className="px-4 py-3 text-right">Manage</th></tr>
           </thead>
-          <tbody>
-            {rows.map((m) => (
-              <tr key={m.id} className={`border-b border-sand last:border-0 ${m.suspended ? "opacity-55" : ""}`}>
+          <Stagger as="tbody">
+            {rows.map((m, idx) => (
+              <StaggerItem as="tr" key={m.id} index={idx} className={`border-b border-sand last:border-0 ${m.suspended ? "opacity-55" : ""}`}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {m.photoUrl
@@ -96,9 +97,9 @@ export function Component() {
                     </button>
                   </div>
                 </td>
-              </tr>
+              </StaggerItem>
             ))}
-          </tbody>
+          </Stagger>
         </table>
       </Card>
       <p className="mt-3 text-xs text-ink-faint">Role assignment and suspension are steward actions (spec §9, §8.10). Changes persist to MongoDB.</p>

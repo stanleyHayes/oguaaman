@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
+import Animated from "react-native-reanimated";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { MemberView } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
+import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 
 function FollowButton({ slug }: Readonly<{ slug: string }>) {
   const { member } = useAuth();
@@ -57,6 +59,7 @@ function roleLabel(role: string): string {
 export default function MemberProfile() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<MemberView>(() => api.member(slug), `member:${slug}`);
+  const { scrollY, onScroll } = useHeroParallax();
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
 
@@ -75,30 +78,32 @@ export default function MemberProfile() {
   return (
     <>
       <Stack.Screen options={{ title: m.displayName }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
+      <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
         <View style={s.header}>
-          {m.photoUrl ? (
-            <Thumb seed={m.slug} src={m.photoUrl} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
-          ) : (
-            <View style={s.avatar}><Text style={s.avatarText}>{m.initials || initials(m.displayName)}</Text></View>
-          )}
-          <Text style={s.name}>{m.displayName}</Text>
-          <Text style={s.role}>{roleLabel(m.role)}{m.joinedAt ? ` · joined ${m.joinedAt}` : ""}</Text>
-          {m.bio ? <Text style={s.bio}>{m.bio}</Text> : null}
-          {(quarter || asafo || stints.length > 0) && (
-            <View style={s.chipRow}>
-              {quarter ? <View style={s.chip}><Text style={s.chipText}>{quarter.name}</Text></View> : null}
-              {asafo ? <View style={s.chip}><Text style={s.chipText}>{asafo.name}</Text></View> : null}
-              {stints.map((label) => (
-                <View key={label} style={s.chip}><Text style={s.chipText}>{label}</Text></View>
-              ))}
-            </View>
-          )}
-          <FollowButton slug={m.slug} />
+          <HeroParallax scrollY={scrollY} style={{ width: "100%", alignItems: "center" }}>
+            {m.photoUrl ? (
+              <Thumb seed={m.slug} src={m.photoUrl} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
+            ) : (
+              <View style={s.avatar}><Text style={s.avatarText}>{m.initials || initials(m.displayName)}</Text></View>
+            )}
+            <Text style={s.name}>{m.displayName}</Text>
+            <Text style={s.role}>{roleLabel(m.role)}{m.joinedAt ? ` · joined ${m.joinedAt}` : ""}</Text>
+            {m.bio ? <Text style={s.bio}>{m.bio}</Text> : null}
+            {(quarter || asafo || stints.length > 0) && (
+              <View style={s.chipRow}>
+                {quarter ? <View style={s.chip}><Text style={s.chipText}>{quarter.name}</Text></View> : null}
+                {asafo ? <View style={s.chip}><Text style={s.chipText}>{asafo.name}</Text></View> : null}
+                {stints.map((label) => (
+                  <View key={label} style={s.chip}><Text style={s.chipText}>{label}</Text></View>
+                ))}
+              </View>
+            )}
+            <FollowButton slug={m.slug} />
+          </HeroParallax>
         </View>
 
         <View style={s.body}>
-          <View style={s.sectionCard}>
+          <RevealView style={s.sectionCard}>
             <Text style={s.sectionTitle}>Contributions</Text>
             <Text style={s.sectionHelp}>Everything {m.displayName.split(" ")[0]} has shared with the town.</Text>
             {published.length === 0 && <Text style={s.empty}>No public contributions yet.</Text>}
@@ -111,9 +116,9 @@ export default function MemberProfile() {
                 </View>
               </View>
             ))}
-          </View>
+          </RevealView>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </>
   );
 }

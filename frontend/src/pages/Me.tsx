@@ -8,6 +8,7 @@ import { ImageUpload } from "@/components/image-upload";
 import { SchoolingEditor, PeopleYouMayKnow } from "@/components/connections";
 import { formatDate, initials } from "@/lib/format";
 import { Thumb } from "@/components/cards";
+import { StaggerItem } from "@/components/motion";
 import { ProfileSkeleton } from "@/components/skeleton";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -252,7 +253,7 @@ export function Component() {
 
       <Container size="wide" className="py-8 sm:py-10">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {QUICK_ACTIONS.map((a) => <QuickAction key={a.to} {...a} />)}
+          {QUICK_ACTIONS.map((a, i) => <StaggerItem key={a.to} index={i}><QuickAction {...a} /></StaggerItem>)}
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.7fr_1fr] lg:items-start">

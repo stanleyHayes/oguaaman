@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Section, Container, Eyebrow, Pill, CTA as Cta } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
+import { CircularReveal, Reveal } from "@/components/motion";
 import { PORTAL_APP_URL, IOS_URL, ANDROID_URL } from "@/config";
 
 /**
@@ -88,7 +89,7 @@ export function Download() {
 
       <Container size="wide" className="relative">
         <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
-          <div className="rise">
+          <Reveal>
             <Eyebrow className="mb-4 text-gold/80">YƐNKAE — CARRY IT WITH YOU</Eyebrow>
 
             <h2 className="text-4xl font-semibold leading-[1.05] text-cream sm:text-5xl lg:text-6xl">
@@ -135,7 +136,7 @@ export function Download() {
               Your privacy is part of the build: members connect, but phone numbers
               are never shown. Verified institutions only.
             </p>
-          </div>
+          </Reveal>
 
           <ScanPanel />
         </div>
@@ -171,8 +172,9 @@ function StoreButton({ href, glyph, topLine, bottomLine, ariaLabel }: Readonly<S
 
 function ScanPanel() {
   return (
-    <div className="rise rise-2 flex justify-center lg:justify-end">
-      <div className="relative w-full max-w-xs rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.05] p-6 text-center shadow-[var(--shadow-lift)] backdrop-blur-sm">
+    <div className="flex justify-center lg:justify-end">
+      <CircularReveal className="relative w-full max-w-xs">
+      <div className="relative rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.05] p-6 text-center shadow-[var(--shadow-lift)] backdrop-blur-sm">
         <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-gold/80">
           Scan to open
         </p>
@@ -195,6 +197,7 @@ function ScanPanel() {
         </p>
         <p className="mt-2 font-serif text-sm italic text-gold/85">Akwaaba — welcome home.</p>
       </div>
+      </CircularReveal>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { EventCard } from "@/components/cards";
 import { EventCalendar } from "@/components/event-calendar";
+import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { cldCover } from "@/lib/cloudinary";
@@ -32,9 +33,10 @@ function ViewToggle({ view, onChange }: Readonly<{ view: EventsView; onChange: (
           type="button"
           aria-pressed={view === o.id}
           onClick={() => onChange(o.id)}
-          className={`rounded-full px-4 py-1 text-sm font-semibold transition-colors ${view === o.id ? "bg-green text-cream" : "text-ink-muted hover:text-ink"}`}
+          className={`relative rounded-full px-4 py-1 text-sm font-semibold transition-colors ${view === o.id ? "text-cream" : "text-ink-muted hover:text-ink"}`}
         >
-          {o.label}
+          {view === o.id && <LayoutPill layoutId="events-view" className="absolute inset-0 rounded-full bg-green" />}
+          <span className="relative">{o.label}</span>
         </button>
       ))}
     </fieldset>
@@ -75,15 +77,15 @@ export function Component() {
       </PageHero>
       <Container size="wide" className="py-12">
         {anchor && (anchor.details.festival
-          ? <Link to={`/festivals/${anchor.details.festival}`} className={anchorClass}>{anchorBody}</Link>
-          : <article className={anchorClass}>{anchorBody}</article>
+          ? <Reveal><Link to={`/festivals/${anchor.details.festival}`} className={anchorClass}>{anchorBody}</Link></Reveal>
+          : <Reveal><article className={anchorClass}>{anchorBody}</article></Reveal>
         )}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-semibold text-ink">{view === "list" ? "Coming up" : "Calendar"}</h2>
           <ViewToggle view={view} onChange={setView} />
         </div>
         {view === "list" ? (
-          <div className="grid gap-4 sm:grid-cols-2">{rest.map((e) => <EventCard key={e.id} event={e} />)}</div>
+          <div className="grid gap-4 sm:grid-cols-2">{rest.map((e, i) => <StaggerItem key={e.id} index={i} lift><EventCard event={e} /></StaggerItem>)}</div>
         ) : (
           <EventCalendar events={all} />
         )}

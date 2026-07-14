@@ -1,6 +1,7 @@
 import { Container, CTA as Cta, Eyebrow } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
+import { CircularReveal, Parallax, Stagger, StaggerItem } from "@/components/motion";
 import { PORTAL_APP_URL } from "@/config";
 
 /**
@@ -16,40 +17,48 @@ export function Hero() {
       className="relative isolate overflow-hidden bg-green-900 text-cream on-dark"
     >
       {/* Texture + warm glow */}
-      <div className="bg-contours absolute inset-0 -z-10" aria-hidden />
+      <Parallax className="absolute -inset-16 -z-10" distance={40} aria-hidden>
+        <div className="bg-contours h-full w-full" />
+      </Parallax>
       <div
         className="absolute inset-0 -z-10 bg-gradient-to-b from-green-900 via-green-900 to-green/60"
         aria-hidden
       />
-      <div
-        className="absolute -right-24 -top-24 -z-10 h-[36rem] w-[36rem] rounded-full bg-gold/10 blur-3xl"
-        aria-hidden
-      />
+      <Parallax className="absolute -right-24 -top-24 -z-10 h-[36rem] w-[36rem]" distance={70} aria-hidden>
+        <div className="h-full w-full rounded-full bg-gold/10 blur-3xl" />
+      </Parallax>
 
       <Container size="wide" className="relative">
         <div className="grid min-h-[88vh] grid-cols-1 items-center gap-12 py-24 sm:py-28 lg:min-h-[92vh] lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           {/* ---- Left: the message ---- */}
-          <div className="max-w-2xl">
-            <div className="rise">
+          <Stagger className="max-w-2xl">
+            <StaggerItem index={0}>
               <Wordmark size="text-xl" />
-            </div>
+            </StaggerItem>
 
-            <Eyebrow className="rise rise-2 mt-8 text-gold/80">
-              Oguaa · Cape Coast, Ghana
-            </Eyebrow>
+            <StaggerItem index={1}>
+              <Eyebrow className="mt-8 text-gold/80">
+                Oguaa · Cape Coast, Ghana
+              </Eyebrow>
+            </StaggerItem>
 
-            <h1 className="rise rise-2 mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-cream sm:text-5xl lg:text-[3.75rem]">
-              The home of{" "}
-              <span className="text-gradient-gold">Cape Coast</span>.
-            </h1>
+            <StaggerItem index={2}>
+              <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-cream sm:text-5xl lg:text-[3.75rem]">
+                The home of{" "}
+                <span className="text-gradient-gold">Cape Coast</span>.
+              </h1>
+            </StaggerItem>
 
-            <p className="rise rise-3 mt-6 max-w-xl font-serif text-lg leading-relaxed text-cream/80 sm:text-xl">
-              A living gathering-place for its music, people, heritage, schools
-              and the ones we remember. Built by Cape Coasters at home and in the
-              diaspora — made by us, for us.
-            </p>
+            <StaggerItem index={3}>
+              <p className="mt-6 max-w-xl font-serif text-lg leading-relaxed text-cream/80 sm:text-xl">
+                A living gathering-place for its music, people, heritage, schools
+                and the ones we remember. Built by Cape Coasters at home and in the
+                diaspora — made by us, for us.
+              </p>
+            </StaggerItem>
 
-            <div className="rise rise-3 mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <StaggerItem index={4}>
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Cta href={PORTAL_APP_URL} variant="gold" external>
                 Open the web app
                 <svg
@@ -69,15 +78,18 @@ export function Hero() {
               <Cta href="#get" variant="outline-dark">
                 Get the mobile app
               </Cta>
-            </div>
+              </div>
+            </StaggerItem>
 
-            <p className="rise rise-4 mt-6 font-mono text-xs tracking-wide text-cream/55">
-              Free · Community-owned · Your number stays private.
-            </p>
-          </div>
+            <StaggerItem index={5}>
+              <p className="mt-6 font-mono text-xs tracking-wide text-cream/55">
+                Free · Community-owned · Your number stays private.
+              </p>
+            </StaggerItem>
+          </Stagger>
 
           {/* ---- Right: the portal card mock (lg+) ---- */}
-          <div className="rise rise-3 relative hidden lg:block" aria-hidden>
+          <div className="relative hidden lg:block" aria-hidden>
             {/* Atlantic sun + waves motif behind the card */}
             <svg
               className="absolute -top-10 right-2 h-40 w-40 text-gold/70"
@@ -112,7 +124,8 @@ export function Hero() {
               />
             </svg>
 
-            <div className="relative ml-auto w-full max-w-md rounded-[var(--radius-card)] border border-cream/15 bg-green/40 p-6 shadow-[var(--shadow-lift)] backdrop-blur-sm">
+            <CircularReveal className="relative ml-auto w-full max-w-md">
+            <div className="relative rounded-[var(--radius-card)] border border-cream/15 bg-green/40 p-6 shadow-[var(--shadow-lift)] backdrop-blur-sm">
               {/* Card chrome */}
               <div className="flex items-center justify-between border-b border-cream/10 pb-4">
                 <Wordmark size="text-lg" markTone="text-gold" />
@@ -173,6 +186,7 @@ export function Hero() {
                 </span>
               </div>
             </div>
+            </CircularReveal>
 
             {/* Floating accent mark */}
             <span className="absolute -bottom-6 -left-6 grid h-16 w-16 place-items-center rounded-full border border-gold/30 bg-green-900 text-gold shadow-[var(--shadow-lift)]">

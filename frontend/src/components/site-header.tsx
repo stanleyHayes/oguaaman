@@ -1,8 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Wordmark } from "./wordmark";
 import { NotificationsBell } from "./notifications-bell";
 import { LanguageSwitcher } from "./language-switcher";
+import { LayoutPill } from "./motion";
 import { SECTIONS, TONES, type NavSection } from "@/lib/sections";
 import { useAuth } from "@/lib/auth";
 import { useLang, sectionLabel } from "@/lib/i18n";
@@ -115,9 +117,19 @@ function SectionMenuItem({ s, lang, onClick }: Readonly<{ s: NavSection; lang: R
 }
 
 const navPill = (active: boolean) =>
-  `inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm transition-colors ${
-    active ? "bg-gold-brand font-semibold text-green-900" : "text-cream/85 hover:bg-cream/10 hover:text-cream"
+  `relative inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm transition-colors ${
+    active ? "font-semibold text-green-900" : "text-cream/85 hover:bg-cream/10 hover:text-cream"
   }`;
+
+/** Pill label + the shared-layout gold background that slides between active entries. */
+function PillLabel({ active, children }: Readonly<{ active: boolean; children: ReactNode }>) {
+  return (
+    <>
+      {active && <LayoutPill layoutId="nav-pill" className="absolute inset-0 rounded-full bg-gold-brand" />}
+      <span className="relative inline-flex items-center gap-1">{children}</span>
+    </>
+  );
+}
 
 /** One grouped entry in the desktop pill nav: trigger + menu of sections. */
 function NavDropdown({ label, active, items, lang }: Readonly<{ label: string; active: boolean; items: NavSection[]; lang: ReturnType<typeof useLang>["lang"] }>) {
@@ -128,7 +140,7 @@ function NavDropdown({ label, active, items, lang }: Readonly<{ label: string; a
   return (
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu">
-        <span className={navPill(active || open)}>{label} <Chevron open={open} /></span>
+        <span className={navPill(active || open)}><PillLabel active={active || open}>{label} <Chevron open={open} /></PillLabel></span>
       </button>
       {open && (
         <div className="absolute left-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]" role="menu">
@@ -159,6 +171,12 @@ export function SiteHeader() {
   const groupActive = (items: NavSection[]) => items.some((s) => isActive(s.href));
   const firstName = member?.displayName.split(/\s+/)[0];
   const initials = member ? member.displayName.split(/\s+/).slice(0, 2).map((w) => w[0]).join("") : "";
+  const musicActive = isActive("/music");
+  const festivalsActive = isActive("/festivals");
+  const memoriamActive = isActive("/memoriam");
+  const discoverActive = groupActive(DISCOVER);
+  const cityActive = groupActive(CITY);
+  const noticesActive = groupActive(NOTICES);
 
   return (
     <header className="on-dark sticky top-0 z-40 border-b border-cream/10 bg-green text-cream">
@@ -169,12 +187,12 @@ export function SiteHeader() {
 
         {/* desktop nav — one pill track, six top-level entries max */}
         <nav className="hidden items-center gap-0.5 rounded-full border border-cream/15 bg-cream/[0.06] p-1 lg:flex">
-          <Link to="/music" className={navPill(isActive("/music"))}>{sectionLabel(byId.music, lang)}</Link>
-          <Link to="/festivals" className={navPill(isActive("/festivals"))}>{sectionLabel(byId.festivals, lang)}</Link>
-          <NavDropdown label="Discover" active={groupActive(DISCOVER)} items={DISCOVER} lang={lang} />
-          <NavDropdown label="City" active={groupActive(CITY)} items={CITY} lang={lang} />
-          <NavDropdown label="Notices" active={groupActive(NOTICES)} items={NOTICES} lang={lang} />
-          <Link to="/memoriam" className={navPill(isActive("/memoriam"))}>{sectionLabel(byId.memoriam, lang)}</Link>
+          <Link to="/music" className={navPill(musicActive)}><PillLabel active={musicActive}>{sectionLabel(byId.music, lang)}</PillLabel></Link>
+          <Link to="/festivals" className={navPill(festivalsActive)}><PillLabel active={festivalsActive}>{sectionLabel(byId.festivals, lang)}</PillLabel></Link>
+          <NavDropdown label="Discover" active={discoverActive} items={DISCOVER} lang={lang} />
+          <NavDropdown label="City" active={cityActive} items={CITY} lang={lang} />
+          <NavDropdown label="Notices" active={noticesActive} items={NOTICES} lang={lang} />
+          <Link to="/memoriam" className={navPill(memoriamActive)}><PillLabel active={memoriamActive}>{sectionLabel(byId.memoriam, lang)}</PillLabel></Link>
         </nav>
 
         {/* right cluster */}
@@ -235,8 +253,16 @@ export function SiteHeader() {
       </div>
 
       {/* mobile drawer — same groups as the desktop pill nav */}
+      <AnimatePresence initial={false}>
       {open && (
-        <div className="border-t border-cream/10 bg-green-900 lg:hidden">
+        <motion.div
+          key="mobile-drawer"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          className="overflow-hidden border-t border-cream/10 bg-green-900 lg:hidden"
+        >
           <nav className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6">
             <DrawerGroup
               heading="Top picks"
@@ -270,8 +296,9 @@ export function SiteHeader() {
               </button>
             )}
           </nav>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </header>
   );
 }

@@ -3,6 +3,7 @@ import { useLoaderData, useNavigate, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { NewsArticle } from "@/lib/types";
 import { PageHeader, Card, Empty } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
 
@@ -80,9 +81,10 @@ export function Component() {
           {list.length === 0 ? "The Newsroom is empty. Write Cape Coast's first notice." : "Try a different search or filter."}
         </Empty>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((a) => (
-            <Card key={a.id} className="overflow-hidden transition-shadow hover:shadow-[var(--shadow-lift,0_8px_24px_rgba(0,0,0,0.08))]">
+        <Stagger className="space-y-3">
+          {filtered.map((a, idx) => (
+            <StaggerItem key={a.id} index={idx}>
+              <Card className="overflow-hidden transition-shadow hover:shadow-[var(--shadow-lift,0_8px_24px_rgba(0,0,0,0.08))]">
               <button onClick={() => navigate(`/newsroom/${a.id}`)} className="flex w-full items-center gap-4 p-3 text-left">
                 <Cover a={a} />
                 <div className="min-w-0 flex-1">
@@ -101,8 +103,9 @@ export function Component() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-ink-faint" aria-hidden><path d="M9 6l6 6-6 6" /></svg>
               </button>
             </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       )}
     </>
   );

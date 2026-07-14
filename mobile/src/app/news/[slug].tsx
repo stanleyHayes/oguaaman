@@ -6,6 +6,7 @@ import type { NewsArticle } from "@/lib/types";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView, Markdown } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
+import { RevealView } from "@/components/anim";
 
 function newsDate(a: NewsArticle): string {
   const raw = a.publishedAt ?? a.createdAt;
@@ -23,7 +24,7 @@ export default function Article() {
 
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-      <View style={s.hero}>
+      <RevealView style={s.hero}>
         {data.coverImageUrl ? (
           <Image source={{ uri: cldCover(data.coverImageUrl, 800) }} resizeMode="cover" style={StyleSheet.absoluteFill} />
         ) : (
@@ -38,13 +39,13 @@ export default function Article() {
             <Text style={s.byline}>By {data.authorName} · {newsDate(data)}</Text>
           </View>
         </View>
-      </View>
+      </RevealView>
 
-      <View style={s.body}>
+      <RevealView delay={100} style={s.body}>
         {data.summary ? <Text style={s.summary}>{data.summary}</Text> : null}
         <View style={s.divider} />
         <Markdown>{data.body}</Markdown>
-      </View>
+      </RevealView>
     </ScrollView>
   );
 }

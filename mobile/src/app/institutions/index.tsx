@@ -6,6 +6,7 @@ import type { Organization } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
+import { StaggerIn } from "@/components/anim";
 
 const KIND_LABEL: Record<string, string> = {
   school: "School",
@@ -28,9 +29,10 @@ export default function Institutions() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
     >
       <Text style={s.lede}>The official institutions of Cape Coast — schools, the traditional council, churches, the Asafo companies and civic bodies. Each keeps a verified page.</Text>
-      {data.map((o) => (
-          <Link key={o.id} href={`/institutions/${o.slug}`} asChild>
-            <Pressable style={s.card}>
+      {data.map((o, i) => (
+          <StaggerIn key={o.id} index={i}>
+            <Link href={`/institutions/${o.slug}`} asChild>
+              <Pressable style={s.card}>
               {o.crestUrl ? (
                 <Image source={{ uri: cldCover(o.crestUrl, 120) }} resizeMode="cover" style={s.crest} />
               ) : (
@@ -49,8 +51,9 @@ export default function Institutions() {
                 {o.motto ? <Text style={s.motto} numberOfLines={1}>{o.motto}</Text> : null}
               </View>
               <Text style={s.chevron}>›</Text>
-            </Pressable>
-          </Link>
+              </Pressable>
+            </Link>
+          </StaggerIn>
       ))}
     </ScrollView>
   );

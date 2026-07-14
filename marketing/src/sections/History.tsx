@@ -1,5 +1,6 @@
 import { Section, SectionHeading } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
+import { Stagger, StaggerItem } from "@/components/motion";
 
 /**
  * The story of Oguaa — the heart of the marketing site. This page is about Cape
@@ -73,9 +74,9 @@ export function History() {
         lede="Cape Coast — Oguaa — is one of the oldest and most storied towns in Ghana: a Fante market that became a castle, a colonial capital, the nation's Citadel of Education, and a place of return for the African diaspora. This is its story; Oguaa the platform only keeps it."
       />
 
-      <ol className="relative mt-14 space-y-10 border-l-2 border-sand pl-6 sm:pl-8">
-        {TIMELINE.map((m) => (
-          <li key={m.year} className="relative">
+      <Stagger as="ol" className="relative mt-14 space-y-10 border-l-2 border-sand pl-6 sm:pl-8">
+        {TIMELINE.map((m, i) => (
+          <StaggerItem as="li" key={m.year} index={i} className="relative">
             <span
               className={`absolute -left-[33px] mt-1 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-paper sm:-left-[41px] ${
                 m.sober ? "bg-maroon-900" : "bg-gold-brand"
@@ -87,9 +88,9 @@ export function History() {
             </p>
             <h3 className="mt-1 text-2xl font-semibold text-ink">{m.title}</h3>
             <p className="mt-2 max-w-2xl leading-relaxed text-ink-muted">{m.text}</p>
-          </li>
+          </StaggerItem>
         ))}
-      </ol>
+      </Stagger>
 
       <SymbolDivider name="sankofa" className="mt-16" />
       <p className="mx-auto mt-5 max-w-xl text-center font-serif text-base italic text-ink-muted">

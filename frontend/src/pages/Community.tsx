@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { OpportunityCard, MemoryCard, EventCard } from "@/components/cards";
+import { Reveal, StaggerItem } from "@/components/motion";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 interface Data {
@@ -27,26 +28,26 @@ export function Component() {
       </PageHero>
 
       <Container size="wide" className="py-12">
-        <SectionHeading kicker="Youth opportunities · information & links only" title="Open doors for the young" lede="Scholarships, internships, apprenticeships, training and jobs. Browse and follow the outbound link to apply — no private adult-to-minor contact runs through the platform." accentClass="bg-teal" />
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{opps.map((o) => <OpportunityCard key={o.id} opp={o} />)}</div>
+        <Reveal><SectionHeading kicker="Youth opportunities · information & links only" title="Open doors for the young" lede="Scholarships, internships, apprenticeships, training and jobs. Browse and follow the outbound link to apply — no private adult-to-minor contact runs through the platform." accentClass="bg-teal" /></Reveal>
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{opps.map((o, i) => <StaggerItem key={o.id} index={i} lift><OpportunityCard opp={o} /></StaggerItem>)}</div>
       </Container>
 
       <section className="bg-cream py-12">
         <Container size="wide">
           <div className="flex items-end justify-between gap-4">
-            <SectionHeading kicker="Heritage, preserved" title="The Memory Wall" accentClass="bg-gold-brand" />
+            <Reveal><SectionHeading kicker="Heritage, preserved" title="The Memory Wall" accentClass="bg-gold-brand" /></Reveal>
             <Link to="/submit?type=memory" className="shrink-0 text-sm font-semibold text-gold-text hover:underline">Share a memory →</Link>
           </div>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{memories.map((m) => <MemoryCard key={m.id} memory={m} />)}</div>
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{memories.map((m, i) => <StaggerItem key={m.id} index={i} lift><MemoryCard memory={m} /></StaggerItem>)}</div>
         </Container>
       </section>
 
       <Container size="wide" className="py-12">
         <div className="flex items-end justify-between gap-4">
-          <SectionHeading kicker="What's on" title="Upcoming events" accentClass="bg-teal" />
+          <Reveal><SectionHeading kicker="What's on" title="Upcoming events" accentClass="bg-teal" /></Reveal>
           <Link to="/events" className="shrink-0 text-sm font-semibold text-teal-text hover:underline">Full calendar →</Link>
         </div>
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">{events.map((e) => <EventCard key={e.id} event={e} />)}</div>
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">{events.map((e, i) => <StaggerItem key={e.id} index={i} lift><EventCard event={e} /></StaggerItem>)}</div>
       </Container>
 
       <section id="join" className="on-dark bg-green py-16 text-cream">

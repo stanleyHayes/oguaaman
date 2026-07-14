@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
+import Animated from "react-native-reanimated";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
@@ -8,6 +9,7 @@ import type { LostFound, LostFoundStatus } from "@/lib/types";
 import { KIND_LABEL, LF_STATUS_LABEL } from "@/lib/lostfound";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
+import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -30,6 +32,7 @@ export default function LostFoundDetail() {
 
 function Detail({ notice }: Readonly<{ notice: LostFound }>) {
   const { member } = useAuth();
+  const { scrollY, onScroll } = useHeroParallax();
   const d = notice.details;
   const missing = d.kind === "missing_person";
   const [lfStatus, setLfStatus] = useState<LostFoundStatus>(d.lfStatus);
@@ -39,21 +42,23 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
   return (
     <>
       <Stack.Screen options={{ title: "Lost & Found" }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
+      <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
         <View style={[s.hero, { backgroundColor: missing ? C.maroon : C.teal }]}>
-          <Text style={s.heroKicker}>LOST &amp; FOUND · {(KIND_LABEL[d.kind] ?? d.kind).toUpperCase()}</Text>
-          <Text style={s.heroTitle}>{notice.title}</Text>
-          <View style={s.heroChipRow}>
-            <View style={s.heroChip}>
-              <Text style={s.heroChipText}>{LF_STATUS_LABEL[lfStatus] ?? lfStatus}</Text>
+          <HeroParallax scrollY={scrollY}>
+            <Text style={s.heroKicker}>LOST &amp; FOUND · {(KIND_LABEL[d.kind] ?? d.kind).toUpperCase()}</Text>
+            <Text style={s.heroTitle}>{notice.title}</Text>
+            <View style={s.heroChipRow}>
+              <View style={s.heroChip}>
+                <Text style={s.heroChipText}>{LF_STATUS_LABEL[lfStatus] ?? lfStatus}</Text>
+              </View>
             </View>
-          </View>
+          </HeroParallax>
         </View>
 
         <View style={s.body}>
           {d.description ? <Text style={s.desc}>{d.description}</Text> : null}
 
-          <View style={s.facts}>
+          <RevealView delay={100} style={s.facts}>
             {d.lastSeenLocation ? (
               <View style={s.factRow}>
                 <Text style={s.factLabel}>{locationLabel(d, missing)}</Text>
@@ -64,13 +69,13 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
               <View style={s.factRow}><Text style={s.factLabel}>WHEN</Text><Text style={s.factValue}>{fmtDate(d.lastSeenDate)}</Text></View>
             ) : null}
             <View style={s.factRow}><Text style={s.factLabel}>POSTED</Text><Text style={s.factValue}>{fmtDate(notice.createdAt)}</Text></View>
-          </View>
+          </RevealView>
 
-          <View style={[s.contactBox, missing && { borderColor: C.maroon }]}>
+          <RevealView delay={160} style={[s.contactBox, missing && { borderColor: C.maroon }]}>
             <Text style={s.contactLabel}>CONTACT</Text>
             <Text style={s.contactValue}>{d.contact}</Text>
             <Text style={s.contactHint}>{missing ? "Any information, however small — reach out." : "Reach out directly to arrange a handover."}</Text>
-          </View>
+          </RevealView>
 
           {canResolve && lfStatus === "open" && (
             <ResolveBox slug={notice.slug} missing={missing} onResolved={setLfStatus} />
@@ -86,7 +91,7 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
             {isOwner ? "You posted this notice." : "Only the person who posted this notice or a curator can resolve it."}
           </Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </>
   );
 }

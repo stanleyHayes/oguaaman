@@ -3,6 +3,8 @@ import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Listing, Pledge, PledgeTotals } from "@/lib/types";
 import { PageHeader, Card, Empty, Pill, StatCard } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
+import { motion } from "motion/react";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -51,31 +53,38 @@ export function Component() {
       {projects.length === 0 ? (
         <Empty title="No open campaigns">Approve a project listing and it appears here with its funding progress.</Empty>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {projects.map((p) => {
+        <Stagger className="grid gap-4 sm:grid-cols-2">
+          {projects.map((p, idx) => {
             const goal = (p.details.goalPesewas as number) ?? 0;
             const raised = (p.details.raisedPesewas as number) ?? 0;
             const pct = goal ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
             return (
-              <Card key={p.id} className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="truncate text-lg font-semibold text-ink">{p.title}</h3>
-                    {typeof p.details.organiser === "string" && <p className="text-xs text-gold-text">{p.details.organiser}</p>}
+              <StaggerItem key={p.id} index={idx}>
+                <Card className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-lg font-semibold text-ink">{p.title}</h3>
+                      {typeof p.details.organiser === "string" && <p className="text-xs text-gold-text">{p.details.organiser}</p>}
+                    </div>
+                    <Pill tone="green">{pct}%</Pill>
                   </div>
-                  <Pill tone="green">{pct}%</Pill>
-                </div>
-                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-sand">
-                  <div className="h-full rounded-full bg-green" style={{ width: `${pct}%` }} />
-                </div>
-                <p className="mt-2 text-sm text-ink-muted">
-                  <b className="text-green">{cedis(raised)}</b> of {cedis(goal)} · {(p.details.backers as number) ?? 0} backers
-                  {typeof p.details.deadline === "string" && <span className="text-ink-faint"> · closes {p.details.deadline}</span>}
-                </p>
-              </Card>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-sand">
+                    <motion.div
+                      className="h-full rounded-full bg-green"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.7, ease: "easeOut" }}
+                    />
+                  </div>
+                  <p className="mt-2 text-sm text-ink-muted">
+                    <b className="text-green">{cedis(raised)}</b> of {cedis(goal)} · {(p.details.backers as number) ?? 0} backers
+                    {typeof p.details.deadline === "string" && <span className="text-ink-faint"> · closes {p.details.deadline}</span>}
+                  </p>
+                </Card>
+              </StaggerItem>
             );
           })}
-        </div>
+        </Stagger>
       )}
 
       {/* pledge ledger */}
@@ -114,9 +123,9 @@ export function Component() {
                 <th className="px-4 py-3">Reference</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-sand">
-              {shown.map((p) => (
-                <tr key={p.id} className="hover:bg-paper">
+            <Stagger as="tbody" className="divide-y divide-sand">
+              {shown.map((p, idx) => (
+                <StaggerItem as="tr" key={p.id} index={idx} className="hover:bg-paper">
                   <td className="max-w-[14rem] truncate px-4 py-3 font-medium text-ink">{p.projectTitle}</td>
                   <td className="px-4 py-3 font-semibold text-green">{cedis(p.amountPesewas)}</td>
                   <td className="px-4 py-3 text-ink-muted">{p.feePesewas ? cedis(p.feePesewas) : <span className="text-ink-faint">—</span>}</td>
@@ -128,9 +137,9 @@ export function Component() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{formatDate(p.confirmedAt ?? p.createdAt)}</td>
                   <td className="max-w-[12rem] truncate px-4 py-3 font-mono text-xs text-ink-faint">{p.reference}</td>
-                </tr>
+                </StaggerItem>
               ))}
-            </tbody>
+            </Stagger>
           </table>
         </Card>
       )}

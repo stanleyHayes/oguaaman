@@ -9,6 +9,7 @@ import type { Listing, Subscription } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
+import { RevealView } from "@/components/anim";
 
 // Only open web-safe schemes (tel/mailto included — this is the call-them screen).
 function openURL(url?: string) {
@@ -142,9 +143,11 @@ function BusinessDetail({ data, slug, reload }: Readonly<{ data: Listing; slug: 
     <>
       <Stack.Screen options={{ title: data.title }} />
       <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-        <Thumb seed={data.slug} src={data.coverImageUrl} label={initials(data.title)} style={s.cover} labelStyle={s.coverInit} />
+        <RevealView>
+          <Thumb seed={data.slug} src={data.coverImageUrl} label={initials(data.title)} style={s.cover} labelStyle={s.coverInit} />
+        </RevealView>
 
-        <View style={s.body}>
+        <RevealView delay={100} style={s.body}>
           <View style={s.pillRow}>
             {d.category ? <Pill label={d.category} color={C.tealText} bg={C.cream} border={C.sand} /> : null}
             {data.supporter ? <Pill label="★ Supporter" color={C.goldText} bg={C.cream} border={C.gold} /> : null}
@@ -199,7 +202,7 @@ function BusinessDetail({ data, slug, reload }: Readonly<{ data: Listing; slug: 
           <View style={{ marginTop: 22, alignItems: "center" }}>
             <ReportButton listingId={data.id} />
           </View>
-        </View>
+        </RevealView>
       </ScrollView>
     </>
   );

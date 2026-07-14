@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, SectionHeading } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { MemoryCard } from "@/components/cards";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { HERITAGE_BLURB } from "@/lib/content";
 
 export async function loader(): Promise<HistoryView> {
@@ -28,10 +29,10 @@ export function Component() {
 
       <section className="bg-cream py-12">
         <Container>
-          <SectionHeading kicker="Nkyinkyim · the path is twisted" title="A timeline of Oguaa" accentClass="bg-gold-brand" />
-          <ol className="mt-8 space-y-1">
+          <Reveal><SectionHeading kicker="Nkyinkyim · the path is twisted" title="A timeline of Oguaa" accentClass="bg-gold-brand" /></Reveal>
+          <Stagger as="ol" className="mt-8 space-y-1">
             {timeline.map((e) => (
-              <li key={e.id} className="flex gap-5">
+              <StaggerItem as="li" key={e.id} className="flex gap-5">
                 <span className="w-14 shrink-0 text-right text-lg font-semibold text-gold-text">{e.year}</span>
                 <span className="relative flex flex-col items-center">
                   <span className="h-3 w-3 rounded-full border-2 border-gold-brand bg-cream" aria-hidden />
@@ -41,17 +42,18 @@ export function Component() {
                   <span className="block text-base font-semibold text-ink">{e.title}</span>
                   <span className="block text-ink-muted">{e.summary}</span>
                 </span>
-              </li>
+              </StaggerItem>
             ))}
-          </ol>
+          </Stagger>
         </Container>
       </section>
 
       <Container className="py-12">
-        <SectionHeading kicker="A sense of place" title="The places that hold the story" accentClass="bg-clay" />
+        <Reveal><SectionHeading kicker="A sense of place" title="The places that hold the story" accentClass="bg-clay" /></Reveal>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {heritage.map((h) => (
-            <Link key={h.id} to={`/education/${h.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
+          {heritage.map((h, i) => (
+            <StaggerItem key={h.id} index={i} lift className="h-full">
+            <Link to={`/education/${h.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
               <div className="h-1.5" style={{ backgroundColor: h.houseColors?.[0] ?? "#123F2D" }} aria-hidden />
               <div className="flex flex-1 flex-col p-5">
                 <h3 className="text-lg font-semibold text-ink group-hover:text-gold-text">{h.name}</h3>
@@ -59,6 +61,7 @@ export function Component() {
                 <p className="mt-2 text-sm text-ink-muted">{excerpt(h.history || h.summary)}</p>
               </div>
             </Link>
+            </StaggerItem>
           ))}
         </div>
       </Container>
@@ -66,7 +69,7 @@ export function Component() {
       <section className="bg-cream py-12">
         <Container>
           <div className="flex items-end justify-between gap-4">
-            <SectionHeading kicker="Sons & daughters" title="The people who carry the story" accentClass="bg-green" />
+            <Reveal><SectionHeading kicker="Sons & daughters" title="The people who carry the story" accentClass="bg-green" /></Reveal>
             <Link to="/people" className="shrink-0 text-sm font-semibold text-gold-text hover:underline">All notable people →</Link>
           </div>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -81,10 +84,10 @@ export function Component() {
 
       <Container className="py-12">
         <div className="flex items-end justify-between gap-4">
-          <SectionHeading kicker="Heritage, preserved" title="Memories of the town" accentClass="bg-gold-brand" />
+          <Reveal><SectionHeading kicker="Heritage, preserved" title="Memories of the town" accentClass="bg-gold-brand" /></Reveal>
           <Link to="/community" className="shrink-0 text-sm font-semibold text-gold-text hover:underline">The Memory Wall →</Link>
         </div>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{memories.map((m) => <MemoryCard key={m.id} memory={m} />)}</div>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{memories.map((m, i) => <StaggerItem key={m.id} index={i} lift><MemoryCard memory={m} /></StaggerItem>)}</div>
         <p className="mt-10 flex items-center justify-center gap-2 text-center font-serif text-lg italic text-ink-muted">
           <Adinkra name="nkyinkyim" size={18} labelled={false} className="text-gold-brand" />We hold both stories: the pride and the wound.
         </p>

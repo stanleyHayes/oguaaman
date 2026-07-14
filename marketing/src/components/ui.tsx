@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Reveal } from "./motion";
 
 /** Marketing UI primitives — self-contained (no router); CTAs are plain anchors. */
 
@@ -70,18 +71,20 @@ export function SectionHeading({
   onDark?: boolean;
 }>) {
   return (
-    <div className={center ? "text-center" : ""}>
-      {kicker && <Eyebrow className={`mb-3 ${onDark ? "text-gold/80" : ""}`}>{kicker}</Eyebrow>}
-      <h2 className={`text-3xl sm:text-[2.6rem] font-semibold ${onDark ? "text-cream" : "text-ink"}`}>
-        {title}
-      </h2>
-      <div className={`mt-4 h-[3px] w-14 rounded-full ${accentClass} ${center ? "mx-auto" : ""}`} />
-      {lede && (
-        <p className={`mt-5 max-w-2xl leading-relaxed ${onDark ? "text-cream/80" : "text-ink-muted"} ${center ? "mx-auto" : ""}`}>
-          {lede}
-        </p>
-      )}
-    </div>
+    <Reveal>
+      <div className={center ? "text-center" : ""}>
+        {kicker && <Eyebrow className={`mb-3 ${onDark ? "text-gold/80" : ""}`}>{kicker}</Eyebrow>}
+        <h2 className={`text-3xl sm:text-[2.6rem] font-semibold ${onDark ? "text-cream" : "text-ink"}`}>
+          {title}
+        </h2>
+        <div className={`mt-4 h-[3px] w-14 rounded-full ${accentClass} ${center ? "mx-auto" : ""}`} />
+        {lede && (
+          <p className={`mt-5 max-w-2xl leading-relaxed ${onDark ? "text-cream/80" : "text-ink-muted"} ${center ? "mx-auto" : ""}`}>
+            {lede}
+          </p>
+        )}
+      </div>
+    </Reveal>
   );
 }
 

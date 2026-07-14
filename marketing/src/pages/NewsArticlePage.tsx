@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Container } from "@/components/ui";
 import { Markdown } from "@/components/markdown";
+import { Reveal } from "@/components/motion";
 import { api, type NewsArticle } from "@/lib/api";
 
 function fmt(iso?: string): string {
@@ -78,14 +79,16 @@ export function Component() {
     <article className="min-h-screen bg-paper">
       <ArticleCover a={article} />
       <Container size="prose" className="relative z-10 -mt-16 pb-16">
-        <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-7 shadow-[var(--shadow-lift)] sm:p-10">
-          <Link to="/news" className="inline-flex items-center gap-1.5 rounded-full border border-sand bg-paper px-3.5 py-1.5 text-sm font-medium text-teal-text transition-colors hover:border-teal hover:bg-teal/[0.06]">
-            ← Newsroom
-          </Link>
-          <h1 className="mt-5 text-4xl font-semibold leading-tight text-ink sm:text-5xl">{article.title}</h1>
-          {article.summary && <p className="mt-4 font-serif text-xl italic text-ink-muted">{article.summary}</p>}
-          <p className="mt-6 border-t border-sand pt-5 text-sm text-ink-faint">By {article.authorName} · {fmt(article.publishedAt ?? article.createdAt)}</p>
-        </div>
+        <Reveal>
+          <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-7 shadow-[var(--shadow-lift)] sm:p-10">
+            <Link to="/news" className="inline-flex items-center gap-1.5 rounded-full border border-sand bg-paper px-3.5 py-1.5 text-sm font-medium text-teal-text transition-colors hover:border-teal hover:bg-teal/[0.06]">
+              ← Newsroom
+            </Link>
+            <h1 className="mt-5 text-4xl font-semibold leading-tight text-ink sm:text-5xl">{article.title}</h1>
+            {article.summary && <p className="mt-4 font-serif text-xl italic text-ink-muted">{article.summary}</p>}
+            <p className="mt-6 border-t border-sand pt-5 text-sm text-ink-faint">By {article.authorName} · {fmt(article.publishedAt ?? article.createdAt)}</p>
+          </div>
+        </Reveal>
         <div className="mt-10"><Markdown>{article.body}</Markdown></div>
         {tags.length > 0 && (
           <div className="mt-10 flex flex-wrap gap-2 border-t border-sand pt-6">

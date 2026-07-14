@@ -1,15 +1,18 @@
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { StyleSheet, Text, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import Animated from "react-native-reanimated";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, serif, fillFor, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
+import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 
 export default function Person() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Listing>(() => api.person(slug), `person:${slug}`);
+  const { scrollY, onScroll } = useHeroParallax();
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
   const d = data.details;
@@ -18,15 +21,17 @@ export default function Person() {
   return (
     <>
       <Stack.Screen options={{ title: data.title }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
+      <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
         <View style={[s.head, { backgroundColor: fillFor(data.slug) }]}>
-          <Thumb seed={data.slug} src={data.coverImageUrl} label={initials(data.title)} style={s.thumb} labelStyle={s.thumbInit} />
-          <View style={s.badge}><Text style={s.badgeText}>{d.living ? "LIVING ICON" : "IN LEGACY"}</Text></View>
-          <Text style={s.name}>{data.title}</Text>
-          {d.era ? <Text style={s.era}>{d.era}</Text> : null}
+          <HeroParallax scrollY={scrollY} style={{ width: "100%", alignItems: "center" }}>
+            <Thumb seed={data.slug} src={data.coverImageUrl} label={initials(data.title)} style={s.thumb} labelStyle={s.thumbInit} />
+            <View style={s.badge}><Text style={s.badgeText}>{d.living ? "LIVING ICON" : "IN LEGACY"}</Text></View>
+            <Text style={s.name}>{data.title}</Text>
+            {d.era ? <Text style={s.era}>{d.era}</Text> : null}
+          </HeroParallax>
         </View>
 
-        <View style={s.body}>
+        <RevealView delay={100} style={s.body}>
           <Text style={s.kicker}>WHY OGUAA IS PROUD</Text>
           {d.whyNotable ? <Text style={s.pull}>{d.whyNotable}</Text> : null}
           {story.map((p, i) => (
@@ -46,8 +51,8 @@ export default function Person() {
           <View style={{ marginTop: 22, alignItems: "center" }}>
             <ReportButton listingId={data.id} />
           </View>
-        </View>
-      </ScrollView>
+        </RevealView>
+      </Animated.ScrollView>
     </>
   );
 }

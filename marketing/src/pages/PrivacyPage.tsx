@@ -1,6 +1,7 @@
 import { PageHero } from "@/components/page-hero";
 import { LagoonScene } from "@/components/scenes";
 import { Section } from "@/components/ui";
+import { Reveal } from "@/components/motion";
 
 export function Component() {
   return (
@@ -13,7 +14,8 @@ export function Component() {
       />
 
       <Section tone="paper" size="prose">
-        <p className="text-sm text-ink-muted">Last updated: June 2026</p>
+        <Reveal>
+          <p className="text-sm text-ink-muted">Last updated: June 2026</p>
 
         <h2 className="mt-8 text-2xl font-semibold text-ink sm:text-3xl">
           The short version
@@ -98,7 +100,8 @@ export function Component() {
           If you have a question about your information or want something changed,
           reach the stewards through the app. We would rather hear from you than
           have you wonder.
-        </p>
+          </p>
+        </Reveal>
       </Section>
     </>
   );

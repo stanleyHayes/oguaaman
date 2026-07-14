@@ -9,6 +9,7 @@ import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { cldCover } from "@/lib/cloudinary";
+import { RevealView, StaggerIn } from "@/components/anim";
 
 function dayMonth(date?: string): string {
   if (!date) return "";
@@ -110,7 +111,7 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
 
   return (
     <ScrollView style={{ backgroundColor: C.cream }} contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
-      <View style={{ alignItems: "center" }}>
+      <RevealView style={{ alignItems: "center" }}>
         {m.coverImageUrl ? (
           <Thumb seed={m.slug} src={m.coverImageUrl} label={initials(m.title)} style={s.portrait} labelStyle={s.portraitInit} />
         ) : (
@@ -125,7 +126,7 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
         </Pressable>
         <RememberButton slug={slug} initialCount={d.rememberedByCount ?? 0} />
         <Text style={s.rememberHint}>Those who remember are quietly told on the anniversary each year.</Text>
-      </View>
+      </RevealView>
 
       <View style={s.divider} />
 
@@ -162,11 +163,11 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
       {tributes.length === 0 && (
         <Text style={s.tributeEmpty}>Be the first to leave a word.</Text>
       )}
-      {tributes.map((t) => (
-        <View key={t.id} style={s.tribute}>
+      {tributes.map((t, i) => (
+        <StaggerIn key={t.id} index={i} style={s.tribute}>
           <Text style={s.tributeMsg}>“{t.message}”</Text>
           <Text style={s.tributeWho}>{t.authorName}{t.relation ? ` · ${t.relation}` : ""}</Text>
-        </View>
+        </StaggerIn>
       ))}
 
       <View style={s.form}>

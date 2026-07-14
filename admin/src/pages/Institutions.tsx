@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Organization } from "@/lib/types";
 import { PageHeader, Card } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { InstitutionLogo } from "@/components/crest";
 import { formatDate } from "@/lib/format";
 
@@ -39,9 +40,9 @@ export function Component() {
           <thead className="border-b border-sand bg-paper text-left text-xs uppercase tracking-wide text-ink-faint">
             <tr><th className="px-4 py-3">Institution</th><th className="px-4 py-3 hidden sm:table-cell">Kind</th><th className="px-4 py-3 hidden md:table-cell">Offices</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Action</th></tr>
           </thead>
-          <tbody>
-            {rows.map((o) => (
-              <tr key={o.id} className="border-b border-sand last:border-0">
+          <Stagger as="tbody">
+            {rows.map((o, idx) => (
+              <StaggerItem as="tr" key={o.id} index={idx} className="border-b border-sand last:border-0">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <InstitutionLogo org={o} size={40} />
@@ -66,9 +67,9 @@ export function Component() {
                     {o.verified ? "Revoke" : "Verify"}
                   </button>
                 </td>
-              </tr>
+              </StaggerItem>
             ))}
-          </tbody>
+          </Stagger>
         </table>
       </Card>
     </>

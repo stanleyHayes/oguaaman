@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { ArtistCard, PersonCard } from "@/components/cards";
+import { LayoutPill, StaggerItem } from "@/components/motion";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 interface Data {
@@ -49,7 +50,7 @@ export function Component() {
         </div>
 
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {shown.map((a) => <ArtistCard key={a.id} artist={a} />)}
+          {shown.map((a, i) => <StaggerItem key={a.id} index={i} lift><ArtistCard artist={a} /></StaggerItem>)}
         </div>
         {shown.length === 0 && (
           <p className="py-12 text-center text-ink-muted">No artists in “{genre}” yet. <Link to="/submit?type=artist" className="font-semibold text-clay-text">Nominate one →</Link></p>
@@ -63,7 +64,7 @@ export function Component() {
       <section className="bg-cream py-14">
         <Container size="wide">
           <SectionHeading kicker="Where it comes from" title="The grandfathers of the sound" lede="Before today's artists, the coastal osode rhythm of the fishermen became a national sound. We open at their feet." accentClass="bg-gold-brand" />
-          <div className="mt-8 grid gap-5 sm:grid-cols-2">{legacy.map((p) => <PersonCard key={p.id} person={p} />)}</div>
+          <div className="mt-8 grid gap-5 sm:grid-cols-2">{legacy.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}</div>
           <p className="mt-5 inline-flex items-center gap-2 text-sm text-ink-faint">
             <Adinkra name="sankofa" size={16} labelled={false} className="text-gold-brand" />San kɔfa — go back and fetch it.
           </p>
@@ -77,8 +78,9 @@ export function Component() {
 
 function GenreChip({ label, to, active }: Readonly<{ label: string; to: string; active: boolean }>) {
   return (
-    <Link to={to} className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${active ? "border-clay bg-clay text-cream" : "border-sand bg-cream text-ink-muted hover:border-clay"}`}>
-      {label}
+    <Link to={to} className={`relative rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${active ? "border-clay text-cream" : "border-sand bg-cream text-ink-muted hover:border-clay"}`}>
+      {active && <LayoutPill layoutId="genre-chip" className="absolute inset-0 rounded-full bg-clay" />}
+      <span className="relative">{label}</span>
     </Link>
   );
 }

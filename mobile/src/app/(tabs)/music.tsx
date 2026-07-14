@@ -6,6 +6,7 @@ import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
+import { PressScale, StaggerIn } from "@/components/anim";
 
 // Genre filter chips (client-side filtering, like the web directory).
 function GenreChips({ active, onPick }: Readonly<{ active: string; onPick: (g: string) => void }>) {
@@ -37,16 +38,17 @@ export default function Music() {
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
       <Text style={s.lede}>Cape Coast’s artists and the rotating spotlight. We link out to streaming — no audio is hosted.</Text>
-      <Pressable onPress={() => router.push("/music/the-oguaa-sound" as never)} style={s.soundCard}>
+      <PressScale onPress={() => router.push("/music/the-oguaa-sound" as never)} style={s.soundCard}>
         <Text style={s.soundKicker}>THE OGUAA SOUND</Text>
         <Text style={s.soundTitle}>Where highlife learned to swim ›</Text>
         <Text style={s.soundSub}>The grandfathers of the sound — C.K. Mann, Ebo Taylor, and the osode wave.</Text>
-      </Pressable>
+      </PressScale>
       <GenreChips active={genre} onPick={setGenre} />
       {shown.length === 0 && <Text style={s.empty}>No artists in this genre yet.</Text>}
-      {shown.map((a) => (
-        <Link key={a.id} href={`/music/${a.slug}`} asChild>
-          <Pressable style={s.card}>
+      {shown.map((a, i) => (
+        <StaggerIn key={a.id} index={i}>
+          <Link href={`/music/${a.slug}`} asChild>
+            <Pressable style={s.card}>
             <Thumb
               seed={a.slug}
               src={a.coverImageUrl}
@@ -62,8 +64,9 @@ export default function Music() {
               <Text style={s.genre}>{(a.details.genres ?? []).join(" · ")}</Text>
               <Text style={s.bio} numberOfLines={2}>{a.details.bio}</Text>
             </View>
-          </Pressable>
-        </Link>
+            </Pressable>
+          </Link>
+        </StaggerIn>
       ))}
     </ScrollView>
   );

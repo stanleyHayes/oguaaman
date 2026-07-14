@@ -9,6 +9,7 @@ import type { Member, MemberView, Organization, Place, SchoolStint, Connection, 
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ImageField } from "@/components/image-field";
+import { RevealView } from "@/components/anim";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -290,11 +291,11 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
 // Dashboard section card — serif title + optional help text wrapping a body slot.
 function Section({ title, help, children }: Readonly<{ title: string; help?: string; children: React.ReactNode }>) {
   return (
-    <View style={s.section}>
+    <RevealView style={s.section}>
       <Text style={s.sectionTitle}>{title}</Text>
       {help ? <Text style={s.help}>{help}</Text> : <View style={{ height: 8 }} />}
       {children}
-    </View>
+    </RevealView>
   );
 }
 

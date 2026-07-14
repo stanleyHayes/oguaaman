@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { PersonCard } from "@/components/cards";
+import { Reveal, StaggerItem } from "@/components/motion";
 import { OGUAA_SOUND, SAMPLE_NOTICE } from "@/lib/content";
 
 export async function loader() {
@@ -24,8 +25,8 @@ export function Component() {
           ))}
         </article>
         <SymbolDivider name="sankofa" className="my-12" />
-        <h2 className="text-center text-3xl font-semibold text-ink">The grandfathers</h2>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2">{legacy.map((p) => <PersonCard key={p.id} person={p} />)}</div>
+        <Reveal as="h2" className="text-center text-3xl font-semibold text-ink">The grandfathers</Reveal>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2">{legacy.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}</div>
         <div className="mt-12 flex flex-wrap justify-center gap-3">
           <Cta to="/music" variant="primary">Browse the artists →</Cta>
           <Cta to="/submit?type=artist" variant="outline">Nominate an artist</Cta>

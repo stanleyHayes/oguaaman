@@ -1,5 +1,6 @@
 import { Section, SectionHeading } from "@/components/ui";
 import { Adinkra, SymbolDivider, type AdinkraName } from "@/components/adinkra";
+import { Stagger, StaggerItem } from "@/components/motion";
 
 /**
  * Legends, heroes & folktales of Oguaa — an immersive "told by the fire" band
@@ -97,12 +98,9 @@ export function Stories() {
         lede="Every old town keeps its heroes and its tales. These are Oguaa's — founding legends, the valour of the Asafo, the men who crossed oceans and saved the land, and the spider-tales told here on the coast since before the castle. Some are legend, some are documented history; we have marked which is which."
       />
 
-      <div className="mt-14 grid gap-5 sm:grid-cols-2">
-        {STORIES.map((s) => (
-          <article
-            key={s.title}
-            className="group relative overflow-hidden rounded-[var(--radius-card)] border border-cream/12 bg-cream/[0.035] p-6 transition-colors hover:border-gold/45 sm:p-7"
-          >
+      <Stagger className="mt-14 grid gap-5 sm:grid-cols-2">
+        {STORIES.map((s, i) => (
+          <StaggerItem key={s.title} index={i} as="article" className="group relative overflow-hidden rounded-[var(--radius-card)] border border-cream/12 bg-cream/[0.035] p-6 transition-colors hover:border-gold/45 sm:p-7">
             <Adinkra
               name={s.symbol}
               size={108}
@@ -118,9 +116,9 @@ export function Stories() {
               <p className="mt-3 leading-relaxed text-cream/80">{s.text}</p>
               <p className="mt-4 text-xs italic text-cream/45">{s.note}</p>
             </div>
-          </article>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
 
       <SymbolDivider name="nyame-nwu-na-mawu" className="mt-16" tone="text-gold/70" />
       <p className="mx-auto mt-5 max-w-xl text-center font-serif text-base italic text-cream/70">

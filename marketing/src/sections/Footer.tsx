@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Container } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
+import { Reveal } from "@/components/motion";
 import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL } from "@/config";
 
 interface FooterLink {
@@ -89,7 +90,7 @@ export function Footer() {
 
       <Container className="relative py-16 sm:py-20" size="wide">
         {/* CTA card */}
-        <div className="relative mb-14 overflow-hidden rounded-[var(--radius-card)] border border-cream/10 bg-cream/[0.05] p-7 backdrop-blur-sm sm:p-9">
+        <Reveal className="relative mb-14 overflow-hidden rounded-[var(--radius-card)] border border-cream/10 bg-cream/[0.05] p-7 backdrop-blur-sm sm:p-9">
           <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-gold">Yɛn ara asaase ni</p>
           <h2 className="mt-3 max-w-xl text-2xl font-semibold text-cream sm:text-3xl">
             This is our own land — the app is where the town gathers.
@@ -105,7 +106,7 @@ export function Footer() {
               Explore the festivals
             </Link>
           </div>
-        </div>
+        </Reveal>
 
         {/* Top row */}
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.2fr_2fr]">

@@ -3,6 +3,7 @@ import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Organization } from "@/lib/types";
 import { PageHeader, Card } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { InstitutionLogo } from "@/components/crest";
 
 // The heritage/visitor places shown on the marketing Visit page. A shortcut to
@@ -95,9 +96,10 @@ export function Component() {
       {places.length === 0 ? (
         <Card className="p-8 text-center text-sm text-ink-muted">No places yet — add the first with “New place”.</Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {places.map((p) => (
-            <Link key={p.id} to={`/institutions/${p.slug}`} className="group block">
+        <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {places.map((p, idx) => (
+            <StaggerItem key={p.id} index={idx}>
+              <Link to={`/institutions/${p.slug}`} className="group block h-full">
               <Card className="flex h-full flex-col p-5 transition-shadow hover:shadow-[var(--shadow-lift)]">
                 <div className="flex items-start gap-3">
                   <InstitutionLogo org={p} size={44} />
@@ -113,8 +115,9 @@ export function Component() {
                 </div>
               </Card>
             </Link>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       )}
     </>
   );

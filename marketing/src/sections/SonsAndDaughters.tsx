@@ -1,4 +1,5 @@
 import { Section, SectionHeading, Card } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 
 /**
  * "Sons & daughters of Oguaa" — appended to the Leadership page. The town is
@@ -91,16 +92,24 @@ export function SonsAndDaughters() {
 
       <div className="mt-12">
         <p className="eyebrow text-gold-text">Born in Cape Coast</p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          {BORN.map((f) => <FigureCard key={f.name} figure={f} accent="gold" />)}
-        </div>
+        <Stagger className="mt-5 grid gap-5 sm:grid-cols-2">
+          {BORN.map((f, i) => (
+            <StaggerItem key={f.name} index={i}>
+              <FigureCard figure={f} accent="gold" />
+            </StaggerItem>
+          ))}
+        </Stagger>
       </div>
 
       <div className="mt-12">
         <p className="eyebrow text-clay-text">Shaped in its schools — born elsewhere</p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          {SCHOOLED.map((f) => <FigureCard key={f.name} figure={f} accent="clay" />)}
-        </div>
+        <Stagger className="mt-5 grid gap-5 sm:grid-cols-2">
+          {SCHOOLED.map((f, i) => (
+            <StaggerItem key={f.name} index={i}>
+              <FigureCard figure={f} accent="clay" />
+            </StaggerItem>
+          ))}
+        </Stagger>
       </div>
     </Section>
   );

@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { PersonCard } from "@/components/cards";
+import { Reveal, StaggerItem } from "@/components/motion";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 export async function loader() {
@@ -23,13 +24,15 @@ export function Component() {
 
       {living.length > 0 && (
         <Container size="wide" className="py-14">
-          <SectionHeading
-            kicker={`${living.length} on the wall`}
-            title="Living icons"
-            lede="The people carrying Oguaa's name into the world today — artists, educators, traders, leaders."
-            accentClass="bg-gold-brand"
-          />
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{living.map((p) => <PersonCard key={p.id} person={p} />)}</div>
+          <Reveal>
+            <SectionHeading
+              kicker={`${living.length} on the wall`}
+              title="Living icons"
+              lede="The people carrying Oguaa's name into the world today — artists, educators, traders, leaders."
+              accentClass="bg-gold-brand"
+            />
+          </Reveal>
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{living.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}</div>
         </Container>
       )}
 
@@ -38,14 +41,16 @@ export function Component() {
           <Container size="wide">
             <SymbolDivider name="sankofa" />
             <div className="mt-8">
-              <SectionHeading
-                kicker={`${remembered.length} remembered`}
-                title="In legacy"
-                lede="Those who have passed but whose names the town still carries. San kɔfa — go back and fetch it."
-                accentClass="bg-gold-brand"
-              />
+              <Reveal>
+                <SectionHeading
+                  kicker={`${remembered.length} remembered`}
+                  title="In legacy"
+                  lede="Those who have passed but whose names the town still carries. San kɔfa — go back and fetch it."
+                  accentClass="bg-gold-brand"
+                />
+              </Reveal>
             </div>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{remembered.map((p) => <PersonCard key={p.id} person={p} />)}</div>
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{remembered.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}</div>
           </Container>
         </section>
       )}

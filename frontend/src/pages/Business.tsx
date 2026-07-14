@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { BusinessCard } from "@/components/cards";
+import { LayoutPill, StaggerItem } from "@/components/motion";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 export async function loader() {
@@ -30,16 +31,22 @@ export function Component() {
         {categories.length > 1 && (
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-1 text-sm text-ink-faint">Browse by trade:</span>
-            <Link to="/business" className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${!cat ? "border-teal bg-teal text-cream" : "border-sand bg-cream text-ink-muted hover:border-teal"}`}>All</Link>
+            <Link to="/business" className={`relative rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${!cat ? "border-teal text-cream" : "border-sand bg-cream text-ink-muted hover:border-teal"}`}>
+              {!cat && <LayoutPill layoutId="biz-cat" className="absolute inset-0 rounded-full bg-teal" />}
+              <span className="relative">All</span>
+            </Link>
             {categories.map((c) => (
-              <Link key={c} to={`/business?cat=${encodeURIComponent(c)}`} className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${cat === c ? "border-teal bg-teal text-cream" : "border-sand bg-cream text-ink-muted hover:border-teal"}`}>{c}</Link>
+              <Link key={c} to={`/business?cat=${encodeURIComponent(c)}`} className={`relative rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${cat === c ? "border-teal text-cream" : "border-sand bg-cream text-ink-muted hover:border-teal"}`}>
+                {cat === c && <LayoutPill layoutId="biz-cat" className="absolute inset-0 rounded-full bg-teal" />}
+                <span className="relative">{c}</span>
+              </Link>
             ))}
           </div>
         )}
 
         <p className="mt-6 text-sm text-ink-faint">{shown.length} {shown.length === 1 ? "business" : "businesses"}{cat ? ` in ${cat}` : ""} · ★ Supporters first</p>
 
-        <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{shown.map((b) => <BusinessCard key={b.id} business={b} />)}</div>
+        <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{shown.map((b, i) => <StaggerItem key={b.id} index={i} lift><BusinessCard business={b} /></StaggerItem>)}</div>
         {shown.length === 0 && (
           <p className="py-12 text-center text-ink-muted">No businesses here yet. <Link to="/submit?type=business" className="font-semibold text-teal-text">List yours →</Link></p>
         )}

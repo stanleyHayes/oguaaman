@@ -7,6 +7,7 @@ import type { LostFound, LostFoundKind } from "@/lib/types";
 import { KIND_LABEL, LF_STATUS_COLOR, LF_STATUS_LABEL } from "@/lib/lostfound";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
+import { StaggerIn } from "@/components/anim";
 
 const TABS: { kind: LostFoundKind; label: string }[] = [
   { kind: "lost_item", label: "Lost" },
@@ -82,7 +83,7 @@ export default function LostFoundList() {
         <Text style={s.empty}>Nothing here yet — and may it stay that way.</Text>
       ) : (
         <View style={{ gap: 12, marginTop: 16 }}>
-          {shown.map((i) => <NoticeCard key={i.id} i={i} />)}
+          {shown.map((i, idx) => <StaggerIn key={i.id} index={idx}><NoticeCard i={i} /></StaggerIn>)}
         </View>
       )}
     </ScrollView>

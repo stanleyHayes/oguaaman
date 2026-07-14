@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { useLoaderData, useNavigate, type LoaderFunctionArgs } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { api, type NewsPayload } from "@/lib/api";
 import type { NewsArticle } from "@/lib/types";
 import { Card, BackLink } from "@/components/ui";
@@ -155,14 +156,26 @@ function EditorHeader({ article, isNew, dirty, savedFlash, busy, onSave, onToggl
             {article.status === "published" ? "Unpublish" : "Publish"}
           </button>
         )}
-        {article && (confirmDel ? (
-          <span className="inline-flex items-center gap-1">
-            <button onClick={onDelete} disabled={busy} className="rounded-full bg-maroon-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Confirm delete</button>
-            <button onClick={() => setConfirmDel(false)} className="rounded-full px-2 py-1.5 text-xs font-medium text-ink-muted hover:text-ink">Cancel</button>
-          </span>
-        ) : (
+        {article && (
+          <AnimatePresence initial={false}>
+            {confirmDel && (
+              <motion.span
+                key="confirm-delete"
+                className="inline-flex items-center gap-1"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+              >
+                <button onClick={onDelete} disabled={busy} className="rounded-full bg-maroon-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Confirm delete</button>
+                <button onClick={() => setConfirmDel(false)} className="rounded-full px-2 py-1.5 text-xs font-medium text-ink-muted hover:text-ink">Cancel</button>
+              </motion.span>
+            )}
+          </AnimatePresence>
+        )}
+        {article && !confirmDel && (
           <button onClick={() => setConfirmDel(true)} className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-maroon-900 hover:text-maroon-900">Delete</button>
-        ))}
+        )}
       </div>
     </div>
   );

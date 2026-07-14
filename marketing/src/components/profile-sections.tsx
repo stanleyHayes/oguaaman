@@ -3,9 +3,11 @@
 // the marketing design language. One block model, many section kinds; content is
 // configured in the admin dashboard. See oguaa/Institution-Pages-Spec.md.
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import type { MediaAsset, ProfileSection, SectionItem, SubEntity } from "@/lib/org";
 import { Markdown } from "@/components/markdown";
 import { SymbolDivider } from "@/components/adinkra";
+import { Reveal, Stagger, StaggerItem } from "./motion";
 
 interface ToneClasses {
   text: string;
@@ -90,16 +92,18 @@ function SectionBlock({ section }: Readonly<{ section: ProfileSection }>) {
   if (!body) return null;
   const showTitle = section.title && TITLED.has(section.type);
   return (
-    <section id={section.anchor || undefined}>
-      {showTitle && (
-        <h2 className="mb-5 flex items-center gap-3 text-2xl font-semibold text-ink">
-          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${t.dot}`} aria-hidden />
-          {section.title}
-          <span className="h-px flex-1 bg-sand" />
-        </h2>
-      )}
-      {body}
-    </section>
+    <Reveal>
+      <section id={section.anchor || undefined}>
+        {showTitle && (
+          <h2 className="mb-5 flex items-center gap-3 text-2xl font-semibold text-ink">
+            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${t.dot}`} aria-hidden />
+            {section.title}
+            <span className="h-px flex-1 bg-sand" />
+          </h2>
+        )}
+        {body}
+      </section>
+    </Reveal>
   );
 }
 
@@ -154,34 +158,37 @@ export function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
   if (items.length === 0) return null;
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {items.map((m, i) => (
-          <button
-            key={m.id || i}
-            type="button"
-            onClick={() => m.url && setOpen(m)}
-            className={`group relative block aspect-square overflow-hidden rounded-[var(--radius-card)] border border-sand bg-sand text-left ${m.url ? "cursor-zoom-in" : "cursor-default"}`}
-            aria-label={m.alt || m.caption || "Photo"}
-          >
-            <span className="bg-dotgrid absolute inset-0 opacity-30" aria-hidden />
-            {m.url && (
-              <img
-                src={m.url}
-                alt={m.alt ?? m.caption ?? ""}
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-              />
-            )}
-            {m.caption && (
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-3 pt-8">
-                <span className="block text-sm text-cream">{m.caption}</span>
-              </span>
-            )}
-          </button>
+          <StaggerItem key={m.id || i} index={i}>
+            <button
+              type="button"
+              onClick={() => m.url && setOpen(m)}
+              className={`group relative block aspect-square w-full overflow-hidden rounded-[var(--radius-card)] border border-sand bg-sand text-left ${m.url ? "cursor-zoom-in" : "cursor-default"}`}
+              aria-label={m.alt || m.caption || "Photo"}
+            >
+              <span className="bg-dotgrid absolute inset-0 opacity-30" aria-hidden />
+              {m.url && (
+                <img
+                  src={m.url}
+                  alt={m.alt ?? m.caption ?? ""}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+              )}
+              {m.caption && (
+                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-3 pt-8">
+                  <span className="block text-sm text-cream">{m.caption}</span>
+                </span>
+              )}
+            </button>
+          </StaggerItem>
         ))}
-      </div>
-      {open && <Lightbox asset={open} onClose={() => setOpen(null)} />}
+      </Stagger>
+      <AnimatePresence>
+        {open && <Lightbox asset={open} onClose={() => setOpen(null)} />}
+      </AnimatePresence>
     </>
   );
 }
@@ -202,14 +209,24 @@ function Lightbox({ asset, onClose }: Readonly<{ asset: MediaAsset; onClose: () 
     };
   }, [onClose]);
   return (
-    <dialog
+    <motion.dialog
       open
       aria-modal="true"
       aria-label={asset.alt ?? asset.caption ?? "Image"}
       className="on-dark fixed inset-0 z-50 m-0 flex h-full w-full max-w-none items-center justify-center border-0 bg-black/80 p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
     >
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 h-full w-full cursor-default" />
-      <figure className="relative max-h-full max-w-3xl">
+      <motion.figure
+        className="relative max-h-full max-w-3xl"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      >
         <img
           src={asset.url}
           alt={asset.alt ?? asset.caption ?? ""}
@@ -222,9 +239,9 @@ function Lightbox({ asset, onClose }: Readonly<{ asset: MediaAsset; onClose: () 
             {asset.credit && <span className="text-cream/60"> · {asset.credit}</span>}
           </figcaption>
         )}
-      </figure>
+      </motion.figure>
       <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 rounded-full bg-white/10 px-3 py-1.5 text-cream hover:bg-white/20">✕</button>
-    </dialog>
+    </motion.dialog>
   );
 }
 

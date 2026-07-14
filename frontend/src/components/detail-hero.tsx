@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Container } from "./ui";
+import { CircularReveal, Parallax, Reveal } from "./motion";
 import { cldCover } from "@/lib/cloudinary";
 
 const GRADIENTS = {
@@ -33,22 +34,30 @@ export function DetailHero({
 }>) {
   return (
     <section className="on-dark relative overflow-hidden text-cream">
-      <div className="absolute inset-0" style={{ background: GRADIENTS[tone] }} aria-hidden />
+      <Parallax strength={24} className="absolute -inset-y-6 inset-x-0">
+        <div className="absolute inset-0" style={{ background: GRADIENTS[tone] }} aria-hidden />
+      </Parallax>
       {coverImageUrl && (
-        <img
-          src={cldCover(coverImageUrl, 1400)}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full object-cover opacity-20"
-          onError={(e) => { e.currentTarget.style.display = "none"; }}
-        />
+        <Parallax strength={16} className="absolute -inset-y-6 inset-x-0">
+          <CircularReveal className="absolute inset-0">
+            <img
+              src={cldCover(coverImageUrl, 1400)}
+              alt=""
+              aria-hidden
+              className="h-full w-full object-cover opacity-20"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+          </CircularReveal>
+        </Parallax>
       )}
       <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
       <Container size="wide" className="relative py-10 sm:py-14">
-        <Link to={backTo} className="text-sm text-cream/70 transition-colors hover:text-gold">← {backLabel}</Link>
-        {children && <div className="mt-5 flex flex-wrap items-center gap-2">{children}</div>}
-        <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-5xl">{title}</h1>
-        {meta && <div className="mt-3 text-sm text-cream/85 sm:text-base">{meta}</div>}
+        <Reveal>
+          <Link to={backTo} className="text-sm text-cream/70 transition-colors hover:text-gold">← {backLabel}</Link>
+        </Reveal>
+        {children && <Reveal delay={0.05} className="mt-5 flex flex-wrap items-center gap-2">{children}</Reveal>}
+        <Reveal as="h1" delay={0.1} className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-5xl">{title}</Reveal>
+        {meta && <Reveal delay={0.16} className="mt-3 text-sm text-cream/85 sm:text-base">{meta}</Reveal>}
       </Container>
     </section>
   );

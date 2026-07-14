@@ -3,6 +3,7 @@ import { CollegeScene } from "@/components/scenes";
 import { Section, SectionHeading, Card } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { LiveCollection } from "@/components/live-collection";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { OPPORTUNITIES_FALLBACK } from "@/lib/fallbacks";
 import { useSchools, SCHOOLS_FALLBACK, schoolInitials, type SchoolOrg } from "@/lib/schools";
 import { PORTAL_APP_URL } from "@/config";
@@ -40,7 +41,7 @@ function SchoolCrest({ school }: Readonly<{ school: SchoolOrg }>) {
 function SchoolCard({ school }: Readonly<{ school: SchoolOrg }>) {
   const meta = [school.founded ? `Est. ${school.founded}` : null, school.classification].filter(Boolean).join(" · ");
   return (
-    <a href={`${PORTAL_APP_URL}/education/${school.slug}`} target="_blank" rel="noopener noreferrer" className="group block">
+    <a href={`${PORTAL_APP_URL}/education/${school.slug}`} target="_blank" rel="noopener noreferrer" className="group block h-full">
       <Card className="flex h-full gap-5 p-6 transition-shadow duration-300 hover:shadow-[var(--shadow-lift)] sm:p-7">
         <SchoolCrest school={school} />
         <div className="min-w-0">
@@ -89,11 +90,13 @@ export function Component() {
           title="The foundations of a town."
           lede="Each with its colours, its motto, and its old students who answer to a name only their school understands — from the oldest school in Ghana to the basic school by the sea."
         />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2">
-          {schools.map((s) => (
-            <SchoolCard key={s.id} school={s} />
+        <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
+          {schools.map((s, idx) => (
+            <StaggerItem key={s.id} index={idx}>
+              <SchoolCard school={s} />
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
         <p className="mt-8 text-center text-sm text-ink-faint">
           {schools.length} schools listed — and growing, as each claims its profile in the app.
         </p>
@@ -123,15 +126,17 @@ export function Component() {
             title="Large lives, small classrooms."
             lede="Not all of them were born here. All of them were shaped here."
           />
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {SCHOOLED.map((a) => (
-              <div key={a.name} className="flex flex-col rounded-[var(--radius-card)] border border-cream/12 bg-green-900/30 p-6">
-                <h3 className="text-xl font-semibold text-cream">{a.name}</h3>
-                <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-gold/80">{a.meta}</p>
-                <p className="mt-3 text-sm leading-relaxed text-cream/75">{a.body}</p>
-              </div>
+          <Stagger className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {SCHOOLED.map((a, idx) => (
+              <StaggerItem key={a.name} index={idx}>
+                <div className="flex h-full flex-col rounded-[var(--radius-card)] border border-cream/12 bg-green-900/30 p-6">
+                  <h3 className="text-xl font-semibold text-cream">{a.name}</h3>
+                  <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-gold/80">{a.meta}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-cream/75">{a.body}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </Section>
 

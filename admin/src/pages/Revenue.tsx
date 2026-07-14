@@ -3,6 +3,7 @@ import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Pledge, Subscription, Promotion, RevenueOverview } from "@/lib/types";
 import { PageHeader, Card, Empty, StatCard } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -118,9 +119,9 @@ export function Component() {
                 <th className="px-4 py-3">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-sand">
-              {recent.map((a) => (
-                <tr key={a.id} className="hover:bg-paper">
+            <Stagger as="tbody" className="divide-y divide-sand">
+              {recent.map((a, idx) => (
+                <StaggerItem as="tr" key={a.id} index={idx} className="hover:bg-paper">
                   <td className="px-4 py-3 text-ink-muted">{a.stream}</td>
                   <td className="px-4 py-3 font-medium text-ink">{a.title}</td>
                   <td className="px-4 py-3 font-semibold text-green">{cedis(a.amountPesewas)}</td>
@@ -129,9 +130,9 @@ export function Component() {
                     {a.simulated && <span className="ml-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">sim</span>}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{formatDate(a.at)}</td>
-                </tr>
+                </StaggerItem>
               ))}
-            </tbody>
+            </Stagger>
           </table>
         </Card>
       )}

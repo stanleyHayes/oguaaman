@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import { Container, Eyebrow } from "./ui";
+import { Parallax, Stagger, StaggerItem } from "./motion";
 
 /**
  * An immersive page header: a full-bleed Cape Coast scene illustration behind a
@@ -23,24 +24,40 @@ export function PageHero({
 }>) {
   return (
     <header className="on-dark relative isolate overflow-hidden bg-green-900 text-cream">
-      <div className="absolute inset-0" aria-hidden>
-        {coverUrl ? (
-          <img
-            src={coverUrl}
-            alt=""
-            className="h-full w-full object-cover"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          />
-        ) : (
-          <div className="h-full w-full opacity-45"><Scene /></div>
-        )}
-      </div>
+      <Parallax className="absolute inset-x-0 -inset-y-16" distance={48}>
+        <div className="h-full w-full" aria-hidden>
+          {coverUrl ? (
+            <img
+              src={coverUrl}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            />
+          ) : (
+            <div className="h-full w-full opacity-45"><Scene /></div>
+          )}
+        </div>
+      </Parallax>
       <div className="absolute inset-0 bg-gradient-to-t from-green-900 via-green-900/85 to-green-900/40" aria-hidden />
       <Container className="relative py-24 sm:py-32" size="wide">
-        <Eyebrow className="text-gold">{kicker}</Eyebrow>
-        <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] text-cream sm:text-6xl">{title}</h1>
-        {lede && <p className="mt-5 max-w-2xl text-lg leading-relaxed text-cream/85">{lede}</p>}
-        {children && <div className="mt-8">{children}</div>}
+        <Stagger>
+          <StaggerItem index={0}>
+            <Eyebrow className="text-gold">{kicker}</Eyebrow>
+          </StaggerItem>
+          <StaggerItem index={1}>
+            <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] text-cream sm:text-6xl">{title}</h1>
+          </StaggerItem>
+          {lede && (
+            <StaggerItem index={2}>
+              <p className="mt-5 max-w-2xl text-lg leading-relaxed text-cream/85">{lede}</p>
+            </StaggerItem>
+          )}
+          {children && (
+            <StaggerItem index={3}>
+              <div className="mt-8">{children}</div>
+            </StaggerItem>
+          )}
+        </Stagger>
       </Container>
     </header>
   );

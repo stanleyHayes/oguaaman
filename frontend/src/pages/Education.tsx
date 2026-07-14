@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SectionHeading, VerifiedBadge, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Crest } from "@/components/crest";
+import { Reveal, StaggerItem } from "@/components/motion";
 import { initials } from "@/lib/format";
 import { EDUCATION_BLURB, SAMPLE_NOTICE } from "@/lib/content";
 import { SCHOOL_PHOTOS } from "@/lib/cape-coast-photos";
@@ -26,10 +27,11 @@ export function Component() {
       </Container>
 
       <Container size="wide" className="pb-8">
-        <SectionHeading kicker="Official, verified profiles" title="The schools on the hills" accentClass="bg-maroon-900" />
+        <Reveal><SectionHeading kicker="Official, verified profiles" title="The schools on the hills" accentClass="bg-maroon-900" /></Reveal>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {schools.map((s) => (
-            <Link key={s.id} to={`/education/${s.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
+          {schools.map((s, i) => (
+            <StaggerItem key={s.id} index={i} lift className="h-full">
+            <Link to={`/education/${s.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
               <div className="relative flex items-center gap-4 overflow-hidden p-5" style={{ background: `linear-gradient(135deg, ${s.houseColors?.[0]}, ${s.houseColors?.[0]}E6)` }}>
                 {SCHOOL_PHOTOS[s.slug] && (
                   <>
@@ -52,6 +54,7 @@ export function Component() {
                 </div>
               </div>
             </Link>
+            </StaggerItem>
           ))}
         </div>
       </Container>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Section, SectionHeading, CTA as Cta } from "@/components/ui";
 import { ListingCard } from "@/components/listing-card";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { useListings, type Listing } from "@/lib/listings";
 
 /**
@@ -38,11 +39,13 @@ export function LiveCollection({
     <Section id={id} tone={tone} size="wide">
       <SectionHeading kicker={kicker} title={title} lede={lede} accentClass={accentClass} />
 
-      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((listing) => (
-          <ListingCard key={listing.id} listing={listing} />
+      <Stagger className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((listing, i) => (
+          <StaggerItem key={listing.id} index={i} className="h-full">
+            <ListingCard listing={listing} />
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
 
       {cta && (
         <div className="mt-12 text-center">

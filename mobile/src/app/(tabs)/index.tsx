@@ -1,11 +1,13 @@
 import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
+import Animated from "react-native-reanimated";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HomeData, Listing, NewsArticle } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Mark, Pill, Thumb } from "@/ui";
+import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 
 // Route a featured listing to its canonical screen (any type can be featured).
 function featuredRoute(l: Listing): string {
@@ -29,12 +31,14 @@ function FeaturedRow() {
     <View style={s.section}>
       <Text style={s.kicker}>FEATURED IN OGUAA</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 4 }}>
-        {items.map((l) => (
-          <Pressable key={l.id} onPress={() => router.push(featuredRoute(l) as never)} style={s.artistCard}>
-            <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.artistThumb} labelStyle={s.thumbInit} />
-            <Text style={s.artistName} numberOfLines={1}>{l.title}</Text>
-            <Text style={s.artistGenre} numberOfLines={1}>{l.type}</Text>
-          </Pressable>
+        {items.map((l, i) => (
+          <StaggerIn key={l.id} index={i}>
+            <Pressable onPress={() => router.push(featuredRoute(l) as never)} style={s.artistCard}>
+              <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.artistThumb} labelStyle={s.thumbInit} />
+              <Text style={s.artistName} numberOfLines={1}>{l.title}</Text>
+              <Text style={s.artistGenre} numberOfLines={1}>{l.type}</Text>
+            </Pressable>
+          </StaggerIn>
         ))}
       </ScrollView>
     </View>
@@ -53,15 +57,17 @@ function NewsStrip() {
         <Link href="/news"><Text style={s.link}>All →</Text></Link>
       </View>
       <View style={{ gap: 8 }}>
-        {items.map((a) => (
-          <Pressable key={a.id} onPress={() => router.push(`/news/${a.slug}` as never)} style={s.newsRow}>
-            <View style={[s.newsBar, { backgroundColor: a.coverColor ?? C.green }]} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.newsTitle} numberOfLines={2}>{a.title}</Text>
-              <Text style={s.newsMeta}>{a.authorName}</Text>
-            </View>
-            <Text style={s.newsChevron}>›</Text>
-          </Pressable>
+        {items.map((a, i) => (
+          <StaggerIn key={a.id} index={i}>
+            <PressScale onPress={() => router.push(`/news/${a.slug}` as never)} style={s.newsRow}>
+              <View style={[s.newsBar, { backgroundColor: a.coverColor ?? C.green }]} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={s.newsTitle} numberOfLines={2}>{a.title}</Text>
+                <Text style={s.newsMeta}>{a.authorName}</Text>
+              </View>
+              <Text style={s.newsChevron}>›</Text>
+            </PressScale>
+          </StaggerIn>
         ))}
       </View>
     </View>
@@ -70,6 +76,7 @@ function NewsStrip() {
 
 export default function Home() {
   const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useHeroParallax();
   const { data, error, loading } = useApi<HomeData>(() => api.home(), "home");
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
@@ -79,34 +86,37 @@ export default function Home() {
   const events = (data.events ?? []).slice(0, 3);
 
   return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
+    <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
       {/* hero */}
       <View style={[s.hero, { paddingTop: insets.top + 24 }]}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Mark size={26} />
-          <Text style={s.eyebrow}>CAPE COAST · GHANA</Text>
-        </View>
-        <Text style={s.heroTitle}>
-          This is <Text style={{ color: C.gold }}>Oguaa.</Text>
-        </Text>
-        <Text style={s.heroSub}>
-          The town that began as a market — its music, its people, its memory, in one place. Made by us, for us.
-        </Text>
-        <View style={s.stats}>
-          {([["Members", stats.members], ["Listings", stats.listings], ["Schools", stats.schools], ["Artists", stats.artists]] as const).map(([k, v]) => (
-            <View key={k} style={s.stat}>
-              <Text style={s.statNum}>{v}</Text>
-              <Text style={s.statLbl}>{k}</Text>
-            </View>
-          ))}
-        </View>
+        <HeroParallax scrollY={scrollY}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Mark size={26} />
+            <Text style={s.eyebrow}>CAPE COAST · GHANA</Text>
+          </View>
+          <Text style={s.heroTitle}>
+            This is <Text style={{ color: C.gold }}>Oguaa.</Text>
+          </Text>
+          <Text style={s.heroSub}>
+            The town that began as a market — its music, its people, its memory, in one place. Made by us, for us.
+          </Text>
+          <View style={s.stats}>
+            {([["Members", stats.members], ["Listings", stats.listings], ["Schools", stats.schools], ["Artists", stats.artists]] as const).map(([k, v]) => (
+              <View key={k} style={s.stat}>
+                <Text style={s.statNum}>{v}</Text>
+                <Text style={s.statLbl}>{k}</Text>
+              </View>
+            ))}
+          </View>
+        </HeroParallax>
       </View>
 
       {/* spotlight */}
       <View style={s.section}>
         <Text style={s.kicker}>ROTATING SPOTLIGHT</Text>
-        <Link href={`/music/${spotlight.slug}`} asChild>
-          <Pressable style={s.spotlight}>
+        <StaggerIn index={0}>
+          <Link href={`/music/${spotlight.slug}`} asChild>
+            <Pressable style={s.spotlight}>
             <Thumb
               seed={spotlight.slug}
               src={spotlight.coverImageUrl}
@@ -120,7 +130,8 @@ export default function Home() {
               <Text style={s.spotBio} numberOfLines={3}>{spotlight.details.bio}</Text>
             </View>
           </Pressable>
-        </Link>
+          </Link>
+        </StaggerIn>
       </View>
 
       {/* artists preview */}
@@ -130,20 +141,22 @@ export default function Home() {
           <Link href="/music"><Text style={s.link}>All →</Text></Link>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 4 }}>
-          {more.map((a) => (
-            <Link key={a.id} href={`/music/${a.slug}`} asChild>
-              <Pressable style={s.artistCard}>
-                <Thumb
-                  seed={a.slug}
-                  src={a.coverImageUrl}
-                  label={initials(a.details.actName ?? a.title)}
-                  style={s.artistThumb}
-                  labelStyle={s.thumbInit}
-                />
-                <Text style={s.artistName} numberOfLines={1}>{a.details.actName ?? a.title}</Text>
-                <Text style={s.artistGenre} numberOfLines={1}>{(a.details.genres ?? [])[0]}</Text>
-              </Pressable>
-            </Link>
+          {more.map((a, i) => (
+            <StaggerIn key={a.id} index={i + 1}>
+              <Link href={`/music/${a.slug}`} asChild>
+                <Pressable style={s.artistCard}>
+                  <Thumb
+                    seed={a.slug}
+                    src={a.coverImageUrl}
+                    label={initials(a.details.actName ?? a.title)}
+                    style={s.artistThumb}
+                    labelStyle={s.thumbInit}
+                  />
+                  <Text style={s.artistName} numberOfLines={1}>{a.details.actName ?? a.title}</Text>
+                  <Text style={s.artistGenre} numberOfLines={1}>{(a.details.genres ?? [])[0]}</Text>
+                </Pressable>
+              </Link>
+            </StaggerIn>
           ))}
         </ScrollView>
       </View>
@@ -158,15 +171,17 @@ export default function Home() {
             <Link href="/browse/events"><Text style={s.link}>All →</Text></Link>
           </View>
           <View style={{ gap: 8 }}>
-            {events.map((e) => (
-              <Pressable key={e.id} onPress={() => router.push("/browse/events" as never)} style={s.newsRow}>
-                <View style={[s.newsBar, { backgroundColor: C.teal }]} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={s.newsTitle} numberOfLines={1}>{e.title}</Text>
-                  <Text style={s.newsMeta}>{[e.details.startsAt, e.details.venue].filter(Boolean).join(" · ")}</Text>
-                </View>
-                <Text style={s.newsChevron}>›</Text>
-              </Pressable>
+            {events.map((e, i) => (
+              <StaggerIn key={e.id} index={i}>
+                <PressScale onPress={() => router.push("/browse/events" as never)} style={s.newsRow}>
+                  <View style={[s.newsBar, { backgroundColor: C.teal }]} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={s.newsTitle} numberOfLines={1}>{e.title}</Text>
+                    <Text style={s.newsMeta}>{[e.details.startsAt, e.details.venue].filter(Boolean).join(" · ")}</Text>
+                  </View>
+                  <Text style={s.newsChevron}>›</Text>
+                </PressScale>
+              </StaggerIn>
             ))}
           </View>
         </View>
@@ -178,8 +193,9 @@ export default function Home() {
       {memorial && (
         <View style={s.section}>
           <Text style={s.kicker}>YƐNKAE · IN MEMORIAM</Text>
-          <Link href={`/memoriam/${memorial.slug}`} asChild>
-            <Pressable style={s.memorial}>
+          <RevealView>
+            <Link href={`/memoriam/${memorial.slug}`} asChild>
+              <Pressable style={s.memorial}>
               {memorial.coverImageUrl ? (
                 <Thumb seed={memorial.slug} src={memorial.coverImageUrl} label={initials(memorial.title)} style={s.memPortrait} labelStyle={s.memPortraitInit} />
               ) : null}
@@ -188,11 +204,12 @@ export default function Home() {
               <View style={{ marginTop: 8 }}>
                 <Pill label={`${memorial.details.candles ?? 0} candles · remember together`} color={C.goldText} bg={C.cream} border={C.sand} />
               </View>
-            </Pressable>
-          </Link>
+              </Pressable>
+            </Link>
+          </RevealView>
         </View>
       )}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 

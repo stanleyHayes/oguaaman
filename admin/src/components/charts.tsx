@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { motion } from "motion/react";
 
 // Bespoke, dependency-free charts in the Oguaa palette. All animate on data
 // change (transition on width/height) so the live-refreshing dashboard feels
@@ -27,9 +28,12 @@ export function BarsH({ data }: Readonly<{ data: Datum[] }>) {
         <div key={d.label} className="flex items-center gap-3">
           <span className="w-24 shrink-0 truncate text-xs text-ink-muted" title={d.label}>{d.label}</span>
           <div className="relative h-5 flex-1 overflow-hidden rounded bg-sand/60">
-            <div
-              className="absolute inset-y-0 left-0 rounded transition-[width] duration-700 ease-out"
-              style={{ width: `${(d.value / max) * 100}%`, backgroundColor: d.color ?? CHART_COLORS[i % CHART_COLORS.length] }}
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded"
+              initial={{ width: 0 }}
+              animate={{ width: `${(d.value / max) * 100}%` }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              style={{ backgroundColor: d.color ?? CHART_COLORS[i % CHART_COLORS.length] }}
             />
           </div>
           <span className="w-7 shrink-0 text-right text-xs font-semibold tabular-nums text-ink">{d.value}</span>
@@ -47,14 +51,17 @@ export function Histogram({ data, color = PALETTE.gold }: Readonly<{ data: Datum
     <div>
       <div className="flex h-40 items-end gap-1.5">
         {data.map((d) => (
-          <div
-            key={d.label + d.value}
-            className="group relative flex-1 rounded-t transition-[height] duration-700 ease-out"
-            style={{ height: `${Math.max(2, (d.value / max) * 100)}%`, backgroundColor: color }}
+          <motion.div
+            key={d.label}
+            className="group relative flex-1 rounded-t"
+            initial={{ height: "0%" }}
+            animate={{ height: `${Math.max(2, (d.value / max) * 100)}%` }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            style={{ backgroundColor: color }}
             title={`${d.label}: ${d.value}`}
           >
             <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[0.6rem] font-semibold tabular-nums text-ink opacity-0 transition-opacity group-hover:opacity-100">{d.value}</span>
-          </div>
+          </motion.div>
         ))}
       </div>
       <div className="mt-1.5 flex gap-1.5">

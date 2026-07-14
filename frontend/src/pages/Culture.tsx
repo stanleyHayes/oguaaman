@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { PageHero } from "@/components/page-hero";
 import { Container, Card, SectionHeading, CTA as Cta } from "@/components/ui";
+import { Reveal, Reveal3D, StaggerItem } from "@/components/motion";
 import { CULTURE_BLURB } from "@/lib/content";
 
 const COMPANIES = [
@@ -27,7 +28,7 @@ export function Component() {
 
       <section className="bg-cream py-12">
         <Container>
-          <Card className="overflow-hidden p-0">
+          <Reveal3D><Card className="overflow-hidden p-0">
             <div className="grid gap-6 p-7 sm:grid-cols-[1fr_auto] sm:items-center">
               <div>
                 <p className="eyebrow text-gold-text">The anchor festival</p>
@@ -36,27 +37,27 @@ export function Component() {
                 <div className="mt-5"><Cta to="/events" variant="gold">See the festival event →</Cta></div>
               </div>
             </div>
-          </Card>
+          </Card></Reveal3D>
         </Container>
       </section>
 
       <Container className="py-12">
-        <SectionHeading kicker="Seven companies" title="The Asafo of Oguaa" lede="Once town soldiers, now ceremonial brotherhoods, each with its own colours and frankaa flags. (We honour their grammar; we never reproduce a real company's flag or shrine.)" accentClass="bg-clay" />
+        <Reveal><SectionHeading kicker="Seven companies" title="The Asafo of Oguaa" lede="Once town soldiers, now ceremonial brotherhoods, each with its own colours and frankaa flags. (We honour their grammar; we never reproduce a real company's flag or shrine.)" accentClass="bg-clay" /></Reveal>
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {COMPANIES.map((c) => (
-            <div key={c.name} className="flex items-center gap-3 rounded-[var(--radius-card)] border border-sand bg-cream p-4">
+          {COMPANIES.map((c, i) => (
+            <StaggerItem key={c.name} index={i} className="flex items-center gap-3 rounded-[var(--radius-card)] border border-sand bg-cream p-4">
               <span className="h-8 w-8 shrink-0 rounded-full border border-sand" style={{ background: c.hex }} aria-hidden />
               <div><p className="text-lg text-ink">{c.name}</p><p className="text-xs text-ink-faint">{c.colour}</p></div>
-            </div>
+            </StaggerItem>
           ))}
         </div>
       </Container>
 
       <section className="bg-cream py-12">
         <Container>
-          <SectionHeading kicker="The Traditional Council" title="Who holds authority" accentClass="bg-gold-brand" />
+          <Reveal><SectionHeading kicker="The Traditional Council" title="Who holds authority" accentClass="bg-gold-brand" /></Reveal>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {OFFICES.map((o) => (<Card key={o.role} className="p-5"><h3 className="text-xl font-semibold text-ink">{o.role}</h3><p className="mt-1.5 text-sm text-ink-muted">{o.note}</p></Card>))}
+            {OFFICES.map((o, i) => (<StaggerItem key={o.role} index={i} lift><Card className="h-full p-5"><h3 className="text-xl font-semibold text-ink">{o.role}</h3><p className="mt-1.5 text-sm text-ink-muted">{o.note}</p></Card></StaggerItem>))}
           </div>
           <p className="mt-6 text-sm text-ink-muted">See the <Link to="/education/oguaa-traditional-area" className="font-semibold text-gold-text hover:underline">Oguaa Traditional Area profile →</Link></p>
         </Container>

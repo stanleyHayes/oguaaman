@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLoaderData, useNavigate, type LoaderFunctionArgs } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { api } from "@/lib/api";
 import type { Listing, ListingStatus } from "@/lib/types";
 import { BackLink, Card, StatusBadge, Pill, KeyVal } from "@/components/ui";
@@ -84,15 +85,25 @@ export function Component() {
       return (
               <div className="space-y-2.5">
                 <button disabled={busy} onClick={() => moderate("approve")} className="w-full rounded-lg bg-green px-4 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-50">Approve & publish</button>
-                {rejecting ? (
-                  <div className="space-y-2">
-                    <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason for rejection (sent to the contributor)…" className="w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm focus:border-maroon-900 focus:outline-none" />
-                    <div className="flex gap-2">
-                      <button disabled={busy || !reason.trim()} onClick={() => moderate("reject")} className="flex-1 rounded-lg bg-maroon-900 px-4 py-2 text-sm font-semibold text-cream disabled:opacity-50">Confirm reject</button>
-                      <button onClick={() => { setRejecting(false); setReason(""); }} className="rounded-lg border border-sand px-4 py-2 text-sm">Cancel</button>
-                    </div>
-                  </div>
-                ) : (
+                <AnimatePresence initial={false}>
+                  {rejecting && (
+                    <motion.div
+                      key="reject-panel"
+                      className="space-y-2"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason for rejection (sent to the contributor)…" className="w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm focus:border-maroon-900 focus:outline-none" />
+                      <div className="flex gap-2">
+                        <button disabled={busy || !reason.trim()} onClick={() => moderate("reject")} className="flex-1 rounded-lg bg-maroon-900 px-4 py-2 text-sm font-semibold text-cream disabled:opacity-50">Confirm reject</button>
+                        <button onClick={() => { setRejecting(false); setReason(""); }} className="rounded-lg border border-sand px-4 py-2 text-sm">Cancel</button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                {!rejecting && (
                   <button disabled={busy} onClick={() => setRejecting(true)} className="w-full rounded-lg border border-maroon-900/40 px-4 py-2.5 text-sm font-semibold text-maroon-900 hover:bg-maroon-900/[0.06] disabled:opacity-50">Reject…</button>
                 )}
               </div>

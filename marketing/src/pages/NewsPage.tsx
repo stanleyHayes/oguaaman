@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Section } from "@/components/ui";
 import { PageHero } from "@/components/page-hero";
 import { CoastScene } from "@/components/scenes";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { api, type NewsArticle } from "@/lib/api";
 
 function fmt(iso?: string): string {
@@ -61,7 +62,7 @@ function FeaturedStory({ a }: Readonly<{ a: NewsArticle }>) {
 
 function CoverageCard({ a }: Readonly<{ a: NewsArticle }>) {
   return (
-    <Link to={`/news/${a.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+    <Link to={`/news/${a.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
       <Cover a={a} sizes="sm" />
       <div className="flex flex-1 flex-col p-6">
         {a.tags?.[0] && (
@@ -106,7 +107,11 @@ export function Component() {
           <p className="mt-4 text-center text-ink-muted">No news yet — check back soon.</p>
         )}
 
-        {lead && <FeaturedStory a={lead} />}
+        {lead && (
+          <Reveal>
+            <FeaturedStory a={lead} />
+          </Reveal>
+        )}
 
         {rest.length > 0 && (
           <>
@@ -114,9 +119,13 @@ export function Component() {
               <p className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-gold-text">Latest coverage</p>
               <h2 className="mt-1 text-2xl font-semibold text-ink">From the newsroom</h2>
             </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {rest.map((a) => <CoverageCard key={a.id} a={a} />)}
-            </div>
+            <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {rest.map((a, idx) => (
+                <StaggerItem key={a.id} index={idx}>
+                  <CoverageCard a={a} />
+                </StaggerItem>
+              ))}
+            </Stagger>
           </>
         )}
       </Section>

@@ -2,6 +2,7 @@ import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { ModerationRecord, Member } from "@/lib/types";
 import { PageHeader, Card, Empty } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate, titleCase } from "@/lib/format";
 
 interface Data { records: ModerationRecord[]; members: Member[] }
@@ -29,17 +30,17 @@ export function Component() {
             <thead className="border-b border-sand bg-paper text-left text-xs uppercase tracking-wide text-ink-faint">
               <tr><th className="px-4 py-3">Action</th><th className="px-4 py-3">Listing</th><th className="px-4 py-3 hidden sm:table-cell">By</th><th className="px-4 py-3 hidden md:table-cell">When</th><th className="px-4 py-3">Reason</th></tr>
             </thead>
-            <tbody>
-              {records.map((r) => (
-                <tr key={r.id} className="border-b border-sand last:border-0">
+            <Stagger as="tbody">
+              {records.map((r, idx) => (
+                <StaggerItem as="tr" key={r.id} index={idx} className="border-b border-sand last:border-0">
                   <td className={`px-4 py-3 font-semibold ${ACTION_TONE[r.action] ?? "text-ink"}`}>{titleCase(r.action.replace("-", " "))}</td>
                   <td className="px-4 py-3 font-mono text-xs text-ink-muted">{r.listingId}</td>
                   <td className="px-4 py-3 hidden text-ink-muted sm:table-cell">{nameOf(r.moderatorId)}</td>
                   <td className="px-4 py-3 hidden text-ink-faint md:table-cell">{formatDate(r.createdAt)}</td>
                   <td className="px-4 py-3 text-ink-muted">{r.reason || "—"}</td>
-                </tr>
+                </StaggerItem>
               ))}
-            </tbody>
+            </Stagger>
           </table>
         </Card>
       )}

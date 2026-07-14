@@ -4,6 +4,7 @@ import { DurbarScene } from "@/components/scenes";
 import { Section, SectionHeading, Card, Pill, CTA as Cta } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { LiveCollection } from "@/components/live-collection";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { ARTISTS_FALLBACK, BUSINESSES_FALLBACK } from "@/lib/fallbacks";
 import { PORTAL_APP_URL } from "@/config";
 
@@ -138,9 +139,13 @@ export function Component() {
           streets with their flags, their drums and their musketry, while the chiefs come up to Victoria Park
           in palanquins under turning umbrellas, each one with his okyeame walking ahead, staff in hand.
         </p>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {FETU.map((i) => <ItemCard key={i.title} item={i} />)}
-        </div>
+        <Stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {FETU.map((item, idx) => (
+            <StaggerItem key={item.title} index={idx}>
+              <ItemCard item={item} />
+            </StaggerItem>
+          ))}
+        </Stagger>
       </Section>
 
       {/* The regalia & the rite */}
@@ -150,9 +155,13 @@ export function Component() {
           title="Palanquin, staff and drum."
           lede="Nothing at a durbar is accidental. Every object carries a word."
         />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {RITE.map((i) => <ItemCard key={i.title} item={i} />)}
-        </div>
+        <Stagger className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {RITE.map((item, idx) => (
+            <StaggerItem key={item.title} index={idx}>
+              <ItemCard item={item} />
+            </StaggerItem>
+          ))}
+        </Stagger>
       </Section>
 
       {/* The wider calendar */}
@@ -162,9 +171,13 @@ export function Component() {
           title="Oguaa is not the only fire."
           lede="One short stretch of the Central Region coast keeps more festivals than most countries. Within an afternoon's drive of the Castle, the calendar turns all year."
         />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2">
-          {CALENDAR.map((i) => <ItemCard key={i.title} item={i} />)}
-        </div>
+        <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
+          {CALENDAR.map((item, idx) => (
+            <StaggerItem key={item.title} index={idx}>
+              <ItemCard item={item} />
+            </StaggerItem>
+          ))}
+        </Stagger>
       </Section>
 
       {/* The Oguaa Sound — dark band */}
@@ -208,9 +221,13 @@ export function Component() {
           title="What the sea sets down."
           lede="The taste of the coast: fermented corn, palm oil, and fish that was in the Atlantic this morning."
         />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2">
-          {TABLE.map((i) => <ItemCard key={i.title} item={i} />)}
-        </div>
+        <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
+          {TABLE.map((item, idx) => (
+            <StaggerItem key={item.title} index={idx}>
+              <ItemCard item={item} />
+            </StaggerItem>
+          ))}
+        </Stagger>
         <SymbolDivider name="crab" className="mt-14" />
         <p className="mx-auto mt-5 max-w-xl text-center font-serif text-base italic text-ink-muted">
           Told by the fire. Da yie.

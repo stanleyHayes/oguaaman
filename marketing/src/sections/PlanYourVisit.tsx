@@ -1,4 +1,5 @@
 import { Section, SectionHeading, Card, Pill } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { Link } from "react-router-dom";
 
 /**
@@ -111,26 +112,28 @@ export function PlanYourVisit() {
           title="What you need to know."
           lede="The practical part. Hours and fees change — confirm on arrival, and carry cash in cedis."
         />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2">
-          {SITES.map((s) => (
-            <Card key={s.title} className="flex flex-col p-6 sm:p-7">
-              <Pill tone={s.tone} className="self-start">{s.pill}</Pill>
-              <h3 className="mt-4 text-2xl font-semibold text-ink">{s.title}</h3>
-              <dl className="mt-4 space-y-2.5">
-                {s.facts.map((f) => (
-                  <div key={f.label} className="grid grid-cols-[6.5rem_1fr] gap-3">
-                    <dt className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{f.label}</dt>
-                    <dd className="text-sm leading-relaxed text-ink-muted">{f.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              {s.note && <p className="mt-4 font-serif text-sm italic text-ink-muted">{s.note}</p>}
-              <Link to={`/visit/${s.slug}`} className="mt-4 inline-flex items-center gap-1 border-t border-sand pt-3 text-sm font-semibold text-green transition-colors hover:text-green-900">
-                Full guide & history →
-              </Link>
-            </Card>
+        <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
+          {SITES.map((s, i) => (
+            <StaggerItem key={s.title} index={i} className="h-full">
+              <Card className="flex h-full flex-col p-6 sm:p-7">
+                <Pill tone={s.tone} className="self-start">{s.pill}</Pill>
+                <h3 className="mt-4 text-2xl font-semibold text-ink">{s.title}</h3>
+                <dl className="mt-4 space-y-2.5">
+                  {s.facts.map((f) => (
+                    <div key={f.label} className="grid grid-cols-[6.5rem_1fr] gap-3">
+                      <dt className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{f.label}</dt>
+                      <dd className="text-sm leading-relaxed text-ink-muted">{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {s.note && <p className="mt-4 font-serif text-sm italic text-ink-muted">{s.note}</p>}
+                <Link to={`/visit/${s.slug}`} className="mt-4 inline-flex items-center gap-1 border-t border-sand pt-3 text-sm font-semibold text-green transition-colors hover:text-green-900">
+                  Full guide & history →
+                </Link>
+              </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </Section>
 
       {/* Getting here & around */}
@@ -140,14 +143,16 @@ export function PlanYourVisit() {
           title="Two and a half hours from Accra."
           lede="An easy drive along the coast, and an easy place to get around once you arrive."
         />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2">
-          {ROAD.map((c) => (
-            <Card key={c.title} className="p-6 sm:p-7">
-              <h3 className="text-xl font-semibold text-ink">{c.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-ink-muted">{c.body}</p>
-            </Card>
+        <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
+          {ROAD.map((c, i) => (
+            <StaggerItem key={c.title} index={i}>
+              <Card className="p-6 sm:p-7">
+                <h3 className="text-xl font-semibold text-ink">{c.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink-muted">{c.body}</p>
+              </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </Section>
 
       {/* When to come */}
@@ -157,16 +162,18 @@ export function PlanYourVisit() {
           title="Come in September, if you can."
           lede="The town is worth a visit any week of the year — but one Saturday turns it into something you will never forget."
         />
-        <div className="mt-12 grid gap-5 sm:grid-cols-3">
-          {WHEN.map((w) => (
-            <Card key={w.title} className="flex flex-col p-6 sm:p-7">
-              <Pill tone={w.tone} className="self-start">{w.pill}</Pill>
-              <h3 className="mt-4 text-xl font-semibold text-ink">{w.title}</h3>
-              <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{w.meta}</p>
-              <p className="mt-2 text-sm leading-relaxed text-ink-muted">{w.body}</p>
-            </Card>
+        <Stagger className="mt-12 grid gap-5 sm:grid-cols-3">
+          {WHEN.map((w, i) => (
+            <StaggerItem key={w.title} index={i} className="h-full">
+              <Card className="flex h-full flex-col p-6 sm:p-7">
+                <Pill tone={w.tone} className="self-start">{w.pill}</Pill>
+                <h3 className="mt-4 text-xl font-semibold text-ink">{w.title}</h3>
+                <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{w.meta}</p>
+                <p className="mt-2 text-sm leading-relaxed text-ink-muted">{w.body}</p>
+              </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
         <div className="mt-10 text-center">
           <Link
             to="/festivals"

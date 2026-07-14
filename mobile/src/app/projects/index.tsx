@@ -5,6 +5,7 @@ import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
+import { StaggerIn } from "@/components/anim";
 
 export const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
@@ -42,9 +43,10 @@ export default function Projects() {
     >
       <Text style={s.lede}>Concrete, costed improvements for Cape Coast — proposed by verified institutions, funded by residents and the diaspora together. Receipts are published to backers.</Text>
       {data.length === 0 && <Text style={s.empty}>No open projects yet — the first campaigns are being costed.</Text>}
-      {data.map((l) => (
-        <Link key={l.id} href={`/projects/${l.slug}` as never} asChild>
-          <Pressable style={s.card}>
+      {data.map((l, i) => (
+        <StaggerIn key={l.id} index={i}>
+          <Link href={`/projects/${l.slug}` as never} asChild>
+            <Pressable style={s.card}>
             <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cover} labelStyle={s.coverInit} />
             <View style={{ padding: 14 }}>
               <Text style={s.title}>{l.title}</Text>
@@ -55,8 +57,9 @@ export default function Projects() {
               </View>
               <Text style={s.meta}>{l.details.backers ?? 0} backers{l.details.deadline ? ` · closes ${l.details.deadline}` : ""}</Text>
             </View>
-          </Pressable>
-        </Link>
+            </Pressable>
+          </Link>
+        </StaggerIn>
       ))}
     </ScrollView>
   );

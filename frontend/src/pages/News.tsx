@@ -4,6 +4,7 @@ import type { NewsArticle } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container, CTA as Cta } from "@/components/ui";
 import { EmptyState } from "@/components/empty-state";
+import { LayoutPill, Reveal, Reveal3D, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
 
@@ -77,15 +78,19 @@ function CoverageCard({ a }: Readonly<{ a: NewsArticle }>) {
 function TagChips({ tags, active, onPick }: Readonly<{ tags: string[]; active: string | null; onPick: (t: string | null) => void }>) {
   if (tags.length === 0) return null;
   const chip = (on: boolean) =>
-    `rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-      on ? "bg-green text-cream" : "border border-sand bg-cream text-ink-muted hover:border-green hover:text-green"
+    `relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+      on ? "text-cream" : "border border-sand bg-cream text-ink-muted hover:border-green hover:text-green"
     }`;
   return (
     <div className="mb-8 flex flex-wrap gap-2">
-      <button type="button" onClick={() => onPick(null)} className={chip(active === null)}>All</button>
+      <button type="button" onClick={() => onPick(null)} className={chip(active === null)}>
+        {active === null && <LayoutPill layoutId="news-tag" className="absolute inset-0 rounded-full bg-green" />}
+        <span className="relative">All</span>
+      </button>
       {tags.map((t) => (
         <button key={t} type="button" onClick={() => onPick(active === t ? null : t)} className={chip(active === t)}>
-          #{t}
+          {active === t && <LayoutPill layoutId="news-tag" className="absolute inset-0 rounded-full bg-green" />}
+          <span className="relative">#{t}</span>
         </button>
       ))}
     </div>
@@ -108,9 +113,11 @@ export function Component() {
       <section className="on-dark relative overflow-hidden bg-green-900 py-14 text-cream">
         <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-brand/[0.08] blur-3xl" />
         <Container className="relative">
-          <p className="eyebrow text-gold/80">The Oguaa Newsroom</p>
-          <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">News &amp; notices</h1>
-          <p className="mt-3 max-w-2xl text-cream/80">Festivals, scholarships, homecomings and announcements — from the community and its institutions.</p>
+          <Reveal>
+            <p className="eyebrow text-gold/80">The Oguaa Newsroom</p>
+            <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">News &amp; notices</h1>
+            <p className="mt-3 max-w-2xl text-cream/80">Festivals, scholarships, homecomings and announcements — from the community and its institutions.</p>
+          </Reveal>
         </Container>
       </section>
 
@@ -124,7 +131,7 @@ export function Component() {
         ) : (
           <>
             <TagChips tags={tags} active={activeTag} onPick={setActiveTag} />
-            {leadMatches && <FeaturedStory a={lead} />}
+            {leadMatches && <Reveal3D><FeaturedStory a={lead} /></Reveal3D>}
             {visible.length > 0 && (
               <>
                 <div className="mb-5 mt-10 flex items-end justify-between gap-4">
@@ -134,7 +141,7 @@ export function Component() {
                   </div>
                 </div>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {visible.map((a) => <CoverageCard key={a.id} a={a} />)}
+                  {visible.map((a, i) => <StaggerItem key={a.id} index={i}><CoverageCard a={a} /></StaggerItem>)}
                 </div>
               </>
             )}

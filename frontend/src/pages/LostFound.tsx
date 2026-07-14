@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { formatDate } from "@/lib/format";
+import { LayoutPill, StaggerItem } from "@/components/motion";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { LOST_FOUND_KINDS, KIND_LABEL, LF_STATUS_CLASS, LF_STATUS_LABEL } from "@/lib/lostfound";
 
@@ -29,9 +30,10 @@ export function Component() {
             <button
               key={k.value}
               onClick={() => setKind(k.value)}
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${kind === k.value ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
+              className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${kind === k.value ? "border-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
             >
-              {k.label}s <span className="opacity-60">({counts(k.value)})</span>
+              {kind === k.value && <LayoutPill layoutId="lf-kind" className="absolute inset-0 rounded-full bg-green" />}
+              <span className="relative">{k.label}s <span className="opacity-60">({counts(k.value)})</span></span>
             </button>
           ))}
         </div>
@@ -41,7 +43,7 @@ export function Component() {
             Nothing here yet — and may it stay that way.
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">{shown.map((i) => <NoticeCard key={i.id} notice={i} />)}</div>
+          <div className="grid gap-4 sm:grid-cols-2">{shown.map((n, idx) => <StaggerItem key={n.id} index={idx} lift><NoticeCard notice={n} /></StaggerItem>)}</div>
         )}
         <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>

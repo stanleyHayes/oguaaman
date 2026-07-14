@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import Animated from "react-native-reanimated";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
@@ -8,6 +9,7 @@ import type { InstitutionView, MediaAsset, ProfileSection, SectionItem, SubEntit
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb, Markdown } from "@/ui";
 import { cldCover, cld } from "@/lib/cloudinary";
+import { HeroParallax, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 
 // Section accents map to the heritage palette (never AI purple).
 const TONE: Record<string, string> = { green: C.green, clay: C.clay, gold: C.goldBrand, maroon: C.maroon, teal: C.teal };
@@ -22,6 +24,7 @@ function openURL(url?: string) {
 export default function Institution() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<InstitutionView>(() => api.institution(slug), "inst:" + slug);
+  const { scrollY, onScroll } = useHeroParallax();
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
 
@@ -38,45 +41,47 @@ export default function Institution() {
   return (
     <>
       <Stack.Screen options={{ title: org.name }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 56 }}>
+      <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 56 }} onScroll={onScroll} scrollEventThrottle={16}>
         <View style={[s.hero, { backgroundColor: heroBg }]}>
-          {org.crestUrl
-            ? <Image source={{ uri: cldCover(org.crestUrl, 200) }} resizeMode="cover" style={s.crest} />
-            : <View style={[s.crest, s.crestFallback]}><Text style={s.crestInit}>{initials(org.name)}</Text></View>}
-          <Text style={s.heroName}>{org.name}</Text>
-          {org.motto ? <Text style={s.heroMotto}>{org.motto}</Text> : null}
-          {org.verified ? <View style={s.badge}><Text style={s.badgeText}>✓ Verified · Official</Text></View> : null}
+          <HeroParallax scrollY={scrollY} style={{ width: "100%", alignItems: "center" }}>
+            {org.crestUrl
+              ? <Image source={{ uri: cldCover(org.crestUrl, 200) }} resizeMode="cover" style={s.crest} />
+              : <View style={[s.crest, s.crestFallback]}><Text style={s.crestInit}>{initials(org.name)}</Text></View>}
+            <Text style={s.heroName}>{org.name}</Text>
+            {org.motto ? <Text style={s.heroMotto}>{org.motto}</Text> : null}
+            {org.verified ? <View style={s.badge}><Text style={s.badgeText}>✓ Verified · Official</Text></View> : null}
+          </HeroParallax>
         </View>
 
-        <View style={s.facts}>
+        <RevealView delay={100} style={s.facts}>
           {facts.map(([k, v], i) => (
             <View key={k} style={[s.factCell, i < facts.length - 1 && s.factDivider]}>
               <Text style={s.factVal} numberOfLines={1}>{v}</Text>
               <Text style={s.factKey}>{k}</Text>
             </View>
           ))}
-        </View>
+        </RevealView>
 
         <View style={s.body}>
           {org.summary ? (
-            <View style={s.section}>
+            <RevealView delay={150} style={s.section}>
               <SecTitle>About</SecTitle>
               <Text style={s.summary}>{org.summary}</Text>
               {org.history ? <Text style={s.history}>{org.history}</Text> : null}
-            </View>
+            </RevealView>
           ) : null}
 
-          {sections.map((sec) => <SectionView key={sec.id} section={sec} />)}
+          {sections.map((sec, i) => <SectionView key={sec.id} section={sec} index={i} />)}
 
           {org.gallery && org.gallery.length > 0 ? (
-            <View style={s.section}>
+            <RevealView style={s.section}>
               <SecTitle>Gallery</SecTitle>
               <Gallery media={org.gallery} />
-            </View>
+            </RevealView>
           ) : null}
 
           {org.offices && org.offices.length > 0 ? (
-            <View style={s.section}>
+            <RevealView style={s.section}>
               <SecTitle>Offices &amp; office-holders</SecTitle>
               <View style={{ gap: 8 }}>
                 {org.offices.map((o) => (
@@ -86,12 +91,12 @@ export default function Institution() {
                   </View>
                 ))}
               </View>
-            </View>
+            </RevealView>
           ) : null}
 
           <ClaimPanel slug={slug} orgName={org.name} />
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </>
   );
 }
@@ -166,7 +171,7 @@ function SecTitle({ children, color = C.ink }: Readonly<{ children: ReactNode; c
   );
 }
 
-function SectionView({ section }: Readonly<{ section: ProfileSection }>) {
+function SectionView({ section, index = 0 }: Readonly<{ section: ProfileSection; index?: number }>) {
   const t = toneColor(section.tone);
   const items = section.items ?? [];
   const media = section.media ?? [];
@@ -195,10 +200,10 @@ function SectionView({ section }: Readonly<{ section: ProfileSection }>) {
   }
   if (!body) return null;
   return (
-    <View style={s.section}>
+    <StaggerIn index={index} style={s.section}>
       {showTitle && section.title ? <SecTitle color={t}>{section.title}</SecTitle> : null}
       {body}
-    </View>
+    </StaggerIn>
   );
 }
 

@@ -3,6 +3,7 @@ import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Listing, Ticket, TicketTier } from "@/lib/types";
 import { PageHeader, Card, Empty, StatCard } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -97,9 +98,9 @@ export function Component() {
                     <th className="px-4 py-3">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-sand">
-                  {tickets.map((t) => (
-                    <tr key={t.id} className="hover:bg-paper">
+                <Stagger as="tbody" className="divide-y divide-sand">
+                  {tickets.map((t, idx) => (
+                    <StaggerItem as="tr" key={t.id} index={idx} className="hover:bg-paper">
                       <td className="px-4 py-3 text-ink-muted">{t.memberId || <span className="text-ink-faint">—</span>}</td>
                       <td className="px-4 py-3 font-medium text-ink">{t.tier}</td>
                       <td className="px-4 py-3 text-ink-muted">{t.qty}</td>
@@ -111,9 +112,9 @@ export function Component() {
                       <td className="px-4 py-3 font-mono text-xs tracking-widest text-ink">{t.code || <span className="font-sans text-ink-faint">—</span>}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{t.checkedInAt ? formatDate(t.checkedInAt) : "—"}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{formatDate(t.confirmedAt ?? t.createdAt)}</td>
-                    </tr>
+                    </StaggerItem>
                   ))}
-                </tbody>
+                </Stagger>
               </table>
             </Card>
     );

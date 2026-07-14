@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import type { Notification } from "@/lib/types";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
+import { RevealView, StaggerIn } from "@/components/anim";
 
 function when(iso: string): string {
   if (!iso) return "";
@@ -77,7 +78,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
 
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 10 }}>
-      <View style={s.topRow}>
+      <RevealView style={s.topRow}>
         <View>
           <Text style={s.pageTitle}>Notifications</Text>
           <Text style={s.count}>{unread > 0 ? `${unread} unread` : "All caught up"}</Text>
@@ -85,24 +86,26 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
         {unread > 0 && (
           <Pressable onPress={markAll} disabled={busy} style={s.markBtn}><Text style={s.markText}>Mark all read</Text></Pressable>
         )}
-      </View>
+      </RevealView>
 
       {items.length === 0 && <Text style={s.empty}>No notifications yet. Updates on your listings and remembrances will appear here.</Text>}
 
-      {items.map((n) => {
+      {items.map((n, i) => {
         const linkable = mobileLink(n.link) != null;
         return (
-          <Pressable key={n.id} onPress={() => openItem(n)} style={[s.card, !n.read && s.cardUnread]}>
-            <View style={[s.bar, { backgroundColor: KIND_COLOR[n.kind] ?? C.inkFaint, opacity: n.read ? 0.3 : 1 }]} />
-            <View style={{ flex: 1 }}>
-              <View style={s.cardHead}>
-                <Text style={s.cardTitle}>{n.title}</Text>
-                <Text style={s.cardDate}>{when(n.createdAt)}</Text>
+          <StaggerIn key={n.id} index={i}>
+            <Pressable onPress={() => openItem(n)} style={[s.card, !n.read && s.cardUnread]}>
+              <View style={[s.bar, { backgroundColor: KIND_COLOR[n.kind] ?? C.inkFaint, opacity: n.read ? 0.3 : 1 }]} />
+              <View style={{ flex: 1 }}>
+                <View style={s.cardHead}>
+                  <Text style={s.cardTitle}>{n.title}</Text>
+                  <Text style={s.cardDate}>{when(n.createdAt)}</Text>
+                </View>
+                <Text style={s.cardBody}>{n.body}</Text>
+                {linkable && <Text style={s.cardOpen}>Open →</Text>}
               </View>
-              <Text style={s.cardBody}>{n.body}</Text>
-              {linkable && <Text style={s.cardOpen}>Open →</Text>}
-            </View>
-          </Pressable>
+            </Pressable>
+          </StaggerIn>
         );
       })}
     </ScrollView>

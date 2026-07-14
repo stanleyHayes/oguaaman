@@ -1,6 +1,7 @@
 import { PageHero } from "@/components/page-hero";
 import { LighthouseScene } from "@/components/scenes";
 import { Section } from "@/components/ui";
+import { Reveal } from "@/components/motion";
 
 export function Component() {
   return (
@@ -13,7 +14,8 @@ export function Component() {
       />
 
       <Section tone="paper" size="prose">
-        <p className="text-sm text-ink-muted">Last updated: June 2026</p>
+        <Reveal>
+          <p className="text-sm text-ink-muted">Last updated: June 2026</p>
 
         <h2 className="mt-8 text-2xl font-semibold text-ink sm:text-3xl">
           Using Oguaa
@@ -105,7 +107,8 @@ export function Component() {
           As the platform grows, these terms may be updated, and we will note the
           date when they are. If anything here is unclear, or you need to raise
           something, reach the stewards through the app.
-        </p>
+          </p>
+        </Reveal>
       </Section>
     </>
   );

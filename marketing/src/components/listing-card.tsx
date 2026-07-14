@@ -20,7 +20,7 @@ export function ListingCard({ listing }: Readonly<{ listing: Listing }>) {
       href={portalHref(listing)}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block"
+      className="group block h-full"
     >
       <Card className="flex h-full flex-col overflow-hidden transition-shadow duration-300 hover:shadow-[var(--shadow-lift)]">
         {listing.coverImageUrl ? (

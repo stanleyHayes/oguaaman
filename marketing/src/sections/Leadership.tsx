@@ -1,6 +1,7 @@
 import { Section, SectionHeading } from "@/components/ui";
 import { Seal } from "@/components/scenes";
 import { Adinkra } from "@/components/adinkra";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 
 /**
  * The custodians of Oguaa, shown as two parallel TOP-DOWN HIERARCHIES — the
@@ -302,9 +303,11 @@ function NodeCard({ node, accent }: Readonly<{ node: Node; accent: Hierarchy["ac
 function Ladder({ hierarchy }: Readonly<{ hierarchy: Hierarchy }>) {
   return (
     <div>
-      <p className="eyebrow text-gold/80">{hierarchy.eyebrow}</p>
-      <h3 className="mt-2 text-3xl font-semibold text-cream sm:text-4xl">{hierarchy.title}</h3>
-      <p className="mt-4 max-w-2xl leading-relaxed text-cream/80">{hierarchy.intro}</p>
+      <Reveal>
+        <p className="eyebrow text-gold/80">{hierarchy.eyebrow}</p>
+        <h3 className="mt-2 text-3xl font-semibold text-cream sm:text-4xl">{hierarchy.title}</h3>
+        <p className="mt-4 max-w-2xl leading-relaxed text-cream/80">{hierarchy.intro}</p>
+      </Reveal>
 
       <ol className="mt-10">
         {hierarchy.tiers.map((tier, ti) => (
@@ -320,11 +323,13 @@ function Ladder({ hierarchy }: Readonly<{ hierarchy: Hierarchy }>) {
               </span>
               <span className="h-px flex-1 bg-cream/10" />
             </div>
-            <div className={`mt-4 grid gap-4 ${tier.nodes.some((n) => n.feature) ? "" : "sm:grid-cols-2"}`}>
-              {tier.nodes.map((node) => (
-                <NodeCard key={node.role} node={node} accent={hierarchy.accent} />
+            <Stagger className={`mt-4 grid gap-4 ${tier.nodes.some((n) => n.feature) ? "" : "sm:grid-cols-2"}`}>
+              {tier.nodes.map((node, ni) => (
+                <StaggerItem key={node.role} index={ni}>
+                  <NodeCard node={node} accent={hierarchy.accent} />
+                </StaggerItem>
               ))}
-            </div>
+            </Stagger>
           </li>
         ))}
       </ol>

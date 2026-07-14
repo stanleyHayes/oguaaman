@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import type { Stats, Listing, Member, Organization } from "@/lib/types";
 import { Card, StatusBadge } from "@/components/ui";
 import { BarsH, Histogram, AreaLine, Donut, CHART_COLORS, type Datum } from "@/components/charts";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { useAuth } from "@/lib/auth";
 
 interface Data {
@@ -87,7 +88,7 @@ function StatTile({ label, value, to, tone = "text-ink", accent = false }: Reado
 
 function ChartCard({ title, hint, children }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
   return (
-    <Card className="min-w-0 p-5">
+    <Card className="h-full min-w-0 p-5">
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <h2 className="text-lg font-semibold text-ink">{title}</h2>
         {hint && <span className="text-xs text-ink-faint">{hint}</span>}
@@ -183,83 +184,97 @@ export function Component() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile label="Pending" value={stats.pending} to="/moderation" tone="text-gold-text" accent />
-        <StatTile label="Live listings" value={stats.listings} to="/listings" />
-        <StatTile label="Members" value={stats.members} to="/members" />
-        <StatTile label="Institutions" value={stats.institutions} to="/institutions" />
-        <StatTile label="Artists" value={stats.artists} to="/listings" tone="text-clay-text" />
-        <StatTile label="Memorials" value={stats.memorials} to="/listings" tone="text-gold-text" />
-        <StatTile label="Memories" value={stats.memories} to="/listings" />
-        <StatTile label="Schools" value={stats.schools} to="/institutions" tone="text-maroon-900" />
-      </div>
+      <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StaggerItem index={0}><StatTile label="Pending" value={stats.pending} to="/moderation" tone="text-gold-text" accent /></StaggerItem>
+        <StaggerItem index={1}><StatTile label="Live listings" value={stats.listings} to="/listings" /></StaggerItem>
+        <StaggerItem index={2}><StatTile label="Members" value={stats.members} to="/members" /></StaggerItem>
+        <StaggerItem index={3}><StatTile label="Institutions" value={stats.institutions} to="/institutions" /></StaggerItem>
+        <StaggerItem index={4}><StatTile label="Artists" value={stats.artists} to="/listings" tone="text-clay-text" /></StaggerItem>
+        <StaggerItem index={5}><StatTile label="Memorials" value={stats.memorials} to="/listings" tone="text-gold-text" /></StaggerItem>
+        <StaggerItem index={6}><StatTile label="Memories" value={stats.memories} to="/listings" /></StaggerItem>
+        <StaggerItem index={7}><StatTile label="Schools" value={stats.schools} to="/institutions" tone="text-maroon-900" /></StaggerItem>
+      </Stagger>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-        <ChartCard title="Community growth" hint="Cumulative members">
-          <AreaLine points={growth} />
-        </ChartCard>
-        <ChartCard title="Listing status" hint={`${stats.listings} live`}>
-          <Donut data={statusMix} label="listings" />
-        </ChartCard>
-      </div>
+      <Stagger className="mt-5 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+        <StaggerItem index={0} className="min-w-0">
+          <ChartCard title="Community growth" hint="Cumulative members">
+            <AreaLine points={growth} />
+          </ChartCard>
+        </StaggerItem>
+        <StaggerItem index={1} className="min-w-0">
+          <ChartCard title="Listing status" hint={`${stats.listings} live`}>
+            <Donut data={statusMix} label="listings" />
+          </ChartCard>
+        </StaggerItem>
+      </Stagger>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-3">
-        <ChartCard title="Submissions" hint="Per month">
-          <Histogram data={submissions} />
-        </ChartCard>
-        <ChartCard title="Content mix" hint="By type">
-          <BarsH data={contentMix} />
-        </ChartCard>
-        <ChartCard title="Institutions" hint={`${verified}/${institutions.length} verified`}>
-          {institutionMix.length ? (
-            <div className="space-y-4">
-              <BarsH data={institutionMix} />
-              <div className="border-t border-sand pt-3"><Donut data={verifyMix} label="total" /></div>
+      <Stagger className="mt-5 grid gap-5 lg:grid-cols-3">
+        <StaggerItem index={0} className="min-w-0">
+          <ChartCard title="Submissions" hint="Per month">
+            <Histogram data={submissions} />
+          </ChartCard>
+        </StaggerItem>
+        <StaggerItem index={1} className="min-w-0">
+          <ChartCard title="Content mix" hint="By type">
+            <BarsH data={contentMix} />
+          </ChartCard>
+        </StaggerItem>
+        <StaggerItem index={2} className="min-w-0">
+          <ChartCard title="Institutions" hint={`${verified}/${institutions.length} verified`}>
+            {institutionMix.length ? (
+              <div className="space-y-4">
+                <BarsH data={institutionMix} />
+                <div className="border-t border-sand pt-3"><Donut data={verifyMix} label="total" /></div>
+              </div>
+            ) : <BarsH data={institutionMix} />}
+          </ChartCard>
+        </StaggerItem>
+      </Stagger>
+
+      <Stagger className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+        <StaggerItem index={0} className="min-w-0">
+          <Card className="h-full min-w-0 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-sand px-5 py-3">
+              <h2 className="text-lg font-semibold">Needs attention</h2>
+              <Link to="/moderation" className="text-sm font-semibold text-gold-text hover:underline">Open queue →</Link>
             </div>
-          ) : <BarsH data={institutionMix} />}
-        </ChartCard>
-      </div>
+            {queue.length === 0 ? (
+              <p className="px-5 py-10 text-center text-sm text-ink-muted">Queue is clear. 🦀</p>
+            ) : (
+              <ul>
+                {queue.slice(0, 6).map((l) => (
+                  <li key={l.id} className="border-b border-sand last:border-0">
+                    <Link to={`/listings/${l.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-paper">
+                      <span className="min-w-0 flex-1 truncate">
+                        <span className="font-medium text-ink">{l.title}</span>
+                        <span className="ml-2 text-xs capitalize text-ink-faint">{l.type}</span>
+                      </span>
+                      <StatusBadge status={l.status} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </StaggerItem>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <Card className="min-w-0 overflow-hidden">
-          <div className="flex items-center justify-between border-b border-sand px-5 py-3">
-            <h2 className="text-lg font-semibold">Needs attention</h2>
-            <Link to="/moderation" className="text-sm font-semibold text-gold-text hover:underline">Open queue →</Link>
-          </div>
-          {queue.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-ink-muted">Queue is clear. 🦀</p>
-          ) : (
-            <ul>
-              {queue.slice(0, 6).map((l) => (
-                <li key={l.id} className="border-b border-sand last:border-0">
-                  <Link to={`/listings/${l.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-paper">
-                    <span className="min-w-0 flex-1 truncate">
-                      <span className="font-medium text-ink">{l.title}</span>
-                      <span className="ml-2 text-xs capitalize text-ink-faint">{l.type}</span>
-                    </span>
-                    <StatusBadge status={l.status} />
-                  </Link>
-                </li>
+        <StaggerItem index={1} className="min-w-0">
+          <Card className="h-full min-w-0 p-5">
+            <h2 className="mb-3 text-lg font-semibold">Quick actions</h2>
+            <div className="space-y-2">
+              {QUICK.map((q) => (
+                <Link key={q.to} to={q.to} className="group flex items-center justify-between gap-3 rounded-lg border border-sand px-3.5 py-2.5 transition-colors hover:border-gold-border/50 hover:bg-paper">
+                  <span>
+                    <span className="block text-sm font-medium text-ink">{q.label}</span>
+                    <span className="block text-xs text-ink-faint">{q.desc}</span>
+                  </span>
+                  <span className="text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-gold-text">→</span>
+                </Link>
               ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card className="min-w-0 p-5">
-          <h2 className="mb-3 text-lg font-semibold">Quick actions</h2>
-          <div className="space-y-2">
-            {QUICK.map((q) => (
-              <Link key={q.to} to={q.to} className="group flex items-center justify-between gap-3 rounded-lg border border-sand px-3.5 py-2.5 transition-colors hover:border-gold-border/50 hover:bg-paper">
-                <span>
-                  <span className="block text-sm font-medium text-ink">{q.label}</span>
-                  <span className="block text-xs text-ink-faint">{q.desc}</span>
-                </span>
-                <span className="text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-gold-text">→</span>
-              </Link>
-            ))}
-          </div>
-        </Card>
-      </div>
+            </div>
+          </Card>
+        </StaggerItem>
+      </Stagger>
     </>
   );
 }

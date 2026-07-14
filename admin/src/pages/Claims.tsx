@@ -3,6 +3,7 @@ import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { OrgClaim } from "@/lib/types";
 import { PageHeader, Card, Empty } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -36,9 +37,10 @@ export function Component() {
       {rows.length === 0 ? (
         <Empty>No claims awaiting review. The queue is clear.</Empty>
       ) : (
-        <div className="space-y-3">
-          {rows.map((c) => (
-            <Card key={c.id} className="p-5">
+        <Stagger className="space-y-3">
+          {rows.map((c, idx) => (
+            <StaggerItem key={c.id} index={idx}>
+              <Card className="p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="font-medium">
@@ -70,8 +72,9 @@ export function Component() {
                 </div>
               </div>
             </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       )}
     </>
   );

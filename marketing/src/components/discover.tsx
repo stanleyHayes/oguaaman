@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { Link } from "react-router-dom";
 import { Section, SectionHeading } from "./ui";
+import { Reveal3D } from "./motion";
 import { CastleScene, MarketScene, CanopyScene, LighthouseScene, DurbarScene, CollegeScene } from "./scenes";
 
 interface Card { to: string; scene: ComponentType<{ className?: string }>; title: string; text: string }
@@ -23,22 +24,23 @@ export function Discover() {
         lede="No login needed — explore Oguaa's story, its culture, its landmarks and its leaders, and see what the community is doing right now."
       />
       <div className="mt-12 grid gap-5 sm:grid-cols-2">
-        {CARDS.map(({ to, scene: Scene, title, text }) => (
-          <Link
-            key={to}
-            to={to}
-            className="group relative block aspect-[16/9] overflow-hidden rounded-[var(--radius-card)] border border-sand shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]"
-          >
-            <div className="absolute inset-0 bg-sand transition-transform duration-500 group-hover:scale-105">
-              <Scene />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-green-900/85 via-green-900/30 to-transparent" />
-            <div className="on-dark absolute bottom-0 left-0 p-6 text-cream">
-              <h3 className="text-2xl font-semibold sm:text-3xl">{title}</h3>
-              <p className="mt-1 max-w-md text-sm text-cream/85">{text}</p>
-              <span className="mt-2 inline-block text-sm font-semibold text-gold">Explore →</span>
-            </div>
-          </Link>
+        {CARDS.map(({ to, scene: Scene, title, text }, i) => (
+          <Reveal3D key={to} className="group" delay={Math.min(i, 8) * 0.07}>
+            <Link
+              to={to}
+              className="relative block aspect-[16/9] overflow-hidden rounded-[var(--radius-card)] border border-sand shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]"
+            >
+              <div className="absolute inset-0 bg-sand transition-transform duration-500 group-hover:scale-105">
+                <Scene />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-green-900/85 via-green-900/30 to-transparent" />
+              <div className="on-dark absolute bottom-0 left-0 p-6 text-cream">
+                <h3 className="text-2xl font-semibold sm:text-3xl">{title}</h3>
+                <p className="mt-1 max-w-md text-sm text-cream/85">{text}</p>
+                <span className="mt-2 inline-block text-sm font-semibold text-gold">Explore →</span>
+              </div>
+            </Link>
+          </Reveal3D>
         ))}
       </div>
     </Section>

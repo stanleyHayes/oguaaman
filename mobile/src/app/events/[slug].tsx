@@ -10,6 +10,7 @@ import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb, Pill } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { cedis } from "../projects/index";
+import { RevealView } from "@/components/anim";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -33,8 +34,10 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
     <>
       <Stack.Screen options={{ title: event.title }} />
       <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-        <Thumb seed={event.slug} src={event.coverImageUrl} label={initials(event.title)} style={s.cover} labelStyle={s.coverInit} />
-        <View style={s.body}>
+        <RevealView>
+          <Thumb seed={event.slug} src={event.coverImageUrl} label={initials(event.title)} style={s.cover} labelStyle={s.coverInit} />
+        </RevealView>
+        <RevealView delay={100} style={s.body}>
           <View style={s.pillRow}>
             <Pill label={d.anchorFestival ? "Event · homecoming" : "Event"} color={C.goldText} bg={C.cream} border={C.gold} />
           </View>
@@ -79,7 +82,7 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
           <View style={{ marginTop: 22, alignItems: "center" }}>
             <ReportButton listingId={event.id} />
           </View>
-        </View>
+        </RevealView>
       </ScrollView>
     </>
   );

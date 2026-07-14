@@ -6,6 +6,7 @@ import type { NewsArticle } from "@/lib/types";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
+import { RevealView, StaggerIn } from "@/components/anim";
 
 function newsDate(a: NewsArticle): string {
   const raw = a.publishedAt ?? a.createdAt;
@@ -31,11 +32,11 @@ export default function News() {
 
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
-      <View style={s.hero}>
+      <RevealView style={s.hero}>
         <Text style={s.heroKicker}>The Oguaa Newsroom</Text>
         <Text style={s.heroTitle}>Stories from the town</Text>
         <Text style={s.heroLede}>Festivals, scholarships, homecomings and notices from Cape Coast.</Text>
-      </View>
+      </RevealView>
 
       <View style={{ padding: 16, gap: 14 }}>
         {data.length === 0 && (
@@ -43,32 +44,36 @@ export default function News() {
         )}
 
         {featured && (
-          <Link href={`/news/${featured.slug}`} asChild>
-            <Pressable style={s.featured}>
-              <Cover article={featured} height={190} />
-              <View style={s.featuredBody}>
-                <Text style={s.featuredKicker}>Featured story</Text>
-                <Text style={s.featuredTitle}>{featured.title}</Text>
-                {featured.summary ? <Text style={s.summary} numberOfLines={3}>{featured.summary}</Text> : null}
-                <Text style={s.byline}>{featured.authorName} · {newsDate(featured)}</Text>
-                <Text style={s.readMore}>Read story ↗</Text>
-              </View>
-            </Pressable>
-          </Link>
+          <StaggerIn index={0}>
+            <Link href={`/news/${featured.slug}`} asChild>
+              <Pressable style={s.featured}>
+                <Cover article={featured} height={190} />
+                <View style={s.featuredBody}>
+                  <Text style={s.featuredKicker}>Featured story</Text>
+                  <Text style={s.featuredTitle}>{featured.title}</Text>
+                  {featured.summary ? <Text style={s.summary} numberOfLines={3}>{featured.summary}</Text> : null}
+                  <Text style={s.byline}>{featured.authorName} · {newsDate(featured)}</Text>
+                  <Text style={s.readMore}>Read story ↗</Text>
+                </View>
+              </Pressable>
+            </Link>
+          </StaggerIn>
         )}
 
-        {rest.map((a) => (
-          <Link key={a.id} href={`/news/${a.slug}`} asChild>
-            <Pressable style={s.card}>
-              <Cover article={a} height={130} />
-              <View style={s.cardBody}>
-                <Text style={s.title}>{a.title}</Text>
-                {a.summary ? <Text style={s.summary} numberOfLines={2}>{a.summary}</Text> : null}
-                <Text style={s.byline}>{a.authorName} · {newsDate(a)}</Text>
-                <Text style={s.readMore}>Read story ↗</Text>
-              </View>
-            </Pressable>
-          </Link>
+        {rest.map((a, i) => (
+          <StaggerIn key={a.id} index={i + 1}>
+            <Link href={`/news/${a.slug}`} asChild>
+              <Pressable style={s.card}>
+                <Cover article={a} height={130} />
+                <View style={s.cardBody}>
+                  <Text style={s.title}>{a.title}</Text>
+                  {a.summary ? <Text style={s.summary} numberOfLines={2}>{a.summary}</Text> : null}
+                  <Text style={s.byline}>{a.authorName} · {newsDate(a)}</Text>
+                  <Text style={s.readMore}>Read story ↗</Text>
+                </View>
+              </Pressable>
+            </Link>
+          </StaggerIn>
         ))}
       </View>
     </ScrollView>

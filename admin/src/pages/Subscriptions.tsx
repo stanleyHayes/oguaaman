@@ -3,6 +3,7 @@ import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Subscription } from "@/lib/types";
 import { PageHeader, Card, Empty, StatCard } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -58,9 +59,9 @@ export function Component() {
                 <th className="px-4 py-3">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-sand">
-              {subs.map((s) => (
-                <tr key={s.id} className="hover:bg-paper">
+            <Stagger as="tbody" className="divide-y divide-sand">
+              {subs.map((s, idx) => (
+                <StaggerItem as="tr" key={s.id} index={idx} className="hover:bg-paper">
                   <td className="px-4 py-3 text-ink-muted">{s.memberId || <span className="text-ink-faint">—</span>}</td>
                   <td className="px-4 py-3 font-medium text-ink">{s.listingTitle}</td>
                   <td className="px-4 py-3 text-ink-muted">{PLAN_LABEL[s.plan] ?? s.plan}</td>
@@ -71,9 +72,9 @@ export function Component() {
                     {s.simulated && <span className="ml-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">sim</span>}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{formatDate(s.confirmedAt ?? s.createdAt)}</td>
-                </tr>
+                </StaggerItem>
               ))}
-            </tbody>
+            </Stagger>
           </table>
         </Card>
       )}

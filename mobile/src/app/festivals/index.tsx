@@ -5,6 +5,7 @@ import { useApi } from "@/lib/use-api";
 import type { FestivalSummary } from "@/lib/types";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
+import { StaggerIn } from "@/components/anim";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -26,8 +27,9 @@ export default function Festivals() {
       <Text style={s.lede}>
         Every edition of every festival — Fetu Afahye, Edina Bakatue, PANAFEST and the rest — kept year by year: recaps of the ones behind us, programmes for the ones ahead.
       </Text>
-      {data.map((f) => (
-        <Pressable key={f.slug} onPress={() => router.push(`/festivals/${f.slug}` as never)} style={s.card}>
+      {data.map((f, i) => (
+        <StaggerIn key={f.slug} index={i}>
+          <Pressable onPress={() => router.push(`/festivals/${f.slug}` as never)} style={s.card}>
           <Thumb seed={f.slug} src={f.nextEdition?.coverImageUrl} label={f.name} style={s.cover} labelStyle={s.coverLabel} />
           <View style={{ padding: 14 }}>
             <Text style={s.name}>{f.name}</Text>
@@ -37,7 +39,8 @@ export default function Festivals() {
               {f.editions} edition{f.editions === 1 ? "" : "s"} archived
             </Text>
           </View>
-        </Pressable>
+          </Pressable>
+        </StaggerIn>
       ))}
     </ScrollView>
   );

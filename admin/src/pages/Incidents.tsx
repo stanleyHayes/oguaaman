@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Incident, IncidentStatus } from "@/lib/types";
 import { PageHeader, Card, Empty, Pill } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -68,12 +69,13 @@ export function Component() {
       {rows.length === 0 ? (
         <Empty title="No incidents">Nothing reported — the town is quiet.</Empty>
       ) : (
-        <div className="space-y-3">
-          {rows.map((i) => {
+        <Stagger className="space-y-3">
+          {rows.map((i, idx) => {
             const cur = d(i.id, i.details.incidentStatus);
             const open = expanded === i.id;
             return (
-              <Card key={i.id} className="p-5">
+              <StaggerItem key={i.id} index={idx}>
+                <Card className="p-5">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -127,10 +129,11 @@ export function Component() {
                     </div>
                   </div>
                 )}
-              </Card>
+                </Card>
+              </StaggerItem>
             );
           })}
-        </div>
+        </Stagger>
       )}
     </>
   );

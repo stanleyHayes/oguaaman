@@ -4,6 +4,7 @@ import { PageHero } from "@/components/page-hero";
 import { Section, CTA as Cta } from "@/components/ui";
 import { sceneForSlug } from "@/components/scenes";
 import { SectionRenderer, Gallery } from "@/components/profile-sections";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { fetchPlace, type Organization } from "@/lib/org";
 import { listingSubtitle, portalHref, type Listing } from "@/lib/listings";
 import { setMeta } from "@/lib/meta";
@@ -108,14 +109,14 @@ export function Component() {
         )}
 
         {history.length > 0 && (
-          <div className="mb-12 max-w-3xl">
+          <Reveal className="mb-12 max-w-3xl">
             <p className="eyebrow mb-3">The story</p>
             <div className="font-serif text-lg leading-relaxed text-ink">
               {history.map((p, i) => (
                 <p key={p} className={i === 0 ? "" : "mt-5"}>{p}</p>
               ))}
             </div>
-          </div>
+          </Reveal>
         )}
 
         {hasSections && <SectionRenderer sections={org.sections} />}
@@ -138,16 +139,16 @@ export function Component() {
               {"What's on here"}
               <span className="h-px flex-1 bg-sand" />
             </h2>
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {events.map((e) => (
-                <li key={e.id}>
+            <Stagger as="ul" className="grid gap-4 sm:grid-cols-2">
+              {events.map((e, idx) => (
+                <StaggerItem as="li" key={e.id} index={idx}>
                   <a href={portalHref(e)} target="_blank" rel="noopener noreferrer" className="block h-full rounded-[var(--radius-card)] border border-sand bg-cream p-5 transition-shadow hover:shadow-[var(--shadow-card)]">
                     <h3 className="text-lg font-semibold text-ink">{e.title}</h3>
                     <p className="mt-1 text-sm text-ink-muted">{listingSubtitle(e)}</p>
                   </a>
-                </li>
+                </StaggerItem>
               ))}
-            </ul>
+            </Stagger>
           </section>
         )}
       </Section>

@@ -2,6 +2,7 @@ import type { AdinkraName } from "@/components/adinkra";
 import { useEffect, useState } from "react";
 import { Section, SectionHeading } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
+import { Stagger, StaggerItem } from "@/components/motion";
 
 /**
  * Stats — a dark "community numbers" band (tone="green").
@@ -100,11 +101,13 @@ export function Stats() {
         lede="From the first members to the institutions that raised us, this is what the community home of Cape Coast holds today — at home and across the diaspora."
       />
 
-      <dl className="mt-12 grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-y-12 md:mt-16 md:grid-cols-3 lg:grid-cols-6">
+      <Stagger as="dl" className="mt-12 grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-y-12 md:mt-16 md:grid-cols-3 lg:grid-cols-6">
         {FIGURES.map((figure, i) => (
-          <StatFigure key={figure.key} figure={figure} value={stats[figure.key] ?? 0} index={i} />
+          <StaggerItem key={figure.key} index={i}>
+            <StatFigure figure={figure} value={stats[figure.key] ?? 0} />
+          </StaggerItem>
         ))}
-      </dl>
+      </Stagger>
 
       <p className="mt-12 text-center font-serif text-sm italic text-cream/70 sm:mt-14 sm:text-base">
         These numbers update as the community grows — every name added, every shop
@@ -117,18 +120,12 @@ export function Stats() {
 function StatFigure({
   figure,
   value,
-  index,
 }: Readonly<{
   figure: Figure;
   value: number;
-  index: number;
 }>) {
-  const riseClass =
-    ["rise", "rise rise-2", "rise rise-3", "rise rise-4", "rise rise-3", "rise rise-2"][index] ??
-    "rise";
-
   return (
-    <div className={`flex flex-col items-center text-center ${riseClass}`}>
+    <div className="flex flex-col items-center text-center">
       <Adinkra
         name={figure.symbol}
         size={22}

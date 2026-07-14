@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
 import { Container, SampleNote } from "@/components/ui";
 import { Thumb } from "@/components/cards";
+import { StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
@@ -20,11 +21,11 @@ export function Component() {
       </PageHero>
       <Container size="wide" className="py-12">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {festivals.map((f) => (
+          {festivals.map((f, i) => (
+            <StaggerItem key={f.slug} index={i} className="h-full">
             <Link
-              key={f.slug}
               to={`/festivals/${f.slug}`}
-              className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
+              className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
             >
               <Thumb seed={f.slug} label={f.name} src={f.nextEdition?.coverImageUrl} rounded="rounded-none" className="aspect-[16/9] w-full" />
               <div className="flex flex-1 flex-col p-5">
@@ -38,6 +39,7 @@ export function Component() {
                 </p>
               </div>
             </Link>
+            </StaggerItem>
           ))}
         </div>
         <SampleNote>{SAMPLE_NOTICE}</SampleNote>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { motion } from "motion/react";
 import { Wordmark } from "@/components/wordmark";
 import { CTA as Cta } from "@/components/ui";
 import { PORTAL_APP_URL } from "@/config";
@@ -80,9 +81,9 @@ export function Nav() {
 
   const onLight = scrolled || open;
   const linkCls = (active: boolean) => {
-    const base = "inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium tracking-tight transition-colors";
-    if (onLight) return `${base} ${active ? "bg-green text-cream" : "text-ink-muted hover:text-green"}`;
-    return `${base} ${active ? "bg-gold-brand font-semibold text-green-900" : "text-cream/85 hover:bg-cream/10 hover:text-cream"}`;
+    const base = "relative isolate inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium tracking-tight transition-colors";
+    if (onLight) return `${base} ${active ? "text-cream" : "text-ink-muted hover:text-green"}`;
+    return `${base} ${active ? "font-semibold text-green-900" : "text-cream/85 hover:bg-cream/10 hover:text-cream"}`;
   };
   const trackCls = onLight
     ? "hidden items-center gap-0.5 rounded-full border border-gold-border/20 bg-cream/70 p-1 lg:flex"
@@ -101,7 +102,21 @@ export function Nav() {
 
         <div className={trackCls}>
           {LINKS.map((link) => (
-            <NavLink key={link.to} to={link.to} className={({ isActive }) => linkCls(isActive)}>{link.label}</NavLink>
+            <NavLink key={link.to} to={link.to} className={({ isActive }) => linkCls(isActive)}>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className={`absolute inset-0 -z-10 rounded-full ${onLight ? "bg-green" : "bg-gold-brand"}`}
+                      transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                      aria-hidden
+                    />
+                  )}
+                  {link.label}
+                </>
+              )}
+            </NavLink>
           ))}
           <MoreMenu onLight={onLight} />
         </div>

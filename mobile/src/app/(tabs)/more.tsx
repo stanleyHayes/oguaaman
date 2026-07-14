@@ -4,6 +4,7 @@ import { C, serif } from "@/theme";
 import { Mark } from "@/ui";
 import { useAuth } from "@/lib/auth";
 import { useLang, LANGS } from "@/lib/i18n";
+import { RevealView, StaggerIn } from "@/components/anim";
 
 type MoreItem = { label: string; blurb: string; href: string };
 
@@ -61,7 +62,7 @@ export default function More() {
       </Text>
 
       {/* Auth */}
-      <View style={s.authCard}>
+      <RevealView style={s.authCard}>
         {member ? (
           <>
             <Text style={s.authName}>Signed in as {member.displayName}</Text>
@@ -80,7 +81,7 @@ export default function More() {
             <Pressable onPress={() => router.push("/signin")} style={s.authBtn}><Text style={s.authBtnText}>Sign in / create account</Text></Pressable>
           </>
         )}
-      </View>
+      </RevealView>
 
       <Text style={s.kicker}>LANGUAGE</Text>
       <View style={s.langRow}>
@@ -95,17 +96,19 @@ export default function More() {
         <Text style={s.searchText}>🔍  Search people, places & memories</Text>
       </Pressable>
 
-      {GROUPS.map((g) => (
+      {GROUPS.map((g, gi) => (
         <View key={g.heading}>
           <Text style={s.kicker}>{g.heading}</Text>
-          {g.items.map((x) => (
-            <Pressable key={x.label} onPress={() => router.push(x.href as never)} style={s.card}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={s.cardTitle}>{x.label}</Text>
-                <Text style={s.chevron}>›</Text>
-              </View>
-              <Text style={s.cardBlurb}>{x.blurb}</Text>
-            </Pressable>
+          {g.items.map((x, xi) => (
+            <StaggerIn key={x.label} index={gi * 4 + xi}>
+              <Pressable onPress={() => router.push(x.href as never)} style={s.card}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <Text style={s.cardTitle}>{x.label}</Text>
+                  <Text style={s.chevron}>›</Text>
+                </View>
+                <Text style={s.cardBlurb}>{x.blurb}</Text>
+              </Pressable>
+            </StaggerIn>
           ))}
         </View>
       ))}

@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Report } from "@/lib/types";
 import { PageHeader, Card, Empty, Pill } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -53,9 +54,10 @@ export function Component() {
       {shown.length === 0 ? (
         <Empty title={open.length === 0 ? "No open reports" : "Nothing to show"}>The community queue is clear. New reports notify every steward.</Empty>
       ) : (
-        <div className="space-y-3">
-          {shown.map((r) => (
-            <Card key={r.id} className={`p-5 ${r.status !== "open" ? "opacity-70" : ""}`}>
+        <Stagger className="space-y-3">
+          {shown.map((r, idx) => (
+            <StaggerItem key={r.id} index={idx}>
+              <Card className={`p-5 ${r.status !== "open" ? "opacity-70" : ""}`}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -84,8 +86,9 @@ export function Component() {
                 )}
               </div>
             </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       )}
     </>
   );

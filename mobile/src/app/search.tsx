@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import type { SearchHit } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Thumb } from "@/ui";
+import { StaggerIn } from "@/components/anim";
 
 // Map a hit to its canonical mobile route (parity with the web's hrefFor).
 // Per-listing base paths; browse pages have no slug of their own.
@@ -90,7 +91,7 @@ function Results({ q, hits, loading }: Readonly<{ q: string; hits: SearchHit[] |
   if ((hits?.length ?? 0) === 0) return <Text style={s.hint}>No matches for “{q.trim()}”.</Text>;
   return (
     <View style={{ marginTop: 14, gap: 10 }}>
-      {(hits ?? []).map((h) => <HitRow key={`${h.kind}-${h.slug}`} hit={h} />)}
+      {(hits ?? []).map((h, i) => <StaggerIn key={`${h.kind}-${h.slug}`} index={i}><HitRow hit={h} /></StaggerIn>)}
     </View>
   );
 }

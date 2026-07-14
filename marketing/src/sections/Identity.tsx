@@ -1,6 +1,7 @@
 import type { AdinkraName } from "@/components/adinkra";
 import { Section, SectionHeading } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
+import { Stagger, StaggerItem } from "@/components/motion";
 
 /**
  * Identity — the "design & values" band (agent_plan.md §2). A deep green-900
@@ -75,11 +76,13 @@ export function Identity() {
         />
 
         {/* Palette — colour chips drawn straight from the town. */}
-        <ul className="mt-12 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
+        <Stagger as="ul" className="mt-12 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
           {SWATCHES.map((s, i) => (
-            <li
+            <StaggerItem
+              as="li"
               key={s.label}
-              className={`rise rise-${Math.min(i + 1, 4)} flex flex-col gap-3`}
+              index={i}
+              className="flex flex-col gap-3"
             >
               <span
                 className={`h-16 w-full rounded-[var(--radius-card)] shadow-[var(--shadow-card)] ${
@@ -96,9 +99,9 @@ export function Identity() {
                   {s.drawn}
                 </span>
               </span>
-            </li>
+            </StaggerItem>
           ))}
-        </ul>
+        </Stagger>
 
         <SymbolDivider name="adinkrahene" className="mt-16 max-w-xs" tone="text-gold" />
 
@@ -117,11 +120,13 @@ export function Identity() {
             </p>
           </div>
 
-          <ul className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          <Stagger as="ul" className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {SYMBOLS.map((sym, i) => (
-              <li
+              <StaggerItem
+                as="li"
                 key={sym.name}
-                className={`rise rise-${Math.min(i + 1, 4)} flex items-start gap-4`}
+                index={i}
+                className="flex items-start gap-4"
               >
                 <span
                   aria-hidden="true"
@@ -133,9 +138,9 @@ export function Identity() {
                   <h4 className="text-lg font-semibold text-cream">{sym.title}</h4>
                   <p className="mt-1.5 text-sm leading-relaxed text-cream/75">{sym.meaning}</p>
                 </div>
-              </li>
+              </StaggerItem>
             ))}
-          </ul>
+          </Stagger>
         </div>
 
         {/* Sober closing note — the Castle's history is held with care. */}

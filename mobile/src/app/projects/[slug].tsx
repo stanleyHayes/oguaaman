@@ -9,6 +9,7 @@ import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { Progress, cedis } from "./index";
+import { RevealView } from "@/components/anim";
 
 const QUICK = [20, 50, 100, 500]; // GHS
 
@@ -27,8 +28,10 @@ function Detail({ project, slug, reload }: Readonly<{ project: Listing; slug: st
     <>
       <Stack.Screen options={{ title: project.title }} />
       <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-        <Thumb seed={project.slug} src={project.coverImageUrl} label={initials(project.title)} style={s.cover} labelStyle={s.coverInit} />
-        <View style={s.body}>
+        <RevealView>
+          <Thumb seed={project.slug} src={project.coverImageUrl} label={initials(project.title)} style={s.cover} labelStyle={s.coverInit} />
+        </RevealView>
+        <RevealView delay={100} style={s.body}>
           <Text style={s.kicker}>ADOPT A PROJECT</Text>
           <Text style={s.title}>{project.title}</Text>
           {d.organiser ? <Text style={s.organiser}>{d.organiser}</Text> : null}
@@ -50,7 +53,7 @@ function Detail({ project, slug, reload }: Readonly<{ project: Listing; slug: st
           <View style={{ marginTop: 22, alignItems: "center" }}>
             <ReportButton listingId={project.id} />
           </View>
-        </View>
+        </RevealView>
       </ScrollView>
     </>
   );

@@ -1,5 +1,6 @@
 import { Section, SectionHeading, Card } from "@/components/ui";
 import { Adinkra, type AdinkraName } from "@/components/adinkra";
+import { Stagger, StaggerItem } from "@/components/motion";
 
 interface Strand {
   symbol: AdinkraName;
@@ -38,17 +39,19 @@ export function CultureContent() {
         title="A town that still keeps its rites."
         lede="Cape Coast is not a museum — its festival, its companies and its sound are alive, carried each year by the people of Oguaa."
       />
-      <div className="mt-12 grid gap-5 sm:grid-cols-2">
-        {STRANDS.map((s) => (
-          <Card key={s.title} className="flex gap-5 p-7">
-            <Adinkra name={s.symbol} size={40} labelled={false} strokeWidth={1.4} className="shrink-0 text-gold-brand" />
-            <div>
-              <h3 className="text-2xl font-semibold text-ink">{s.title}</h3>
-              <p className="mt-2 leading-relaxed text-ink-muted">{s.body}</p>
-            </div>
-          </Card>
+      <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
+        {STRANDS.map((s, i) => (
+          <StaggerItem key={s.title} index={i}>
+            <Card className="flex gap-5 p-7">
+              <Adinkra name={s.symbol} size={40} labelled={false} strokeWidth={1.4} className="shrink-0 text-gold-brand" />
+              <div>
+                <h3 className="text-2xl font-semibold text-ink">{s.title}</h3>
+                <p className="mt-2 leading-relaxed text-ink-muted">{s.body}</p>
+              </div>
+            </Card>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </Section>
   );
 }

@@ -5,6 +5,7 @@ import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
+import { StaggerIn } from "@/components/anim";
 
 function lifeDates(bornYear?: number, diedDate?: string) {
   return [bornYear ? String(bornYear) : "", diedDate ? diedDate.slice(0, 4) : ""].filter(Boolean).join(" — ");
@@ -22,9 +23,10 @@ export default function Memoriam() {
         Yɛnkae — “let us remember.” A permanent, dignified home for members of the Oguaa community who have passed. Light a candle and remember together.
       </Text>
       <View style={{ height: 18 }} />
-      {data.map((m) => (
-        <Link key={m.id} href={`/memoriam/${m.slug}`} asChild>
-          <Pressable style={s.card}>
+      {data.map((m, i) => (
+        <StaggerIn key={m.id} index={i}>
+          <Link href={`/memoriam/${m.slug}`} asChild>
+            <Pressable style={s.card}>
             {m.coverImageUrl ? (
               <Thumb seed={m.slug} src={m.coverImageUrl} label={initials(m.title)} style={s.portrait} labelStyle={s.portraitInit} />
             ) : (
@@ -36,8 +38,9 @@ export default function Memoriam() {
             <Text style={s.dates}>{lifeDates(m.details.bornYear, m.details.diedDate)}</Text>
             {m.details.epitaph && <Text style={s.epitaph} numberOfLines={2}>“{m.details.epitaph}”</Text>}
             <Text style={s.meta}>{m.details.candles ?? 0} candles · {m.details.rememberedByCount ?? 0} remembering</Text>
-          </Pressable>
-        </Link>
+            </Pressable>
+          </Link>
+        </StaggerIn>
       ))}
     </ScrollView>
   );

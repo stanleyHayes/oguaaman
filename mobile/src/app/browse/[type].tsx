@@ -1,11 +1,13 @@
-import { Linking, ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { Linking, StyleSheet, Text, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import Animated from "react-native-reanimated";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, serif, fillFor, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
+import { HeroParallax, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 
 function openURL(url?: string) {
   const u = (url ?? "").trim();
@@ -123,6 +125,7 @@ function EventHero({ e }: Readonly<{ e: Listing }>) {
 export default function Browse() {
   const { type } = useLocalSearchParams<{ type: string }>();
   const view = VIEWS[type ?? ""];
+  const { scrollY, onScroll } = useHeroParallax();
   const { data, error, loading } = useApi<Listing[]>(
     () => (view ? view.fetch() : Promise.resolve([])),
     `browse:${type}`,
@@ -138,7 +141,7 @@ export default function Browse() {
   const isOpportunities = type === "opportunities";
   const sections = isEvents ? groupByMonth(rest) : [];
 
-  const renderCard = (l: Listing) => {
+  const renderCard = (l: Listing, i: number) => {
     const href = view.href?.(l);
     const card = (
       <View style={[s.card, isOpportunities && { alignItems: "flex-start" }]}>
@@ -158,36 +161,42 @@ export default function Browse() {
         {href ? <Text style={s.chevron}>›</Text> : null}
       </View>
     );
-    return href ? (
-      <Pressable key={l.id} onPress={() => router.push(href as never)}>{card}</Pressable>
-    ) : (
-      <View key={l.id}>{card}</View>
+    return (
+      <StaggerIn key={l.id} index={i}>
+        {href ? (
+          <Pressable onPress={() => router.push(href as never)}>{card}</Pressable>
+        ) : (
+          <View>{card}</View>
+        )}
+      </StaggerIn>
     );
   };
 
   return (
     <>
       <Stack.Screen options={{ title: view.title }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
+      <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
         <View style={[s.catHero, { backgroundColor: view.tone }]}>
-          <Text style={s.catKicker}>{view.kicker}</Text>
-          <Text style={s.catTitle}>{view.title}</Text>
-          <Text style={s.catLede}>{view.lede}</Text>
-          <Text style={s.catCount}>{data.length} {view.countNoun}</Text>
+          <HeroParallax scrollY={scrollY}>
+            <Text style={s.catKicker}>{view.kicker}</Text>
+            <Text style={s.catTitle}>{view.title}</Text>
+            <Text style={s.catLede}>{view.lede}</Text>
+            <Text style={s.catCount}>{data.length} {view.countNoun}</Text>
+          </HeroParallax>
         </View>
         <View style={{ padding: 16, gap: 12 }}>
-          {anchor && <Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable>}
+          {anchor && <RevealView><Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable></RevealView>}
           {data.length === 0 && <Text style={s.empty}>Nothing here yet — be the first to contribute.</Text>}
           {isEvents
             ? sections.map((sec) => (
               <View key={sec.key} style={s.section}>
                 <Text style={s.sectionHeader}>{sec.label}</Text>
-                {sec.items.map(renderCard)}
+                {sec.items.map((l, i) => renderCard(l, i))}
               </View>
             ))
-            : rest.map(renderCard)}
+            : rest.map((l, i) => renderCard(l, i))}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </>
   );
 }

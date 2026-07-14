@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Listing, Member, ListingStatus } from "@/lib/types";
 import { PageHeader, Card, StatusBadge, Empty } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
 
@@ -71,9 +72,9 @@ export function Component() {
             <thead className="border-b border-sand bg-paper text-left text-xs uppercase tracking-wide text-ink-faint">
               <tr><th className="px-4 py-3">Title</th><th className="px-4 py-3">Type</th><th className="px-4 py-3 hidden sm:table-cell">Owner</th><th className="px-4 py-3 hidden md:table-cell">Created</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"></th></tr>
             </thead>
-            <tbody>
-              {filtered.map((l) => (
-                <tr key={l.id} className="border-b border-sand last:border-0">
+            <Stagger as="tbody">
+              {filtered.map((l, idx) => (
+                <StaggerItem as="tr" key={l.id} index={idx} className="border-b border-sand last:border-0">
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-3">
                       {l.coverImageUrl
@@ -113,9 +114,9 @@ export function Component() {
                       </span>
                     )}
                   </td>
-                </tr>
+                </StaggerItem>
               ))}
-            </tbody>
+            </Stagger>
           </table>
         </Card>
       )}

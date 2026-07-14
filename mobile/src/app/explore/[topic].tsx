@@ -1,10 +1,12 @@
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { StyleSheet, Text, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import Animated from "react-native-reanimated";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HistoryView } from "@/lib/types";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
+import { HeroParallax, StaggerIn, useHeroParallax } from "@/components/anim";
 
 // Static editorial for Heritage / Culture / Visit, ported from the portal and
 // grounded in the fact-checked Cape Coast research brief (agent_plan.md §1).
@@ -58,20 +60,23 @@ const TOPICS: Record<string, Topic> = {
 export default function Explore() {
   const { topic } = useLocalSearchParams<{ topic: string }>();
   const t = TOPICS[topic ?? ""];
+  const { scrollY, onScroll } = useHeroParallax();
   if (!t) return <ErrorView message="Unknown topic" />;
   if (topic === "heritage") return <HeritageScreen topic={t} />;
 
   return (
     <>
       <Stack.Screen options={{ title: t.title }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
+      <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
         <View style={[s.hero, { backgroundColor: t.tone }]}>
-          <Text style={s.heroKicker}>{t.kicker}</Text>
-          <Text style={s.heroLede}>{t.lede}</Text>
+          <HeroParallax scrollY={scrollY}>
+            <Text style={s.heroKicker}>{t.kicker}</Text>
+            <Text style={s.heroLede}>{t.lede}</Text>
+          </HeroParallax>
         </View>
         <View style={s.body}>
           {t.blocks.map((b, i) => (
-            <View key={`${b.h ?? ""}-${i}`} style={{ marginTop: i === 0 ? 0 : 22 }}>
+            <StaggerIn key={`${b.h ?? ""}-${i}`} index={i} style={{ marginTop: i === 0 ? 0 : 22 }}>
               {b.h ? <Text style={s.h}>{b.h}</Text> : null}
               {b.p ? <Text style={s.p}>{b.p}</Text> : null}
               {b.items ? (
@@ -90,7 +95,7 @@ export default function Explore() {
                   ))}
                 </View>
               ) : null}
-            </View>
+            </StaggerIn>
           ))}
           {t.link ? (
             <Pressable onPress={() => router.push(t.link!.href as never)} style={s.linkCard}>
@@ -98,7 +103,7 @@ export default function Explore() {
             </Pressable>
           ) : null}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </>
   );
 }
@@ -107,26 +112,29 @@ export default function Explore() {
 // people and memories — all served by /api/history (the history hub).
 function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
   const { data, error, loading } = useApi<HistoryView>(() => api.history(), "history");
+  const { scrollY, onScroll } = useHeroParallax();
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
 
   return (
     <>
       <Stack.Screen options={{ title: t.title }} />
-      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
+      <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
         <View style={[s.hero, { backgroundColor: t.tone }]}>
-          <Text style={s.heroKicker}>{t.kicker}</Text>
-          <Text style={s.heroLede}>{t.lede}</Text>
+          <HeroParallax scrollY={scrollY}>
+            <Text style={s.heroKicker}>{t.kicker}</Text>
+            <Text style={s.heroLede}>{t.lede}</Text>
+          </HeroParallax>
         </View>
         <View style={s.body}>
           {/* Timeline — nkyinkyim: the path is twisted */}
           <Text style={s.h}>A timeline of Oguaa</Text>
           <View style={{ gap: 8, marginTop: 4 }}>
-            {data.timeline.map((e) => (
-              <View key={e.id} style={s.itemRow}>
+            {data.timeline.map((e, i) => (
+              <StaggerIn key={e.id} index={i} style={s.itemRow}>
                 <Text style={[s.itemLabel, { color: t.tone }]}>{e.year}</Text>
                 <Text style={s.itemText}><Text style={{ fontWeight: "700" }}>{e.title}</Text>{e.summary ? ` — ${e.summary}` : ""}</Text>
-              </View>
+              </StaggerIn>
             ))}
           </View>
 
@@ -135,12 +143,12 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
             <>
               <Text style={[s.h, { marginTop: 24 }]}>The places that hold the story</Text>
               <View style={{ gap: 10, marginTop: 4 }}>
-                {data.heritage.map((o) => (
-                  <View key={o.id} style={s.placeCard}>
+                {data.heritage.map((o, i) => (
+                  <StaggerIn key={o.id} index={i} style={s.placeCard}>
                     <Text style={s.placeName}>{o.name}</Text>
                     {o.classification ? <Text style={s.placeClass}>{o.classification}</Text> : null}
                     {o.summary ? <Text style={s.placeSummary}>{o.summary}</Text> : null}
-                  </View>
+                  </StaggerIn>
                 ))}
               </View>
             </>
@@ -151,14 +159,16 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
             <>
               <Text style={[s.h, { marginTop: 24 }]}>The people who carry the story</Text>
               <View style={{ gap: 8, marginTop: 4 }}>
-                {data.people.map((p) => (
-                  <Pressable key={p.id} onPress={() => router.push(`/people/${p.slug}` as never)} style={s.linkRow}>
+                {data.people.map((p, i) => (
+                  <StaggerIn key={p.id} index={i}>
+                    <Pressable onPress={() => router.push(`/people/${p.slug}` as never)} style={s.linkRow}>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={s.linkTitle}>{p.title}</Text>
                       <Text style={s.linkSub} numberOfLines={1}>{[p.details.era, p.details.whyNotable].filter(Boolean).join(" · ")}</Text>
                     </View>
                     <Text style={s.chevron}>›</Text>
-                  </Pressable>
+                    </Pressable>
+                  </StaggerIn>
                 ))}
               </View>
             </>
@@ -169,17 +179,17 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
             <>
               <Text style={[s.h, { marginTop: 24 }]}>Memories of the town</Text>
               <View style={{ gap: 8, marginTop: 4 }}>
-                {data.memories.map((m) => (
-                  <View key={m.id} style={s.placeCard}>
+                {data.memories.map((m, i) => (
+                  <StaggerIn key={m.id} index={i} style={s.placeCard}>
                     <Text style={s.placeName}>{m.title}</Text>
                     {m.details.text ? <Text style={s.placeSummary}>{m.details.text}</Text> : null}
-                  </View>
+                  </StaggerIn>
                 ))}
               </View>
             </>
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </>
   );
 }

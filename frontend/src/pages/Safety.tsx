@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { formatDate } from "@/lib/format";
+import { LayoutPill, StaggerItem } from "@/components/motion";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { INCIDENT_CATEGORIES, CATEGORY_LABEL, SEVERITY_CLASS, STATUS_LABEL } from "@/lib/incidents";
 
@@ -28,17 +29,19 @@ export function Component() {
         <div className="mb-8 flex flex-wrap gap-2">
           <button
             onClick={() => setCat(null)}
-            className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === null ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
+            className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === null ? "border-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
           >
-            All
+            {cat === null && <LayoutPill layoutId="safety-cat" className="absolute inset-0 rounded-full bg-green" />}
+            <span className="relative">All</span>
           </button>
           {INCIDENT_CATEGORIES.map((c) => (
             <button
               key={c.value}
               onClick={() => setCat(cat === c.value ? null : c.value)}
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === c.value ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
+              className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === c.value ? "border-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
             >
-              {c.label}
+              {cat === c.value && <LayoutPill layoutId="safety-cat" className="absolute inset-0 rounded-full bg-green" />}
+              <span className="relative">{c.label}</span>
             </button>
           ))}
         </div>
@@ -52,13 +55,13 @@ export function Component() {
             {open.length > 0 && (
               <section>
                 <h2 className="mb-5 text-2xl font-semibold text-ink">Active</h2>
-                <div className="grid gap-4 sm:grid-cols-2">{open.map((i) => <IncidentCard key={i.id} incident={i} />)}</div>
+                <div className="grid gap-4 sm:grid-cols-2">{open.map((i, idx) => <StaggerItem key={i.id} index={idx} lift><IncidentCard incident={i} /></StaggerItem>)}</div>
               </section>
             )}
             {closed.length > 0 && (
               <section>
                 <h2 className="mb-5 text-2xl font-semibold text-ink">Resolved & recovered</h2>
-                <div className="grid gap-4 sm:grid-cols-2">{closed.map((i) => <IncidentCard key={i.id} incident={i} />)}</div>
+                <div className="grid gap-4 sm:grid-cols-2">{closed.map((i, idx) => <StaggerItem key={i.id} index={idx} lift><IncidentCard incident={i} /></StaggerItem>)}</div>
               </section>
             )}
           </div>

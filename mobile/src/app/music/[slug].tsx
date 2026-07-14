@@ -1,11 +1,13 @@
-import { Linking, ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { Linking, StyleSheet, Text, View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import Animated from "react-native-reanimated";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, serif, fillFor, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
+import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 
 // "Reps <school>" — resolves the artist's first school affiliation to its
 // institution page, hiding itself if the lookup fails (mirrors the web page).
@@ -22,24 +24,27 @@ function SchoolLink({ orgId }: Readonly<{ orgId: string }>) {
 export default function Artist() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Listing>(() => api.artist(slug), `artist:${slug}`);
+  const { scrollY, onScroll } = useHeroParallax();
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
   const d = data.details;
 
   return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
+    <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
       <View style={[s.head, { backgroundColor: fillFor(data.slug) }]}>
-        <Thumb seed={data.slug} src={data.coverImageUrl} label={initials(d.actName ?? data.title)} style={s.thumb} labelStyle={s.thumbInit} />
+        <HeroParallax scrollY={scrollY} style={{ width: "100%", alignItems: "center" }}>
+          <Thumb seed={data.slug} src={data.coverImageUrl} label={initials(d.actName ?? data.title)} style={s.thumb} labelStyle={s.thumbInit} />
 
-        <Text style={s.name}>{d.actName ?? data.title}</Text>
-        <View style={s.genres}>
-          {(d.genres ?? []).map((g) => (
-            <View key={g} style={s.genrePill}><Text style={s.genrePillText}>{g}</Text></View>
-          ))}
-        </View>
+          <Text style={s.name}>{d.actName ?? data.title}</Text>
+          <View style={s.genres}>
+            {(d.genres ?? []).map((g) => (
+              <View key={g} style={s.genrePill}><Text style={s.genrePillText}>{g}</Text></View>
+            ))}
+          </View>
+        </HeroParallax>
       </View>
 
-      <View style={s.body}>
+      <RevealView delay={100} style={s.body}>
         <Text style={s.kicker}>ABOUT</Text>
         <Text style={s.bio}>{d.bio}</Text>
 
@@ -72,8 +77,8 @@ export default function Artist() {
         <View style={{ marginTop: 22, alignItems: "center" }}>
           <ReportButton listingId={data.id} />
         </View>
-      </View>
-    </ScrollView>
+      </RevealView>
+    </Animated.ScrollView>
   );
 }
 

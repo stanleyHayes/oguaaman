@@ -3,6 +3,7 @@ import { useLoaderData, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { NotificationItem } from "@/lib/types";
 import { PageHeader, Card, Empty } from "@/components/ui";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -50,28 +51,31 @@ export function Component() {
       {items.length === 0 ? (
         <Empty title="No notifications">Moderation outcomes, claims and remembrance notices will show up here.</Empty>
       ) : (
-        <Card className="divide-y divide-sand overflow-hidden">
-          {items.map((n) => {
-            const linkable = adminLink(n.link) != null;
-            return (
-              <button
-                key={n.id}
-                type="button"
-                onClick={() => open(n)}
-                className={`flex w-full items-start gap-3 px-5 py-4 text-left transition-colors ${n.read ? "" : "bg-paper"} ${linkable ? "hover:bg-sand/40" : ""}`}
-              >
-                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-sand" : KIND_DOT[n.kind] ?? "bg-ai"}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className={`text-sm ${n.read ? "text-ink-muted" : "font-semibold text-ink"}`}>{n.title}</span>
-                    <span className="shrink-0 text-xs text-ink-faint">{formatDate(n.createdAt)}</span>
-                  </div>
-                  <p className="mt-0.5 text-sm text-ink-muted">{n.body}</p>
-                  {linkable && <span className="mt-1 inline-block text-xs font-medium text-ai">Open →</span>}
-                </div>
-              </button>
-            );
-          })}
+        <Card className="overflow-hidden">
+          <Stagger className="divide-y divide-sand">
+            {items.map((n, idx) => {
+              const linkable = adminLink(n.link) != null;
+              return (
+                <StaggerItem key={n.id} index={idx}>
+                  <button
+                    type="button"
+                    onClick={() => open(n)}
+                    className={`flex w-full items-start gap-3 px-5 py-4 text-left transition-colors ${n.read ? "" : "bg-paper"} ${linkable ? "hover:bg-sand/40" : ""}`}
+                  >
+                    <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-sand" : KIND_DOT[n.kind] ?? "bg-ai"}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className={`text-sm ${n.read ? "text-ink-muted" : "font-semibold text-ink"}`}>{n.title}</span>
+                        <span className="shrink-0 text-xs text-ink-faint">{formatDate(n.createdAt)}</span>
+                      </div>
+                      <p className="mt-0.5 text-sm text-ink-muted">{n.body}</p>
+                      {linkable && <span className="mt-1 inline-block text-xs font-medium text-ai">Open →</span>}
+                    </div>
+                  </button>
+                </StaggerItem>
+              );
+            })}
+          </Stagger>
         </Card>
       )}
     </>
