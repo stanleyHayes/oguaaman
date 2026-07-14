@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet, isRouteErrorResponse, useLocation, useRouteError } from "react-router-dom";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { PageTransition } from "@/components/page-transition";
 import { Container, CTA as Cta } from "@/components/ui";
 
 /** Reset scroll to the top on every route change (instant, loader-safe). */
@@ -19,7 +20,9 @@ export function RootLayout() {
       <ScrollToTop />
       <SiteHeader />
       <main className="flex-1">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
       <SiteFooter />
     </div>

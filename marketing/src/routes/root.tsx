@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet, ScrollRestoration, isRouteErrorResponse, useRouteError, useMatches, Link } from "react-router-dom";
 import { Nav } from "@/sections/Nav";
 import { Footer } from "@/sections/Footer";
+import { PageTransition } from "@/components/page-transition";
 import { setMeta, setLink, DEFAULT_OG_IMAGE } from "@/lib/meta";
 
 const DEFAULT_TITLE = "Oguaa — the home of Cape Coast";
@@ -47,7 +48,9 @@ export function RootLayout() {
     <>
       <Nav />
       <main>
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
       <Footer />
       <ScrollRestoration />

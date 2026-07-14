@@ -308,18 +308,39 @@ function TimelineBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone
 
 function FaqBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.value);
+  const keyOf = (i: SectionItem, idx: number) => i.id || `faq-${idx}`;
+  const [open, setOpen] = useState<string | null>(() => (list.length ? keyOf(list[0], 0) : null));
   if (list.length === 0) return null;
   return (
     <div className="overflow-hidden rounded-[var(--radius-card)] border border-sand">
-      {list.map((i, idx) => (
-        <details key={i.id || idx} className="group border-b border-sand last:border-b-0 [&_summary::-webkit-details-marker]:hidden">
-          <summary className="flex cursor-pointer items-center justify-between gap-3 bg-cream px-4 py-3 font-medium text-ink">
-            <span>{i.label || "—"}</span>
-            <span className="shrink-0 text-ink-faint transition-transform group-open:rotate-45" aria-hidden>+</span>
-          </summary>
-          {i.value && <p className="bg-paper px-4 py-3 text-sm leading-relaxed text-ink-muted">{i.value}</p>}
-        </details>
-      ))}
+      {list.map((i, idx) => {
+        const id = keyOf(i, idx);
+        const isOpen = open === id;
+        return (
+          <div key={id} className="border-b border-sand last:border-b-0">
+            <button
+              type="button"
+              onClick={() => setOpen(isOpen ? null : id)}
+              className="flex w-full cursor-pointer items-center justify-between gap-3 bg-cream px-4 py-3 text-left font-medium text-ink"
+            >
+              <span>{i.label || "—"}</span>
+              <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.2 }} className="shrink-0 text-ink-faint" aria-hidden>+</motion.span>
+            </button>
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }}
+                >
+                  <p className="bg-paper px-4 py-3 text-sm leading-relaxed text-ink-muted">{i.value}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
     </div>
   );
 }

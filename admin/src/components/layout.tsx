@@ -1,6 +1,7 @@
 import { NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation } from "react-router-dom";
 import { useEffect, useState, type ReactNode } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { PageTransition } from "@/components/page-transition";
 import { useAuth } from "@/lib/auth";
 
 interface NavItem { to: string; label: string; icon: IconName; end?: boolean }
@@ -66,7 +67,7 @@ export function Mark({ size = 26 }: Readonly<{ size?: number }>) {
 
 type IconName =
   | "grid" | "inbox" | "list" | "history" | "users" | "landmark"
-  | "shield" | "news" | "sparkles" | "bell" | "user" | "gear" | "menu" | "chevrons" | "flag" | "pin" | "coins" | "ticket";
+  | "shield" | "news" | "sparkles" | "bell" | "user" | "gear" | "menu" | "chevrons" | "chevron-down" | "flag" | "pin" | "coins" | "ticket";
 
 function Icon({ name, className = "" }: Readonly<{ name: IconName; className?: string }>) {
   const p: Record<IconName, ReactNode> = {
@@ -84,6 +85,7 @@ function Icon({ name, className = "" }: Readonly<{ name: IconName; className?: s
     gear: <><circle cx="12" cy="12" r="3.2" /><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4 5.3 5.3" /></>,
     menu: <path d="M4 7h16M4 12h16M4 17h16" />,
     chevrons: <path d="m13 6-6 6 6 6M19 6l-6 6 6 6" />,
+    "chevron-down": <path d="m6 9 6 6 6-6" />,
     flag: <><path d="M4 21V4h12l-1.6 4L16 12H4" /><path d="M4 4v17" /></>,
     pin: <><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></>,
     coins: <><circle cx="9" cy="9" r="6" /><path d="M15.2 5.1a6 6 0 1 1-7.7 8.4" /><path d="M7 9h4M9 7v4" /></>,
@@ -103,6 +105,7 @@ export function AdminLayout() {
   const loc = useLocation();
   const [collapsed, setCollapsed] = useState(() => (typeof localStorage !== "undefined" ? localStorage.getItem(COLLAPSE_KEY) === "1" : false));
   const [open, setOpen] = useState(false); // mobile drawer
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => Object.fromEntries(NAV_GROUPS.map((g) => [g.title, true])));
 
   useEffect(() => { if (typeof localStorage !== "undefined") localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0"); }, [collapsed]);
   // Scroll to top on navigation. (The mobile drawer closes via each link's onClick.)
@@ -130,10 +133,29 @@ export function AdminLayout() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {NAV_GROUPS.map((g) => (
+          {NAV_GROUPS.map((g) => {
+            const expanded = openGroups[g.title] ?? true;
+            return (
             <div key={g.title} className="mb-4 last:mb-0">
-              <p className={`px-3 pb-1.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-cream/70 ${collapsed ? "lg:hidden" : ""}`}>{g.title}</p>
-              <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => setOpenGroups((prev) => ({ ...prev, [g.title]: !expanded }))}
+                className={`flex w-full items-center justify-between px-3 pb-1.5 text-left text-[0.6rem] font-bold uppercase tracking-[0.14em] text-cream/70 ${collapsed ? "lg:hidden" : ""}`}
+              >
+                <span>{g.title}</span>
+                <motion.span animate={{ rotate: expanded ? 0 : -90 }} transition={{ duration: 0.18 }}>
+                  <Icon name="chevron-down" />
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {expanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }}
+                    className="space-y-0.5 overflow-hidden"
+                  >
                 {g.items.map((n) => (
                   <NavLink
                     key={n.to}
@@ -167,9 +189,12 @@ export function AdminLayout() {
                     )}
                   </NavLink>
                 ))}
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          ))}
+          );
+          })}
         </nav>
 
         <div className={`shrink-0 border-t border-cream/10 px-4 py-3 ${collapsed ? "lg:px-2" : ""}`}>
@@ -220,7 +245,9 @@ export function AdminLayout() {
 
         <main className="flex-1 px-4 py-7 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
-            <Outlet />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
           </div>
         </main>
       </div>
