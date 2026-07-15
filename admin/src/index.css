@@ -20,6 +20,15 @@
   --color-maroon-900: #7c2d2d;
   --color-teal: #0e7c6b;
   --color-teal-text: #0b6557;
+  /* Aura command-center sidebar palette (auraedu packages/tokens/tokens.css) */
+  --color-navy: #001b50;
+  --color-navy-soft: #002870;
+  --color-navy-muted: #1e3a66;
+  --color-aura-gold: #c58b2c;
+  --color-aura-gold-soft: #d4af37;
+  --color-aura-gold-muted: #e8d5a3;
+  --color-aura-cream: #fdfcf7;
+  --color-crit: #b42318;
   --color-ai: #4c40a8;
   --color-ai-tint: #f6f5fd;
   --color-ai-line: #e2dff4;
