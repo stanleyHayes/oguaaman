@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Listing, Pledge, PledgeTotals } from "@/lib/types";
-import { PageHeader, Card, Empty, Pill, StatCard } from "@/components/ui";
+import { PageHeader, Card, Empty, Pill } from "@/components/ui";
+import { MetricCard } from "@/components/metric-card";
+import { HandCoins, CheckCircle2, Clock, FlaskConical, Banknote, Percent, TrendingUp } from "lucide-react";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { motion } from "motion/react";
 import { formatDate } from "@/lib/format";
@@ -41,12 +43,12 @@ export function Component() {
     <>
       <PageHeader kicker="Adopt a project · spec §4/§6" title="Projects & pledges" />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Raised (confirmed)" value={cedis(totals.raised)} />
-        <StatCard label="Confirmed pledges" value={totals.confirmed} tone="text-teal-text" />
-        <StatCard label="Pending" value={totals.pending} tone="text-gold-text" />
-        <StatCard label="Simulated (dev)" value={totals.simulated} tone="text-ink-muted" />
-      </div>
+      <Stagger className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StaggerItem index={0}><MetricCard label="Raised (confirmed)" value={cedis(totals.raised)} tone="green" icon={<HandCoins size={18} />} /></StaggerItem>
+        <StaggerItem index={1}><MetricCard label="Confirmed pledges" value={totals.confirmed} tone="teal" icon={<CheckCircle2 size={18} />} /></StaggerItem>
+        <StaggerItem index={2}><MetricCard label="Pending" value={totals.pending} tone="gold" icon={<Clock size={18} />} /></StaggerItem>
+        <StaggerItem index={3}><MetricCard label="Simulated (dev)" value={totals.simulated} tone="ink" icon={<FlaskConical size={18} />} /></StaggerItem>
+      </Stagger>
 
       {/* campaigns */}
       <h2 className="mb-3 text-lg font-semibold text-ink">Campaigns</h2>
@@ -100,11 +102,11 @@ export function Component() {
       </div>
 
       {/* platform-fee split over successful pledges */}
-      <div className="mb-4 grid grid-cols-3 gap-4">
-        <StatCard label="Gross charged" value={cedis(pledgeTotals.grossPesewas)} />
-        <StatCard label="Platform fee" value={cedis(pledgeTotals.feePesewas)} tone="text-gold-text" />
-        <StatCard label="Net to projects" value={cedis(pledgeTotals.netPesewas)} tone="text-teal-text" />
-      </div>
+      <Stagger className="mb-4 grid grid-cols-3 gap-4">
+        <StaggerItem index={0}><MetricCard label="Gross charged" value={cedis(pledgeTotals.grossPesewas)} tone="green" icon={<Banknote size={18} />} /></StaggerItem>
+        <StaggerItem index={1}><MetricCard label="Platform fee" value={cedis(pledgeTotals.feePesewas)} tone="gold" icon={<Percent size={18} />} /></StaggerItem>
+        <StaggerItem index={2}><MetricCard label="Net to projects" value={cedis(pledgeTotals.netPesewas)} tone="teal" icon={<TrendingUp size={18} />} /></StaggerItem>
+      </Stagger>
 
       {shown.length === 0 ? (
         <Empty title="No pledges yet">When members pledge to a campaign, every transaction lands here.</Empty>

@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Listing, Ticket, TicketTier } from "@/lib/types";
-import { PageHeader, Card, Empty, StatCard } from "@/components/ui";
+import { PageHeader, Card, Empty } from "@/components/ui";
+import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { Banknote, Ticket as TicketIcon, DoorOpen } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -161,11 +163,11 @@ export function Component() {
             ))}
           </div>
 
-          <div className="mb-6 grid grid-cols-3 gap-4">
-            <StatCard label="Revenue (confirmed)" value={cedis(totals.revenue)} />
-            <StatCard label="Tickets sold" value={totals.sold} tone="text-teal-text" />
-            <StatCard label="Admitted" value={totals.admitted} tone="text-gold-text" />
-          </div>
+          <Stagger className="mb-6 grid grid-cols-3 gap-4">
+            <StaggerItem index={0}><MetricCard label="Revenue (confirmed)" value={cedis(totals.revenue)} tone="green" icon={<Banknote size={18} />} /></StaggerItem>
+            <StaggerItem index={1}><MetricCard label="Tickets sold" value={totals.sold} tone="teal" icon={<TicketIcon size={18} />} /></StaggerItem>
+            <StaggerItem index={2}><MetricCard label="Admitted" value={totals.admitted} tone="gold" icon={<DoorOpen size={18} />} /></StaggerItem>
+          </Stagger>
 
           {renderLedger()}
         </>

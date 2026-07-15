@@ -3,9 +3,11 @@ import { Link, useLoaderData, useRevalidator } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Stats, Listing, Member, Organization } from "@/lib/types";
 import { Card, StatusBadge } from "@/components/ui";
+import { MetricCard } from "@/components/metric-card";
 import { BarsH, Histogram, AreaLine, Donut, CHART_COLORS, type Datum } from "@/components/charts";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { useAuth } from "@/lib/auth";
+import { Inbox, ListChecks, Users, Landmark, Palette, Heart, Camera, GraduationCap } from "lucide-react";
 
 interface Data {
   stats: Stats;
@@ -68,26 +70,6 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 // ── small presentational pieces ──────────────────────────────────────────────
-interface Tile { label: string; value: number; to: string; tone?: string; accent?: boolean }
-function StatTile({ label, value, to, tone = "text-ink", accent = false }: Readonly<Tile>) {
-  return (
-    <Link
-      to={to}
-      // `block` is required: an inline <a> wrapping block divs fragments its
-      // box, collapsing the border/background into a thin strip.
-      className={`group block rounded-[var(--radius-card)] border p-4 transition-colors ${
-        accent ? "border-gold-border/50 bg-gold/[0.08] hover:bg-gold/[0.14]" : "border-sand bg-cream hover:border-gold-border/50"
-      }`}
-    >
-      <div className={`text-3xl font-semibold ${tone}`}>{value}</div>
-      <div className="mt-1 flex items-center justify-between text-xs uppercase tracking-wide text-ink-faint">
-        {label}
-        <span className="opacity-0 transition-opacity group-hover:opacity-100">→</span>
-      </div>
-    </Link>
-  );
-}
-
 function ChartCard({ title, hint, children }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
   return (
     <Card className="h-full min-w-0 p-5">
@@ -187,14 +169,14 @@ export function Component() {
       </div>
 
       <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StaggerItem index={0}><StatTile label="Pending" value={stats.pending} to="/moderation" tone="text-gold-text" accent /></StaggerItem>
-        <StaggerItem index={1}><StatTile label="Live listings" value={stats.listings} to="/listings" /></StaggerItem>
-        <StaggerItem index={2}><StatTile label="Members" value={stats.members} to="/members" /></StaggerItem>
-        <StaggerItem index={3}><StatTile label="Institutions" value={stats.institutions} to="/institutions" /></StaggerItem>
-        <StaggerItem index={4}><StatTile label="Artists" value={stats.artists} to="/listings" tone="text-clay-text" /></StaggerItem>
-        <StaggerItem index={5}><StatTile label="Memorials" value={stats.memorials} to="/listings" tone="text-gold-text" /></StaggerItem>
-        <StaggerItem index={6}><StatTile label="Memories" value={stats.memories} to="/listings" /></StaggerItem>
-        <StaggerItem index={7}><StatTile label="Schools" value={stats.schools} to="/institutions" tone="text-maroon-900" /></StaggerItem>
+        <StaggerItem index={0}><MetricCard label="Pending" value={stats.pending} to="/moderation" tone="gold" icon={<Inbox size={18} />} /></StaggerItem>
+        <StaggerItem index={1}><MetricCard label="Live listings" value={stats.listings} to="/listings" tone="green" icon={<ListChecks size={18} />} /></StaggerItem>
+        <StaggerItem index={2}><MetricCard label="Members" value={stats.members} to="/members" tone="teal" icon={<Users size={18} />} /></StaggerItem>
+        <StaggerItem index={3}><MetricCard label="Institutions" value={stats.institutions} to="/institutions" tone="ink" icon={<Landmark size={18} />} /></StaggerItem>
+        <StaggerItem index={4}><MetricCard label="Artists" value={stats.artists} to="/listings" tone="clay" icon={<Palette size={18} />} /></StaggerItem>
+        <StaggerItem index={5}><MetricCard label="Memorials" value={stats.memorials} to="/listings" tone="gold" icon={<Heart size={18} />} /></StaggerItem>
+        <StaggerItem index={6}><MetricCard label="Memories" value={stats.memories} to="/listings" tone="ink" icon={<Camera size={18} />} /></StaggerItem>
+        <StaggerItem index={7}><MetricCard label="Schools" value={stats.schools} to="/institutions" tone="maroon" icon={<GraduationCap size={18} />} /></StaggerItem>
       </Stagger>
 
       <Stagger className="mt-5 grid gap-5 lg:grid-cols-[1.5fr_1fr]">

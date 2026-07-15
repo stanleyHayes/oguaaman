@@ -2,8 +2,10 @@ import { useMemo } from "react";
 import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Subscription } from "@/lib/types";
-import { PageHeader, Card, Empty, StatCard } from "@/components/ui";
+import { PageHeader, Card, Empty } from "@/components/ui";
+import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { Banknote, BadgeCheck } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -38,10 +40,10 @@ export function Component() {
     <>
       <PageHeader kicker="Business directory" title="Subscriptions" />
 
-      <div className="mb-6 grid grid-cols-2 gap-4">
-        <StatCard label="Revenue (confirmed)" value={cedis(totals.revenue)} />
-        <StatCard label="Active supporters" value={totals.active} tone="text-gold-text" />
-      </div>
+      <Stagger className="mb-6 grid grid-cols-2 gap-4">
+        <StaggerItem index={0}><MetricCard label="Revenue (confirmed)" value={cedis(totals.revenue)} tone="green" icon={<Banknote size={18} />} /></StaggerItem>
+        <StaggerItem index={1}><MetricCard label="Active supporters" value={totals.active} tone="gold" icon={<BadgeCheck size={18} />} /></StaggerItem>
+      </Stagger>
 
       {subs.length === 0 ? (
         <Empty title="No subscriptions yet">When business owners subscribe to the Supporter plan, every payment lands here.</Empty>

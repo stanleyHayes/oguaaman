@@ -2,8 +2,10 @@ import { useMemo } from "react";
 import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Pledge, Subscription, Promotion, RevenueOverview } from "@/lib/types";
-import { PageHeader, Card, Empty, StatCard } from "@/components/ui";
+import { PageHeader, Card, Empty } from "@/components/ui";
+import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { HandCoins, Ticket, Repeat, Megaphone } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -96,12 +98,12 @@ export function Component() {
       </div>
 
       {/* headline stats row */}
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Pledges (gross)" value={cedis(overview.pledges.grossPesewas)} tone="text-teal-text" />
-        <StatCard label="Tickets (gross)" value={cedis(overview.tickets.grossPesewas)} tone="text-teal-text" />
-        <StatCard label="Subscriptions (gross)" value={cedis(overview.subscriptions.grossPesewas)} tone="text-teal-text" />
-        <StatCard label="Promotions (gross)" value={cedis(overview.promotions.grossPesewas)} tone="text-teal-text" />
-      </div>
+      <Stagger className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StaggerItem index={0}><MetricCard label="Pledges (gross)" value={cedis(overview.pledges.grossPesewas)} tone="teal" icon={<HandCoins size={18} />} /></StaggerItem>
+        <StaggerItem index={1}><MetricCard label="Tickets (gross)" value={cedis(overview.tickets.grossPesewas)} tone="teal" icon={<Ticket size={18} />} /></StaggerItem>
+        <StaggerItem index={2}><MetricCard label="Subscriptions (gross)" value={cedis(overview.subscriptions.grossPesewas)} tone="teal" icon={<Repeat size={18} />} /></StaggerItem>
+        <StaggerItem index={3}><MetricCard label="Promotions (gross)" value={cedis(overview.promotions.grossPesewas)} tone="teal" icon={<Megaphone size={18} />} /></StaggerItem>
+      </Stagger>
 
       {/* recent activity across streams */}
       <h2 className="mb-3 text-lg font-semibold text-ink">Recent activity</h2>

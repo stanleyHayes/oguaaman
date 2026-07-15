@@ -26,15 +26,6 @@ export function Card({ children, className = "" }: Readonly<{ children: ReactNod
   return <div className={`rounded-[var(--radius-card)] border border-sand bg-cream ${className}`}>{children}</div>;
 }
 
-export function StatCard({ label, value, tone = "text-green" }: Readonly<{ label: string; value: number | string; tone?: string }>) {
-  return (
-    <Card className="px-4 py-5 text-center">
-      <div className={`text-3xl font-semibold ${tone}`}>{value}</div>
-      <div className="mt-1 text-xs uppercase tracking-wide text-ink-faint">{label}</div>
-    </Card>
-  );
-}
-
 const STATUS_STYLE: Record<ListingStatus, string> = {
   approved: "bg-green/[0.1] text-green",
   pending: "bg-gold/[0.18] text-gold-text",
