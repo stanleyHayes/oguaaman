@@ -8,6 +8,7 @@ import type { HomeData, Listing, NewsArticle } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Mark, Pill, Thumb } from "@/ui";
 import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
+import { useNavDrawer } from "@/components/nav-drawer";
 
 // Route a featured listing to its canonical screen (any type can be featured).
 function featuredRoute(l: Listing): string {
@@ -77,6 +78,7 @@ function NewsStrip() {
 export default function Home() {
   const insets = useSafeAreaInsets();
   const { scrollY, onScroll } = useHeroParallax();
+  const { open } = useNavDrawer();
   const { data, error, loading } = useApi<HomeData>(() => api.home(), "home");
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
@@ -90,7 +92,10 @@ export default function Home() {
       {/* hero */}
       <View style={[s.hero, { paddingTop: insets.top + 24 }]}>
         <HeroParallax scrollY={scrollY}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingVertical: 4, paddingRight: 4 }}>
+              <Text style={s.menuGlyph}>☰</Text>
+            </Pressable>
             <Mark size={26} />
             <Text style={s.eyebrow}>CAPE COAST · GHANA</Text>
           </View>
@@ -215,6 +220,7 @@ export default function Home() {
 
 const s = StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingBottom: 24 },
+  menuGlyph: { color: C.cream, fontSize: 20, fontWeight: "700" },
   eyebrow: { color: C.gold, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, fontFamily: serif, fontSize: 44, fontWeight: "600", marginTop: 10 },
   heroSub: { color: "rgba(246,241,231,0.85)", fontSize: 15, lineHeight: 22, marginTop: 8 },

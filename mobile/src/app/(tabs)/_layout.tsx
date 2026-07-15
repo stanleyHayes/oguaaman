@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Tabs } from "expo-router";
-import { Text, type ColorValue } from "react-native";
+import { Pressable, Text, type ColorValue } from "react-native";
 import { C } from "@/theme";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { useNavDrawer } from "@/components/nav-drawer";
 
 const icon = (glyph: string) => {
   // Named so it has a display name (react/display-name) for the tab bar.
@@ -31,6 +32,17 @@ function useUnreadCount(): number {
   return count;
 }
 
+// ☰ in the green top bar — opens the section drawer (the links that used to
+// be the More tab's content).
+function HeaderMenuButton() {
+  const { open } = useNavDrawer();
+  return (
+    <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
+      <Text style={{ fontSize: 20, color: C.cream, fontWeight: "700" }}>☰</Text>
+    </Pressable>
+  );
+}
+
 export default function TabsLayout() {
   const { t } = useLang();
   const unread = useUnreadCount();
@@ -45,6 +57,7 @@ export default function TabsLayout() {
         headerStyle: { backgroundColor: C.green },
         headerTintColor: C.cream,
         headerTitleStyle: { fontWeight: "600" },
+        headerLeft: () => <HeaderMenuButton />,
       }}
     >
       <Tabs.Screen name="index" options={{ title: t("nav.home"), headerShown: false, tabBarIcon: icon("◎") }} />

@@ -3,12 +3,14 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { C } from "@/theme";
 import { AuthProvider } from "@/lib/auth";
 import { LanguageProvider } from "@/lib/i18n";
+import { NavDrawerProvider } from "@/components/nav-drawer";
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <LanguageProvider>
       <AuthProvider>
+        <NavDrawerProvider>
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: C.green },
@@ -48,6 +50,7 @@ export default function RootLayout() {
           <Stack.Screen name="notifications" options={{ title: "Notifications", headerBackTitle: "Back" }} />
           <Stack.Screen name="search" options={{ title: "Search", headerBackTitle: "More" }} />
         </Stack>
+        </NavDrawerProvider>
       </AuthProvider>
       </LanguageProvider>
     </SafeAreaProvider>
