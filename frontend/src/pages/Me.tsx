@@ -15,6 +15,12 @@ import { ProfileSkeleton } from "@/components/skeleton";
 const TYPE_LABELS: Record<string, string> = {
   business: "Business", artist: "Artist", person: "Person", memory: "Memory", event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
 };
+
+// The creator studio (separate SPA) hosts the owner listing editor.
+const CREATOR = (import.meta.env.VITE_CREATOR_URL as string | undefined) ?? "http://localhost:3004";
+// The editor covers the member-submittable types (incidents/lost-found have
+// their own flows; projects belong to institutions).
+const EDITABLE = new Set(["artist", "business", "event", "memory", "opportunity", "person", "memorial"]);
 const STATUS_STYLE: Record<ListingStatus, string> = {
   approved: "bg-green/[0.08] text-green",
   pending: "bg-gold/[0.14] text-gold-text",
@@ -362,6 +368,10 @@ export function Component() {
                         {href ? <Link to={href} className="block min-w-0 flex-1 rounded-lg transition-colors hover:bg-paper">{inner}</Link> : <div className="min-w-0 flex-1">{inner}</div>}
                         {l.status === "approved" && featuredUntil && (
                           <span className="hidden shrink-0 rounded-full bg-gold/[0.14] px-2.5 py-1 text-xs font-semibold text-gold-text sm:inline">★ Featured until {formatDate(featuredUntil)}</span>
+                        )}
+                        {EDITABLE.has(l.type) && (
+                          <a href={`${CREATOR}/work/${l.id}/edit`}
+                            className="shrink-0 rounded-full border border-sand px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:border-gold-border/60 hover:text-gold-text">Edit</a>
                         )}
                         {l.status === "approved" && (promoFor === l.id ? (
                           <div className="flex shrink-0 items-center gap-1.5">

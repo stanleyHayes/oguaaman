@@ -1,0 +1,138 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/oguaa/backend/internal/domain"
+)
+
+// ── owner listing editor (Creator Platform plan §Phase 2) ────────────────────
+//
+// Creators edit their own listings from the creator studio. Approved listings
+// stay live (an "owner-edit" audit record lands in the moderation trail so
+// curators can spot-check); edits to draft/rejected/unpublished listings
+// re-queue them for review — which also gives "request changes" a way back
+// into the queue for the first time.
+
+// OwnerEditInput is the full-replace edit payload (mirrors the submit form's
+// shape: title + cover + free-form details, whitelisted per type server-side).
+type OwnerEditInput struct {
+	Title         string         `json:"title"`
+	CoverImageURL string         `json:"coverImageUrl"`
+	Details       map[string]any `json:"details"`
+}
+
+// ownerEditableTypes are the member-submittable types (same set as Submit).
+// project/incident/lostfound have their own flows.
+var ownerEditableTypes = validTypes
+
+// editableDetailsKeys whitelists the details vocabulary a creator may write.
+// Everything else is stripped — system keys (candles, raisedPesewas, backers,
+// subscribedUntil, tiers, incident/lostfound lifecycle, spotlight…) can never
+// arrive here because those types/keys are excluded.
+var editableDetailsKeys = map[string]map[string]bool{
+	domain.TypeArtist:      {"actName": true, "genres": true, "bio": true, "link": true, "streamingLinks": true, "socials": true, "booking": true},
+	domain.TypeBusiness:    {"category": true, "description": true, "address": true, "openingHours": true, "services": true, "contact": true},
+	domain.TypeEvent:       {"description": true, "startsAt": true, "venue": true, "organiser": true},
+	domain.TypeMemory:      {"text": true, "era": true},
+	domain.TypeOpportunity: {"kind": true, "description": true, "eligibility": true, "deadline": true, "applyUrl": true, "provider": true},
+	domain.TypePerson:      {"whyNotable": true, "era": true},
+	domain.TypeMemorial:    {"honorific": true, "bornYear": true, "diedDate": true, "birthday": true, "epitaph": true, "lifeStory": true, "associations": true, "gallery": true, "observeBirthday": true},
+}
+
+// urlDetailKeys are scalar details values that must pass the URL guard.
+var urlDetailKeys = map[string]bool{"applyUrl": true, "link": true, "booking": true}
+
+// linkListKeys are details arrays of {label,url}-ish objects whose url fields
+// need the same guard (streamingLinks/socials/contact/gallery).
+var linkListKeys = map[string]bool{"streamingLinks": true, "socials": true, "contact": true, "gallery": true}
+
+func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, listingID string, in OwnerEditInput) (*domain.Listing, error) {
+	if actor == nil {
+		return nil, &domain.ForbiddenError{Reason: "a signed-in member is required to edit a listing"}
+	}
+	l, err := s.listings.GetByID(ctx, listingID)
+	if err != nil {
+		return nil, err
+	}
+	if !ownerEditableTypes[l.Type] {
+		return nil, &domain.NotFoundError{Entity: "editable listing"}
+	}
+	if actor.ID != l.OwnerID && actor.Role != domain.RoleCurator && actor.Role != domain.RoleSteward {
+		return nil, &domain.ForbiddenError{Reason: "only the owner can edit this listing"}
+	}
+	title := strings.TrimSpace(in.Title)
+	if len(title) < 2 || len(title) > 160 {
+		return nil, fmt.Errorf("title must be 2–160 characters")
+	}
+
+	// Full-replace details, whitelisted per type + URL-guarded.
+	details := map[string]any{}
+	allow := editableDetailsKeys[l.Type]
+	for k, v := range in.Details {
+		if !allow[k] {
+			continue
+		}
+		switch {
+		case urlDetailKeys[k]:
+			if s, ok := v.(string); ok {
+				v = safeURL(s)
+			}
+		case linkListKeys[k]:
+			v = sanitizeLinkList(v)
+		}
+		details[k] = v
+	}
+	if l.Type == domain.TypeMemorial {
+		// System counters must survive the full-replace edit.
+		for _, sys := range []string{"candles", "rememberedByCount"} {
+			if cur, ok := l.Details[sys]; ok {
+				details[sys] = cur
+			}
+		}
+	}
+
+	// Status: approved stays live; pending stays pending; anything else
+	// (draft/rejected/unpublished) re-queues with a fresh submission date.
+	status := l.Status
+	submittedAt := ""
+	now := time.Now().UTC().Format(time.RFC3339)
+	if status != domain.StatusApproved && status != domain.StatusPending {
+		status = domain.StatusPending
+		submittedAt = now
+	}
+
+	if err := s.listings.OwnerUpdate(ctx, l.ID, title, safeURL(strings.TrimSpace(in.CoverImageURL)), details, status, submittedAt); err != nil {
+		return nil, err
+	}
+	if err := s.mod.Insert(ctx, domain.ModerationRecord{
+		ID:          "mod-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ListingID:   l.ID,
+		ModeratorID: actor.ID,
+		Action:      "owner-edit",
+		CreatedAt:   now,
+	}); err != nil {
+		return nil, err
+	}
+	return s.listings.GetByID(ctx, l.ID)
+}
+
+// sanitizeLinkList URL-guards every "url" field of a [{label,url}…] details
+// array (best-effort: non-object entries pass through untouched).
+func sanitizeLinkList(v any) any {
+	items, ok := v.([]any)
+	if !ok {
+		return v
+	}
+	for _, item := range items {
+		if m, ok := item.(map[string]any); ok {
+			if u, ok := m["url"].(string); ok {
+				m["url"] = safeURL(u)
+			}
+		}
+	}
+	return items
+}

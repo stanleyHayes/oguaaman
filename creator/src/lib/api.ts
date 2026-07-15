@@ -1,4 +1,4 @@
-import type { CreatorOverview, Member, MemberView, NotificationItem, Organization, Promotion, Subscription, Ticket } from "./types";
+import type { CreatorOverview, Listing, Member, MemberView, NotificationItem, Organization, Promotion, Subscription, Ticket } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -49,6 +49,11 @@ export const api = {
 
   // The member's own listings arrive on the public member view (all statuses).
   member: (slug: string) => get<MemberView>(`/api/members/${slug}`),
+
+  // Owner listing editor: full-replace title/cover/whitelisted details.
+  // Approved listings stay live; non-live ones re-queue for review.
+  updateListing: (id: string, body: { title: string; coverImageUrl?: string; details: Record<string, unknown> }) =>
+    post<Listing>(`/api/listings/${id}/edit`, body),
 
   // Institutions the member manages (claim → steward-verify → manage, spec §8.13).
   myInstitutions: () => get<Organization[]>("/api/me/institutions"),

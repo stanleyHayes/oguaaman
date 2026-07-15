@@ -90,6 +90,17 @@ func (r *ListingRepo) UpdateStatus(ctx context.Context, id, status, reviewedBy, 
 	return err
 }
 
+// OwnerUpdate applies a creator's content edit in one $set (see the interface
+// doc for the status/submittedAt semantics — computed by the service).
+func (r *ListingRepo) OwnerUpdate(ctx context.Context, id, title, coverImageURL string, details map[string]any, status, submittedAt string) error {
+	set := bson.M{"title": title, "status": status, "details": details, "coverImageUrl": coverImageURL}
+	if submittedAt != "" {
+		set["submittedAt"] = submittedAt
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": set})
+	return err
+}
+
 func (r *ListingRepo) AddTribute(ctx context.Context, listingID string, t domain.Tribute) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$push": bson.M{"tributes": t}})
 	return err

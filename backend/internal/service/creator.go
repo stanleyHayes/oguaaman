@@ -16,9 +16,9 @@ import (
 
 // CreatorOverview is the GET /api/creator/overview payload.
 type CreatorOverview struct {
-	Listings             int    `json:"listings"`   // all listings the creator owns
-	Live                 int    `json:"live"`       // approved
-	Pending              int    `json:"pending"`    // in the moderation queue
+	Listings             int    `json:"listings"` // all listings the creator owns
+	Live                 int    `json:"live"`     // approved
+	Pending              int    `json:"pending"`  // in the moderation queue
 	ActivePromotions     int    `json:"activePromotions"`
 	PromotionDaysLeft    int    `json:"promotionDaysLeft"` // summed remaining days across placements
 	ActiveSubscription   bool   `json:"activeSubscription"`

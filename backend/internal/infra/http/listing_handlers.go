@@ -215,6 +215,40 @@ func (h *Handler) Submit(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, l)
 }
 
+// EditListing applies a creator's content edit (title, cover, whitelisted
+// details). The service enforces ownership; approved listings stay live,
+// non-live listings re-queue for review (Creator Platform, Phase 2).
+func (h *Handler) EditListing(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "edit:"+clientKey(r), 60, time.Hour) {
+		return
+	}
+	var in service.OwnerEditInput
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	l, err := h.svc.UpdateOwnerListing(r.Context(), m, r.PathValue("id"), in)
+	if err != nil {
+		var nf *domain.NotFoundError
+		var fb *domain.ForbiddenError
+		if errors.As(err, &nf) || errors.As(err, &fb) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, l)
+}
+
 func (h *Handler) Candle(w http.ResponseWriter, r *http.Request) {
 	count, err := h.svc.LightCandle(r.Context(), r.PathValue("slug"))
 	if err != nil {

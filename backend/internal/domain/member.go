@@ -54,9 +54,9 @@ type Member struct {
 	Role          string        `json:"role" bson:"role"`
 	// CreatorTypes — empty means a plain citizen; any value makes the member a
 	// creator with dashboard access (Creator Platform plan §3).
-	CreatorTypes  []string      `json:"creatorTypes,omitempty" bson:"creatorTypes,omitempty"`
-	Suspended     bool          `json:"suspended" bson:"suspended"`
-	JoinedAt      string        `json:"joinedAt" bson:"joinedAt"`
+	CreatorTypes []string `json:"creatorTypes,omitempty" bson:"creatorTypes,omitempty"`
+	Suspended    bool     `json:"suspended" bson:"suspended"`
+	JoinedAt     string   `json:"joinedAt" bson:"joinedAt"`
 	// Living-member birthday (spec §8.11). Broadcast to followers only if the
 	// member opts in. Birthday is "MM-DD" or "YYYY-MM-DD".
 	Birthday          string `json:"birthday,omitempty" bson:"birthday,omitempty"`

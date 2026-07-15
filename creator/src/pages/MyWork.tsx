@@ -6,7 +6,7 @@ import type { Listing, MemberView, Promotion } from "@/lib/types";
 import { Card, Empty, StatusBadge } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { cedis, formatDate, initials } from "@/lib/format";
-import { ExternalLink, Megaphone } from "lucide-react";
+import { ExternalLink, Megaphone, Pencil } from "lucide-react";
 
 export async function loader(): Promise<MemberView> {
   const me = await api.me();
@@ -18,6 +18,10 @@ const TYPE_LABELS: Record<string, string> = {
   event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
   incident: "Incident", lostfound: "Lost & found",
 };
+
+// The owner editor covers the member-submittable types; incident/lostfound
+// have their own flows and projects belong to institutions.
+const EDITABLE = new Set(["artist", "business", "event", "memory", "opportunity", "person", "memorial"]);
 
 export function Component() {
   const { listings } = useLoaderData() as MemberView;
@@ -105,6 +109,11 @@ export function Component() {
                       </span>
                     )}
                     <StatusBadge status={l.status} />
+                    {EDITABLE.has(l.type) && (
+                      <Link to={`/work/${l.id}/edit`} className="shrink-0 rounded-lg p-1.5 text-ink-faint transition-colors hover:text-gold-text" title="Edit listing" aria-label={`Edit ${l.title}`}>
+                        <Pencil size={15} />
+                      </Link>
+                    )}
                     {path && (
                       <a href={portalUrl(path)} target="_blank" rel="noreferrer" className="shrink-0 rounded-lg p-1.5 text-ink-faint transition-colors hover:text-gold-text" title="View on the portal" aria-label={`View ${l.title} on the portal`}>
                         <ExternalLink size={15} />
@@ -139,7 +148,7 @@ export function Component() {
       )}
 
       <p className="mt-4 text-xs text-ink-faint">
-        Need to edit a listing? Edits happen on the <a href={`${PORTAL}/me`} className="font-semibold text-gold-text hover:underline">portal</a> for now — the owner editor arrives in a later phase.
+        Tap the pencil to edit a listing — approved listings stay live, others go back into review.
         Want to grow faster? See <Link to="/grow" className="font-semibold text-gold-text hover:underline">Promote &amp; plan</Link>.
       </p>
     </>

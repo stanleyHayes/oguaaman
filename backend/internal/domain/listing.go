@@ -85,6 +85,11 @@ type ListingRepository interface {
 	GetByID(ctx context.Context, id string) (*Listing, error)
 	Insert(ctx context.Context, l Listing) error
 	UpdateStatus(ctx context.Context, id, status, reviewedBy, reason, at string) error
+	// OwnerUpdate applies a creator's content edit: title, cover, whitelisted
+	// details (system keys are stripped by the service before this call), and
+	// the resulting status/submittedAt (edits to non-live listings re-queue
+	// them for review; approved listings stay live).
+	OwnerUpdate(ctx context.Context, id, title, coverImageURL string, details map[string]any, status, submittedAt string) error
 	AddTribute(ctx context.Context, listingID string, t Tribute) error
 	IncrementCandles(ctx context.Context, listingID string) (int, error)
 	// IncrementRaised atomically adds a confirmed pledge to a project's running

@@ -62,6 +62,21 @@ func (f *fakeRepo) UpdateStatus(_ context.Context, id, status, _, _, _ string) e
 	}
 	return &domain.NotFoundError{Entity: "listing"}
 }
+func (f *fakeRepo) OwnerUpdate(_ context.Context, id, title, coverImageURL string, details map[string]any, status, submittedAt string) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			f.listings[i].Title = title
+			f.listings[i].CoverImageURL = coverImageURL
+			f.listings[i].Details = details
+			f.listings[i].Status = status
+			if submittedAt != "" {
+				f.listings[i].SubmittedAt = submittedAt
+			}
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
 func (f *fakeRepo) AddTribute(_ context.Context, id string, t domain.Tribute) error { return nil }
 func (f *fakeRepo) IncrementCandles(_ context.Context, id string) (int, error)      { return 1, nil }
 func (f *fakeRepo) IncrementRaised(_ context.Context, id string, delta int64) error {
