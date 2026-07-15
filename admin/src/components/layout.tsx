@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
 import { useAuth } from "@/lib/auth";
 import {
@@ -226,12 +226,25 @@ export function AdminLayout() {
   const loc = useLocation();
   const [open, setOpen] = useState(false); // mobile drawer
   const [userMenu, setUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to top on navigation. (The mobile drawer closes via each link's
-  // onClick; the user menu closes via its backdrop and item clicks.)
+  // Scroll to top on navigation. (The mobile drawer closes via each link's onClick.)
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [loc.pathname]);
+
+  // User menu dismisses on click-outside or Escape (Aura user-menu pattern).
+  useEffect(() => {
+    if (!userMenu) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setUserMenu(false); };
+    const onDown = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setUserMenu(false); };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [userMenu]);
 
   const current = ALL_ITEMS.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? ALL_ITEMS[0];
 
@@ -266,26 +279,23 @@ export function AdminLayout() {
           </NavLink>
           <div className="hidden h-6 w-px bg-sand sm:block" />
           {/* User menu lives in the top bar, not the sidebar — as in Aura. */}
-          <div className="relative hidden sm:block">
+          <div className="relative hidden sm:block" ref={menuRef}>
             <button
               onClick={() => setUserMenu((v) => !v)}
               aria-expanded={userMenu}
               aria-haspopup="menu"
-              className="flex items-center gap-2 rounded-full border border-sand bg-paper py-1 pl-1 pr-3 text-sm hover:border-gold-border/60"
+              className="flex items-center gap-2.5 rounded-full border border-sand bg-paper py-1.5 pl-1.5 pr-4 text-sm transition-colors hover:border-gold-border/60"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gold/15 text-xs font-bold text-gold-text">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gold/15 text-xs font-bold text-gold-text">
                 {member?.displayName.split(" ").map((s) => s[0]).slice(0, 2).join("") ?? "··"}
               </span>
-              <span className="max-w-[8rem] truncate font-medium text-ink">{member?.displayName ?? "Account"}</span>
+              <span className="max-w-[9rem] truncate font-medium text-ink">{member?.displayName ?? "Account"}</span>
             </button>
             {userMenu && (
-              <>
-                <button className="fixed inset-0 z-10 cursor-default" onClick={() => setUserMenu(false)} aria-hidden tabIndex={-1} />
-                <div role="menu" className="absolute right-0 z-20 mt-2 w-44 rounded-xl border border-sand bg-paper p-1.5 shadow-lg">
-                  <Link to="/profile" role="menuitem" onClick={() => setUserMenu(false)} className="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-cream">Profile</Link>
-                  <button role="menuitem" onClick={signOut} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-clay-text hover:bg-cream">Sign out</button>
-                </div>
-              </>
+              <div role="menu" className="absolute right-0 z-20 mt-2 w-56 rounded-2xl border border-sand bg-paper p-2 shadow-lg">
+                <Link to="/profile" role="menuitem" onClick={() => setUserMenu(false)} className="block rounded-xl px-4 py-3 text-[0.9375rem] font-medium text-ink transition-colors hover:bg-cream">Profile</Link>
+                <button role="menuitem" onClick={signOut} className="mt-0.5 block w-full rounded-xl px-4 py-3 text-left text-[0.9375rem] font-medium text-clay-text transition-colors hover:bg-cream">Sign out</button>
+              </div>
             )}
           </div>
         </header>

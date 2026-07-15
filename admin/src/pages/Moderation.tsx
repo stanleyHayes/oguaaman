@@ -51,7 +51,7 @@ export function Component() {
     <>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-gold-text">Moderation · spec §8.10</p>
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-gold-text">Moderation</p>
           <h1 className="mt-1 text-3xl font-semibold text-ink">Review queue</h1>
         </div>
         <span className="rounded-full bg-gold/[0.16] px-3 py-1 text-sm font-semibold text-gold-text">{items.length} pending</span>

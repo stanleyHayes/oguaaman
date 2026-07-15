@@ -83,7 +83,7 @@ export function Component() {
             <button disabled={busy} onClick={toggleSuspend} className={`mt-3 w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${m.suspended ? "border-green/40 text-green hover:bg-green/[0.06]" : "border-maroon-900/40 text-maroon-900 hover:bg-maroon-900/[0.06]"}`}>
               {m.suspended ? "Unsuspend member" : "Suspend member"}
             </button>
-            <p className="mt-2 text-xs text-ink-faint">Role &amp; suspension are steward actions (spec §9, §8.10).</p>
+            <p className="mt-2 text-xs text-ink-faint">Role &amp; suspension are steward actions.</p>
           </Card>
         </div>
 

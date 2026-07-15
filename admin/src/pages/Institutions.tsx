@@ -31,7 +31,7 @@ export function Component() {
 
   return (
     <>
-      <PageHeader kicker="Spec §8.13 · §14.8" title="Institutions & verification" />
+      <PageHeader kicker="Verification & trust" title="Institutions & verification" />
       <p className="mb-5 max-w-2xl text-sm text-ink-muted">
         Grant the verified-official badge only after confirming standing through recognised channels (GES/metro directorate for schools; recognised councils for traditional authorities). The platform documents and hosts — it does not adjudicate disputes.
       </p>

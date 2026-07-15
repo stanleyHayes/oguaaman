@@ -23,7 +23,7 @@ export function Component() {
 
   return (
     <>
-      <PageHeader kicker="Spec §8.10 · who · what · when · why" title="Audit log" />
+      <PageHeader kicker="Who · what · when · why" title="Audit log" />
       {records.length === 0 ? <Empty>No moderation actions recorded yet.</Empty> : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">

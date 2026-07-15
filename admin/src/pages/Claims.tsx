@@ -27,7 +27,7 @@ export function Component() {
 
   return (
     <>
-      <PageHeader kicker="Spec §8.13 · institution management" title="Claims to review" />
+      <PageHeader kicker="Institution management" title="Claims to review" />
       <p className="mb-5 max-w-2xl text-sm text-ink-muted">
         Members requesting to manage an institution’s official presence. Approve only after
         confirming the person holds the office they claim — approval lets them edit the profile,

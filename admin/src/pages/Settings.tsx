@@ -62,7 +62,7 @@ export function Component() {
               {member && <RoleBadge role={member.role} />}
             </div>
             <p className="mt-2 text-sm text-ink-muted">
-              You sign in with your phone or email and a password (spec §8.1). Sessions last 30 days.
+              You sign in with your phone or email and a password. Sessions last 30 days.
             </p>
             <p className="mt-2 text-xs text-ink-faint">To change your name, bio or photo, use your <Link to="/profile" className="font-medium text-ai underline">Profile</Link>.</p>
           </div>

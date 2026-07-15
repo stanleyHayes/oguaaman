@@ -102,7 +102,7 @@ export function Component() {
           </Stagger>
         </table>
       </Card>
-      <p className="mt-3 text-xs text-ink-faint">Role assignment and suspension are steward actions (spec §9, §8.10). Changes persist to MongoDB.</p>
+      <p className="mt-3 text-xs text-ink-faint">Role assignment and suspension are steward actions. Changes persist to MongoDB.</p>
     </>
   );
 }

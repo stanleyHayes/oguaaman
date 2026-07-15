@@ -41,7 +41,7 @@ export function Component() {
 
   return (
     <>
-      <PageHeader kicker="Adopt a project · spec §4/§6" title="Projects & pledges" />
+      <PageHeader kicker="Adopt a project" title="Projects & pledges" />
 
       <Stagger className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StaggerItem index={0}><MetricCard label="Raised (confirmed)" value={cedis(totals.raised)} tone="green" icon={<HandCoins size={18} />} /></StaggerItem>

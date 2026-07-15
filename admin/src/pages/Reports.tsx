@@ -40,7 +40,7 @@ export function Component() {
 
   return (
     <>
-      <PageHeader kicker="Spec §14 · safeguarding" title="Reports">
+      <PageHeader kicker="Safeguarding" title="Reports">
         <button onClick={() => setShowResolved((v) => !v)} className="rounded-full border border-sand px-4 py-2 text-sm font-medium text-ink-muted hover:bg-paper">
           {showResolved ? `Hide resolved (${resolved.length})` : `Show resolved (${resolved.length})`}
         </button>

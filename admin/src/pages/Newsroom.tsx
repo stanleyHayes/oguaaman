@@ -54,7 +54,7 @@ export function Component() {
 
   return (
     <>
-      <PageHeader kicker="Spec §8.12 · editorial" title="Newsroom">
+      <PageHeader kicker="Editorial" title="Newsroom">
         <Link to="/newsroom/new" className="inline-flex items-center gap-1.5 rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green-900">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
           New article
