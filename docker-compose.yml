@@ -4,6 +4,7 @@
 #
 # Then: marketing http://localhost:3003 · web (portal) http://localhost:3000 ·
 #       admin http://localhost:3001 · mobile-web http://localhost:3002 ·
+#       creator http://localhost:3004 ·
 #       REST http://localhost:8080/api/health · GraphQL http://localhost:8080/graphql ·
 #       gRPC localhost:50051
 #
@@ -85,6 +86,16 @@ services:
     build: ./admin
     ports:
       - "3001:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Creator studio — the creator-facing dashboard (businesses, artists,
+  # organisers, institution managers). Sibling of the admin console.
+  creator:
+    build: ./creator
+    ports:
+      - "3004:80"
     depends_on:
       - api
     restart: unless-stopped

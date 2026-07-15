@@ -14,6 +14,7 @@ Its music, people, heritage, schools and memories — made by us, for us.
 | **Database** | MongoDB (one polymorphic `listings` collection — the "one engine, many types" model) |
 | **Public web** | React 19 · Vite 8 · React Router 7 · TypeScript · Tailwind v4 |
 | **Admin platform** | React 19 · Vite 8 (separate back-office SPA) |
+| **Creator studio** | React 19 · Vite 8 (creator-facing SPA, sibling of admin) |
 | **Mobile** | Expo SDK 56 · React Native · expo-router (iOS · Android · web) |
 | **AI** | Anthropic Claude, called server-side from Go (key never reaches the browser) |
 
@@ -22,6 +23,7 @@ oguaaman/
 ├── backend/     Go API (cmd/{server,seed}; internal/{domain,service,infra/{http,mongo},platform,config})
 ├── frontend/    Public site — Vite + React SPA (src/{pages,components,lib})
 ├── admin/       Admin back-office — Vite + React SPA (moderation, members, institutions, audit, AI compose)
+├── creator/     Creator studio — Vite + React SPA (creator dashboard: listings, promote, plans, earnings)
 ├── mobile/      Native apps — Expo + React Native (src/app: tabs + artist/memorial screens)
 ├── oguaa/       the spec + the original HTML mockups
 └── agent_plan.md
@@ -46,6 +48,9 @@ cd ../frontend && pnpm install && pnpm dev
 # 3. Admin platform — back-office on :5174 (proxies /api → :8080)
 cd ../admin && pnpm install && pnpm dev
 
+# 3b. Creator studio — creator dashboard on :5175 (proxies /api → :8080)
+cd ../creator && pnpm install && pnpm dev
+
 # 4. Mobile (iOS / Android / web) — Expo
 cd ../mobile && pnpm install && pnpm start
 # On a physical device, set EXPO_PUBLIC_API_URL to your machine's LAN IP.
@@ -57,6 +62,7 @@ Tests & builds:
 cd backend  && go test ./...    # engine/service unit tests
 cd frontend && pnpm build       # tsc typecheck + production build
 cd admin    && pnpm build       # tsc typecheck + production build
+cd creator  && pnpm build       # tsc typecheck + production build
 cd mobile   && pnpm exec tsc --noEmit   # typecheck (expo export -p web to bundle)
 ```
 
