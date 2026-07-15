@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#123F2D"/>
+  <!-- Adinkrahene-style concentric rings, top right -->
+  <g fill="none" stroke="#B07D32" stroke-width="3" opacity="0.18">
+    <circle cx="980" cy="150" r="150"/>
+    <circle cx="980" cy="150" r="95"/>
+    <circle cx="980" cy="150" r="42"/>
+  </g>
+  <!-- waves: the canoe / Atlantic -->
+  <g fill="none" stroke="#0E7C6B" stroke-width="4" opacity="0.5" stroke-linecap="round">
+    <path d="M0 540 q60 -28 120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0"/>
+    <path d="M0 580 q60 -28 120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0"/>
+  </g>
+  <g transform="translate(90,140)">
+    <g fill="none" stroke="#B07D32" stroke-width="5">
+      <circle cx="34" cy="34" r="32"/>
+      <circle cx="34" cy="34" r="19"/>
+    </g>
+    <circle cx="34" cy="34" r="7" fill="#B07D32"/>
+    <text x="92" y="54" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="68" fill="#F6F1E7">Oguaa</text>
+  </g>
+  <text x="92" y="330" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="76" fill="#F6F1E7">The home of Cape Coast.</text>
+  <text x="92" y="412" font-family="Outfit, Helvetica, Arial, sans-serif" font-size="34" fill="#C7A24A">Its music, people, heritage, schools</text>
+  <text x="92" y="456" font-family="Outfit, Helvetica, Arial, sans-serif" font-size="34" fill="#C7A24A">and the ones we remember. Made by us, for us.</text>
+  <text x="92" y="620" font-family="Outfit, Helvetica, Arial, sans-serif" font-weight="600" font-size="24" letter-spacing="4" fill="#F6F1E7" opacity="0.7">YƐN ARA ASAASE NI</text>
+</svg>

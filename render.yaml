@@ -1,0 +1,52 @@
+# Render Blueprint — Oguaa API (free tier).
+# Deploy: Render dashboard → New → Blueprint → pick this repo. Render reads this
+# file, builds backend/Dockerfile, and prompts for the sync:false secrets once.
+#
+# Free-tier notes:
+# - The service sleeps after ~15 min idle; first request after a nap takes ~50s.
+# - The disk is ephemeral — files under UPLOAD_DIR vanish on redeploy/restart.
+#   Durable member images go through Cloudinary (unsigned preset, see
+#   frontend/.env.example); first-party /uploads are best-effort on free.
+# - Only $PORT is exposed publicly, so the gRPC server (50051) stays internal.
+#   The portal talks REST (/api/*) + GraphQL (/graphql) only.
+services:
+  - type: web
+    name: oguaa-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: frankfurt # closest Render region to Ghana
+    healthCheckPath: /api/health
+    envVars:
+      # Atlas M0 (free) connection string — paste the mongodb+srv:// URI from
+      # Atlas → Database → Connect → Drivers. The live cluster is already seeded.
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: oguaa
+      # Render generates a strong secret on first deploy.
+      - key: JWT_SECRET
+        generateValue: true
+      # Enforce real sign-in on writes/admin in production.
+      - key: AUTH_REQUIRED
+        value: "true"
+      # Portal origin(s) allowed by CORS — comma-separate to add more
+      # (e.g. a custom domain later). Must match the Vercel deployment URL.
+      - key: ALLOWED_ORIGIN
+        value: https://oguaa.vercel.app
+      # Used for Paystack callback URLs.
+      - key: PUBLIC_PORTAL_URL
+        value: https://oguaa.vercel.app
+      # Absolute base for returned image URLs.
+      - key: PUBLIC_API_URL
+        value: https://oguaa-api.onrender.com
+      - key: UPLOAD_DIR
+        value: /app/uploads
+      - key: PLATFORM_FEE_PERCENT
+        value: "5"
+      # Optional — leave blank prompts empty to stay in labelled simulation:
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

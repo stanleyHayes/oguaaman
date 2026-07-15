@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Private / action pages — no value to index.
+Disallow: /admin
+Disallow: /me
+Disallow: /signin
+Disallow: /submit
+Disallow: /search
+Disallow: /safety/report
+Disallow: /lost-found/new
+
+Sitemap: https://oguaa.vercel.app/sitemap.xml
