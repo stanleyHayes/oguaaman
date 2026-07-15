@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageTransition } from "@/components/page-transition";
+import { Wordmark } from "@/components/wordmark";
 import { Container, CTA as Cta } from "@/components/ui";
 
 /** Reset scroll to the top on every route change (instant, loader-safe). */
@@ -26,6 +27,34 @@ function NavigationProgress() {
         animate={{ x: "100%" }}
         transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity }}
       />
+    </div>
+  );
+}
+
+/**
+ * Shown during the very first load while the route's lazy chunk and its
+ * loader settle. Without it react-router renders nothing at all in that
+ * window — a blank white page on cold caches / slow networks.
+ */
+export function HydrateFallback() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-green-900 text-cream">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        <Wordmark size="text-3xl" />
+      </motion.div>
+      <div className="h-0.5 w-28 overflow-hidden rounded-full bg-gold/15" aria-hidden>
+        <motion.div
+          className="h-full w-full bg-gold-brand"
+          initial={{ x: "-100%" }}
+          animate={{ x: "100%" }}
+          transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity }}
+        />
+      </div>
+      <p className="text-xs uppercase tracking-[0.2em] text-gold/80">Yɛn ara asaase ni</p>
     </div>
   );
 }

@@ -1,12 +1,14 @@
 import { createBrowserRouter } from "react-router-dom";
-import { RootLayout, RootError } from "./routes/root";
+import { RootLayout, RootError, HydrateFallback } from "./routes/root";
 
 // Lazy, code-split routes (low-bandwidth friendly). Each page module exports
-// `Component` and, where it loads data, a `loader`.
+// `Component` and, where it loads data, a `loader`. HydrateFallback covers the
+// first load while the initial lazy chunk + loader settle (else: blank page).
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     errorElement: <RootError />,
+    HydrateFallback,
     children: [
       { index: true, lazy: () => import("./pages/Home") },
       { path: "signin", lazy: () => import("./pages/SignIn") },
