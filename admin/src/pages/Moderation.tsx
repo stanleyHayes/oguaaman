@@ -57,7 +57,7 @@ export function Component() {
         <span className="rounded-full bg-gold/[0.16] px-3 py-1 text-sm font-semibold text-gold-text">{items.length} pending</span>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
+      <div>
         <div>
           {items.length === 0 ? (
             <Empty title="Queue clear 🎉"><p>Nothing waiting. New submissions land here for review.</p></Empty>
@@ -129,7 +129,7 @@ export function Component() {
           )}
         </div>
 
-        <div>
+        <div className="mt-8">
           <h2 className="mb-3 text-lg font-semibold">This session</h2>
           <Card className="p-5">
             {log.length === 0 ? <p className="text-sm text-ink-faint">Your moderation actions appear here and are written to the audit log.</p> : (
