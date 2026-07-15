@@ -44,7 +44,7 @@ export default function Projects() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
     >
       <PhotoHero
-        image="/uploads/seed/classroom-block-ghana.jpg"
+        image="/uploads/seed/town-view.jpg"
         tone={C.green}
         kicker="Adopt a project"
         title="Pride that builds something"

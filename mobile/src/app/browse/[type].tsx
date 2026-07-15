@@ -69,7 +69,7 @@ const VIEWS: Record<string, BrowseView> = {
     kicker: "Youth & opportunity",
     lede: "Jobs, scholarships and mentorship shared within the community.",
     tone: C.teal,
-    image: "/uploads/seed/outdoor-classroom-ghana.jpg",
+    image: "/uploads/seed/school-girl-ghana.jpg",
     countNoun: "opportunities",
     fetch: () => api.opportunities(),
     sub: (l) => [l.details.kind, l.details.deadline ? `closes ${l.details.deadline}` : ""].filter(Boolean).join(" · ") || "Open",

@@ -3,7 +3,8 @@ import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
 // EXPO_PUBLIC_API_URL to your machine's LAN IP, e.g. http://192.168.1.10:8080
-export const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+// Trailing slashes are stripped so joining "/path" never yields "//path".
+export const API_BASE = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
 /**
  * Seed/upload URLs arrive root-relative ("/uploads/..."). Web works because
@@ -59,6 +60,13 @@ export interface LoginResult {
   member?: Member;
   mfaRequired?: boolean;
   challenge?: string;
+}
+
+export interface PhoneVerificationResult {
+  member: Member;
+  code?: string;
+  expiresAt?: string;
+  verified: boolean;
 }
 
 export const api = {
@@ -204,5 +212,8 @@ export const api = {
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
   register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
+  startPhoneVerification: () => post<PhoneVerificationResult>("/api/me/phone/verify/start", {}),
+  confirmPhoneVerification: (code: string) =>
+    post<PhoneVerificationResult>("/api/me/phone/verify/confirm", { code }),
   me: () => get<Member>("/api/auth/me"),
 };
