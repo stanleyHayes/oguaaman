@@ -48,7 +48,7 @@ export function Component() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p, i) => (
               <StaggerItem key={p.id} index={i} lift>
-                <Link to={`/projects/${p.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
+                <Link to={`/projects/${p.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
                   <Thumb seed={p.slug} src={p.coverImageUrl} label={initials(p.title)} rounded="rounded-none" className="aspect-[16/9] w-full" />
                   <div className="flex flex-1 flex-col p-5">
                     <h3 className="text-xl font-semibold text-ink group-hover:text-green">{p.title}</h3>

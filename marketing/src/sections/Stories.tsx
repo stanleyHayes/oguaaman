@@ -100,21 +100,21 @@ export function Stories() {
 
       <Stagger className="mt-14 grid gap-5 sm:grid-cols-2">
         {STORIES.map((s, i) => (
-          <StaggerItem key={s.title} index={i} as="article" className="group relative overflow-hidden rounded-[var(--radius-card)] border border-cream/12 bg-cream/[0.035] p-6 transition-colors hover:border-gold/45 sm:p-7">
+          <StaggerItem key={s.title} index={i} as="article" className="group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-cream/12 bg-cream/[0.035] p-6 transition-colors hover:border-gold/45 sm:p-7">
             <Adinkra
               name={s.symbol}
               size={108}
               labelled={false}
               className="pointer-events-none absolute -right-4 -top-4 text-gold opacity-[0.07] transition-opacity group-hover:opacity-[0.12]"
             />
-            <div className="relative">
+            <div className="relative flex flex-1 flex-col">
               <div className="flex items-center gap-3">
                 <Adinkra name={s.symbol} size={26} labelled={false} className="text-gold" />
                 <span className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold/90">{s.kind}</span>
               </div>
               <h3 className="mt-4 text-2xl font-semibold text-cream">{s.title}</h3>
               <p className="mt-3 leading-relaxed text-cream/80">{s.text}</p>
-              <p className="mt-4 text-xs italic text-cream/45">{s.note}</p>
+              <p className="mt-auto pt-4 text-xs italic text-cream/45">{s.note}</p>
             </div>
           </StaggerItem>
         ))}

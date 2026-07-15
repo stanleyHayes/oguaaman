@@ -75,7 +75,7 @@ function IncidentCard({ incident: i }: Readonly<{ incident: Incident }>) {
   return (
     <Link
       to={`/safety/${i.slug}`}
-      className="block rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)] transition-colors hover:border-gold-border"
+      className="flex h-full flex-col rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)] transition-colors hover:border-gold-border"
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${SEVERITY_CLASS[i.details.severity]}`}>
@@ -91,7 +91,7 @@ function IncidentCard({ incident: i }: Readonly<{ incident: Incident }>) {
       <h3 className="mt-3 text-xl font-semibold text-ink">{i.title}</h3>
       <p className="mt-1.5 text-sm text-ink-muted">{i.details.location}</p>
       {i.details.description && <p className="mt-2 line-clamp-2 text-sm text-ink-faint">{i.details.description}</p>}
-      <p className="mt-3 text-xs text-ink-faint">Reported {formatDate(i.createdAt)}</p>
+      <p className="mt-auto pt-3 text-xs text-ink-faint">Reported {formatDate(i.createdAt)}</p>
     </Link>
   );
 }

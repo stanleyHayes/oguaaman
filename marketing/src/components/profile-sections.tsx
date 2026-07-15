@@ -514,10 +514,10 @@ function TestimonialsBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {list.map((i, idx) => (
-        <figure key={i.id || idx} className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
+        <figure key={i.id || idx} className="flex h-full flex-col rounded-[var(--radius-card)] border border-sand bg-cream p-5">
           {i.value && <blockquote className="font-serif text-lg italic leading-relaxed text-ink">{`“${i.value}”`}</blockquote>}
           {(i.label || i.detail || i.image) && (
-            <figcaption className="mt-4 flex items-center gap-3">
+            <figcaption className="mt-auto flex items-center gap-3 pt-4">
               <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-green/10 text-xs font-semibold text-green">
                 {i.image ? (
                   <img src={i.image} alt={i.label ?? ""} loading="lazy" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />

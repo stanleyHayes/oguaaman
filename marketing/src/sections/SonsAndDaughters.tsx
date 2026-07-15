@@ -70,12 +70,12 @@ const SCHOOLED: Figure[] = [
 function FigureCard({ figure, accent }: Readonly<{ figure: Figure; accent: "gold" | "clay" }>) {
   const border = accent === "gold" ? "border-l-gold-brand/60" : "border-l-clay/55";
   return (
-    <Card className={`flex flex-col border-l-2 ${border} p-6`}>
+    <Card className={`flex h-full flex-col border-l-2 ${border} p-6`}>
       <h4 className="text-xl font-semibold text-ink">{figure.name}</h4>
       <p className="mt-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-gold-text">{figure.dates}</p>
       <p className="mt-3 text-sm leading-relaxed text-ink-muted">{figure.body}</p>
       {figure.bornElsewhere && (
-        <p className="mt-3 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-clay-text">{figure.bornElsewhere}</p>
+        <p className="mt-auto pt-3 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-clay-text">{figure.bornElsewhere}</p>
       )}
     </Card>
   );

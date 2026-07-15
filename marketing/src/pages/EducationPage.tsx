@@ -44,12 +44,12 @@ function SchoolCard({ school }: Readonly<{ school: SchoolOrg }>) {
     <a href={`${PORTAL_APP_URL}/education/${school.slug}`} target="_blank" rel="noopener noreferrer" className="group block h-full">
       <Card className="flex h-full gap-5 p-6 transition-shadow duration-300 hover:shadow-[var(--shadow-lift)] sm:p-7">
         <SchoolCrest school={school} />
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col">
           <h3 className="text-xl font-semibold text-ink">{school.name}</h3>
           {meta && <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{meta}</p>}
           {school.motto && <p className="mt-2 text-base italic text-gold-text">{school.motto}</p>}
           {school.summary && <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-ink-muted">{school.summary}</p>}
-          {school.osaName && <p className="mt-3 text-xs font-medium text-ink-faint">Old students: {school.osaName}</p>}
+          {school.osaName && <p className="mt-auto pt-3 text-xs font-medium text-ink-faint">Old students: {school.osaName}</p>}
         </div>
       </Card>
     </a>

@@ -109,7 +109,7 @@ export function Component() {
                   </div>
                 </div>
                 {p.summary && <p className="mt-3 line-clamp-3 text-sm text-ink-muted">{p.summary}</p>}
-                <div className="mt-4 flex items-center justify-between border-t border-sand pt-3 text-xs text-ink-faint">
+                <div className="mt-auto flex items-center justify-between border-t border-sand pt-3 text-xs text-ink-faint">
                   <span>{count(p.sections?.length, "section", "sections")} · {count(p.gallery?.length, "photo", "photos")}</span>
                   <span className="font-semibold text-green opacity-0 transition-opacity group-hover:opacity-100">Configure →</span>
                 </div>

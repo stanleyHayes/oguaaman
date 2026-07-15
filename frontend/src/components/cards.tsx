@@ -61,7 +61,7 @@ export function Thumb({
 export function ArtistCard({ artist }: Readonly<{ artist: Listing }>) {
   const d = artist.details;
   return (
-    <Card as="article" className="group overflow-hidden">
+    <Card as="article" className="group h-full overflow-hidden">
       <Link to={`/music/${artist.slug}`} className="block">
         <Thumb seed={artist.slug} label={initials(d.actName ?? artist.title)} src={artist.coverImageUrl} rounded="rounded-none" className="aspect-[4/3] w-full" />
         <div className="p-4">
@@ -118,7 +118,7 @@ export function SectionCard({ section }: Readonly<{ section: NavSection }>) {
   return (
     <Link
       to={section.href}
-      className="group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
+      className="group relative flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
     >
       <SectionIcon id={section.id} className={`pointer-events-none absolute -right-5 -top-5 h-28 w-28 opacity-[0.06] transition-opacity group-hover:opacity-[0.1] ${t.text}`} />
       <div className="relative flex items-center justify-between">
@@ -132,7 +132,8 @@ export function SectionCard({ section }: Readonly<{ section: NavSection }>) {
       <h3 className="relative mt-3 text-2xl font-semibold text-ink">{section.label}</h3>
       {section.fanteName && <p className={`relative text-sm italic ${t.text}`}>{section.fanteName}</p>}
       <p className="relative mt-2 text-sm text-ink-muted">{section.tagline}</p>
-      <span className={`relative mt-4 text-sm font-semibold ${t.text}`}>Explore →</span>
+      {/* Action docks to the bottom so cards in a row share one height. */}
+      <span className={`relative mt-auto pt-4 text-sm font-semibold ${t.text}`}>Explore →</span>
     </Link>
   );
 }
@@ -142,7 +143,7 @@ export function MemorialCard({ memorial }: Readonly<{ memorial: Listing }>) {
   return (
     <Link
       to={`/memoriam/${memorial.slug}`}
-      className="group flex flex-col items-center rounded-[var(--radius-card)] border border-sand bg-cream p-6 text-center shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]"
+      className="group flex h-full flex-col items-center rounded-[var(--radius-card)] border border-sand bg-cream p-6 text-center shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]"
     >
       {memorial.coverImageUrl ? (
         <Thumb seed={memorial.slug} label={initials(memorial.title)} src={memorial.coverImageUrl} rounded="rounded-full" className="h-20 w-20 border border-gold-border/40" />
@@ -160,7 +161,7 @@ export function MemorialCard({ memorial }: Readonly<{ memorial: Listing }>) {
       </h3>
       <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gold-text">{lifeDates(d.bornYear, d.diedDate)}</p>
       {d.epitaph && <p className="mt-3 font-serif text-sm italic text-ink-muted">“{d.epitaph}”</p>}
-      <p className="mt-4 inline-flex items-center gap-1.5 text-xs text-ink-faint">
+      <p className="mt-auto pt-4 inline-flex items-center gap-1.5 text-xs text-ink-faint">
         <Adinkra name="nyame-nwu-na-mawu" size={14} labelled={false} className="text-gold-brand" />
         {d.candles ?? 0} candles · {d.rememberedByCount ?? 0} remembering
       </p>
@@ -171,17 +172,17 @@ export function MemorialCard({ memorial }: Readonly<{ memorial: Listing }>) {
 export function BusinessCard({ business }: Readonly<{ business: Listing }>) {
   const d = business.details;
   return (
-    <Card as="article" className="overflow-hidden">
-      <Link to={`/business/${business.slug}`} className="group block">
+    <Card as="article" className="h-full overflow-hidden">
+      <Link to={`/business/${business.slug}`} className="group flex h-full flex-col">
         {business.coverImageUrl && <Thumb seed={business.slug} src={business.coverImageUrl} rounded="rounded-none" className="aspect-[16/9] w-full" />}
-        <div className="p-5">
+        <div className="flex flex-1 flex-col p-5">
           <div className="flex flex-wrap items-center gap-2">
             <Pill tone="teal">{d.category}</Pill>
             {business.supporter && <Pill tone="gold">★ Supporter</Pill>}
           </div>
           <h3 className="mt-3 text-xl font-semibold text-ink group-hover:text-teal-text">{business.title}</h3>
           <p className="mt-2 line-clamp-2 text-sm text-ink-muted">{d.description}</p>
-          {d.address && <p className="mt-3 text-xs text-ink-faint">📍 {d.address}</p>}
+          {d.address && <p className="mt-auto pt-3 text-xs text-ink-faint">📍 {d.address}</p>}
         </div>
       </Link>
     </Card>
@@ -194,7 +195,7 @@ const OPP_LABEL: Record<string, string> = {
 export function OpportunityCard({ opp }: Readonly<{ opp: Listing }>) {
   const d = opp.details;
   return (
-    <Card as="article" className="flex flex-col p-5">
+    <Card as="article" className="flex h-full flex-col p-5">
       {opp.coverImageUrl && <Thumb seed={opp.slug} src={opp.coverImageUrl} rounded="rounded-lg" className="mb-4 aspect-[16/9] w-full" />}
       <div className="flex items-center justify-between gap-2">
         <Pill tone="teal">{OPP_LABEL[d.kind ?? ""] ?? d.kind}</Pill>
@@ -218,8 +219,8 @@ export function OpportunityCard({ opp }: Readonly<{ opp: Listing }>) {
 export function PersonCard({ person }: Readonly<{ person: Listing }>) {
   const d = person.details;
   return (
-    <Card as="article" className="group overflow-hidden">
-      <Link to={`/people/${person.slug}`} className="flex gap-4 p-5">
+    <Card as="article" className="group h-full overflow-hidden">
+      <Link to={`/people/${person.slug}`} className="flex h-full gap-4 p-5">
         <Thumb seed={person.slug} label={initials(person.title)} src={person.coverImageUrl} className="h-16 w-16 shrink-0" coverWidth={140} />
         <div className="min-w-0">
           <h3 className="text-lg font-semibold text-ink group-hover:text-gold-text">{person.title}</h3>
@@ -235,7 +236,7 @@ export function NewsCard({ article, lead = false }: Readonly<{ article: NewsArti
   return (
     <Link
       to={`/news/${article.slug}`}
-      className={`group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)] ${lead ? "sm:col-span-2 lg:col-span-1" : ""}`}
+      className={`group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)] ${lead ? "sm:col-span-2 lg:col-span-1" : ""}`}
     >
       {article.coverImageUrl ? (
         <div className="relative w-full overflow-hidden" style={{ aspectRatio: lead ? "16 / 9" : "16 / 10" }}>
@@ -257,11 +258,11 @@ export function NewsCard({ article, lead = false }: Readonly<{ article: NewsArti
 
 export function MemoryCard({ memory }: Readonly<{ memory: Listing }>) {
   return (
-    <Card as="article" className="flex flex-col p-5">
+    <Card as="article" className="flex h-full flex-col p-5">
       {memory.coverImageUrl && <Thumb seed={memory.title} src={memory.coverImageUrl} rounded="rounded-lg" className="mb-3 aspect-[4/3] w-full" />}
       <h3 className="text-lg font-semibold text-ink">{memory.title}</h3>
       <p className="mt-2 font-serif text-sm leading-relaxed text-ink">{memory.details.text}</p>
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
         {memory.tags.slice(0, 4).map((t) => <Pill key={t}>{tagLabel(t)}</Pill>)}
       </div>
     </Card>
@@ -322,7 +323,7 @@ export function FeaturedCard({ listing, hero = false, index = 0 }: Readonly<{ li
   return (
     <Link
       to={featuredHref(listing)}
-      className={`group relative flex flex-col justify-end overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] ${hero ? "min-h-[22rem] lg:min-h-[27rem]" : "min-h-[13rem]"}`}
+      className={`group relative flex h-full flex-col justify-end overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] ${hero ? "min-h-[22rem] lg:min-h-[27rem]" : "min-h-[13rem]"}`}
     >
       <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" style={{ background: grad }} aria-hidden />
       {listing.coverImageUrl && (

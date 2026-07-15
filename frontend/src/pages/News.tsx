@@ -61,7 +61,7 @@ function FeaturedStory({ a }: Readonly<{ a: NewsArticle }>) {
 
 function CoverageCard({ a }: Readonly<{ a: NewsArticle }>) {
   return (
-    <Link to={`/news/${a.slug}`} className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+    <Link to={`/news/${a.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
       <Cover a={a} sizes="sm" />
       <div className="flex flex-1 flex-col p-6">
         <h3 className="text-xl font-semibold text-ink group-hover:text-green">{a.title}</h3>

@@ -42,7 +42,7 @@ export function CultureContent() {
       <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
         {STRANDS.map((s, i) => (
           <StaggerItem key={s.title} index={i}>
-            <Card className="flex gap-5 p-7">
+            <Card className="flex h-full gap-5 p-7">
               <Adinkra name={s.symbol} size={40} labelled={false} strokeWidth={1.4} className="shrink-0 text-gold-brand" />
               <div>
                 <h3 className="text-2xl font-semibold text-ink">{s.title}</h3>

@@ -48,7 +48,7 @@ export function ListingCard({ listing }: Readonly<{ listing: Listing }>) {
             {listing.title}
           </h3>
           <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">{listingSubtitle(listing)}</p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-green opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-green opacity-0 transition-opacity group-hover:opacity-100">
             Open in the app →
           </span>
         </div>

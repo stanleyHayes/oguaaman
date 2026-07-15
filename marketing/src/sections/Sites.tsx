@@ -43,7 +43,7 @@ export function Sites() {
                     )}
                     <h3 className="mt-3 text-xl font-semibold text-ink">{p.name}</h3>
                     <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">{p.summary}</p>
-                    <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-green opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="mt-auto inline-flex items-center gap-1 pt-3 text-sm font-semibold text-green opacity-0 transition-opacity group-hover:opacity-100">
                       Explore →
                     </span>
                   </div>

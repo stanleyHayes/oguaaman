@@ -59,7 +59,7 @@ function NoticeCard({ notice: i }: Readonly<{ notice: LostFound }>) {
   return (
     <Link
       to={`/lost-found/${i.slug}`}
-      className={`block rounded-[var(--radius-card)] border bg-cream p-5 shadow-[var(--shadow-card)] transition-colors hover:border-gold-border ${missing ? "border-l-4 border-l-maroon-900 border-sand" : "border-sand"}`}
+      className={`flex h-full flex-col rounded-[var(--radius-card)] border bg-cream p-5 shadow-[var(--shadow-card)] transition-colors hover:border-gold-border ${missing ? "border-l-4 border-l-maroon-900 border-sand" : "border-sand"}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${missing ? "border-maroon-900/40 bg-maroon-900/[0.08] text-maroon-900" : "border-teal/30 bg-teal/[0.09] text-teal-text"}`}>
@@ -76,7 +76,7 @@ function NoticeCard({ notice: i }: Readonly<{ notice: LostFound }>) {
         </p>
       )}
       {d.description && <p className="mt-2 line-clamp-2 text-sm text-ink-faint">{d.description}</p>}
-      <p className="mt-3 text-xs text-ink-faint">Posted {formatDate(i.createdAt)}</p>
+      <p className="mt-auto pt-3 text-xs text-ink-faint">Posted {formatDate(i.createdAt)}</p>
     </Link>
   );
 }

@@ -127,7 +127,7 @@ export function PlanYourVisit() {
                   ))}
                 </dl>
                 {s.note && <p className="mt-4 font-serif text-sm italic text-ink-muted">{s.note}</p>}
-                <Link to={`/visit/${s.slug}`} className="mt-4 inline-flex items-center gap-1 border-t border-sand pt-3 text-sm font-semibold text-green transition-colors hover:text-green-900">
+                <Link to={`/visit/${s.slug}`} className="mt-auto inline-flex items-center gap-1 border-t border-sand pt-3 text-sm font-semibold text-green transition-colors hover:text-green-900">
                   Full guide & history →
                 </Link>
               </Card>
@@ -146,7 +146,7 @@ export function PlanYourVisit() {
         <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
           {ROAD.map((c, i) => (
             <StaggerItem key={c.title} index={i}>
-              <Card className="p-6 sm:p-7">
+              <Card className="h-full p-6 sm:p-7">
                 <h3 className="text-xl font-semibold text-ink">{c.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink-muted">{c.body}</p>
               </Card>

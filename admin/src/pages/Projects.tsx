@@ -62,7 +62,7 @@ export function Component() {
             const pct = goal ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
             return (
               <StaggerItem key={p.id} index={idx}>
-                <Card className="p-5">
+                <Card className="flex h-full flex-col p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="truncate text-lg font-semibold text-ink">{p.title}</h3>
@@ -78,7 +78,7 @@ export function Component() {
                       transition={{ duration: 0.7, ease: "easeOut" }}
                     />
                   </div>
-                  <p className="mt-2 text-sm text-ink-muted">
+                  <p className="mt-auto pt-3 text-sm text-ink-muted">
                     <b className="text-green">{cedis(raised)}</b> of {cedis(goal)} · {(p.details.backers as number) ?? 0} backers
                     {typeof p.details.deadline === "string" && <span className="text-ink-faint"> · closes {p.details.deadline}</span>}
                   </p>
