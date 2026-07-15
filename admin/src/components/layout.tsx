@@ -2,48 +2,57 @@ import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation
 import { useEffect, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
 import { useAuth } from "@/lib/auth";
+import {
+  Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
+  Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
+  Newspaper, Sparkles, UserRound, Bell, User, Settings, type LucideIcon,
+} from "lucide-react";
 
-interface NavItem { to: string; label: string; end?: boolean; badge?: number }
-interface NavGroup { title: string; items: NavItem[] }
+interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
+interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
 
 const NAV_GROUPS: NavGroup[] = [
-  { title: "Dashboard", items: [{ to: "/", label: "Overview", end: true }] },
+  { title: "Dashboard", icon: Gauge, items: [{ to: "/", label: "Overview", icon: LayoutDashboard, end: true }] },
   {
     title: "Moderation",
+    icon: ShieldCheck,
     items: [
-      { to: "/moderation", label: "Queue" },
-      { to: "/listings", label: "Listings" },
-      { to: "/reports", label: "Reports" },
-      { to: "/incidents", label: "Incidents" },
-      { to: "/audit", label: "Audit log" },
+      { to: "/moderation", label: "Queue", icon: Inbox },
+      { to: "/listings", label: "Listings", icon: List },
+      { to: "/reports", label: "Reports", icon: Flag },
+      { to: "/incidents", label: "Incidents", icon: ShieldAlert },
+      { to: "/audit", label: "Audit log", icon: History },
     ],
   },
   {
     title: "Community",
+    icon: Users,
     items: [
-      { to: "/members", label: "Members" },
-      { to: "/institutions", label: "Institutions" },
-      { to: "/places", label: "Places" },
-      { to: "/claims", label: "Claims" },
-      { to: "/projects", label: "Projects" },
-      { to: "/tickets", label: "Tickets" },
-      { to: "/subscriptions", label: "Subscriptions" },
-      { to: "/revenue", label: "Revenue" },
+      { to: "/members", label: "Members", icon: Users },
+      { to: "/institutions", label: "Institutions", icon: Landmark },
+      { to: "/places", label: "Places", icon: MapPin },
+      { to: "/claims", label: "Claims", icon: BadgeCheck },
+      { to: "/projects", label: "Projects", icon: HandCoins },
+      { to: "/tickets", label: "Tickets", icon: Ticket },
+      { to: "/subscriptions", label: "Subscriptions", icon: Repeat },
+      { to: "/revenue", label: "Revenue", icon: Banknote },
     ],
   },
   {
     title: "Publishing",
+    icon: Newspaper,
     items: [
-      { to: "/newsroom", label: "Newsroom" },
-      { to: "/compose", label: "Compose · AI" },
+      { to: "/newsroom", label: "Newsroom", icon: Newspaper },
+      { to: "/compose", label: "Compose · AI", icon: Sparkles },
     ],
   },
   {
     title: "Account",
+    icon: UserRound,
     items: [
-      { to: "/notifications", label: "Notifications" },
-      { to: "/profile", label: "Profile" },
-      { to: "/settings", label: "Settings" },
+      { to: "/notifications", label: "Notifications", icon: Bell },
+      { to: "/profile", label: "Profile", icon: User },
+      { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
@@ -165,7 +174,10 @@ function SidebarNav({ pathname, onNavigate }: Readonly<{ pathname: string; onNav
                 aria-controls={panelId}
                 className="flex w-full items-center justify-between px-[18px] py-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-aura-gold-muted transition-colors hover:text-aura-gold-soft"
               >
-                {group.title}
+                <span className="flex items-center gap-2">
+                  <group.icon size={12} className="shrink-0" aria-hidden />
+                  {group.title}
+                </span>
                 <svg viewBox="0 0 24 24" className={`size-3 transition-transform ${isOpen ? "" : "-rotate-90"}`} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round">
                   <path d="M6 9l6 6 6-6" />
                 </svg>
@@ -189,6 +201,7 @@ function SidebarNav({ pathname, onNavigate }: Readonly<{ pathname: string; onNav
                       >
                         <Connector last={i === group.items.length - 1} active={active} />
                         {active && <span aria-hidden className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r bg-aura-gold" />}
+                        <item.icon size={15} className="shrink-0" aria-hidden />
                         <span className="truncate">{item.label}</span>
                         {item.badge ? (
                           <span className="ml-auto rounded-full bg-crit px-1.5 font-mono text-[10px] text-white">{item.badge}</span>
