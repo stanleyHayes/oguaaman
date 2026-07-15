@@ -4,11 +4,30 @@ import "context"
 
 // Roles (spec §9).
 const (
-	RoleMember  = "member"
-	RoleCurator = "curator"
-	RoleSteward = "steward"
-	RoleEditor  = "editor" // newsroom / editorial (spec §8.12)
+	RoleMember    = "member"
+	RoleCurator   = "curator"
+	RoleSteward   = "steward"
+	RoleEditor    = "editor"    // newsroom / editorial (spec §8.12)
+	RoleModerator = "moderator" // queue/listings/reports/incidents only (Creator Platform plan §9.3)
 )
+
+// Creator types — the self-serve creator account kinds (Creator Platform plan §3).
+// Orthogonal to Role: any member may create; roles stay staff-only.
+const (
+	CreatorBusiness    = "business"
+	CreatorArtist      = "artist"
+	CreatorOrganiser   = "organiser"
+	CreatorInstitution = "institution"
+)
+
+// ValidCreatorType reports whether t is a known creator type.
+func ValidCreatorType(t string) bool {
+	switch t {
+	case CreatorBusiness, CreatorArtist, CreatorOrganiser, CreatorInstitution:
+		return true
+	}
+	return false
+}
 
 // SchoolStint — a member's time at a school. Overlapping stints at the same
 // school make people classmates — the basis of "people you may know" (spec §8.6).
@@ -33,6 +52,9 @@ type Member struct {
 	Links         []SocialLink  `json:"links,omitempty" bson:"links,omitempty"`
 	PhoneVerified bool          `json:"phoneVerified" bson:"phoneVerified"`
 	Role          string        `json:"role" bson:"role"`
+	// CreatorTypes — empty means a plain citizen; any value makes the member a
+	// creator with dashboard access (Creator Platform plan §3).
+	CreatorTypes  []string      `json:"creatorTypes,omitempty" bson:"creatorTypes,omitempty"`
 	Suspended     bool          `json:"suspended" bson:"suspended"`
 	JoinedAt      string        `json:"joinedAt" bson:"joinedAt"`
 	// Living-member birthday (spec §8.11). Broadcast to followers only if the
@@ -78,4 +100,5 @@ type MemberRepository interface {
 	SetDateOfBirth(ctx context.Context, id, dateOfBirth string) error
 	SetSchooling(ctx context.Context, id string, stints []SchoolStint) error
 	SetDiaspora(ctx context.Context, id string, d *Diaspora) error
+	SetCreatorTypes(ctx context.Context, id string, types []string) error
 }

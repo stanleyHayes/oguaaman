@@ -115,6 +115,8 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	// Institution management (spec §8.13): claim → steward-verify → manage.
 	mux.HandleFunc("GET /api/me/institutions", h.MyInstitutions)
+	mux.HandleFunc("POST /api/me/creator-types", h.SetMyCreatorTypes)
+	mux.HandleFunc("GET /api/creator/overview", h.CreatorOverview)
 	mux.HandleFunc("POST /api/institutions/{slug}/claim", h.ClaimInstitution)
 	mux.HandleFunc("POST /api/institutions/{slug}/profile", h.UpdateInstitutionProfile)
 	mux.HandleFunc("POST /api/institutions/{slug}/offices", h.SetInstitutionOffices)

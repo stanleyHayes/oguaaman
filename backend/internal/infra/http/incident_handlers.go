@@ -65,7 +65,7 @@ func (h *Handler) SubmitIncident(w http.ResponseWriter, r *http.Request) {
 
 // AdminIncidentStatus advances an incident's lifecycle (curator/steward only).
 func (h *Handler) AdminIncidentStatus(w http.ResponseWriter, r *http.Request) {
-	m, ok := h.requireRole(w, r, "curator")
+	m, ok := h.requireRole(w, r, "curator", "moderator")
 	if !ok {
 		return
 	}

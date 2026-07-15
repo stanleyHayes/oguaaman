@@ -42,7 +42,7 @@ func (h *Handler) Report(w http.ResponseWriter, r *http.Request) {
 
 // AdminReports lists the report triage queue for stewards/curators.
 func (h *Handler) AdminReports(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.requireRole(w, r, "curator"); !ok {
+	if _, ok := h.requireRole(w, r, "curator", "moderator"); !ok {
 		return
 	}
 	reps, err := h.svc.Reports(r.Context())
@@ -55,7 +55,7 @@ func (h *Handler) AdminReports(w http.ResponseWriter, r *http.Request) {
 
 // AdminResolveReport closes a report as actioned or dismissed.
 func (h *Handler) AdminResolveReport(w http.ResponseWriter, r *http.Request) {
-	m, ok := h.requireRole(w, r, "curator")
+	m, ok := h.requireRole(w, r, "curator", "moderator")
 	if !ok {
 		return
 	}

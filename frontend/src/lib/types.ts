@@ -120,7 +120,9 @@ export interface Member {
   schooling?: SchoolStint[];
   links?: SocialLink[];
   phoneVerified: boolean;
-  role: "member" | "curator" | "steward" | "editor";
+  role: "member" | "curator" | "steward" | "editor" | "moderator";
+  /** Creator kinds ("business" | "artist" | "organiser" | "institution"); empty = plain citizen. */
+  creatorTypes?: string[];
   joinedAt: string;
   birthday?: string;
   broadcastBirthday?: boolean;

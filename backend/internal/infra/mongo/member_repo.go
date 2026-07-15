@@ -102,6 +102,12 @@ func (r *MemberRepo) SetDiaspora(ctx context.Context, id string, d *domain.Diasp
 	return err
 }
 
+// SetCreatorTypes records the member's creator kinds (Creator Platform plan §3).
+func (r *MemberRepo) SetCreatorTypes(ctx context.Context, id string, types []string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"creatorTypes": types}})
+	return err
+}
+
 func (r *MemberRepo) SetSchooling(ctx context.Context, id string, stints []domain.SchoolStint) error {
 	if stints == nil {
 		stints = []domain.SchoolStint{}

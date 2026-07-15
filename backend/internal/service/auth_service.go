@@ -27,6 +27,9 @@ var ErrIdentifierTaken = errors.New("an account already exists for that identifi
 // pre-password accounts are claimed through the Join/Register flow.
 var ErrNoPassword = errors.New("this account has no password yet")
 
+// ErrSuspended is returned when a suspended account tries to sign in.
+var ErrSuspended = errors.New("this account is suspended")
+
 // minSignupAge is the self-registration floor; minors join only via a guardian
 // (a deferred flow). See spec §14.4.
 const minSignupAge = 18
@@ -47,14 +50,19 @@ func NewAuthService(members domain.MemberRepository, secret string) *AuthService
 // Register signs up a new member — or lets a pre-existing passwordless account
 // (e.g. an invited one) claim itself — and returns a signed JWT plus the member.
 // dateOfBirth ("YYYY-MM-DD") is required for first-time sign-ups and enforces the
-// 18+ self-registration gate (spec §14.4).
-func (a *AuthService) Register(ctx context.Context, identifier, displayName, dateOfBirth, password string) (string, *domain.Member, error) {
+// 18+ self-registration gate (spec §14.4). creatorTypes may name the creator
+// kinds the member joins with (Creator Platform plan §3); empty = plain citizen.
+func (a *AuthService) Register(ctx context.Context, identifier, displayName, dateOfBirth, password string, creatorTypes []string) (string, *domain.Member, error) {
 	identifier = normalizeIdentifier(identifier)
 	if identifier == "" {
 		return "", nil, fmt.Errorf("a phone number or email is required")
 	}
 	if len(password) < minPasswordLen {
 		return "", nil, fmt.Errorf("password must be at least %d characters", minPasswordLen)
+	}
+	types, err := cleanCreatorTypes(creatorTypes)
+	if err != nil {
+		return "", nil, err
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -76,12 +84,38 @@ func (a *AuthService) Register(ctx context.Context, identifier, displayName, dat
 	if err != nil {
 		return "", nil, err
 	}
+	if len(types) > 0 {
+		if err := a.members.SetCreatorTypes(ctx, member.ID, types); err != nil {
+			return "", nil, err
+		}
+		member.CreatorTypes = types
+	}
 
 	token, err := a.issue(member)
 	if err != nil {
 		return "", nil, err
 	}
 	return token, member, nil
+}
+
+// cleanCreatorTypes validates and dedupes creator-type slugs, preserving order.
+func cleanCreatorTypes(in []string) ([]string, error) {
+	seen := map[string]bool{}
+	out := []string{}
+	for _, t := range in {
+		t = strings.ToLower(strings.TrimSpace(t))
+		if t == "" {
+			continue
+		}
+		if !domain.ValidCreatorType(t) {
+			return nil, fmt.Errorf("unknown creator type %q", t)
+		}
+		if !seen[t] {
+			seen[t] = true
+			out = append(out, t)
+		}
+	}
+	return out, nil
 }
 
 // registerNew creates a brand-new account, enforcing the 18+ gate.
@@ -106,10 +140,6 @@ func (a *AuthService) claimAccount(ctx context.Context, member *domain.Member, d
 	if dateOfBirth != "" && !isAdult(dateOfBirth, time.Now().UTC()) {
 		return nil, ErrUnderage
 	}
-	if err := a.members.SetPasswordHash(ctx, member.ID, hash); err != nil {
-		return nil, err
-	}
-	member.PasswordHash = hash
 	if name := strings.TrimSpace(displayName); name != "" && name != member.DisplayName {
 		if err := a.members.SetProfile(ctx, member.ID, name, initialsOf(name), member.Bio); err != nil {
 			return nil, err
@@ -123,6 +153,10 @@ func (a *AuthService) claimAccount(ctx context.Context, member *domain.Member, d
 		}
 		member.DateOfBirth = dateOfBirth
 	}
+	if err := a.members.SetPasswordHash(ctx, member.ID, hash); err != nil {
+		return nil, err
+	}
+	member.PasswordHash = hash
 	return member, nil
 }
 
@@ -138,7 +172,7 @@ func (a *AuthService) Login(ctx context.Context, identifier, password string) (s
 		return "", nil, err
 	}
 	if member.Suspended {
-		return "", nil, fmt.Errorf("this account is suspended")
+		return "", nil, ErrSuspended
 	}
 	if member.PasswordHash == "" {
 		return "", nil, ErrNoPassword

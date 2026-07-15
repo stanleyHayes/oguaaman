@@ -5,7 +5,7 @@ import "net/http"
 // ── moderation queue & actions ───────────────────────────────────────────────
 
 func (h *Handler) Queue(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.requireRole(w, r, "curator"); !ok {
+	if _, ok := h.requireRole(w, r, "curator", "moderator"); !ok {
 		return
 	}
 	items, err := h.svc.ModerationQueue(r.Context())
@@ -17,7 +17,7 @@ func (h *Handler) Queue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Moderate(w http.ResponseWriter, r *http.Request) {
-	m, ok := h.requireRole(w, r, "curator")
+	m, ok := h.requireRole(w, r, "curator", "moderator")
 	if !ok {
 		return
 	}
@@ -46,7 +46,7 @@ func (h *Handler) Moderate(w http.ResponseWriter, r *http.Request) {
 // ── admin back-office ─────────────────────────────────────────────────────────
 
 func (h *Handler) AdminListings(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.requireRole(w, r, "curator"); !ok {
+	if _, ok := h.requireRole(w, r, "curator", "moderator"); !ok {
 		return
 	}
 	items, err := h.svc.AllListings(r.Context())
@@ -191,7 +191,7 @@ func (h *Handler) AdminFeature(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) AdminUnpublish(w http.ResponseWriter, r *http.Request) {
-	m, ok := h.requireRole(w, r, "curator")
+	m, ok := h.requireRole(w, r, "curator", "moderator")
 	if !ok {
 		return
 	}

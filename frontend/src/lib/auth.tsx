@@ -7,6 +7,7 @@ export interface JoinInput {
   displayName: string;
   dateOfBirth: string;
   password: string;
+  creatorTypes?: string[];
 }
 
 interface AuthState {

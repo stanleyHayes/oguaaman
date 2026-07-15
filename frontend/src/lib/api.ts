@@ -228,7 +228,7 @@ export const api = {
   // auth (spec §8.1). dateOfBirth gates 18+ self-registration (spec §14.4).
   login: (identifier: string, password: string) =>
     post<{ token: string; member: Member }>("/api/auth/login", { identifier, password }),
-  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string }) =>
+  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[] }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
   me: () => get<Member>("/api/auth/me"),
 

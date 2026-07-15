@@ -28,6 +28,31 @@ func (s *Service) UpdateMemberProfile(ctx context.Context, id, displayName, bio 
 
 // ── reads: members / orgs / places ───────────────────────────────────────────
 
+// SetCreatorTypes lets a member declare themselves a creator (or update their
+// creator kinds) — the self-serve "become a creator" upgrade (Creator Platform
+// plan §3). Passing an empty list turns creator access off.
+func (s *Service) SetCreatorTypes(ctx context.Context, id string, types []string) (*domain.Member, error) {
+	seen := map[string]bool{}
+	clean := []string{}
+	for _, t := range types {
+		t = strings.ToLower(strings.TrimSpace(t))
+		if t == "" {
+			continue
+		}
+		if !domain.ValidCreatorType(t) {
+			return nil, fmt.Errorf("unknown creator type %q", t)
+		}
+		if !seen[t] {
+			seen[t] = true
+			clean = append(clean, t)
+		}
+	}
+	if err := s.members.SetCreatorTypes(ctx, id, clean); err != nil {
+		return nil, err
+	}
+	return s.members.ByID(ctx, id)
+}
+
 func (s *Service) Members(ctx context.Context) ([]domain.Member, error) { return s.members.All(ctx) }
 func (s *Service) MemberBySlug(ctx context.Context, slug string) (*domain.Member, error) {
 	return s.members.BySlug(ctx, slug)

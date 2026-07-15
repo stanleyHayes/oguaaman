@@ -32,6 +32,7 @@ type Handler struct {
 	subs           *service.SubscriptionsService
 	promotions     *service.PromotionsService
 	revenue        *service.RevenueService
+	creator        *service.CreatorService
 	paystackSecret string // webhook signature verification; "" in dev simulation
 	authRequired   bool
 	log            *slog.Logger
@@ -50,6 +51,7 @@ type HandlerDeps struct {
 	Subs           *service.SubscriptionsService
 	Promotions     *service.PromotionsService
 	Revenue        *service.RevenueService
+	Creator        *service.CreatorService
 	PaystackSecret string // webhook signature verification; "" in dev simulation
 	AuthRequired   bool
 	UploadDir      string // where uploaded images are written
@@ -59,7 +61,7 @@ type HandlerDeps struct {
 
 func NewHandler(d HandlerDeps) *Handler {
 	return &Handler{
-		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, revenue: d.Revenue, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
+		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, revenue: d.Revenue, creator: d.Creator, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
 		uploadDir: d.UploadDir, uploadBase: d.UploadBase, log: d.Log, limiter: newRateLimiter(),
 	}
 }

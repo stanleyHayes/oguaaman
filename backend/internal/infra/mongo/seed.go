@@ -240,10 +240,16 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 			return err
 		}
 	}
-	// Members sign in by email: one account per address; sparse so invited
-	// phone-only members (no email yet) don't collide on a null key.
+	// Members sign in by email or phone: one account per identifier; sparse so
+	// invited email-only or phone-only members don't collide on a null key.
 	if _, err := db.Collection(collMembers).Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    bson.D{{Key: "email", Value: 1}},
+		Options: options.Index().SetUnique(true).SetSparse(true),
+	}); err != nil {
+		return err
+	}
+	if _, err := db.Collection(collMembers).Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "phone", Value: 1}},
 		Options: options.Index().SetUnique(true).SetSparse(true),
 	}); err != nil {
 		return err
@@ -324,15 +330,16 @@ func avatar(seed string) string {
 // ── members ──────────────────────────────────────────────────────────────────
 
 var seedMembers = []domain.Member{
-	{ID: "m-ama", Slug: "ama-mensah", PhotoURL: avatar("ama-mensah"), DisplayName: "Ama Mensah", Initials: "AM", Bio: "Daughter of Madam Adwoa. Keeper of her memory.", TownID: "bakaano", AsafoID: "asafo-bentsir", SchoolIDs: []string{schoolWesleyGirls}, PhoneVerified: true, Role: "member", JoinedAt: "2026-01-12", Phone: "+233240000001", Email: "ama-mensah@oguaa.test"},
-	{ID: memberKojo, Slug: "kojo-arthur", PhotoURL: avatar("kojo-arthur"), DisplayName: "Kojo Arthur", Initials: "KA", Bio: "Teacher. Mfantsipim '88.", TownID: "oguaa", AsafoID: "asafo-nkum", SchoolIDs: []string{"mfantsipim"}, Schooling: []domain.SchoolStint{{SchoolID: "mfantsipim", FromYear: 1984, ToYear: 1988}}, PhoneVerified: true, Role: "member", JoinedAt: d20260120, Phone: "+233240000002", Email: "kojo-arthur@oguaa.test"},
-	{ID: memberEfua, Slug: "efua-sam", PhotoURL: avatar("efua-sam"), DisplayName: "Efua Sam", Initials: "ES", TownID: "bakaano", SchoolIDs: []string{schoolHolyChild}, PhoneVerified: true, Role: "member", JoinedAt: "2026-02-01", Phone: "+233240000003", Email: "efua-sam@oguaa.test"},
-	{ID: memberNana, Slug: "nana-essien", PhotoURL: avatar("nana-essien"), DisplayName: "Nana Kweku Essien", Initials: "NE", Bio: "PTA chair, Bakaano. Community steward.", TownID: "bakaano", SchoolIDs: []string{"mfantsipim"}, Schooling: []domain.SchoolStint{{SchoolID: "mfantsipim", FromYear: 1983, ToYear: 1987}}, PhoneVerified: true, Role: "steward", JoinedAt: "2025-12-02", Phone: "+233240000004", Email: "nana-essien@oguaa.test"},
-	{ID: memberAidoo, Slug: "samuel-aidoo", PhotoURL: avatar("samuel-aidoo"), DisplayName: "Mr. Samuel Aidoo", Initials: "SA", Bio: "Headteacher, Bakaano M/A Basic School.", TownID: "bakaano", SchoolIDs: []string{schoolBakaanoBasic}, PhoneVerified: true, Role: "curator", JoinedAt: "2026-01-05", Phone: "+233240000005", Email: "samuel-aidoo@oguaa.test"},
-	{ID: memberAkua, Slug: "akua-pratt", PhotoURL: avatar("akua-pratt"), DisplayName: "Akua Pratt", Initials: "AP", Bio: "Music curator. UCC '15.", TownID: "oguaa", SchoolIDs: []string{"ucc"}, PhoneVerified: true, Role: "curator", JoinedAt: "2026-01-08", Phone: "+233240000006", Email: "akua-pratt@oguaa.test"},
-	{ID: "m-yaw", Slug: "yaw-ofori", PhotoURL: avatar("yaw-ofori"), DisplayName: "Yaw Ofori", Initials: "YO", Bio: "Manages Castle View Guesthouse.", TownID: "oguaa", SchoolIDs: []string{"adisadel"}, PhoneVerified: true, Role: "member", JoinedAt: "2026-02-14", Phone: "+233240000007", Email: "yaw-ofori@oguaa.test"},
-	{ID: "m-esi", Slug: "esi-quayson", PhotoURL: avatar("esi-quayson"), DisplayName: "Esi Quayson", Initials: "EQ", Bio: "Fishmonger, Kotokuraba. Reps Bakaano hard.", TownID: "kotokuraba", AsafoID: "asafo-anaafo", SchoolIDs: []string{}, PhoneVerified: true, Role: "member", JoinedAt: d20260301, Phone: "+233240000008", Email: "esi-quayson@oguaa.test"},
+	{ID: "m-ama", Slug: "ama-mensah", PhotoURL: avatar("ama-mensah"), DisplayName: "Ama Mensah", Initials: "AM", Bio: "Daughter of Madam Adwoa. Keeper of her memory.", TownID: "bakaano", AsafoID: "asafo-bentsir", SchoolIDs: []string{schoolWesleyGirls}, PhoneVerified: true, Role: "member", CreatorTypes: []string{domain.CreatorBusiness}, JoinedAt: "2026-01-12", Phone: "+233240000001", Email: "ama-mensah@oguaa.test"},
+	{ID: memberKojo, Slug: "kojo-arthur", PhotoURL: avatar("kojo-arthur"), DisplayName: "Kojo Arthur", Initials: "KA", Bio: "Teacher. Mfantsipim '88.", TownID: "oguaa", AsafoID: "asafo-nkum", SchoolIDs: []string{"mfantsipim"}, Schooling: []domain.SchoolStint{{SchoolID: "mfantsipim", FromYear: 1984, ToYear: 1988}}, PhoneVerified: true, Role: "member", CreatorTypes: []string{domain.CreatorOrganiser}, JoinedAt: d20260120, Phone: "+233240000002", Email: "kojo-arthur@oguaa.test"},
+	{ID: memberEfua, Slug: "efua-sam", PhotoURL: avatar("efua-sam"), DisplayName: "Efua Sam", Initials: "ES", TownID: "bakaano", SchoolIDs: []string{schoolHolyChild}, PhoneVerified: true, Role: "member", CreatorTypes: []string{domain.CreatorBusiness}, JoinedAt: "2026-02-01", Phone: "+233240000003", Email: "efua-sam@oguaa.test"},
+	{ID: memberNana, Slug: "nana-essien", PhotoURL: avatar("nana-essien"), DisplayName: "Nana Kweku Essien", Initials: "NE", Bio: "PTA chair, Bakaano. Community steward.", TownID: "bakaano", SchoolIDs: []string{"mfantsipim"}, Schooling: []domain.SchoolStint{{SchoolID: "mfantsipim", FromYear: 1983, ToYear: 1987}}, PhoneVerified: true, Role: "steward", CreatorTypes: []string{domain.CreatorBusiness, domain.CreatorOrganiser, domain.CreatorArtist}, JoinedAt: "2025-12-02", Phone: "+233240000004", Email: "nana-essien@oguaa.test"},
+	{ID: memberAidoo, Slug: "samuel-aidoo", PhotoURL: avatar("samuel-aidoo"), DisplayName: "Mr. Samuel Aidoo", Initials: "SA", Bio: "Headteacher, Bakaano M/A Basic School.", TownID: "bakaano", SchoolIDs: []string{schoolBakaanoBasic}, PhoneVerified: true, Role: "curator", CreatorTypes: []string{domain.CreatorInstitution}, JoinedAt: "2026-01-05", Phone: "+233240000005", Email: "samuel-aidoo@oguaa.test"},
+	{ID: memberAkua, Slug: "akua-pratt", PhotoURL: avatar("akua-pratt"), DisplayName: "Akua Pratt", Initials: "AP", Bio: "Music curator. UCC '15.", TownID: "oguaa", SchoolIDs: []string{"ucc"}, PhoneVerified: true, Role: "curator", CreatorTypes: []string{domain.CreatorArtist, domain.CreatorBusiness, domain.CreatorOrganiser}, JoinedAt: "2026-01-08", Phone: "+233240000006", Email: "akua-pratt@oguaa.test"},
+	{ID: "m-yaw", Slug: "yaw-ofori", PhotoURL: avatar("yaw-ofori"), DisplayName: "Yaw Ofori", Initials: "YO", Bio: "Manages Castle View Guesthouse.", TownID: "oguaa", SchoolIDs: []string{"adisadel"}, PhoneVerified: true, Role: "member", CreatorTypes: []string{domain.CreatorBusiness}, JoinedAt: "2026-02-14", Phone: "+233240000007", Email: "yaw-ofori@oguaa.test"},
+	{ID: "m-esi", Slug: "esi-quayson", PhotoURL: avatar("esi-quayson"), DisplayName: "Esi Quayson", Initials: "EQ", Bio: "Fishmonger, Kotokuraba. Reps Bakaano hard.", TownID: "kotokuraba", AsafoID: "asafo-anaafo", SchoolIDs: []string{}, PhoneVerified: true, Role: "member", CreatorTypes: []string{domain.CreatorBusiness}, JoinedAt: d20260301, Phone: "+233240000008", Email: "esi-quayson@oguaa.test"},
 	{ID: "m-efia", Slug: "efia-quagraine", PhotoURL: avatar("efia-quagraine"), DisplayName: "Efia Quagraine", Initials: "EQ", Bio: "Newsroom editor. Keeps the town informed.", TownID: "oguaa", SchoolIDs: []string{"ucc"}, PhoneVerified: true, Role: "editor", JoinedAt: "2026-01-15", Phone: "+233240000009", Email: "efia-quagraine@oguaa.test"},
+	{ID: "m-kofi", Slug: "kofi-abban", PhotoURL: avatar("kofi-abban"), DisplayName: "Kofi Abban", Initials: "KA", Bio: "Moderation desk. Keeps the town tidy.", TownID: "oguaa", SchoolIDs: []string{"adisadel"}, PhoneVerified: true, Role: domain.RoleModerator, JoinedAt: d20260401, Phone: "+233240000010", Email: "kofi-abban@oguaa.test"},
 }
 
 // ── places ───────────────────────────────────────────────────────────────────

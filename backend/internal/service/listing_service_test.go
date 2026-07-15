@@ -217,6 +217,7 @@ func (stubMembers) SetPhoto(context.Context, string, string) error              
 func (stubMembers) SetProfile(context.Context, string, string, string, string) error { return nil }
 func (stubMembers) SetPasswordHash(context.Context, string, string) error            { return nil }
 func (stubMembers) SetDateOfBirth(context.Context, string, string) error             { return nil }
+func (stubMembers) SetCreatorTypes(context.Context, string, []string) error          { return nil }
 
 type stubOrgs struct{}
 

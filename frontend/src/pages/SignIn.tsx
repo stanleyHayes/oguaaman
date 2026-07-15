@@ -86,6 +86,20 @@ function ModeTabs({ mode, onChange }: Readonly<{ mode: Mode; onChange: (m: Mode)
 const submitBtnCls =
   "w-full rounded-full bg-green py-3 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
 
+function adultCutoffIso() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Creator kinds offered on the Join form (Creator Platform plan §3).
+const CREATOR_KINDS = [
+  { id: "business", label: "Business owner" },
+  { id: "artist", label: "Artist" },
+  { id: "organiser", label: "Event organiser" },
+  { id: "institution", label: "Institution" },
+] as const;
+
 function SignInForm({
   identifier,
   setIdentifier,
@@ -152,6 +166,10 @@ function JoinForm({
   setName,
   dob,
   setDob,
+  asCreator,
+  setAsCreator,
+  creatorTypes,
+  onToggleCreatorType,
   password,
   setPassword,
   busy,
@@ -165,6 +183,10 @@ function JoinForm({
   setName: (v: string) => void;
   dob: string;
   setDob: (v: string) => void;
+  asCreator: boolean;
+  setAsCreator: (v: boolean) => void;
+  creatorTypes: string[];
+  onToggleCreatorType: (id: string) => void;
   password: string;
   setPassword: (v: string) => void;
   busy: boolean;
@@ -172,12 +194,46 @@ function JoinForm({
   onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   onSwitchMode: (m: Mode) => void;
 }>) {
+  const choiceCls = (on: boolean) =>
+    `rounded-xl border px-3 py-2.5 text-left transition-colors ${on ? "border-green bg-green/[0.06]" : "border-sand bg-cream hover:border-green/40"}`;
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
         <h2 className="text-2xl font-semibold text-ink">Join Oguaa</h2>
         <p className="mt-1 text-sm text-ink-muted">Create your account — one password for web & mobile.</p>
       </div>
+      <div className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink">I'm joining as</span>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => setAsCreator(false)} className={choiceCls(!asCreator)} aria-pressed={!asCreator}>
+            <span className="block text-sm font-semibold text-ink">A citizen</span>
+            <span className="mt-0.5 block text-xs text-ink-faint">Memories, memorials, school ties</span>
+          </button>
+          <button type="button" onClick={() => setAsCreator(true)} className={choiceCls(asCreator)} aria-pressed={asCreator}>
+            <span className="block text-sm font-semibold text-ink">A creator</span>
+            <span className="mt-0.5 block text-xs text-ink-faint">Listings, promotions, a dashboard</span>
+          </button>
+        </div>
+      </div>
+      {asCreator && (
+        <div className="block">
+          <span className="mb-1.5 block text-sm font-medium text-ink">
+            What do you create? <span className="font-normal text-ink-faint">pick all that apply</span>
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {CREATOR_KINDS.map((k) => {
+              const on = creatorTypes.includes(k.id);
+              return (
+                <button key={k.id} type="button" onClick={() => onToggleCreatorType(k.id)} aria-pressed={on}
+                  className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${on ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}>
+                  {k.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-xs text-ink-faint">Creators get a dashboard to add listings, promote them and manage a plan.</p>
+        </div>
+      )}
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium text-ink">Your name</span>
         <input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" placeholder="Display name" className={inputCls} />
@@ -188,7 +244,7 @@ function JoinForm({
       </label>
       <div className="block">
         <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth</span>
-        <DatePicker value={dob} onChange={setDob} max="2010-01-01" placeholder="dd/mm/yyyy" className="w-full" />
+        <DatePicker value={dob} onChange={setDob} max={adultCutoffIso()} placeholder="dd/mm/yyyy" className="w-full" />
         <span className="mt-1.5 block text-xs text-ink-faint">Oguaa is for ages 18 and over.</span>
       </div>
       <label className="block">
@@ -232,6 +288,8 @@ export function Component() {
   const [identifier, setIdentifier] = useState("");
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
+  const [asCreator, setAsCreator] = useState(params.get("as") === "creator");
+  const [creatorTypes, setCreatorTypes] = useState<string[]>([]);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -268,8 +326,13 @@ export function Component() {
       setBusy(false);
       return;
     }
+    if (asCreator && creatorTypes.length === 0) {
+      setErr("Pick at least one creator type — business, artist, organiser or institution.");
+      setBusy(false);
+      return;
+    }
     try {
-      await join({ identifier: identifier.trim(), displayName: name.trim(), dateOfBirth: dob, password });
+      await join({ identifier: identifier.trim(), displayName: name.trim(), dateOfBirth: dob, password, creatorTypes: asCreator ? creatorTypes : [] });
       nav(from, { replace: true });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not create your account.");
@@ -301,6 +364,10 @@ export function Component() {
               setName={setName}
               dob={dob}
               setDob={setDob}
+              asCreator={asCreator}
+              setAsCreator={setAsCreator}
+              creatorTypes={creatorTypes}
+              onToggleCreatorType={(id) => setCreatorTypes((cur) => (cur.includes(id) ? cur.filter((t) => t !== id) : [...cur, id]))}
               password={password}
               setPassword={setPassword}
               busy={busy}
