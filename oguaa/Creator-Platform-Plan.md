@@ -130,7 +130,8 @@ plan. Existing four revenue streams are untouched; plans just bundle them.
 2. `POST /api/creator/join` — register with creatorTypes (reuses password auth).
 3. `GET /api/creator/overview` — per-creator KPI aggregate (listings, views,
    promotions, plan, their ticket/pledge totals).
-4. Owner-scoped listing edit: `PATCH /api/listings/:id` (owner or staff).
+4. ~~Owner-scoped listing edit~~ → ✅ `POST /api/listings/:id/edit` (owner or
+   curator/steward), per-type details whitelist, 60/hr rate limit.
 5. Listing view counter (`POST /api/listings/:id/view`, daily-deduped by
    member/IP hash) — powers the dashboard "views" KPI.
 6. Plans as constants in code (no new collection): ids, prices, perks.
@@ -150,6 +151,13 @@ plan. Existing four revenue streams are untouched; plans just bundle them.
 - **Phase 2 (money & team):** plans catalog + Paystack subscribe/manage +
   owner listing editor + Promote page (port the `/me` panel) + institution
   workspace port + **team/officer invitations**.
+  - Owner listing editor **SHIPPED 2026-07-15 (slice 1, `02fde49`)** —
+    backend `POST /api/listings/:id/edit` + creator app editor at
+    `/work/:id/edit` for the 7 member-editable types + portal `/me` edit
+    links. Approved edits stay live + `owner-edit` audit record;
+    draft/rejected/unpublished re-queue to pending (fixes the
+    request-changes dead-end). Passthrough merge keeps unmanaged
+    whitelisted keys (streamingLinks, socials) across full-replace updates.
 - **Phase 3 (visibility):** view counter + analytics + front-page trade band +
   creator CTA + creator public profiles (`/creators/:slug`)?
 
@@ -165,3 +173,6 @@ plan. Existing four revenue streams are untouched; plans just bundle them.
    handles review; admin nav + backend routes filter by role permissions.
 4. Mobile → **both citizen and creator features** (creator section in the
    mobile app lands in a later phase; web app first).
+5. Owner edits of **approved** listings → publish immediately, stay live,
+   audited (`owner-edit` moderation record) — curators spot-check after the
+   fact rather than blocking live listings on every tweak.
