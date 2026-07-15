@@ -6,7 +6,7 @@
 > companion to `oguaa/Oguaa-Platform-Specification.md` (the product spec) — read that for *why*; read
 > this for *how it's being built*.
 >
-> **Status:** Phase 1 build in progress. Stack chosen, design system locked, foundation underway.
+> **Status:** Phase 1 shipped (all ten build-order items plus extras: safety/incidents, lost & found, festivals archive, history hub, newsroom, ticketing, subscriptions, promotions, the creator app). Phase 2 in progress — diaspora register and adopt-a-project funding delivered; investment opportunities and mentor-to-youth matching (gated on the §14.4 safeguarding policy) remain. **§7 is the living implementation-status and backlog section — this file is the single source of truth.**
 
 ---
 
@@ -27,7 +27,7 @@ The spec (§17) leaves several decisions open. To start building, the agent has 
 | Mobile | "Build the app now" | **Mobile-first responsive SPA** (PWA wrapper is a fast-follow) | Spec defers native apps (§6); the responsive SPA is app-like on phones today. A PWA manifest/offline shell or a native Expo track can follow. |
 | §17.1 | Name & brand | **Oguaa** | Authentic, ownable, replicable ("we ourselves"). Visual identity defined in §3 below. |
 | §17.2 | "Town" meaning | **Cape Coast / Oguaa as a whole**, with `Place.parentId` ready for quarters (Bakaano, Amanful…) | Keeps the replication vision; taxonomy can deepen without re-architecting. |
-| §17.3 | Edit re-approval | **All edits re-reviewed at launch** (simplest), config flag to relax later | Spec §8.2 simplest launch setting. |
+| §17.3 | Edit re-approval | **Approved owner edits publish immediately + `owner-edit` audit** (Creator Plan §9.5 — supersedes the earlier all-edits-reviewed default); the minor/major re-approval split remains open (§7.1) | Creator Plan decision, 2026-07. |
 | §17.5 | Backend | **MongoDB** (see above) | Document store fits the polymorphic listing engine; one `listings` collection. |
 | §17.7 | Memorial name | **Yɛnkae** ("let us remember"), *In Memoriam* subtitle | Confirmed direction in mockup; exact diacritics to confirm with community. |
 | §17.9 | AI provider | **Anthropic Claude API**, server-side only, streamed, metered | Spec §8.12 example; keys never in the browser. |
@@ -117,13 +117,11 @@ Cape Coast is **hard contrasts in soft equatorial light**: the bone-white lime w
 ### 2.2 Per-section accents
 `Home` green `#123F2D` · `Music` clay `#B0503C` · `People` gold-text `#8A5E1F` · `Heritage` green `#123F2D` · `Culture` gold-brand `#B07D32` · `Visit` teal `#0E7C6B` · `Education` maroon `#7C2D2D` (each school carries its own house colours) · `Business` teal-text `#0B6557` · **`In Memoriam (Yɛnkae)` muted gold `#B07D32`** (calmest — a candle, not festival) · `Community/Youth` teal `#0E7C6B` · `Admin` green-slate `#3B473D` (the only home of AI purple).
 
-### 2.3 Typography (canonical set)
-- **Cormorant Garamond** (display/hero/section heads/wordmark/pull quotes) — engraved civic-stone serif.
-- **Spectral** (long-form reverent body: memorial eulogies, heritage long-reads; supports ɛ/ɔ).
-- **Figtree** (UI/body workhorse: forms, chips, metadata) — warm humanist sans.
+### 2.3 Typography (canonical set — revised 2026-07)
+- **Fraunces** (display/hero/section heads/wordmark/pull quotes) — **h1/h2 on every platform.**
+- **Outfit** (everything else: UI/body workhorse, forms, chips, metadata, long-form).
 - **JetBrains Mono** (AI output/diffs only).
-- *Bridge:* **Libre Baskerville + Archivo** retained for Education crests/mottos.
-- Always render Fante diacritics (ɛ, ɔ). Self-host via `next/font/google`, `display:swap`, latin + latin-ext.
+- *Replaced the earlier Cormorant Garamond / Spectral / Figtree set.* Web apps enforce the rule in `src/index.css` base (`--font-serif` is deliberately aliased to Outfit); mobile bundles both via `@expo-google-fonts` with the `D()/DI()`/`S()/SI()` theme helpers and `T`/`TI` text wrappers. Always render Fante diacritics (ɛ, ɔ).
 
 ### 2.4 Symbol vocabulary (respectful, attributed)
 Borrow the *grammar* of Adinkra/Asafo, never the *property*. Redraw Adinkra as clean uniform-stroke line icons; never reproduce a real company's flag/name/shrine, never invent a company, no Union-Jack/Ghana-flag canton, no sacred regalia in the UI. Every symbol carries a tooltip teaching its name + meaning.
@@ -151,7 +149,7 @@ Everything is **Members** (people / identity), **Institutions** (verified bodies
 `draft → pending → approved | rejected → (resubmit) ; approved → unpublished → pending`. Moderation checklist: **real · local · correctly categorised · appropriate**; rejection carries a reason; owner notified on approve/reject; every action audited (`ModerationRecord`).
 
 ### 3.3 Data layer (Go + MongoDB)
-Clean ports/adapters: `internal/domain` defines the entities + **repository interfaces**; `internal/infra/mongo` implements them against MongoDB (one polymorphic `listings` collection + `members`, `organizations`, `places`, `moderation_records`); `internal/service` holds the engine (submit/moderate/candle/tribute), query composition (genres, stats, the moderation queue), and the AI service. `cmd/seed` loads the fact-checked Cape-Coast-real seed data. The frontend never touches the DB — it calls the JSON API via a small typed client (`frontend/src/lib/api.ts`). Deferred: auth + phone/WhatsApp OTP, image storage, scheduled yearly-remembrance jobs.
+Clean ports/adapters: `internal/domain` defines the entities + **repository interfaces**; `internal/infra/mongo` implements them against MongoDB (one polymorphic `listings` collection + `members`, `organizations`, `places`, `moderation_records`); `internal/service` holds the engine (submit/moderate/candle/tribute), query composition (genres, stats, the moderation queue), and the AI service. `cmd/seed` loads the fact-checked Cape-Coast-real seed data. The frontend never touches the DB — it calls the JSON API via a small typed client (`frontend/src/lib/api.ts`). Delivered since this was written: password auth + JWT with optional TOTP MFA, first-party + Cloudinary image uploads, and the scheduled yearly-remembrance job. Still deferred: phone/WhatsApp OTP verification (the spec's primary spam gate) and email/WhatsApp notification delivery.
 
 ### 3.4 Routes
 **API (Go, `/api/*`):** `home · stats · artists[/:slug] · genres · music/legacy · people · memorials[/:slug] · businesses[/:slug] · events · opportunities · memories · schools · institutions[/:slug] · places · members[/:slug]`; writes — `POST listings`, `POST admin/moderate`, `POST memorials/:slug/{candle,tributes}`, `POST ai`.
@@ -161,14 +159,22 @@ Clean ports/adapters: `internal/domain` defines the entities + **repository inte
 /                         Home — the mirror
 /music · /music/:slug · /music/the-oguaa-sound      Music flagship  [LAUNCH DEEP]
 /memoriam · /memoriam/:slug                         Yɛnkae — In Memoriam  [FLAGSHIP]
-/education · /education/:slug                        Citadel + official school profiles
-/business · /business/:slug · /events · /community  Directory, calendar, get-involved
-/people /heritage /culture /visit                   Showcase sections
+/education · /education/:slug · /education/:slug/manage   Citadel + official institution profiles
+/people · /people/:slug · /members/:slug            Sons & daughters + member profiles
+/heritage · /culture · /visit                       Showcase sections
+/business · /business/:slug                         Directory
+/events · /events/:slug · /festivals · /festivals/:slug   Calendar + festival archive (ticketing)
+/projects · /projects/:slug                         Adopt-a-project (Paystack pledges)
+/community · /youth · /diaspora                     Get involved · opportunities · the register
+/safety · /safety/:slug · /safety/report            Incidents, rescue & recovery
+/lost-found · /lost-found/:slug · /lost-found/new   Lost items, found items, missing people
+/news · /news/:slug                                 The newsroom's public face
+/search · /signin · /privacy · /terms · /acceptable-use
 /submit                   The shared submit→review→publish entry
-/me                       Member profile (rep town / rep school)
-/admin · /admin/compose   Moderation queue + the AI writing bar
+/me                       Member profile (rep town / rep school / diaspora opt-in / listings)
+/admin · /admin/compose   Portal-side moderation + the AI writing bar
 ```
-Each route loads its data through a React Router **loader** hitting the Go API; routes are lazily imported so each page is a small chunk (≈1–9 KB).
+Each route loads its data through a React Router **loader** hitting the Go API; routes are lazily imported so each page is a small chunk.
 
 ### 3.5 Non-functional (spec §11)
 Mobile-first; low-bandwidth (≤~130KB first-load JS target, AVIF/WebP, lazy media, self-hosted fonts); **PWA** (manifest + offline shell) as the native bridge; per-listing **1200×630 OG cards** (WhatsApp is the #1 growth channel); AAA/AA contrast; HTTPS; phone private by default.
@@ -185,25 +191,16 @@ A **dedicated admin application**, separate from the public site, for curators a
 - **Audit log** — every moderation action (who · what · when · why).
 - **Compose** — the AI writing assistant bar across admin text areas (spec §8.12).
 
-Backend additions: `GET /api/admin/{members,listings,institutions,audit}`, `POST /api/admin/members/:id/{role,suspend}`, `POST /api/admin/institutions/:id/verify`, `POST /api/admin/listings/:id/unpublish`. (Real auth gating is the documented next step; until then the API is open in dev and the admin app carries a demo steward identity.)
+Backend additions: `GET /api/admin/{members,listings,institutions,audit}`, `POST /api/admin/members/:id/{role,suspend}`, `POST /api/admin/institutions/:id/verify`, `POST /api/admin/listings/:id/unpublish`. (Auth gating delivered: `/api/admin/*` is role-guarded — curator/steward pass, plus a scoped `moderator` role limited to queue/listings/reports/incidents; staff are force-enrolled into TOTP MFA before the console unlocks. The admin SPA's own gate/nav filtering for the moderator role is still open — see §7.3.)
 
 ### 3.7 Mobile platforms (native) — [`mobile/`](mobile/)
-The spec defers native apps (§6); this delivers them now. **Expo + React Native (expo-router, TypeScript)** — one codebase for **iOS, Android, and web**, consuming the same Go API. Mobile-first by nature, low-bandwidth aware. Core: a tab shell (Home · Music · Yɛnkae · More), the artist directory + profile (stream-out links), the In Memoriam list + memorial with **light-a-candle** (a real write to the API), and entry points to the other sections. The "Castle, Canopy, and Canoe" identity is reproduced with React Native styles + the Adinkra marks. Shares the API contract and types with the web app; auth/push/OTP ride the same backend once added.
+The spec defers native apps (§6); this delivers them now. **Expo + React Native (expo-router, TypeScript)** — one codebase for **iOS, Android, and web**, consuming the same Go API. Mobile-first by nature, low-bandwidth aware. Today it **mirrors all portal features** (safety/incidents, lost & found, festivals, history hub, event ticketing, subscriptions, promotions, news, the diaspora register, institution pages + claims, notifications, MFA enrolment) with the Fraunces/Outfit identity bundled via `@expo-google-fonts` and enforced through the `D()/DI()`/`S()/SI()` theme helpers and `T`/`TI` text wrappers. Shares the API contract and types with the web app.
 
 ---
 
 ## 4. Build order (maps to spec §15)
 
-1. **Foundation** — types, design tokens, data layer, layout/nav/footer. *(in progress)*
-2. **Home + Music (deep)** — the mirror; artist directory, profile, The Oguaa Sound, submit.
-3. **Yɛnkae / In Memoriam** — index + memorial page (candle, tributes, yearly remembrance) — flagship of reverence.
-4. **Institutions** — school official profile + registry (verified badge, offices, official notices).
-5. **Listing engine UI** — shared submit flow, member profile, rep town/school.
-6. **Admin** — moderation queue + the **AI writing assistant bar** (server-side Claude, streamed, metered).
-7. **Memory Wall, Events/Calendar, Youth Opportunities** — further listing types + views.
-8. **Stub sections** — People, Heritage, Culture, Visit, Business, Community — structured shells filled as content arrives.
-9. **PWA + SEO/OG + low-bandwidth polish.**
-10. **Verify** — clean build + dev server + browser smoke test.
+**Phase 1 — all ten items delivered** (foundation; Home + Music deep; Yɛnkae; institutions; listing engine UI; admin + AI bar; Memory Wall/events/youth; showcase sections; PWA+SEO/low-bandwidth — *except the PWA shell itself, still open*; verify). Extras beyond the order: safety/incidents, lost & found, festivals archive, history hub, newsroom + AI bar, event ticketing, business subscriptions, paid promotions, revenue, the creator app, the diaspora register.
 
 *Phase 2 (spec §15):* diaspora register **(delivered — opt-in member field, `/api/diaspora`, public `/diaspora` page on portal + mobile)**; adopt-a-project funding **(delivered — Paystack pledges, see money-flows convention)**; investment opportunities and mentor-to-youth matching (gated on the §14.4 safeguarding policy) remain.
 
@@ -211,13 +208,85 @@ The spec defers native apps (§6); this delivers them now. **Expo + React Native
 
 ## 5. What this pass delivers vs. defers
 
-**Delivered now (working full stack — Go + MongoDB + React, verified end-to-end):** the full design system; responsive layout + navigation; Home; the Music flagship; the Yɛnkae memorial (candle + tributes persist to Mongo); school official profiles; the shared submit→review→publish engine with **real mutations**; member profile; the admin moderation queue with audit records; the AI writing bar wired to a server-side Go endpoint (live Claude when `ANTHROPIC_API_KEY` is set, labelled simulation otherwise); all showcase sections; seeded, fact-checked data; Go unit tests + a clean frontend production build.
+**Delivered (working full stack — Go + MongoDB + React + Expo, verified end-to-end):** the full design system; responsive layout + navigation; Home; the Music flagship; the Yɛnkae memorial (candle + tributes + yearly remembrance persist to Mongo); institution official profiles (18-block section library, gallery, offices, claims, official events); the shared submit→review→publish engine with **real mutations**; member profile; the admin moderation queue with audit records; the AI writing bar wired to a server-side Go endpoint (live Claude when `ANTHROPIC_API_KEY` is set, labelled simulation otherwise); all showcase sections; seeded, fact-checked data; Go unit tests + clean production builds; plus the money flows (pledges, tickets, subscriptions, promotions — live Paystack or labelled simulation), safety/incidents, lost & found, the festivals archive, the history hub, the newsroom, notifications, the creator app, and the diaspora register.
 
-**Authentication (delivered).** Passwordless **phone/email OTP → JWT sessions** (spec §8.1, §9): `POST /api/auth/{request-otp,verify-otp}` + `GET /api/auth/me`, find-or-create member on verify, JWT (HS256) bearer tokens. An `OTPSender` interface fronts delivery — the dev impl logs the code (and the API returns it in dev mode); a real SMS/WhatsApp provider (e.g. Hubtel) drops in there. Gating is feature-flagged by `AUTH_REQUIRED`: submit needs a signed-in member (owner is attributed to them), `/api/admin/*` needs curator/steward (stewards pass all), and unauthenticated reads stay open. Wired across all three clients: the **web** (sign-in route, header state, submit gate, real `/me`), the **admin** (whole back-office gated behind a curator/steward sign-in), and **mobile** (sign-in screen + token storage + More-tab state).
+**Authentication (delivered).** Password sign-in → **JWT sessions** (`POST /api/auth/{register,login}`), 18+ DOB gate on self-registration, optional **TOTP MFA** with recovery codes (staff force-enrolled before the admin console unlocks), and Act 843 data rights (`GET /api/me/export`, `DELETE /api/me` — erasure anonymises in place and `$unset`s the sparse-unique email/phone). Roles: member, curator, steward, editor, plus a scoped **moderator** (queue/listings/reports/incidents only). `AUTH_REQUIRED=true` enforces sign-in on writes/admin in production; reads stay open.
 
-**Deferred (documented, interfaces ready):** a live SMS/WhatsApp OTP provider (the `OTPSender` seam) and a live Claude key; scheduled yearly-remembrance jobs; image uploads/storage; a PWA manifest/offline shell; maps; the §14 legal pages drafted with counsel. None require re-architecting — they slot behind the existing interfaces, service methods, and API/route shapes.
+**Deferred (documented, interfaces ready):** phone/WhatsApp **OTP verification** (the spec's primary spam gate — `PhoneVerified` exists but nothing sets it); email/WhatsApp **notification delivery** (in-app only today); the **PWA** manifest/offline shell; per-listing **OG share cards**; deeper **maps** (per-listing pins, events, mobile); investment opportunities; mentor-to-youth matching (blocked on the unwritten §14.4 safeguarding policy); and the §14 legal pages drafted with counsel. The full status + backlog lives in §7.
 
 ---
 
 ## 6. Open decisions still to confirm with the community (spec §17)
 Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the first curators; Translate target languages and AI per-admin limits; which institution kinds open beyond schools; default remembrance audience and living-member birthdays. None block the foundation.
+
+---
+
+## 7. Implementation status & backlog (single source of truth)
+
+*Full audit of all three spec documents against the codebase, 2026-07-15. Update this section whenever a feature ships — it is the canonical done/left ledger. Statuses: ✅ done · ◐ partial (what remains in italics) · ☐ not started.*
+
+### 7.1 Main spec — `oguaa/Oguaa-Platform-Specification.md`
+
+**Phase 1 (§15) — delivered.** Foundation, listing engine + lifecycle, accounts, moderation/admin, music flagship, business directory, rep school/town, memory wall, Yɛnkae, events/calendar, youth board + talent spotlight, institutions registry (schools first), AI writing bar. Plus beyond-spec extras: safety/incidents, lost & found, festivals archive, history hub, newsroom, event ticketing, subscriptions, promotions, revenue, creator app, MFA.
+
+**Phase 2 (§15) — half delivered.** Diaspora register ✅ (`/diaspora` portal + mobile) · adopt-a-project funding ✅ (Paystack pledges) · investment opportunities ☐ · mentor-to-youth matching ☐ *(blocked on the unwritten §14.4 safeguarding policy)*.
+
+**Partial / open Phase 1 items:**
+- ☐ §8.1 **Phone/WhatsApp OTP verification** — the spec's *primary spam gate*. No endpoints, no provider, `PhoneVerified` never set, submit ungated. *(Password auth shipped instead; OTP is the open hole.)*
+- ◐ §8.2 **Edit re-approval policy** (Open Decision #3) — *today every owner edit of an approved listing publishes immediately; neither the minor/major split nor the all-edits-reviewed flag exists.*
+- ◐ §8.5 **Rivalry signals** — *only static memberCount chips; no computed cross-school comparisons.*
+- ◐ §8.7 **Memory-wall filters** by school/town/era/festival — *tags exist in the model; no query params or UI.*
+- ◐ §8.11 **Memorial keeper controls** — *submit form + backend never set `remindersEnabled`, so user-submitted memorials silently get no yearly remembrance (seeded ones do). **Family claim/correct/remove** mechanism missing (only a generic `bereavement` report reason). Funeral/celebration-of-life details (Open Decision #7) absent. Reminders are in-app only — no email/WhatsApp delivery.*
+- ◐ §8.12 **AI bar** — *responses not streamed; Replace has no confirmation step; mounted only on admin Compose (not e.g. the newsroom editor).*
+- ◐ §8.13 **Institution announcements** — *no notice type distinct from events; no contested-claim "held and referred" state.*
+- ◐ §11 **Non-functional** — PWA manifest/offline shell ☐; per-page titles/meta + per-listing 1200×630 OG share cards ☐ *(sharing is the spec's growth engine; today every link renders the generic homepage card)*; maps ◐ *(keyless OSM embed on business pages only, fixed pin)*; localisation ◐ *(UI-chrome i18n switcher exists; no field-level/message-catalog scaffolding)*.
+- ◐ §14 **Legal/compliance** — *cookie/consent notice ☐; guardian-consent flow for featuring minors ☐; privacy/terms/acceptable-use published but shallow drafts pending counsel.*
+- ◐ §8.10 **Queue type filter** — *no filter param or UI.*
+- ◐ §4 **KPI instrumentation** — *no view/click-through counters or approval-time metrics (also blocks creator "views this month").*
+
+### 7.2 Institution pages — `oguaa/Institution-Pages-Spec.md`
+
+**Delivered.** The whole fixed-core + composable-blocks model: `MediaAsset`/`ProfileSection` domain (18 block types, tones, hidden/anchor), gallery + lightbox, `requireManager` gate with steward bypass, type/tone allowlists + URL sanitizers, rate limits (60/h manage, 20/h·org events, 10/h claims), web + mobile renderers, portal + admin editors, Cloudinary upload pipeline with responsive helpers, claim → steward-verify → manage, immediate publish for managers, official events (auto-publish for verified orgs), verified schools + heritage seed data.
+
+**Partial / open:**
+- ◐ **Per-kind structured catalog (§4)** — blocks cover presentation; signature structured fields absent (office-holder terms/predecessor/successor, GES category/boarding/gender, OSA endowment, NHIS flag, dual-tier citizen/foreigner pricing, giving fields). *Education strongest; health and government weakest.*
+- ◐ **Media metadata (§5)** — *alt/caption collected; Credit field not in any editor.*
+- ◐ **Notices** — *official events double as announcements; no distinct notice type; mobile institution page shows no events/announcements at all.*
+- ☐ **§7 Localization pack** — field-level i18n, MoMo as a giving field, GhanaPostGPS + lat/long, quarter/Asafo tag on orgs, kind-specific verification artifacts. *All unbuilt.*
+- ☐ **schema.org JSON-LD** per institution (§4 SEO mapping).
+- ☐ **Revoke-verification lever** — revoking does **not** take the page offline and `School.tsx` renders the Verified badge unconditionally. *Governance lever is hollow — small fix, real integrity issue.*
+- ☐ **Manager revocation** endpoint/UI (only pending-claim review exists).
+
+### 7.3 Creator platform — `oguaa/Creator-Platform-Plan.md`
+
+**Phase 1 (foundation) — shipped 2026-07-15.** `members.creatorTypes` + register payload, portal join citizen/creator picker, moderator role (backend), `GET /api/creator/overview`, `POST /api/me/creator-types`, the `creator/` app on :3004 (auth gate, Aura sidebar, Overview KPIs, My Work with in-place promote, Grow/Plan, Money, Institutions, Account, Notifications).
+
+**Phase 2 (money & team) — in progress.** Owner listing editor shipped (slice 1, `02fde49`). Remaining:
+- ☐ **Plans catalog (§5)** — `plans` collection + admin **Monetization → Plans** CRUD + `GET /api/plans`, seeded Starter/Supporter/Featured; nothing price-related hardcoded client-side. *Note: §5/§9.1 (collection) contradict §7.6 (constants) — re-confirm before building.*
+- ☐ **Institution workspace port (§4.1.3)** — the five manage panels into the creator app + TEAM sidebar + institution switcher.
+- ☐ **Team/officer invitations (§4.1.2)** — `invited` claim status + `invitedById`, invite/accept/decline/revoke endpoints, manager-vs-officer scopes, team list UI.
+- ☐ **Request-a-new-institution flow + server-side kind catalog** (school, traditional-authority, association, faith, civic, asafo, heritage).
+
+**Phase 3 (visibility) — not started.** View counter (`POST /api/listings/:id/view`, daily-deduped) + analytics; "Trade in Oguaa" home band (category chips + 4 cards, supporters first); creator CTA banner; creator public profiles `/creators/:slug` *(marked "?" in the plan — undecided)*.
+
+**Small gaps:** `/me` "Become a creator" entry point; creator Account type-picker omits `institution`; Drafts view; Payouts ledger; **admin SPA moderator gating** (auth gate rejects moderators; nav not role-filtered; RoleBadge lacks a moderator tone); creatorTypes migration for pre-existing business owners; `dev.sh` verify script; citizen upgrade screen is a soft CTA, not the planned screen.
+
+### 7.4 Prioritized backlog (next-up order)
+
+1. **OTP verification + submit gate** (spec §8.1/§16 — the primary spam gate; highest-impact Phase 1 hole).
+2. **Memorial keeper reminder controls** (§8.11 — small fix, real user-facing bug: submitted memorials get no remembrance).
+3. **Revoke-verification takes the page offline + conditional badge** (Institution §6 — governance integrity).
+4. **Creator Phase 2 remainder** — plans catalog → institution workspace port → team/officer invitations (Creator §4.1/§5; resolve the §5-vs-§7.6 contradiction first).
+5. **Per-listing OG cards / rich link previews** (spec §11 — the growth engine).
+6. **PWA manifest + offline shell** (spec §11).
+7. **View counter** (+ creator "views this month" KPI; Creator §7.5).
+8. **Memory-wall filters** (spec §8.7/§16).
+9. **Edit re-approval policy** (spec §17.3 — pick and implement one option).
+10. **Email/WhatsApp notification delivery** (spec §8.11/§12).
+11. **Maps depth** — per-listing geocoded pins, events map, mobile (spec §12).
+12. **Institution localization pack + schema.org** (Institution §4/§7).
+13. **AI bar polish** — streaming, replace-confirmation, mount on all admin rich-text fields (spec §8.12).
+14. **Admin moderator-role SPA gating + queue type filter** (Creator §9.3, spec §8.10).
+15. **Cookie notice, legal depth, guardian-consent flow** (spec §14.4/§14.6/§16).
+16. **Phase 2 spec remainder** — investment opportunities; mentor-to-youth matching *(both gated on the §14.4 safeguarding policy, itself unwritten)*.
+17. **Smaller items** — school rivalry signals; official-announcements type; contested-claim hold; funeral details; media Credit capture; mobile institution events + manager editing; creator mobile section (explicitly future); `/me` creator upgrade entry; Drafts view; Payouts ledger; migrations + verify script; mobile maps.
