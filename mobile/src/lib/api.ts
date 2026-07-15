@@ -88,6 +88,8 @@ export const api = {
   // Diaspora register opt-in (spec §4/§5/§15, Phase 2 foundation).
   setDiaspora: (body: { abroad: boolean; city?: string; country?: string }) =>
     post<{ diaspora: { abroad: boolean; city?: string; country?: string } | null }>("/api/me/diaspora", body),
+  // The public register — members who opted in as living away from Oguaa.
+  diaspora: () => get<Member[]>("/api/diaspora"),
 
   // Profile photo — uploaded to Cloudinary on the device; we store the URL.
   setPhoto: (photoUrl: string) => post<{ photoUrl: string }>("/api/me/photo", { photoUrl }),

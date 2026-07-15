@@ -14,6 +14,7 @@ Oguaa — a community-pride platform for Cape Coast (Oguaa), Ghana. Monorepo:
 - Lifecycle: draft → pending → approved/rejected → unpublished, steward/curator moderated. **Exceptions:** `incident` and `lostfound` auto-publish on submit (time-critical: rescue/missing persons) with an operational status in Details (`incidentStatus` reported→verified→responding→resolved→recovered; `lfStatus` open→reunited/closed) and after-the-fact curator verification.
 - Festivals = `event` listings with `details.festival` + `details.edition` (+ `programme`/`recap`); the archive is assembled in `service/festivals.go` from a fixed registry of known festivals.
 - History hub (`GET /api/history`) assembles the seeded `timeline` collection + heritage orgs + people + memories (`service/history.go`).
+- **Diaspora register (spec §4/§5/§15, Phase 2):** opt-in `member.diaspora {abroad, city, country}` — "abroad" includes elsewhere in Ghana. `GET /api/diaspora` returns only opted-in members sorted by name (identifiers stay `json:"-"`-private); public register page at `/diaspora` on portal + mobile (a `sections.ts` entry, so it flows into Home cards/nav automatically), join via the "Oguaa abroad" panel on `/me`.
 
 ## Conventions to follow
 - **Focused repo methods** on `ListingRepository` (e.g. `AddTribute`, `IncrementRaised`, `UpdateIncidentStatus`, `SetLostFoundStatus`, `SetSubscribedUntil`, `SetFeatured`) — no generic details-update. Every new repo method also goes on the fakes in `internal/service/*_test.go`.

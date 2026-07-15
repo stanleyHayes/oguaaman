@@ -2,7 +2,7 @@
 
 export type SectionId =
   | "home" | "music" | "people" | "heritage" | "culture" | "festivals"
-  | "visit" | "education" | "business" | "memoriam" | "community" | "youth"
+  | "visit" | "education" | "business" | "memoriam" | "community" | "diaspora" | "youth"
   | "news" | "events" | "safety" | "lostfound";
 
 export type LaunchDepth = "deep" | "live" | "stub";
@@ -47,6 +47,7 @@ export const SECTIONS: NavSection[] = [
   { id: "business", href: "/business", label: "Business", tagline: "The working city — markets, fishing, trade.", tone: "teal", depth: "live" },
   { id: "memoriam", href: "/memoriam", label: "In Memoriam", fanteName: "Yɛnkae", tagline: "Let us remember — a home for those who have passed.", tone: "gold", depth: "deep", primary: true },
   { id: "community", href: "/community", label: "Community", tagline: "Get involved — events, youth opportunities, join us.", tone: "teal", depth: "live", primary: true },
+  { id: "diaspora", href: "/diaspora", label: "Diaspora", fanteName: "Abɔkyirfoɔ", tagline: "Sons & daughters everywhere — the bridge home.", tone: "gold", depth: "live", primary: true },
   { id: "youth", href: "/youth", label: "Youth", tagline: "Opportunities board & young-talent spotlight.", tone: "teal", depth: "live", primary: true },
   { id: "safety", href: "/safety", label: "Safety", tagline: "Incidents, rescue & recovery — keeping Oguaa safe.", tone: "maroon", depth: "live" },
   { id: "lostfound", href: "/lost-found", label: "Lost & Found", tagline: "Lost items, found items, missing people — the town helps.", tone: "teal", depth: "live" },

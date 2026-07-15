@@ -16,6 +16,7 @@
   <url><loc>https://oguaa.vercel.app/projects</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://oguaa.vercel.app/business</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://oguaa.vercel.app/community</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://oguaa.vercel.app/diaspora</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://oguaa.vercel.app/memoriam</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://oguaa.vercel.app/lost-found</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://oguaa.vercel.app/safety</loc><changefreq>daily</changefreq><priority>0.6</priority></url>

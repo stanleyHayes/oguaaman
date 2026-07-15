@@ -205,7 +205,7 @@ The spec defers native apps (§6); this delivers them now. **Expo + React Native
 9. **PWA + SEO/OG + low-bandwidth polish.**
 10. **Verify** — clean build + dev server + browser smoke test.
 
-*Phase 2 (later, spec §15):* diaspora register, adopt-a-project funding, investment, mentor-to-youth matching with §14.4 safeguards.
+*Phase 2 (spec §15):* diaspora register **(delivered — opt-in member field, `/api/diaspora`, public `/diaspora` page on portal + mobile)**; adopt-a-project funding **(delivered — Paystack pledges, see money-flows convention)**; investment opportunities and mentor-to-youth matching (gated on the §14.4 safeguarding policy) remain.
 
 ---
 

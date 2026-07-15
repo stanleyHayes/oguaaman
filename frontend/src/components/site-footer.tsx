@@ -24,6 +24,7 @@ const TAKE_PART = [
   { to: "/submit", label: "Submit a listing" },
   { to: "/events", label: "Events calendar" },
   { to: "/community", label: "Join the community" },
+  { to: "/diaspora", label: "The diaspora register" },
   { to: "/projects", label: "Adopt a project" },
   { to: "/me", label: "Your profile" },
   { to: "/admin", label: "Curator dashboard" },
