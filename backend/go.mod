@@ -7,6 +7,7 @@ require (
 	github.com/graphql-go/graphql v0.8.1
 	github.com/graphql-go/handler v0.2.4
 	github.com/joho/godotenv v1.5.1
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	go.mongodb.org/mongo-driver/v2 v2.6.0
 	golang.org/x/crypto v0.48.0
 	google.golang.org/grpc v1.81.1

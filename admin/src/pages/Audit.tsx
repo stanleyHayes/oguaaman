@@ -24,7 +24,7 @@ export function Component() {
   return (
     <>
       <PageHeader kicker="Who · what · when · why" title="Audit log" />
-      {records.length === 0 ? <Empty>No moderation actions recorded yet.</Empty> : (
+      {records.length === 0 ? <Empty icon="shield" title="No entries yet">Every moderation action — who, what, when and why — is recorded here.</Empty> : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-sand bg-paper text-left text-xs uppercase tracking-wide text-ink-faint">

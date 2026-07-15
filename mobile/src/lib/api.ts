@@ -35,8 +35,21 @@ async function post<T>(path: string, body: unknown = {}): Promise<T> {
 
 async function del<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { method: "DELETE", headers: authHeaders() });
-  if (!res.ok) throw new Error(`DELETE ${path} failed (${res.status})`);
-  return res.json() as Promise<T>;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = (data as { error?: string }).error ?? `DELETE ${path} failed (${res.status})`;
+    throw Object.assign(new Error(msg), { status: res.status, data });
+  }
+  return data as T;
+}
+
+// LoginResult — password sign-in either completes (token+member) or, for
+// MFA-enrolled accounts, returns a 5-minute challenge for the code step.
+export interface LoginResult {
+  token?: string;
+  member?: Member;
+  mfaRequired?: boolean;
+  challenge?: string;
 }
 
 export const api = {
@@ -175,7 +188,9 @@ export const api = {
 
   // auth (spec §8.1). dateOfBirth gates 18+ self-registration (spec §14.4).
   login: (identifier: string, password: string) =>
-    post<{ token: string; member: Member }>("/api/auth/login", { identifier, password }),
+    post<LoginResult>("/api/auth/login", { identifier, password }),
+  mfaLogin: (challenge: string, code: string) =>
+    post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
   register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
   me: () => get<Member>("/api/auth/me"),

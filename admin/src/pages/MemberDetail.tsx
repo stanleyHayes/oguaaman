@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { MemberView, Member } from "@/lib/types";
-import { BackLink, Card, RoleBadge, StatusBadge, KeyVal } from "@/components/ui";
+import { BackLink, Card, Empty, RoleBadge, StatusBadge, KeyVal } from "@/components/ui";
 import { formatDate, initials } from "@/lib/format";
 import { cldAvatar } from "@/lib/cloudinary";
 
@@ -93,7 +93,7 @@ export function Component() {
             <span className="text-xs text-ink-faint">{view.listings.length}</span>
           </div>
           {view.listings.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm text-ink-muted">No contributions yet.</p>
+            <Empty compact icon="pen" title="No contributions yet" />
           ) : (
             <ul>
               {view.listings.map((l) => (

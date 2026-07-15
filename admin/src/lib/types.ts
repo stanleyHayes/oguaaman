@@ -91,6 +91,8 @@ export interface Member {
   birthday?: string;
   broadcastBirthday?: boolean;
   joinedAt: string;
+  /** Two-factor enrolment state — required for staff roles (spec §14). */
+  mfaEnabled?: boolean;
 }
 
 export interface Office { id: string; role: string; holderId?: string; holderName?: string; verified: boolean }

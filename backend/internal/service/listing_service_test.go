@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -233,6 +234,8 @@ func (stubMembers) SetProfile(context.Context, string, string, string, string) e
 func (stubMembers) SetPasswordHash(context.Context, string, string) error            { return nil }
 func (stubMembers) SetDateOfBirth(context.Context, string, string) error             { return nil }
 func (stubMembers) SetCreatorTypes(context.Context, string, []string) error          { return nil }
+func (stubMembers) SetMFA(context.Context, string, bool, string, []string) error     { return nil }
+func (stubMembers) Anonymize(context.Context, string) error                          { return nil }
 
 type stubOrgs struct{}
 
@@ -310,8 +313,8 @@ func TestSubmit_validatesAndDefaults(t *testing.T) {
 	if l.Status != domain.StatusPending {
 		t.Errorf("new listing status = %q, want pending", l.Status)
 	}
-	if l.Slug != "a-real-memory" {
-		t.Errorf("slug = %q", l.Slug)
+	if !strings.HasPrefix(l.Slug, "a-real-memory-") {
+		t.Errorf("slug = %q, want prefix \"a-real-memory-\"", l.Slug)
 	}
 	if l.OwnerID != "m-test" {
 		t.Errorf("owner = %q, want the supplied member id", l.OwnerID)

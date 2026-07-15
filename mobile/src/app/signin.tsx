@@ -119,12 +119,14 @@ function FormCard(f: Readonly<FormState>) {
 }
 
 export default function SignIn() {
-  const { signIn, join } = useAuth();
+  const { signIn, completeMfa, join } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [identifier, setIdentifier] = useState("");
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -133,6 +135,7 @@ export default function SignIn() {
   function switchMode(m: Mode) {
     setMode(m);
     setErr(null);
+    setChallenge(null);
   }
 
   async function submit() {
@@ -142,14 +145,56 @@ export default function SignIn() {
     try {
       if (isJoin) {
         await join({ identifier: identifier.trim(), displayName: name.trim(), dateOfBirth: dob.trim(), password });
+        router.back();
       } else {
-        await signIn(identifier.trim(), password);
+        const res = await signIn(identifier.trim(), password);
+        if (res.mfaRequired && res.challenge) { setChallenge(res.challenge); setCode(""); }
+        else router.back();
       }
-      router.back();
     } catch (e) {
       const fallback = isJoin ? "Could not create your account." : "Sign in failed.";
       setErr(e instanceof Error ? e.message : fallback);
     } finally { setBusy(false); }
+  }
+
+  async function submitCode() {
+    if (!challenge) return;
+    setBusy(true); setErr(null);
+    try {
+      await completeMfa(challenge, code.trim());
+      router.back();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "That code didn't work.");
+    } finally { setBusy(false); }
+  }
+
+  if (challenge) {
+    return (
+      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <Hero isJoin={false} trust={TRUST_SIGNIN} />
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Two-factor check</Text>
+          <Text style={s.cardSub}>Enter the 6-digit code from your authenticator app, or a recovery code.</Text>
+          <Text style={s.label}>Code</Text>
+          <TextInput
+            style={[s.input, { textAlign: "center", letterSpacing: 4, fontSize: 18 }]}
+            value={code}
+            onChangeText={setCode}
+            placeholder="123 456"
+            placeholderTextColor={C.inkFaint}
+            keyboardType="number-pad"
+            autoComplete="one-time-code"
+          />
+          {err ? <Text style={s.err}>{err}</Text> : null}
+          <Pressable style={[s.btn, busy && { opacity: 0.6 }]} onPress={submitCode} disabled={busy}>
+            <Text style={s.btnText}>{busy ? "Verifying…" : "Verify & sign in"}</Text>
+          </Pressable>
+          <Pressable onPress={() => { setChallenge(null); setErr(null); setPassword(""); }}>
+            <Text style={s.back}>← Back to sign in</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    );
   }
 
   return (

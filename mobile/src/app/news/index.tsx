@@ -7,6 +7,7 @@ import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn } from "@/components/anim";
+import { EmptyState } from "@/components/empty-state";
 
 function newsDate(a: NewsArticle): string {
   const raw = a.publishedAt ?? a.createdAt;
@@ -40,7 +41,7 @@ export default function News() {
 
       <View style={{ padding: 16, gap: 14 }}>
         {data.length === 0 && (
-          <Text style={s.empty}>No stories yet — the newsroom is just getting started.</Text>
+          <EmptyState glyph="✉" title="No stories yet" body="The newsroom is just getting started." />
         )}
 
         {featured && (
@@ -85,7 +86,6 @@ const s = StyleSheet.create({
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
   heroTitle: { color: C.cream, fontFamily: serif, fontSize: 30, fontWeight: "700", marginTop: 6 },
   heroLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
-  empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 20 },
   featured: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   featuredBody: { padding: 16 },
   featuredKicker: { color: C.goldText, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },

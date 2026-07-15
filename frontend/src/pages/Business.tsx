@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { BusinessCard } from "@/components/cards";
 import { LayoutPill, StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 export async function loader() {
@@ -48,7 +49,11 @@ export function Component() {
 
         <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{shown.map((b, i) => <StaggerItem key={b.id} index={i} lift><BusinessCard business={b} /></StaggerItem>)}</div>
         {shown.length === 0 && (
-          <p className="py-12 text-center text-ink-muted">No businesses here yet. <Link to="/submit?type=business" className="font-semibold text-teal-text">List yours →</Link></p>
+          <EmptyState
+            icon={<EmptyGlyph name="building" />}
+            title="No businesses here yet"
+            actions={<Link to="/submit?type=business" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">List yours →</Link>}
+          />
         )}
       </Container>
 

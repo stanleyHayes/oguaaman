@@ -77,7 +77,7 @@ export function Component() {
       )}
 
       {listings.length === 0 ? (
-        <Empty title="Nothing yet" actions={
+        <Empty icon="pen" title="Nothing yet" actions={
           <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">Add your first listing</a>
         }>
           Your businesses, events, art and projects show up here once you submit them on the portal.

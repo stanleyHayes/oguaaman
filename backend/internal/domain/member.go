@@ -74,6 +74,12 @@ type Member struct {
 	// PasswordHash — private; bcrypt hash of the member's password. Empty means
 	// the account predates password sign-in and can be claimed via the Join flow.
 	PasswordHash string `json:"-" bson:"passwordHash,omitempty"`
+	// MFA (TOTP, RFC 6238 — authenticator apps). MFAEnabled is safe to expose so
+	// clients can render the security state; the secret and recovery-code hashes
+	// never leave the server.
+	MFAEnabled        bool     `json:"mfaEnabled" bson:"mfaEnabled,omitempty"`
+	TOTPSecret        string   `json:"-" bson:"totpSecret,omitempty"`
+	MFARecoveryHashes []string `json:"-" bson:"mfaRecoveryHashes,omitempty"`
 }
 
 // Diaspora is a member's location away from Cape Coast (spec §4/§5/§15).
@@ -101,4 +107,11 @@ type MemberRepository interface {
 	SetSchooling(ctx context.Context, id string, stints []SchoolStint) error
 	SetDiaspora(ctx context.Context, id string, d *Diaspora) error
 	SetCreatorTypes(ctx context.Context, id string, types []string) error
+	// SetMFA persists the member's TOTP state: enabled flag, base32 secret
+	// (empty clears it), and bcrypt hashes of unused recovery codes.
+	SetMFA(ctx context.Context, id string, enabled bool, secret string, recoveryHashes []string) error
+	// Anonymize wipes a member's personal data and suspends the account
+	// (Act 843 right to erasure, spec §14.2), keeping the row so published
+	// content retains a "Former member" owner.
+	Anonymize(ctx context.Context, id string) error
 }

@@ -8,6 +8,7 @@ import type { Notification } from "@/lib/types";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
+import { EmptyState } from "@/components/empty-state";
 
 function when(iso: string): string {
   if (!iso) return "";
@@ -88,7 +89,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
         )}
       </RevealView>
 
-      {items.length === 0 && <Text style={s.empty}>No notifications yet. Updates on your listings and remembrances will appear here.</Text>}
+      {items.length === 0 && <EmptyState glyph="✉" title="No notifications yet" body="Updates on your listings and remembrances will appear here." />}
 
       {items.map((n, i) => {
         const linkable = mobileLink(n.link) != null;
@@ -124,7 +125,6 @@ const s = StyleSheet.create({
   count: { color: C.goldText, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginTop: 2 },
   markBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   markText: { color: C.green, fontWeight: "700", fontSize: 12 },
-  empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 24, lineHeight: 20 },
 
   card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, overflow: "hidden" },
   cardUnread: { backgroundColor: "#fffdf7", borderColor: C.goldBrand },

@@ -103,29 +103,32 @@ func (s *Service) SubmitIncident(ctx context.Context, member *domain.Member, in 
 }
 
 // notifyCuratorsOfIncident alerts every curator/steward to a severe incident,
-// mirroring the report-alert pattern.
+// mirroring the report-alert pattern. Runs in a goroutine so the full-member
+// scan does not hold up the time-critical incident creation response.
 func (s *Service) notifyCuratorsOfIncident(ctx context.Context, l *domain.Listing) {
 	if s.notifs == nil {
 		return
 	}
-	members, err := s.members.All(ctx)
-	if err != nil {
-		return
-	}
-	for i := range members {
-		m := &members[i]
-		if m.Role != domain.RoleCurator && m.Role != domain.RoleSteward {
-			continue
+	go func() {
+		members, err := s.members.All(context.Background())
+		if err != nil {
+			return
 		}
-		_ = s.notifs.Insert(ctx, domain.Notification{
-			ID:       "ntf-" + fmt.Sprintf("%d-%s", time.Now().UnixNano(), m.ID),
-			MemberID: m.ID, Kind: "incident",
-			Title:     "Urgent incident reported",
-			Body:      fmt.Sprintf("“%s” (%s severity) was reported. Verify and coordinate response.", l.Title, asString(l.Details, "severity")),
-			Link:      "/incidents",
-			CreatedAt: time.Now().UTC().Format(time.RFC3339),
-		})
-	}
+		for i := range members {
+			m := &members[i]
+			if m.Role != domain.RoleCurator && m.Role != domain.RoleSteward {
+				continue
+			}
+			_ = s.notifs.Insert(context.Background(), domain.Notification{
+				ID:       "ntf-" + fmt.Sprintf("%d-%s", time.Now().UnixNano(), m.ID),
+				MemberID: m.ID, Kind: "incident",
+				Title:     "Urgent incident reported",
+				Body:      fmt.Sprintf("\u201c%s\u201d (%s severity) was reported. Verify and coordinate response.", l.Title, asString(l.Details, "severity")),
+				Link:      "/incidents",
+				CreatedAt: time.Now().UTC().Format(time.RFC3339),
+			})
+		}
+	}()
 }
 
 // Incidents lists approved incidents, newest first, with optional filters on

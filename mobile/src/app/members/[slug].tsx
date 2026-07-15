@@ -9,6 +9,7 @@ import type { MemberView } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
+import { EmptyState } from "@/components/empty-state";
 
 function FollowButton({ slug }: Readonly<{ slug: string }>) {
   const { member } = useAuth();
@@ -106,7 +107,7 @@ export default function MemberProfile() {
           <RevealView style={s.sectionCard}>
             <Text style={s.sectionTitle}>Contributions</Text>
             <Text style={s.sectionHelp}>Everything {m.displayName.split(" ")[0]} has shared with the town.</Text>
-            {published.length === 0 && <Text style={s.empty}>No public contributions yet.</Text>}
+            {published.length === 0 && <EmptyState compact glyph="✎" title="No public contributions yet" />}
             {published.map((l) => (
               <View key={l.id} style={s.card}>
                 <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cardThumb} labelStyle={s.cardThumbInit} />
@@ -141,7 +142,6 @@ const s = StyleSheet.create({
   sectionCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   sectionTitle: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink },
   sectionHelp: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 12 },
-  empty: { color: C.inkFaint, fontStyle: "italic" },
   card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
   cardThumb: { width: 48, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   cardThumbInit: { color: C.cream, fontFamily: serif, fontSize: 18, fontWeight: "700" },

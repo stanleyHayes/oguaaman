@@ -6,6 +6,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { OpportunityCard, PersonCard } from "@/components/cards";
 import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
@@ -88,9 +89,7 @@ function Board({ opps }: Readonly<{ opps: Listing[] }>) {
         </Reveal>
         <FilterBar opps={opps} filter={filter} onChange={setFilter} />
         {shown.length === 0 ? (
-          <p className="rounded-[var(--radius-card)] border border-dashed border-sand p-10 text-center text-sm text-ink-faint">
-            Nothing open in this category right now — check back soon.
-          </p>
+          <EmptyState icon={<EmptyGlyph name="sparkle" />} title="Nothing open right now" description="Nothing in this category at the moment — check back soon." />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {shown.map((o, i) => <StaggerItem key={o.id} index={i} lift><OpportunityCard opp={o} /></StaggerItem>)}

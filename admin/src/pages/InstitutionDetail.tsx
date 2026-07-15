@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { InstitutionView, Organization, Listing } from "@/lib/types";
-import { BackLink, Card, StatusBadge, KeyVal } from "@/components/ui";
+import { BackLink, Card, Empty, StatusBadge, KeyVal } from "@/components/ui";
 import { InstitutionLogo } from "@/components/crest";
 import { InstitutionEditor } from "@/components/institution-editor";
 import { formatDate } from "@/lib/format";
@@ -108,7 +108,7 @@ export function Component() {
           <Card className="overflow-hidden">
             <h2 className="border-b border-sand px-5 py-3 text-lg font-semibold">Offices ({(o.offices ?? []).length})</h2>
             {(o.offices ?? []).length === 0 ? (
-              <p className="px-5 py-6 text-center text-sm text-ink-muted">No offices recorded.</p>
+              <Empty compact icon="building" title="No offices recorded" />
             ) : (
               <ul>
                 {(o.offices ?? []).map((off) => (

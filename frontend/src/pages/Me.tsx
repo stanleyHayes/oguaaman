@@ -10,6 +10,8 @@ import { SchoolingEditor, PeopleYouMayKnow } from "@/components/connections";
 import { formatDate, initials } from "@/lib/format";
 import { Thumb } from "@/components/cards";
 import { StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
+import { SecuritySettings, DataRightsSettings } from "@/components/security-panels";
 import { ProfileSkeleton } from "@/components/skeleton";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -334,9 +336,14 @@ export function Component() {
                 </div>
               </div>
             </Panel>
-          </div>
+            <Panel title="Security" lede="Two-factor sign-in with an authenticator app — recommended, and required for curators & stewards.">
+              <SecuritySettings />
+            </Panel>
 
-          {/* Right — activity */}
+            <Panel title="Your data" lede="Yours to take with you, or to erase — under Ghana's Data Protection Act (Act 843).">
+              <DataRightsSettings />
+            </Panel>
+          </div>
           <div className="space-y-6">
             <Panel
               title="Your listings"
@@ -391,7 +398,7 @@ export function Component() {
                     </li>
                   );
                 })}
-                {listings.length === 0 && <li className="py-8 text-center text-sm text-ink-muted">Nothing yet. <Link to="/submit" className="font-semibold text-green">Add your first →</Link></li>}
+                {listings.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="pen" size={18} />} title="Nothing yet" actions={<Link to="/submit" className="text-sm font-semibold text-green">Add your first →</Link>} /></li>}
               </ul>
             </Panel>
 
@@ -413,7 +420,7 @@ export function Component() {
                     </Link>
                   </li>
                 ))}
-                {tickets.length === 0 && <li className="py-8 text-center text-sm text-ink-muted">No tickets yet. <Link to="/events" className="font-semibold text-green">See what&rsquo;s on →</Link></li>}
+                {tickets.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="ticket" size={18} />} title="No tickets yet" actions={<Link to="/events" className="text-sm font-semibold text-green">See what&rsquo;s on →</Link>} /></li>}
               </ul>
             </Panel>
 
@@ -433,7 +440,7 @@ export function Component() {
                     </Link>
                   </li>
                 ))}
-                {subscriptions.length === 0 && <li className="py-8 text-center text-sm text-ink-muted">No subscriptions yet.</li>}
+                {subscriptions.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="money" size={18} />} title="No subscriptions yet" /></li>}
               </ul>
             </Panel>
           </div>

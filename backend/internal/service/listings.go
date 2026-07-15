@@ -136,3 +136,24 @@ func sanitizeLinkList(v any) any {
 	}
 	return items
 }
+
+// UnpublishDraftsByOwner pulls every listing the member owns that was never
+// approved — used on account erasure (Act 843, spec §14.2) so drafts and
+// pending submissions don't linger after the owner is anonymised. Approved
+// listings stay live under the "Former member" owner.
+func (s *Service) UnpublishDraftsByOwner(ctx context.Context, ownerID string) error {
+	owned, err := s.listings.Find(ctx, domain.ListingFilter{OwnerID: ownerID})
+	if err != nil {
+		return err
+	}
+	at := time.Now().UTC().Format(time.RFC3339)
+	for _, l := range owned {
+		if l.Status == domain.StatusApproved || l.Status == domain.StatusUnpublished {
+			continue
+		}
+		if err := s.listings.UpdateStatus(ctx, l.ID, domain.StatusUnpublished, ownerID, "account deleted", at); err != nil {
+			return err
+		}
+	}
+	return nil
+}

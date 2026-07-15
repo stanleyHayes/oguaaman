@@ -108,6 +108,41 @@ func (r *MemberRepo) SetCreatorTypes(ctx context.Context, id string, types []str
 	return err
 }
 
+// SetMFA persists the member's TOTP state (spec §14): enabled flag, base32
+// secret (empty clears it), and bcrypt hashes of unused recovery codes.
+func (r *MemberRepo) SetMFA(ctx context.Context, id string, enabled bool, secret string, recoveryHashes []string) error {
+	if recoveryHashes == nil {
+		recoveryHashes = []string{}
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"mfaEnabled": enabled, "totpSecret": secret, "mfaRecoveryHashes": recoveryHashes,
+	}})
+	return err
+}
+
+// Anonymize wipes a member's personal data and suspends the account (Act 843
+// right to erasure, spec §14.2). The row stays so published content retains a
+// "Former member" owner; the slug is released via a deterministic former-<id>.
+func (r *MemberRepo) Anonymize(ctx context.Context, id string) error {
+	// email/phone carry sparse unique indexes, so they must be REMOVED —
+	// setting "" would index the empty string and every later erasure would
+	// collide on it. Unsetting also frees the identifier for re-registration.
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{
+		"$set": bson.M{
+			"slug": "former-" + id, "displayName": "Former member", "initials": "FM",
+			"photoUrl": "", "bio": "", "townId": "", "asafoId": "",
+			"schoolIds": []string{}, "schooling": []domain.SchoolStint{}, "links": []domain.SocialLink{},
+			"phoneVerified": false, "role": domain.RoleMember, "creatorTypes": []string{},
+			"suspended": true,
+			"birthday":  "", "broadcastBirthday": false, "diaspora": nil,
+			"dateOfBirth": "", "passwordHash": "",
+			"mfaEnabled": false, "totpSecret": "", "mfaRecoveryHashes": []string{},
+		},
+		"$unset": bson.M{"email": "", "phone": ""},
+	})
+	return err
+}
+
 func (r *MemberRepo) SetSchooling(ctx context.Context, id string, stints []domain.SchoolStint) error {
 	if stints == nil {
 		stints = []domain.SchoolStint{}

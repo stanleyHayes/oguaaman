@@ -60,7 +60,7 @@ export function Component() {
       <div>
         <div>
           {items.length === 0 ? (
-            <Empty title="Queue clear 🎉"><p>Nothing waiting. New submissions land here for review.</p></Empty>
+            <Empty icon="check" title="Queue clear">Nothing waiting. New submissions land here for review.</Empty>
           ) : (
             <Stagger className="space-y-4">
               {items.map((l, idx) => (

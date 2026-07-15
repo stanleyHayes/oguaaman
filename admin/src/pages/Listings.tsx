@@ -66,7 +66,7 @@ export function Component() {
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-sand bg-cream px-3 py-2 text-sm capitalize focus:border-ai focus:outline-none">{STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select>
       </div>
 
-      {filtered.length === 0 ? <Empty>No listings match.</Empty> : (
+      {filtered.length === 0 ? <Empty icon="search" title="No matches">No listings match the current filter.</Empty> : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-sand bg-paper text-left text-xs uppercase tracking-wide text-ink-faint">

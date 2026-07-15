@@ -53,7 +53,7 @@ export function Component() {
       {/* campaigns */}
       <h2 className="mb-3 text-lg font-semibold text-ink">Campaigns</h2>
       {projects.length === 0 ? (
-        <Empty title="No open campaigns">Approve a project listing and it appears here with its funding progress.</Empty>
+        <Empty icon="chart" title="No open campaigns">Approve a project listing and it appears here with its funding progress.</Empty>
       ) : (
         <Stagger className="grid gap-4 sm:grid-cols-2">
           {projects.map((p, idx) => {
@@ -109,7 +109,7 @@ export function Component() {
       </Stagger>
 
       {shown.length === 0 ? (
-        <Empty title="No pledges yet">When members pledge to a campaign, every transaction lands here.</Empty>
+        <Empty icon="money" title="No pledges yet">When members pledge to a campaign, every transaction lands here.</Empty>
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[40rem] text-sm">

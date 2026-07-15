@@ -127,6 +127,8 @@ export interface Member {
   birthday?: string;
   broadcastBirthday?: boolean;
   diaspora?: Diaspora;
+  /** Two-factor (authenticator app) enrolment state — secret never leaves the server. */
+  mfaEnabled?: boolean;
 }
 
 export interface SchoolStint {

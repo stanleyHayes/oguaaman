@@ -8,6 +8,7 @@ import { C, serif, fillFor, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { HeroParallax, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
+import { EmptyState } from "@/components/empty-state";
 
 function openURL(url?: string) {
   const u = (url ?? "").trim();
@@ -186,7 +187,7 @@ export default function Browse() {
         </View>
         <View style={{ padding: 16, gap: 12 }}>
           {anchor && <RevealView><Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable></RevealView>}
-          {data.length === 0 && <Text style={s.empty}>Nothing here yet — be the first to contribute.</Text>}
+          {data.length === 0 && <EmptyState glyph="◎" title="Nothing here yet" body="Be the first to contribute." />}
           {isEvents
             ? sections.map((sec) => (
               <View key={sec.key} style={s.section}>
@@ -209,7 +210,6 @@ const s = StyleSheet.create({
   catCount: { color: "rgba(246,241,231,0.55)", fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },
   section: { gap: 12 },
   sectionHeader: { color: C.goldText, fontFamily: serif, fontSize: 15, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
-  empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 20 },
   card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   thumb: { width: 60, height: 60, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, fontFamily: serif, fontSize: 20, fontWeight: "700" },

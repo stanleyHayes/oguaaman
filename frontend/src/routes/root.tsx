@@ -77,7 +77,11 @@ export function RootLayout() {
 
 export function RootError() {
   const err = useRouteError();
-  const is404 = isRouteErrorResponse(err) && err.status === 404;
+  // isRouteErrorResponse catches thrown Response objects; the plain Error check
+  // covers our api.ts get() which now throws Error({ status }) for consistency.
+  const is404 =
+    (isRouteErrorResponse(err) && err.status === 404) ||
+    ((err as { status?: number })?.status === 404);
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
       <SiteHeader />

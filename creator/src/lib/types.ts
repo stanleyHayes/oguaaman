@@ -49,6 +49,8 @@ export interface Member {
   birthday?: string;
   broadcastBirthday?: boolean;
   joinedAt: string;
+  /** Two-factor enrolment state — secret never leaves the server. */
+  mfaEnabled?: boolean;
 }
 
 export interface Office { id: string; role: string; holderId?: string; holderName?: string; verified: boolean }

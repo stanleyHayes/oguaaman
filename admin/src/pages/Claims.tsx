@@ -35,7 +35,7 @@ export function Component() {
       </p>
 
       {rows.length === 0 ? (
-        <Empty>No claims awaiting review. The queue is clear.</Empty>
+        <Empty icon="check" title="Queue clear">No claims awaiting review.</Empty>
       ) : (
         <Stagger className="space-y-3">
           {rows.map((c, idx) => (

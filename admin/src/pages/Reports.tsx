@@ -52,7 +52,7 @@ export function Component() {
       </p>
 
       {shown.length === 0 ? (
-        <Empty title={open.length === 0 ? "No open reports" : "Nothing to show"}>The community queue is clear. New reports notify every steward.</Empty>
+        <Empty icon="shield" title={open.length === 0 ? "No open reports" : "Nothing to show"}>The community queue is clear. New reports notify every steward.</Empty>
       ) : (
         <Stagger className="space-y-3">
           {shown.map((r, idx) => (

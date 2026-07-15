@@ -53,9 +53,12 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 		}
 		details["rememberedByCount"] = 0
 	}
+	// Use the nanosecond as a uniqueness token so two submissions with the same
+	// title don't collide on slug or ID.
+	nano := fmt.Sprintf("%d", time.Now().UnixNano())
 	l := domain.Listing{
-		ID:            "usr-" + slugify(title) + "-" + fmt.Sprintf("%d", time.Now().UnixNano()%1_000_000),
-		Slug:          slugify(title),
+		ID:            "lst-" + slugify(title) + "-" + nano,
+		Slug:          slugify(title) + "-" + nano[len(nano)-7:],
 		Type:          in.Type,
 		OwnerID:       owner,
 		Title:         title,
@@ -107,7 +110,10 @@ func (s *Service) Moderate(ctx context.Context, listingID, action, reason, moder
 		return fmt.Errorf("a moderator identity is required")
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
-	listing, _ := s.listings.GetByID(ctx, listingID)
+	listing, err := s.listings.GetByID(ctx, listingID)
+	if err != nil {
+		return err
+	}
 	if newStatus != "" {
 		if err := s.listings.UpdateStatus(ctx, listingID, newStatus, moderatorID, reason, now); err != nil {
 			return err
@@ -124,9 +130,7 @@ func (s *Service) Moderate(ctx context.Context, listingID, action, reason, moder
 		return err
 	}
 	// Notify the owner on approve/reject/request-changes (spec §8.2).
-	if listing != nil {
-		s.notifyModeration(ctx, listing, action, reason)
-	}
+	s.notifyModeration(ctx, listing, action, reason)
 	return nil
 }
 

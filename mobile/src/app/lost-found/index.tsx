@@ -8,6 +8,7 @@ import { KIND_LABEL, LF_STATUS_COLOR, LF_STATUS_LABEL } from "@/lib/lostfound";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { StaggerIn } from "@/components/anim";
+import { EmptyState } from "@/components/empty-state";
 
 const TABS: { kind: LostFoundKind; label: string }[] = [
   { kind: "lost_item", label: "Lost" },
@@ -80,7 +81,7 @@ export default function LostFoundList() {
       </View>
 
       {shown.length === 0 ? (
-        <Text style={s.empty}>Nothing here yet — and may it stay that way.</Text>
+        <EmptyState glyph="?" title="Nothing here yet" body="…and may it stay that way." />
       ) : (
         <View style={{ gap: 12, marginTop: 16 }}>
           {shown.map((i, idx) => <StaggerIn key={i.id} index={idx}><NoticeCard i={i} /></StaggerIn>)}
@@ -99,7 +100,6 @@ const s = StyleSheet.create({
   tabOn: { borderColor: C.green, backgroundColor: C.green },
   tabText: { color: C.inkMuted, fontSize: 12, fontWeight: "700", textAlign: "center" },
   tabTextOn: { color: C.cream },
-  empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 32, lineHeight: 20 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   cardMissing: { borderLeftWidth: 4, borderLeftColor: C.maroon },
   chipRow: { flexDirection: "row", alignItems: "center", gap: 6 },

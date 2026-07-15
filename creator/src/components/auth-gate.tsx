@@ -93,16 +93,52 @@ const primaryBtn =
   "w-full rounded-full bg-green py-3 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
 
 function SignIn() {
-  const { signIn } = useAuth();
+  const { signIn, completeMfa } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   async function submit(e: React.SubmitEvent) {
     e.preventDefault(); setBusy(true); setErr(null);
-    try { await signIn(identifier.trim(), password); }
-    catch (e) { setErr(e instanceof Error ? e.message : "Sign in failed."); } finally { setBusy(false); }
+    try {
+      const res = await signIn(identifier.trim(), password);
+      if (res.mfaRequired && res.challenge) { setChallenge(res.challenge); setCode(""); }
+    } catch (e) { setErr(e instanceof Error ? e.message : "Sign in failed."); } finally { setBusy(false); }
+  }
+
+  async function submitCode(e: React.SubmitEvent) {
+    e.preventDefault();
+    if (!challenge) return;
+    setBusy(true); setErr(null);
+    try { await completeMfa(challenge, code.trim()); }
+    catch (e) { setErr(e instanceof Error ? e.message : "That code didn't work."); } finally { setBusy(false); }
+  }
+
+  if (challenge) {
+    return (
+      <Backdrop>
+        <Shell>
+          <form onSubmit={submitCode} className="space-y-5">
+            <div>
+              <h2 className="text-2xl font-semibold text-ink">Two-factor check</h2>
+              <p className="mt-1 text-sm text-ink-muted">Enter the 6-digit code from your authenticator app, or a recovery code.</p>
+            </div>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
+              <input value={code} onChange={(e) => setCode(e.target.value)} required autoComplete="one-time-code" inputMode="numeric" placeholder="123 456" className={`${inputCls} text-center text-lg tracking-[0.3em]`} />
+            </label>
+            {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
+            <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Verifying…" : "Verify & sign in"}</button>
+            <p className="text-center text-xs text-ink-faint">
+              <button type="button" onClick={() => { setChallenge(null); setErr(null); setPassword(""); }} className="font-medium text-ink-muted underline hover:text-ink">← Back to sign in</button>
+            </p>
+          </form>
+        </Shell>
+      </Backdrop>
+    );
   }
 
   return (

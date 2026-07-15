@@ -77,7 +77,7 @@ export function Component() {
       </div>
 
       {filtered.length === 0 ? (
-        <Empty title={list.length === 0 ? "No articles yet" : "No matches"} actions={list.length === 0 ? <Link to="/newsroom/new" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-900">+ Write the first article</Link> : undefined}>
+        <Empty icon="pen" title={list.length === 0 ? "No articles yet" : "No matches"} actions={list.length === 0 ? <Link to="/newsroom/new" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-900">+ Write the first article</Link> : undefined}>
           {list.length === 0 ? "The Newsroom is empty. Write Cape Coast's first notice." : "Try a different search or filter."}
         </Empty>
       ) : (

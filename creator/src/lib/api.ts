@@ -36,11 +36,22 @@ async function post<T>(path: string, body: unknown = {}): Promise<T> {
   return data as T;
 }
 
+// LoginResult — password sign-in either completes (token+member) or, for
+// MFA-enrolled accounts, returns a 5-minute challenge for the code step.
+export interface LoginResult {
+  token?: string;
+  member?: Member;
+  mfaRequired?: boolean;
+  challenge?: string;
+}
+
 export const api = {
   // auth (spec §8.1) — any signed-in member may use the creator app; citizens
   // upgrade to creator types in-app (Account page).
   login: (identifier: string, password: string) =>
-    post<{ token: string; member: Member }>("/api/auth/login", { identifier, password }),
+    post<LoginResult>("/api/auth/login", { identifier, password }),
+  mfaLogin: (challenge: string, code: string) =>
+    post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
   me: () => get<Member>("/api/auth/me"),
 
   // Owner-scoped dashboard aggregation (Creator Platform plan §4).

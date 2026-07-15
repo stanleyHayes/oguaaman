@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 
 export interface QueueItem {
   id: string;
@@ -56,10 +57,13 @@ export function ModerationQueue({ initial }: Readonly<{ initial: QueueItem[] }>)
         </div>
 
         {items.length === 0 ? (
-          <div className="rounded-[var(--radius-card)] border border-dashed border-sand bg-cream p-10 text-center text-ink-muted">
-            <p className="text-xl text-ink">Queue clear 🎉</p>
-            <p className="mt-1 text-sm">Nothing waiting. Median time-to-approval looking healthy.</p>
-          </div>
+          <EmptyState
+            icon={<EmptyGlyph name="check" />}
+            tone="green"
+            title="Queue clear"
+            description="Nothing waiting. Median time-to-approval looking healthy."
+            className="rounded-[var(--radius-card)] border border-dashed border-sand bg-cream"
+          />
         ) : (
           <ul className="space-y-4">
             {items.map((item) => (

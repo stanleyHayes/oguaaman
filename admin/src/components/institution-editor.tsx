@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { MediaAsset, Organization, ProfileSection, ProfileSectionType, SectionItem, SubEntity } from "@/lib/types";
 import { api } from "@/lib/api";
 import { ImageUpload } from "@/components/image-upload";
+import { Empty } from "@/components/ui";
 
 type Tone = "green" | "clay" | "gold" | "maroon" | "teal";
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -309,7 +310,7 @@ function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; initial?
             </div>
           </div>
         ))}
-        {sections.length === 0 && <p className="text-sm text-ink-faint">No sections yet. Add one below.</p>}
+        {sections.length === 0 && <Empty compact icon="pen" title="No sections yet">Add one below.</Empty>}
       </div>
 
       <div className="mt-4">
@@ -465,7 +466,7 @@ function GalleryForm({ slug, initial }: Readonly<{ slug: string; initial?: Media
             <button type="button" onClick={() => remove(i)} className="mt-2 text-sm text-clay-text hover:underline">Remove photo</button>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-ink-faint">No photos yet.</p>}
+        {items.length === 0 && <Empty compact icon="image" title="No photos yet" />}
       </div>
       <div className="mt-4 flex items-center gap-3">
         <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green hover:border-green">+ Add photo</button>

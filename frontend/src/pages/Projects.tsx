@@ -5,6 +5,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { initials } from "@/lib/format";
 
 export async function loader() {
@@ -42,7 +43,7 @@ export function Component() {
       />
       <Container className="py-12">
         {projects.length === 0 ? (
-          <p className="py-16 text-center text-ink-muted">No open projects yet — the first campaigns are being costed with their institutions.</p>
+          <EmptyState icon={<EmptyGlyph name="heart" />} title="No open projects yet" description="The first campaigns are being costed with their institutions." />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p, i) => (

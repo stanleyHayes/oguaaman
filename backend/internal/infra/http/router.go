@@ -29,7 +29,13 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	mux.HandleFunc("POST /api/auth/register", h.AuthRegister)
 	mux.HandleFunc("POST /api/auth/login", h.AuthLogin)
+	mux.HandleFunc("POST /api/auth/mfa", h.AuthMFA)
 	mux.HandleFunc("GET /api/auth/me", h.AuthMe)
+	mux.HandleFunc("POST /api/me/mfa/setup", h.MFASetup)
+	mux.HandleFunc("POST /api/me/mfa/confirm", h.MFAConfirm)
+	mux.HandleFunc("POST /api/me/mfa/disable", h.MFADisable)
+	mux.HandleFunc("GET /api/me/export", h.ExportMyData)
+	mux.HandleFunc("DELETE /api/me", h.DeleteMyAccount)
 
 	mux.HandleFunc("GET /api/artists", h.Artists)
 	mux.HandleFunc("GET /api/artists/{slug}", h.Artist)

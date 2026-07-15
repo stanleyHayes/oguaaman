@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, Card, KeyVal, RoleBadge } from "@/components/ui";
+import { MfaManage } from "@/components/mfa";
 
 /** A titled section card with an optional description and a gold accent bar. */
 function Section({ title, description, children, className = "" }: Readonly<{ title: string; description?: string; children: ReactNode; className?: string }>) {
@@ -64,6 +65,10 @@ export function Component() {
             <p className="mt-2 text-sm text-ink-muted">
               You sign in with your phone or email and a password. Sessions last 30 days.
             </p>
+            <div className="mt-3 border-t border-sand pt-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">Two-factor sign-in (TOTP)</p>
+              <MfaManage />
+            </div>
             <p className="mt-2 text-xs text-ink-faint">To change your name, bio or photo, use your <Link to="/profile" className="font-medium text-ai underline">Profile</Link>.</p>
           </div>
           <button onClick={signOut} className="rounded-full border border-maroon-900/50 px-5 py-2.5 text-sm font-semibold text-maroon-900 transition-colors hover:bg-maroon-900/[0.06]">
@@ -79,7 +84,7 @@ export function Component() {
           <dl>
             <KeyVal label="AI daily limit (global)">OGUAA_AI_DAILY_BUDGET · 60/day</KeyVal>
             <KeyVal label="AI per-member limit">OGUAA_AI_PER_MEMBER · 20/day</KeyVal>
-            <KeyVal label="Sign-in">Password → JWT (AUTH_REQUIRED toggles enforcement)</KeyVal>
+            <KeyVal label="Sign-in">Password + TOTP two-factor → JWT (AUTH_REQUIRED toggles enforcement)</KeyVal>
             <KeyVal label="SMS provider">OTP_PROVIDER · Hubtel (or dev log sender)</KeyVal>
             <KeyVal label="Image uploads">Cloudinary, or first-party /api/uploads</KeyVal>
             <KeyVal label="Languages">English (base) · Fante · Twi · Ga · Ewe</KeyVal>

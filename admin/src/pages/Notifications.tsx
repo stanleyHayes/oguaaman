@@ -49,7 +49,7 @@ export function Component() {
       </PageHeader>
 
       {items.length === 0 ? (
-        <Empty title="No notifications">Moderation outcomes, claims and remembrance notices will show up here.</Empty>
+        <Empty icon="bell" title="No notifications">Moderation outcomes, claims and remembrance notices will show up here.</Empty>
       ) : (
         <Card className="overflow-hidden">
           <Stagger className="divide-y divide-sand">

@@ -111,6 +111,8 @@ export interface Member {
   diaspora?: Diaspora;
   birthday?: string;
   broadcastBirthday?: boolean;
+  /** Two-factor enrolment state — secret never leaves the server. */
+  mfaEnabled?: boolean;
   joinedAt?: string;
 }
 

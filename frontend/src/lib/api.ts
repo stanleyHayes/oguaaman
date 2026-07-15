@@ -26,7 +26,12 @@ function headers(json = false): HeadersInit {
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { headers: headers() });
-  if (!res.ok) throw new Response(`Request failed: ${path}`, { status: res.status });
+  if (!res.ok) {
+    // Throw a plain Error (with .status) so catch handlers can read .message
+    // consistently. React Router loaders that want to trigger an error boundary
+    // can check err.status and re-throw a Response if needed.
+    throw Object.assign(new Error(`Request failed: ${path}`), { status: res.status });
+  }
   return res.json() as Promise<T>;
 }
 
@@ -46,8 +51,12 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-async function del<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { method: "DELETE", headers: headers() });
+async function del<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "DELETE",
+    headers: headers(body !== undefined),
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = (data as { message?: string; error?: string }).message
@@ -56,6 +65,15 @@ async function del<T>(path: string): Promise<T> {
     throw Object.assign(new Error(msg), { status: res.status, data });
   }
   return data as T;
+}
+
+// LoginResult — password sign-in either completes (token+member) or, for
+// MFA-enrolled accounts, returns a 5-minute challenge for the code step.
+export interface LoginResult {
+  token?: string;
+  member?: Member;
+  mfaRequired?: boolean;
+  challenge?: string;
 }
 
 export const api = {
@@ -227,9 +245,21 @@ export const api = {
 
   // auth (spec §8.1). dateOfBirth gates 18+ self-registration (spec §14.4).
   login: (identifier: string, password: string) =>
-    post<{ token: string; member: Member }>("/api/auth/login", { identifier, password }),
+    post<LoginResult>("/api/auth/login", { identifier, password }),
+  mfaLogin: (challenge: string, code: string) =>
+    post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
   register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[] }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
+  // MFA enrolment + account data rights (Act 843, spec §14).
+  mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup", {}),
+  mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
+  mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
+  exportData: async (): Promise<Blob> => {
+    const res = await fetch(`${BASE}/api/me/export`, { headers: headers() });
+    if (!res.ok) throw Object.assign(new Error("Couldn't export your data — try again."), { status: res.status });
+    return res.blob();
+  },
+  deleteAccount: (password: string) => del<{ ok: boolean }>("/api/me", { password }),
   me: () => get<Member>("/api/auth/me"),
 
   queue: () => get<Listing[]>("/api/admin/queue"),

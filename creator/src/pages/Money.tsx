@@ -61,7 +61,7 @@ export function Component() {
             <p className="text-xs text-ink-faint">Your Supporter subscriptions, newest first.</p>
           </div>
           {subscriptions.length === 0 ? (
-            <p className="px-5 py-8 text-sm text-ink-faint">No plan payments yet.</p>
+            <Empty compact icon="money" title="No plan payments yet" />
           ) : (
             <ul className="divide-y divide-sand">
               {subscriptions.map((s) => (
@@ -84,7 +84,7 @@ export function Component() {
             <p className="text-xs text-ink-faint">Gate codes are shown on the portal.</p>
           </div>
           {tickets.length === 0 ? (
-            <p className="px-5 py-8 text-sm text-ink-faint">No tickets yet.</p>
+            <Empty compact icon="ticket" title="No tickets yet" />
           ) : (
             <ul className="divide-y divide-sand">
               {tickets.map((t) => (
@@ -104,7 +104,7 @@ export function Component() {
 
       {overview.ticketsSold === 0 && overview.pledgesRaisedPesewas === 0 && (
         <div className="mt-6">
-          <Empty title="No sales yet">
+          <Empty icon="chart" title="No sales yet">
             Earnings appear here when attendees buy tickets to your events or supporters pledge toward your projects on the portal.
           </Empty>
         </div>

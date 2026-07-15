@@ -7,6 +7,7 @@ import type { Incident, IncidentCategory } from "@/lib/types";
 import { CATEGORY_LABEL, INCIDENT_CATEGORIES, INCIDENT_STATUSES, SEVERITY_COLOR, STATUS_COLOR, STATUS_LABEL } from "@/lib/incidents";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
+import { EmptyState } from "@/components/empty-state";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -84,7 +85,7 @@ export default function Safety() {
       </ScrollView>
 
       {data.length === 0 ? (
-        <Text style={s.empty}>No incidents reported in this category — the town is quiet.</Text>
+        <EmptyState glyph="✓" title="The town is quiet" body="No incidents reported in this category." />
       ) : (
         <View style={{ gap: 12, marginTop: 16 }}>
           {open.length > 0 && (
@@ -115,7 +116,6 @@ const s = StyleSheet.create({
   filterText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
   filterTextOn: { color: C.cream },
   section: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 2 },
-  empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 32, lineHeight: 20 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" },
   chip: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },

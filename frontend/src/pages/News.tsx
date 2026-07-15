@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import type { NewsArticle } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container, CTA as Cta } from "@/components/ui";
-import { EmptyState } from "@/components/empty-state";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { LayoutPill, Reveal, Reveal3D, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
@@ -146,9 +146,7 @@ export function Component() {
               </>
             )}
             {!leadMatches && visible.length === 0 && (
-              <p className="rounded-[var(--radius-card)] border border-sand bg-cream p-10 text-center text-sm text-ink-muted">
-                Nothing filed under #{activeTag} yet — try another tag.
-              </p>
+              <EmptyState icon={<EmptyGlyph name="search" />} title={`Nothing filed under #${activeTag}`} description="Try another tag." />
             )}
           </>
         )}

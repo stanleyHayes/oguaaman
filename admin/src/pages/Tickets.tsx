@@ -83,7 +83,7 @@ export function Component() {
       return <p className="py-8 text-center text-sm text-ink-muted">Loading sales…</p>;
     }
     if (tickets.length === 0) {
-      return <Empty title="No sales yet">When members buy tickets for this event, every transaction lands here.</Empty>;
+      return <Empty icon="ticket" title="No sales yet">When members buy tickets for this event, every transaction lands here.</Empty>;
     }
     return (
             <Card className="overflow-x-auto">
@@ -152,7 +152,7 @@ export function Component() {
 
       {/* event selector */}
       {events.length === 0 ? (
-        <Empty title="No ticketed events">Add a tiers list to an event listing and its sales appear here.</Empty>
+        <Empty icon="ticket" title="No ticketed events">Add a tiers list to an event listing and its sales appear here.</Empty>
       ) : (
         <>
           <div className="mb-4 flex flex-wrap gap-2">

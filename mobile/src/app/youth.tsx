@@ -6,6 +6,7 @@ import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, serif } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
+import { EmptyState } from "@/components/empty-state";
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
 const KINDS = ["scholarship", "internship", "apprenticeship", "training", "job"] as const;
@@ -97,7 +98,7 @@ export default function Youth() {
       </View>
 
       {shown.length === 0 ? (
-        <Text style={s.empty}>Nothing open in this category right now — check back soon.</Text>
+        <EmptyState glyph="✦" title="Nothing open right now" body="Nothing in this category at the moment — check back soon." />
       ) : (
         <View style={{ gap: 12, marginTop: 16 }}>
           {shown.map((o) => <OppCard key={o.id} opp={o} />)}
@@ -171,7 +172,6 @@ const s = StyleSheet.create({
   chipOn: { borderColor: C.teal, backgroundColor: C.teal },
   chipText: { color: C.inkMuted, fontSize: 12, fontWeight: "700" },
   chipTextOn: { color: C.cream },
-  empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 32, lineHeight: 20 },
   talentCard: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   talentThumb: { width: 56, height: 56, borderRadius: 28 },
   talentThumbLabel: { color: C.cream, fontFamily: serif, fontSize: 18, fontWeight: "700" },

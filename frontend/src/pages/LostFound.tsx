@@ -6,6 +6,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { LayoutPill, StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { LOST_FOUND_KINDS, KIND_LABEL, LF_STATUS_CLASS, LF_STATUS_LABEL } from "@/lib/lostfound";
 
@@ -39,9 +40,7 @@ export function Component() {
         </div>
 
         {shown.length === 0 ? (
-          <p className="rounded-[var(--radius-card)] border border-dashed border-sand p-10 text-center text-sm text-ink-faint">
-            Nothing here yet — and may it stay that way.
-          </p>
+          <EmptyState icon={<EmptyGlyph name="search" />} title="Nothing here yet" description="…and may it stay that way." />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">{shown.map((n, idx) => <StaggerItem key={n.id} index={idx} lift><NoticeCard notice={n} /></StaggerItem>)}</div>
         )}

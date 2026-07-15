@@ -6,6 +6,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { LayoutPill, StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { INCIDENT_CATEGORIES, CATEGORY_LABEL, SEVERITY_CLASS, STATUS_LABEL } from "@/lib/incidents";
 
@@ -47,9 +48,7 @@ export function Component() {
         </div>
 
         {shown.length === 0 ? (
-          <p className="rounded-[var(--radius-card)] border border-dashed border-sand p-10 text-center text-sm text-ink-faint">
-            No incidents reported in this category — the town is quiet.
-          </p>
+          <EmptyState icon={<EmptyGlyph name="shield" />} tone="green" title="The town is quiet" description="No incidents reported in this category." />
         ) : (
           <div className="space-y-10">
             {open.length > 0 && (

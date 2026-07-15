@@ -108,7 +108,7 @@ export function Component() {
       {/* recent activity across streams */}
       <h2 className="mb-3 text-lg font-semibold text-ink">Recent activity</h2>
       {recent.length === 0 ? (
-        <Empty title="No payments yet">Confirmed pledges, subscriptions and promotions will land here.</Empty>
+        <Empty icon="chart" title="No payments yet">Confirmed pledges, subscriptions and promotions will land here.</Empty>
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[40rem] text-sm">

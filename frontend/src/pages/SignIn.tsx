@@ -159,6 +159,45 @@ function SignInForm({
   );
 }
 
+function MfaForm({ code, setCode, busy, err, onSubmit, onCancel }: Readonly<{
+  code: string;
+  setCode: (v: string) => void;
+  busy: boolean;
+  err: string | null;
+  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
+  onCancel: () => void;
+}>) {
+  return (
+    <form onSubmit={onSubmit} className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-semibold text-ink">Two-factor check</h2>
+        <p className="mt-1 text-sm text-ink-muted">Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
+      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          required
+          autoComplete="one-time-code"
+          inputMode="numeric"
+          placeholder="123 456"
+          className={`${inputCls} text-center text-lg tracking-[0.3em]`}
+        />
+      </label>
+      {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
+      <button type="submit" disabled={busy} className={submitBtnCls}>
+        {busy ? "Verifying…" : "Verify & sign in"}
+      </button>
+      <p className="text-center text-xs text-ink-faint">
+        <button type="button" onClick={onCancel} className="font-medium text-ink-muted underline hover:text-ink">
+          ← Back to sign in
+        </button>
+      </p>
+    </form>
+  );
+}
+
 function JoinForm({
   identifier,
   setIdentifier,
@@ -172,6 +211,8 @@ function JoinForm({
   onToggleCreatorType,
   password,
   setPassword,
+  consent,
+  setConsent,
   busy,
   err,
   onSubmit,
@@ -189,6 +230,8 @@ function JoinForm({
   onToggleCreatorType: (id: string) => void;
   password: string;
   setPassword: (v: string) => void;
+  consent: boolean;
+  setConsent: (v: boolean) => void;
   busy: boolean;
   err: string | null;
   onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
@@ -252,6 +295,13 @@ function JoinForm({
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Choose a password" className={inputCls} />
         <span className="mt-1.5 block text-xs text-ink-faint">At least 8 characters</span>
       </label>
+      <label className="flex items-start gap-2.5 rounded-xl border border-sand bg-cream px-3.5 py-3">
+        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-green" />
+        <span className="text-xs leading-relaxed text-ink-muted">
+          I agree to the <a href="/terms" className="font-semibold text-green underline">Terms of Use</a> and the{" "}
+          <a href="/privacy" className="font-semibold text-green underline">Privacy Policy</a>, and I consent to Oguaa storing the details above so my account can work.
+        </span>
+      </label>
       {err && (
         <div className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">
           <p>{err}</p>
@@ -271,7 +321,7 @@ function JoinForm({
 }
 
 export function Component() {
-  const { member, signIn, join } = useAuth();
+  const { member, signIn, completeMfa, join } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
   const [params, setParams] = useSearchParams();
@@ -291,6 +341,9 @@ export function Component() {
   const [asCreator, setAsCreator] = useState(params.get("as") === "creator");
   const [creatorTypes, setCreatorTypes] = useState<string[]>([]);
   const [password, setPassword] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -300,16 +353,34 @@ export function Component() {
     setMode(m);
     setErr(null);
     setPassword("");
+    setMfaChallenge(null);
   };
 
   const submitSignIn = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
-      await signIn(identifier.trim(), password);
-      nav(from, { replace: true });
+      const res = await signIn(identifier.trim(), password);
+      if (res.mfaRequired && res.challenge) {
+        setMfaChallenge(res.challenge);
+        setMfaCode("");
+      } else {
+        nav(from, { replace: true });
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Sign in failed.");
+    } finally { setBusy(false); }
+  };
+
+  const submitMfa = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!mfaChallenge) return;
+    setBusy(true); setErr(null);
+    try {
+      await completeMfa(mfaChallenge, mfaCode.trim());
+      nav(from, { replace: true });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "That code didn't work.");
     } finally { setBusy(false); }
   };
 
@@ -331,6 +402,11 @@ export function Component() {
       setBusy(false);
       return;
     }
+    if (!consent) {
+      setErr("Please agree to the Terms of Use and Privacy Policy to join.");
+      setBusy(false);
+      return;
+    }
     try {
       await join({ identifier: identifier.trim(), displayName: name.trim(), dateOfBirth: dob, password, creatorTypes: asCreator ? creatorTypes : [] });
       nav(from, { replace: true });
@@ -345,7 +421,16 @@ export function Component() {
         <BrandPanel mode={mode} />
         <div className="p-8 lg:p-10">
           <ModeTabs mode={mode} onChange={switchMode} />
-          {mode === "signin" ? (
+          {mfaChallenge ? (
+            <MfaForm
+              code={mfaCode}
+              setCode={setMfaCode}
+              busy={busy}
+              err={err}
+              onSubmit={submitMfa}
+              onCancel={() => { setMfaChallenge(null); setErr(null); setPassword(""); }}
+            />
+          ) : mode === "signin" ? (
             <SignInForm
               identifier={identifier}
               setIdentifier={setIdentifier}
@@ -370,6 +455,8 @@ export function Component() {
               onToggleCreatorType={(id) => setCreatorTypes((cur) => (cur.includes(id) ? cur.filter((t) => t !== id) : [...cur, id]))}
               password={password}
               setPassword={setPassword}
+              consent={consent}
+              setConsent={setConsent}
               busy={busy}
               err={err}
               onSubmit={submitJoin}

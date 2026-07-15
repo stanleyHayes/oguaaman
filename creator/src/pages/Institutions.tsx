@@ -25,7 +25,7 @@ export function Component() {
       </div>
 
       {orgs.length === 0 ? (
-        <Empty title="No institutions yet" actions={
+        <Empty icon="building" title="No institutions yet" actions={
           <a href={`${PORTAL}/education`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">Browse institutions on the portal</a>
         }>
           Find your school, council or association on the portal and tap “Claim this page” — once a steward approves, it shows up here.

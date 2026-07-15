@@ -4,6 +4,7 @@ import type { MemberView, Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Container, Avatar, Pill } from "@/components/ui";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { formatDate } from "@/lib/format";
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -122,7 +123,7 @@ export function Component() {
             Contributions<span className="h-px flex-1 bg-sand" />
           </h2>
           {published.length === 0 ? (
-            <p className="text-ink-muted">No public contributions yet.</p>
+            <EmptyState compact icon={<EmptyGlyph name="pen" size={18} />} title="No public contributions yet" />
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2">
               {published.map((l) => {

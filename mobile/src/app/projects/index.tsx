@@ -6,6 +6,7 @@ import type { Listing } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
+import { EmptyState } from "@/components/empty-state";
 
 export const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
@@ -42,7 +43,7 @@ export default function Projects() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
     >
       <Text style={s.lede}>Concrete, costed improvements for Cape Coast — proposed by verified institutions, funded by residents and the diaspora together. Receipts are published to backers.</Text>
-      {data.length === 0 && <Text style={s.empty}>No open projects yet — the first campaigns are being costed.</Text>}
+      {data.length === 0 && <EmptyState glyph="◈" title="No open projects yet" body="The first campaigns are being costed." />}
       {data.map((l, i) => (
         <StaggerIn key={l.id} index={i}>
           <Link href={`/projects/${l.slug}` as never} asChild>
@@ -67,7 +68,6 @@ export default function Projects() {
 
 const s = StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
-  empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 20 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
   coverInit: { color: C.cream, fontFamily: serif, fontSize: 32, fontWeight: "700" },

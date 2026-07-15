@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Notification } from "@/lib/types";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 
 /** Small relative-time formatter for notification timestamps (ISO → "3d ago"). */
 function ago(iso: string): string {
@@ -97,7 +98,7 @@ export function NotificationsBell() {
   }
 
   const inbox = items.length === 0 ? (
-    <p className="px-4 py-10 text-center text-sm italic text-ink-faint">No notifications yet.</p>
+    <EmptyState compact icon={<EmptyGlyph name="bell" size={18} />} title="No notifications yet" />
   ) : (
     <ul className="divide-y divide-sand">
       {items.map((n) => (

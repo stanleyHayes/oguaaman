@@ -45,6 +45,15 @@ async function del<T>(path: string): Promise<T> {
   return data as T;
 }
 
+// LoginResult — password sign-in either completes (token+member) or, for
+// MFA-enrolled accounts, returns a 5-minute challenge for the code step.
+export interface LoginResult {
+  token?: string;
+  member?: Member;
+  mfaRequired?: boolean;
+  challenge?: string;
+}
+
 export const api = {
   stats: () => get<Stats>("/api/stats"),
   queue: () => get<Listing[]>("/api/admin/queue"),
@@ -138,7 +147,13 @@ export const api = {
     post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body),
 
   login: (identifier: string, password: string) =>
-    post<{ token: string; member: Member }>("/api/auth/login", { identifier, password }),
+    post<LoginResult>("/api/auth/login", { identifier, password }),
+  mfaLogin: (challenge: string, code: string) =>
+    post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
+  // MFA enrolment (TOTP) — required for staff roles (spec §14).
+  mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup"),
+  mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
+  mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
   me: () => get<Member>("/api/auth/me"),
 
   // Your own account.

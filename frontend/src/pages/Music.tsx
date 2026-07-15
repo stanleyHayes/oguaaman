@@ -6,6 +6,7 @@ import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/
 import { Adinkra } from "@/components/adinkra";
 import { ArtistCard, PersonCard } from "@/components/cards";
 import { LayoutPill, StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 interface Data {
@@ -53,7 +54,11 @@ export function Component() {
           {shown.map((a, i) => <StaggerItem key={a.id} index={i} lift><ArtistCard artist={a} /></StaggerItem>)}
         </div>
         {shown.length === 0 && (
-          <p className="py-12 text-center text-ink-muted">No artists in “{genre}” yet. <Link to="/submit?type=artist" className="font-semibold text-clay-text">Nominate one →</Link></p>
+          <EmptyState
+            icon={<EmptyGlyph name="users" />}
+            title={`No artists in “${genre}” yet`}
+            actions={<Link to="/submit?type=artist" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">Nominate one →</Link>}
+          />
         )}
 
         <p className="mt-8 rounded-[var(--radius-card)] border border-dashed border-sand bg-cream p-4 text-center text-sm text-ink-muted">

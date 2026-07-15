@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -29,6 +30,15 @@ var ErrNoPassword = errors.New("this account has no password yet")
 
 // ErrSuspended is returned when a suspended account tries to sign in.
 var ErrSuspended = errors.New("this account is suspended")
+
+// ErrInvalidMFACode is returned when a TOTP/recovery code doesn't match.
+var ErrInvalidMFACode = errors.New("that code didn't work — check your authenticator app and try again")
+
+// ErrMFANotSetup is returned when MFA is touched before enrolment.
+var ErrMFANotSetup = errors.New("two-factor authentication isn't set up on this account")
+
+// ErrInvalidChallenge is returned for an expired/forged MFA login challenge.
+var ErrInvalidChallenge = errors.New("your sign-in challenge expired — please sign in again")
 
 // minSignupAge is the self-registration floor; minors join only via a guardian
 // (a deferred flow). See spec §14.4.
@@ -180,11 +190,191 @@ func (a *AuthService) Login(ctx context.Context, identifier, password string) (s
 	if bcrypt.CompareHashAndPassword([]byte(member.PasswordHash), []byte(password)) != nil {
 		return "", nil, ErrInvalidCredentials
 	}
+	// MFA enrolment turns the password step into a challenge: the client must
+	// complete MFALogin with a TOTP/recovery code before a full session issues.
+	if member.MFAEnabled {
+		challenge, err := a.issueMFAChallenge(member)
+		if err != nil {
+			return "", nil, err
+		}
+		return challenge, member, nil
+	}
 	token, err := a.issue(member)
 	if err != nil {
 		return "", nil, err
 	}
 	return token, member, nil
+}
+
+// DeleteAccount verifies the member's password, then anonymises the account
+// (Act 843 right to erasure, spec §14.2): personal data is wiped and the
+// account is suspended, ending all access. Published content stays live under
+// a "Former member" owner.
+func (a *AuthService) DeleteAccount(ctx context.Context, memberID, password string) error {
+	m, err := a.members.ByID(ctx, memberID)
+	if err != nil {
+		return err
+	}
+	if m.PasswordHash == "" || bcrypt.CompareHashAndPassword([]byte(m.PasswordHash), []byte(password)) != nil {
+		return ErrInvalidCredentials
+	}
+	return a.members.Anonymize(ctx, m.ID)
+}
+
+// ── MFA (TOTP — spec §14; authenticator apps) ────────────────────────────────
+
+// mfaChallengeTTL bounds the password→code window at sign-in.
+const mfaChallengeTTL = 5 * time.Minute
+
+// mfaRecoveryCount is how many one-time backup codes enrolment issues.
+const mfaRecoveryCount = 8
+
+// MFASetup generates a fresh TOTP secret for the member (not yet enabled —
+// MFAConfirm turns it on) and returns the secret plus the account label for
+// the otpauth:// URL the client renders as a QR.
+func (a *AuthService) MFASetup(ctx context.Context, memberID string) (secret, account string, err error) {
+	m, err := a.members.ByID(ctx, memberID)
+	if err != nil {
+		return "", "", err
+	}
+	secret, err = newTOTPSecret()
+	if err != nil {
+		return "", "", err
+	}
+	if err := a.members.SetMFA(ctx, m.ID, false, secret, nil); err != nil {
+		return "", "", err
+	}
+	account = m.Email
+	if account == "" {
+		account = m.Phone
+	}
+	return secret, account, nil
+}
+
+// MFAConfirm verifies the first code from the member's authenticator, enables
+// MFA, and returns the one-time recovery codes (shown once, stored as bcrypt
+// hashes).
+func (a *AuthService) MFAConfirm(ctx context.Context, memberID, code string) ([]string, error) {
+	m, err := a.members.ByID(ctx, memberID)
+	if err != nil {
+		return nil, err
+	}
+	if m.TOTPSecret == "" {
+		return nil, ErrMFANotSetup
+	}
+	if !validTOTP(m.TOTPSecret, code, time.Now()) {
+		return nil, ErrInvalidMFACode
+	}
+	codes := make([]string, 0, mfaRecoveryCount)
+	hashes := make([]string, 0, mfaRecoveryCount)
+	for range mfaRecoveryCount {
+		c, err := newRecoveryCode()
+		if err != nil {
+			return nil, err
+		}
+		h, err := bcrypt.GenerateFromPassword([]byte(normalizeRecovery(c)), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		codes = append(codes, c)
+		hashes = append(hashes, string(h))
+	}
+	if err := a.members.SetMFA(ctx, m.ID, true, m.TOTPSecret, hashes); err != nil {
+		return nil, err
+	}
+	return codes, nil
+}
+
+// MFALogin completes an MFA-gated sign-in: validates the short-lived challenge
+// from Login, checks the TOTP or an unused recovery code, and issues the full
+// session token.
+func (a *AuthService) MFALogin(ctx context.Context, challenge, code string) (string, *domain.Member, error) {
+	id, err := a.ParseMFAChallenge(challenge)
+	if err != nil {
+		return "", nil, ErrInvalidChallenge
+	}
+	m, err := a.members.ByID(ctx, id)
+	if err != nil {
+		return "", nil, ErrInvalidChallenge
+	}
+	if m.Suspended {
+		return "", nil, ErrSuspended
+	}
+	if !m.MFAEnabled || m.TOTPSecret == "" {
+		return "", nil, ErrMFANotSetup
+	}
+	if !a.checkMFACode(ctx, m, code) {
+		return "", nil, ErrInvalidMFACode
+	}
+	token, err := a.issue(m)
+	if err != nil {
+		return "", nil, err
+	}
+	return token, m, nil
+}
+
+// MFADisable turns MFA off after re-verifying a current TOTP or recovery code.
+func (a *AuthService) MFADisable(ctx context.Context, memberID, code string) error {
+	m, err := a.members.ByID(ctx, memberID)
+	if err != nil {
+		return err
+	}
+	if !m.MFAEnabled {
+		return ErrMFANotSetup
+	}
+	if !a.checkMFACode(ctx, m, code) {
+		return ErrInvalidMFACode
+	}
+	return a.members.SetMFA(ctx, m.ID, false, "", nil)
+}
+
+// checkMFACode accepts a live TOTP, or an unused recovery code (consuming it).
+func (a *AuthService) checkMFACode(ctx context.Context, m *domain.Member, code string) bool {
+	if validTOTP(m.TOTPSecret, code, time.Now()) {
+		return true
+	}
+	norm := normalizeRecovery(code)
+	if norm == "" {
+		return false
+	}
+	for i, h := range m.MFARecoveryHashes {
+		if bcrypt.CompareHashAndPassword([]byte(h), []byte(norm)) == nil {
+			remaining := append([]string{}, m.MFARecoveryHashes[:i]...)
+			remaining = append(remaining, m.MFARecoveryHashes[i+1:]...)
+			_ = a.members.SetMFA(ctx, m.ID, true, m.TOTPSecret, remaining)
+			return true
+		}
+	}
+	return false
+}
+
+// issueMFAChallenge signs the 5-minute token that holds a password-verified
+// member between the password step and the code step. The "mfa" claim makes
+// ParseToken reject it, so it can never act as a session.
+func (a *AuthService) issueMFAChallenge(m *domain.Member) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": m.ID,
+		"mfa": "pending",
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(mfaChallengeTTL).Unix(),
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(a.secret)
+}
+
+// ParseMFAChallenge validates a challenge token issued by issueMFAChallenge.
+func (a *AuthService) ParseMFAChallenge(token string) (string, error) {
+	claims, err := a.parseClaims(token)
+	if err != nil {
+		return "", err
+	}
+	if claims["mfa"] != "pending" {
+		return "", fmt.Errorf("not an mfa challenge")
+	}
+	sub, _ := claims["sub"].(string)
+	if sub == "" {
+		return "", fmt.Errorf("no subject")
+	}
+	return sub, nil
 }
 
 func (a *AuthService) issue(m *domain.Member) (string, error) {
@@ -198,8 +388,26 @@ func (a *AuthService) issue(m *domain.Member) (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(a.secret)
 }
 
-// ParseToken validates a JWT and returns the member id (subject).
+// ParseToken validates a session JWT and returns the member id (subject).
+// MFA challenge tokens (mfa=pending) are explicitly rejected — they are not
+// sessions, only a 5-minute pass between the password and code steps.
 func (a *AuthService) ParseToken(token string) (string, error) {
+	claims, err := a.parseClaims(token)
+	if err != nil {
+		return "", err
+	}
+	if _, isChallenge := claims["mfa"]; isChallenge {
+		return "", fmt.Errorf("mfa challenge token is not a session")
+	}
+	sub, _ := claims["sub"].(string)
+	if sub == "" {
+		return "", fmt.Errorf("no subject")
+	}
+	return sub, nil
+}
+
+// parseClaims verifies signature + expiry and returns the token claims.
+func (a *AuthService) parseClaims(token string) (jwt.MapClaims, error) {
 	parsed, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
@@ -207,17 +415,13 @@ func (a *AuthService) ParseToken(token string) (string, error) {
 		return a.secret, nil
 	})
 	if err != nil || !parsed.Valid {
-		return "", fmt.Errorf("invalid token")
+		return nil, fmt.Errorf("invalid token")
 	}
 	claims, ok := parsed.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", fmt.Errorf("invalid claims")
+		return nil, fmt.Errorf("invalid claims")
 	}
-	sub, _ := claims["sub"].(string)
-	if sub == "" {
-		return "", fmt.Errorf("no subject")
-	}
-	return sub, nil
+	return claims, nil
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -285,7 +489,8 @@ func initialsOf(name string) string {
 		if i >= 2 {
 			break
 		}
-		out += strings.ToUpper(p[:1])
+		r, _ := utf8.DecodeRuneInString(p)
+		out += strings.ToUpper(string(r))
 	}
 	if out == "" {
 		return "?"

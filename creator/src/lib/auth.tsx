@@ -5,11 +5,15 @@ import { api, getToken, setToken } from "./api";
 interface AuthState {
   member: Member | null;
   loading: boolean;
-  signIn: (identifier: string, password: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<SignInResult>;
+  completeMfa: (challenge: string, code: string) => Promise<void>;
   signOut: () => void;
   /** Update the cached member (e.g. after changing creator types). */
   setMember: (m: Member) => void;
 }
+
+/** What signIn resolves to: a session, or an MFA challenge to complete. */
+export type SignInResult = { mfaRequired: boolean; challenge?: string };
 
 const Ctx = createContext<AuthState | null>(null);
 
@@ -24,8 +28,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     api.me().then(setMember).catch(() => setToken(null)).finally(() => setLoading(false));
   }, []);
 
-  const signIn = useCallback(async (identifier: string, password: string) => {
-    const { token, member } = await api.login(identifier, password);
+  const signIn = useCallback(async (identifier: string, password: string): Promise<SignInResult> => {
+    const res = await api.login(identifier, password);
+    if (res.mfaRequired && res.challenge) {
+      return { mfaRequired: true, challenge: res.challenge };
+    }
+    if (res.token && res.member) {
+      setToken(res.token);
+      setMember(res.member);
+      return { mfaRequired: false };
+    }
+    throw new Error("Sign in failed — unexpected response.");
+  }, []);
+  const completeMfa = useCallback(async (challenge: string, code: string) => {
+    const { token, member } = await api.mfaLogin(challenge, code);
     setToken(token);
     setMember(member);
   }, []);
@@ -34,7 +50,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setMember(null);
   }, []);
 
-  const value = useMemo(() => ({ member, loading, signIn, signOut, setMember }), [member, loading, signIn, signOut]);
+  const value = useMemo(() => ({ member, loading, signIn, completeMfa, signOut, setMember }), [member, loading, signIn, completeMfa, signOut]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

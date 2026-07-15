@@ -7,6 +7,7 @@ import type { Listing } from "@/lib/types";
 import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { PressScale, StaggerIn } from "@/components/anim";
+import { EmptyState } from "@/components/empty-state";
 
 // Genre filter chips (client-side filtering, like the web directory).
 function GenreChips({ active, onPick }: Readonly<{ active: string; onPick: (g: string) => void }>) {
@@ -44,7 +45,7 @@ export default function Music() {
         <Text style={s.soundSub}>The grandfathers of the sound — C.K. Mann, Ebo Taylor, and the osode wave.</Text>
       </PressScale>
       <GenreChips active={genre} onPick={setGenre} />
-      {shown.length === 0 && <Text style={s.empty}>No artists in this genre yet.</Text>}
+      {shown.length === 0 && <EmptyState glyph="♪" title="No artists in this genre yet" />}
       {shown.map((a, i) => (
         <StaggerIn key={a.id} index={i}>
           <Link href={`/music/${a.slug}`} asChild>
@@ -74,7 +75,6 @@ export default function Music() {
 
 const s = StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
-  empty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginTop: 20 },
   soundCard: { backgroundColor: C.green900, borderRadius: 14, padding: 16 },
   soundKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   soundTitle: { color: C.cream, fontFamily: serif, fontSize: 20, fontWeight: "700", marginTop: 4 },

@@ -10,6 +10,7 @@ import { C, serif, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ImageField } from "@/components/image-field";
 import { RevealView } from "@/components/anim";
+import { EmptyState } from "@/components/empty-state";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -46,7 +47,7 @@ function MyTickets() {
   if (loading) return <Text style={s.help}>Loading your tickets…</Text>;
   if (error) return <Text style={s.help}>Couldn&apos;t load your tickets.</Text>;
   const list = data ?? [];
-  if (list.length === 0) return <Text style={s.empty}>No tickets yet — see what&apos;s on under Events.</Text>;
+  if (list.length === 0) return <EmptyState compact glyph="◇" title="No tickets yet" body="See what's on under Events." />;
   return (
     <View style={{ gap: 8 }}>
       {list.map((t) => (
@@ -74,7 +75,7 @@ function MySubscriptions() {
   if (loading) return <Text style={s.help}>Loading your subscriptions…</Text>;
   if (error) return <Text style={s.help}>Couldn&apos;t load your subscriptions.</Text>;
   const list = data ?? [];
-  if (list.length === 0) return <Text style={s.empty}>No subscriptions yet.</Text>;
+  if (list.length === 0) return <EmptyState compact glyph="↻" title="No subscriptions yet" />;
   return (
     <View style={{ gap: 8 }}>
       {list.map((sub) => {
@@ -527,7 +528,7 @@ function PeopleYouMayKnow({ refreshKey }: Readonly<{ refreshKey: number }>) {
   if (error) return <Text style={s.help}>Couldn&apos;t load suggestions.</Text>;
   const list = data ?? [];
   if (list.length === 0) {
-    return <Text style={s.empty}>No suggestions yet — add your schooling, quarter and Asafo and we&apos;ll connect you with classmates and neighbours.</Text>;
+    return <EmptyState compact glyph="✧" title="No suggestions yet" body="Add your schooling, quarter and Asafo and we'll connect you with classmates and neighbours." />;
   }
   return (
     <View style={{ gap: 10 }}>
@@ -601,7 +602,6 @@ const s = StyleSheet.create({
   subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginBottom: 8 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 6 },
   help: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginBottom: 12 },
-  empty: { color: C.inkFaint, fontSize: 13, lineHeight: 19, fontStyle: "italic" },
 
   stint: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
   stintName: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink },

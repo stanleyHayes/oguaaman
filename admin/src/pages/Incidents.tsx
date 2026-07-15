@@ -67,7 +67,7 @@ export function Component() {
       </p>
 
       {rows.length === 0 ? (
-        <Empty title="No incidents">Nothing reported — the town is quiet.</Empty>
+        <Empty icon="shield" title="No incidents">Nothing reported — the town is quiet.</Empty>
       ) : (
         <Stagger className="space-y-3">
           {rows.map((i, idx) => {

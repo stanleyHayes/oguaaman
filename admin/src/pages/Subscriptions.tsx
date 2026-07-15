@@ -46,7 +46,7 @@ export function Component() {
       </Stagger>
 
       {subs.length === 0 ? (
-        <Empty title="No subscriptions yet">When business owners subscribe to the Supporter plan, every payment lands here.</Empty>
+        <Empty icon="money" title="No subscriptions yet">When business owners subscribe to the Supporter plan, every payment lands here.</Empty>
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-sm">
