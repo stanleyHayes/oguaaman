@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Tabs } from "expo-router";
-import { Pressable, Text, type ColorValue } from "react-native";
+import { Pressable, type ColorValue } from "react-native";
+import { T as Text } from "@/components/typography";
 import { C } from "@/theme";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";

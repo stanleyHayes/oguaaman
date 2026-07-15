@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, serif } from "@/theme";
+import { C, S } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 
@@ -174,8 +175,8 @@ const s = StyleSheet.create({
   chipTextOn: { color: C.cream },
   talentCard: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   talentThumb: { width: 56, height: 56, borderRadius: 28 },
-  talentThumbLabel: { color: C.cream, fontFamily: serif, fontSize: 18, fontWeight: "700" },
-  talentName: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
+  talentThumbLabel: { color: C.cream, ...S(700), fontSize: 18 },
+  talentName: { ...S(700), fontSize: 18, color: C.ink },
   talentEra: { color: C.goldText, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginTop: 2 },
   talentBio: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
@@ -183,7 +184,7 @@ const s = StyleSheet.create({
   kindChip: { borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   kindChipText: { color: C.tealText, fontSize: 11, fontWeight: "700" },
   deadline: { marginLeft: "auto", color: C.clayText, fontSize: 11, fontWeight: "700" },
-  title: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink, marginTop: 10 },
+  title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 10 },
   desc: { color: C.inkFaint, fontSize: 13, lineHeight: 19, marginTop: 6 },
   eligibility: { color: C.inkMuted, fontSize: 12, lineHeight: 18, marginTop: 8 },
   eligibilityLabel: { fontWeight: "700" },

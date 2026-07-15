@@ -1,9 +1,10 @@
-import { Image, ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Link } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { NewsArticle } from "@/lib/types";
-import { C, serif } from "@/theme";
+import { C, D, S } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn } from "@/components/anim";
@@ -84,15 +85,15 @@ export default function News() {
 const s = StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 30, fontWeight: "700", marginTop: 6 },
+  heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 6 },
   heroLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
   featured: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   featuredBody: { padding: 16 },
   featuredKicker: { color: C.goldText, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  featuredTitle: { fontFamily: serif, fontSize: 24, fontWeight: "700", color: C.ink, lineHeight: 30, marginTop: 6 },
+  featuredTitle: { ...S(700), fontSize: 24, color: C.ink, lineHeight: 30, marginTop: 6 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cardBody: { padding: 14 },
-  title: { fontFamily: serif, fontSize: 19, fontWeight: "700", color: C.ink, lineHeight: 25 },
+  title: { ...S(700), fontSize: 19, color: C.ink, lineHeight: 25 },
   summary: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
   byline: { color: C.inkFaint, fontSize: 12, marginTop: 10 },
   readMore: { color: C.green, fontSize: 13, fontWeight: "700", marginTop: 10 },

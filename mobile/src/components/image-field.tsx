@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { C } from "@/theme";
 import { cldCover } from "@/lib/cloudinary";
 import { API_BASE } from "@/lib/api";

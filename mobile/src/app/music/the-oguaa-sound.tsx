@@ -1,9 +1,10 @@
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, initials } from "@/theme";
 import { Thumb } from "@/ui";
 
 // The long-read behind the Music section (fact-checked, agent_plan.md §1.4):
@@ -65,15 +66,15 @@ export default function OguaaSound() {
 const s = StyleSheet.create({
   hero: { backgroundColor: C.clay, paddingHorizontal: 20, paddingVertical: 28 },
   heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 30, fontWeight: "700", marginTop: 6, lineHeight: 38 },
+  heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 6, lineHeight: 38 },
   body: { padding: 20 },
-  h: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink, marginBottom: 6 },
-  p: { fontFamily: serif, fontSize: 16, lineHeight: 25, color: C.ink },
+  h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },
+  p: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
   kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 28, marginBottom: 10 },
   card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
   thumb: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
-  thumbInit: { color: C.cream, fontFamily: serif, fontSize: 20, fontWeight: "700" },
-  cardTitle: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
+  thumbInit: { color: C.cream, ...S(700), fontSize: 20 },
+  cardTitle: { ...S(700), fontSize: 18, color: C.ink },
   cardEra: { color: C.goldText, fontSize: 12, marginTop: 1 },
   cardWhy: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 4 },
   chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },

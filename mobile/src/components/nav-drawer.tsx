@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
 import { router } from "expo-router";
-import { C, serif } from "@/theme";
+import { T as Text } from "@/components/typography";
+import { C, D, S, SI } from "@/theme";
 import { Mark } from "@/ui";
 
 type NavItem = { label: string; blurb: string; href: string };
@@ -159,14 +160,14 @@ const s = StyleSheet.create({
   closeBtn: { width: 36, height: 36, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: C.cream },
   closeText: { color: C.inkMuted, fontSize: 15, fontWeight: "700" },
   scrollContent: { padding: 20, paddingTop: 8, paddingBottom: 48 },
-  title: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
+  title: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   body: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 10, textAlign: "center" },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 24, marginBottom: 10 },
   searchBtn: { marginTop: 18, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 18, alignItems: "center" },
   searchText: { color: C.inkMuted, fontSize: 14, fontWeight: "600" },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, marginBottom: 10 },
-  cardTitle: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
+  cardTitle: { ...S(700), fontSize: 18, color: C.ink },
   chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
   cardBlurb: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
-  foot: { fontFamily: serif, fontStyle: "italic", color: C.goldText, textAlign: "center", marginTop: 24, fontSize: 16 },
+  foot: { ...SI(), color: C.goldText, textAlign: "center", marginTop: 24, fontSize: 16 },
 });

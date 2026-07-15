@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from "react";
-import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { InstitutionView, MediaAsset, ProfileSection, SectionItem, SubEntity } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, DI, S, SI, initials } from "@/theme";
 import { Loading, ErrorView, Thumb, Markdown } from "@/ui";
 import { cldCover, cld } from "@/lib/cloudinary";
 import { HeroParallax, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
@@ -532,26 +533,26 @@ const s = StyleSheet.create({
   hero: { alignItems: "center", paddingHorizontal: 20, paddingVertical: 28 },
   crest: { width: 84, height: 84, borderRadius: 42, backgroundColor: "#0003" },
   crestFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FFFFFF44" },
-  crestInit: { fontFamily: serif, fontSize: 28, fontWeight: "700", color: C.cream },
-  heroName: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.cream, textAlign: "center", marginTop: 14 },
-  heroMotto: { fontFamily: serif, fontStyle: "italic", fontSize: 15, color: C.gold, textAlign: "center", marginTop: 6 },
+  crestInit: { ...S(700), fontSize: 28, color: C.cream },
+  heroName: { ...D(700), fontSize: 26, color: C.cream, textAlign: "center", marginTop: 14 },
+  heroMotto: { ...DI(), fontSize: 15, color: C.gold, textAlign: "center", marginTop: 6 },
   badge: { marginTop: 12, borderWidth: 1, borderColor: "#C7A24A88", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
   badgeText: { color: C.gold, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
 
   facts: { flexDirection: "row", backgroundColor: C.cream, borderBottomWidth: 1, borderBottomColor: C.sand },
   factCell: { flex: 1, alignItems: "center", paddingVertical: 14, paddingHorizontal: 4 },
   factDivider: { borderRightWidth: 1, borderRightColor: C.sand },
-  factVal: { fontFamily: serif, fontSize: 15, color: C.green, fontWeight: "600" },
+  factVal: { ...S(600), fontSize: 15, color: C.green },
   factKey: { fontSize: 9, color: C.inkFaint, marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 },
 
   body: { padding: 20 },
   section: { marginBottom: 26 },
 
   secTitleRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  secTitle: { fontFamily: serif, fontSize: 19, fontWeight: "700", color: C.ink },
+  secTitle: { ...D(700), fontSize: 19, color: C.ink },
   secRule: { flex: 1, height: 1, backgroundColor: C.sand },
 
-  summary: { fontFamily: serif, fontSize: 17, lineHeight: 26, color: C.ink },
+  summary: { ...S(400), fontSize: 17, lineHeight: 26, color: C.ink },
   history: { fontSize: 15, lineHeight: 23, color: C.inkMuted, marginTop: 10 },
 
   divider: { height: 1, backgroundColor: C.sand, marginVertical: 2 },
@@ -563,20 +564,20 @@ const s = StyleSheet.create({
 
   statsWrap: { flexDirection: "row", flexWrap: "wrap", borderWidth: 1, borderColor: C.sand, borderRadius: 12, overflow: "hidden" },
   statCell: { width: "50%", alignItems: "center", paddingVertical: 16, backgroundColor: C.cream, borderWidth: 0.5, borderColor: C.sand },
-  statVal: { fontFamily: serif, fontSize: 26, fontWeight: "700" },
+  statVal: { ...S(700), fontSize: 26 },
   statLabel: { fontSize: 10, color: C.inkFaint, marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 },
 
   teamRow: { flexDirection: "row", gap: 12, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
   avatar: { width: 44, height: 44, borderRadius: 22 },
-  avatarInit: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.cream },
-  teamName: { fontFamily: serif, fontSize: 16, color: C.ink, fontWeight: "600" },
+  avatarInit: { ...S(700), fontSize: 16, color: C.cream },
+  teamName: { ...S(600), fontSize: 16, color: C.ink },
   teamRole: { fontSize: 11, color: C.goldText, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4, marginTop: 2 },
   teamBio: { fontSize: 13, lineHeight: 19, color: C.inkMuted, marginTop: 4 },
 
   timelineRow: { flexDirection: "row", gap: 12 },
   dot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2, backgroundColor: C.paper, marginTop: 4 },
-  timeDate: { fontFamily: serif, fontSize: 14, fontWeight: "700" },
-  timeHead: { fontFamily: serif, fontSize: 17, color: C.ink, marginTop: 1 },
+  timeDate: { ...S(700), fontSize: 14 },
+  timeHead: { ...S(400), fontSize: 17, color: C.ink, marginTop: 1 },
   timeBody: { fontSize: 14, lineHeight: 21, color: C.inkMuted, marginTop: 3 },
 
   boxWrap: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, overflow: "hidden", backgroundColor: C.cream },
@@ -591,11 +592,11 @@ const s = StyleSheet.create({
   docOpen: { fontSize: 12, fontWeight: "700", color: C.tealText },
 
   quote: { borderLeftWidth: 3, paddingLeft: 16, paddingVertical: 4 },
-  quoteText: { fontFamily: serif, fontStyle: "italic", fontSize: 21, lineHeight: 29, color: C.ink },
+  quoteText: { ...SI(), fontSize: 21, lineHeight: 29, color: C.ink },
   quoteAttr: { fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 10 },
 
   cta: { borderWidth: 1, borderRadius: 14, padding: 22, alignItems: "center", backgroundColor: C.cream },
-  ctaTitle: { fontFamily: serif, fontSize: 22, fontWeight: "700", color: C.ink, textAlign: "center" },
+  ctaTitle: { ...D(700), fontSize: 22, color: C.ink, textAlign: "center" },
   ctaBody: { fontSize: 14, lineHeight: 21, color: C.inkMuted, textAlign: "center", marginTop: 8 },
   ctaButtons: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 16 },
   ctaBtn: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 },
@@ -611,13 +612,13 @@ const s = StyleSheet.create({
 
   officeCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
   officeRole: { fontSize: 11, color: C.goldText, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
-  officeHolder: { fontFamily: serif, fontSize: 17, color: C.ink, marginTop: 4 },
+  officeHolder: { ...S(400), fontSize: 17, color: C.ink, marginTop: 4 },
 
   groupCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
   groupCrest: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: C.sand, backgroundColor: C.greenSlate },
   groupCrestFallback: { alignItems: "center", justifyContent: "center", backgroundColor: C.green },
-  groupCrestInit: { fontFamily: serif, fontSize: 15, fontWeight: "700", color: C.cream },
-  groupName: { fontFamily: serif, fontSize: 17, color: C.ink },
+  groupCrestInit: { ...S(700), fontSize: 15, color: C.cream },
+  groupName: { ...S(400), fontSize: 17, color: C.ink },
   groupSubtitle: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
   colorDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: C.sand },
   groupSummary: { fontSize: 14, lineHeight: 21, color: C.inkMuted, marginTop: 8 },
@@ -626,29 +627,29 @@ const s = StyleSheet.create({
 
   heroCard: { borderRadius: 14, overflow: "hidden" },
   heroInner: { paddingHorizontal: 20, paddingVertical: 32, alignItems: "center" },
-  heroTitle: { fontFamily: serif, fontSize: 26, fontWeight: "700", textAlign: "center" },
+  heroTitle: { ...D(700), fontSize: 26, textAlign: "center" },
   heroBody: { fontSize: 15, lineHeight: 22, textAlign: "center", marginTop: 8 },
   heroButtons: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 18 },
   heroBtnLight: { borderWidth: 1, borderColor: "rgba(246,241,231,0.5)" },
   heroBtnLightText: { color: C.cream, fontWeight: "700", fontSize: 13 },
 
   testimCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 16 },
-  testimQuote: { fontFamily: serif, fontStyle: "italic", fontSize: 17, lineHeight: 25, color: C.ink },
+  testimQuote: { ...SI(), fontSize: 17, lineHeight: 25, color: C.ink },
   testimFoot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14 },
   testimAvatar: { width: 36, height: 36, borderRadius: 18 },
-  testimAvatarInit: { fontFamily: serif, fontSize: 14, fontWeight: "700", color: C.cream },
+  testimAvatarInit: { ...S(700), fontSize: 14, color: C.cream },
   testimAuthor: { fontSize: 14, fontWeight: "600", color: C.ink },
   testimRole: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4, marginTop: 1 },
 
   contactCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 16 },
-  contactAddress: { fontFamily: serif, fontSize: 15, lineHeight: 23, color: C.ink },
+  contactAddress: { ...S(400), fontSize: 15, lineHeight: 23, color: C.ink },
   contactRowsTop: { marginTop: 12, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 12 },
   contactLabel: { width: 92, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
   contactValue: { fontSize: 14, color: C.ink },
   contactLink: { color: C.tealText },
 
   claimCard: { borderWidth: 1, borderStyle: "dashed", borderColor: C.goldBrand, borderRadius: 14, backgroundColor: C.cream, padding: 16 },
-  claimTitle: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
+  claimTitle: { ...D(700), fontSize: 18, color: C.ink },
   claimBody: { fontSize: 13, lineHeight: 19, color: C.inkMuted, marginTop: 6 },
   claimBtn: { alignSelf: "flex-start", backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10, marginTop: 12 },
   claimBtnText: { color: C.cream, fontWeight: "700", fontSize: 13 },
@@ -660,8 +661,8 @@ const s = StyleSheet.create({
   listRowBorder: { borderBottomWidth: 1, borderBottomColor: C.sand },
   menuName: { fontSize: 15, fontWeight: "600", color: C.ink },
   menuDesc: { fontSize: 13, lineHeight: 18, color: C.inkMuted, marginTop: 2 },
-  menuPrice: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.goldText },
-  schedWhen: { width: 120, fontFamily: serif, fontSize: 15 },
+  menuPrice: { ...S(700), fontSize: 16, color: C.goldText },
+  schedWhen: { width: 120, ...S(400), fontSize: 15 },
   schedTime: { fontSize: 14, fontWeight: "600", color: C.ink },
   schedNote: { fontSize: 13, color: C.inkMuted, marginTop: 2 },
 });

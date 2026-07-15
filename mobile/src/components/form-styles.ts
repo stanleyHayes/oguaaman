@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { C, serif } from "@/theme";
+import { C, D, S } from "@/theme";
 
 /**
  * Shared styling for the contribution form screens (submit a listing, report an
@@ -14,11 +14,11 @@ export const formStyles = StyleSheet.create({
   chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
   input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
-  area: { minHeight: 110, textAlignVertical: "top", fontFamily: serif },
+  area: { minHeight: 110, textAlignVertical: "top", ...S(400) },
   error: { color: C.clayText, marginTop: 12, fontSize: 13 },
   note: { color: C.inkFaint, fontSize: 12, textAlign: "center", marginTop: 12, lineHeight: 18 },
   btnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
   gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
-  gateTitle: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
+  gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
 });

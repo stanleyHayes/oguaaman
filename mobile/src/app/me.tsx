@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
 import { Link, router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Promotion, Listing } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ImageField } from "@/components/image-field";
 import { RevealView } from "@/components/anim";
@@ -289,7 +290,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
   );
 }
 
-// Dashboard section card — serif title + optional help text wrapping a body slot.
+// Dashboard section card — display title + optional help text wrapping a body slot.
 function Section({ title, help, children }: Readonly<{ title: string; help?: string; children: React.ReactNode }>) {
   return (
     <RevealView style={s.section}>
@@ -582,15 +583,15 @@ function FollowChip({ slug }: Readonly<{ slug: string }>) {
 
 const s = StyleSheet.create({
   gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
-  gateTitle: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
+  gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
   primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
 
   header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
-  avatarText: { color: C.cream, fontFamily: serif, fontSize: 30, fontWeight: "700" },
-  name: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.cream, marginTop: 12 },
+  avatarText: { color: C.cream, ...S(700), fontSize: 30 },
+  name: { ...D(700), fontSize: 26, color: C.cream, marginTop: 12 },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12, justifyContent: "center" },
   darkChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.3)", backgroundColor: "rgba(246,241,231,0.1)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
@@ -598,13 +599,13 @@ const s = StyleSheet.create({
 
   body: { padding: 16, gap: 16 },
   section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  sectionTitle: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink, marginBottom: 4 },
+  sectionTitle: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 4 },
   subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginBottom: 8 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 6 },
   help: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginBottom: 12 },
 
   stint: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
-  stintName: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink },
+  stintName: { ...S(700), fontSize: 16, color: C.ink },
   yearRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
   yearInput: { width: 78, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, color: C.ink, fontSize: 14 },
   dash: { color: C.inkFaint },
@@ -664,8 +665,8 @@ const s = StyleSheet.create({
   connCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12 },
   connAvatar: { borderRadius: 22 },
   connAvatarBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
-  connAvatarText: { color: C.cream, fontFamily: serif, fontSize: 16, fontWeight: "700" },
-  connName: { fontFamily: serif, fontSize: 17, fontWeight: "700", color: C.ink },
+  connAvatarText: { color: C.cream, ...S(700), fontSize: 16 },
+  connName: { ...S(700), fontSize: 17, color: C.ink },
   reasonWrap: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   reason: { backgroundColor: C.sand, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   reasonText: { color: C.inkMuted, fontSize: 11, fontWeight: "500" },

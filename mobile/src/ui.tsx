@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
-import { C, serif, fillFor } from "@/theme";
+import { ActivityIndicator, Image, StyleSheet, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { T as Text } from "@/components/typography";
+import { C, D, S, SI, fillFor } from "@/theme";
 import { cldCover } from "@/lib/cloudinary";
 
 export function Loading() {
@@ -153,18 +154,18 @@ export function Markdown({ children }: Readonly<{ children: string }>) {
 }
 
 const md = StyleSheet.create({
-  h1: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.ink },
-  h2: { fontFamily: serif, fontSize: 22, fontWeight: "700", color: C.ink },
-  h3: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
-  body: { color: C.ink, fontFamily: serif, fontSize: 17, lineHeight: 26, flexShrink: 1 },
-  quote: { color: C.inkMuted, fontFamily: serif, fontStyle: "italic", fontSize: 17, lineHeight: 26, borderLeftWidth: 3, borderLeftColor: C.gold, paddingLeft: 12 },
+  h1: { ...D(700), fontSize: 26, color: C.ink },
+  h2: { ...D(700), fontSize: 22, color: C.ink },
+  h3: { ...D(700), fontSize: 18, color: C.ink },
+  body: { color: C.ink, ...S(400), fontSize: 17, lineHeight: 26, flexShrink: 1 },
+  quote: { color: C.inkMuted, ...SI(), fontSize: 17, lineHeight: 26, borderLeftWidth: 3, borderLeftColor: C.gold, paddingLeft: 12 },
   bullet: { color: C.goldText, fontSize: 17, lineHeight: 26 },
   table: { borderWidth: 1, borderColor: C.sand, borderRadius: 8, overflow: "hidden" },
   trow: { flexDirection: "row" },
   trowBorder: { borderBottomWidth: 1, borderBottomColor: C.sand },
   thead: { backgroundColor: C.cream, borderBottomWidth: 1, borderBottomColor: C.sand },
-  cell: { flex: 1, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, lineHeight: 20, color: C.ink, fontFamily: serif },
-  th: { fontWeight: "700", color: C.green },
+  cell: { flex: 1, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, lineHeight: 20, color: C.ink, ...S(400) },
+  th: { ...S(700), color: C.green },
 });
 
 const s = StyleSheet.create({
@@ -176,6 +177,6 @@ const s = StyleSheet.create({
   pillText: { fontSize: 12, fontWeight: "600" },
   heroBand: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 28, fontWeight: "700", marginTop: 6 },
+  heroTitle: { color: C.cream, ...D(700), fontSize: 28, marginTop: 6 },
   heroLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
 });

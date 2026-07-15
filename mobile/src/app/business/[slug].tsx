@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from "react";
-import { Linking, ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { Linking, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing, Subscription } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { RevealView } from "@/components/anim";
@@ -211,7 +212,7 @@ function BusinessDetail({ data, slug, reload }: Readonly<{ data: Listing; slug: 
 const sub = StyleSheet.create({
   card: { marginTop: 22, backgroundColor: "rgba(199,162,74,0.08)", borderWidth: 1, borderColor: C.gold, borderRadius: 14, padding: 16 },
   kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
-  title: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink, marginTop: 4 },
+  title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 4 },
   body: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   active: { color: C.goldText, fontSize: 13, fontWeight: "700", marginTop: 10 },
   err: { color: C.clayText, fontSize: 13, marginTop: 10 },
@@ -219,17 +220,17 @@ const sub = StyleSheet.create({
   btnText: { color: C.green900, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
   thanks: { marginTop: 12, backgroundColor: "rgba(18,63,45,0.06)", borderWidth: 1, borderColor: "rgba(18,63,45,0.3)", borderRadius: 12, padding: 14 },
-  thanksTitle: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.green },
+  thanksTitle: { ...S(700), fontSize: 16, color: C.green },
   thanksBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
 });
 
 const s = StyleSheet.create({
   cover: { width: "100%", height: 180, alignItems: "center", justifyContent: "center" },
-  coverInit: { color: C.cream, fontFamily: serif, fontSize: 40, fontWeight: "700" },
+  coverInit: { color: C.cream, ...S(700), fontSize: 40 },
   body: { padding: 20 },
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  name: { fontFamily: serif, fontSize: 28, fontWeight: "700", color: C.ink, marginTop: 10 },
-  desc: { fontFamily: serif, fontSize: 16, lineHeight: 24, color: C.ink, marginTop: 10 },
+  name: { ...D(700), fontSize: 28, color: C.ink, marginTop: 10 },
+  desc: { ...S(400), fontSize: 16, lineHeight: 24, color: C.ink, marginTop: 10 },
   kicker: { color: C.tealText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   services: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, marginTop: 10, overflow: "hidden" },
   serviceRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.sand },

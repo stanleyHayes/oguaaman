@@ -1,9 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { FestivalView, Listing } from "@/lib/types";
-import { C, serif, fillFor } from "@/theme";
+import { C, D, S, SI, fillFor } from "@/theme";
 import { Loading, ErrorView, Thumb, Pill } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
 
@@ -101,10 +102,10 @@ const s = StyleSheet.create({
   hero: { backgroundColor: fillFor("festival"), height: 210, justifyContent: "flex-end" },
   heroShade: { backgroundColor: "rgba(12,44,31,0.72)", paddingHorizontal: 20, paddingVertical: 20 },
   heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 30, fontWeight: "700", marginTop: 4 },
+  heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 4 },
   heroTagline: { color: C.gold, fontSize: 14, marginTop: 6, lineHeight: 20 },
   body: { padding: 20 },
-  history: { fontFamily: serif, fontSize: 16, lineHeight: 25, color: C.ink },
+  history: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 26, marginBottom: 12 },
   timeline: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 16 },
   tlRow: { flexDirection: "row", gap: 12 },
@@ -113,7 +114,7 @@ const s = StyleSheet.create({
   tlLine: { flex: 1, width: 2, backgroundColor: C.sand, marginVertical: 3 },
   tlBody: { flex: 1, paddingBottom: 20 },
   yearRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 },
-  year: { fontFamily: serif, fontSize: 22, fontWeight: "700", color: C.ink },
+  year: { ...S(700), fontSize: 22, color: C.ink },
   when: { color: C.goldText, fontSize: 13, fontWeight: "600", marginTop: 8 },
   evDesc: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   progRow: { flexDirection: "row", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 8, padding: 10 },
@@ -123,5 +124,5 @@ const s = StyleSheet.create({
   progTitle: { color: C.inkMuted, fontSize: 13, lineHeight: 19, flex: 1 },
   evLink: { marginTop: 10, minHeight: 44, justifyContent: "center" },
   evLinkText: { color: C.tealText, fontSize: 13, fontWeight: "700" },
-  recap: { fontFamily: serif, fontStyle: "italic", color: C.inkMuted, fontSize: 14, lineHeight: 21, borderLeftWidth: 2, borderLeftColor: C.goldBrand, paddingLeft: 12, marginTop: 10 },
+  recap: { ...SI(), color: C.inkMuted, fontSize: 14, lineHeight: 21, borderLeftWidth: 2, borderLeftColor: C.goldBrand, paddingLeft: 12, marginTop: 10 },
 });

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { Progress, cedis } from "./index";
@@ -160,13 +161,13 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
 
 const s = StyleSheet.create({
   cover: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
-  coverInit: { color: C.cream, fontFamily: serif, fontSize: 38, fontWeight: "700" },
+  coverInit: { color: C.cream, ...S(700), fontSize: 38 },
   body: { padding: 20 },
   kicker: { color: C.green, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
-  title: { fontFamily: serif, fontSize: 27, fontWeight: "700", color: C.ink, marginTop: 6 },
+  title: { ...D(700), fontSize: 27, color: C.ink, marginTop: 6 },
   organiser: { color: C.goldText, fontSize: 13, marginTop: 4 },
   meta: { color: C.inkFaint, fontSize: 12, marginTop: 6 },
-  desc: { fontFamily: serif, fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 16 },
+  desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 16 },
   trust: { marginTop: 18, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
   trustTitle: { color: C.ink, fontSize: 14, fontWeight: "700" },
   trustBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
@@ -183,6 +184,6 @@ const s = StyleSheet.create({
   pledgeBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
   thanks: { marginTop: 18, backgroundColor: "rgba(18,63,45,0.06)", borderWidth: 1, borderColor: "rgba(18,63,45,0.3)", borderRadius: 14, padding: 16 },
-  thanksTitle: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.green },
+  thanksTitle: { ...D(700), fontSize: 20, color: C.green },
   thanksBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
 });

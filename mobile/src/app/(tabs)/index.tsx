@@ -1,11 +1,12 @@
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
 import Animated from "react-native-reanimated";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HomeData, Listing, NewsArticle } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, SI, initials } from "@/theme";
 import { Loading, ErrorView, Mark, Pill, Thumb } from "@/ui";
 import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { useNavDrawer } from "@/components/nav-drawer";
@@ -222,11 +223,11 @@ const s = StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingBottom: 24 },
   menuGlyph: { color: C.cream, fontSize: 20, fontWeight: "700" },
   eyebrow: { color: C.gold, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 44, fontWeight: "600", marginTop: 10 },
+  heroTitle: { color: C.cream, ...D(600), fontSize: 44, marginTop: 10 },
   heroSub: { color: "rgba(246,241,231,0.85)", fontSize: 15, lineHeight: 22, marginTop: 8 },
   stats: { flexDirection: "row", marginTop: 20, borderTopWidth: 1, borderTopColor: "rgba(246,241,231,0.12)", paddingTop: 14 },
   stat: { flex: 1, alignItems: "center" },
-  statNum: { color: C.gold, fontFamily: serif, fontSize: 24, fontWeight: "700" },
+  statNum: { color: C.gold, ...S(700), fontSize: 24 },
   statLbl: { color: "rgba(246,241,231,0.6)", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 },
   section: { paddingHorizontal: 20, paddingTop: 22 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 10 },
@@ -234,13 +235,13 @@ const s = StyleSheet.create({
   link: { color: C.clayText, fontWeight: "700", fontSize: 13 },
   spotlight: { flexDirection: "row", gap: 14, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   thumb: { width: 76, height: 76, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  thumbInit: { color: C.cream, fontFamily: serif, fontSize: 26, fontWeight: "700" },
-  spotName: { fontFamily: serif, fontSize: 22, fontWeight: "700", color: C.ink },
+  thumbInit: { color: C.cream, ...S(700), fontSize: 26 },
+  spotName: { ...S(700), fontSize: 22, color: C.ink },
   spotGenre: { color: C.goldText, fontSize: 12, marginTop: 2 },
   spotBio: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   artistCard: { width: 130 },
   artistThumb: { width: 130, height: 110, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  artistName: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink, marginTop: 6 },
+  artistName: { ...S(700), fontSize: 16, color: C.ink, marginTop: 6 },
   artistGenre: { color: C.inkFaint, fontSize: 12 },
   newsRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12 },
   newsBar: { width: 4, alignSelf: "stretch", borderRadius: 2 },
@@ -249,7 +250,7 @@ const s = StyleSheet.create({
   newsChevron: { color: C.inkFaint, fontSize: 20, fontWeight: "700" },
   memorial: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 16, alignItems: "center" },
   memPortrait: { width: 76, height: 76, borderRadius: 38, borderWidth: 1, borderColor: C.goldBrand, alignItems: "center", justifyContent: "center", marginBottom: 12 },
-  memPortraitInit: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.cream },
-  memName: { fontFamily: serif, fontSize: 22, fontWeight: "600", color: C.ink, textAlign: "center" },
-  memEpitaph: { fontFamily: serif, fontStyle: "italic", color: C.inkMuted, textAlign: "center", marginTop: 6 },
+  memPortraitInit: { ...S(600), fontSize: 26, color: C.cream },
+  memName: { ...S(600), fontSize: 22, color: C.ink, textAlign: "center" },
+  memEpitaph: { ...SI(), color: C.inkMuted, textAlign: "center", marginTop: 6 },
 });

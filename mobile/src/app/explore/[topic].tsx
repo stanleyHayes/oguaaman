@@ -1,10 +1,11 @@
-import { StyleSheet, Text, View, Pressable } from "react-native";
+import { StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HistoryView } from "@/lib/types";
-import { C, serif } from "@/theme";
+import { C, D, S } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { HeroParallax, StaggerIn, useHeroParallax } from "@/components/anim";
 
@@ -197,22 +198,22 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
 const s = StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingVertical: 26 },
   heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroLede: { color: C.cream, fontFamily: serif, fontSize: 20, lineHeight: 28, marginTop: 8 },
+  heroLede: { color: C.cream, ...S(400), fontSize: 20, lineHeight: 28, marginTop: 8 },
   body: { padding: 20 },
-  h: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink, marginBottom: 6 },
-  p: { fontFamily: serif, fontSize: 16, lineHeight: 25, color: C.ink },
+  h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },
+  p: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
   itemRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
-  itemLabel: { fontFamily: serif, fontSize: 14, fontWeight: "700", minWidth: 78 },
+  itemLabel: { ...S(700), fontSize: 14, minWidth: 78 },
   itemText: { color: C.ink, fontSize: 14, flex: 1, lineHeight: 20 },
   colorDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: C.sand },
   linkCard: { marginTop: 24, borderWidth: 1, borderColor: C.green, borderRadius: 12, paddingVertical: 13, alignItems: "center" },
   linkText: { color: C.green, fontWeight: "700", fontSize: 14 },
   placeCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 12 },
-  placeName: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink },
+  placeName: { ...S(700), fontSize: 16, color: C.ink },
   placeClass: { color: C.goldText, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, marginTop: 2, textTransform: "uppercase" },
   placeSummary: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   linkRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
-  linkTitle: { fontFamily: serif, fontSize: 15, fontWeight: "700", color: C.ink },
+  linkTitle: { ...S(700), fontSize: 15, color: C.ink },
   linkSub: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
   chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
 });

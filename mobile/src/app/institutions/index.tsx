@@ -1,9 +1,10 @@
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Organization } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, S, initials } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { StaggerIn } from "@/components/anim";
@@ -63,8 +64,8 @@ const s = StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
   crest: { width: 52, height: 52, borderRadius: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper },
-  crestInit: { color: C.cream, fontFamily: serif, fontSize: 18, fontWeight: "700" },
-  name: { fontFamily: serif, fontSize: 17, fontWeight: "700", color: C.ink, flexShrink: 1 },
+  crestInit: { color: C.cream, ...S(700), fontSize: 18 },
+  name: { ...S(700), fontSize: 17, color: C.ink, flexShrink: 1 },
   verified: { color: C.goldText, fontSize: 13, fontWeight: "700" },
   kind: { color: C.goldText, fontSize: 12, marginTop: 2 },
   motto: { color: C.inkMuted, fontSize: 12, fontStyle: "italic", marginTop: 2 },

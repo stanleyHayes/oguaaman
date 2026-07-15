@@ -1,6 +1,7 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { C, serif } from "@/theme";
+import { T as Text } from "@/components/typography";
+import { C, D } from "@/theme";
 import { ErrorView } from "@/ui";
 
 // Static legal drafts, ported from the portal (frontend/src/pages/Legal.tsx).
@@ -78,7 +79,7 @@ export default function Legal() {
 
 const s = StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 15, lineHeight: 22 },
-  h: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink },
+  h: { ...D(700), fontSize: 20, color: C.ink },
   p: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 8 },
   updated: { color: C.inkFaint, fontSize: 12, fontStyle: "italic", marginTop: 28, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 14 },
 });

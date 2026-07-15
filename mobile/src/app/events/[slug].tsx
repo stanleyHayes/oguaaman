@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { EventView, Ticket, TicketTierView } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, initials } from "@/theme";
 import { Loading, ErrorView, Thumb, Pill } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { cedis } from "../projects/index";
@@ -270,12 +271,12 @@ function TierRow({ tier: t, on, onPress }: Readonly<{ tier: TicketTierView; on: 
 
 const s = StyleSheet.create({
   cover: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
-  coverInit: { color: C.cream, fontFamily: serif, fontSize: 38, fontWeight: "700" },
+  coverInit: { color: C.cream, ...S(700), fontSize: 38 },
   body: { padding: 20 },
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  title: { fontFamily: serif, fontSize: 27, fontWeight: "700", color: C.ink, marginTop: 10 },
+  title: { ...D(700), fontSize: 27, color: C.ink, marginTop: 10 },
   meta: { color: C.goldText, fontSize: 13, marginTop: 4, lineHeight: 19 },
-  desc: { fontFamily: serif, fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 16 },
+  desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 16 },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 16 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 26 },
   progRow: { flexDirection: "row", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 12 },
@@ -294,7 +295,7 @@ const s = StyleSheet.create({
   tierOn: { borderColor: C.green, backgroundColor: "rgba(18,63,45,0.06)" },
   tierName: { color: C.ink, fontSize: 14, fontWeight: "600" },
   tierAvail: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
-  tierPrice: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.green },
+  tierPrice: { ...S(700), fontSize: 18, color: C.green },
   qtyRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   qtyLabel: { color: C.ink, fontSize: 14, fontWeight: "600" },
   qtyControls: { flexDirection: "row", alignItems: "center", gap: 14 },
@@ -307,7 +308,7 @@ const s = StyleSheet.create({
   buyBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center" },
   thanks: { marginTop: 10, backgroundColor: "rgba(18,63,45,0.06)", borderWidth: 1, borderColor: "rgba(18,63,45,0.3)", borderRadius: 14, padding: 16, alignItems: "center" },
-  thanksTitle: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.green },
+  thanksTitle: { ...D(700), fontSize: 20, color: C.green },
   thanksBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6, textAlign: "center" },
   code: { fontSize: 30, fontWeight: "700", letterSpacing: 6, color: C.ink, marginTop: 14 },
   codeHint: { color: C.inkFaint, fontSize: 12, marginTop: 4 },

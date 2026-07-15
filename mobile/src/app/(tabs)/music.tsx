@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Link, router } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { PressScale, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -77,7 +78,7 @@ const s = StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   soundCard: { backgroundColor: C.green900, borderRadius: 14, padding: 16 },
   soundKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  soundTitle: { color: C.cream, fontFamily: serif, fontSize: 20, fontWeight: "700", marginTop: 4 },
+  soundTitle: { color: C.cream, ...D(700), fontSize: 20, marginTop: 4 },
   soundSub: { color: "rgba(246,241,231,0.75)", fontSize: 13, lineHeight: 19, marginTop: 4 },
   genreChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   genreChipOn: { backgroundColor: C.clay, borderColor: C.clay },
@@ -85,8 +86,8 @@ const s = StyleSheet.create({
   genreChipTextOn: { color: C.cream },
   card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
   thumb: { width: 64, height: 64, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  init: { color: C.cream, fontFamily: serif, fontSize: 22, fontWeight: "700" },
-  name: { fontFamily: serif, fontSize: 19, fontWeight: "700", color: C.ink },
+  init: { color: C.cream, ...S(700), fontSize: 22 },
+  name: { ...S(700), fontSize: 19, color: C.ink },
   genre: { color: C.goldText, fontSize: 12, marginTop: 1 },
   bio: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 4 },
 });

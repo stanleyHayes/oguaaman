@@ -1,11 +1,44 @@
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as SplashScreen from "expo-splash-screen";
+import { useFonts } from "expo-font";
+import {
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+} from "@expo-google-fonts/outfit";
+import {
+  Fraunces_600SemiBold,
+  Fraunces_600SemiBold_Italic,
+  Fraunces_700Bold,
+} from "@expo-google-fonts/fraunces";
 import { C } from "@/theme";
 import { AuthProvider } from "@/lib/auth";
 import { LanguageProvider } from "@/lib/i18n";
 import { NavDrawerProvider } from "@/components/nav-drawer";
 
+// Keep the splash screen up until the brand fonts are ready, so the first
+// frame never flashes system type.
+void SplashScreen.preventAutoHideAsync().catch(() => {});
+
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    Fraunces_600SemiBold,
+    Fraunces_600SemiBold_Italic,
+    Fraunces_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) void SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) return null;
   return (
     <SafeAreaProvider>
       <LanguageProvider>
@@ -15,7 +48,7 @@ export default function RootLayout() {
           screenOptions={{
             headerStyle: { backgroundColor: C.green },
             headerTintColor: C.cream,
-            headerTitleStyle: { fontWeight: "600" },
+            headerTitleStyle: { fontFamily: "Fraunces_600SemiBold" },
             contentStyle: { backgroundColor: C.paper },
           }}
         >

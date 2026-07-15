@@ -1,9 +1,10 @@
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, S, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -70,8 +71,8 @@ const s = StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
-  coverInit: { color: C.cream, fontFamily: serif, fontSize: 32, fontWeight: "700" },
-  title: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink },
+  coverInit: { color: C.cream, ...S(700), fontSize: 32 },
+  title: { ...S(700), fontSize: 20, color: C.ink },
   organiser: { color: C.goldText, fontSize: 12, marginTop: 2 },
   desc: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   meta: { color: C.inkFaint, fontSize: 12, marginTop: 8 },

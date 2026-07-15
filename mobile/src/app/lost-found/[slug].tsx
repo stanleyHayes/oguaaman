@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { LostFound, LostFoundStatus } from "@/lib/types";
 import { KIND_LABEL, LF_STATUS_LABEL } from "@/lib/lostfound";
-import { C, serif } from "@/theme";
+import { C, D, S } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 
@@ -136,22 +137,22 @@ function ResolveBox({ slug, missing, onResolved }: Readonly<{ slug: string; miss
 const s = StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingVertical: 26 },
   heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 24, fontWeight: "700", lineHeight: 30, marginTop: 8 },
+  heroTitle: { color: C.cream, ...D(700), fontSize: 24, lineHeight: 30, marginTop: 8 },
   heroChipRow: { flexDirection: "row", marginTop: 12 },
   heroChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.4)", backgroundColor: "rgba(246,241,231,0.1)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   heroChipText: { color: C.cream, fontSize: 12, fontWeight: "700" },
   body: { padding: 20 },
-  desc: { fontFamily: serif, fontSize: 16, lineHeight: 25, color: C.ink },
+  desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
   facts: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, marginTop: 16 },
   factRow: { flexDirection: "row", gap: 12, paddingVertical: 7 },
   factLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, fontWeight: "700", width: 100 },
   factValue: { color: C.ink, fontSize: 14, flex: 1, lineHeight: 20 },
   contactBox: { marginTop: 16, borderWidth: 1, borderColor: C.teal, backgroundColor: C.cream, borderRadius: 12, padding: 16 },
   contactLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
-  contactValue: { color: C.ink, fontFamily: serif, fontSize: 18, fontWeight: "700", marginTop: 6 },
+  contactValue: { color: C.ink, ...S(700), fontSize: 18, marginTop: 6 },
   contactHint: { color: C.inkMuted, fontSize: 12, marginTop: 6 },
   resolveBox: { marginTop: 22, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 16 },
-  resolveTitle: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
+  resolveTitle: { ...S(700), fontSize: 18, color: C.ink },
   resolveHelp: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   resolveRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 },
   resolveBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20, minHeight: 44, justifyContent: "center" },

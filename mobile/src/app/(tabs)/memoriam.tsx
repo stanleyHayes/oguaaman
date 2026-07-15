@@ -1,9 +1,10 @@
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Link } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, SI, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
@@ -47,13 +48,13 @@ export default function Memoriam() {
 }
 
 const s = StyleSheet.create({
-  title: { fontFamily: serif, fontSize: 34, fontWeight: "600", color: C.ink, textAlign: "center" },
+  title: { ...D(600), fontSize: 34, color: C.ink, textAlign: "center" },
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10 },
   card: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 20, alignItems: "center", marginBottom: 14 },
   portrait: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#EADFC4", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
-  portraitInit: { fontFamily: serif, fontSize: 24, fontWeight: "600", color: C.green },
-  name: { fontFamily: serif, fontSize: 22, fontWeight: "600", color: C.ink, marginTop: 12, textAlign: "center" },
+  portraitInit: { ...S(600), fontSize: 24, color: C.green },
+  name: { ...S(600), fontSize: 22, color: C.ink, marginTop: 12, textAlign: "center" },
   dates: { color: C.goldText, fontSize: 12, letterSpacing: 2, marginTop: 4 },
-  epitaph: { fontFamily: serif, fontStyle: "italic", color: C.inkMuted, textAlign: "center", marginTop: 8 },
+  epitaph: { ...SI(), color: C.inkMuted, textAlign: "center", marginTop: 8 },
   meta: { color: C.inkFaint, fontSize: 12, marginTop: 10 },
 });

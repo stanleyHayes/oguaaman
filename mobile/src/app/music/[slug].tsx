@@ -1,10 +1,11 @@
-import { Linking, StyleSheet, Text, View, Pressable } from "react-native";
+import { Linking, StyleSheet, View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, serif, fillFor, initials } from "@/theme";
+import { C, D, S, fillFor, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
@@ -85,16 +86,16 @@ export default function Artist() {
 const s = StyleSheet.create({
   head: { alignItems: "center", paddingVertical: 28, paddingHorizontal: 20 },
   thumb: { width: 96, height: 96, borderRadius: 16, backgroundColor: "rgba(0,0,0,0.18)", alignItems: "center", justifyContent: "center" },
-  thumbInit: { color: C.cream, fontFamily: serif, fontSize: 36, fontWeight: "700" },
-  name: { color: C.cream, fontFamily: serif, fontSize: 32, fontWeight: "700", marginTop: 14, textAlign: "center" },
+  thumbInit: { color: C.cream, ...S(700), fontSize: 36 },
+  name: { color: C.cream, ...D(700), fontSize: 32, marginTop: 14, textAlign: "center" },
   genres: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10, justifyContent: "center" },
   genrePill: { borderWidth: 1, borderColor: "rgba(246,241,231,0.5)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   genrePillText: { color: C.cream, fontSize: 12 },
   body: { padding: 20 },
   kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
-  bio: { color: C.ink, fontFamily: serif, fontSize: 17, lineHeight: 25, marginTop: 8 },
+  bio: { color: C.ink, ...S(400), fontSize: 17, lineHeight: 25, marginTop: 8 },
   release: { marginTop: 20, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
-  releaseTitle: { fontFamily: serif, fontSize: 20, color: C.ink, marginTop: 6 },
+  releaseTitle: { ...S(400), fontSize: 20, color: C.ink, marginTop: 6 },
   linkNote: { color: C.inkFaint, fontSize: 12, marginTop: 4 },
   stream: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.green, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12 },
   streamLabel: { color: C.green, fontWeight: "700" },

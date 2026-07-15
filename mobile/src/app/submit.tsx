@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ImageField } from "@/components/image-field";

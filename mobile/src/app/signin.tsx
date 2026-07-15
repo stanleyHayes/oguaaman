@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { useAuth } from "@/lib/auth";
-import { C, serif } from "@/theme";
+import { C, D, DI } from "@/theme";
 import { Mark } from "@/ui";
 
 const TRUST_SIGNIN = [
@@ -223,20 +224,20 @@ const s = StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 44, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   heroMark: { alignItems: "center", marginBottom: 14 },
   heroKicker: { color: C.gold, fontSize: 11, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase", textAlign: "center" },
-  heroTitle: { fontFamily: serif, color: C.cream, fontSize: 30, fontWeight: "600", textAlign: "center", marginTop: 8 },
+  heroTitle: { ...D(600), color: C.cream, fontSize: 30, textAlign: "center", marginTop: 8 },
   heroSub: { color: "#D9D2C2", fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 8 },
   trustRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   trustTick: { width: 20, height: 20, borderRadius: 10, backgroundColor: "rgba(199,162,74,0.2)", alignItems: "center", justifyContent: "center", marginTop: 1 },
   trustTickText: { color: C.gold, fontSize: 11, fontWeight: "700" },
   trustText: { color: "#E7E1D3", fontSize: 13, lineHeight: 19, flex: 1 },
-  motto: { fontFamily: serif, color: C.gold, fontSize: 14, fontStyle: "italic", textAlign: "center", marginTop: 18 },
+  motto: { ...DI(), color: C.gold, fontSize: 14, textAlign: "center", marginTop: 18 },
   card: { marginHorizontal: 16, marginTop: -24, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 20, gap: 14, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   tabs: { flexDirection: "row", gap: 8, marginBottom: 4 },
   tab: { flex: 1, alignItems: "center", borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 9 },
   tabOn: { borderColor: C.green, backgroundColor: C.green },
   tabText: { color: C.inkMuted, fontSize: 14, fontWeight: "600" },
   tabTextOn: { color: C.cream },
-  cardTitle: { fontFamily: serif, fontSize: 24, fontWeight: "600", color: C.ink },
+  cardTitle: { ...D(600), fontSize: 24, color: C.ink },
   cardSub: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: -8 },
   label: { color: C.ink, fontSize: 13, fontWeight: "600", marginBottom: -8 },
   input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, color: C.ink },

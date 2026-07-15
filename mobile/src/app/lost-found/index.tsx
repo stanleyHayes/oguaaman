@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { LostFound, LostFoundKind } from "@/lib/types";
 import { KIND_LABEL, LF_STATUS_COLOR, LF_STATUS_LABEL } from "@/lib/lostfound";
-import { C, serif } from "@/theme";
+import { C, S } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -106,7 +107,7 @@ const s = StyleSheet.create({
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   chipText: { fontSize: 11, fontWeight: "700" },
   status: { marginLeft: "auto", fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
-  title: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink, marginTop: 10 },
+  title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 10 },
   where: { color: C.inkMuted, fontSize: 13, marginTop: 3 },
   desc: { color: C.inkFaint, fontSize: 13, lineHeight: 19, marginTop: 6 },
   posted: { color: C.inkFaint, fontSize: 11, marginTop: 10 },

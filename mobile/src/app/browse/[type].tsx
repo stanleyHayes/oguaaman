@@ -1,10 +1,11 @@
-import { Linking, StyleSheet, Text, View, Pressable } from "react-native";
+import { Linking, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, serif, fillFor, initials } from "@/theme";
+import { C, D, S, fillFor, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { HeroParallax, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
@@ -205,15 +206,15 @@ export default function Browse() {
 const s = StyleSheet.create({
   catHero: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   catKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  catTitle: { color: C.cream, fontFamily: serif, fontSize: 32, fontWeight: "700", marginTop: 6 },
+  catTitle: { color: C.cream, ...D(700), fontSize: 32, marginTop: 6 },
   catLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
   catCount: { color: "rgba(246,241,231,0.55)", fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },
   section: { gap: 12 },
-  sectionHeader: { color: C.goldText, fontFamily: serif, fontSize: 15, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
+  sectionHeader: { color: C.goldText, ...S(700), fontSize: 15, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
   card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   thumb: { width: 60, height: 60, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  thumbInit: { color: C.cream, fontFamily: serif, fontSize: 20, fontWeight: "700" },
-  title: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink },
+  thumbInit: { color: C.cream, ...S(700), fontSize: 20 },
+  title: { ...S(700), fontSize: 18, color: C.ink },
   sub: { color: C.goldText, fontSize: 12, marginTop: 3 },
   chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
   oppDesc: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
@@ -223,7 +224,7 @@ const s = StyleSheet.create({
   heroImg: { width: "100%", height: 130 },
   heroBody: { padding: 16 },
   heroKicker: { color: "rgba(246,241,231,0.8)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 24, fontWeight: "700", marginTop: 4 },
+  heroTitle: { color: C.cream, ...D(700), fontSize: 24, marginTop: 4 },
   heroMeta: { color: "rgba(246,241,231,0.85)", fontSize: 13, marginTop: 4 },
   heroDesc: { color: "rgba(246,241,231,0.85)", fontSize: 13, lineHeight: 19, marginTop: 8 },
 });

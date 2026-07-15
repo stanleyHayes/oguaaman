@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Notification } from "@/lib/types";
-import { C, serif } from "@/theme";
+import { C, D, S } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -115,13 +116,13 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
 
 const s = StyleSheet.create({
   gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
-  gateTitle: { fontFamily: serif, fontSize: 26, fontWeight: "600", color: C.ink, textAlign: "center" },
+  gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
   primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
 
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
-  pageTitle: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.ink },
+  pageTitle: { ...D(700), fontSize: 26, color: C.ink },
   count: { color: C.goldText, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginTop: 2 },
   markBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   markText: { color: C.green, fontWeight: "700", fontSize: 12 },
@@ -130,7 +131,7 @@ const s = StyleSheet.create({
   cardUnread: { backgroundColor: "#fffdf7", borderColor: C.goldBrand },
   bar: { width: 4, borderRadius: 2 },
   cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
-  cardTitle: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink, flexShrink: 1 },
+  cardTitle: { ...S(700), fontSize: 16, color: C.ink, flexShrink: 1 },
   cardDate: { color: C.inkFaint, fontSize: 11 },
   cardBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 3 },
   cardOpen: { color: C.tealText, fontSize: 12, fontWeight: "700", marginTop: 6 },

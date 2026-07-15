@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import type { SearchHit } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, initials } from "@/theme";
 import { Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
@@ -113,7 +114,7 @@ function HitRow({ hit: h }: Readonly<{ hit: SearchHit }>) {
 }
 
 const s = StyleSheet.create({
-  pageTitle: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.ink },
+  pageTitle: { ...D(700), fontSize: 26, color: C.ink },
   pageLede: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 14 },
   inputWrap: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 16 },
   inputIcon: { color: C.goldText, fontSize: 18, fontWeight: "700" },
@@ -121,8 +122,8 @@ const s = StyleSheet.create({
   hint: { color: C.inkFaint, textAlign: "center", marginTop: 28, fontSize: 14 },
   row: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
   rowThumb: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  rowThumbInit: { color: C.cream, fontFamily: serif, fontSize: 16, fontWeight: "700" },
-  rowTitle: { fontFamily: serif, fontSize: 16, fontWeight: "700", color: C.ink },
+  rowThumbInit: { color: C.cream, ...S(700), fontSize: 16 },
+  rowTitle: { ...S(700), fontSize: 16, color: C.ink },
   rowSub: { color: C.inkMuted, fontSize: 13, marginTop: 2 },
   tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
   tagText: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },

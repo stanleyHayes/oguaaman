@@ -1,9 +1,10 @@
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { FestivalSummary } from "@/lib/types";
-import { C, serif } from "@/theme";
+import { C, S } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
@@ -50,8 +51,8 @@ const s = StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
-  coverLabel: { color: C.cream, fontFamily: serif, fontSize: 24, fontWeight: "700", textAlign: "center", paddingHorizontal: 16 },
-  name: { fontFamily: serif, fontSize: 22, fontWeight: "700", color: C.ink },
+  coverLabel: { color: C.cream, ...S(700), fontSize: 24, textAlign: "center", paddingHorizontal: 16 },
+  name: { ...S(700), fontSize: 22, color: C.ink },
   tagline: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   meta: { color: C.inkFaint, fontSize: 12, marginTop: 10 },
   metaNext: { color: C.goldText, fontWeight: "700" },

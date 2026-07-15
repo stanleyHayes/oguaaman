@@ -1,10 +1,11 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Incident } from "@/lib/types";
 import { CATEGORY_LABEL, STATUS_COLOR, STATUS_LABEL } from "@/lib/incidents";
-import { C, serif } from "@/theme";
+import { C, D, S } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 
 function fmtDate(iso?: string): string {
@@ -80,14 +81,14 @@ export default function IncidentDetail() {
 const s = StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingVertical: 26 },
   heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, fontFamily: serif, fontSize: 24, fontWeight: "700", lineHeight: 30, marginTop: 8 },
+  heroTitle: { color: C.cream, ...D(700), fontSize: 24, lineHeight: 30, marginTop: 8 },
   heroStatus: { color: C.cream, fontSize: 12, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginTop: 10 },
   body: { padding: 20 },
   facts: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
   factRow: { flexDirection: "row", gap: 12, paddingVertical: 7 },
   factLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, fontWeight: "700", width: 88 },
   factValue: { color: C.ink, fontSize: 14, flex: 1, lineHeight: 20 },
-  desc: { fontFamily: serif, fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 18 },
+  desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 18 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 26, marginBottom: 12 },
   timeline: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 16 },
   tlRow: { flexDirection: "row", gap: 12 },
@@ -101,5 +102,5 @@ const s = StyleSheet.create({
   tlEmpty: { color: C.inkFaint, fontSize: 13, fontStyle: "italic" },
   currentBox: { marginTop: 22, borderWidth: 1, borderRadius: 12, padding: 14, alignItems: "center" },
   currentLabel: { color: C.inkFaint, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  currentStatus: { fontFamily: serif, fontSize: 20, fontWeight: "700", marginTop: 4 },
+  currentStatus: { ...S(700), fontSize: 20, marginTop: 4 },
 });

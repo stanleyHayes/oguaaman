@@ -1,5 +1,3 @@
-import { Platform } from "react-native";
-
 // Oguaa "Castle, Canopy, and Canoe" palette (agent_plan.md §2), for React Native.
 export const C = {
   paper: "#FBF8F1",
@@ -21,8 +19,32 @@ export const C = {
   tealText: "#0B6557",
 };
 
-// A serif for the display/heritage voice (system-available; no font bundling needed).
-export const serif = Platform.select({ ios: "Georgia", android: "serif", default: "serif" });
+// Brand type: Fraunces is the display voice (the h1/h2 of a screen — page
+// titles and section headings); Outfit is everything else. Both are bundled
+// via @expo-google-fonts and loaded in app/_layout.tsx. On RN each weight is
+// its own family, so use the S()/D() helpers instead of raw names — they also
+// keep fontWeight declarations honest (the family IS the weight).
+export const DISPLAY = { 600: "Fraunces_600SemiBold", 700: "Fraunces_700Bold" } as const;
+export const DISPLAY_ITALIC = "Fraunces_600SemiBold_Italic";
+export const SANS = {
+  400: "Outfit_400Regular",
+  500: "Outfit_500Medium",
+  600: "Outfit_600SemiBold",
+  700: "Outfit_700Bold",
+} as const;
+
+export type SansWeight = keyof typeof SANS;
+export type DisplayWeight = keyof typeof DISPLAY;
+
+/** Outfit at a weight — body text. Replaces `fontWeight` on RN. */
+export const S = (w: SansWeight = 400) => ({ fontFamily: SANS[w] });
+/** Outfit italic — quotes, epitaphs, mottos in the body. The Outfit package
+    ships no italic cut; iOS/web slant it, Android shows upright (graceful). */
+export const SI = (w: SansWeight = 400) => ({ fontFamily: SANS[w], fontStyle: "italic" as const });
+/** Fraunces at a weight — display titles only (screen h1, section h2). */
+export const D = (w: DisplayWeight = 700) => ({ fontFamily: DISPLAY[w] });
+/** Fraunces italic — the rare display-level italic (hero motto). */
+export const DI = () => ({ fontFamily: DISPLAY_ITALIC, fontStyle: "italic" as const });
 
 // Deterministic warm gradient-ish fill seed (we render a flat tinted block in RN).
 const FILLS = [C.green, C.goldBrand, C.clay, C.teal, C.greenSlate, C.maroon];

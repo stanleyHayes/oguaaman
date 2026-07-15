@@ -1,6 +1,7 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import { C, serif, initials } from "@/theme";
+import { T as Text } from "@/components/typography";
+import { C, D, S, SI, initials } from "@/theme";
 import { Mark } from "@/ui";
 import { useAuth } from "@/lib/auth";
 import { useLang, LANGS } from "@/lib/i18n";
@@ -165,9 +166,9 @@ const s = StyleSheet.create({
     marginTop: -38,
     marginLeft: 20,
   },
-  avatarInit: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.green900 },
+  avatarInit: { ...S(700), fontSize: 26, color: C.green900 },
   nameRow: { flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 18, gap: 12 },
-  name: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.ink, marginTop: 12 },
+  name: { ...D(700), fontSize: 26, color: C.ink, marginTop: 12 },
   handle: { color: C.inkFaint, fontSize: 14, marginTop: 3 },
   goArrow: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
   welcomeSub: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
@@ -193,7 +194,7 @@ const s = StyleSheet.create({
   langChipOn: { borderColor: C.green, backgroundColor: C.green },
   langChipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
   langChipTextOn: { color: C.cream },
-  foot: { fontFamily: serif, fontStyle: "italic", color: C.goldText, textAlign: "center", marginTop: 28, fontSize: 16 },
+  foot: { ...SI(), color: C.goldText, textAlign: "center", marginTop: 28, fontSize: 16 },
   version: { color: C.inkMuted, fontSize: 12, textAlign: "center", marginTop: 10, fontWeight: "600" },
   note: { color: C.inkFaint, fontSize: 12, textAlign: "center", marginTop: 4 },
 });

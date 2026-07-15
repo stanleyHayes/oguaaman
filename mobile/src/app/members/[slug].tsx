@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
+import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { MemberView } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -127,8 +128,8 @@ export default function MemberProfile() {
 const s = StyleSheet.create({
   header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 28, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
-  avatarText: { color: C.cream, fontFamily: serif, fontSize: 32, fontWeight: "700" },
-  name: { fontFamily: serif, fontSize: 26, fontWeight: "700", color: C.cream, marginTop: 12 },
+  avatarText: { color: C.cream, ...S(700), fontSize: 32 },
+  name: { ...D(700), fontSize: 26, color: C.cream, marginTop: 12 },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
   bio: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: 8, maxWidth: 320 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, justifyContent: "center" },
@@ -140,11 +141,11 @@ const s = StyleSheet.create({
   followTextOn: { color: C.green900 },
   body: { padding: 16 },
   sectionCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  sectionTitle: { fontFamily: serif, fontSize: 20, fontWeight: "700", color: C.ink },
+  sectionTitle: { ...D(700), fontSize: 20, color: C.ink },
   sectionHelp: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 12 },
   card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
   cardThumb: { width: 48, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  cardThumbInit: { color: C.cream, fontFamily: serif, fontSize: 18, fontWeight: "700" },
+  cardThumbInit: { color: C.cream, ...S(700), fontSize: 18 },
   cardType: { color: C.goldText, fontSize: 10, letterSpacing: 1, fontWeight: "700", textTransform: "uppercase" },
-  cardTitle: { fontFamily: serif, fontSize: 18, color: C.ink, marginTop: 2 },
+  cardTitle: { ...S(400), fontSize: 18, color: C.ink, marginTop: 2 },
 });

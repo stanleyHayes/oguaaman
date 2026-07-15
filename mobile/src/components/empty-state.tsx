@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { C, serif } from "@/theme";
+import { Pressable, StyleSheet, View } from "react-native";
+import { T as Text } from "@/components/typography";
+import { C, S } from "@/theme";
 
 /**
  * Shared empty state — a glyph inside a soft double-ring circle, a title, a
@@ -69,7 +70,7 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(199,162,74,0.14)", borderWidth: 1, borderColor: "rgba(184,134,47,0.35)",
   },
   glyph: { fontSize: 26, color: C.goldText },
-  title: { fontFamily: serif, fontSize: 18, fontWeight: "700", color: C.ink, marginTop: 16, textAlign: "center" },
+  title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 16, textAlign: "center" },
   body: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6, textAlign: "center", maxWidth: 300 },
   btn: { marginTop: 16, backgroundColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
   btnText: { color: C.cream, fontSize: 13, fontWeight: "700" },

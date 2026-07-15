@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from "react-native";
+import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing, Tribute } from "@/lib/types";
-import { C, serif, initials } from "@/theme";
+import { C, D, S, SI, initials } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { cldCover } from "@/lib/cloudinary";
@@ -204,10 +205,10 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
 
 const s = StyleSheet.create({
   portrait: { width: 110, height: 110, borderRadius: 55, backgroundColor: "#EADFC4", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
-  portraitInit: { fontFamily: serif, fontSize: 40, fontWeight: "600", color: C.green },
-  name: { fontFamily: serif, fontSize: 34, fontWeight: "600", color: C.ink, marginTop: 16, textAlign: "center" },
+  portraitInit: { ...S(600), fontSize: 40, color: C.green },
+  name: { ...D(600), fontSize: 34, color: C.ink, marginTop: 16, textAlign: "center" },
   dates: { color: C.goldText, fontSize: 13, letterSpacing: 3, marginTop: 6 },
-  epitaph: { fontFamily: serif, fontStyle: "italic", fontSize: 20, color: C.ink, textAlign: "center", marginTop: 14, maxWidth: 320, lineHeight: 28 },
+  epitaph: { ...SI(), fontSize: 20, color: C.ink, textAlign: "center", marginTop: 14, maxWidth: 320, lineHeight: 28 },
   candle: { backgroundColor: C.ink, borderRadius: 999, paddingHorizontal: 22, paddingVertical: 13, marginTop: 22 },
   candleText: { color: C.cream, fontSize: 15, fontWeight: "600" },
   remember: { borderWidth: 1.5, borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 22, paddingVertical: 11, marginTop: 12 },
@@ -220,20 +221,20 @@ const s = StyleSheet.create({
   momentCaption: { color: C.inkMuted, fontSize: 11, lineHeight: 15, marginTop: 5 },
   datesNote: { marginTop: 22, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
   datesTitle: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  datesLine: { color: C.ink, fontFamily: serif, fontSize: 14, marginTop: 6 },
+  datesLine: { color: C.ink, ...S(400), fontSize: 14, marginTop: 6 },
   divider: { height: 1, backgroundColor: C.sand, marginVertical: 28 },
   sectionLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 3, fontWeight: "700", textAlign: "center", marginBottom: 14 },
-  story: { fontFamily: serif, fontSize: 17, lineHeight: 26, color: C.ink },
+  story: { ...S(400), fontSize: 17, lineHeight: 26, color: C.ink },
   tribute: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 16, marginBottom: 12 },
-  tributeMsg: { fontFamily: serif, fontSize: 15, color: C.ink, lineHeight: 22 },
+  tributeMsg: { ...S(400), fontSize: 15, color: C.ink, lineHeight: 22 },
   tributeWho: { color: C.green, fontWeight: "600", fontSize: 13, marginTop: 8 },
   tributeEmpty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginBottom: 12 },
   form: { marginTop: 8, borderWidth: 1, borderColor: C.sand, borderStyle: "dashed", borderRadius: 12, padding: 16 },
-  input: { minHeight: 70, borderWidth: 1, borderColor: C.sand, borderRadius: 8, backgroundColor: C.paper, padding: 12, fontFamily: serif, fontSize: 15, color: C.ink, textAlignVertical: "top" },
+  input: { minHeight: 70, borderWidth: 1, borderColor: C.sand, borderRadius: 8, backgroundColor: C.paper, padding: 12, ...S(400), fontSize: 15, color: C.ink, textAlignVertical: "top" },
   inputSm: { marginTop: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 8, backgroundColor: C.paper, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: C.ink },
   submit: { marginTop: 14, alignSelf: "center", backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 26, paddingVertical: 12 },
   submitText: { color: C.cream, fontWeight: "600", fontSize: 14 },
   formNote: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 10 },
-  mark: { fontFamily: serif, fontSize: 26, color: C.goldText, textAlign: "center", marginTop: 30 },
+  mark: { ...S(400), fontSize: 26, color: C.goldText, textAlign: "center", marginTop: 30 },
   markSub: { color: C.inkFaint, fontSize: 11, letterSpacing: 3, textAlign: "center", marginTop: 4 },
 });
