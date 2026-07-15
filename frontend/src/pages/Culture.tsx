@@ -23,7 +23,7 @@ const OFFICES = [
 export function Component() {
   return (
     <>
-      <PageHero tone="gold" kicker="The brightest register" title="Culture & festivals" symbol="funtunfunefu" lede="Stitched on cloth and poured in libation — the Asafo, the durbar, and the festival that turns the whole town into one percussion section." />
+      <PageHero tone="gold" kicker="The brightest register" title="Culture & festivals" symbol="funtunfunefu" image="/uploads/seed/fetu-crowd.jpg" lede="Stitched on cloth and poured in libation — the Asafo, the durbar, and the festival that turns the whole town into one percussion section." />
       <Container size="prose" className="py-12"><p className="font-serif text-lg leading-relaxed text-ink">{CULTURE_BLURB}</p></Container>
 
       <section className="bg-cream py-12">

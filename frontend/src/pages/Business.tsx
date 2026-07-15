@@ -24,8 +24,8 @@ export function Component() {
 
   return (
     <>
-      <PageHero tone="teal" kicker="The working city" title="Business & trade" symbol="crab" lede="From the Kotokuraba market to the fishing harbour and the guesthouses by the Castle — the directory of the working city. Born of the market, still trading.">
-        <Cta to="/submit?type=business" variant="primary">List your business</Cta>
+      <PageHero tone="teal" kicker="The working city" title="Business & trade" symbol="crab" image="/uploads/seed/market-women.jpg" lede="From the Kotokuraba market to the fishing harbour and the guesthouses by the Castle — the directory of the working city. Born of the market, still trading.">
+        <Cta to="/submit?type=business" variant="gold">List your business</Cta>
       </PageHero>
 
       <Container size="wide" className="py-12">

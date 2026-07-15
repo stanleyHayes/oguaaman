@@ -72,8 +72,8 @@ export function Component() {
 
   return (
     <>
-      <PageHero tone="gold" kicker="The connective tissue" title="Events & calendar" symbol="sankofa" lede="School reunions, youth workshops, music gigs and the festival itself — the calendar of the town, anchored on Fetu Afahye as the annual homecoming beat.">
-        <Cta to="/submit?type=event" variant="primary">Post an event</Cta>
+      <PageHero tone="gold" kicker="The connective tissue" title="Events & calendar" symbol="sankofa" image="/uploads/seed/bakatue-2016.jpg" lede="School reunions, youth workshops, music gigs and the festival itself — the calendar of the town, anchored on Fetu Afahye as the annual homecoming beat.">
+        <Cta to="/submit?type=event" variant="gold">Post an event</Cta>
       </PageHero>
       <Container size="wide" className="py-12">
         {anchor && (anchor.details.festival

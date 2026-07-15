@@ -17,7 +17,7 @@ export function Component() {
 
   return (
     <>
-      <PageHero tone="gold" kicker="The living archive" title="Festivals of the coast" symbol="sankofa" lede="Every edition of every festival — Fetu Afahye, Edina Bakatue, PANAFEST and the rest — kept year by year: recaps of the ones behind us, programmes for the ones ahead.">
+      <PageHero tone="gold" kicker="The living archive" title="Festivals of the coast" symbol="sankofa" image="/uploads/seed/bakatue.jpg" lede="Every edition of every festival — Fetu Afahye, Edina Bakatue, PANAFEST and the rest — kept year by year: recaps of the ones behind us, programmes for the ones ahead.">
       </PageHero>
       <Container size="wide" className="py-12">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

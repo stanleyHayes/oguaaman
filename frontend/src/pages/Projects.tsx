@@ -39,6 +39,7 @@ export function Component() {
         kicker="Adopt a project"
         title="Pride that builds something"
         symbol="funtunfunefu"
+        image="/uploads/seed/classroom-block-ghana.jpg"
         lede="Concrete, costed improvements for Cape Coast — proposed by verified institutions, funded by residents and the diaspora together. Every project publishes its receipts."
       />
       <Container className="py-12">

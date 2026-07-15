@@ -23,8 +23,8 @@ export function Component() {
   const { opps, memories, events } = useLoaderData() as Data;
   return (
     <>
-      <PageHero tone="teal" kicker="Get involved · training the youth" title="The community" symbol="funtunfunefu" lede="The platform leads with local pride, and pride is downstream of participation. Share a memory, follow the calendar, and open doors for the next generation.">
-        <Cta to="/community#join" variant="primary">Join the community</Cta>
+      <PageHero tone="teal" kicker="Get involved · training the youth" title="The community" symbol="funtunfunefu" image="/uploads/seed/fishermen.jpg" lede="The platform leads with local pride, and pride is downstream of participation. Share a memory, follow the calendar, and open doors for the next generation.">
+        <Cta to="/community#join" variant="gold">Join the community</Cta>
       </PageHero>
 
       <Container size="wide" className="py-12">

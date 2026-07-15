@@ -17,7 +17,7 @@ export function Component() {
   const paragraphs = OGUAA_SOUND.split("\n\n");
   return (
     <>
-      <PageHero tone="clay" kicker="Editorial · The local scene" title="The Oguaa Sound" symbol="sankofa" lede="The story of a coastal town that helped invent highlife — and keeps the pipeline flowing." />
+      <PageHero tone="clay" kicker="Editorial · The local scene" title="The Oguaa Sound" symbol="sankofa" image="/uploads/seed/fetu-procession.jpg" lede="The story of a coastal town that helped invent highlife — and keeps the pipeline flowing." />
       <Container size="prose" className="py-12 sm:py-16">
         <article className="font-serif text-lg leading-relaxed text-ink">
           {paragraphs.map((p, i) => (

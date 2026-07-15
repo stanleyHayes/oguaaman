@@ -43,9 +43,10 @@ export function Component() {
         kicker="Training the youth"
         title="Youth & opportunity"
         symbol="funtunfunefu"
-        lede="Scholarships, internships, apprenticeships, training and jobs for the young of Cape Coast — plus a spotlight on the talents coming up. Everything here is information and outbound links only: applications happen off-platform, and no private adult-to-minor contact ever runs through Oguaa."
+        image="/uploads/seed/outdoor-classroom-ghana.jpg"
+        lede="Scholarships, internships, apprenticeships, training and jobs for the young of Cape Coast — plus a spotlight on rising talent. Information and outbound links only: no private adult-to-minor contact ever runs through Oguaa."
       >
-        <Cta to="/submit?type=opportunity" variant="primary">Post an opportunity</Cta>
+        <Cta to="/submit?type=opportunity" variant="gold">Post an opportunity</Cta>
       </PageHero>
       <Spotlight talents={talents} />
       <Board opps={opps} />

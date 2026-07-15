@@ -83,7 +83,8 @@ export function Component() {
         title="Sons & daughters, everywhere."
         fanteName="Abɔkyirfoɔ"
         symbol="sankofa"
-        lede="The register of Cape Coasters living away from home — across the world and across Ghana. Sankofa: go back and fetch it. The diaspora is the bridge for homecomings, adopt-a-project, and the doors we open for the young."
+        image="/uploads/seed/elmina-pano.jpg"
+        lede="The register of Cape Coasters living away from home — across the world and across Ghana. Sankofa: the bridge for homecomings, projects, and the doors we open for the young."
       />
 
       {members.length > 0 && (

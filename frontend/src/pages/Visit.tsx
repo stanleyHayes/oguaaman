@@ -15,8 +15,8 @@ const SPOTS = [
 export function Component() {
   return (
     <>
-      <PageHero tone="teal" kicker="Tourism · the coast" title="Visit Oguaa" symbol="crab" lede="Come for the Castle and stay for the coast — the canopy, the beaches, the markets, the food, and a festival in September.">
-        <Cta to="/culture" variant="primary">Time it for Fetu Afahye →</Cta>
+      <PageHero tone="teal" kicker="Tourism · the coast" title="Visit Oguaa" symbol="crab" image="/uploads/seed/kakum-canopy.jpg" lede="Come for the Castle and stay for the coast — the canopy, the beaches, the markets, the food, and a festival in September.">
+        <Cta to="/culture" variant="gold">Time it for Fetu Afahye →</Cta>
       </PageHero>
       <Container size="prose" className="py-12"><p className="font-serif text-lg leading-relaxed text-ink">{VISIT_BLURB}</p></Container>
       <Container size="wide" className="pb-14">

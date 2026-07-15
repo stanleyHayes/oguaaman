@@ -39,8 +39,9 @@ export function Component() {
     <>
       <section className="on-dark relative overflow-hidden bg-green text-cream">
         <Parallax strength={28} className="absolute -inset-y-8 inset-x-0">
+          <img src="/uploads/seed/castle-exterior.jpg" alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" aria-hidden />
           <div className="bg-dotgrid absolute inset-0 opacity-60" aria-hidden />
-          <div className="absolute inset-0 opacity-90" style={{ background: "radial-gradient(120% 120% at 80% -10%, #1B5A3F 0%, #123F2D 45%, #0C2C1F 100%)" }} aria-hidden />
+          <div className="absolute inset-0" style={{ background: "radial-gradient(120% 120% at 80% -10%, rgba(27,90,63,0.88) 0%, rgba(18,63,45,0.92) 45%, rgba(12,44,31,0.97) 100%)" }} aria-hidden />
         </Parallax>
         <Container className="relative py-20 sm:py-28" size="wide">
           <Stagger className="max-w-3xl">
@@ -206,10 +207,19 @@ export function Component() {
       )}
 
       <section className="bg-cream py-16">
-        <Container size="prose" className="text-center">
-          <SymbolDivider name="crab" />
-          <Reveal as="h2" className="mt-6 text-3xl font-semibold text-ink sm:text-4xl">The town that began as a market</Reveal>
-          <Reveal as="p" delay={0.08} className="mt-5 text-left font-serif text-lg leading-relaxed text-ink">{ABOUT_OGUAA}</Reveal>
+        <Container size="wide">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div className="text-center lg:text-left">
+              <SymbolDivider name="crab" className="lg:mx-0" />
+              <Reveal as="h2" className="mt-6 text-3xl font-semibold text-ink sm:text-4xl">The town that began as a market</Reveal>
+              <Reveal as="p" delay={0.08} className="mt-5 text-left font-serif text-lg leading-relaxed text-ink">{ABOUT_OGUAA}</Reveal>
+            </div>
+            <Reveal delay={0.1} className="grid grid-cols-2 gap-4">
+              <img src="/uploads/seed/market-women.jpg" alt="Traders at the Kotokuraba market" loading="lazy" className="col-span-2 aspect-[16/9] w-full rounded-2xl object-cover shadow-md" />
+              <img src="/uploads/seed/downtown.jpg" alt="A Cape Coast street" loading="lazy" className="aspect-square w-full rounded-2xl object-cover shadow-md" />
+              <img src="/uploads/seed/kenkey-fish.jpg" alt="Fante kenkey with fresh fish" loading="lazy" className="aspect-square w-full rounded-2xl object-cover shadow-md" />
+            </Reveal>
+          </div>
         </Container>
       </section>
 

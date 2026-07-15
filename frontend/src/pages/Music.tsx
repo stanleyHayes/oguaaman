@@ -33,11 +33,12 @@ export function Component() {
         kicker="The flagship · launch deep"
         title="The Oguaa Sound"
         symbol="sankofa"
-        lede="Local artists are the most starved of a spotlight and the most motivated to share. Give a musician a real profile and they push it to their own following — reach money cannot buy. Music goes through the door first."
+        image="/uploads/seed/fetu-flagbearer.jpg"
+        lede="Local artists are the most starved of a spotlight and the most motivated to share. Give a musician a real profile and they push it to their following — music goes through the door first."
       >
         <div className="flex flex-wrap gap-3">
-          <Cta to="/music/the-oguaa-sound" variant="primary">Read “The Oguaa Sound”</Cta>
-          <Cta to="/submit?type=artist" variant="outline">Nominate an artist</Cta>
+          <Cta to="/music/the-oguaa-sound" variant="gold">Read “The Oguaa Sound”</Cta>
+          <Cta to="/submit?type=artist" variant="outline-dark">Nominate an artist</Cta>
         </div>
       </PageHero>
 

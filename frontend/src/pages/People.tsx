@@ -18,8 +18,8 @@ export function Component() {
   const remembered = people.filter((p) => !p.details.living);
   return (
     <>
-      <PageHero tone="gold" kicker="The sons & daughters wall" title="People of Oguaa" symbol="dwennimmen" lede="The icons, the personalities, the quietly remarkable — historical and living. A wall of pride for the people this town has given the world.">
-        <Cta to="/submit?type=person" variant="primary">Nominate someone</Cta>
+      <PageHero tone="gold" kicker="The sons & daughters wall" title="People of Oguaa" symbol="dwennimmen" image="/uploads/seed/fetu-queenmother.jpg" lede="The icons, the personalities, the quietly remarkable — historical and living. A wall of pride for the people this town has given the world.">
+        <Cta to="/submit?type=person" variant="gold">Nominate someone</Cta>
       </PageHero>
 
       {living.length > 0 && (

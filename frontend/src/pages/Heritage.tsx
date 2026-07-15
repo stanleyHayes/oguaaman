@@ -24,7 +24,7 @@ export function Component() {
   const { timeline, heritage, people, memories } = useLoaderData() as HistoryView;
   return (
     <>
-      <PageHero tone="green" kicker="Sankofa · go back and fetch it" title="Our History" symbol="sankofa" lede="The living memory of the people of Oguaa — the old colonial capital, the cradle of the colony's educated class, the global symbol of the diaspora homecoming." />
+      <PageHero tone="green" kicker="Sankofa · go back and fetch it" title="Our History" symbol="sankofa" image="/uploads/seed/castle-exterior.jpg" lede="The living memory of the people of Oguaa — the old colonial capital, the cradle of the colony's educated class, the global symbol of the diaspora homecoming." />
       <Container size="prose" className="py-12"><p className="font-serif text-lg leading-relaxed text-ink">{HERITAGE_BLURB}</p></Container>
 
       <section className="bg-cream py-12">

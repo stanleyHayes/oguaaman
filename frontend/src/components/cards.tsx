@@ -140,13 +140,16 @@ export function SectionCard({ section }: Readonly<{ section: NavSection }>) {
 
 export function MemorialCard({ memorial }: Readonly<{ memorial: Listing }>) {
   const d = memorial.details;
+  // Portraits first; otherwise the first life-photo from the gallery — a real
+  // image beats the parchment initials disc (seeded memorials carry galleries).
+  const cover = memorial.coverImageUrl ?? (Array.isArray(d.gallery) ? (d.gallery[0] as { url?: string } | undefined)?.url : undefined);
   return (
     <Link
       to={`/memoriam/${memorial.slug}`}
       className="group flex h-full flex-col items-center rounded-[var(--radius-card)] border border-sand bg-cream p-6 text-center shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]"
     >
-      {memorial.coverImageUrl ? (
-        <Thumb seed={memorial.slug} label={initials(memorial.title)} src={memorial.coverImageUrl} rounded="rounded-full" className="h-20 w-20 border border-gold-border/40" />
+      {cover ? (
+        <Thumb seed={memorial.slug} label={initials(memorial.title)} src={cover} rounded="rounded-full" className="h-20 w-20 border border-gold-border/40" />
       ) : (
         <span
           className="flex h-20 w-20 items-center justify-center rounded-full border border-gold-border/40 text-2xl text-green"

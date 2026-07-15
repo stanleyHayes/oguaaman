@@ -18,8 +18,8 @@ export function Component() {
   const schools = useLoaderData() as Organization[];
   return (
     <>
-      <PageHero tone="maroon" kicker="Rep your school · the powerhouse" title="The Citadel of Education" symbol="dwennimmen" lede="Within a few square miles sit the oldest and most decorated schools in Ghana. We don't build communities from scratch — we give existing, loyal Old Students networks a home.">
-        <Cta to="/me" variant="primary">Rep your school →</Cta>
+      <PageHero tone="maroon" kicker="Rep your school · the powerhouse" title="The Citadel of Education" symbol="dwennimmen" image="/uploads/seed/mfantsipim-campus.jpg" lede="Within a few square miles sit the oldest and most decorated schools in Ghana. We don't build communities from scratch — we give existing, loyal Old Students networks a home.">
+        <Cta to="/me" variant="gold">Rep your school →</Cta>
       </PageHero>
 
       <Container size="prose" className="py-12">
