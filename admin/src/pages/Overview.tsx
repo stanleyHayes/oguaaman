@@ -73,7 +73,9 @@ function StatTile({ label, value, to, tone = "text-ink", accent = false }: Reado
   return (
     <Link
       to={to}
-      className={`group rounded-[var(--radius-card)] border p-4 transition-colors ${
+      // `block` is required: an inline <a> wrapping block divs fragments its
+      // box, collapsing the border/background into a thin strip.
+      className={`group block rounded-[var(--radius-card)] border p-4 transition-colors ${
         accent ? "border-gold-border/50 bg-gold/[0.08] hover:bg-gold/[0.14]" : "border-sand bg-cream hover:border-gold-border/50"
       }`}
     >
