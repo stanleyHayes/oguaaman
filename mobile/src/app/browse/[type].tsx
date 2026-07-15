@@ -6,9 +6,9 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, D, S, fillFor, initials } from "@/theme";
-import { Loading, ErrorView, Thumb } from "@/ui";
+import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
-import { HeroParallax, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
+import { RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
 
 function openURL(url?: string) {
@@ -21,6 +21,8 @@ interface BrowseView {
   kicker: string;
   lede: string;
   tone: string;
+  /** Seed photo for the hero band (mirrors the portal section heroes). */
+  image: string;
   countNoun: string;
   fetch: () => Promise<Listing[]>;
   sub: (l: Listing) => string;
@@ -34,6 +36,7 @@ const VIEWS: Record<string, BrowseView> = {
     kicker: "The wall of pride",
     lede: "Sons and daughters of Oguaa — icons past and living.",
     tone: C.green,
+    image: "/uploads/seed/fetu-queenmother.jpg",
     countNoun: "people",
     fetch: () => api.people(),
     sub: (l) => [l.details.era, l.details.whyNotable].filter(Boolean).join(" · ") || "Cape Coast",
@@ -44,6 +47,7 @@ const VIEWS: Record<string, BrowseView> = {
     kicker: "The working city",
     lede: "The working city — markets, fishing, trade and the people behind them.",
     tone: C.teal,
+    image: "/uploads/seed/market-women.jpg",
     countNoun: "businesses",
     fetch: () => api.businesses(),
     sub: (l) => l.details.category || l.details.address || "Cape Coast",
@@ -54,6 +58,7 @@ const VIEWS: Record<string, BrowseView> = {
     kicker: "The town calendar",
     lede: "From Fetu Afahye to school speech days and homecomings.",
     tone: C.green900,
+    image: "/uploads/seed/bakatue-2016.jpg",
     countNoun: "events",
     fetch: () => api.events(),
     sub: (l) => [l.details.startsAt, l.details.venue].filter(Boolean).join(" · ") || "Cape Coast",
@@ -64,6 +69,7 @@ const VIEWS: Record<string, BrowseView> = {
     kicker: "Youth & opportunity",
     lede: "Jobs, scholarships and mentorship shared within the community.",
     tone: C.teal,
+    image: "/uploads/seed/outdoor-classroom-ghana.jpg",
     countNoun: "opportunities",
     fetch: () => api.opportunities(),
     sub: (l) => [l.details.kind, l.details.deadline ? `closes ${l.details.deadline}` : ""].filter(Boolean).join(" · ") || "Open",
@@ -73,6 +79,7 @@ const VIEWS: Record<string, BrowseView> = {
     kicker: "Old Cape Coast",
     lede: "Photos and stories of old Cape Coast, preserved.",
     tone: C.clay,
+    image: "/uploads/seed/fishermen.jpg",
     countNoun: "memories",
     fetch: () => api.memories(),
     sub: (l) => l.details.text?.slice(0, 80) ?? "",
@@ -178,14 +185,7 @@ export default function Browse() {
     <>
       <Stack.Screen options={{ title: view.title }} />
       <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <View style={[s.catHero, { backgroundColor: view.tone }]}>
-          <HeroParallax scrollY={scrollY}>
-            <Text style={s.catKicker}>{view.kicker}</Text>
-            <Text style={s.catTitle}>{view.title}</Text>
-            <Text style={s.catLede}>{view.lede}</Text>
-            <Text style={s.catCount}>{data.length} {view.countNoun}</Text>
-          </HeroParallax>
-        </View>
+        <PhotoHero image={view.image} tone={view.tone} kicker={view.kicker} title={view.title} lede={view.lede} count={`${data.length} ${view.countNoun}`} scrollY={scrollY} />
         <View style={{ padding: 16, gap: 12 }}>
           {anchor && <RevealView><Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable></RevealView>}
           {data.length === 0 && <EmptyState glyph="◎" title="Nothing here yet" body="Be the first to contribute." />}
@@ -204,11 +204,6 @@ export default function Browse() {
 }
 
 const s = StyleSheet.create({
-  catHero: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
-  catKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  catTitle: { color: C.cream, ...D(700), fontSize: 32, marginTop: 6 },
-  catLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
-  catCount: { color: "rgba(246,241,231,0.55)", fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },
   section: { gap: 12 },
   sectionHeader: { color: C.goldText, ...S(700), fontSize: 15, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
   card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },

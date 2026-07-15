@@ -1,11 +1,11 @@
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { api } from "@/lib/api";
+import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Organization } from "@/lib/types";
 import { C, S, initials } from "@/theme";
-import { Loading, ErrorView } from "@/ui";
+import { Loading, ErrorView, PhotoHero } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { StaggerIn } from "@/components/anim";
 
@@ -26,16 +26,23 @@ export default function Institutions() {
   return (
     <ScrollView
       style={{ backgroundColor: C.paper }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 12 }}
+      contentContainerStyle={{ paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
     >
-      <Text style={s.lede}>The official institutions of Cape Coast — schools, the traditional council, churches, the Asafo companies and civic bodies. Each keeps a verified page.</Text>
+      <PhotoHero
+        image="/uploads/seed/mfantsipim-campus.jpg"
+        tone={C.maroon}
+        kicker="Rep your school · the powerhouse"
+        title="Institutions of Oguaa"
+        lede="The official institutions of Cape Coast — schools, the traditional council, churches, the Asafo companies and civic bodies. Each keeps a verified page."
+      />
+      <View style={{ padding: 16, gap: 12 }}>
       {data.map((o, i) => (
           <StaggerIn key={o.id} index={i}>
             <Link href={`/institutions/${o.slug}`} asChild>
               <Pressable style={s.card}>
               {o.crestUrl ? (
-                <Image source={{ uri: cldCover(o.crestUrl, 120) }} resizeMode="cover" style={s.crest} />
+                <Image source={{ uri: cldCover(mediaUrl(o.crestUrl), 120) }} resizeMode="cover" style={s.crest} />
               ) : (
                 <View style={[s.crest, { backgroundColor: o.houseColors?.[0] ?? C.green, alignItems: "center", justifyContent: "center" }]}>
                   <Text style={s.crestInit}>{initials(o.name)}</Text>
@@ -56,12 +63,12 @@ export default function Institutions() {
             </Link>
           </StaggerIn>
       ))}
+      </View>
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
   crest: { width: 52, height: 52, borderRadius: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper },
   crestInit: { color: C.cream, ...S(700), fontSize: 18 },

@@ -1,9 +1,9 @@
-import { ScrollView, StyleSheet, View, Pressable } from "react-native";
+import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
-import { api } from "@/lib/api";
+import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HomeData, Listing, NewsArticle } from "@/lib/types";
 import { C, D, S, SI, initials } from "@/theme";
@@ -90,8 +90,10 @@ export default function Home() {
 
   return (
     <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
-      {/* hero */}
+      {/* hero — castle photo under the green, mirroring the portal home */}
       <View style={[s.hero, { paddingTop: insets.top + 24 }]}>
+        <Image source={{ uri: mediaUrl("/uploads/seed/castle-exterior.jpg") }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, s.heroScrim]} />
         <HeroParallax scrollY={scrollY}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingVertical: 4, paddingRight: 4 }}>
@@ -220,7 +222,8 @@ export default function Home() {
 }
 
 const s = StyleSheet.create({
-  hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingBottom: 24 },
+  hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingBottom: 24, overflow: "hidden" },
+  heroScrim: { backgroundColor: "rgba(12,44,31,0.72)" },
   menuGlyph: { color: C.cream, fontSize: 20, fontWeight: "700" },
   eyebrow: { color: C.gold, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, ...D(600), fontSize: 44, marginTop: 10 },

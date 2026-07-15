@@ -1,7 +1,7 @@
 import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { api } from "@/lib/api";
+import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { NewsArticle } from "@/lib/types";
 import { C, D, S } from "@/theme";
@@ -20,7 +20,7 @@ function newsDate(a: NewsArticle): string {
 
 function Cover({ article: a, height }: Readonly<{ article: NewsArticle; height: number }>) {
   if (a.coverImageUrl) {
-    return <Image source={{ uri: cldCover(a.coverImageUrl, 600) }} resizeMode="cover" style={{ width: "100%", height, backgroundColor: C.sand }} />;
+    return <Image source={{ uri: cldCover(mediaUrl(a.coverImageUrl), 600) }} resizeMode="cover" style={{ width: "100%", height, backgroundColor: C.sand }} />;
   }
   return <View style={{ width: "100%", height: Math.max(10, height * 0.35), backgroundColor: a.coverColor ?? "#123F2D" }} />;
 }

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import type { SharedValue } from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
+import { HeroParallax } from "@/components/anim";
 import { C, D, S, SI, fillFor } from "@/theme";
 import { cldCover } from "@/lib/cloudinary";
+import { mediaUrl } from "@/lib/api";
 
 export function Loading() {
   return (
@@ -51,6 +54,60 @@ export function HeroBand({ tone, kicker, title, lede }: Readonly<{ tone: string;
 }
 
 /**
+ * Media-first section hero — the portal PageHero photo variant mirrored: a
+ * seed photo full-bleed under a green-900 scrim, gold kicker, cream Fraunces
+ * title. Without `image` it renders the flat tonal band. Pass `scrollY` to
+ * keep the gentle parallax the browse/explore heroes already had.
+ */
+export function PhotoHero({
+  image,
+  tone = C.green900,
+  kicker,
+  title,
+  fante,
+  lede,
+  count,
+  scrollY,
+}: Readonly<{
+  /** Seed photo path ("/uploads/seed/...") — resolved via mediaUrl. */
+  image?: string;
+  tone?: string;
+  kicker: string;
+  title?: string;
+  /** Fante name in gold italics after the title (portal fanteName). */
+  fante?: string;
+  lede?: string;
+  count?: string;
+  scrollY?: SharedValue<number>;
+}>) {
+  const content = (
+    <>
+      <Text style={s.heroKicker}>{kicker}</Text>
+      {title ? (
+        <Text style={s.heroTitle}>
+          {title}
+          {fante ? <Text style={s.heroFante}> {fante}</Text> : null}
+        </Text>
+      ) : null}
+      {lede ? <Text style={s.heroLede}>{lede}</Text> : null}
+      {count ? <Text style={s.heroCount}>{count}</Text> : null}
+    </>
+  );
+  return (
+    <View style={[s.heroBand, { backgroundColor: tone }]}>
+      {image ? (
+        <>
+          <Image source={{ uri: mediaUrl(image) }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, s.heroScrim]} />
+          <View style={[StyleSheet.absoluteFill, s.heroScrimLow]} />
+        </>
+      ) : null}
+      {scrollY ? <HeroParallax scrollY={scrollY}>{content}</HeroParallax> : content}
+    </View>
+  );
+}
+
+/**
  * A cover thumbnail: shows the contributor's image when present, otherwise a
  * warm deterministic tint with initials. Falls back to the tint if the image
  * fails to load. `style` controls size/radius; pass the same block style you'd
@@ -72,7 +129,7 @@ export function Thumb({
   const [failed, setFailed] = useState(false);
   const bg = fillFor(seed);
   if (src && !failed) {
-    return <Image source={{ uri: cldCover(src, 400) }} onError={() => setFailed(true)} resizeMode="cover" style={[style as StyleProp<ImageStyle>, { backgroundColor: bg }]} />;
+    return <Image source={{ uri: cldCover(mediaUrl(src), 400) }} onError={() => setFailed(true)} resizeMode="cover" style={[style as StyleProp<ImageStyle>, { backgroundColor: bg }]} />;
   }
   return (
     <View style={[style, { backgroundColor: bg, alignItems: "center", justifyContent: "center" }]}>
@@ -175,8 +232,12 @@ const s = StyleSheet.create({
   errHint: { color: C.inkFaint, fontSize: 12, marginTop: 4 },
   pill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   pillText: { fontSize: 12, fontWeight: "600" },
-  heroBand: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
+  heroBand: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22, overflow: "hidden" },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 28, marginTop: 6 },
-  heroLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
+  heroFante: { color: C.gold, ...SI(), fontSize: 24 },
+  heroLede: { color: "rgba(246,241,231,0.85)", fontSize: 14, lineHeight: 20, marginTop: 6 },
+  heroCount: { color: "rgba(246,241,231,0.6)", fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },
+  heroScrim: { backgroundColor: "rgba(12,44,31,0.62)" },
+  heroScrimLow: { backgroundColor: "rgba(12,44,31,0.25)", top: "55%" },
 });

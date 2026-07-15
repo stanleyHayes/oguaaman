@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { FestivalSummary } from "@/lib/types";
 import { C, S } from "@/theme";
-import { Loading, ErrorView, Thumb } from "@/ui";
+import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
 function fmtDate(iso?: string): string {
@@ -22,12 +22,17 @@ export default function Festivals() {
   return (
     <ScrollView
       style={{ backgroundColor: C.paper }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}
+      contentContainerStyle={{ paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
     >
-      <Text style={s.lede}>
-        Every edition of every festival — Fetu Afahye, Edina Bakatue, PANAFEST and the rest — kept year by year: recaps of the ones behind us, programmes for the ones ahead.
-      </Text>
+      <PhotoHero
+        image="/uploads/seed/bakatue.jpg"
+        tone={C.green}
+        kicker="The living archive"
+        title="Festivals of the coast"
+        lede="Every edition of every festival — Fetu Afahye, Edina Bakatue, PANAFEST and the rest — kept year by year: recaps of the ones behind us, programmes for the ones ahead."
+      />
+      <View style={{ padding: 16, gap: 14 }}>
       {data.map((f, i) => (
         <StaggerIn key={f.slug} index={i}>
           <Pressable onPress={() => router.push(`/festivals/${f.slug}` as never)} style={s.card}>
@@ -43,12 +48,12 @@ export default function Festivals() {
           </Pressable>
         </StaggerIn>
       ))}
+      </View>
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
   coverLabel: { color: C.cream, ...S(700), fontSize: 24, textAlign: "center", paddingHorizontal: 16 },

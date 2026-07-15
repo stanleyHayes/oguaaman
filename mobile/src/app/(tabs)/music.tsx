@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, D, S, initials } from "@/theme";
-import { Loading, ErrorView, Pill, Thumb } from "@/ui";
+import { Loading, ErrorView, PhotoHero, Pill, Thumb } from "@/ui";
 import { PressScale, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
 
@@ -38,8 +38,15 @@ export default function Music() {
   const shown = genre ? data.filter((a) => (a.details.genres ?? []).includes(genre)) : data;
 
   return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
-      <Text style={s.lede}>Cape Coast’s artists and the rotating spotlight. We link out to streaming — no audio is hosted.</Text>
+    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
+      <PhotoHero
+        image="/uploads/seed/fetu-flagbearer.jpg"
+        tone={C.green}
+        kicker="The flagship · launch deep"
+        title="The Oguaa Sound"
+        lede="Local artists are the most starved of a spotlight and the most motivated to share. Give a musician a real profile and they push it to their following — music goes through the door first."
+      />
+      <View style={{ padding: 16, gap: 14 }}>
       <PressScale onPress={() => router.push("/music/the-oguaa-sound" as never)} style={s.soundCard}>
         <Text style={s.soundKicker}>THE OGUAA SOUND</Text>
         <Text style={s.soundTitle}>Where highlife learned to swim ›</Text>
@@ -70,12 +77,12 @@ export default function Music() {
           </Link>
         </StaggerIn>
       ))}
+      </View>
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   soundCard: { backgroundColor: C.green900, borderRadius: 14, padding: 16 },
   soundKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   soundTitle: { color: C.cream, ...D(700), fontSize: 20, marginTop: 4 },

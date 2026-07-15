@@ -7,8 +7,8 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Member } from "@/lib/types";
-import { C, D, S, SI, initials } from "@/theme";
-import { Loading, ErrorView, Thumb } from "@/ui";
+import { C, D, S, initials } from "@/theme";
+import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
 type Group = { country: string; members: Member[] };
@@ -60,13 +60,16 @@ export default function Diaspora() {
   const joinHref = member ? "/me" : "/signin";
 
   return (
-    <ScrollView style={{ backgroundColor: C.cream }} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
-      <Text style={s.kicker}>OGUAA ABROAD · THE DIASPORA REGISTER</Text>
-      <Text style={s.title}>Sons & daughters, everywhere.</Text>
-      <Text style={s.fante}>Abɔkyirfoɔ</Text>
-      <Text style={s.lede}>
-        The register of Cape Coasters living away from home — across the world and across Ghana. Sankofa: go back and fetch it. The diaspora is the bridge for homecomings, adopt-a-project, and the doors we open for the young.
-      </Text>
+    <ScrollView style={{ backgroundColor: C.cream }} contentContainerStyle={{ paddingBottom: 48 }}>
+      <PhotoHero
+        image="/uploads/seed/elmina-pano.jpg"
+        tone={C.teal}
+        kicker="OGUAA ABROAD · THE DIASPORA REGISTER"
+        title="Sons & daughters, everywhere."
+        fante="Abɔkyirfoɔ"
+        lede="The register of Cape Coasters living away from home — across the world and across Ghana. Sankofa: the bridge for homecomings, projects, and the doors we open for the young."
+      />
+      <View style={{ padding: 20 }}>
 
       {data.length > 0 && (
         <View style={s.statsRow}>
@@ -118,16 +121,13 @@ export default function Diaspora() {
           <Pressable style={s.joinBtn}><Text style={s.joinBtnText}>{joinLabel}</Text></Pressable>
         </Link>
       </View>
+      </View>
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  kicker: { ...S(600), fontSize: 11, letterSpacing: 1.6, color: C.goldText },
-  title: { ...D(600), fontSize: 32, color: C.ink, marginTop: 8 },
-  fante: { ...SI(), fontSize: 17, color: C.goldText, marginTop: 2 },
-  lede: { ...S(), fontSize: 15, lineHeight: 23, color: C.inkMuted, marginTop: 12 },
-  statsRow: { flexDirection: "row", gap: 12, marginTop: 18 },
+  statsRow: { flexDirection: "row", gap: 12 },
   stat: { flex: 1, backgroundColor: C.paper, borderRadius: 14, borderWidth: 1, borderColor: C.sand, padding: 12, alignItems: "center" },
   statNum: { ...D(700), fontSize: 24, color: C.goldText },
   statLabel: { ...S(), fontSize: 12, color: C.inkMuted, marginTop: 2, textAlign: "center" },

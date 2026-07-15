@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, S } from "@/theme";
-import { Loading, ErrorView, Thumb } from "@/ui";
+import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
@@ -63,12 +63,17 @@ export default function Youth() {
   return (
     <ScrollView
       style={{ backgroundColor: C.paper }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+      contentContainerStyle={{ paddingBottom: 48 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
     >
-      <Text style={s.lede}>
-        Scholarships, internships, apprenticeships, training and jobs for the young of Cape Coast — plus a spotlight on the talents coming up. Information and outbound links only: applications happen off-platform, and no private adult-to-minor contact ever runs through Oguaa.
-      </Text>
+      <PhotoHero
+        image="/uploads/seed/outdoor-classroom-ghana.jpg"
+        tone={C.teal}
+        kicker="Training the youth"
+        title="Youth & opportunity"
+        lede="Scholarships, internships, apprenticeships, training and jobs for the young of Cape Coast — plus a spotlight on rising talent. Information and outbound links only: no private adult-to-minor contact ever runs through Oguaa."
+      />
+      <View style={{ padding: 16 }}>
       <Pressable onPress={() => router.push("/submit" as never)} style={s.cta}>
         <Text style={s.ctaText}>Post an opportunity</Text>
       </Pressable>
@@ -105,6 +110,7 @@ export default function Youth() {
           {shown.map((o) => <OppCard key={o.id} opp={o} />)}
         </View>
       )}
+      </View>
     </ScrollView>
   );
 }
@@ -163,8 +169,7 @@ function OppCard({ opp: o }: Readonly<{ opp: Listing }>) {
 }
 
 const s = StyleSheet.create({
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
-  cta: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
+  cta: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
   ctaText: { color: C.cream, fontWeight: "700", fontSize: 15 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   sectionBlurb: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },

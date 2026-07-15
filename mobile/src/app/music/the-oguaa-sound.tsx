@@ -1,7 +1,7 @@
-import { ScrollView, StyleSheet, View, Pressable } from "react-native";
+import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { api } from "@/lib/api";
+import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, D, S, initials } from "@/theme";
@@ -27,6 +27,8 @@ export default function OguaaSound() {
       <Stack.Screen options={{ title: "The Oguaa Sound" }} />
       <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
         <View style={s.hero}>
+          <Image source={{ uri: mediaUrl("/uploads/seed/fetu-procession.jpg") }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, s.heroScrim]} />
           <Text style={s.heroKicker}>SANKOFA · GO BACK AND FETCH IT</Text>
           <Text style={s.heroTitle}>Where highlife learned to swim</Text>
         </View>
@@ -64,7 +66,8 @@ export default function OguaaSound() {
 }
 
 const s = StyleSheet.create({
-  hero: { backgroundColor: C.clay, paddingHorizontal: 20, paddingVertical: 28 },
+  hero: { backgroundColor: C.clay, paddingHorizontal: 20, paddingVertical: 28, overflow: "hidden" },
+  heroScrim: { backgroundColor: "rgba(12,44,31,0.62)" },
   heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 6, lineHeight: 38 },
   body: { padding: 20 },

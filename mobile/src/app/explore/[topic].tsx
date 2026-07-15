@@ -6,20 +6,21 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HistoryView } from "@/lib/types";
 import { C, D, S } from "@/theme";
-import { Loading, ErrorView } from "@/ui";
-import { HeroParallax, StaggerIn, useHeroParallax } from "@/components/anim";
+import { Loading, ErrorView, PhotoHero } from "@/ui";
+import { StaggerIn, useHeroParallax } from "@/components/anim";
 
 // Static editorial for Heritage / Culture / Visit, ported from the portal and
 // grounded in the fact-checked Cape Coast research brief (agent_plan.md §1).
 
 interface Block { h?: string; p?: string; items?: { label: string; text?: string; colors?: string[] }[] }
-interface Topic { title: string; kicker: string; tone: string; lede: string; blocks: Block[]; link?: { label: string; href: string } }
+interface Topic { title: string; kicker: string; tone: string; image: string; lede: string; blocks: Block[]; link?: { label: string; href: string } }
 
 const TOPICS: Record<string, Topic> = {
   heritage: {
     title: "Heritage",
     kicker: "SANKOFA · GO BACK AND FETCH IT",
     tone: C.green,
+    image: "/uploads/seed/castle-courtyard.jpg",
     lede: "Oguaa remembers. The Castle and the Door of No Return, the lawyers and journalists of the old capital, the country's oldest schools.",
     blocks: [], // data-driven from /api/history — see HeritageScreen below
   },
@@ -27,6 +28,7 @@ const TOPICS: Record<string, Topic> = {
     title: "Culture",
     kicker: "FETU AFAHYE · THE 77 GODS",
     tone: C.goldBrand,
+    image: "/uploads/seed/fetu-crowd.jpg",
     lede: "Oguaa celebrates. The festival, the durbar, the seven Asafo companies and the Traditional Council that binds them.",
     blocks: [
       { h: "Fetu Afahye", p: "The harvest-and-cleansing festival of the Oguaa Traditional Area climaxes on the first Saturday of September. 'Fetu' is the clearing of the dirt: a ban on drumming and noise precedes it, thanks are given to the 77 gods of Oguaa and to the sea, and the chiefs ride in palanquins under state umbrellas to the grand durbar. At Bakatue, on the Fosu Lagoon, the Omanhene casts a net three times — then the companies race canoes." },
@@ -48,6 +50,7 @@ const TOPICS: Record<string, Topic> = {
     title: "Visit",
     kicker: "AKWAABA · YOU ARE WELCOME",
     tone: C.teal,
+    image: "/uploads/seed/kakum-canopy.jpg",
     lede: "Two hard contrasts in soft light: the bone-white Castle by the sea, the green hush of Kakum inland — and the town between them.",
     blocks: [
       { h: "Cape Coast Castle", p: "Walk the ramparts, stand at the Door of No Return, and take the guided tour through the dungeons. Give it a half day, and give it silence where it asks for it." },
@@ -69,12 +72,7 @@ export default function Explore() {
     <>
       <Stack.Screen options={{ title: t.title }} />
       <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <View style={[s.hero, { backgroundColor: t.tone }]}>
-          <HeroParallax scrollY={scrollY}>
-            <Text style={s.heroKicker}>{t.kicker}</Text>
-            <Text style={s.heroLede}>{t.lede}</Text>
-          </HeroParallax>
-        </View>
+        <PhotoHero image={t.image} tone={t.tone} kicker={t.kicker} lede={t.lede} scrollY={scrollY} />
         <View style={s.body}>
           {t.blocks.map((b, i) => (
             <StaggerIn key={`${b.h ?? ""}-${i}`} index={i} style={{ marginTop: i === 0 ? 0 : 22 }}>
@@ -121,12 +119,7 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
     <>
       <Stack.Screen options={{ title: t.title }} />
       <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <View style={[s.hero, { backgroundColor: t.tone }]}>
-          <HeroParallax scrollY={scrollY}>
-            <Text style={s.heroKicker}>{t.kicker}</Text>
-            <Text style={s.heroLede}>{t.lede}</Text>
-          </HeroParallax>
-        </View>
+        <PhotoHero image={t.image} tone={t.tone} kicker={t.kicker} lede={t.lede} scrollY={scrollY} />
         <View style={s.body}>
           {/* Timeline — nkyinkyim: the path is twisted */}
           <Text style={s.h}>A timeline of Oguaa</Text>
@@ -196,9 +189,6 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
 }
 
 const s = StyleSheet.create({
-  hero: { paddingHorizontal: 20, paddingVertical: 26 },
-  heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroLede: { color: C.cream, ...S(400), fontSize: 20, lineHeight: 28, marginTop: 8 },
   body: { padding: 20 },
   h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },
   p: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },

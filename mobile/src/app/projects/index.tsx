@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, S, initials } from "@/theme";
-import { Loading, ErrorView, Thumb } from "@/ui";
+import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
 
@@ -40,10 +40,17 @@ export default function Projects() {
   return (
     <ScrollView
       style={{ backgroundColor: C.paper }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}
+      contentContainerStyle={{ paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
     >
-      <Text style={s.lede}>Concrete, costed improvements for Cape Coast — proposed by verified institutions, funded by residents and the diaspora together. Receipts are published to backers.</Text>
+      <PhotoHero
+        image="/uploads/seed/classroom-block-ghana.jpg"
+        tone={C.green}
+        kicker="Adopt a project"
+        title="Pride that builds something"
+        lede="Concrete, costed improvements for Cape Coast — proposed by verified institutions, funded by residents and the diaspora together. Receipts are published to backers."
+      />
+      <View style={{ padding: 16, gap: 14 }}>
       {data.length === 0 && <EmptyState glyph="◈" title="No open projects yet" body="The first campaigns are being costed." />}
       {data.map((l, i) => (
         <StaggerIn key={l.id} index={i}>
@@ -63,12 +70,12 @@ export default function Projects() {
           </Link>
         </StaggerIn>
       ))}
+      </View>
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
   coverInit: { color: C.cream, ...S(700), fontSize: 32 },
