@@ -56,6 +56,24 @@ function outOfRange(value: string, min?: string, max?: string) {
   return false;
 }
 
+// Month the calendar opens on: the selected value's month, else today clamped
+// into [min, max]. Without the clamp a max-only picker (e.g. the date-of-birth
+// cut-off 18 years back) opens on the current month where EVERY day is
+// disabled, making the field look broken.
+function initialView(parsed: { y: number; m: number } | null, min: string | undefined, max: string | undefined, today: Date) {
+  if (parsed) return { y: parsed.y, m: parsed.m };
+  const t = isoFromDate(today);
+  if (max && t > max) {
+    const p = parseDate(max);
+    if (p) return { y: p.y, m: p.m };
+  }
+  if (min && t < min) {
+    const p = parseDate(min);
+    if (p) return { y: p.y, m: p.m };
+  }
+  return { y: today.getFullYear(), m: today.getMonth() };
+}
+
 function dayClass(isSelected: boolean, isToday: boolean, inMonth: boolean, disabled: boolean) {
   if (isSelected) return "bg-green font-semibold text-cream";
   if (isToday) return "border border-gold-border bg-gold/[0.08] text-ink hover:bg-gold/[0.14]";
@@ -92,9 +110,7 @@ export function DatePicker({
   const parsed = parseDate(current);
   const today = new Date();
   const todayIso = isoFromDate(today);
-  const [view, setView] = useState(() =>
-    parsed ? { y: parsed.y, m: parsed.m } : { y: today.getFullYear(), m: today.getMonth() },
-  );
+  const [view, setView] = useState(() => initialView(parsed, min, max, today));
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -142,7 +158,7 @@ export function DatePicker({
         type="button"
         id={id}
         onClick={() => {
-          if (!open && parsed) setView({ y: parsed.y, m: parsed.m });
+          if (!open) setView(initialView(parsed, min, max, today));
           setOpen((o) => !o);
         }}
         disabled={disabled}
