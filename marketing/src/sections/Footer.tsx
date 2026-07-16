@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Container } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
@@ -76,15 +75,51 @@ function LinkColumn({ column }: Readonly<{ column: FooterColumn }>) {
   );
 }
 
-function SocialLine({ children }: Readonly<{ children: ReactNode }>) {
-  return <p className="text-sm text-cream/55">{children}</p>;
+type SocialName = "instagram" | "facebook" | "x";
+
+const SOCIALS: { name: SocialName; label: string; href: string }[] = [
+  { name: "instagram", label: "Instagram", href: "https://instagram.com/oguaa" },
+  { name: "facebook", label: "Facebook", href: "https://facebook.com/oguaa" },
+  { name: "x", label: "X (Twitter)", href: "https://x.com/oguaa" },
+];
+
+function SocialIcon({ name }: Readonly<{ name: SocialName }>) {
+  const body = {
+    instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.2 6.8h.01" /></>,
+    facebook: <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />,
+    x: <><path d="M4 4h4.6L20 20h-4.6Z" /><path d="M4 20l6.8-7.5" /><path d="M13.2 11.4 20 4" /></>,
+  }[name];
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden>
+      {body}
+    </svg>
+  );
+}
+
+function SocialRow() {
+  return (
+    <div className="mt-4 flex items-center gap-3">
+      {SOCIALS.map((s) => (
+        <a
+          key={s.name}
+          href={s.href}
+          aria-label={s.label}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-cream/15 text-cream/70 transition-colors hover:border-gold-brand/50 hover:text-gold"
+        >
+          <SocialIcon name={s.name} />
+        </a>
+      ))}
+    </div>
+  );
 }
 
 export function Footer() {
   const connect = COLUMNS[2];
 
   return (
-    <footer className="on-dark relative overflow-hidden bg-gradient-to-b from-green to-green-900 text-cream/80">
+    <footer className="on-dark relative overflow-hidden bg-green-900 text-cream/80">
       <span aria-hidden className="pointer-events-none absolute inset-0 bg-contours opacity-[0.06]" />
       <span aria-hidden className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-gold-brand/[0.08] blur-3xl" />
 
@@ -136,10 +171,7 @@ export function Footer() {
                   <FooterLinkItem key={link.label} link={link} />
                 ))}
               </ul>
-              <div className="mt-4 space-y-1">
-                <SocialLine>Find us on Instagram &amp; Facebook</SocialLine>
-                <SocialLine>@oguaa — coming soon</SocialLine>
-              </div>
+              <SocialRow />
             </div>
           </div>
         </div>
