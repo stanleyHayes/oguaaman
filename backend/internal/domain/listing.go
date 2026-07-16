@@ -77,6 +77,9 @@ type ListingFilter struct {
 	SchoolID      string
 	FeaturedOnly  bool   // when true, only currently-featured (paid, unexpired) listings
 	Now           string // RFC3339; used with FeaturedOnly to exclude lapsed placements
+	TownID        string // filter listings whose townId equals this value
+	Tag           string // filter listings whose tags array contains this value
+	Era           string // filter listings whose details.era equals this value
 }
 
 // ListingRepository is the one engine's persistence boundary (spec §8.2).

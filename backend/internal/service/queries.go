@@ -109,6 +109,26 @@ func (s *Service) Memories(ctx context.Context) ([]domain.Listing, error) {
 	return s.approved(ctx, domain.TypeMemory)
 }
 
+// MemoryFilter scopes the memory wall query (spec §8.7).
+type MemoryFilter struct {
+	SchoolID string
+	TownID   string
+	Tag      string
+	Era      string
+}
+
+// FilteredMemories returns approved memories matching the optional filter.
+func (s *Service) FilteredMemories(ctx context.Context, f MemoryFilter) ([]domain.Listing, error) {
+	return s.listings.Find(ctx, domain.ListingFilter{
+		Type:     domain.TypeMemory,
+		Status:   domain.StatusApproved,
+		SchoolID: f.SchoolID,
+		TownID:   f.TownID,
+		Tag:      f.Tag,
+		Era:      f.Era,
+	})
+}
+
 // RecordView records a unique daily page-view for the given listing.
 func (s *Service) RecordView(ctx context.Context, listingID, visitorKey string) (bool, error) {
 	return s.listings.RecordView(ctx, listingID, visitorKey)

@@ -54,6 +54,15 @@ func (r *ListingRepo) Find(ctx context.Context, f domain.ListingFilter) ([]domai
 			}
 		}
 	}
+	if f.TownID != "" {
+		q["townId"] = f.TownID
+	}
+	if f.Tag != "" {
+		q["tags"] = f.Tag
+	}
+	if f.Era != "" {
+		q["details.era"] = f.Era
+	}
 	cur, err := r.c.Find(ctx, q)
 	if err != nil {
 		return nil, err

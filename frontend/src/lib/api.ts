@@ -207,7 +207,15 @@ export const api = {
   // The history hub — the town's timeline plus the living record (heritage sites, people, memories).
   history: () => get<HistoryView>("/api/history"),
   opportunities: () => get<Listing[]>("/api/opportunities"),
-  memories: () => get<Listing[]>("/api/memories"),
+  memories: (filter?: { school?: string; town?: string; tag?: string; era?: string }) => {
+    const params = new URLSearchParams();
+    if (filter?.school) params.set("school", filter.school);
+    if (filter?.town) params.set("town", filter.town);
+    if (filter?.tag) params.set("tag", filter.tag);
+    if (filter?.era) params.set("era", filter.era);
+    const qs = params.toString();
+    return get<Listing[]>(`/api/memories${qs ? `?${qs}` : ""}`);
+  },
 
   // News / editorial (spec §8.12) — markdown bodies, rendered client-side.
   news: () => get<NewsArticle[]>("/api/news"),

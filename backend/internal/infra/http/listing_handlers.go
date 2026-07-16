@@ -134,7 +134,18 @@ func (h *Handler) Opportunities(w http.ResponseWriter, r *http.Request) {
 	h.list(w, r, func() ([]domain.Listing, error) { return h.svc.Opportunities(r.Context()) })
 }
 func (h *Handler) Memories(w http.ResponseWriter, r *http.Request) {
-	h.list(w, r, func() ([]domain.Listing, error) { return h.svc.Memories(r.Context()) })
+	q := r.URL.Query()
+	memories, err := h.svc.FilteredMemories(r.Context(), service.MemoryFilter{
+		SchoolID: q.Get("school"),
+		TownID:   q.Get("town"),
+		Tag:      q.Get("tag"),
+		Era:      q.Get("era"),
+	})
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, memories)
 }
 
 // Featured — editorially surfaced listings for the marketing "right now" band.
