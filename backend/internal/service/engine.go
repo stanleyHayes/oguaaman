@@ -52,6 +52,16 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 			details["candles"] = 0
 		}
 		details["rememberedByCount"] = 0
+		// Yearly remembrance (spec §8.11): on by default — the passing
+		// anniversary. The keeper may switch reminders off, or also observe
+		// the birthday, at creation or any later edit; explicit values are
+		// respected, only absent ones are defaulted.
+		if _, ok := details["remindersEnabled"]; !ok {
+			details["remindersEnabled"] = true
+		}
+		if _, ok := details["observeBirthday"]; !ok {
+			details["observeBirthday"] = false
+		}
 	}
 	// Use the nanosecond as a uniqueness token so two submissions with the same
 	// title don't collide on slug or ID.

@@ -40,7 +40,7 @@ var editableDetailsKeys = map[string]map[string]bool{
 	domain.TypeMemory:      {"text": true, "era": true},
 	domain.TypeOpportunity: {"kind": true, "description": true, "eligibility": true, "deadline": true, "applyUrl": true, "provider": true},
 	domain.TypePerson:      {"whyNotable": true, "era": true},
-	domain.TypeMemorial:    {"honorific": true, "bornYear": true, "diedDate": true, "birthday": true, "epitaph": true, "lifeStory": true, "associations": true, "gallery": true, "observeBirthday": true},
+	domain.TypeMemorial:    {"honorific": true, "bornYear": true, "diedDate": true, "birthday": true, "epitaph": true, "lifeStory": true, "associations": true, "gallery": true, "observeBirthday": true, "remindersEnabled": true},
 }
 
 // urlDetailKeys are scalar details values that must pass the URL guard.
@@ -87,10 +87,20 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 		details[k] = v
 	}
 	if l.Type == domain.TypeMemorial {
-		// System counters must survive the full-replace edit.
-		for _, sys := range []string{"candles", "rememberedByCount"} {
+		// System counters and the keeper link must survive the full-replace edit.
+		for _, sys := range []string{"candles", "rememberedByCount", "keeperId"} {
 			if cur, ok := l.Details[sys]; ok {
 				details[sys] = cur
+			}
+		}
+		// Remembrance flags are editable (whitelisted) but an edit that omits
+		// them must not silently switch the yearly remembrance off — carry the
+		// existing value over (spec §8.11: default is to remember).
+		for _, flag := range []string{"remindersEnabled", "observeBirthday"} {
+			if _, ok := details[flag]; !ok {
+				if cur, ok := l.Details[flag]; ok {
+					details[flag] = cur
+				}
 			}
 		}
 	}

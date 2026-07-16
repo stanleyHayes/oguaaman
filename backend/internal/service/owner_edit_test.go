@@ -141,3 +141,39 @@ func TestOwnerEditMemorialKeepsCounters(t *testing.T) {
 		t.Fatalf("system counters lost: %+v", l.Details)
 	}
 }
+
+func TestOwnerEditMemorialKeepsRemembranceFlags(t *testing.T) {
+	f := &fakeRepo{listings: []domain.Listing{{
+		ID: "l1", Type: domain.TypeMemorial, OwnerID: "m-owner", Title: "Nana", Status: domain.StatusApproved,
+		Details: map[string]any{"lifeStory": "old", "remindersEnabled": true, "observeBirthday": true, "keeperId": "m-keeper", "candles": 7},
+	}}}
+	svc := newTestService(f)
+	// An edit that omits the flags (older client) must not switch remembrance off.
+	l, err := svc.UpdateOwnerListing(context.Background(), ownerActor(), "l1", OwnerEditInput{Title: "Nana", Details: map[string]any{"lifeStory": "new"}})
+	if err != nil {
+		t.Fatalf("edit: %v", err)
+	}
+	if l.Details["remindersEnabled"] != true || l.Details["observeBirthday"] != true {
+		t.Fatalf("remembrance flags lost: %+v", l.Details)
+	}
+	if l.Details["keeperId"] != "m-keeper" || l.Details["candles"] != 7 {
+		t.Fatalf("keeper link / counters lost: %+v", l.Details)
+	}
+}
+
+func TestOwnerEditMemorialKeeperTogglesReminders(t *testing.T) {
+	f := &fakeRepo{listings: []domain.Listing{{
+		ID: "l1", Type: domain.TypeMemorial, OwnerID: "m-owner", Title: "Nana", Status: domain.StatusApproved,
+		Details: map[string]any{"lifeStory": "old", "remindersEnabled": true, "observeBirthday": false},
+	}}}
+	svc := newTestService(f)
+	l, err := svc.UpdateOwnerListing(context.Background(), ownerActor(), "l1", OwnerEditInput{Title: "Nana", Details: map[string]any{
+		"lifeStory": "new", "remindersEnabled": false, "observeBirthday": true,
+	}})
+	if err != nil {
+		t.Fatalf("edit: %v", err)
+	}
+	if l.Details["remindersEnabled"] != false || l.Details["observeBirthday"] != true {
+		t.Fatalf("keeper toggles not applied: %+v", l.Details)
+	}
+}

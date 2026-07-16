@@ -55,7 +55,7 @@ const MANAGED_KEYS: Record<string, string[]> = {
   memory: ["era", "text"],
   opportunity: ["kind", "description", "applyUrl", "eligibility"],
   person: ["era", "whyNotable"],
-  memorial: ["honorific", "bornYear", "diedDate", "birthday", "epitaph", "associations", "lifeStory"],
+  memorial: ["honorific", "bornYear", "diedDate", "birthday", "epitaph", "associations", "lifeStory", "observeBirthday", "remindersEnabled"],
 };
 
 // The server's per-type whitelist (mirror of editableDetailsKeys in Go) — used
@@ -67,7 +67,7 @@ const WHITELIST: Record<string, string[]> = {
   memory: ["text", "era"],
   opportunity: ["kind", "description", "eligibility", "deadline", "applyUrl", "provider"],
   person: ["whyNotable", "era"],
-  memorial: ["honorific", "bornYear", "diedDate", "birthday", "epitaph", "lifeStory", "associations", "gallery", "observeBirthday"],
+  memorial: ["honorific", "bornYear", "diedDate", "birthday", "epitaph", "lifeStory", "associations", "gallery", "observeBirthday", "remindersEnabled"],
 };
 
 const inputCls =
@@ -123,6 +123,10 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
   // DatePicker is controlled; only the type-relevant one is rendered.
   const [startsAt, setStartsAt] = useState(str(listing.details.startsAt));
   const [diedDate, setDiedDate] = useState(str(listing.details.diedDate));
+  // Memorial keeper controls (spec §8.11): reminders default on; the birthday
+  // is observed only by the keeper's choice. Absent keys read as those defaults.
+  const [reminders, setReminders] = useState(listing.details.remindersEnabled !== false);
+  const [observeBday, setObserveBday] = useState(listing.details.observeBirthday === true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState<"live" | "queued" | null>(null);
@@ -150,6 +154,10 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
       if (Number.isFinite(n)) details.bornYear = n; else delete details.bornYear;
     }
     if (type === "artist") details.actName = title;
+    if (type === "memorial") {
+      details.remindersEnabled = reminders;
+      details.observeBirthday = observeBday;
+    }
 
     // Passthrough: whitelisted keys the form doesn't manage survive untouched.
     const managed = new Set(MANAGED_KEYS[type] ?? []);
@@ -257,6 +265,16 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
                 <Field label="Birthday (optional)" hint="MM-DD, for yearly remembrance"><input name="birthday" defaultValue={str(listing.details.birthday)} className={inputCls} /></Field>
                 <Field label="Epitaph (optional)" hint="A short line of remembrance"><input name="epitaph" defaultValue={str(listing.details.epitaph)} className={inputCls} /></Field>
                 <Field label="Associations (optional)" hint="Comma-separated — schools, asafo companies, churches…"><input name="associations" defaultValue={strList(listing.details.associations)} className={inputCls} /></Field>
+                <div className="space-y-3 rounded-lg border border-sand bg-paper p-3.5">
+                  <label className="flex items-start gap-2.5 text-sm text-ink">
+                    <input type="checkbox" checked={reminders} onChange={(e) => setReminders(e.target.checked)} className="mt-0.5 accent-green" />
+                    <span>Yearly remembrance<span className="block text-xs text-ink-faint">A gentle reminder reaches those who remember them, each year on the passing anniversary.</span></span>
+                  </label>
+                  <label className="flex items-start gap-2.5 text-sm text-ink">
+                    <input type="checkbox" checked={observeBday} onChange={(e) => setObserveBday(e.target.checked)} className="mt-0.5 accent-green" />
+                    <span>Also observe the birthday<span className="block text-xs text-ink-faint">Remember them on their birthday too, not only the anniversary of their passing.</span></span>
+                  </label>
+                </div>
               </div>
             </div>
           )}

@@ -127,6 +127,10 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
   // The primary free-text field for the current type, driven by the AI bar.
   const [aiText, setAiText] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  // Memorial keeper controls (spec §8.11) — booleans can't ride FormData, so
+  // they're controlled state merged into the payload on submit.
+  const [reminders, setReminders] = useState(true);
+  const [observeBday, setObserveBday] = useState(false);
 
   function changeType(next: ListingType) {
     setType(next);
@@ -143,6 +147,10 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
     const title = s("title").trim();
     const details = collectDetails(fd, type, aiText);
     if (type === "artist") details.actName = title;
+    if (type === "memorial") {
+      details.remindersEnabled = reminders;
+      details.observeBirthday = observeBday;
+    }
     const cover = coverImageUrl.trim();
     setBusy(true);
     try {
@@ -169,7 +177,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
 
       <ImageUpload value={coverImageUrl} onChange={setCoverImageUrl} label={cover.label} hint={cover.hint} />
 
-      <TypeFields type={type} />
+      <TypeFields type={type} memorialToggles={{ reminders, observeBday, onReminders: setReminders, onObserveBday: setObserveBday }} />
 
       {aiField && (
         <div>
@@ -187,7 +195,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
       {error && <p className="rounded-lg border border-[#F0D2C9] bg-[#FCEEEA] px-4 py-3 text-sm text-clay-text">{error}</p>}
 
       <div className="rounded-lg border border-sand bg-cream p-4 text-sm text-ink-muted">
-        <span className="font-medium text-ink">One step before you submit:</span> contributing requires a verified phone or WhatsApp number — the platform's spam gate. (Verification ships with member accounts.)
+        <span className="font-medium text-ink">One step before you submit:</span> your account must be verified first. If you haven't done that yet, head to My Account and request a code.
       </div>
 
       <button type="submit" disabled={busy} className="w-full rounded-full bg-green py-3 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60 sm:w-auto sm:px-8">
@@ -234,8 +242,17 @@ function TypePicker({ type, onChange }: Readonly<{ type: ListingType; onChange: 
   );
 }
 
+// Keeper-controlled memorial remembrance toggles (spec §8.11) — booleans can't
+// ride FormData, so SubmitForm owns the state and merges it into the payload.
+type MemorialToggles = {
+  reminders: boolean;
+  observeBday: boolean;
+  onReminders: (v: boolean) => void;
+  onObserveBday: (v: boolean) => void;
+};
+
 // The type-specific extra fields — uncontrolled inputs inside the shared form.
-function TypeFields({ type }: Readonly<{ type: ListingType }>) {
+function TypeFields({ type, memorialToggles }: Readonly<{ type: ListingType; memorialToggles: MemorialToggles }>) {
   return (
     <>
       {type === "artist" && (<>
@@ -273,6 +290,16 @@ function TypeFields({ type }: Readonly<{ type: ListingType }>) {
             <Field label="Birthday (optional)" hint="MM-DD, for yearly remembrance"><input name="birthday" className={inputCls} placeholder="03-21" /></Field>
             <Field label="Epitaph (optional)" hint="A short line of remembrance"><input name="epitaph" className={inputCls} /></Field>
             <Field label="Associations (optional)" hint="Comma-separated — schools, asafo companies, churches…"><input name="associations" className={inputCls} placeholder="Mfantsipim, Bentsir No.1" /></Field>
+            <div className="space-y-3 rounded-lg border border-sand bg-paper p-3.5">
+              <label className="flex items-start gap-2.5 text-sm text-ink">
+                <input type="checkbox" checked={memorialToggles.reminders} onChange={(e) => memorialToggles.onReminders(e.target.checked)} className="mt-0.5 accent-green" />
+                <span>Yearly remembrance<span className="block text-xs text-ink-faint">A gentle reminder reaches those who remember them, each year on the passing anniversary.</span></span>
+              </label>
+              <label className="flex items-start gap-2.5 text-sm text-ink">
+                <input type="checkbox" checked={memorialToggles.observeBday} onChange={(e) => memorialToggles.onObserveBday(e.target.checked)} className="mt-0.5 accent-green" />
+                <span>Also observe the birthday<span className="block text-xs text-ink-faint">Remember them on their birthday too, not only the anniversary of their passing.</span></span>
+              </label>
+            </div>
           </div>
         </div>
       )}

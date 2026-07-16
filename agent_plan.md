@@ -236,7 +236,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 - ◐ §8.2 **Edit re-approval policy** (Open Decision #3) — *today every owner edit of an approved listing publishes immediately; neither the minor/major split nor the all-edits-reviewed flag exists.*
 - ◐ §8.5 **Rivalry signals** — *only static memberCount chips; no computed cross-school comparisons.*
 - ◐ §8.7 **Memory-wall filters** by school/town/era/festival — *tags exist in the model; no query params or UI.*
-- ◐ §8.11 **Memorial keeper controls** — *submit form + backend never set `remindersEnabled`, so user-submitted memorials silently get no yearly remembrance (seeded ones do). **Family claim/correct/remove** mechanism missing (only a generic `bereavement` report reason). Funeral/celebration-of-life details (Open Decision #7) absent. Reminders are in-app only — no email/WhatsApp delivery.*
+- ◐ §8.11 **Memorial keeper controls** — *fixed: submit defaults `remindersEnabled` on / `observeBirthday` off (explicit choices respected), the owner-edit whitelist accepts both flags, omitted flags carry over instead of resetting, and the portal submit form + creator editor expose the toggles. **Family claim/correct/remove** mechanism still missing (only a generic `bereavement` report reason). Funeral/celebration-of-life details (Open Decision #7) absent. Reminders are in-app only — no email/WhatsApp delivery.*
 - ◐ §8.12 **AI bar** — *responses not streamed; Replace has no confirmation step; mounted only on admin Compose (not e.g. the newsroom editor).*
 - ◐ §8.13 **Institution announcements** — *no notice type distinct from events; no contested-claim "held and referred" state.*
 - ◐ §11 **Non-functional** — PWA manifest/offline shell ☐; per-page titles/meta + per-listing 1200×630 OG share cards ☐ *(sharing is the spec's growth engine; today every link renders the generic homepage card)*; maps ◐ *(keyless OSM embed on business pages only, fixed pin)*; localisation ◐ *(UI-chrome i18n switcher exists; no field-level/message-catalog scaffolding)*.
@@ -254,7 +254,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 - ◐ **Notices** — *official events double as announcements; no distinct notice type; mobile institution page shows no events/announcements at all.*
 - ☐ **§7 Localization pack** — field-level i18n, MoMo as a giving field, GhanaPostGPS + lat/long, quarter/Asafo tag on orgs, kind-specific verification artifacts. *All unbuilt.*
 - ☐ **schema.org JSON-LD** per institution (§4 SEO mapping).
-- ☐ **Revoke-verification lever** — revoking does **not** take the page offline and `School.tsx` renders the Verified badge unconditionally. *Governance lever is hollow — small fix, real integrity issue.*
+- ☑ **Revoke-verification lever** — *fixed: public directory/schools lists are verified-only, the public institution detail 404s for unverified orgs (steward/manager bypass), revoking demotes the org's approved official events to unpublished (re-verify republishes), the admin queue reads `GET /api/admin/institutions` (unfiltered), and portal badges render only when `verified`. Remaining seed fixture `kotokuraba-traders` is the deliberate unverified case.*
 - ☐ **Manager revocation** endpoint/UI (only pending-claim review exists).
 
 ### 7.3 Creator platform — `oguaa/Creator-Platform-Plan.md`
@@ -274,8 +274,8 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 ### 7.4 Prioritized backlog (next-up order)
 
 1. **OTP verification + submit gate** (spec §8.1/§16 — the primary spam gate; highest-impact Phase 1 hole).
-2. **Memorial keeper reminder controls** (§8.11 — small fix, real user-facing bug: submitted memorials get no remembrance).
-3. **Revoke-verification takes the page offline + conditional badge** (Institution §6 — governance integrity).
+2. ~~Memorial keeper reminder controls~~ ✅ (§8.11 — submit defaults, edit whitelist + carryover, portal/creator toggles, `RunRemembrance` test coverage).
+3. ~~Revoke-verification takes the page offline + conditional badge~~ ✅ (Institution §6 — verified-only directory, gated detail, events demote/restore, conditional badges, admin list endpoint).
 4. **Creator Phase 2 remainder** — plans catalog → institution workspace port → team/officer invitations (Creator §4.1/§5; resolve the §5-vs-§7.6 contradiction first).
 5. **Per-listing OG cards / rich link previews** (spec §11 — the growth engine).
 6. **PWA manifest + offline shell** (spec §11).
