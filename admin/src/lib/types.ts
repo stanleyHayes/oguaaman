@@ -360,4 +360,6 @@ export interface OrgClaim {
   orgName: string;
   orgSlug: string;
   memberName: string;
+  /** Set = a request to CREATE this institution (approve creates + verifies it). */
+  newOrg?: { name: string; kind: string; seat: string };
 }

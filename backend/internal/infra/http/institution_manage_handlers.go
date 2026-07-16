@@ -387,6 +387,60 @@ func (h *Handler) RespondToInvite(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]bool{"accepted": in.Accept})
 }
 
+// ── request-a-new-institution (Creator plan §4.1.1) ─────────────────────────
+
+// InstitutionKinds — the server-side kind catalog (public).
+func (h *Handler) InstitutionKinds(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, h.svc.InstitutionKinds(r.Context()))
+}
+
+// RequestInstitution — a signed-in member requests a missing institution.
+func (h *Handler) RequestInstitution(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, "Sign in to request an institution.")
+		return
+	}
+	if h.rateLimited(w, r, "orgclaim:"+clientKey(r), 10, time.Hour) {
+		return
+	}
+	var in struct {
+		Name string `json:"name"`
+		Kind string `json:"kind"`
+		Seat string `json:"seat"`
+		Role string `json:"role"`
+		Note string `json:"note"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	c, err := h.svc.RequestNewInstitution(r.Context(), m.ID, in.Name, in.Kind, in.Seat, in.Role, in.Note)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, c)
+}
+
+// MyInstitutionRequests — the member's own create-requests with review state.
+func (h *Handler) MyInstitutionRequests(w http.ResponseWriter, r *http.Request) {
+	m := currentMember(r)
+	if m == nil {
+		writeJSON(w, http.StatusOK, []any{})
+		return
+	}
+	reqs, err := h.svc.MyInstitutionRequests(r.Context(), m.ID)
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, reqs)
+}
+
 // ── admin: review institution claims (steward) ───────────────────────────────
 
 func (h *Handler) AdminClaims(w http.ResponseWriter, r *http.Request) {

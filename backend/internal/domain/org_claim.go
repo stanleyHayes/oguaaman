@@ -23,6 +23,43 @@ const (
 	ScopeOfficer = "officer"
 )
 
+// NewOrgRequest is a citizen's request for a brand-new institution page
+// (Creator plan §4.1.1): steward creates + verifies the org and the claim is
+// auto-approved for the requester — all from the single claim review click.
+type NewOrgRequest struct {
+	Name string `json:"name" bson:"name"`
+	Kind string `json:"kind" bson:"kind"`
+	Seat string `json:"seat" bson:"seat"` // town/quarter it sits in
+}
+
+// InstitutionKind is one entry of the server-side kind catalog.
+type InstitutionKind struct {
+	Slug  string `json:"slug"`
+	Label string `json:"label"`
+}
+
+// InstitutionKindCatalog is the canonical list of institution kinds (Creator
+// plan §4.1.1 — kinds come from the server, not free text).
+var InstitutionKindCatalog = []InstitutionKind{
+	{Slug: "school", Label: "School"},
+	{Slug: "traditional-authority", Label: "Traditional authority"},
+	{Slug: "association", Label: "Association"},
+	{Slug: "faith", Label: "Faith / church"},
+	{Slug: "civic", Label: "Civic"},
+	{Slug: "asafo", Label: "Asafo company"},
+	{Slug: "heritage", Label: "Heritage / visitor site"},
+}
+
+// ValidInstitutionKind reports whether slug is in the catalog.
+func ValidInstitutionKind(slug string) bool {
+	for _, k := range InstitutionKindCatalog {
+		if k.Slug == slug {
+			return true
+		}
+	}
+	return false
+}
+
 // OrgClaim is a member's request to manage an institution's official presence.
 // A steward reviews it; once approved, the member becomes an org manager and may
 // edit the profile, manage the roster of offices, and post official events. This
@@ -36,6 +73,7 @@ type OrgClaim struct {
 	Status        string `json:"status" bson:"status"`
 	Scope         string `json:"scope,omitempty" bson:"scope,omitempty"`           // manager | officer (team invites)
 	InvitedByID   string `json:"invitedById,omitempty" bson:"invitedById,omitempty"` // manager who sent the invite
+	NewOrg        *NewOrgRequest `json:"newOrg,omitempty" bson:"newOrg,omitempty"`   // set = request to CREATE the institution
 	CreatedAt     string `json:"createdAt" bson:"createdAt"`
 	ReviewedByID  string `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
 	ReviewedAt    string `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
@@ -61,6 +99,8 @@ type OrgClaimRepository interface {
 	ByOrg(ctx context.Context, orgID string) ([]OrgClaim, error)
 	UpdateStatus(ctx context.Context, id, status, reviewedBy, at string) error
 	UpdateScope(ctx context.Context, id, scope string) error
+	// AttachOrg points a new-institution request at the org the steward created.
+	AttachOrg(ctx context.Context, id, orgID string) error
 	// IsManager reports an approved claim exists for (member, org).
 	IsManager(ctx context.Context, memberID, orgID string) (bool, error)
 	// ActiveClaim returns the member's approved claim for the org, or nil.

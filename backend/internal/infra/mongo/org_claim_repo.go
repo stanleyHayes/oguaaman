@@ -67,6 +67,11 @@ func (r *OrgClaimRepo) UpdateScope(ctx context.Context, id, scope string) error 
 	return err
 }
 
+func (r *OrgClaimRepo) AttachOrg(ctx context.Context, id, orgID string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"orgId": orgID}})
+	return err
+}
+
 func (r *OrgClaimRepo) IsManager(ctx context.Context, memberID, orgID string) (bool, error) {
 	n, err := r.c.CountDocuments(ctx, bson.M{"memberId": memberID, "orgId": orgID, "status": domain.ClaimApproved})
 	return n > 0, err

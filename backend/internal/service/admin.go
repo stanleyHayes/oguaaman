@@ -138,6 +138,12 @@ func (s *Service) AllInstitutions(ctx context.Context) ([]domain.Organization, e
 // steward then configures its official page (summary/history/sections/gallery)
 // via the normal manager endpoints (which already accept stewards).
 func (s *Service) CreateOrg(ctx context.Context, name, kind, classification, summary string) (*domain.Organization, error) {
+	return s.createOrg(ctx, name, kind, classification, summary, "")
+}
+
+// createOrg is the shared org factory; jurisdiction is the seat (town/quarter)
+// for steward-created institutions born from citizen requests.
+func (s *Service) createOrg(ctx context.Context, name, kind, classification, summary, jurisdiction string) (*domain.Organization, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, fmt.Errorf("a name is required")
@@ -164,6 +170,7 @@ func (s *Service) CreateOrg(ctx context.Context, name, kind, classification, sum
 		Name:           name,
 		Classification: strings.TrimSpace(classification),
 		Summary:        strings.TrimSpace(summary),
+		Jurisdiction:   strings.TrimSpace(jurisdiction),
 		Offices:        []domain.Office{},
 		Verified:       true,
 		VerifiedOn:     time.Now().UTC().Format(time.DateOnly),

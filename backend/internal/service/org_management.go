@@ -70,6 +70,8 @@ func (s *Service) PendingClaims(ctx context.Context) ([]OrgClaimView, error) {
 		v := OrgClaimView{OrgClaim: c}
 		if org, err := s.orgs.ByID(ctx, c.OrgID); err == nil {
 			v.OrgName, v.OrgSlug = org.Name, org.Slug
+		} else if c.NewOrg != nil {
+			v.OrgName = c.NewOrg.Name // a request to CREATE this institution
 		}
 		if m, err := s.members.ByID(ctx, c.MemberID); err == nil {
 			v.MemberName = m.DisplayName
@@ -99,6 +101,18 @@ func (s *Service) ReviewOrgClaim(ctx context.Context, claimID string, approve bo
 		return err
 	}
 	if approve {
+		// A new-institution request: create + verify the org from the same
+		// click, then point the claim at it (Creator plan §4.1.1).
+		if c.NewOrg != nil {
+			org, err := s.createOrg(ctx, c.NewOrg.Name, c.NewOrg.Kind, "", "", c.NewOrg.Seat)
+			if err != nil {
+				return err
+			}
+			if err := s.claims.AttachOrg(ctx, claimID, org.ID); err != nil {
+				return err
+			}
+			c.OrgID = org.ID
+		}
 		s.ensureOffice(ctx, c.OrgID, c.MemberID, c.RequestedRole)
 	}
 	s.notifyClaim(ctx, c, approve)
@@ -117,7 +131,7 @@ func (s *Service) ensureOffice(ctx context.Context, orgID, memberID, role string
 		}
 	}
 	holderName := ""
-	if m, err := s.members.ByID(ctx, memberID); err == nil {
+	if m, err := s.members.ByID(ctx, memberID); err == nil && m != nil {
 		holderName = m.DisplayName
 	}
 	offices := append(org.Offices, domain.Office{
@@ -142,6 +156,10 @@ func (s *Service) notifyClaim(ctx context.Context, c *domain.OrgClaim, approve b
 	if approve {
 		title = "You can now manage " + name
 		body = fmt.Sprintf("Your claim as %s was approved. You can edit the profile, roster, and post official events.", c.RequestedRole)
+		if c.NewOrg != nil {
+			title = name + " is live — you're its first manager"
+			body = "Your new institution was created and verified. Open its Team workspace in the creator app to build the page."
+		}
 	} else {
 		title = "Claim not approved"
 		body = fmt.Sprintf("Your request to manage %s was not approved. Reach out if you think this was a mistake.", name)

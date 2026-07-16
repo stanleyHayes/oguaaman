@@ -143,6 +143,10 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("DELETE /api/institutions/{slug}/team/{memberId}", h.RevokeTeamMember)
 	mux.HandleFunc("GET /api/me/invitations", h.MyInvitations)
 	mux.HandleFunc("POST /api/claims/{id}/respond", h.RespondToInvite)
+	// Request-a-new-institution (Creator plan §4.1.1) + the kind catalog.
+	mux.HandleFunc("GET /api/institution-kinds", h.InstitutionKinds)
+	mux.HandleFunc("POST /api/institution-requests", h.RequestInstitution)
+	mux.HandleFunc("GET /api/me/institution-requests", h.MyInstitutionRequests)
 
 	mux.HandleFunc("GET /api/members", h.MembersList)
 	mux.HandleFunc("GET /api/members/{slug}", h.Member)

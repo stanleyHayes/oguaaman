@@ -165,6 +165,21 @@ export interface Invitation {
   createdAt: string;
 }
 
+// ── request-a-new-institution (Creator plan §4.1.1) ──
+
+/** One entry of the server-side institution kind catalog. */
+export interface InstitutionKind { slug: string; label: string }
+
+/** The member's own request to create a missing institution. */
+export interface InstitutionRequest {
+  id: string;
+  requestedRole: string;
+  note?: string;
+  status: "pending" | "approved" | "rejected";
+  newOrg: { name: string; kind: string; seat: string };
+  createdAt: string;
+}
+
 export interface MemberView { member: Member; listings: Listing[] }
 
 export interface NotificationItem {

@@ -265,6 +265,7 @@ func (stubClaims) ByMember(context.Context, string) ([]domain.OrgClaim, error)  
 func (stubClaims) ByOrg(context.Context, string) ([]domain.OrgClaim, error)           { return nil, nil }
 func (stubClaims) UpdateStatus(context.Context, string, string, string, string) error { return nil }
 func (stubClaims) UpdateScope(context.Context, string, string) error                  { return nil }
+func (stubClaims) AttachOrg(context.Context, string, string) error                    { return nil }
 func (stubClaims) IsManager(context.Context, string, string) (bool, error)            { return false, nil }
 func (stubClaims) ActiveClaim(context.Context, string, string) (*domain.OrgClaim, error) {
 	return nil, &domain.NotFoundError{Entity: "claim"}

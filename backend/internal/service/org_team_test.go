@@ -25,7 +25,15 @@ func (r *recClaims) Get(_ context.Context, id string) (*domain.OrgClaim, error) 
 	}
 	return nil, &domain.NotFoundError{Entity: "claim"}
 }
-func (r *recClaims) Pending(context.Context) ([]domain.OrgClaim, error) { return nil, nil }
+func (r *recClaims) Pending(_ context.Context) ([]domain.OrgClaim, error) {
+	out := []domain.OrgClaim{}
+	for _, c := range r.claims {
+		if c.Status == domain.ClaimPending {
+			out = append(out, c)
+		}
+	}
+	return out, nil
+}
 func (r *recClaims) ByMember(_ context.Context, memberID string) ([]domain.OrgClaim, error) {
 	out := []domain.OrgClaim{}
 	for _, c := range r.claims {
@@ -59,6 +67,15 @@ func (r *recClaims) UpdateScope(_ context.Context, id, scope string) error {
 	for i := range r.claims {
 		if r.claims[i].ID == id {
 			r.claims[i].Scope = scope
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "claim"}
+}
+func (r *recClaims) AttachOrg(_ context.Context, id, orgID string) error {
+	for i := range r.claims {
+		if r.claims[i].ID == id {
+			r.claims[i].OrgID = orgID
 			return nil
 		}
 	}

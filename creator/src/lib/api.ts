@@ -1,4 +1,4 @@
-import type { CreatorOverview, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, Subscription, TeamView, Ticket } from "./types";
+import type { CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, Subscription, TeamView, Ticket } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -101,6 +101,13 @@ export const api = {
   myInvitations: () => get<Invitation[]>("/api/me/invitations"),
   respondToInvite: (claimId: string, accept: boolean) =>
     post<{ accepted: boolean }>(`/api/claims/${claimId}/respond`, { accept }),
+
+  // Request-a-new-institution (Creator plan §4.1.1): kinds from the server
+  // catalog; a steward creates + verifies the org on approve.
+  institutionKinds: () => get<InstitutionKind[]>("/api/institution-kinds"),
+  requestInstitution: (body: { name: string; kind: string; seat: string; role?: string; note?: string }) =>
+    post<{ id: string }>("/api/institution-requests", body),
+  myInstitutionRequests: () => get<InstitutionRequest[]>("/api/me/institution-requests"),
 
   // Paid promotions: self-serve featured placements via Paystack (GH₵10/day).
   promoteListing: (id: string, days: number) =>
