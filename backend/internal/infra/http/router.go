@@ -64,6 +64,13 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/incidents", h.SubmitIncident)
 	mux.HandleFunc("POST /api/admin/incidents/{id}/status", h.AdminIncidentStatus)
 
+	// Authorized directives — official notices from recognised authorities.
+	mux.HandleFunc("GET /api/directives", h.Directives)
+	mux.HandleFunc("GET /api/directives/{slug}", h.Directive)
+	mux.HandleFunc("GET /api/admin/directives", h.AdminDirectives)
+	mux.HandleFunc("POST /api/admin/directives", h.AdminCreateDirective)
+	mux.HandleFunc("POST /api/admin/directives/{id}/cancel", h.AdminCancelDirective)
+
 	// Lost & found — lost items, found items, missing people (auto-published;
 	// the owner or a curator resolves the notice).
 	mux.HandleFunc("GET /api/lost-found", h.LostFound)
@@ -143,6 +150,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/institutions/{slug}/gallery", h.SetInstitutionGallery)
 	mux.HandleFunc("POST /api/institutions/{slug}/sections", h.SetInstitutionSections)
 	mux.HandleFunc("POST /api/institutions/{slug}/events", h.PostInstitutionEvent)
+	mux.HandleFunc("POST /api/institutions/{slug}/directives", h.PostInstitutionDirective)
 	// Team management (Creator plan §4.1.2): invite → accept/decline → scopes.
 	mux.HandleFunc("GET /api/institutions/{slug}/team", h.OrgTeam)
 	mux.HandleFunc("POST /api/institutions/{slug}/team/invite", h.InviteToTeam)

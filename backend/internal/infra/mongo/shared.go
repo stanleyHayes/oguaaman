@@ -29,6 +29,7 @@ const (
 	collPlans         = "plans"
 	collTimeline      = "timeline"
 	collListingViews  = "listing_views"
+	collDirectives    = "directives"
 )
 
 // notFound maps the driver's no-documents sentinel to a domain NotFoundError.

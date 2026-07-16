@@ -6,12 +6,12 @@ import {
   Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
   Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
-  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, type LucideIcon,
+  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
+interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number; roles?: string[] }
 interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -25,6 +25,13 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/reports", label: "Reports", icon: Flag },
       { to: "/incidents", label: "Incidents", icon: ShieldAlert },
       { to: "/audit", label: "Audit log", icon: History },
+    ],
+  },
+  {
+    title: "Alerts",
+    icon: Siren,
+    items: [
+      { to: "/directives", label: "Directives", icon: Megaphone, roles: ["curator", "steward"] },
     ],
   },
   {
@@ -73,8 +80,14 @@ const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 const MODERATOR_PATHS = new Set(["/moderation", "/listings", "/reports", "/incidents"]);
 
 function visibleGroups(role: string | undefined): NavGroup[] {
-  if (role !== "moderator") return NAV_GROUPS;
-  return NAV_GROUPS
+  // Items may declare a `roles` allowlist (e.g. directives authoring is
+  // curator/steward, matching the backend's requireRole gate).
+  const byRole = NAV_GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || (role != null && i.roles.includes(role))) }))
+    .filter((g) => g.items.length > 0);
+  if (role !== "moderator") return byRole;
+  // Moderators are further limited to the triage-focused routes.
+  return byRole
     .map((g) => ({ ...g, items: g.items.filter((i) => MODERATOR_PATHS.has(i.to)) }))
     .filter((g) => g.items.length > 0);
 }

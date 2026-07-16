@@ -90,7 +90,7 @@ const SeedPassword = "Oguaa-2026!"
 // Seed resets the collections and loads the fact-checked Cape Coast seed data.
 // It is idempotent: collections are dropped and reinserted. (See agent_plan.md §1.)
 func Seed(ctx context.Context, db *mongo.Database) error {
-	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline} {
+	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline, collDirectives} {
 		if err := db.Collection(name).Drop(ctx); err != nil {
 			return err
 		}
@@ -125,6 +125,12 @@ func Seed(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 	if err := insertAll(ctx, db.Collection(collPlans), seedPlans); err != nil {
+		return err
+	}
+	if err := insertAll(ctx, db.Collection(collOrgClaims), seedOrgClaims); err != nil {
+		return err
+	}
+	if err := insertAll(ctx, db.Collection(collDirectives), seedDirectives()); err != nil {
 		return err
 	}
 	return createIndexes(ctx, db)
@@ -275,6 +281,13 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 	if _, err := db.Collection(collReports).Indexes().CreateOne(ctx, idx(bson.D{{Key: "status", Value: 1}, {Key: "createdAt", Value: -1}})); err != nil {
+		return err
+	}
+	// Directives are fetched by slug (detail) and filtered by town + status (feed).
+	if _, err := db.Collection(collDirectives).Indexes().CreateMany(ctx, []mongo.IndexModel{
+		idx(bson.D{{Key: "slug", Value: 1}}),
+		idx(bson.D{{Key: "townId", Value: 1}, {Key: "status", Value: 1}}),
+	}); err != nil {
 		return err
 	}
 	// Pledges are looked up by Paystack reference on every callback/webhook.
@@ -485,8 +498,8 @@ var seedOrgs = []domain.Organization{
 	{ID: "asafo-bentsir-co", Slug: "bentsir-asafo-company", Kind: "asafo", Name: "Bentsir No. 1 Asafo Company", Classification: "Asafo company", Summary: "The No. 1 of Oguaa's seven Asafo companies — guardians of custom who lead the durbar at Fetu Afahye each September. Company colour: red.", History: "The Asafo (\"war people\") are the traditional companies of the Oguaa state; Bentsir carries the No. 1 standard. Leadership runs through the Supi (superior captain) and Safohen (captains).", Jurisdiction: "Oguaa Traditional Area", Verified: true, VerifiedOn: "2026-05-25", HouseColors: []string{colorCrimson}, RelatedOrgIDs: []string{orgOguaaTraditional}, Offices: []domain.Office{{ID: "o-bentsir-supi", Role: "Supi (superior captain)", HolderName: officePlaceholder, Verified: true}, {ID: "o-bentsir-safohen", Role: "Safohen (captain)", HolderName: officePlaceholder, Verified: true}}},
 	// Market / trade association.
 	{ID: "kotokuraba-traders", Slug: "kotokuraba-market-traders", Kind: "association", Name: "Kotokuraba Market Traders' Union", Classification: "Market traders' association", Summary: "The traders of Kotokuraba — Cape Coast's central market — organised under their Konkohemaa (market queen) to speak for the women and men who keep Oguaa fed.", Jurisdiction: "Kotokuraba, Cape Coast", Verified: false, Offices: []domain.Office{{ID: "o-kotok-queen", Role: "Konkohemaa (Market Queen)", HolderName: officePlaceholder, Verified: false}}},
-	// Civic / local government.
-	{ID: "ccma", Slug: "cape-coast-metropolitan-assembly", Kind: "civic", Name: "Cape Coast Metropolitan Assembly", OfficialTitle: "CCMA", Classification: "Local government", Summary: "The metropolitan assembly governing Cape Coast — the seat of the Central Region's capital, responsible for sanitation, markets, roads and local development.", Jurisdiction: "Cape Coast Metropolis", Verified: true, VerifiedOn: "2026-05-28", HouseColors: []string{colorCobalt, colorBrass}, Offices: []domain.Office{{ID: "o-ccma-mce", Role: "Metropolitan Chief Executive", HolderName: officePlaceholder, Verified: true}, {ID: "o-ccma-pm", Role: "Presiding Member", HolderName: officePlaceholder, Verified: true}}},
+	// Local government (an authority kind — may issue directives).
+	{ID: "ccma", Slug: "cape-coast-metropolitan-assembly", Kind: "local-government", Name: "Cape Coast Metropolitan Assembly", OfficialTitle: "CCMA", Classification: "Local government", Summary: "The metropolitan assembly governing Cape Coast — the seat of the Central Region's capital, responsible for sanitation, markets, roads and local development.", Jurisdiction: "Cape Coast Metropolis", Verified: true, VerifiedOn: "2026-05-28", HouseColors: []string{colorCobalt, colorBrass}, Offices: []domain.Office{{ID: "o-ccma-mce", Role: "Metropolitan Chief Executive", HolderName: officePlaceholder, Verified: true}, {ID: "o-ccma-pm", Role: "Presiding Member", HolderName: officePlaceholder, Verified: true}}},
 }
 
 // seedExtraOrgs is appended to seedOrgs: the fuller fact-checked roster of Cape
@@ -683,4 +696,52 @@ var seedExtraOrgs = []domain.Organization{
 	{ID: "inst-cnc", Slug: "centre-for-national-culture-central-region", Kind: "cultural", Name: "Centre for National Culture", OfficialTitle: "Centre for National Culture, Central Region", Classification: "Regional cultural agency", Summary: "The Cape Coast-based regional arm of the National Commission on Culture, promoting Ghanaian arts, heritage and crafts with performances, exhibitions and a crafts market — across the highway from the University of Cape Coast.", History: "The national network began as the Institute of Arts and Culture set up in 1961 under President Nkrumah, renamed the Arts Council of Ghana in 1973, and reorganised under the National Commission on Culture (PNDC Law 238 of 1990, which created the regional centres). The Central Region centre is the region's implementing body for the arts.", Jurisdiction: "Cape Coast, Central Region · National Commission on Culture", Verified: true, VerifiedOn: verifiedSitesBatch, HouseColors: []string{colorClay, colorGold}},
 	{ID: "inst-cc-mosque", Slug: "cape-coast-central-mosque", Kind: "faith", Name: "Cape Coast Central Mosque", OfficialTitle: "Cape Coast (Oguaa) Central Mosque", Classification: "Central congregational mosque", Summary: "The principal congregational mosque of Cape Coast's Muslim and Zongo community, near Kotokuraba Market — the focal point for Friday prayers and the Ramadan and Eid gatherings.", History: "Cape Coast's Muslim community grew with Sahelian traders and migrants who settled in the town's Zongo wards, with the central mosque near Kotokuraba Market as the focus of worship. Accounts describe a mosque at the site from before 1900, improved on over the decades.", Jurisdiction: "Near Kotokuraba Market, Cape Coast, Central Region", Verified: true, VerifiedOn: verifiedSitesBatch, HouseColors: []string{colorLeafGreen, colorBrass}},
 	{ID: "inst-ccnmtc", Slug: "cape-coast-nursing-midwifery-training-college", Kind: "education", Name: ccnmtcPage.name, OfficialTitle: "Cape Coast Nursing and Midwifery Training College (CCNMTC)", Classification: ccnmtcPage.classification, Summary: "One of Ghana's older nursing-training institutions, supervised by the Ministry of Health and regulated by the Nursing and Midwifery Council. It runs a three-year diploma in nursing and midwifery, awarded in affiliation with KNUST.", History: "The college is described as one of the oldest nursing-training institutions in Ghana. It operates under the Ministry of Health, with curriculum and examinations regulated by the Nursing and Midwifery Council; graduates complete a three-year programme leading to a diploma awarded through the Kwame Nkrumah University of Science and Technology.", Jurisdiction: "Cape Coast, Central Region · Ministry of Health", Verified: true, VerifiedOn: verifiedSitesBatch, HouseColors: []string{colorLeafGreen, colorPaper}, CrestURL: seedImg("crests/ccnmtc.png"), Offices: ccnmtcOffices, Gallery: schoolGallery(ccnmtcPage), Sections: schoolOfficialSections(ccnmtcPage, ccnmtcOffices)},
+
+	// ── authority institutions (may issue directives — see IsAuthorityKind) ────
+	// The Cape Coast Metropolitan Assembly (org "ccma", above) is the town's
+	// local-government authority. The fire service is the emergency-service one.
+	{ID: "inst-cc-fire", Slug: "cape-coast-fire-rescue-service", Kind: "emergency-service", Name: "Cape Coast Fire & Rescue Service", OfficialTitle: "Ghana National Fire Service — Cape Coast Command", Classification: "Emergency service · fire & rescue", Summary: "The Cape Coast command of the Ghana National Fire Service — fire prevention, rescue and public fire-safety education for the metropolis, from the market rows of Kotokuraba to the fishing quarters of Bakaano.", History: "The Ghana National Fire Service traces its roots to the colonial fire brigades and was reconstituted under the Ghana National Fire Service Act, 1997 (Act 537). Its Cape Coast command serves the Central Region's capital and surrounding communities.", Jurisdiction: "Cape Coast Metropolis, Central Region", Verified: true, VerifiedOn: verifiedSitesBatch, HouseColors: []string{colorCrimson, colorInk}, Offices: []domain.Office{{ID: "o-fire-cmdr", Role: "Metropolitan Fire Commander", HolderName: officePlaceholder, Verified: true}, {ID: "o-fire-pro", Role: "Public Relations Officer", HolderName: officePlaceholder, Verified: true}}},
+}
+
+// ── org claims: seeded management rights ─────────────────────────────────────
+// An approved MANAGER claim lets a member issue directives for an authority org
+// through the API. Nana Kweku Essien (m-nana) manages the Fire & Rescue Service.
+var seedOrgClaims = []domain.OrgClaim{
+	{ID: "clm-fire-nana", OrgID: "inst-cc-fire", MemberID: memberNana, RequestedRole: "Public Relations Officer", Status: domain.ClaimApproved, Scope: domain.ScopeManager, CreatedAt: verifiedSitesBatch + "T09:00:00Z", ReviewedByID: memberNana, ReviewedAt: verifiedSitesBatch + "T09:30:00Z"},
+}
+
+// ── directives: seeded authorized announcements ──────────────────────────────
+// Deterministic seed: the codebase seeds with FIXED date strings (never
+// time.Now() at init), so these timestamps are fixed too. Values are anchored to
+// 2026-07-16 (the demo "today"). The clean-up directive's window is that
+// morning, so it reads as "expired" on any later day; the fire-safety advisory
+// is open-ended, so it stays active indefinitely.
+func seedDirectives() []domain.Directive {
+	const (
+		cleanupFrom  = "2026-07-16T06:00:00Z"
+		cleanupUntil = "2026-07-16T10:00:00Z"
+		advisoryFrom = "2026-07-10T08:00:00Z"
+	)
+	return []domain.Directive{
+		{
+			ID: "dir-ccma-cleanup-2026-07", Slug: "monthly-clean-up-exercise-cape-coast",
+			Title:    "Monthly national clean-up exercise",
+			Body:     "The Assembly directs that the monthly sanitation exercise be observed across the metropolis this morning. Residents should join the communal clean-up of gutters, markets and lorry parks. Sanitation officers and the environmental health teams will be on the ground.",
+			Severity: domain.DirectiveSeverityHigh, Kind: domain.DirectiveKindDirective,
+			Action: "Keep shops closed until 10:00", Area: cityCapeCoast, TownID: "oguaa",
+			IssuedByOrgID: "ccma", IssuedByOrgSlug: "cape-coast-metropolitan-assembly", IssuedByName: "Cape Coast Metropolitan Assembly",
+			EffectiveFrom: cleanupFrom, EffectiveUntil: cleanupUntil,
+			Status: domain.DirectiveStatusActive, CreatedAt: cleanupFrom, CreatedByID: memberNana,
+		},
+		{
+			ID: "dir-fire-dry-season-advisory", Slug: "fire-safety-advisory-dry-season",
+			Title:    "Dry-season fire-safety advisory",
+			Body:     "The Fire & Rescue Service advises households and traders to guard against fire outbreaks in the dry season. Put out coal pots and candles before sleeping, keep gas cylinders away from open flame, and do not overload sockets. Report smoke early — the Cape Coast command responds day and night.",
+			Severity: domain.DirectiveSeverityMedium, Kind: domain.DirectiveKindAdvisory,
+			Area: cityCapeCoast, TownID: "oguaa",
+			IssuedByOrgID: "inst-cc-fire", IssuedByOrgSlug: "cape-coast-fire-rescue-service", IssuedByName: "Cape Coast Fire & Rescue Service",
+			EffectiveFrom: advisoryFrom, EffectiveUntil: "",
+			Status: domain.DirectiveStatusActive, CreatedAt: advisoryFrom, CreatedByID: memberNana,
+		},
+	}
 }

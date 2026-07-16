@@ -42,21 +42,22 @@ func main() {
 	wa := wax.New(cfg.WhatsAppToken, cfg.WhatsAppPhoneID, log)
 	email := emailx.New(cfg.ResendAPIKey, cfg.EmailFrom, log)
 	svc := service.New(service.Deps{
-		Listings: mongox.NewListingRepo(db),
-		Members:  memberRepo,
-		Orgs:     mongox.NewOrgRepo(db),
-		Places:   mongox.NewPlaceRepo(db),
-		Mod:      mongox.NewModerationRepo(db),
-		Notifs:   mongox.NewNotificationRepo(db),
-		Follows:  mongox.NewFollowRepo(db),
-		Claims:   mongox.NewOrgClaimRepo(db),
-		News:     mongox.NewNewsRepo(db),
-		Reports:  mongox.NewReportRepo(db),
-		Timeline: mongox.NewTimelineRepo(db),
-		Plans:    mongox.NewPlanRepo(db),
-		Email:    email,
-		WhatsApp: wa,
-		Log:      log,
+		Listings:   mongox.NewListingRepo(db),
+		Members:    memberRepo,
+		Orgs:       mongox.NewOrgRepo(db),
+		Places:     mongox.NewPlaceRepo(db),
+		Mod:        mongox.NewModerationRepo(db),
+		Notifs:     mongox.NewNotificationRepo(db),
+		Follows:    mongox.NewFollowRepo(db),
+		Claims:     mongox.NewOrgClaimRepo(db),
+		News:       mongox.NewNewsRepo(db),
+		Reports:    mongox.NewReportRepo(db),
+		Timeline:   mongox.NewTimelineRepo(db),
+		Plans:      mongox.NewPlanRepo(db),
+		Directives: mongox.NewDirectiveRepo(db),
+		Email:      email,
+		WhatsApp:   wa,
+		Log:        log,
 	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db))
 	auth := newAuthService(memberRepo, cfg, wa)

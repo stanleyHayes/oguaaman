@@ -34,6 +34,7 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
   {
     heading: "NOTICES",
     items: [
+      { label: "Alerts", blurb: "Advisories, directives and emergency notices from the fire service, the assembly, health and security.", href: "/alerts" },
       { label: "News", blurb: "Festivals, scholarships, homecomings and notices from Cape Coast.", href: "/news" },
       { label: "Events", blurb: "From Fetu Afahye to school speech days and homecomings.", href: "/browse/events" },
       { label: "Safety", blurb: "Floods, fires, accidents and hazards — reported by neighbours, followed through to recovery.", href: "/safety" },

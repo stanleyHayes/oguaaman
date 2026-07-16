@@ -1,4 +1,18 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind } from "./types";
+
+/** Compose body for an authority directive (staff/admin path adds an issuer). */
+export interface DirectivePayload {
+  title: string;
+  body: string;
+  severity: DirectiveSeverity;
+  kind: DirectiveKind;
+  action?: string;
+  area?: string;
+  effectiveFrom?: string; // RFC3339; defaults to now server-side when omitted
+  effectiveUntil?: string; // RFC3339; omitted = open-ended
+  issuedByOrgId?: string; // admin path: choose the issuing authority
+  issuedByOrgSlug?: string; // admin path: alternative to issuedByOrgId
+}
 
 export interface NewsPayload { title: string; summary: string; body: string; coverColor: string; coverImageUrl: string; tags: string[] }
 export interface PlanPayload {
@@ -72,6 +86,12 @@ export const api = {
     const q = kind ? `?kind=${encodeURIComponent(kind)}` : "";
     return get<Organization[]>(`/api/admin/institutions${q}`);
   },
+  // Public institution directory (verified only) — a curator-safe fallback for
+  // the steward-only admin directory (e.g. choosing a directive's issuer).
+  publicInstitutions: (kind?: string) => {
+    const q = kind ? `?kind=${encodeURIComponent(kind)}` : "";
+    return get<Organization[]>(`/api/institutions${q}`);
+  },
 
   // Detail views reuse the public read endpoints (rich, ready-made views).
   member: (slug: string) => get<MemberView>(`/api/members/${slug}`),
@@ -116,6 +136,20 @@ export const api = {
     post<{ status: string }>(`/api/admin/reports/${id}/resolve`, { status, resolution }),
   grantKeeperRole: (listingId: string, keeperMemberId: string, reportId?: string) =>
     post<{ status: string }>(`/api/admin/memorials/${listingId}/grant-keeper`, { keeperMemberId, reportId }),
+
+  // Authority directives / advisories (townwide official notices).
+  // Public feed — active=true keeps only currently-active; town filters by townId.
+  directives: (activeOnly?: boolean, town?: string) => {
+    const p = new URLSearchParams();
+    if (activeOnly) p.set("active", "true");
+    if (town) p.set("town", town);
+    const q = p.toString();
+    return get<Directive[]>(`/api/directives${q ? `?${q}` : ""}`);
+  },
+  // Staff console: all statuses (incl. cancelled), sorted most-severe then newest.
+  adminDirectives: () => get<Directive[]>("/api/admin/directives"),
+  createDirective: (body: DirectivePayload) => post<Directive>("/api/admin/directives", body),
+  cancelDirective: (id: string) => post<Directive>(`/api/admin/directives/${id}/cancel`),
 
   // Community safety triage (auto-published; curators transition the lifecycle).
   incidents: () => get<Incident[]>("/api/incidents"),

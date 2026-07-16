@@ -48,6 +48,27 @@ var InstitutionKindCatalog = []InstitutionKind{
 	{Slug: "civic", Label: "Civic"},
 	{Slug: "asafo", Label: "Asafo company"},
 	{Slug: "heritage", Label: "Heritage / visitor site"},
+	// Authority kinds — institutions empowered to issue directives/announcements
+	// that carry official weight (see IsAuthorityKind and the directives feature).
+	{Slug: "emergency-service", Label: "Emergency service"},
+	{Slug: "security-service", Label: "Security service"},
+	{Slug: "health-service", Label: "Health service"},
+	{Slug: "local-government", Label: "Local government"},
+}
+
+// authorityKinds is the subset of the catalog whose members may issue
+// authorized directives. Kept as a set for O(1) IsAuthorityKind lookups.
+var authorityKinds = map[string]bool{
+	"emergency-service": true,
+	"security-service":  true,
+	"health-service":    true,
+	"local-government":  true,
+}
+
+// IsAuthorityKind reports whether an institution of this kind may issue
+// authorized directives (spec: the directives/announcements feature).
+func IsAuthorityKind(kind string) bool {
+	return authorityKinds[kind]
 }
 
 // ValidInstitutionKind reports whether slug is in the catalog.

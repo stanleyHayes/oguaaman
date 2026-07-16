@@ -22,12 +22,14 @@ function when(iso: string): string {
 // Palette token per notification kind — resolved against the active theme.
 const KIND_TOKEN: Record<string, keyof Palette> = {
   approved: "teal", rejected: "maroon", changes: "goldBrand", remembrance: "goldBrand",
-  birthday: "gold", report: "maroon", welcome: "green",
+  birthday: "gold", report: "maroon", welcome: "green", directive: "clay",
 };
 
 // Notification links are portal paths; translate them to mobile routes.
 function mobileLink(link?: string): string | null {
   if (!link) return null;
+  // The directive broadcast links to the alerts screen.
+  if (link === "/alerts" || link.startsWith("/alerts")) return "/alerts";
   // Same-shaped routes pass straight through.
   if (["/memoriam/", "/members/", "/news/", "/music/", "/people/", "/business/", "/institutions/", "/projects/"].some((r) => link.startsWith(r))) return link;
   // Portal paths with a different mobile home.

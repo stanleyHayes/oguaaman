@@ -262,6 +262,37 @@ export interface Notification {
   createdAt: string;
 }
 
+/**
+ * Directives — advisories, directives and emergency notices issued by authority
+ * institutions (emergency-service, security-service, health-service,
+ * local-government). Severity mirrors the incident palette so the two safety
+ * surfaces read the same. "Active" = status "active" AND now within
+ * [effectiveFrom, effectiveUntil] (effectiveUntil empty = open-ended).
+ */
+export type DirectiveSeverity = "low" | "medium" | "high" | "critical";
+export type DirectiveKind = "advisory" | "directive" | "emergency";
+export type DirectiveStatus = "active" | "cancelled" | "expired";
+
+export interface Directive {
+  id: string;
+  slug: string;
+  title: string;
+  body: string;
+  severity: DirectiveSeverity;
+  kind: DirectiveKind;
+  action?: string;
+  area?: string;
+  townId?: string;
+  issuedByOrgId: string;
+  issuedByOrgSlug: string;
+  issuedByName: string;
+  effectiveFrom: string;      // RFC3339
+  effectiveUntil?: string;    // RFC3339; omitted = open-ended
+  status: DirectiveStatus;
+  createdAt: string;          // RFC3339
+  createdById: string;
+}
+
 /** Community safety — rescue & early recovery (auto-published on submit). */
 export type IncidentCategory = "flood" | "fire" | "accident" | "medical" | "crime" | "utility" | "other";
 export type IncidentSeverity = "low" | "medium" | "high" | "critical";

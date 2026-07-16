@@ -12,6 +12,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Mark, Pill, Thumb } from "@/ui";
 import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { useNavDrawer } from "@/components/nav-drawer";
+import { useDirectives } from "@/lib/directives";
 
 // Route a featured listing to its canonical screen (any type can be featured).
 function featuredRoute(l: Listing): string {
@@ -86,6 +87,9 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { scrollY, onScroll } = useHeroParallax();
   const { open } = useNavDrawer();
+  // The alert banner (rendered above the tabs) already owns the top safe-area
+  // inset when it's showing, so the hero shouldn't add it again.
+  const { bannerVisible } = useDirectives();
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading } = useApi<HomeData>(() => api.home(), "home");
@@ -99,7 +103,7 @@ export default function Home() {
   return (
     <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
       {/* hero — castle photo under the green, mirroring the portal home */}
-      <View style={[s.hero, { paddingTop: insets.top + 24 }]}>
+      <View style={[s.hero, { paddingTop: (bannerVisible ? 12 : insets.top) + 24 }]}>
         <Image source={{ uri: mediaUrl("/uploads/seed/castle-exterior.jpg") }} resizeMode="cover" style={StyleSheet.absoluteFill} />
         <View style={[StyleSheet.absoluteFill, s.heroScrim]} />
         <HeroParallax scrollY={scrollY}>

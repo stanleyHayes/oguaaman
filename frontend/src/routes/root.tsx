@@ -3,6 +3,7 @@ import { Outlet, isRouteErrorResponse, useLocation, useNavigation, useRouteError
 import { motion } from "motion/react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { AlertBanner } from "@/components/alert-banner";
 import { CookieConsent } from "@/components/cookie-consent";
 import { PageTransition } from "@/components/page-transition";
 import { Wordmark } from "@/components/wordmark";
@@ -66,6 +67,7 @@ export function RootLayout() {
       <ScrollToTop />
       <NavigationProgress />
       <SiteHeader />
+      <AlertBanner />
       <main className="flex-1">
         <PageTransition>
           <Outlet />

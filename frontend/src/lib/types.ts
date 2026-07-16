@@ -542,3 +542,32 @@ export interface MemberView {
   places: Place[];
   schools: Organization[];
 }
+
+/**
+ * Community directives & advisories — authority-issued alerts (emergency,
+ * security, health, local-government). Mirrors backend/internal/domain.Directive.
+ * "Active" = status==="active" AND now>=effectiveFrom AND (no effectiveUntil OR now<=effectiveUntil).
+ */
+export type DirectiveSeverity = "low" | "medium" | "high" | "critical";
+export type DirectiveKind = "advisory" | "directive" | "emergency";
+export type DirectiveStatus = "active" | "cancelled" | "expired";
+
+export interface Directive {
+  id: string;
+  slug: string;
+  title: string;
+  body: string;
+  severity: DirectiveSeverity;
+  kind: DirectiveKind;
+  action?: string;         // omitted when empty
+  area?: string;           // omitted when empty
+  townId?: string;         // omitted when empty
+  issuedByOrgId: string;
+  issuedByOrgSlug: string;
+  issuedByName: string;
+  effectiveFrom: string;   // RFC3339
+  effectiveUntil?: string; // RFC3339 — omitted = open-ended
+  status: DirectiveStatus;
+  createdAt: string;       // RFC3339
+  createdById: string;
+}

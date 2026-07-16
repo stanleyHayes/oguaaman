@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Tabs } from "expo-router";
-import { Pressable, type ColorValue } from "react-native";
+import { Pressable, View, type ColorValue } from "react-native";
 import { T as Text } from "@/components/typography";
 import { useTheme } from "@/lib/theme-context";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { useDirectives } from "@/lib/directives";
+import { AlertBanner } from "@/components/alert-banner";
 import { useNavDrawer } from "@/components/nav-drawer";
 
 const icon = (glyph: string) => {
@@ -49,31 +51,39 @@ export default function TabsLayout() {
   const { t } = useLang();
   const { C } = useTheme();
   const unread = useUnreadCount();
+  // The safety banner is rendered above the navigator; when it shows, it already
+  // owns the top safe-area inset, so drop the header's own status-bar height to
+  // avoid a double gap. When hidden, the header reclaims the notch as usual.
+  const { bannerVisible } = useDirectives();
   const badgeText = unread > 9 ? "9+" : unread;
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: C.green,
-        tabBarInactiveTintColor: C.inkFaint,
-        tabBarStyle: { backgroundColor: C.cream, borderTopColor: C.sand },
-        tabBarBadgeStyle: { backgroundColor: C.clay, color: C.cream, fontSize: 11 },
-        headerStyle: { backgroundColor: C.green },
-        headerTintColor: C.cream,
-        headerTitleStyle: { fontWeight: "600" },
-        headerLeft: () => <HeaderMenuButton />,
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: t("nav.home"), headerShown: false, tabBarIcon: icon("◎") }} />
-      <Tabs.Screen name="music" options={{ title: t("nav.music"), tabBarIcon: icon("♪") }} />
-      <Tabs.Screen name="memoriam" options={{ title: t("nav.memoriam"), tabBarIcon: icon("♡") }} />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: t("nav.more"),
-          tabBarIcon: icon("≡"),
-          tabBarBadge: unread > 0 ? badgeText : undefined,
+    <View style={{ flex: 1, backgroundColor: C.green }}>
+      <AlertBanner />
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: C.green,
+          tabBarInactiveTintColor: C.inkFaint,
+          tabBarStyle: { backgroundColor: C.cream, borderTopColor: C.sand },
+          tabBarBadgeStyle: { backgroundColor: C.clay, color: C.cream, fontSize: 11 },
+          headerStyle: { backgroundColor: C.green },
+          headerTintColor: C.cream,
+          headerTitleStyle: { fontWeight: "600" },
+          headerStatusBarHeight: bannerVisible ? 0 : undefined,
+          headerLeft: () => <HeaderMenuButton />,
         }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen name="index" options={{ title: t("nav.home"), headerShown: false, tabBarIcon: icon("◎") }} />
+        <Tabs.Screen name="music" options={{ title: t("nav.music"), tabBarIcon: icon("♪") }} />
+        <Tabs.Screen name="memoriam" options={{ title: t("nav.memoriam"), tabBarIcon: icon("♡") }} />
+        <Tabs.Screen
+          name="more"
+          options={{
+            title: t("nav.more"),
+            tabBarIcon: icon("≡"),
+            tabBarBadge: unread > 0 ? badgeText : undefined,
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }

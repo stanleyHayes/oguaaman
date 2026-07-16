@@ -1,4 +1,4 @@
-import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion } from "./types";
+import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion } from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -162,6 +162,19 @@ export const api = {
   incident: (slug: string) => get<Incident>(`/api/incidents/${slug}`),
   reportIncident: (body: { title: string; category: string; severity: string; location: string; contact?: string; description?: string }) =>
     post<Incident>("/api/incidents", body),
+
+  // Directives — public safety notices from authority institutions. `activeOnly`
+  // keeps only currently-active ones (server-filtered, sorted most-severe first);
+  // pass false for the full non-cancelled set (active + computed-expired). `town`
+  // is an exact townId match (seeded directives use "oguaa").
+  directives: (activeOnly = true, town?: string) => {
+    const params: string[] = [];
+    if (activeOnly) params.push("active=true");
+    if (town) params.push(`town=${encodeURIComponent(town)}`);
+    const query = params.length ? `?${params.join("&")}` : "";
+    return get<Directive[]>(`/api/directives${query}`);
+  },
+  directive: (slug: string) => get<Directive>(`/api/directives/${slug}`),
 
   // Lost & found — lost items, found items, missing people.
   lostFoundList: (f?: { kind?: string; status?: string }) => {

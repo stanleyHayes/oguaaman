@@ -75,6 +75,32 @@ export interface Incident {
   publishedAt?: string;
 }
 
+/** Authority directives / advisories — official notices broadcast townwide. */
+export type DirectiveSeverity = "low" | "medium" | "high" | "critical";
+export type DirectiveKind = "advisory" | "directive" | "emergency";
+export type DirectiveStatus = "active" | "cancelled" | "expired";
+
+export interface Directive {
+  id: string;
+  slug: string;
+  title: string;
+  body: string;
+  severity: DirectiveSeverity;
+  kind: DirectiveKind;
+  action?: string;
+  area?: string;
+  townId?: string;
+  issuedByOrgId: string;
+  issuedByOrgSlug: string;
+  issuedByName: string;
+  effectiveFrom: string;
+  /** Omitted = open-ended. */
+  effectiveUntil?: string;
+  status: DirectiveStatus;
+  createdAt: string;
+  createdById: string;
+}
+
 export interface Member {
   id: string;
   slug: string;

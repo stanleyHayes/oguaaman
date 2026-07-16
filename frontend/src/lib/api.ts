@@ -1,7 +1,7 @@
 // Thin client for the Go API. In dev, calls go to relative /api (Vite proxies to
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
-  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan,
+  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive,
 } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
@@ -179,6 +179,18 @@ export const api = {
     post<Incident>("/api/incidents", body),
   transitionIncident: (id: string, status: string, note?: string) =>
     post<{ status: string }>(`/api/admin/incidents/${id}/status`, { status, note }),
+
+  // Community directives & advisories — authority-issued alerts (public reads).
+  // activeOnly keeps only currently-in-effect notices (server-sorted most-severe
+  // first, then newest); pass activeOnly=false for the archive (active + expired).
+  directives: (activeOnly = true, town?: string) => {
+    const q = new URLSearchParams();
+    if (activeOnly) q.set("active", "true");
+    if (town) q.set("town", town);
+    const qs = q.toString();
+    return get<Directive[]>(`/api/directives${qs ? `?${qs}` : ""}`);
+  },
+  directive: (slug: string) => get<Directive>(`/api/directives/${slug}`),
 
   // Lost & found — lost items, found items, missing people. Auto-published on
   // submit; the owner or a curator resolves the notice (reunited / closed).

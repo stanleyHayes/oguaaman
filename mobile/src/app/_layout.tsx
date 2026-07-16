@@ -19,6 +19,7 @@ import {
 import { AuthProvider } from "@/lib/auth";
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
+import { DirectivesProvider } from "@/lib/directives";
 import { NavDrawerProvider } from "@/components/nav-drawer";
 
 // Keep the splash screen up until the brand fonts are ready, so the first
@@ -98,6 +99,7 @@ function RootNavigator() {
         <Stack.Screen name="music/the-oguaa-sound" options={{ title: "The Oguaa Sound", headerBackTitle: "Music" }} />
         <Stack.Screen name="me" options={{ title: "My profile", headerBackTitle: "More" }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications", headerBackTitle: "Back" }} />
+        <Stack.Screen name="alerts" options={{ title: "Alerts", headerBackTitle: "Back" }} />
         <Stack.Screen name="search" options={{ title: "Search", headerBackTitle: "More" }} />
       </Stack>
     </>
@@ -125,9 +127,11 @@ export default function RootLayout() {
       <ThemeProvider>
         <LanguageProvider>
         <AuthProvider>
-          <NavDrawerProvider>
-            <RootNavigator />
-          </NavDrawerProvider>
+          <DirectivesProvider>
+            <NavDrawerProvider>
+              <RootNavigator />
+            </NavDrawerProvider>
+          </DirectivesProvider>
         </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>

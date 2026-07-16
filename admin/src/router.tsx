@@ -23,6 +23,7 @@ export const router = createBrowserRouter([
       { path: "revenue", lazy: () => import("./pages/Revenue") },
       { path: "reports", lazy: () => import("./pages/Reports") },
       { path: "incidents", lazy: () => import("./pages/Incidents") },
+      { path: "directives", lazy: () => import("./pages/Directives") },
       { path: "newsroom", lazy: () => import("./pages/Newsroom") },
       { path: "newsroom/new", lazy: () => import("./pages/NewsroomEditor") },
       { path: "newsroom/:id", lazy: () => import("./pages/NewsroomEditor") },

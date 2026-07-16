@@ -10,6 +10,53 @@ import { SECTIONS, TONES, type NavSection } from "@/lib/sections";
 import { useAuth } from "@/lib/auth";
 import { useLang, sectionLabel } from "@/lib/i18n";
 import { SectionIcon } from "./section-icon";
+import { api } from "@/lib/api";
+
+/**
+ * The Alerts nav entry — a megaphone icon linking to /alerts, badged with the
+ * count of active high/critical directives. Polls the public feed every 30s and
+ * on window focus, mirroring the AlertBanner's cadence.
+ */
+function AlertsNavLink() {
+  const { pathname } = useLocation();
+  const [urgent, setUrgent] = useState(0);
+  const active = pathname.startsWith("/alerts");
+
+  useEffect(() => {
+    let alive = true;
+    const load = () => {
+      api.directives(true)
+        .then((list) => {
+          if (alive) setUrgent(list.filter((d) => d.severity === "high" || d.severity === "critical").length);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = window.setInterval(load, 30_000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    return () => { alive = false; window.clearInterval(id); window.removeEventListener("focus", onFocus); };
+  }, []);
+
+  return (
+    <Link
+      to="/alerts"
+      aria-label={urgent > 0 ? `Alerts, ${urgent} urgent` : "Alerts"}
+      className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${active ? "bg-cream/15 text-gold" : "text-cream/85 hover:bg-cream/10"}`}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M3 10.5v3A1.5 1.5 0 0 0 4.5 15H7l8 4.5v-15L7 9H4.5A1.5 1.5 0 0 0 3 10.5z" />
+        <path d="M18.5 8.5a4.5 4.5 0 0 1 0 7" />
+        <path d="M7 15v3.2A1.8 1.8 0 0 0 8.8 20h.4A1.8 1.8 0 0 0 11 18.2V16.6" />
+      </svg>
+      {urgent > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-maroon-900 px-1 text-[0.6rem] font-bold text-cream ring-1 ring-cream/30">
+          {urgent > 9 ? "9+" : urgent}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 const byId = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<string, NavSection>;
 const DISCOVER = ["heritage", "culture", "people", "visit"].map((id) => byId[id]).filter(Boolean);
@@ -203,6 +250,7 @@ export function SiteHeader() {
               <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
             </svg>
           </Link>
+          <AlertsNavLink />
           <LanguageSwitcher className="hidden lg:inline-flex" />
           <ThemeToggle className="hidden text-cream/85 hover:bg-cream/10 sm:inline-flex" />
 
