@@ -1,4 +1,5 @@
 import { useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -14,6 +15,7 @@ export async function loader() {
 
 export function Component() {
   const people = useLoaderData() as Listing[];
+  usePageTitle("People of Oguaa");
   const living = people.filter((p) => p.details.living);
   const remembered = people.filter((p) => !p.details.living);
   return (

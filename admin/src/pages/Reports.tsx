@@ -61,6 +61,7 @@ export function Component() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
+                    {r.keeperClaim && <Pill tone="clay">Keeper claim</Pill>}
                     <Pill tone={TONE[r.reason] ?? "neutral"}>{REASON_LABEL[r.reason] ?? r.reason}</Pill>
                     <span className="text-xs uppercase tracking-wide text-ink-faint">{r.listingType}</span>
                     {r.status !== "open" && <span className="text-xs font-semibold capitalize text-ink-muted">· {r.status}</span>}
@@ -75,7 +76,22 @@ export function Component() {
                   </div>
                 </div>
                 {r.status === "open" && (
-                  <div className="flex shrink-0 gap-2">
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    {r.keeperClaim && r.reporterId && (
+                      <button
+                        disabled={busy === r.id}
+                        onClick={async () => {
+                          setBusy(r.id);
+                          try {
+                            await api.grantKeeperRole(r.listingId, r.reporterId!, r.id);
+                            setRows((prev) => prev.map((x) => x.id === r.id ? { ...x, status: "actioned" } : x));
+                          } finally { setBusy(null); }
+                        }}
+                        className="rounded-full bg-forest px-4 py-2 text-xs font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
+                      >
+                        Grant keeper
+                      </button>
+                    )}
                     <button disabled={busy === r.id} onClick={() => resolve(r, "actioned")} className="rounded-full bg-maroon-900 px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
                       Mark actioned
                     </button>

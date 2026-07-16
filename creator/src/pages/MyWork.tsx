@@ -26,10 +26,20 @@ const EDITABLE = new Set(["artist", "business", "event", "memory", "opportunity"
 export function Component() {
   const { listings } = useLoaderData() as MemberView;
   const revalidator = useRevalidator();
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [promoFor, setPromoFor] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoConfirmed, setPromoConfirmed] = useState<Promotion | null>(null);
+
+  const filtered = statusFilter === "all" ? listings : listings.filter((l) => l.status === statusFilter);
+  const counts = {
+    all: listings.length,
+    draft: listings.filter((l) => l.status === "draft").length,
+    pending: listings.filter((l) => l.status === "pending").length,
+    approved: listings.filter((l) => l.status === "approved").length,
+    rejected: listings.filter((l) => l.status === "rejected").length,
+  };
 
   async function promote(l: Listing, days: number) {
     setPromoError(null);
@@ -67,6 +77,15 @@ export function Component() {
         </a>
       </div>
 
+      <div className="mb-4 flex flex-wrap gap-2">
+        {(["all", "draft", "pending", "approved", "rejected"] as const).map((s) => (
+          <button key={s} type="button" onClick={() => setStatusFilter(s)}
+            className={`rounded-full border px-3.5 py-1 text-sm font-medium transition-colors capitalize ${statusFilter === s ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}>
+            {s} <span className="opacity-60">({counts[s]})</span>
+          </button>
+        ))}
+      </div>
+
       {promoConfirmed && (
         <p className="mb-4 rounded-lg bg-teal/[0.12] px-4 py-3 text-sm font-medium text-teal-text">
           Payment confirmed — &ldquo;{promoConfirmed.listingTitle}&rdquo; is now featured for {promoConfirmed.days} days. ✓
@@ -76,16 +95,16 @@ export function Component() {
         <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-900">{promoError}</p>
       )}
 
-      {listings.length === 0 ? (
-        <Empty icon="pen" title="Nothing yet" actions={
-          <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">Add your first listing</a>
+      {filtered.length === 0 ? (
+        <Empty icon="pen" title={statusFilter === "all" ? "Nothing yet" : `No ${statusFilter} listings`} actions={
+          statusFilter === "all" ? <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">Add your first listing</a> : undefined
         }>
-          Your businesses, events, art and projects show up here once you submit them on the portal.
+          {statusFilter === "all" ? "Your businesses, events, art and projects show up here once you submit them on the portal." : `You have no listings with "${statusFilter}" status.`}
         </Empty>
       ) : (
         <Card className="overflow-hidden px-4">
           <Stagger as="ul" className="divide-y divide-sand">
-            {listings.map((l, idx) => {
+            {filtered.map((l, idx) => {
               const path = publicPathFor(l);
               const featuredUntil = l.featuredUntil && l.featuredUntil > new Date().toISOString() ? l.featuredUntil : null;
               return (

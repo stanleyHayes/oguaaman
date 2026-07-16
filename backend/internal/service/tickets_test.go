@@ -81,6 +81,19 @@ func (f *fakeTickets) SetCheckedIn(_ context.Context, code, at string) error {
 	return &domain.NotFoundError{Entity: "ticket"}
 }
 func (f *fakeTickets) All(context.Context) ([]domain.Ticket, error) { return f.rows, nil }
+func (f *fakeTickets) ByEvents(_ context.Context, eventIDs []string) ([]domain.Ticket, error) {
+	ids := map[string]bool{}
+	for _, id := range eventIDs {
+		ids[id] = true
+	}
+	var out []domain.Ticket
+	for _, t := range f.rows {
+		if ids[t.EventID] {
+			out = append(out, t)
+		}
+	}
+	return out, nil
+}
 
 func ticketsFixture(verifyOK bool, verifyAmount int64) (*TicketsService, *fakeTickets) {
 	listings := &fakeRepo{listings: []domain.Listing{

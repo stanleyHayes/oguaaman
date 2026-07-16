@@ -1,5 +1,6 @@
 import { Link, useLoaderData } from "react-router-dom";
 import { useState } from "react";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing, Organization, Place } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -106,6 +107,7 @@ function MemoryWall({ initial, schools, places }: Readonly<{ initial: Listing[];
 
 export function Component() {
   const { opps, memories, events, schools, places } = useLoaderData() as Data;
+  usePageTitle("Community");
   return (
     <>
       <PageHero tone="teal" kicker="Get involved · training the youth" title="The community" symbol="funtunfunefu" image="/uploads/seed/fishermen.jpg" lede="The platform leads with local pride, and pride is downstream of participation. Share a memory, follow the calendar, and open doors for the next generation.">

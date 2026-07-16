@@ -1,4 +1,5 @@
 import { Link, useLoaderData, useSearchParams } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -22,6 +23,7 @@ export async function loader(): Promise<Data> {
 
 export function Component() {
   const { artists, genres, legacy } = useLoaderData() as Data;
+  usePageTitle("Music");
   const [params] = useSearchParams();
   const genre = params.get("genre") ?? undefined;
   const shown = genre ? artists.filter((a) => (a.details.genres ?? []).includes(genre)) : artists;

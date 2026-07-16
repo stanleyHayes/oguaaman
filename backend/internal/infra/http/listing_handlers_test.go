@@ -37,8 +37,11 @@ func (s *submitListings) UpdateIncidentStatus(context.Context, string, string, m
 }
 func (s *submitListings) SetLostFoundStatus(context.Context, string, string) error { return nil }
 func (s *submitListings) SetSubscribedUntil(context.Context, string, string) error  { return nil }
+func (s *submitListings) SetKeeperID(context.Context, string, string) error         { return nil }
+func (s *submitListings) AvgApprovalHours(context.Context) (float64, error)          { return 0, nil }
 func (s *submitListings) RecordView(context.Context, string, string) (bool, error)  { return true, nil }
 func (s *submitListings) ViewsThisMonth(context.Context, []string) (int, error)     { return 0, nil }
+func (s *submitListings) PlatformViewsThisMonth(context.Context) (int, error)       { return 0, nil }
 
 func TestSubmit_requiresVerifiedContact(t *testing.T) {
 	listings := &submitListings{}

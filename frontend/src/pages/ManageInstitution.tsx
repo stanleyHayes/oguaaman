@@ -86,13 +86,27 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
   const [motto, setMotto] = useState(org.motto ?? "");
   const [history, setHistory] = useState(org.history ?? "");
   const [crestUrl, setCrestUrl] = useState(org.crestUrl ?? "");
+  // Per-kind fields
+  const [gesCategory, setGesCategory] = useState(org.gesCategory ?? "");
+  const [boardingType, setBoardingType] = useState(org.boardingType ?? "");
+  const [genderPolicy, setGenderPolicy] = useState(org.genderPolicy ?? "");
+  const [nhisAccredited, setNhisAccredited] = useState(org.nhisAccredited ?? false);
+  const [ghanaPostGPS, setGhanaPostGPS] = useState(org.ghanaPostGPS ?? "");
+  const [momoNumber, setMomoNumber] = useState(org.momoNumber ?? "");
   const [state, setState] = useState<SaveState>("idle");
+
+  const isSchool = org.kind === "school";
+  const isHealth = org.kind === "health";
 
   async function save() {
     setState("saving");
     try {
-      // Preserve existing contact links (not edited here) so they aren't cleared.
-      await api.updateOrgProfile(slug, { summary, motto, history, crestUrl, contact: org.contact ?? [] });
+      await api.updateOrgProfile(slug, {
+        summary, motto, history, crestUrl, contact: org.contact ?? [],
+        gesCategory, boardingType, genderPolicy,
+        nhisAccredited: isHealth ? nhisAccredited : undefined,
+        ghanaPostGPS, momoNumber,
+      });
       setState("saved");
     } catch {
       setState("error");
@@ -120,6 +134,61 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
           <label htmlFor="org-history" className={label}>History</label>
           <textarea id="org-history" rows={4} className={`mt-1.5 resize-none ${field}`} value={history} onChange={(e) => setHistory(e.target.value)} />
         </div>
+
+        {/* Education-specific fields */}
+        {isSchool && (
+          <>
+            <div>
+              <label htmlFor="org-ges" className={label}>GES Category</label>
+              <select id="org-ges" className={`mt-1.5 ${field}`} value={gesCategory} onChange={(e) => setGesCategory(e.target.value)}>
+                <option value="">— select —</option>
+                <option value="Primary">Primary (KG–P6)</option>
+                <option value="Junior High">Junior High School (JHS)</option>
+                <option value="Senior High">Senior High School (SHS)</option>
+                <option value="Technical/Vocational">Technical / Vocational</option>
+                <option value="Tertiary">Tertiary</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="org-boarding" className={label}>Boarding arrangement</label>
+              <select id="org-boarding" className={`mt-1.5 ${field}`} value={boardingType} onChange={(e) => setBoardingType(e.target.value)}>
+                <option value="">— select —</option>
+                <option value="day">Day school only</option>
+                <option value="boarding">Boarding only</option>
+                <option value="both">Both boarding and day</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="org-gender" className={label}>Admission gender policy</label>
+              <select id="org-gender" className={`mt-1.5 ${field}`} value={genderPolicy} onChange={(e) => setGenderPolicy(e.target.value)}>
+                <option value="">— select —</option>
+                <option value="boys">Boys only</option>
+                <option value="girls">Girls only</option>
+                <option value="mixed">Mixed / co-educational</option>
+              </select>
+            </div>
+          </>
+        )}
+
+        {/* Health-specific fields */}
+        {isHealth && (
+          <div className="flex items-center gap-3">
+            <input id="org-nhis" type="checkbox" checked={nhisAccredited} onChange={(e) => setNhisAccredited(e.target.checked)} className="h-4 w-4 accent-green" />
+            <label htmlFor="org-nhis" className="text-sm text-ink">NHIS-accredited facility</label>
+          </div>
+        )}
+
+        {/* Universal catalog fields */}
+        <div>
+          <label htmlFor="org-ghanapost" className={label}>GhanaPost GPS address</label>
+          <input id="org-ghanapost" className={`mt-1.5 ${field}`} value={ghanaPostGPS} onChange={(e) => setGhanaPostGPS(e.target.value)} placeholder="e.g. CF-0172-0842" />
+        </div>
+        <div>
+          <label htmlFor="org-momo" className={label}>Mobile money / giving number</label>
+          <input id="org-momo" className={`mt-1.5 ${field}`} value={momoNumber} onChange={(e) => setMomoNumber(e.target.value)} placeholder="e.g. 024 000 0000" />
+          <p className="mt-1 text-xs text-ink-faint">The number supporters can send donations to via MTN MoMo, Telecel Cash, or AirtelTigo.</p>
+        </div>
+
         <div className="flex items-center gap-3">
           <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
             Save profile
@@ -545,6 +614,7 @@ function MediaItemsEditor({ media, onChange }: Readonly<{ media: MediaAsset[]; o
           <ImageUpload value={m.url} onChange={(url) => update(i, { url })} label={`Photo ${i + 1}`} hint="Shown in this album on your public page." />
           <input className={`${field} mt-2`} value={m.caption ?? ""} onChange={(e) => update(i, { caption: e.target.value })} placeholder="Caption (e.g. Aggrey Memorial Library)" />
           <input className={`${field} mt-2`} value={m.alt ?? ""} onChange={(e) => update(i, { alt: e.target.value })} placeholder="Alt text — describe the image for accessibility" />
+          <input className={`${field} mt-2`} value={m.credit ?? ""} onChange={(e) => update(i, { credit: e.target.value })} placeholder="Photo credit / source (optional)" />
           <button type="button" onClick={() => remove(i)} className="mt-2 text-sm text-clay-text hover:underline">Remove photo</button>
         </div>
       ))}
@@ -634,6 +704,7 @@ function GalleryForm({ slug, initial }: Readonly<{ slug: string; initial?: Media
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <input className={field} value={m.caption ?? ""} onChange={(e) => update(i, { caption: e.target.value })} placeholder="Caption" />
               <input className={field} value={m.alt ?? ""} onChange={(e) => update(i, { alt: e.target.value })} placeholder="Alt text (describe the image)" />
+              <input className={`${field} sm:col-span-2`} value={m.credit ?? ""} onChange={(e) => update(i, { credit: e.target.value })} placeholder="Photo credit / source (optional)" />
             </div>
             <button type="button" onClick={() => remove(i)} className="mt-2 text-sm text-clay-text hover:underline">Remove photo</button>
           </div>

@@ -50,3 +50,22 @@ func (h *Handler) CreatorOverview(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, ov)
 }
+
+// CreatorEarnings — GET /api/creator/earnings. Itemized ticket sales and
+// pledges for the signed-in creator's events and projects.
+func (h *Handler) CreatorEarnings(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	earnings, err := h.creator.Earnings(r.Context(), m.ID)
+	if err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, earnings)
+}

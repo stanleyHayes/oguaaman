@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { api } from "@/lib/api";
 import type { Listing, ListingStatus } from "@/lib/types";
 import { BackLink, Card, StatusBadge, Pill, KeyVal } from "@/components/ui";
+import { AiWritingBar } from "@/components/ai-writing-bar";
 import { formatDate, titleCase } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
 
@@ -183,6 +184,12 @@ export function Component() {
               ))}
               {knownDetails.length === 0 && <p className="text-sm text-ink-muted">No extra details provided.</p>}
             </dl>
+            {(d.bio || d.description || d.text || l.title) && (
+              <div className="mt-5 border-t border-sand pt-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">AI writing assistant</p>
+                <AiWritingBar initialTitle={l.title} initialBody={d.bio ?? d.description ?? d.text ?? ""} />
+              </div>
+            )}
           </Card>
 
           {gallery.length > 0 && (

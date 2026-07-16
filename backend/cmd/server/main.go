@@ -22,6 +22,7 @@ import (
 	grpcx "github.com/oguaa/backend/internal/infra/grpcapi"
 	httpx "github.com/oguaa/backend/internal/infra/http"
 	mongox "github.com/oguaa/backend/internal/infra/mongo"
+	wax "github.com/oguaa/backend/internal/infra/whatsapp"
 	"github.com/oguaa/backend/internal/platform/logger"
 	"github.com/oguaa/backend/internal/service"
 )
@@ -52,7 +53,7 @@ func main() {
 		Plans:    mongox.NewPlanRepo(db),
 	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db))
-	auth := newAuthService(memberRepo, cfg)
+	auth := newAuthService(memberRepo, cfg, log)
 	ensureUploadDir(log, cfg)
 	payments, tickets, subs, promotions, revenue := moneyServices(db, cfg, log)
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
@@ -98,8 +99,10 @@ func connectMongo(ctx context.Context, log *slog.Logger, cfg config.Config) (*mo
 	return client, db
 }
 
-func newAuthService(members domain.MemberRepository, cfg config.Config) *service.AuthService {
-	return service.NewAuthService(members, cfg.JWTSecret)
+func newAuthService(members domain.MemberRepository, cfg config.Config, log *slog.Logger) *service.AuthService {
+	auth := service.NewAuthService(members, cfg.JWTSecret)
+	wa := wax.New(cfg.WhatsAppToken, cfg.WhatsAppPhoneID, log)
+	return auth.WithOTPSender(wa)
 }
 
 func ensureUploadDir(log *slog.Logger, cfg config.Config) {

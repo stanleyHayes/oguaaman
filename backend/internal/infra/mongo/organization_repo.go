@@ -62,13 +62,22 @@ func (r *OrgRepo) UpdateProfile(ctx context.Context, id string, patch domain.Org
 	if contact == nil {
 		contact = []domain.SocialLink{}
 	}
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
-		"summary":  patch.Summary,
-		"history":  patch.History,
-		"motto":    patch.Motto,
-		"crestUrl": patch.CrestURL,
-		"contact":  contact,
-	}})
+	fields := bson.M{
+		"summary":      patch.Summary,
+		"history":      patch.History,
+		"motto":        patch.Motto,
+		"crestUrl":     patch.CrestURL,
+		"contact":      contact,
+		"ghanaPostGPS": patch.GhanaPostGPS,
+		"momoNumber":   patch.MoMoNumber,
+		"gesCategory":  patch.GESCategory,
+		"boardingType": patch.BoardingType,
+		"genderPolicy": patch.GenderPolicy,
+	}
+	if patch.NHISAccredited != nil {
+		fields["nhisAccredited"] = *patch.NHISAccredited
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": fields})
 	return err
 }
 

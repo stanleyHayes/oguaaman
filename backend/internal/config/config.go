@@ -36,6 +36,18 @@ type Config struct {
 	PaystackSecretKey  string
 	PortalURL          string
 	PlatformFeePercent int // kept by the platform on each confirmed pledge; net goes to the project
+
+	// Email delivery via Resend (transactional — OTP codes, moderation outcomes,
+	// notification digests). Without a key, email delivery is silently skipped
+	// (in-app notifications still work).
+	ResendAPIKey  string
+	EmailFrom     string // e.g. "Oguaa <noreply@oguaa.gh>"
+
+	// WhatsApp OTP delivery. Uses WhatsApp Business Cloud API (Meta) or a
+	// provider that speaks the same HTTP interface (e.g. 360dialog, Twilio).
+	// Without a token the OTP code is returned in the API response (dev/sim mode).
+	WhatsAppToken   string // Bearer token for the WhatsApp Business API
+	WhatsAppPhoneID string // WhatsApp Business Account phone number ID
 }
 
 // Load reads configuration from a local .env (if present) and the environment,
@@ -62,6 +74,12 @@ func Load() Config {
 		PaystackSecretKey:  os.Getenv("PAYSTACK_SECRET_KEY"),
 		PortalURL:          env("PUBLIC_PORTAL_URL", "http://localhost:5173"),
 		PlatformFeePercent: envInt("PLATFORM_FEE_PERCENT", 5),
+
+		ResendAPIKey: os.Getenv("RESEND_API_KEY"),
+		EmailFrom:    env("EMAIL_FROM", "Oguaa <noreply@oguaa.gh>"),
+
+		WhatsAppToken:   os.Getenv("WHATSAPP_TOKEN"),
+		WhatsAppPhoneID: os.Getenv("WHATSAPP_PHONE_ID"),
 	}
 }
 

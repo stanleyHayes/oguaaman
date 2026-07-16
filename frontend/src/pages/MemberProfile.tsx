@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { MemberView, Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -77,6 +78,7 @@ function FollowButton({ slug }: Readonly<{ slug: string }>) {
 
 export function Component() {
   const { member: me, listings, places, schools } = useLoaderData() as MemberView;
+  usePageTitle(me.displayName);
   const quarter = places.find((p) => p.id === me.townId && p.kind !== "asafo");
   const asafo = places.find((p) => p.id === me.asafoId);
   const published = listings.filter((l) => l.status === "approved");

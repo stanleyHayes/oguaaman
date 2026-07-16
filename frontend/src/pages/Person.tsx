@@ -1,4 +1,5 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
@@ -14,6 +15,7 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<Listing> {
 
 export function Component() {
   const person = useLoaderData() as Listing;
+  usePageTitle(person.title);
   useRecordView(person.id);
   const d = person.details;
   const story = (d.bio ?? d.whyNotable ?? "").split("\n\n").filter(Boolean);

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { EventView, Ticket } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill } from "@/components/ui";
+import { LocationMap } from "@/components/location-map";
 import { DetailHero } from "@/components/detail-hero";
 import { ReportButton } from "@/components/report-button";
 import { formatDate } from "@/lib/format";
@@ -16,6 +18,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export function Component() {
   const { event, tiers } = useLoaderData() as EventView;
+  usePageTitle(event.title);
   useRecordView(event.id);
   const { member } = useAuth();
   const navigate = useNavigate();
@@ -110,6 +113,7 @@ export function Component() {
             />
           </div>
 
+          {d.venue && <LocationMap address={d.venue} query={`${event.title} ${d.venue}`} />}
           <div className="flex justify-end"><ReportButton listingId={event.id} /></div>
         </aside>
       </Container>

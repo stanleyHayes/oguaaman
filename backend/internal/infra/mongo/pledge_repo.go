@@ -49,6 +49,15 @@ func (r *PledgeRepo) ByMember(ctx context.Context, memberID string) ([]domain.Pl
 	return out, cur.All(ctx, &out)
 }
 
+func (r *PledgeRepo) ByProject(ctx context.Context, projectID string) ([]domain.Pledge, error) {
+	cur, err := r.c.Find(ctx, bson.M{"projectId": projectID})
+	if err != nil {
+		return nil, err
+	}
+	out := []domain.Pledge{}
+	return out, cur.All(ctx, &out)
+}
+
 func (r *PledgeRepo) All(ctx context.Context) ([]domain.Pledge, error) {
 	cur, err := r.c.Find(ctx, bson.M{})
 	if err != nil {

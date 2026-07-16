@@ -502,6 +502,7 @@ function MediaItemsEditor({ media, onChange }: Readonly<{ media: MediaAsset[]; o
           <ImageUpload value={m.url} onChange={(url) => update(i, { url })} label={`Photo ${i + 1}`} hint="Shown in this album on your public page." />
           <input className={`${field} mt-2`} value={m.caption ?? ""} onChange={(e) => update(i, { caption: e.target.value })} placeholder="Caption (e.g. Aggrey Memorial Library)" />
           <input className={`${field} mt-2`} value={m.alt ?? ""} onChange={(e) => update(i, { alt: e.target.value })} placeholder="Alt text — describe the image for accessibility" />
+          <input className={`${field} mt-2`} value={m.credit ?? ""} onChange={(e) => update(i, { credit: e.target.value })} placeholder="Photo credit / source (optional)" />
           <button type="button" onClick={() => remove(i)} className="mt-2 text-sm text-clay-text hover:underline">Remove photo</button>
         </div>
       ))}
@@ -591,6 +592,7 @@ export function GalleryForm({ slug, initial }: Readonly<{ slug: string; initial?
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <input className={field} value={m.caption ?? ""} onChange={(e) => update(i, { caption: e.target.value })} placeholder="Caption" />
               <input className={field} value={m.alt ?? ""} onChange={(e) => update(i, { alt: e.target.value })} placeholder="Alt text (describe the image)" />
+              <input className={`${field} sm:col-span-2`} value={m.credit ?? ""} onChange={(e) => update(i, { credit: e.target.value })} placeholder="Photo credit / source (optional)" />
             </div>
             <button type="button" onClick={() => remove(i)} className="mt-2 text-sm text-clay-text hover:underline">Remove photo</button>
           </div>

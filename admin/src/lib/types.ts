@@ -185,6 +185,18 @@ export interface Place { id: string; slug: string; name: string; kind?: "quarter
 export interface MemberView { member: Member; listings: Listing[]; places: Place[]; schools: Organization[] }
 export interface InstitutionView { institution: Organization; events: Listing[]; officialEvents: Listing[] }
 
+export interface TeamMember {
+  claimId: string;
+  memberId: string;
+  memberName: string;
+  memberSlug: string;
+  photoUrl?: string;
+  role: string;
+  scope: "manager" | "officer";
+  status: "approved" | "invited";
+  invitedByName?: string;
+}
+
 export interface Stats {
   members: number; listings: number; schools: number; institutions: number;
   artists: number; memorials: number; memories: number; pending: number;

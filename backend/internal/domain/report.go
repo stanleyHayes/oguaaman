@@ -22,6 +22,10 @@ type Report struct {
 	ReviewedByID string `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
 	ReviewedAt   string `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
 	Resolution   string `json:"resolution,omitempty" bson:"resolution,omitempty"`
+	// KeeperClaim marks this as a family "claim / correct / remove" request for a
+	// memorial — distinct from a generic bereavement concern. When true, the curator
+	// reviews it and may transfer keeperId to the claimant, request evidence, or dismiss.
+	KeeperClaim bool `json:"keeperClaim,omitempty" bson:"keeperClaim,omitempty"`
 }
 
 // Report lifecycle.

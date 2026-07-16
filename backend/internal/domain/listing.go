@@ -109,6 +109,9 @@ type ListingRepository interface {
 	// SetSubscribedUntil sets details.subscribedUntil (RFC3339) — the paid-until
 	// date of a business's Supporter subscription (Phase 7).
 	SetSubscribedUntil(ctx context.Context, listingID, until string) error
+	// SetKeeperID sets details.keeperId on a memorial listing (a curator action
+	// taken after reviewing a family keeper-claim request).
+	SetKeeperID(ctx context.Context, listingID, keeperMemberID string) error
 	// RecordView idempotently records a unique daily page-view. visitorKey is the
 	// member ID (if authed) or "ip:"+IP (anon). Returns true when this is the
 	// first view from this visitor today (viewCount was incremented).
@@ -116,4 +119,11 @@ type ListingRepository interface {
 	// ViewsThisMonth sums unique daily view records for the given listing IDs in
 	// the current calendar month (YYYY-MM prefix match on the day field).
 	ViewsThisMonth(ctx context.Context, listingIDs []string) (int, error)
+	// PlatformViewsThisMonth counts all unique daily view records across every
+	// listing in the current calendar month (admin KPI dashboard).
+	PlatformViewsThisMonth(ctx context.Context) (int, error)
+	// AvgApprovalHours returns the mean hours between submittedAt and reviewedAt
+	// for approved listings over the last 90 days (admin KPI dashboard).
+	// Returns 0.0 if there are no decisions in the window.
+	AvgApprovalHours(ctx context.Context) (float64, error)
 }

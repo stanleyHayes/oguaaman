@@ -1,4 +1,4 @@
-import type { CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, Subscription, TeamView, Ticket } from "./types";
+import type { CreatorEarnings, CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, Subscription, TeamView, Ticket } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -63,6 +63,7 @@ export const api = {
 
   // Owner-scoped dashboard aggregation (Creator Platform plan §4).
   creatorOverview: () => get<CreatorOverview>("/api/creator/overview"),
+  creatorEarnings: () => get<CreatorEarnings>("/api/creator/earnings"),
   setCreatorTypes: (creatorTypes: string[]) => post<Member>("/api/me/creator-types", { creatorTypes }),
 
   // The member's own listings arrive on the public member view (all statuses).

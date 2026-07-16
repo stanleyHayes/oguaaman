@@ -242,6 +242,13 @@ export interface Organization {
   houseColors?: string[];
   osaName?: string;
   memberCount?: number;
+  // Per-kind structured catalog fields (§4 perkind-catalog)
+  gesCategory?: string;
+  boardingType?: string;
+  genderPolicy?: string;
+  nhisAccredited?: boolean;
+  ghanaPostGPS?: string;
+  momoNumber?: string;
 }
 
 export interface Place {

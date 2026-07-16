@@ -1,4 +1,5 @@
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { FestivalSummary } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -14,6 +15,7 @@ export async function loader() {
 
 export function Component() {
   const festivals = useLoaderData() as FestivalSummary[];
+  usePageTitle("Festivals");
 
   return (
     <>

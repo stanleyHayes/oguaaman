@@ -1,4 +1,5 @@
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -32,6 +33,7 @@ export function ProgressBar({ raised, goal }: Readonly<{ raised?: number; goal?:
 
 export function Component() {
   const projects = useLoaderData() as Listing[];
+  usePageTitle("Community Projects");
   return (
     <>
       <PageHero

@@ -133,6 +133,8 @@ export const api = {
   followState: (slug: string) => get<{ following: boolean }>(`/api/memorials/${slug}/follow`),
   follow: (slug: string) => post<{ following: boolean; remembering: number }>(`/api/memorials/${slug}/follow`, {}),
   unfollow: (slug: string) => del<{ following: boolean; remembering: number }>(`/api/memorials/${slug}/follow`),
+  claimKeeperRole: (slug: string, detail: string) =>
+    post<{ id: string }>(`/api/memorials/${slug}/keeper-claim`, { detail }),
 
   // Notifications (spec §8.2 moderation outcomes, §8.11 remembrance).
   notifications: () => get<Notification[]>("/api/notifications"),
@@ -249,7 +251,7 @@ export const api = {
   myInstitutions: () => get<Organization[]>("/api/me/institutions"),
   claimInstitution: (slug: string, body: { requestedRole: string; note?: string }) =>
     post<{ id: string; status: string }>(`/api/institutions/${slug}/claim`, body),
-  updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[] }) =>
+  updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[]; gesCategory?: string; boardingType?: string; genderPolicy?: string; nhisAccredited?: boolean | null; ghanaPostGPS?: string; momoNumber?: string }) =>
     post<Organization>(`/api/institutions/${slug}/profile`, body),
   setOrgOffices: (slug: string, offices: Office[]) =>
     post<Organization>(`/api/institutions/${slug}/offices`, { offices }),

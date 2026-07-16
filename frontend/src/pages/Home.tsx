@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { HomeData, NewsArticle, Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container, CTA as Cta, Eyebrow, SectionHeading, SampleNote } from "@/components/ui";
@@ -25,8 +27,12 @@ export async function loader(): Promise<HomeLoaderData> {
   return { ...home, news, businesses, featured };
 }
 
+const TRADE_CATEGORIES = ["Food & Drink", "Fashion", "Tech", "Health", "Services", "Crafts", "Education"] as const;
+
 export function Component() {
   const { spotlight, artists, events, memorial, stats, news, businesses, featured } = useLoaderData() as HomeLoaderData;
+  usePageTitle(null); // Home uses the site name alone
+  const [tradeCategory, setTradeCategory] = useState<string | null>(null);
   const featuredSpots = featured.slice(0, 6);
   const moreArtists = artists.filter((a) => a.id !== spotlight.id).slice(0, 3);
   const headlines = news.slice(0, 3);
@@ -34,6 +40,10 @@ export function Component() {
   // the latest approved businesses so the showcase is never empty in dev/seed.
   const featuredBiz = featuredSpots.filter((l) => l.type === "business");
   const showcase = (featuredBiz.length ? featuredBiz : businesses).slice(0, 3);
+  // Trade band: filter by selected category chip, else show supporter-first set.
+  const tradeBiz = businesses
+    .filter((b) => !tradeCategory || (b.details.category ?? "").toLowerCase().includes(tradeCategory.toLowerCase()))
+    .slice(0, 4);
 
   return (
     <>
@@ -201,6 +211,40 @@ export function Component() {
             </div>
             <div className="mt-10 text-center sm:hidden">
               <Cta to="/business" variant="primary">All businesses →</Cta>
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {businesses.length > 0 && (
+        <section className="bg-green/[0.04] py-16 sm:py-20">
+          <Container size="wide">
+            <Reveal>
+              <Eyebrow className="text-teal-text">Trade in Oguaa · the working city</Eyebrow>
+              <h2 className="mt-2 text-3xl font-semibold text-ink sm:text-4xl">Find a <span className="text-teal-text">local business</span></h2>
+              <p className="mt-2 text-sm text-ink-muted">Markets, kitchens, services and makers — all from Cape Coast.</p>
+            </Reveal>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {TRADE_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setTradeCategory(tradeCategory === cat ? null : cat)}
+                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${tradeCategory === cat ? "border-teal bg-teal text-cream" : "border-sand bg-cream text-ink-muted hover:border-teal hover:text-teal-text"}`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            {tradeBiz.length > 0 ? (
+              <Stagger className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {tradeBiz.map((b, i) => <StaggerItem key={b.id}><FeaturedCard listing={b} index={i} /></StaggerItem>)}
+              </Stagger>
+            ) : (
+              <p className="mt-8 text-sm text-ink-faint">No businesses listed in that category yet — <Link to="/submit" className="font-medium text-teal-text hover:underline">be the first</Link>.</p>
+            )}
+            <div className="mt-8 text-center">
+              <Cta to="/business" variant="outline">Browse all businesses →</Cta>
             </div>
           </Container>
         </section>

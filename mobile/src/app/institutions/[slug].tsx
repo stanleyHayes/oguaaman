@@ -6,7 +6,7 @@ import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
-import type { InstitutionView, MediaAsset, ProfileSection, SectionItem, SubEntity } from "@/lib/types";
+import type { InstitutionView, Listing, MediaAsset, ProfileSection, SectionItem, SubEntity } from "@/lib/types";
 import { C, D, DI, S, SI, initials } from "@/theme";
 import { Loading, ErrorView, Thumb, Markdown } from "@/ui";
 import { cldCover, cld } from "@/lib/cloudinary";
@@ -30,6 +30,7 @@ export default function Institution() {
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
 
   const org = data.institution;
+  const officialEvents = data.officialEvents ?? [];
   const heroBg = org.houseColors?.[0] ?? C.green;
   const facts: [string, string][] = [
     ["Established", org.founded ? String(org.founded) : "—"],
@@ -95,6 +96,17 @@ export default function Institution() {
             </RevealView>
           ) : null}
 
+          {officialEvents.length > 0 ? (
+            <RevealView style={s.section}>
+              <SecTitle>Events &amp; Announcements</SecTitle>
+              <View style={{ gap: 8 }}>
+                {officialEvents.map((ev) => (
+                  <OfficialEventCard key={ev.id} event={ev} />
+                ))}
+              </View>
+            </RevealView>
+          ) : null}
+
           <ClaimPanel slug={slug} orgName={org.name} />
         </View>
       </Animated.ScrollView>
@@ -104,6 +116,15 @@ export default function Institution() {
 
 // "Claim this institution" — a member's request to manage the official page
 // (spec §8.13). A steward reviews it; editing itself stays on the desktop admin.
+function OfficialEventCard({ event }: Readonly<{ event: Listing }>) {
+  const dateStr = event.details.startsAt ? new Date(event.details.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
+  return (
+    <Pressable style={s.eventCard} onPress={() => router.push(`/events/${event.slug}` as never)}>      <Text style={s.eventDate}>{dateStr}</Text>
+      <Text style={s.eventTitle} numberOfLines={2}>{event.title}</Text>
+    </Pressable>
+  );
+}
+
 function ClaimPanel({ slug, orgName }: Readonly<{ slug: string; orgName: string }>) {
   const { member } = useAuth();
   const [open, setOpen] = useState(false);
@@ -612,6 +633,9 @@ const s = StyleSheet.create({
 
   officeCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
   officeRole: { fontSize: 11, color: C.goldText, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
+  eventCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
+  eventDate: { fontSize: 11, color: C.teal, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
+  eventTitle: { fontSize: 14, color: C.ink, marginTop: 3, fontWeight: "600" },
   officeHolder: { ...S(400), fontSize: 17, color: C.ink, marginTop: 4 },
 
   groupCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },

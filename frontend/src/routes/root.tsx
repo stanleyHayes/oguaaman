@@ -3,6 +3,7 @@ import { Outlet, isRouteErrorResponse, useLocation, useNavigation, useRouteError
 import { motion } from "motion/react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { CookieConsent } from "@/components/cookie-consent";
 import { PageTransition } from "@/components/page-transition";
 import { Wordmark } from "@/components/wordmark";
 import { Container, CTA as Cta } from "@/components/ui";
@@ -71,6 +72,7 @@ export function RootLayout() {
         </PageTransition>
       </main>
       <SiteFooter />
+      <CookieConsent />
     </div>
   );
 }

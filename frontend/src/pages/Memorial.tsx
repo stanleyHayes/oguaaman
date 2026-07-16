@@ -1,6 +1,9 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { useState } from "react";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing, Place, Organization } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { useRecordView } from "@/lib/use-record-view";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { CandleRemember, Tributes } from "@/components/memorial-actions";
@@ -30,11 +33,13 @@ const GALLERY_GRADIENTS = [
 
 export function Component() {
   const { memorial: m, places, schools } = useLoaderData() as Data;
+  usePageTitle(m.title);
   useRecordView(m.id);
   const d = m.details;
   const place = places.find((p) => p.id === m.townId) ?? null;
   const memSchools = (m.schoolIds ?? []).map((id) => schools.find((s) => s.id === id)).filter(Boolean) as Organization[];
   const story = (d.lifeStory ?? "").split("\n\n");
+  const { member } = useAuth();
 
   const shown = new Set<string>([place?.name, ...memSchools.map((s) => s.name)].filter(Boolean) as string[]);
   const extraAssociations = (d.associations ?? []).filter((a) => !shown.has(a));
@@ -43,6 +48,14 @@ export function Component() {
   const remembrance = d.remindersEnabled
     ? `Remembered each year on ${formatDayMonth(d.diedDate!)}${birthdayNote} — the dates the family chose.`
     : null;
+
+  // Keeper-claim state
+  const isKeeper = !!(member && d.keeperId === member.id);
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [claimDetail, setClaimDetail] = useState("");
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [claimDone, setClaimDone] = useState(false);
+  const [claimError, setClaimError] = useState("");
 
   return (
     <article className="bg-cream">
@@ -112,6 +125,70 @@ export function Component() {
           <p className="mt-3 text-2xl text-gold-text">Yɛnkae</p>
           <p className="mt-1 text-xs uppercase tracking-[0.26em] text-ink-faint">Kept in remembrance</p>
           <Link to="/memoriam" className="mt-6 inline-block text-sm text-ink-muted hover:text-gold-text">← All who we remember</Link>
+
+          {/* Keeper-claim section */}
+          {member && !isKeeper && !d.keeperId && (
+            <div className="mt-8 border-t border-sand pt-5">
+              {!claimDone ? (
+                <>
+                  <p className="text-sm text-ink-muted">Are you a family member or next-of-kin for this memorial?</p>
+                  {!claimOpen ? (
+                    <button
+                      onClick={() => setClaimOpen(true)}
+                      className="mt-3 rounded border border-gold-border px-4 py-2 text-sm text-gold-text hover:bg-gold-brand/10"
+                    >
+                      Claim keeper role
+                    </button>
+                  ) : (
+                    <div className="mt-4 text-left">
+                      <label htmlFor="keeper-detail" className="block text-xs font-medium text-ink-muted mb-1">
+                        Please describe your relationship to {m.title}
+                      </label>
+                      <textarea
+                        id="keeper-detail"
+                        rows={4}
+                        value={claimDetail}
+                        onChange={(e) => setClaimDetail(e.target.value)}
+                        placeholder="E.g. I am the eldest daughter and wish to manage this memorial page…"
+                        className="w-full rounded border border-sand bg-paper px-3 py-2 text-sm text-ink focus:outline-none focus:border-gold-brand"
+                      />
+                      {claimError && <p className="mt-1 text-xs text-clay">{claimError}</p>}
+                      <div className="mt-3 flex gap-3">
+                        <button
+                          onClick={async () => {
+                            if (!claimDetail.trim()) { setClaimError("Please describe your relationship."); return; }
+                            setClaimLoading(true); setClaimError("");
+                            try {
+                              await api.claimKeeperRole(m.slug, claimDetail);
+                              setClaimDone(true);
+                            } catch {
+                              setClaimError("Something went wrong. Please try again.");
+                            } finally {
+                              setClaimLoading(false);
+                            }
+                          }}
+                          disabled={claimLoading}
+                          className="rounded bg-forest px-4 py-2 text-sm text-cream hover:bg-green disabled:opacity-60"
+                        >
+                          {claimLoading ? "Submitting…" : "Submit claim"}
+                        </button>
+                        <button onClick={() => setClaimOpen(false)} className="rounded border border-sand px-4 py-2 text-sm text-ink-muted hover:bg-sand/30">Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-green">Thank you — a steward will review your claim and be in touch.</p>
+              )}
+            </div>
+          )}
+
+          {isKeeper && (
+            <div className="mt-8 border-t border-sand pt-5">
+              <p className="text-xs uppercase tracking-widest text-gold-text">You are the keeper of this memorial</p>
+            </div>
+          )}
+
           <div className="mt-8 border-t border-sand pt-5">
             <ReportButton listingId={m.id} memorial />
             <p className="mt-1.5 text-xs text-ink-faint">Is something here wrong, or does the family wish to make a change? Let a steward know.</p>

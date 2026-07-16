@@ -50,6 +50,14 @@ var urlDetailKeys = map[string]bool{"applyUrl": true, "link": true, "booking": t
 // need the same guard (streamingLinks/socials/contact/gallery).
 var linkListKeys = map[string]bool{"streamingLinks": true, "socials": true, "contact": true, "gallery": true}
 
+// majorEditKeys are details fields whose change is significant enough to
+// re-queue a previously-approved listing for curator review (spec §8.2/§17.3).
+// Minor edits (links, opening hours, contact info, booking URL) stay live.
+var majorEditKeys = map[string]bool{
+	"bio": true, "description": true, "lifeStory": true, "epitaph": true,
+	"text": true, "whyNotable": true, "eligibility": true, "services": true,
+}
+
 func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, listingID string, in OwnerEditInput) (*domain.Listing, error) {
 	if actor == nil {
 		return nil, &domain.ForbiddenError{Reason: "a signed-in member is required to edit a listing"}
@@ -105,14 +113,46 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 		}
 	}
 
-	// Status: approved stays live; pending stays pending; anything else
-	// (draft/rejected/unpublished) re-queues with a fresh submission date.
+	// Status policy (spec §8.2/§17.3):
+	//   • draft/rejected/unpublished → pending (re-queue)
+	//   • pending → stays pending
+	//   • approved → stays live for minor edits; re-queues for major ones.
+	//
+	// A "major" edit is a title change or a change to significant content keys
+	// (bio, description, lifeStory, etc. — see majorEditKeys). Link, hours,
+	// contact and image changes are always minor and stay live.
 	status := l.Status
 	submittedAt := ""
+	editKind := "owner-edit-minor"
 	now := time.Now().UTC().Format(time.RFC3339)
-	if status != domain.StatusApproved && status != domain.StatusPending {
+	switch status {
+	case domain.StatusApproved:
+		// Check whether the edit is major (title change or major content key).
+		isMajor := strings.TrimSpace(in.Title) != l.Title
+		if !isMajor {
+			for k := range details {
+				if majorEditKeys[k] {
+					prev, _ := l.Details[k].(string)
+					next, _ := details[k].(string)
+					if next != prev {
+						isMajor = true
+						break
+					}
+				}
+			}
+		}
+		if isMajor {
+			status = domain.StatusPending
+			submittedAt = now
+			editKind = "owner-edit-major"
+		}
+	case domain.StatusPending:
+		// already queued; keep pending.
+	default:
+		// draft/rejected/unpublished — re-queue.
 		status = domain.StatusPending
 		submittedAt = now
+		editKind = "owner-edit-major"
 	}
 
 	if err := s.listings.OwnerUpdate(ctx, l.ID, title, safeURL(strings.TrimSpace(in.CoverImageURL)), details, status, submittedAt); err != nil {
@@ -122,7 +162,7 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 		ID:          "mod-" + fmt.Sprintf("%d", time.Now().UnixNano()),
 		ListingID:   l.ID,
 		ModeratorID: actor.ID,
-		Action:      "owner-edit",
+		Action:      editKind,
 		CreatedAt:   now,
 	}); err != nil {
 		return nil, err

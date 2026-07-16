@@ -143,14 +143,16 @@ func (s *Service) ModerationQueue(ctx context.Context, typeFilter string) ([]dom
 
 // Stats are the home/admin headline counts (spec §4 KPIs).
 type Stats struct {
-	Members      int `json:"members"`
-	Listings     int `json:"listings"`
-	Schools      int `json:"schools"`
-	Institutions int `json:"institutions"`
-	Artists      int `json:"artists"`
-	Memorials    int `json:"memorials"`
-	Memories     int `json:"memories"`
-	Pending      int `json:"pending"`
+	Members         int     `json:"members"`
+	Listings        int     `json:"listings"`
+	Schools         int     `json:"schools"`
+	Institutions    int     `json:"institutions"`
+	Artists         int     `json:"artists"`
+	Memorials       int     `json:"memorials"`
+	Memories        int     `json:"memories"`
+	Pending         int     `json:"pending"`
+	ViewsThisMonth  int     `json:"viewsThisMonth"`
+	AvgApprovalHrs  float64 `json:"avgApprovalHrs"`
 }
 
 func (s *Service) Stats(ctx context.Context) (Stats, error) {
@@ -188,6 +190,14 @@ func (s *Service) Stats(ctx context.Context) (Stats, error) {
 	}
 	if st.Pending, err = count(domain.ListingFilter{Status: domain.StatusPending}); err != nil {
 		return st, err
+	}
+	// Non-critical — fall back to 0 if the views collection is unavailable.
+	if views, verr := s.listings.PlatformViewsThisMonth(ctx); verr == nil {
+		st.ViewsThisMonth = views
+	}
+	// Non-critical — fall back to 0 on error.
+	if hrs, verr := s.listings.AvgApprovalHours(ctx); verr == nil {
+		st.AvgApprovalHrs = hrs
 	}
 	return st, nil
 }

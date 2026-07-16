@@ -151,6 +151,22 @@ func (f *fakeRepo) RecordView(_ context.Context, _, _ string) (bool, error) { re
 func (f *fakeRepo) ViewsThisMonth(_ context.Context, _ []string) (int, error) {
 	return 0, nil
 }
+func (f *fakeRepo) PlatformViewsThisMonth(_ context.Context) (int, error) {
+	return 0, nil
+}
+func (f *fakeRepo) AvgApprovalHours(_ context.Context) (float64, error) { return 0, nil }
+func (f *fakeRepo) SetKeeperID(_ context.Context, id, keeperID string) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			if f.listings[i].Details == nil {
+				f.listings[i].Details = map[string]any{}
+			}
+			f.listings[i].Details["keeperId"] = keeperID
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
 
 // repository interfaces the service needs but these tests don't exercise.
 func (f *fakeRepo) All(context.Context) ([]domain.Member, error)           { return nil, nil }

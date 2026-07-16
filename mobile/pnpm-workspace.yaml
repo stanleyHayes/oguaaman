@@ -1,3 +1,5 @@
+packages:
+  - "."
 allowBuilds:
   msgpackr-extract: false
   unrs-resolver: false

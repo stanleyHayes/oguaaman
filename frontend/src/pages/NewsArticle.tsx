@@ -1,4 +1,5 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { NewsArticle } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container } from "@/components/ui";
@@ -29,6 +30,7 @@ function ArticleCover({ a }: Readonly<{ a: NewsArticle }>) {
 
 export function Component() {
   const a = useLoaderData() as NewsArticle;
+  usePageTitle(a.title);
   const tags = a.tags ?? [];
   return (
     <article>

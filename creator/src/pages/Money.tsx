@@ -1,6 +1,6 @@
 import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
-import type { CreatorOverview, Subscription, Ticket } from "@/lib/types";
+import type { CreatorEarnings, CreatorOverview, Pledge, Subscription, Ticket } from "@/lib/types";
 import { Card, Empty, Pill } from "@/components/ui";
 import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
@@ -11,21 +11,23 @@ interface Data {
   overview: CreatorOverview;
   subscriptions: Subscription[];
   tickets: Ticket[];
+  earnings: CreatorEarnings | null;
 }
 
 export async function loader(): Promise<Data> {
-  const [overview, subscriptions, tickets] = await Promise.all([
+  const [overview, subscriptions, tickets, earnings] = await Promise.all([
     api.creatorOverview(),
     api.mySubscriptions().catch(() => [] as Subscription[]),
     api.myTickets().catch(() => [] as Ticket[]),
+    api.creatorEarnings().catch(() => null),
   ]);
-  return { overview, subscriptions, tickets };
+  return { overview, subscriptions, tickets, earnings };
 }
 
 const PAY_TONE: Record<string, "green" | "gold" | "clay"> = { success: "green", pending: "gold", failed: "clay" };
 
 export function Component() {
-  const { overview, subscriptions, tickets } = useLoaderData() as Data;
+  const { overview, subscriptions, tickets, earnings } = useLoaderData() as Data;
   const successSubs = subscriptions.filter((s) => s.status === "success");
   const subSpend = successSubs.reduce((sum, s) => sum + s.amountPesewas, 0);
 
@@ -107,6 +109,56 @@ export function Component() {
           <Empty icon="chart" title="No sales yet">
             Earnings appear here when attendees buy tickets to your events or supporters pledge toward your projects on the portal.
           </Empty>
+        </div>
+      )}
+
+      {earnings && (earnings.ticketSales.length > 0 || earnings.pledges.length > 0) && (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <Card className="overflow-hidden">
+            <div className="border-b border-sand px-5 py-4">
+              <h2 className="text-lg font-semibold text-ink">Ticket sales by event</h2>
+              <p className="text-xs text-ink-faint">Confirmed ticket revenue from your events.</p>
+            </div>
+            {earnings.ticketSales.length === 0 ? (
+              <Empty compact icon="ticket" title="No ticket sales yet" />
+            ) : (
+              <ul className="divide-y divide-sand">
+                {earnings.ticketSales.map((t: Ticket) => (
+                  <li key={t.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink">{t.eventTitle}</p>
+                      <p className="text-xs text-ink-faint">{t.qty} × {t.tier} · {formatDate(t.createdAt)}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-ink">{cedis(t.amountPesewas)}</span>
+                    <Pill tone={PAY_TONE[t.status] ?? "neutral"}>{t.status}</Pill>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <Card className="overflow-hidden">
+            <div className="border-b border-sand px-5 py-4">
+              <h2 className="text-lg font-semibold text-ink">Pledges by project</h2>
+              <p className="text-xs text-ink-faint">Net amount credited to your projects.</p>
+            </div>
+            {earnings.pledges.length === 0 ? (
+              <Empty compact icon="money" title="No pledges received yet" />
+            ) : (
+              <ul className="divide-y divide-sand">
+                {earnings.pledges.map((p: Pledge) => (
+                  <li key={p.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink">{p.projectTitle}</p>
+                      <p className="text-xs text-ink-faint">{formatDate(p.createdAt)}{p.netPesewas != null ? ` · net ${cedis(p.netPesewas)}` : ""}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-ink">{cedis(p.amountPesewas)}</span>
+                    <Pill tone={PAY_TONE[p.status] ?? "neutral"}>{p.status}</Pill>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
         </div>
       )}
     </>

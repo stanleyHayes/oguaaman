@@ -1,9 +1,11 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { ReactNode } from "react";
 import type { Incident, IncidentStatusEntry, Place } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { Container, Pill } from "@/components/ui";
+import { LocationMap } from "@/components/location-map";
 import { PageHero } from "@/components/page-hero";
 import { formatDate } from "@/lib/format";
 import { CATEGORY_LABEL, SEVERITY_CLASS, STATUS_LABEL } from "@/lib/incidents";
@@ -23,6 +25,7 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<Data> {
 
 export function Component() {
   const { incident: i, places } = useLoaderData() as Data;
+  usePageTitle(i.title);
   useRecordView(i.id);
   const d = i.details;
   const town = places.find((p) => p.id === i.townId);
@@ -46,6 +49,8 @@ export function Component() {
           {d.contact && <KeyVal label="Reporter contact">{d.contact}</KeyVal>}
           <KeyVal label="Reported">{formatDate(i.createdAt)}</KeyVal>
         </dl>
+
+        {d.location && <LocationMap address={d.location} query={`${i.title} ${d.location}`} className="mt-4" />}
 
         <h2 className="mb-5 mt-10 text-2xl font-semibold text-ink">Status timeline</h2>
         <ol className="space-y-0 border-l-2 border-sand pl-5">

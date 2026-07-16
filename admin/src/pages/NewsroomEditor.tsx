@@ -6,6 +6,7 @@ import type { NewsArticle } from "@/lib/types";
 import { Card, BackLink } from "@/components/ui";
 import { Markdown } from "@/components/markdown";
 import { ImageUpload } from "@/components/image-upload";
+import { AiWritingBar } from "@/components/ai-writing-bar";
 import { formatDate } from "@/lib/format";
 
 const BLANK: NewsPayload = { title: "", summary: "", body: "", coverColor: "#123F2D", coverImageUrl: "", tags: [] };
@@ -111,6 +112,10 @@ export function Component() {
           <PreviewPane form={form} />
         )}
       </Card>
+
+      <div className="mt-4">
+        <AiWritingBar initialTitle={form.title} initialBody={form.body} />
+      </div>
     </>
   );
 }

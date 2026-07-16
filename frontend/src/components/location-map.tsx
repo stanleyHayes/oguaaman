@@ -1,25 +1,43 @@
-// A no-key location card: an ambient OpenStreetMap embed centred on Cape Coast
-// plus a "Get directions" link that resolves the exact address in the visitor's
-// own maps app (spec §12 maps). We don't geocode server-side, so the embedded pin
-// marks the town; directions do the precise routing — stated plainly.
+// Interactive Leaflet map centred on Cape Coast (OpenStreetMap tiles, no API key).
+// We don't geocode server-side, so the pin marks the town centre; the
+// "Get directions" link resolves the exact address in the user's maps app.
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-const CAPE_COAST = { lat: 5.1053, lon: -1.2466 };
-// A bounding box framing Cape Coast for the embedded map.
-const BBOX = "-1.300,5.075,-1.185,5.135";
-const MAP_SRC = `https://www.openstreetmap.org/export/embed.html?bbox=${BBOX}&layer=mapnik&marker=${CAPE_COAST.lat},${CAPE_COAST.lon}`;
+// Vite tree-shakes Leaflet's default icon assets; re-wire them manually.
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+const CAPE_COAST: [number, number] = [5.1053, -1.2466];
 
 export function LocationMap({ address, query, className = "" }: Readonly<{ address?: string; query?: string; className?: string }>) {
   const q = encodeURIComponent([query ?? address, "Cape Coast", "Ghana"].filter(Boolean).join(", "));
   const directions = `https://www.google.com/maps/search/?api=1&query=${q}`;
   return (
     <div className={`overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream ${className}`}>
-      <iframe
-        title="Map of Cape Coast"
-        src={MAP_SRC}
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        className="h-44 w-full border-0"
-      />
+      <MapContainer
+        center={CAPE_COAST}
+        zoom={14}
+        scrollWheelZoom={false}
+        style={{ height: "176px", width: "100%" }}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        />
+        <Marker position={CAPE_COAST}>
+          {address && <Popup>{address}</Popup>}
+        </Marker>
+      </MapContainer>
       <div className="p-4">
         {address && <p className="text-sm text-ink"><span aria-hidden>📍</span> {address}</p>}
         <a
@@ -31,7 +49,7 @@ export function LocationMap({ address, query, className = "" }: Readonly<{ addre
           Get directions <span aria-hidden>↗</span>
         </a>
         <p className="mt-2 text-[0.7rem] leading-snug text-ink-faint">
-          Map data © OpenStreetMap. The pin marks Cape Coast; directions open the exact address in your maps app.
+          Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">OpenStreetMap</a> contributors. Pin marks Cape Coast town centre; directions open your maps app.
         </p>
       </div>
     </div>

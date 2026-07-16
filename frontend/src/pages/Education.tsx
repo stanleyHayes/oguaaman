@@ -1,4 +1,5 @@
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Organization } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -16,6 +17,7 @@ export async function loader() {
 
 export function Component() {
   const schools = useLoaderData() as Organization[];
+  usePageTitle("Education");
   return (
     <>
       <PageHero tone="maroon" kicker="Rep your school · the powerhouse" title="The Citadel of Education" symbol="dwennimmen" image="/uploads/seed/mfantsipim-campus.jpg" lede="Within a few square miles sit the oldest and most decorated schools in Ghana. We don't build communities from scratch — we give existing, loyal Old Students networks a home.">

@@ -1,4 +1,4 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember } from "./types";
 
 export interface NewsPayload { title: string; summary: string; body: string; coverColor: string; coverImageUrl: string; tags: string[] }
 export interface PlanPayload {
@@ -114,6 +114,8 @@ export const api = {
   reports: () => get<Report[]>("/api/admin/reports"),
   resolveReport: (id: string, status: "actioned" | "dismissed", resolution?: string) =>
     post<{ status: string }>(`/api/admin/reports/${id}/resolve`, { status, resolution }),
+  grantKeeperRole: (listingId: string, keeperMemberId: string, reportId?: string) =>
+    post<{ status: string }>(`/api/admin/memorials/${listingId}/grant-keeper`, { keeperMemberId, reportId }),
 
   // Community safety triage (auto-published; curators transition the lifecycle).
   incidents: () => get<Incident[]>("/api/incidents"),
@@ -132,6 +134,9 @@ export const api = {
   // manager endpoints (full-replace for gallery/sections). See Institution-Pages-Spec.
   updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[] }) =>
     post<Organization>(`/api/institutions/${slug}/profile`, body),
+  institutionTeam: (slug: string) => get<TeamMember[]>(`/api/institutions/${slug}/team`),
+  revokeTeamMember: (slug: string, memberId: string) =>
+    del<{ status: string }>(`/api/institutions/${slug}/team/${memberId}`),
   setOrgGallery: (slug: string, gallery: MediaAsset[]) =>
     post<Organization>(`/api/institutions/${slug}/gallery`, { gallery }),
   setOrgSections: (slug: string, sections: ProfileSection[]) =>

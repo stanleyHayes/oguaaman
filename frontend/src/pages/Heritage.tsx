@@ -1,4 +1,5 @@
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { HistoryView } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -22,6 +23,7 @@ function excerpt(text: string, max = 180): string {
 
 export function Component() {
   const { timeline, heritage, people, memories } = useLoaderData() as HistoryView;
+  usePageTitle("Heritage & History");
   return (
     <>
       <PageHero tone="green" kicker="Sankofa · go back and fetch it" title="Our History" symbol="sankofa" image="/uploads/seed/castle-courtyard.jpg" lede="The living memory of the people of Oguaa — the old colonial capital, the cradle of the colony's educated class, the global symbol of the diaspora homecoming." />

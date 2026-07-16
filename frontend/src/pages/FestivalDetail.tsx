@@ -1,4 +1,5 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { FestivalView } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container, Pill, SampleNote } from "@/components/ui";
@@ -14,6 +15,7 @@ const TODAY = new Date().toISOString().slice(0, 10);
 
 export function Component() {
   const festival = useLoaderData() as FestivalView;
+  usePageTitle(festival.name);
   const cover = festival.editions.flatMap((e) => e.events).find((e) => e.coverImageUrl)?.coverImageUrl;
 
   return (

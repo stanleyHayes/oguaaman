@@ -39,6 +39,14 @@ type Organization struct {
 	HouseColors   []string         `json:"houseColors,omitempty" bson:"houseColors,omitempty"`
 	OSAName       string           `json:"osaName,omitempty" bson:"osaName,omitempty"`
 	MemberCount   int              `json:"memberCount,omitempty" bson:"memberCount,omitempty"`
+
+	// Per-kind structured catalog fields (§4 perkind-catalog).
+	GESCategory    string `json:"gesCategory,omitempty" bson:"gesCategory,omitempty"`
+	BoardingType   string `json:"boardingType,omitempty" bson:"boardingType,omitempty"`
+	GenderPolicy   string `json:"genderPolicy,omitempty" bson:"genderPolicy,omitempty"`
+	NHISAccredited *bool  `json:"nhisAccredited,omitempty" bson:"nhisAccredited,omitempty"`
+	GhanaPostGPS   string `json:"ghanaPostGPS,omitempty" bson:"ghanaPostGPS,omitempty"`
+	MoMoNumber     string `json:"momoNumber,omitempty" bson:"momoNumber,omitempty"`
 }
 
 type OrganizationRepository interface {

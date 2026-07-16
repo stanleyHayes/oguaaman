@@ -233,16 +233,16 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 
 **Partial / open Phase 1 items:**
 - ◐ §8.1 **Phone/WhatsApp OTP verification** — *◐ delivered 2026-07-15 (`d97c11c`): start/confirm endpoints (hashed code, 10-min TTL), `phoneVerified` gate on submit, portal + mobile verification UI, dev-mode code display. Still open: real SMS/WhatsApp provider delivery (ties to backlog #10) and the broader verification-badge surface.*
-- ◐ §8.2 **Edit re-approval policy** (Open Decision #3) — *today every owner edit of an approved listing publishes immediately; neither the minor/major split nor the all-edits-reviewed flag exists.*
-- ◐ §8.5 **Rivalry signals** — *only static memberCount chips; no computed cross-school comparisons.*
-- ◐ §8.7 **Memory-wall filters** by school/town/era/festival — *tags exist in the model; no query params or UI.*
+- ✅ §8.2 **Edit re-approval policy** — *minor/major split fully implemented: title change or change to major content keys (bio/description/lifeStory/epitaph/text/whyNotable/eligibility/services) re-queues the listing (`owner-edit-major` audit record); link/hours/contact/image-only edits stay live (`owner-edit-minor`). Tests updated to cover all four cases.*
+- ◐ §8.5 **Rivalry signals** — *memberCount comparison bar on School detail page ✅ (top schools by member count, bar chart with this school highlighted); cross-school comparisons computed client-side from the existing `GET /api/schools` payload.*
+- ✅ §8.7 **Memory-wall filters** by school/town/era/festival — *`GET /api/memories?school=&town=&tag=&era=`; filter bar on Community page; era options derived from memories.*
 - ◐ §8.11 **Memorial keeper controls** — *fixed: submit defaults `remindersEnabled` on / `observeBirthday` off (explicit choices respected), the owner-edit whitelist accepts both flags, omitted flags carry over instead of resetting, and the portal submit form + creator editor expose the toggles. **Family claim/correct/remove** mechanism still missing (only a generic `bereavement` report reason). Funeral/celebration-of-life details (Open Decision #7) absent. Reminders are in-app only — no email/WhatsApp delivery.*
-- ◐ §8.12 **AI bar** — *responses not streamed; Replace has no confirmation step; mounted only on admin Compose (not e.g. the newsroom editor).*
+- ◐ §8.12 **AI bar** — *responses not streamed; Replace has no confirmation step; mounted on admin Compose and newsroom editor ✅ (editor shows bar seeded with article title+body); still not on all admin rich-text fields.*
 - ◐ §8.13 **Institution announcements** — *no notice type distinct from events; no contested-claim "held and referred" state.*
-- ◐ §11 **Non-functional** — PWA manifest + offline shell ✅ *(installable, boots offline once visited; `/api` stays network-only)*; per-listing 1200×630 OG share cards ✅ *(pure-Go renderer + crawler meta shim; scraper UAs mapped in portal nginx — every public page now shares a branded card)*; per-page titles/meta in the SPA itself ◐ *(static index.html — bots covered by the shim, in-tab titles unimplemented)*; maps ◐ *(keyless OSM embed on business pages only, fixed pin)*; localisation ◐ *(UI-chrome i18n switcher exists; no field-level/message-catalog scaffolding)*.
-- ◐ §14 **Legal/compliance** — *cookie/consent notice ☐; guardian-consent flow for featuring minors ☐; privacy/terms/acceptable-use published but shallow drafts pending counsel.*
-- ◐ §8.10 **Queue type filter** — *no filter param or UI.*
-- ◐ §4 **KPI instrumentation** — *no view/click-through counters or approval-time metrics (also blocks creator "views this month").*
+- ◐ §11 **Non-functional** — PWA manifest + offline shell ✅ *(installable, boots offline once visited; `/api` stays network-only)*; per-listing 1200×630 OG share cards ✅ *(pure-Go renderer + crawler meta shim; scraper UAs mapped in portal nginx — every public page now shares a branded card)*; per-page titles/meta in the SPA itself ✅ *(`usePageTitle` hook + all 30+ pages wired; dynamic titles on detail pages)*; maps ◐ *(keyless OSM embed now on business, event, incident, lost-found and school pages — all have location/venue fields; events map and mobile still missing)*; localisation ◐ *(UI-chrome i18n switcher exists; no field-level/message-catalog scaffolding)*.
+- ◐ §14 **Legal/compliance** — *cookie/consent notice ✅ (dismissible banner, `localStorage` persisted); guardian-consent flow for featuring minors ☐; privacy/terms/acceptable-use published but shallow drafts pending counsel.*
+- ✅ §8.10 **Queue type filter** — *type filter chips on admin Moderation page (all existing listing types + incident + lostfound); backend `GET /api/admin/queue?type=` already supported.*
+- ◐ §4 **KPI instrumentation** — *`PlatformViewsThisMonth` added to backend Stats + admin Overview shows "Views this month" metric tile ✅; approval-time metrics and click-through still absent.*
 
 ### 7.2 Institution pages — `oguaa/Institution-Pages-Spec.md`
 
@@ -250,10 +250,10 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 
 **Partial / open:**
 - ◐ **Per-kind structured catalog (§4)** — blocks cover presentation; signature structured fields absent (office-holder terms/predecessor/successor, GES category/boarding/gender, OSA endowment, NHIS flag, dual-tier citizen/foreigner pricing, giving fields). *Education strongest; health and government weakest.*
-- ◐ **Media metadata (§5)** — *alt/caption collected; Credit field not in any editor.*
+- ◐ **Media metadata (§5)** — *alt/caption collected; Credit field added to gallery and section media editors in portal ManageInstitution + creator institution-panels ✅.*
 - ◐ **Notices** — *official events double as announcements; no distinct notice type; mobile institution page shows no events/announcements at all.*
 - ☐ **§7 Localization pack** — field-level i18n, MoMo as a giving field, GhanaPostGPS + lat/long, quarter/Asafo tag on orgs, kind-specific verification artifacts. *All unbuilt.*
-- ☐ **schema.org JSON-LD** per institution (§4 SEO mapping).
+- ☑ **schema.org JSON-LD** per institution ✅ (Organization/EducationalOrganization block embedded via `<script type="application/ld+json">` on the School detail page).
 - ☑ **Revoke-verification lever** — *fixed: public directory/schools lists are verified-only, the public institution detail 404s for unverified orgs (steward/manager bypass), revoking demotes the org's approved official events to unpublished (re-verify republishes), the admin queue reads `GET /api/admin/institutions` (unfiltered), and portal badges render only when `verified`. Remaining seed fixture `kotokuraba-traders` is the deliberate unverified case.*
 - ☐ **Manager revocation** endpoint/UI (only pending-claim review exists).
 
@@ -290,5 +290,5 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 15. ~~**Admin moderator-role SPA gating + queue type filter**~~ ✅ (auth-gate now admits moderator role; MFA not enforced for moderators; nav filtered to queue/listings/reports/incidents for moderators; `RoleBadge` chip in user menu; `?type=` filter dropdown on Moderation queue page).
 16. **Cookie notice, legal depth, guardian-consent flow** (spec §14.4/§14.6/§16).
 17. **Phase 2 spec remainder** — investment opportunities; mentor-to-youth matching *(both gated on the §14.4 safeguarding policy, itself unwritten)*.
-18. **Smaller items** — school rivalry signals; official-announcements type; contested-claim hold; funeral details; media Credit capture; mobile institution events + manager editing; creator mobile section (explicitly future); `/me` creator upgrade entry; Drafts view; Payouts ledger; migrations + verify script; mobile maps.
+18. **Smaller items** — school rivalry signals ✅; official-announcements type; contested-claim hold; funeral details; mobile institution events ✅ (Events & Announcements section from `officialEvents`); mobile manager editing; creator mobile section (explicitly future); `/me` creator upgrade entry ✅ (Become a creator CTA panel for members with no creatorTypes); media Credit capture ✅ (credit input in gallery + section-media editors); Drafts view ✅ (status-filter tabs on MyWork: All/Draft/Pending/Approved/Rejected); Payouts ledger; migrations + verify script; mobile maps; schema.org JSON-LD per institution ✅ (Organization/EducationalOrganization block on School.tsx); "Trade in Oguaa" home band ✅ (category chips + 4-card grid + link to /business); per-page document titles ✅ (`usePageTitle` hook, 30+ pages); cookie consent banner ✅.
 18. **Mobile-web hydration noise** — every dynamic route (`[type]`, `[topic]`, `[slug]`) on the Expo static web export logs React #418 (server HTML ≠ client) on load; screens recover and render fine. Pre-existing (verified against untouched `[slug]` routes), cosmetic but noisy — likely an expo-router static-render + RN-web mismatch; consider client-only rendering for dynamic routes.

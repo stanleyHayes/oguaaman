@@ -41,5 +41,6 @@ type PledgeRepository interface {
 	UpdateStatus(ctx context.Context, reference, status, at string) error
 	SetFeeNet(ctx context.Context, reference string, fee, net int64) error // platform-fee split, set on confirmation
 	ByMember(ctx context.Context, memberID string) ([]Pledge, error)
+	ByProject(ctx context.Context, projectID string) ([]Pledge, error)
 	All(ctx context.Context) ([]Pledge, error) // steward ledger
 }

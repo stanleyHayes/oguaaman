@@ -1,4 +1,5 @@
 import { useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container, CTA as Cta } from "@/components/ui";
@@ -13,6 +14,7 @@ export async function loader() {
 
 export function Component() {
   const memorials = useLoaderData() as Listing[];
+  usePageTitle("In Memoriam");
   return (
     <>
       <section className="bg-cream">

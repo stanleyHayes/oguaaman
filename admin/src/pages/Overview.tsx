@@ -7,7 +7,7 @@ import { MetricCard } from "@/components/metric-card";
 import { BarsH, Histogram, AreaLine, Donut, CHART_COLORS, type Datum } from "@/components/charts";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { useAuth } from "@/lib/auth";
-import { Inbox, ListChecks, Users, Landmark, Palette, Heart, Camera, GraduationCap } from "lucide-react";
+import { Inbox, ListChecks, Users, Landmark, Palette, Heart, Camera, GraduationCap, Eye, Clock } from "lucide-react";
 
 interface Data {
   stats: Stats;
@@ -177,6 +177,8 @@ export function Component() {
         <StaggerItem index={5}><MetricCard label="Memorials" value={stats.memorials} to="/listings" tone="gold" icon={<Heart size={18} />} /></StaggerItem>
         <StaggerItem index={6}><MetricCard label="Memories" value={stats.memories} to="/listings" tone="ink" icon={<Camera size={18} />} /></StaggerItem>
         <StaggerItem index={7}><MetricCard label="Schools" value={stats.schools} to="/institutions" tone="maroon" icon={<GraduationCap size={18} />} /></StaggerItem>
+        <StaggerItem index={8}><MetricCard label="Views this month" value={stats.viewsThisMonth} tone="teal" icon={<Eye size={18} />} sub="Unique daily views" /></StaggerItem>
+        <StaggerItem index={9}><MetricCard label="Avg approval" value={stats.avgApprovalHrs > 0 ? `${stats.avgApprovalHrs.toFixed(1)}h` : "—"} tone="gold" icon={<Clock size={18} />} sub="Submission → decision (90d)" /></StaggerItem>
       </Stagger>
 
       <Stagger className="mt-5 grid gap-5 lg:grid-cols-[1.5fr_1fr]">

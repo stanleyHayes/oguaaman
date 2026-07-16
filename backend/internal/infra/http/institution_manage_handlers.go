@@ -76,11 +76,17 @@ func (h *Handler) UpdateInstitutionProfile(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	var in struct {
-		Summary  string              `json:"summary"`
-		History  string              `json:"history"`
-		Motto    string              `json:"motto"`
-		CrestURL string              `json:"crestUrl"`
-		Contact  []domain.SocialLink `json:"contact"`
+		Summary        string              `json:"summary"`
+		History        string              `json:"history"`
+		Motto          string              `json:"motto"`
+		CrestURL       string              `json:"crestUrl"`
+		Contact        []domain.SocialLink `json:"contact"`
+		GESCategory    string              `json:"gesCategory"`
+		BoardingType   string              `json:"boardingType"`
+		GenderPolicy   string              `json:"genderPolicy"`
+		NHISAccredited *bool               `json:"nhisAccredited"`
+		GhanaPostGPS   string              `json:"ghanaPostGPS"`
+		MoMoNumber     string              `json:"momoNumber"`
 	}
 	if err := decodeBody(r, &in); err != nil {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
@@ -88,6 +94,8 @@ func (h *Handler) UpdateInstitutionProfile(w http.ResponseWriter, r *http.Reques
 	}
 	org, err := h.svc.UpdateOrgProfile(r.Context(), m.ID, r.PathValue("slug"), domain.OrgProfilePatch{
 		Summary: in.Summary, History: in.History, Motto: in.Motto, CrestURL: in.CrestURL, Contact: in.Contact,
+		GESCategory: in.GESCategory, BoardingType: in.BoardingType, GenderPolicy: in.GenderPolicy,
+		NHISAccredited: in.NHISAccredited, GhanaPostGPS: in.GhanaPostGPS, MoMoNumber: in.MoMoNumber,
 	})
 	if err != nil {
 		h.handleErr(w, err)

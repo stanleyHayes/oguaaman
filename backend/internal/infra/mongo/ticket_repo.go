@@ -71,6 +71,18 @@ func (r *TicketRepo) SetCheckedIn(ctx context.Context, code, at string) error {
 	return err
 }
 
+func (r *TicketRepo) ByEvents(ctx context.Context, eventIDs []string) ([]domain.Ticket, error) {
+	if len(eventIDs) == 0 {
+		return nil, nil
+	}
+	cur, err := r.c.Find(ctx, bson.M{"eventId": bson.M{"$in": eventIDs}})
+	if err != nil {
+		return nil, err
+	}
+	out := []domain.Ticket{}
+	return out, cur.All(ctx, &out)
+}
+
 func (r *TicketRepo) All(ctx context.Context) ([]domain.Ticket, error) {
 	cur, err := r.c.Find(ctx, bson.M{})
 	if err != nil {

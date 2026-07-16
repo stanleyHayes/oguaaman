@@ -42,7 +42,50 @@ func NewCreatorService(l domain.ListingRepository, p domain.PledgeRepository, t 
 	return &CreatorService{listings: l, pledges: p, tickets: t, subs: s, promotions: pr}
 }
 
-// Overview aggregates the signed-in creator's dashboard KPIs.
+// CreatorEarnings is the GET /api/creator/earnings payload.
+type CreatorEarnings struct {
+	TicketSales []domain.Ticket `json:"ticketSales"`
+	Pledges     []domain.Pledge `json:"pledges"`
+}
+
+// Earnings returns all tickets sold to the creator's events and all pledges
+// to the creator's projects, for the ledger view.
+func (c *CreatorService) Earnings(ctx context.Context, memberID string) (CreatorEarnings, error) {
+	var out CreatorEarnings
+	owned, err := c.listings.Find(ctx, domain.ListingFilter{OwnerID: memberID})
+	if err != nil {
+		return out, err
+	}
+	eventIDs, projectIDs := []string{}, []string{}
+	for _, l := range owned {
+		switch l.Type {
+		case domain.TypeEvent:
+			eventIDs = append(eventIDs, l.ID)
+		case domain.TypeProject:
+			projectIDs = append(projectIDs, l.ID)
+		}
+	}
+	if len(eventIDs) > 0 {
+		out.TicketSales, err = c.tickets.ByEvents(ctx, eventIDs)
+		if err != nil {
+			return out, err
+		}
+	}
+	for _, pid := range projectIDs {
+		pledges, err := c.pledges.ByProject(ctx, pid)
+		if err != nil {
+			return out, err
+		}
+		out.Pledges = append(out.Pledges, pledges...)
+	}
+	if out.TicketSales == nil {
+		out.TicketSales = []domain.Ticket{}
+	}
+	if out.Pledges == nil {
+		out.Pledges = []domain.Pledge{}
+	}
+	return out, nil
+}
 func (c *CreatorService) Overview(ctx context.Context, memberID string) (CreatorOverview, error) {
 	var ov CreatorOverview
 	owned, err := c.listings.Find(ctx, domain.ListingFilter{OwnerID: memberID})

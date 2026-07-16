@@ -62,6 +62,15 @@ func (f *fakePledges) SetFeeNet(_ context.Context, ref string, fee, net int64) e
 	return &domain.NotFoundError{Entity: "pledge"}
 }
 func (f *fakePledges) All(context.Context) ([]domain.Pledge, error) { return f.rows, nil }
+func (f *fakePledges) ByProject(_ context.Context, projectID string) ([]domain.Pledge, error) {
+	var out []domain.Pledge
+	for _, p := range f.rows {
+		if p.ProjectID == projectID {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
 func (f *fakePledges) ByMember(_ context.Context, memberID string) ([]domain.Pledge, error) {
 	out := []domain.Pledge{}
 	for _, p := range f.rows {

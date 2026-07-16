@@ -3,6 +3,7 @@ import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Organization } from "@/lib/types";
 import { PageHeader, Card } from "@/components/ui";
+import { AiWritingBar } from "@/components/ai-writing-bar";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { InstitutionLogo } from "@/components/crest";
 
@@ -59,6 +60,7 @@ function NewPlaceForm({ onClose }: Readonly<{ onClose: () => void }>) {
         <div>
           <label htmlFor="place-summary" className={labelCls}>Summary</label>
           <textarea id="place-summary" rows={2} className={`mt-1.5 resize-none ${field}`} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="One or two sentences shown on the card and the page hero." />
+          <AiWritingBar initialTitle={name} initialBody={summary} />
         </div>
         <div className="flex items-center gap-3">
           <button type="button" onClick={create} disabled={busy || !name.trim()} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">

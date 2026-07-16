@@ -6,8 +6,9 @@ import {
   Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
   Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
-  LogOut, BellRing, type LucideIcon,
+  LogOut, BellRing, Map, type LucideIcon,
 } from "lucide-react";
+import { Tour, type TourStep } from "@/components/tour";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
 interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
@@ -273,6 +274,51 @@ const USER_MENU: { to: string; icon: LucideIcon; title: string; sub: string }[] 
   { to: "/notifications", icon: BellRing, title: "Notifications", sub: "Your back-office alerts" },
 ];
 
+/** First-login walkthrough — "show me around". Selectors fall back to a
+ * centred card when a target isn't on screen (role-filtered nav, mobile). */
+const ADMIN_TOUR: TourStep[] = [
+  {
+    title: "Welcome to the back office",
+    body: "This is where Oguaa is looked after — the queue, the people, the money, and the presses. Sixty seconds and you'll know your way around.",
+  },
+  {
+    selector: 'aside[aria-label="Primary"]',
+    side: "right",
+    title: "Your sections",
+    body: "Everything lives in these groups: Moderation for the queue, Community for people and schools, Monetization for plans and payments, Publishing for the newsroom.",
+  },
+  {
+    selector: 'aside a[href="/moderation"]',
+    side: "right",
+    title: "The review queue",
+    body: "Every submission lands here first. Approve, reject, or ask for changes — nothing goes public without passing this desk.",
+  },
+  {
+    selector: '[data-tour="search"]',
+    side: "bottom",
+    title: "Search listings",
+    body: "Jump straight to any listing in the directory. Press / from anywhere to focus the search.",
+  },
+  {
+    selector: '[data-tour="bell"]',
+    side: "bottom",
+    title: "Notifications",
+    body: "Member reports, incident updates, and back-office alerts land here.",
+  },
+  {
+    selector: '[data-tour="user-menu"]',
+    side: "bottom",
+    title: "Your account",
+    body: "Profile, two-factor settings, and a replay of this tour live in this menu.",
+  },
+  {
+    selector: "main",
+    side: "top",
+    title: "The workspace",
+    body: "Pages open here. The overview keeps a pulse on the town — queue depth, members, views, and growth.",
+  },
+];
+
 export function AdminLayout() {
   const { member, signOut } = useAuth();
   const loc = useLocation();
@@ -280,8 +326,23 @@ export function AdminLayout() {
   const [open, setOpen] = useState(false); // mobile drawer
   const [userMenu, setUserMenu] = useState(false);
   const [term, setTerm] = useState("");
+  const [tour, setTour] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // First login on a desktop viewport → auto-start the walkthrough.
+  useEffect(() => {
+    if (!member) return;
+    const key = `oguaa.admin.tourSeen.${member.id}`;
+    if (localStorage.getItem(key) || window.innerWidth < 1024) return;
+    const t = setTimeout(() => setTour(true), 900);
+    return () => clearTimeout(t);
+  }, [member]);
+
+  const closeTour = () => {
+    setTour(false);
+    if (member) localStorage.setItem(`oguaa.admin.tourSeen.${member.id}`, "1");
+  };
 
   // "/" focuses the header search (Gmail/GitHub convention).
   useEffect(() => {
@@ -356,6 +417,7 @@ export function AdminLayout() {
 
           {/* Centre search — jumps to the listings directory filtered */}
           <form
+            data-tour="search"
             className="relative mx-auto hidden w-full max-w-md md:block"
             onSubmit={(e) => {
               e.preventDefault();
@@ -376,13 +438,14 @@ export function AdminLayout() {
           </form>
 
           <div className="ml-auto flex items-center gap-1.5">
-            <NavLink to="/notifications" className="relative rounded-lg p-2 text-ink-muted hover:bg-sand" aria-label="Notifications" title="Notifications">
+            <NavLink to="/notifications" data-tour="bell" className="relative rounded-lg p-2 text-ink-muted hover:bg-sand" aria-label="Notifications" title="Notifications">
               <Icon name="bell" />
             </NavLink>
             <div className="hidden h-6 w-px bg-sand sm:block" />
             {/* User menu lives in the top bar, not the sidebar — as in Aura. */}
             <div className="relative" ref={menuRef}>
               <button
+                data-tour="user-menu"
                 onClick={() => setUserMenu((v) => !v)}
                 aria-expanded={userMenu}
                 aria-haspopup="menu"
@@ -423,6 +486,22 @@ export function AdminLayout() {
                         </span>
                       </Link>
                     ))}
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setUserMenu(false);
+                        setTour(true);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-cream"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sand/70 text-ink-muted">
+                        <Map size={16} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-ink">Replay tour</span>
+                        <span className="block truncate text-[11px] text-ink-faint">Play the dashboard walkthrough again</span>
+                      </span>
+                    </button>
                   </div>
                   <div className="border-t border-sand p-2">
                     <button
@@ -453,6 +532,8 @@ export function AdminLayout() {
           </div>
         </main>
       </div>
+
+      {tour && <Tour steps={ADMIN_TOUR} onDone={closeTour} />}
     </div>
   );
 }

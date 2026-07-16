@@ -36,6 +36,7 @@ type TicketRepository interface {
 	SetCode(ctx context.Context, reference, code string) error // check-in code, set on confirmation
 	ByEvent(ctx context.Context, eventID string) ([]Ticket, error)
 	ByMember(ctx context.Context, memberID string) ([]Ticket, error)
+	ByEvents(ctx context.Context, eventIDs []string) ([]Ticket, error)
 	ByCode(ctx context.Context, code string) (*Ticket, error)
 	SetCheckedIn(ctx context.Context, code, at string) error
 	All(ctx context.Context) ([]Ticket, error) // revenue reporting

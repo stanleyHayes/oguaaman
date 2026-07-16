@@ -123,6 +123,12 @@ export interface Organization {
   gallery?: MediaAsset[];
   sections?: ProfileSection[];
   verified: boolean;
+  gesCategory?: string;
+  boardingType?: string;
+  genderPolicy?: string;
+  nhisAccredited?: boolean;
+  ghanaPostGPS?: string;
+  momoNumber?: string;
 }
 
 /** Public institution page payload (GET /api/institutions/:slug). */
@@ -276,4 +282,26 @@ export interface CreatorOverview {
   ticketsGrossPesewas: number;
   pledgesRaisedPesewas: number;
   viewsThisMonth: number;  // unique daily views on all owned listings in the current month
+}
+
+export interface Pledge {
+  id: string;
+  reference: string;
+  projectId: string;
+  projectSlug: string;
+  projectTitle: string;
+  memberId?: string;
+  amountPesewas: number;
+  feePesewas?: number;
+  netPesewas?: number;
+  currency: string;
+  status: string;
+  simulated?: boolean;
+  createdAt: string;
+  confirmedAt?: string;
+}
+
+export interface CreatorEarnings {
+  ticketSales: Ticket[];
+  pledges: Pledge[];
 }

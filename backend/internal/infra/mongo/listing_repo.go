@@ -150,6 +150,12 @@ func (r *ListingRepo) SetSubscribedUntil(ctx context.Context, id, until string) 
 	return err
 }
 
+// SetKeeperID assigns a keeper (family administrator) to a memorial listing.
+func (r *ListingRepo) SetKeeperID(ctx context.Context, id, keeperMemberID string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"details.keeperId": keeperMemberID}})
+	return err
+}
+
 func (r *ListingRepo) IncrementRaised(ctx context.Context, listingID string, deltaPesewas int64) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{
 		"details.raisedPesewas": deltaPesewas,
@@ -208,4 +214,54 @@ func (r *ListingRepo) ViewsThisMonth(ctx context.Context, listingIDs []string) (
 		return 0, err
 	}
 	return len(docs), nil
+}
+
+// PlatformViewsThisMonth counts all unique daily view records in the current
+// calendar month across every listing.
+func (r *ListingRepo) PlatformViewsThisMonth(ctx context.Context) (int, error) {
+	prefix := time.Now().UTC().Format("2006-01")
+	n, err := r.views.CountDocuments(ctx, bson.M{"day": bson.M{"$regex": "^" + prefix}})
+	return int(n), err
+}
+
+// AvgApprovalHours computes the mean hours between submittedAt and reviewedAt
+// for approved listings decided in the last 90 days.
+func (r *ListingRepo) AvgApprovalHours(ctx context.Context) (float64, error) {
+	cutoff := time.Now().UTC().Add(-90 * 24 * time.Hour).Format(time.RFC3339)
+	cur, err := r.c.Find(ctx, bson.M{
+		"status":     "approved",
+		"reviewedAt": bson.M{"$gte": cutoff},
+		"submittedAt": bson.M{"$exists": true, "$ne": ""},
+	})
+	if err != nil {
+		return 0, err
+	}
+	defer cur.Close(ctx)
+
+	type row struct {
+		SubmittedAt string `bson:"submittedAt"`
+		ReviewedAt  string `bson:"reviewedAt"`
+	}
+	var total float64
+	var n int
+	for cur.Next(ctx) {
+		var rd row
+		if err := cur.Decode(&rd); err != nil {
+			continue
+		}
+		sub, e1 := time.Parse(time.RFC3339, rd.SubmittedAt)
+		rev, e2 := time.Parse(time.RFC3339, rd.ReviewedAt)
+		if e1 != nil || e2 != nil {
+			continue
+		}
+		diff := rev.Sub(sub).Hours()
+		if diff >= 0 {
+			total += diff
+			n++
+		}
+	}
+	if n == 0 {
+		return 0, nil
+	}
+	return total / float64(n), nil
 }

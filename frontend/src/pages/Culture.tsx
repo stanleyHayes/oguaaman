@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import { PageHero } from "@/components/page-hero";
 import { Container, Card, SectionHeading, CTA as Cta } from "@/components/ui";
 import { Reveal, Reveal3D, StaggerItem } from "@/components/motion";
@@ -21,6 +22,7 @@ const OFFICES = [
 ];
 
 export function Component() {
+  usePageTitle("Culture & Festivals");
   return (
     <>
       <PageHero tone="gold" kicker="The brightest register" title="Culture & festivals" symbol="funtunfunefu" image="/uploads/seed/fetu-crowd.jpg" lede="Stitched on cloth and poured in libation — the Asafo, the durbar, and the festival that turns the whole town into one percussion section." />

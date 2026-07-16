@@ -1,4 +1,5 @@
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Member } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -72,6 +73,7 @@ function DiasporaCard({ member }: Readonly<{ member: Member }>) {
 
 export function Component() {
   const { members } = useLoaderData() as { members: Member[] };
+  usePageTitle("Oguaa Diaspora");
   const groups = groupByCountry(members);
   const cityCount = groups.reduce((n, g) => n + g.cities, 0);
 

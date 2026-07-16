@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -36,6 +37,7 @@ export async function loader(): Promise<Data> {
 
 export function Component() {
   const { opps, talents } = useLoaderData() as Data;
+  usePageTitle("Youth & Talent");
   return (
     <>
       <PageHero

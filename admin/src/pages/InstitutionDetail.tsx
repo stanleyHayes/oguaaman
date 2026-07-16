@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
-import type { InstitutionView, Organization, Listing } from "@/lib/types";
+import type { InstitutionView, Organization, Listing, TeamMember } from "@/lib/types";
 import { BackLink, Card, Empty, StatusBadge, KeyVal } from "@/components/ui";
+import { AiWritingBar } from "@/components/ai-writing-bar";
 import { InstitutionLogo } from "@/components/crest";
 import { InstitutionEditor } from "@/components/institution-editor";
 import { formatDate } from "@/lib/format";
@@ -12,8 +13,14 @@ const KIND_LABEL: Record<string, string> = {
   faith: "Faith body", civic: "Civic body", business: "Business", asafo: "Asafo company",
 };
 
-export async function loader({ params }: LoaderFunctionArgs): Promise<InstitutionView> {
-  return api.institution(params.slug!);
+interface PageData extends InstitutionView { team: TeamMember[] }
+
+export async function loader({ params }: LoaderFunctionArgs): Promise<PageData> {
+  const [view, team] = await Promise.all([
+    api.institution(params.slug!),
+    api.institutionTeam(params.slug!).catch(() => []),
+  ]);
+  return { ...view, team };
 }
 
 function EventList({ title, items }: Readonly<{ title: string; items: Listing[] }>) {
@@ -36,8 +43,10 @@ function EventList({ title, items }: Readonly<{ title: string; items: Listing[] 
 }
 
 export function Component() {
-  const view = useLoaderData() as InstitutionView;
-  const [o, setO] = useState<Organization>(view.institution);
+  const { institution, events, officialEvents, team: initialTeam } = useLoaderData() as PageData;
+  const [o, setO] = useState<Organization>(institution);
+  const [team, setTeam] = useState<TeamMember[]>(initialTeam);
+  const [revoking, setRevoking] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -47,6 +56,14 @@ export function Component() {
       const { verified } = await api.verify(o.id, !o.verified);
       setO((x) => ({ ...x, verified, verifiedOn: verified ? new Date().toISOString().slice(0, 10) : undefined }));
     } finally { setBusy(false); }
+  }
+
+  async function revokeTeamMember(memberId: string) {
+    setRevoking(memberId);
+    try {
+      await api.revokeTeamMember(o.slug, memberId);
+      setTeam((prev) => prev.filter((m) => m.memberId !== memberId));
+    } finally { setRevoking(null); }
   }
 
   return (
@@ -74,6 +91,11 @@ export function Component() {
           )}
         </div>
         {o.summary && <p className="mt-4 max-w-2xl leading-relaxed text-ink-muted">{o.summary}</p>}
+        {(o.summary || o.history) && (
+          <div className="mt-4 border-t border-sand pt-3">
+            <AiWritingBar initialTitle={o.name} initialBody={o.summary ?? ""} />
+          </div>
+        )}
       </Card>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
@@ -101,6 +123,33 @@ export function Component() {
             <button disabled={busy} onClick={toggleVerify} className={`w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${o.verified ? "border-sand text-ink-muted hover:bg-paper" : "border-gold-border/60 bg-gold/[0.08] text-gold-text hover:bg-gold/[0.16]"}`}>
               {o.verified ? "Revoke verification" : "Verify institution"}
             </button>
+          </Card>
+
+          <Card className="overflow-hidden">
+            <h2 className="border-b border-sand px-5 py-3 text-lg font-semibold">
+              Team ({team.length})
+            </h2>
+            {team.length === 0 ? (
+              <div className="px-5 py-4 text-sm text-ink-muted">No managers or officers yet.</div>
+            ) : (
+              <ul>
+                {team.map((m) => (
+                  <li key={m.memberId} className="flex items-center justify-between gap-3 border-b border-sand px-5 py-3 last:border-0">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-ink">{m.memberName}</p>
+                      <p className="text-xs text-ink-faint capitalize">{m.scope} · {m.role || "—"}{m.status === "invited" ? " · invited" : ""}</p>
+                    </div>
+                    <button
+                      disabled={revoking === m.memberId}
+                      onClick={() => revokeTeamMember(m.memberId)}
+                      className="shrink-0 rounded-full border border-clay/40 px-3 py-1 text-xs font-semibold text-clay hover:bg-clay/10 disabled:opacity-50"
+                    >
+                      {revoking === m.memberId ? "Removing…" : "Remove"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
         </div>
 
@@ -149,8 +198,8 @@ export function Component() {
             </Card>
           )}
 
-          <EventList title="Official events" items={view.officialEvents} />
-          <EventList title="Community events" items={view.events} />
+          <EventList title="Official events" items={officialEvents} />
+          <EventList title="Community events" items={events} />
         </div>
       </div>
 

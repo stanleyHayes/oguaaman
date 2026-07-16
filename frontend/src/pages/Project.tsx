@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing, Pledge } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
@@ -17,6 +18,7 @@ const QUICK_AMOUNTS = [20, 50, 100, 500]; // GHS
 
 export function Component() {
   const project = useLoaderData() as Listing;
+  usePageTitle(project.title);
   useRecordView(project.id);
   const { member } = useAuth();
   const navigate = useNavigate();

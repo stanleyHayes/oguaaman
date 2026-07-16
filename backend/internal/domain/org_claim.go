@@ -120,4 +120,17 @@ type OrgProfilePatch struct {
 	Motto    string
 	CrestURL string
 	Contact  []SocialLink
+
+	// Per-kind structured catalog fields (§4 perkind-catalog).
+	// Education (schools):
+	GESCategory string // e.g. "Senior High", "Junior High", "Primary"
+	BoardingType string // "boarding", "day", "both"
+	GenderPolicy string // "boys", "girls", "mixed"
+
+	// Health:
+	NHISAccredited *bool // nil = not specified
+
+	// All kinds:
+	GhanaPostGPS string // GhanaPost digital address e.g. "CF-0172-0842"
+	MoMoNumber   string // Mobile money number for donations/giving
 }

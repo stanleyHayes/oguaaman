@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Incident, IncidentCategory } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -16,6 +17,7 @@ export async function loader() {
 
 export function Component() {
   const all = useLoaderData() as Incident[];
+  usePageTitle("Safety & Incidents");
   const [cat, setCat] = useState<IncidentCategory | null>(null);
   const shown = cat ? all.filter((i) => i.details.category === cat) : all;
   const open = shown.filter((i) => i.details.incidentStatus !== "resolved" && i.details.incidentStatus !== "recovered");

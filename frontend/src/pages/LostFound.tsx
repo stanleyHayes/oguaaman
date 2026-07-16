@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { LostFound, LostFoundKind } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -16,6 +17,7 @@ export async function loader() {
 
 export function Component() {
   const all = useLoaderData() as LostFound[];
+  usePageTitle("Lost & Found");
   const [kind, setKind] = useState<LostFoundKind>("lost_item");
   const shown = all.filter((i) => i.details.kind === kind);
   const counts = (k: LostFoundKind) => all.filter((i) => i.details.kind === k).length;

@@ -316,3 +316,58 @@ func (h *Handler) RecordView(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"new": isNew})
 }
+
+// KeeperClaim — POST /api/memorials/{slug}/keeper-claim
+// Any signed-in member submits a family claim request for a memorial.
+func (h *Handler) KeeperClaim(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "keeper-claim:"+clientKey(r), 3, 24*time.Hour) {
+		return
+	}
+	var in struct {
+		Detail string `json:"detail"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	rep, err := h.svc.ClaimKeeperRole(r.Context(), m.ID, m.DisplayName, r.PathValue("slug"), in.Detail)
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, rep)
+}
+
+// GrantKeeper — POST /api/admin/memorials/{id}/grant-keeper
+// Curator grants keeper status to a member after reviewing their claim.
+func (h *Handler) GrantKeeper(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireRole(w, r, "curator", "steward")
+	if !ok {
+		return
+	}
+	var in struct {
+		KeeperMemberID string `json:"keeperMemberId"`
+		ReportID       string `json:"reportId"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	if in.KeeperMemberID == "" {
+		fail(w, http.StatusBadRequest, "keeperMemberId is required")
+		return
+	}
+	if err := h.svc.GrantKeeperRole(r.Context(), r.PathValue("id"), in.KeeperMemberID, m.ID, in.ReportID); err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "granted"})
+}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -7,6 +8,7 @@ import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { EventCard } from "@/components/cards";
 import { EventCalendar } from "@/components/event-calendar";
+import { LocationMap } from "@/components/location-map";
 import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
@@ -18,12 +20,13 @@ export async function loader() {
   return api.events();
 }
 
-type EventsView = "list" | "calendar";
+type EventsView = "list" | "calendar" | "map";
 
 function ViewToggle({ view, onChange }: Readonly<{ view: EventsView; onChange: (v: EventsView) => void }>) {
   const options: { id: EventsView; label: string }[] = [
     { id: "list", label: "List" },
     { id: "calendar", label: "Calendar" },
+    { id: "map", label: "Map" },
   ];
   return (
     <fieldset aria-label="Events view" className="m-0 inline-flex rounded-full border border-sand bg-paper p-1">
@@ -45,6 +48,7 @@ function ViewToggle({ view, onChange }: Readonly<{ view: EventsView; onChange: (
 
 export function Component() {
   const all = useLoaderData() as Listing[];
+  usePageTitle("Events");
   const [view, setView] = useState<EventsView>("list");
   const upcoming = all.filter((e) => (e.details.startsAt ?? "") >= TODAY);
   const anchor = all.find((e) => e.details.anchorFestival) ?? null;
@@ -81,13 +85,30 @@ export function Component() {
           : <Reveal><article className={anchorClass}>{anchorBody}</article></Reveal>
         )}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-semibold text-ink">{view === "list" ? "Coming up" : "Calendar"}</h2>
+          <h2 className="text-2xl font-semibold text-ink">{view === "list" ? "Coming up" : view === "calendar" ? "Calendar" : "Venues"}</h2>
           <ViewToggle view={view} onChange={setView} />
         </div>
         {view === "list" ? (
           <div className="grid gap-4 sm:grid-cols-2">{rest.map((e, i) => <StaggerItem key={e.id} index={i} lift><EventCard event={e} /></StaggerItem>)}</div>
-        ) : (
+        ) : view === "calendar" ? (
           <EventCalendar events={all} />
+        ) : (
+          <div className="space-y-4">
+            {upcoming.filter((e) => e.details.venue).map((e) => (
+              <div key={e.id} className="rounded-[var(--radius-card)] border border-sand bg-paper p-4">
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <Link to={`/events/${e.slug}`} className="font-semibold text-ink hover:text-green">{e.title}</Link>
+                    <p className="mt-0.5 text-sm text-ink-muted">{e.details.venue} · {formatDate(e.details.startsAt!)}</p>
+                  </div>
+                </div>
+                <LocationMap address={e.details.venue} query={`${e.details.venue ?? ""}, Cape Coast, Ghana`} className="h-52 rounded-lg" />
+              </div>
+            ))}
+            {upcoming.filter((e) => e.details.venue).length === 0 && (
+              <p className="py-12 text-center text-ink-muted">No upcoming events with venue information.</p>
+            )}
+          </div>
         )}
         <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>

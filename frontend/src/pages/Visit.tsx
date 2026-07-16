@@ -1,3 +1,4 @@
+import { usePageTitle } from "@/lib/use-page-title";
 import { PageHero } from "@/components/page-hero";
 import { Container, Card, SectionHeading, CTA as Cta } from "@/components/ui";
 import { Thumb } from "@/components/cards";
@@ -13,6 +14,7 @@ const SPOTS = [
 ];
 
 export function Component() {
+  usePageTitle("Visit Oguaa");
   return (
     <>
       <PageHero tone="teal" kicker="Tourism · the coast" title="Visit Oguaa" symbol="crab" image="/uploads/seed/kakum-canopy.jpg" lede="Come for the Castle and stay for the coast — the canopy, the beaches, the markets, the food, and a festival in September.">

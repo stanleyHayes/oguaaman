@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { ReactNode } from "react";
 import type { LostFound, LostFoundStatus, Place } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill } from "@/components/ui";
+import { LocationMap } from "@/components/location-map";
 import { PageHero } from "@/components/page-hero";
 import { formatDate } from "@/lib/format";
 import { KIND_LABEL, LF_STATUS_CLASS, LF_STATUS_LABEL } from "@/lib/lostfound";
@@ -25,6 +27,7 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<Data> {
 
 export function Component() {
   const { notice, places } = useLoaderData() as Data;
+  usePageTitle(notice.title);
   useRecordView(notice.id);
   const { member } = useAuth();
   const [lfStatus, setLfStatus] = useState<LostFoundStatus>(notice.details.lfStatus);
@@ -73,6 +76,8 @@ export function Component() {
           <KeyVal label="Contact">{d.contact}</KeyVal>
           <KeyVal label="Posted">{formatDate(notice.createdAt)}</KeyVal>
         </dl>
+
+        {d.lastSeenLocation && <LocationMap address={d.lastSeenLocation} query={`${notice.title} ${d.lastSeenLocation}`} className="mt-4" />}
 
         {canResolve && lfStatus === "open" && (
           <div className="mt-8 rounded-[var(--radius-card)] border border-sand bg-cream p-6">

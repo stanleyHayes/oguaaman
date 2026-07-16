@@ -16,6 +16,8 @@ const LISTING_TYPES = [
   { value: "artist", label: "Artist" },
   { value: "business", label: "Business" },
   { value: "event", label: "Event" },
+  { value: "incident", label: "Incident" },
+  { value: "lostfound", label: "Lost & Found" },
   { value: "memorial", label: "Memorial" },
   { value: "memory", label: "Memory" },
   { value: "opportunity", label: "Opportunity" },

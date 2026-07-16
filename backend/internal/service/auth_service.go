@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -66,10 +67,24 @@ const phoneVerificationTTL = 10 * time.Minute
 type AuthService struct {
 	members domain.MemberRepository
 	secret  []byte
+	otp     OTPSender // nil = return code in response (dev mode)
+	log     *slog.Logger
+}
+
+// OTPSender delivers a one-time code to a phone number out-of-band.
+// Implement with infra/whatsapp.Client for production.
+type OTPSender interface {
+	SendOTP(ctx context.Context, phone, code string) error
 }
 
 func NewAuthService(members domain.MemberRepository, secret string) *AuthService {
-	return &AuthService{members: members, secret: []byte(secret)}
+	return &AuthService{members: members, secret: []byte(secret), log: slog.Default()}
+}
+
+// WithOTPSender attaches an out-of-band OTP delivery channel.
+func (a *AuthService) WithOTPSender(s OTPSender) *AuthService {
+	a.otp = s
+	return a
 }
 
 // Register signs up a new member — or lets a pre-existing passwordless account
@@ -222,8 +237,8 @@ func (a *AuthService) Login(ctx context.Context, identifier, password string) (s
 }
 
 // StartPhoneVerification generates a short-lived verification code, stores its
-// hash on the member record, and returns the code so the caller can deliver it
-// out-of-band (or display it in dev mode where no SMS/WhatsApp provider exists).
+// hash on the member record, and delivers it via WhatsApp when an OTPSender is
+// configured. In dev mode (no sender) the code is returned for display.
 func (a *AuthService) StartPhoneVerification(ctx context.Context, memberID string) (*domain.Member, string, string, error) {
 	m, err := a.members.ByID(ctx, memberID)
 	if err != nil {
@@ -247,6 +262,19 @@ func (a *AuthService) StartPhoneVerification(ctx context.Context, memberID strin
 	m.PhoneVerificationCodeHash = string(hash)
 	m.PhoneVerificationExpiresAt = expiresAt
 	m.PhoneVerified = false
+
+	// Deliver OTP via WhatsApp when a sender is configured.
+	// In dev/sim mode (no sender) the code is returned in the response.
+	if a.otp != nil && m.Phone != "" {
+		if serr := a.otp.SendOTP(ctx, m.Phone, code); serr == nil {
+			// Code delivered out-of-band — suppress it from the response.
+			return m, "", expiresAt, nil
+		} else {
+			// Delivery failed; fall through so the caller still gets a code.
+			// This is a degraded-mode fallback — log so ops can investigate.
+			a.log.Warn("WhatsApp OTP delivery failed; falling back to in-response code", "err", serr)
+		}
+	}
 	return m, code, expiresAt, nil
 }
 

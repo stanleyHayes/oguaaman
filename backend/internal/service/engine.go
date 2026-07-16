@@ -199,3 +199,60 @@ func (s *Service) AddTribute(ctx context.Context, slug, author, message string) 
 	}
 	return &t, nil
 }
+
+// ClaimKeeperRole submits a memorial family claim request to the curator queue.
+// Any signed-in member may claim keeper status for a memorial; a curator
+// reviews it and either grants (via GrantKeeperRole) or dismisses it.
+func (s *Service) ClaimKeeperRole(ctx context.Context, memberID, memberName, slug, detail string) (*domain.Report, error) {
+	if s.reports == nil {
+		return nil, fmt.Errorf("reports are not available")
+	}
+	l, err := s.listings.GetBySlug(ctx, domain.TypeMemorial, slug)
+	if err != nil {
+		return nil, err
+	}
+	detail = strings.TrimSpace(detail)
+	if len(detail) > 2000 {
+		return nil, fmt.Errorf("please keep your message under 2000 characters")
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+	rep := domain.Report{
+		ID:           "rpt-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ListingID:    l.ID,
+		ListingSlug:  l.Slug,
+		ListingType:  domain.TypeMemorial,
+		ListingTitle: l.Title,
+		Reason:       domain.ReasonBereavement,
+		Detail:       detail,
+		ReporterID:   memberID,
+		ReporterName: memberName,
+		Status:       domain.ReportOpen,
+		CreatedAt:    now,
+		KeeperClaim:  true,
+	}
+	if err := s.reports.Insert(ctx, rep); err != nil {
+		return nil, err
+	}
+	s.notifyStewardsOfReport(ctx, &rep)
+	return &rep, nil
+}
+
+// GrantKeeperRole is a curator action: assign keeperId on a memorial listing
+// and resolve the keeper-claim report. reportID may be empty (direct grant).
+func (s *Service) GrantKeeperRole(ctx context.Context, listingID, keeperMemberID, curatorID, reportID string) error {
+	l, err := s.listings.GetByID(ctx, listingID)
+	if err != nil {
+		return err
+	}
+	if l.Type != domain.TypeMemorial {
+		return fmt.Errorf("keeper roles can only be granted on memorial listings")
+	}
+	if err := s.listings.SetKeeperID(ctx, listingID, keeperMemberID); err != nil {
+		return err
+	}
+	if reportID != "" && s.reports != nil {
+		now := time.Now().UTC().Format(time.RFC3339)
+		_ = s.reports.UpdateStatus(ctx, reportID, domain.ReportActioned, curatorID, "keeper role granted", now)
+	}
+	return nil
+}

@@ -78,6 +78,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/memorials/{slug}/follow", h.FollowState)
 	mux.HandleFunc("POST /api/memorials/{slug}/follow", h.FollowMemorial)
 	mux.HandleFunc("DELETE /api/memorials/{slug}/follow", h.UnfollowMemorial)
+	mux.HandleFunc("POST /api/memorials/{slug}/keeper-claim", h.KeeperClaim)
 
 	mux.HandleFunc("GET /api/notifications", h.Notifications)
 	mux.HandleFunc("GET /api/notifications/unread-count", h.UnreadCount)
@@ -135,6 +136,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/me/institutions", h.MyInstitutions)
 	mux.HandleFunc("POST /api/me/creator-types", h.SetMyCreatorTypes)
 	mux.HandleFunc("GET /api/creator/overview", h.CreatorOverview)
+	mux.HandleFunc("GET /api/creator/earnings", h.CreatorEarnings)
 	mux.HandleFunc("POST /api/institutions/{slug}/claim", h.ClaimInstitution)
 	mux.HandleFunc("POST /api/institutions/{slug}/profile", h.UpdateInstitutionProfile)
 	mux.HandleFunc("POST /api/institutions/{slug}/offices", h.SetInstitutionOffices)
@@ -187,6 +189,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/admin/pledges/totals", h.AdminPledgeTotals)
 	mux.HandleFunc("GET /api/admin/reports", h.AdminReports)
 	mux.HandleFunc("POST /api/admin/reports/{id}/resolve", h.AdminResolveReport)
+	mux.HandleFunc("POST /api/admin/memorials/{id}/grant-keeper", h.GrantKeeper)
 
 	mux.HandleFunc("GET /api/admin/news", h.AdminNewsList)
 	mux.HandleFunc("POST /api/admin/news", h.AdminNewsCreate)

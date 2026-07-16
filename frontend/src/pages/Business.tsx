@@ -1,4 +1,5 @@
 import { Link, useLoaderData, useSearchParams } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
@@ -14,6 +15,7 @@ export async function loader() {
 
 export function Component() {
   const businesses = useLoaderData() as Listing[];
+  usePageTitle("Business Directory");
   const [params] = useSearchParams();
   const cat = params.get("cat") ?? undefined;
   const categories = [...new Set(businesses.map((b) => b.details.category).filter((c): c is string => !!c))].sort((a, b) => a.localeCompare(b));

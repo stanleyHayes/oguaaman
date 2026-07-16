@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
+import { usePageTitle } from "@/lib/use-page-title";
 import type { NewsArticle } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container, CTA as Cta } from "@/components/ui";
@@ -99,6 +100,7 @@ function TagChips({ tags, active, onPick }: Readonly<{ tags: string[]; active: s
 
 export function Component() {
   const articles = useLoaderData() as NewsArticle[];
+  usePageTitle("News");
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [lead, ...rest] = articles;
   const tags = useMemo(
