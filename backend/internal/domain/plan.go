@@ -18,17 +18,17 @@ type Plan struct {
 	// Prices in pesewas by audience key ("default" always present;
 	// "business"/"creator" override it — Supporter is GH₵50 business,
 	// GH₵30 artist/organiser).
-	Prices  map[string]int64 `json:"prices" bson:"prices"`
-	Interval string          `json:"interval" bson:"interval"` // "free" | "month"
+	Prices   map[string]int64 `json:"prices" bson:"prices"`
+	Interval string           `json:"interval" bson:"interval"` // "free" | "month"
 	// Perks are the marketing bullet lines shown on plan cards.
 	Perks       []string `json:"perks" bson:"perks"`
 	MaxListings int      `json:"maxListings,omitempty" bson:"maxListings,omitempty"`
 	// IncludedPromoDays are promotion days auto-applied to the subscribed
 	// listing on every confirmed payment (Featured bundle: 7/month).
-	IncludedPromoDays int  `json:"includedPromoDays,omitempty" bson:"includedPromoDays,omitempty"`
-	GoldBadge         bool `json:"goldBadge,omitempty" bson:"goldBadge,omitempty"`
-	Active            bool `json:"active" bson:"active"` // only active plans are sold/listed publicly
-	SortOrder         int  `json:"sortOrder" bson:"sortOrder"`
+	IncludedPromoDays int    `json:"includedPromoDays,omitempty" bson:"includedPromoDays,omitempty"`
+	GoldBadge         bool   `json:"goldBadge,omitempty" bson:"goldBadge,omitempty"`
+	Active            bool   `json:"active" bson:"active"` // only active plans are sold/listed publicly
+	SortOrder         int    `json:"sortOrder" bson:"sortOrder"`
 	CreatedAt         string `json:"createdAt" bson:"createdAt"`
 	UpdatedAt         string `json:"updatedAt" bson:"updatedAt"`
 }

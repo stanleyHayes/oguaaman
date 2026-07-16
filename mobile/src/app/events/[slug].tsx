@@ -13,6 +13,7 @@ import { Loading, ErrorView, Thumb, Pill } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { cedis } from "../projects/index";
 import { RevealView } from "@/components/anim";
+import { LocationCard } from "@/components/location-card";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -50,6 +51,7 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
           </Text>
 
           {d.description ? <Text style={s.desc}>{d.description}</Text> : null}
+          {d.venue ? <LocationCard address={d.venue} query={`${event.title} ${d.venue}`} /> : null}
 
           {event.tags.length > 0 && (
             <View style={s.tags}>

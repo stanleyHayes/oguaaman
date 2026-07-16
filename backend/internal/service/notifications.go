@@ -119,14 +119,17 @@ func (s *Service) notifyRemembranceAudience(ctx context.Context, m *domain.Listi
 	}
 	created := 0
 	for memberID := range audience {
+		title := reminderTitle(m.Title, birthday)
+		body := remembranceBody(m, birthday)
 		_ = s.notifs.Insert(ctx, domain.Notification{
 			ID:       "ntf-" + fmt.Sprintf("%d-%s", time.Now().UnixNano(), memberID),
 			MemberID: memberID, Kind: "remembrance",
-			Title:     "Today we remember " + m.Title,
-			Body:      remembranceBody(m, birthday),
+			Title:     title,
+			Body:      body,
 			Link:      "/memoriam/" + m.Slug,
 			CreatedAt: time.Now().UTC().Format(time.RFC3339),
 		})
+		s.notifyOutOfBand(ctx, memberID, title, body, "/memoriam/"+m.Slug)
 		created++
 	}
 	return created
@@ -147,14 +150,17 @@ func (s *Service) birthdayNotices(ctx context.Context, monthDay string) (int, er
 		}
 		fol, _ := s.follows.MemberFollowers(ctx, mem.ID)
 		for _, memberID := range fol {
+			title := "Today is " + mem.DisplayName + "'s birthday"
+			body := "Wish " + mem.DisplayName + " a happy birthday — Afehyia pa!"
 			_ = s.notifs.Insert(ctx, domain.Notification{
 				ID:       "ntf-" + fmt.Sprintf("%d-%s", time.Now().UnixNano(), memberID),
 				MemberID: memberID, Kind: "birthday",
-				Title:     "Today is " + mem.DisplayName + "'s birthday",
-				Body:      "Wish " + mem.DisplayName + " a happy birthday — Afehyia pa!",
+				Title:     title,
+				Body:      body,
 				Link:      "/members/" + mem.Slug,
 				CreatedAt: time.Now().UTC().Format(time.RFC3339),
 			})
+			s.notifyOutOfBand(ctx, memberID, title, body, "/members/"+mem.Slug)
 			created++
 		}
 	}

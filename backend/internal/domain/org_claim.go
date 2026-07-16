@@ -65,18 +65,18 @@ func ValidInstitutionKind(slug string) bool {
 // edit the profile, manage the roster of offices, and post official events. This
 // is the trust gate that keeps institution identity authoritative (spec §8.13).
 type OrgClaim struct {
-	ID            string `json:"id" bson:"_id"`
-	OrgID         string `json:"orgId" bson:"orgId"`
-	MemberID      string `json:"memberId" bson:"memberId"`
-	RequestedRole string `json:"requestedRole" bson:"requestedRole"` // e.g. "OBA President", "Headmaster"
-	Note          string `json:"note,omitempty" bson:"note,omitempty"`
-	Status        string `json:"status" bson:"status"`
-	Scope         string `json:"scope,omitempty" bson:"scope,omitempty"`           // manager | officer (team invites)
-	InvitedByID   string `json:"invitedById,omitempty" bson:"invitedById,omitempty"` // manager who sent the invite
-	NewOrg        *NewOrgRequest `json:"newOrg,omitempty" bson:"newOrg,omitempty"`   // set = request to CREATE the institution
-	CreatedAt     string `json:"createdAt" bson:"createdAt"`
-	ReviewedByID  string `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
-	ReviewedAt    string `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
+	ID            string         `json:"id" bson:"_id"`
+	OrgID         string         `json:"orgId" bson:"orgId"`
+	MemberID      string         `json:"memberId" bson:"memberId"`
+	RequestedRole string         `json:"requestedRole" bson:"requestedRole"` // e.g. "OBA President", "Headmaster"
+	Note          string         `json:"note,omitempty" bson:"note,omitempty"`
+	Status        string         `json:"status" bson:"status"`
+	Scope         string         `json:"scope,omitempty" bson:"scope,omitempty"`             // manager | officer (team invites)
+	InvitedByID   string         `json:"invitedById,omitempty" bson:"invitedById,omitempty"` // manager who sent the invite
+	NewOrg        *NewOrgRequest `json:"newOrg,omitempty" bson:"newOrg,omitempty"`           // set = request to CREATE the institution
+	CreatedAt     string         `json:"createdAt" bson:"createdAt"`
+	ReviewedByID  string         `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
+	ReviewedAt    string         `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
 }
 
 // EffectiveScope resolves the member's team powers. Original claimants (and
@@ -123,7 +123,7 @@ type OrgProfilePatch struct {
 
 	// Per-kind structured catalog fields (§4 perkind-catalog).
 	// Education (schools):
-	GESCategory string // e.g. "Senior High", "Junior High", "Primary"
+	GESCategory  string // e.g. "Senior High", "Junior High", "Primary"
 	BoardingType string // "boarding", "day", "both"
 	GenderPolicy string // "boys", "girls", "mixed"
 
@@ -131,6 +131,11 @@ type OrgProfilePatch struct {
 	NHISAccredited *bool // nil = not specified
 
 	// All kinds:
-	GhanaPostGPS string // GhanaPost digital address e.g. "CF-0172-0842"
-	MoMoNumber   string // Mobile money number for donations/giving
+	GhanaPostGPS          string // GhanaPost digital address e.g. "CF-0172-0842"
+	MoMoNumber            string // Mobile money number for donations/giving
+	Latitude              *float64
+	Longitude             *float64
+	QuarterTag            string
+	AsafoTag              string
+	VerificationArtifacts []SocialLink
 }

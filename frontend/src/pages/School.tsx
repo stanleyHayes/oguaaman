@@ -80,12 +80,14 @@ export function Component() {
               </div>
             ))}
           </dl>
-          {(org.gesCategory || org.boardingType || org.genderPolicy || org.ghanaPostGPS) && (
+          {(org.gesCategory || org.boardingType || org.genderPolicy || org.ghanaPostGPS || org.quarterTag || org.asafoTag) && (
             <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-sand px-4 py-3">
               {org.gesCategory && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Category</dt><dd className="text-green">{org.gesCategory}</dd></div>}
               {org.boardingType && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Boarding</dt><dd className="text-green capitalize">{org.boardingType}</dd></div>}
               {org.genderPolicy && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Admission</dt><dd className="text-green capitalize">{org.genderPolicy}</dd></div>}
               {org.ghanaPostGPS && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">GhanaPost</dt><dd className="text-green">{org.ghanaPostGPS}</dd></div>}
+              {org.quarterTag && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Quarter</dt><dd className="text-green">{org.quarterTag}</dd></div>}
+              {org.asafoTag && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Asafo</dt><dd className="text-green">{org.asafoTag}</dd></div>}
             </dl>
           )}
         </Container>
@@ -167,7 +169,7 @@ export function Component() {
           <section>
             <SecHead>Location</SecHead>
             {org.ghanaPostGPS && <p className="mb-3 text-sm text-ink-muted">GhanaPost GPS: <span className="font-mono text-green">{org.ghanaPostGPS}</span></p>}
-            <LocationMap address={org.jurisdiction ?? "Cape Coast"} query={`${org.name} ${org.jurisdiction ?? "Cape Coast"}`} />
+            <LocationMap address={org.jurisdiction ?? "Cape Coast"} query={`${org.name} ${org.jurisdiction ?? "Cape Coast"}`} latitude={org.latitude} longitude={org.longitude} />
           </section>
         )}
 

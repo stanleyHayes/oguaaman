@@ -20,14 +20,14 @@ var seedPlans = []domain.Plan{
 	{
 		ID: "plan-supporter", Slug: "supporter", Name: "Supporter", Audience: "business",
 		Prices: map[string]int64{"default": 3_000, "business": 5_000}, Interval: "month",
-		Perks: []string{"Gold ★ badge", "Priority sorting in the directory", "Up to 3 live listings", "More photos per listing"},
+		Perks:       []string{"Gold ★ badge", "Priority sorting in the directory", "Up to 3 live listings", "More photos per listing"},
 		MaxListings: 3, GoldBadge: true, Active: true, SortOrder: 2,
 		CreatedAt: "2026-07-15T00:00:00Z", UpdatedAt: "2026-07-15T00:00:00Z",
 	},
 	{
 		ID: "plan-featured", Slug: "featured", Name: "Featured bundle", Audience: "business",
 		Prices: map[string]int64{"default": 12_000}, Interval: "month",
-		Perks: []string{"Everything in Supporter", "7 promotion days auto-applied every month"},
+		Perks:       []string{"Everything in Supporter", "7 promotion days auto-applied every month"},
 		MaxListings: 3, GoldBadge: true, IncludedPromoDays: 7, Active: true, SortOrder: 3,
 		CreatedAt: "2026-07-15T00:00:00Z", UpdatedAt: "2026-07-15T00:00:00Z",
 	},

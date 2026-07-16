@@ -18,6 +18,7 @@ import (
 
 	"github.com/oguaa/backend/internal/config"
 	"github.com/oguaa/backend/internal/domain"
+	emailx "github.com/oguaa/backend/internal/infra/email"
 	gqlx "github.com/oguaa/backend/internal/infra/graphql"
 	grpcx "github.com/oguaa/backend/internal/infra/grpcapi"
 	httpx "github.com/oguaa/backend/internal/infra/http"
@@ -38,6 +39,8 @@ func main() {
 	}()
 
 	memberRepo := mongox.NewMemberRepo(db)
+	wa := wax.New(cfg.WhatsAppToken, cfg.WhatsAppPhoneID, log)
+	email := emailx.New(cfg.ResendAPIKey, cfg.EmailFrom, log)
 	svc := service.New(service.Deps{
 		Listings: mongox.NewListingRepo(db),
 		Members:  memberRepo,
@@ -51,9 +54,12 @@ func main() {
 		Reports:  mongox.NewReportRepo(db),
 		Timeline: mongox.NewTimelineRepo(db),
 		Plans:    mongox.NewPlanRepo(db),
+		Email:    email,
+		WhatsApp: wa,
+		Log:      log,
 	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db))
-	auth := newAuthService(memberRepo, cfg, log)
+	auth := newAuthService(memberRepo, cfg, wa)
 	ensureUploadDir(log, cfg)
 	payments, tickets, subs, promotions, revenue := moneyServices(db, cfg, log)
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
@@ -99,9 +105,8 @@ func connectMongo(ctx context.Context, log *slog.Logger, cfg config.Config) (*mo
 	return client, db
 }
 
-func newAuthService(members domain.MemberRepository, cfg config.Config, log *slog.Logger) *service.AuthService {
+func newAuthService(members domain.MemberRepository, cfg config.Config, wa wax.Sender) *service.AuthService {
 	auth := service.NewAuthService(members, cfg.JWTSecret)
-	wa := wax.New(cfg.WhatsAppToken, cfg.WhatsAppPhoneID, log)
 	return auth.WithOTPSender(wa)
 }
 

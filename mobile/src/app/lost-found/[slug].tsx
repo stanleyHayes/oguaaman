@@ -12,6 +12,7 @@ import { KIND_LABEL, LF_STATUS_LABEL } from "@/lib/lostfound";
 import { C, D, S } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
+import { LocationCard } from "@/components/location-card";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -73,6 +74,11 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
             ) : null}
             <View style={s.factRow}><Text style={s.factLabel}>POSTED</Text><Text style={s.factValue}>{fmtDate(notice.createdAt)}</Text></View>
           </RevealView>
+          {d.lastSeenLocation ? (
+            <RevealView delay={130} style={{ marginTop: 12 }}>
+              <LocationCard address={d.lastSeenLocation} query={`${notice.title} ${d.lastSeenLocation}`} />
+            </RevealView>
+          ) : null}
 
           <RevealView delay={160} style={[s.contactBox, missing && { borderColor: C.maroon }]}>
             <Text style={s.contactLabel}>CONTACT</Text>

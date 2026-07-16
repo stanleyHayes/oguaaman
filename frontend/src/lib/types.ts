@@ -249,6 +249,11 @@ export interface Organization {
   nhisAccredited?: boolean;
   ghanaPostGPS?: string;
   momoNumber?: string;
+  latitude?: number;
+  longitude?: number;
+  quarterTag?: string;
+  asafoTag?: string;
+  verificationArtifacts?: SocialLink[];
 }
 
 export interface Place {

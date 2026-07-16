@@ -166,6 +166,7 @@ func (s *Service) notifyModeration(ctx context.Context, l *domain.Listing, actio
 		ID: "ntf-" + fmt.Sprintf("%d", time.Now().UnixNano()), MemberID: l.OwnerID,
 		Kind: kind, Title: title, Body: body, CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	})
+	s.notifyOutOfBand(ctx, l.OwnerID, title, body, "/me")
 }
 
 func (s *Service) LightCandle(ctx context.Context, slug string) (int, error) {
@@ -252,7 +253,16 @@ func (s *Service) GrantKeeperRole(ctx context.Context, listingID, keeperMemberID
 	}
 	if reportID != "" && s.reports != nil {
 		now := time.Now().UTC().Format(time.RFC3339)
+		var reporterID string
+		if rep, rerr := s.reports.Get(ctx, reportID); rerr == nil && rep != nil {
+			reporterID = rep.ReporterID
+		}
 		_ = s.reports.UpdateStatus(ctx, reportID, domain.ReportActioned, curatorID, "keeper role granted", now)
+		if reporterID != "" {
+			title := "Your memorial keeper claim was approved"
+			body := fmt.Sprintf("You were granted keeper access for “%s”.", l.Title)
+			s.notify(ctx, reporterID, "keeper-claim", title, body, "/memoriam/"+l.Slug)
+		}
 	}
 	return nil
 }

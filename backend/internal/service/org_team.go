@@ -25,9 +25,9 @@ type TeamMember struct {
 	MemberName    string `json:"memberName"`
 	MemberSlug    string `json:"memberSlug"`
 	PhotoURL      string `json:"photoUrl,omitempty"`
-	Role          string `json:"role"`            // the office they hold (RequestedRole)
-	Scope         string `json:"scope"`           // manager | officer (effective)
-	Status        string `json:"status"`          // approved | invited
+	Role          string `json:"role"`   // the office they hold (RequestedRole)
+	Scope         string `json:"scope"`  // manager | officer (effective)
+	Status        string `json:"status"` // approved | invited
 	InvitedByName string `json:"invitedByName,omitempty"`
 }
 
@@ -332,4 +332,5 @@ func (s *Service) notify(ctx context.Context, memberID, kind, title, body, link 
 		Kind: kind, Title: title, Body: body, Link: link,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	})
+	s.notifyOutOfBand(ctx, memberID, title, body, link)
 }

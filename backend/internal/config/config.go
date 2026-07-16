@@ -40,8 +40,8 @@ type Config struct {
 	// Email delivery via Resend (transactional — OTP codes, moderation outcomes,
 	// notification digests). Without a key, email delivery is silently skipped
 	// (in-app notifications still work).
-	ResendAPIKey  string
-	EmailFrom     string // e.g. "Oguaa <noreply@oguaa.gh>"
+	ResendAPIKey string
+	EmailFrom    string // e.g. "Oguaa <noreply@oguaa.gh>"
 
 	// WhatsApp OTP delivery. Uses WhatsApp Business Cloud API (Meta) or a
 	// provider that speaks the same HTTP interface (e.g. 360dialog, Twilio).

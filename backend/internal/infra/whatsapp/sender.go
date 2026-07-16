@@ -18,6 +18,12 @@ type OTPSender interface {
 	SendOTP(ctx context.Context, phone, code string) error
 }
 
+// Sender supports both OTP and generic transactional messages.
+type Sender interface {
+	OTPSender
+	SendMessage(ctx context.Context, phone, body string) error
+}
+
 // Client uses the Meta WhatsApp Business Cloud API
 // (graph.facebook.com/v20.0/{phoneNumberID}/messages).
 type Client struct {
@@ -32,7 +38,7 @@ type NoopSender struct{ log *slog.Logger }
 
 // New returns a live WhatsApp client when token and phoneID are set,
 // otherwise a NoopSender.
-func New(token, phoneID string, log *slog.Logger) OTPSender {
+func New(token, phoneID string, log *slog.Logger) Sender {
 	if token == "" || phoneID == "" {
 		log.Info("WhatsApp OTP SKIPPED — set WHATSAPP_TOKEN and WHATSAPP_PHONE_ID to enable")
 		return &NoopSender{log: log}
@@ -47,12 +53,16 @@ func New(token, phoneID string, log *slog.Logger) OTPSender {
 }
 
 func (c *Client) SendOTP(ctx context.Context, phone, code string) error {
+	return c.SendMessage(ctx, phone, fmt.Sprintf("Your Oguaa verification code is *%s*. It expires in 10 minutes. Do not share it.", code))
+}
+
+func (c *Client) SendMessage(ctx context.Context, phone, message string) error {
 	body := map[string]any{
 		"messaging_product": "whatsapp",
 		"to":                phone,
 		"type":              "text",
 		"text": map[string]string{
-			"body": fmt.Sprintf("Your Oguaa verification code is *%s*. It expires in 10 minutes. Do not share it.", code),
+			"body": message,
 		},
 	}
 	b, _ := json.Marshal(body)
@@ -79,5 +89,10 @@ func (c *Client) SendOTP(ctx context.Context, phone, code string) error {
 
 func (n *NoopSender) SendOTP(_ context.Context, phone, _ string) error {
 	n.log.Debug("WhatsApp OTP skipped (no credentials)", "phone", phone)
+	return nil
+}
+
+func (n *NoopSender) SendMessage(_ context.Context, phone, body string) error {
+	n.log.Debug("WhatsApp message skipped (no credentials)", "phone", phone, "bodyLen", len(body))
 	return nil
 }

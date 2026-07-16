@@ -83,6 +83,7 @@ func (s *Service) notifyStewardsOfReport(ctx context.Context, rep *domain.Report
 			Link:      "/reports",
 			CreatedAt: time.Now().UTC().Format(time.RFC3339),
 		})
+		s.notifyOutOfBand(ctx, m.ID, "A listing was reported", fmt.Sprintf("“%s” was reported (%s). Review it in the queue.", rep.ListingTitle, reportReasonLabel(rep.Reason)), "/reports")
 	}
 }
 

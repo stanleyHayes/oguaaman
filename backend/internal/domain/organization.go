@@ -41,12 +41,17 @@ type Organization struct {
 	MemberCount   int              `json:"memberCount,omitempty" bson:"memberCount,omitempty"`
 
 	// Per-kind structured catalog fields (§4 perkind-catalog).
-	GESCategory    string `json:"gesCategory,omitempty" bson:"gesCategory,omitempty"`
-	BoardingType   string `json:"boardingType,omitempty" bson:"boardingType,omitempty"`
-	GenderPolicy   string `json:"genderPolicy,omitempty" bson:"genderPolicy,omitempty"`
-	NHISAccredited *bool  `json:"nhisAccredited,omitempty" bson:"nhisAccredited,omitempty"`
-	GhanaPostGPS   string `json:"ghanaPostGPS,omitempty" bson:"ghanaPostGPS,omitempty"`
-	MoMoNumber     string `json:"momoNumber,omitempty" bson:"momoNumber,omitempty"`
+	GESCategory           string       `json:"gesCategory,omitempty" bson:"gesCategory,omitempty"`
+	BoardingType          string       `json:"boardingType,omitempty" bson:"boardingType,omitempty"`
+	GenderPolicy          string       `json:"genderPolicy,omitempty" bson:"genderPolicy,omitempty"`
+	NHISAccredited        *bool        `json:"nhisAccredited,omitempty" bson:"nhisAccredited,omitempty"`
+	GhanaPostGPS          string       `json:"ghanaPostGPS,omitempty" bson:"ghanaPostGPS,omitempty"`
+	MoMoNumber            string       `json:"momoNumber,omitempty" bson:"momoNumber,omitempty"`
+	Latitude              *float64     `json:"latitude,omitempty" bson:"latitude,omitempty"`
+	Longitude             *float64     `json:"longitude,omitempty" bson:"longitude,omitempty"`
+	QuarterTag            string       `json:"quarterTag,omitempty" bson:"quarterTag,omitempty"`
+	AsafoTag              string       `json:"asafoTag,omitempty" bson:"asafoTag,omitempty"`
+	VerificationArtifacts []SocialLink `json:"verificationArtifacts,omitempty" bson:"verificationArtifacts,omitempty"`
 }
 
 type OrganizationRepository interface {

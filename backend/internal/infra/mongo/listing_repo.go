@@ -229,8 +229,8 @@ func (r *ListingRepo) PlatformViewsThisMonth(ctx context.Context) (int, error) {
 func (r *ListingRepo) AvgApprovalHours(ctx context.Context) (float64, error) {
 	cutoff := time.Now().UTC().Add(-90 * 24 * time.Hour).Format(time.RFC3339)
 	cur, err := r.c.Find(ctx, bson.M{
-		"status":     "approved",
-		"reviewedAt": bson.M{"$gte": cutoff},
+		"status":      "approved",
+		"reviewedAt":  bson.M{"$gte": cutoff},
 		"submittedAt": bson.M{"$exists": true, "$ne": ""},
 	})
 	if err != nil {

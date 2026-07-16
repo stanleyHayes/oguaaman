@@ -15,9 +15,15 @@ type submitListings struct {
 	inserted []domain.Listing
 }
 
-func (s *submitListings) Find(context.Context, domain.ListingFilter) ([]domain.Listing, error) { return nil, nil }
-func (s *submitListings) GetBySlug(context.Context, string, string) (*domain.Listing, error)    { return nil, &domain.NotFoundError{Entity: "listing"} }
-func (s *submitListings) GetByID(context.Context, string) (*domain.Listing, error)               { return nil, &domain.NotFoundError{Entity: "listing"} }
+func (s *submitListings) Find(context.Context, domain.ListingFilter) ([]domain.Listing, error) {
+	return nil, nil
+}
+func (s *submitListings) GetBySlug(context.Context, string, string) (*domain.Listing, error) {
+	return nil, &domain.NotFoundError{Entity: "listing"}
+}
+func (s *submitListings) GetByID(context.Context, string) (*domain.Listing, error) {
+	return nil, &domain.NotFoundError{Entity: "listing"}
+}
 func (s *submitListings) Insert(_ context.Context, l domain.Listing) error {
 	s.inserted = append(s.inserted, l)
 	return nil
@@ -29,19 +35,19 @@ func (s *submitListings) OwnerUpdate(context.Context, string, string, string, ma
 	return nil
 }
 func (s *submitListings) AddTribute(context.Context, string, domain.Tribute) error { return nil }
-func (s *submitListings) IncrementCandles(context.Context, string) (int, error)     { return 0, nil }
-func (s *submitListings) IncrementRaised(context.Context, string, int64) error      { return nil }
-func (s *submitListings) SetFeatured(context.Context, string, bool, string) error   { return nil }
+func (s *submitListings) IncrementCandles(context.Context, string) (int, error)    { return 0, nil }
+func (s *submitListings) IncrementRaised(context.Context, string, int64) error     { return nil }
+func (s *submitListings) SetFeatured(context.Context, string, bool, string) error  { return nil }
 func (s *submitListings) UpdateIncidentStatus(context.Context, string, string, map[string]any) error {
 	return nil
 }
 func (s *submitListings) SetLostFoundStatus(context.Context, string, string) error { return nil }
-func (s *submitListings) SetSubscribedUntil(context.Context, string, string) error  { return nil }
-func (s *submitListings) SetKeeperID(context.Context, string, string) error         { return nil }
-func (s *submitListings) AvgApprovalHours(context.Context) (float64, error)          { return 0, nil }
-func (s *submitListings) RecordView(context.Context, string, string) (bool, error)  { return true, nil }
-func (s *submitListings) ViewsThisMonth(context.Context, []string) (int, error)     { return 0, nil }
-func (s *submitListings) PlatformViewsThisMonth(context.Context) (int, error)       { return 0, nil }
+func (s *submitListings) SetSubscribedUntil(context.Context, string, string) error { return nil }
+func (s *submitListings) SetKeeperID(context.Context, string, string) error        { return nil }
+func (s *submitListings) AvgApprovalHours(context.Context) (float64, error)        { return 0, nil }
+func (s *submitListings) RecordView(context.Context, string, string) (bool, error) { return true, nil }
+func (s *submitListings) ViewsThisMonth(context.Context, []string) (int, error)    { return 0, nil }
+func (s *submitListings) PlatformViewsThisMonth(context.Context) (int, error)      { return 0, nil }
 
 func TestSubmit_requiresVerifiedContact(t *testing.T) {
 	listings := &submitListings{}

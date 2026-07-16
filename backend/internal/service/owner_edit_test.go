@@ -24,12 +24,12 @@ func TestOwnerEditApprovedMinorStaysLive(t *testing.T) {
 	l, err := svc.UpdateOwnerListing(context.Background(), ownerActor(), "l1", OwnerEditInput{
 		Title: "Esi Sunshine",
 		Details: map[string]any{
-			"bio":       "same bio",             // unchanged — not major
-			"actName":   "Esi Sunshine (Esi)",   // minor rename
+			"bio":       "same bio",           // unchanged — not major
+			"actName":   "Esi Sunshine (Esi)", // minor rename
 			"link":      "https://example.com/esi",
-			"spotlight": true,                   // system key — must be stripped
-			"unknown":   "nope",                 // unknown key — must be dropped
-			"bad":       "javascript:alert(1)",  // not whitelisted anyway
+			"spotlight": true,                  // system key — must be stripped
+			"unknown":   "nope",                // unknown key — must be dropped
+			"bad":       "javascript:alert(1)", // not whitelisted anyway
 		},
 	})
 	if err != nil {

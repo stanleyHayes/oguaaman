@@ -93,6 +93,12 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
   const [nhisAccredited, setNhisAccredited] = useState(org.nhisAccredited ?? false);
   const [ghanaPostGPS, setGhanaPostGPS] = useState(org.ghanaPostGPS ?? "");
   const [momoNumber, setMomoNumber] = useState(org.momoNumber ?? "");
+  const [latitude, setLatitude] = useState(org.latitude != null ? String(org.latitude) : "");
+  const [longitude, setLongitude] = useState(org.longitude != null ? String(org.longitude) : "");
+  const [quarterTag, setQuarterTag] = useState(org.quarterTag ?? "");
+  const [asafoTag, setAsafoTag] = useState(org.asafoTag ?? "");
+  const [artifactLabel, setArtifactLabel] = useState(org.verificationArtifacts?.[0]?.label ?? "");
+  const [artifactURL, setArtifactURL] = useState(org.verificationArtifacts?.[0]?.url ?? "");
   const [state, setState] = useState<SaveState>("idle");
 
   const isSchool = org.kind === "school";
@@ -106,6 +112,10 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
         gesCategory, boardingType, genderPolicy,
         nhisAccredited: isHealth ? nhisAccredited : undefined,
         ghanaPostGPS, momoNumber,
+        latitude: latitude.trim() === "" || !Number.isFinite(Number(latitude)) ? undefined : Number(latitude),
+        longitude: longitude.trim() === "" || !Number.isFinite(Number(longitude)) ? undefined : Number(longitude),
+        quarterTag, asafoTag,
+        verificationArtifacts: artifactURL.trim() ? [{ label: artifactLabel.trim() || "Verification", url: artifactURL.trim() }] : [],
       });
       setState("saved");
     } catch {
@@ -187,6 +197,36 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
           <label htmlFor="org-momo" className={label}>Mobile money / giving number</label>
           <input id="org-momo" className={`mt-1.5 ${field}`} value={momoNumber} onChange={(e) => setMomoNumber(e.target.value)} placeholder="e.g. 024 000 0000" />
           <p className="mt-1 text-xs text-ink-faint">The number supporters can send donations to via MTN MoMo, Telecel Cash, or AirtelTigo.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="org-lat" className={label}>Latitude</label>
+            <input id="org-lat" className={`mt-1.5 ${field}`} value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="e.g. 5.1053" />
+          </div>
+          <div>
+            <label htmlFor="org-lng" className={label}>Longitude</label>
+            <input id="org-lng" className={`mt-1.5 ${field}`} value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="e.g. -1.2466" />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="org-quarter" className={label}>Quarter tag</label>
+            <input id="org-quarter" className={`mt-1.5 ${field}`} value={quarterTag} onChange={(e) => setQuarterTag(e.target.value)} placeholder="e.g. Kotokuraba" />
+          </div>
+          <div>
+            <label htmlFor="org-asafo" className={label}>Asafo tag</label>
+            <input id="org-asafo" className={`mt-1.5 ${field}`} value={asafoTag} onChange={(e) => setAsafoTag(e.target.value)} placeholder="e.g. Bentsir" />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="org-art-label" className={label}>Verification artifact label</label>
+            <input id="org-art-label" className={`mt-1.5 ${field}`} value={artifactLabel} onChange={(e) => setArtifactLabel(e.target.value)} placeholder="e.g. Gazette notice" />
+          </div>
+          <div>
+            <label htmlFor="org-art-url" className={label}>Verification artifact URL</label>
+            <input id="org-art-url" className={`mt-1.5 ${field}`} value={artifactURL} onChange={(e) => setArtifactURL(e.target.value)} placeholder="https://..." />
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

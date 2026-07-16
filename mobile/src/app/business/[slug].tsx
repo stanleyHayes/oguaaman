@@ -12,6 +12,7 @@ import { C, D, S, initials } from "@/theme";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { RevealView } from "@/components/anim";
+import { LocationCard } from "@/components/location-card";
 
 // Only open web-safe schemes (tel/mailto included — this is the call-them screen).
 function openURL(url?: string) {
@@ -178,6 +179,7 @@ function BusinessDetail({ data, slug, reload }: Readonly<{ data: Listing; slug: 
           <Text style={[s.kicker, { marginTop: 22 }]}>FIND THEM</Text>
           {d.address ? <Text style={s.fact}>📍 {d.address}</Text> : null}
           {d.openingHours ? <Text style={s.fact}>🕔 {d.openingHours}</Text> : null}
+          {d.address ? <LocationCard address={d.address} query={`${data.title} ${d.address}`} /> : null}
 
           <View style={{ gap: 8, marginTop: 12 }}>
             {(d.contact ?? []).map((c) => (

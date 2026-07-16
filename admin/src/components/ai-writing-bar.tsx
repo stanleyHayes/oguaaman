@@ -27,6 +27,7 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
   const [simulated, setSimulated] = useState(false);
   const [promptText, setPromptText] = useState("");
   const [language, setLanguage] = useState("Twi");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   function refreshScope() {
     const el = bodyRef.current;
@@ -47,8 +48,11 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
     setResult(null); setError(null); setLimit(false); setLoading(true);
     const text = sel.active ? body.slice(sel.start, sel.end) : body;
     try {
-      const data = await api.ai({ action, text, language: action === "translate" ? language : undefined, prompt: action === "prompt" ? promptText : undefined });
-      setResult(data.result); setSimulated(Boolean(data.simulated));
+      const data = await api.aiStream(
+        { action, text, language: action === "translate" ? language : undefined, prompt: action === "prompt" ? promptText : undefined },
+        (chunk) => setResult((prev) => `${prev ?? ""}${chunk}`),
+      );
+      setSimulated(Boolean(data.simulated));
       if (typeof data.remaining === "number") setRemaining(data.remaining);
     } catch (err) {
       if ((err as { status?: number }).status === 429) setLimit(true);
@@ -58,6 +62,12 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
 
   const scopeWord = sel.words === 1 ? "word" : "words";
   const scope = sel.active ? `selection · ${sel.words} ${scopeWord}` : "whole field";
+  const applyReplace = () => {
+    if (result == null) return;
+    setBody(sel.active ? body.slice(0, sel.start) + result + body.slice(sel.end) : result);
+    setResult(null);
+    setConfirmOpen(false);
+  };
 
   return (
     <div>
@@ -101,7 +111,7 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
             <div className="flex items-center justify-between"><span className="text-sm font-semibold">Preview</span><span className="text-xs text-ink-faint">{lastAction}{simulated ? " · simulated" : ""}</span></div>
             <div className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-white p-4 text-sm leading-relaxed">{result}</div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => { setBody(sel.active ? body.slice(0, sel.start) + result + body.slice(sel.end) : result); setResult(null); }} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-cream">Replace</button>
+              <button onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-cream">Replace</button>
               <button onClick={() => { setBody(body.trimEnd() + "\n\n" + result); setResult(null); }} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold">Insert below</button>
               <button onClick={() => { navigator.clipboard?.writeText(result).catch(() => {}); }} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold">Copy</button>
               <button onClick={() => setResult(null)} className="rounded-lg border border-[#EAD7D1] px-4 py-2 text-sm font-semibold text-clay-text">Discard</button>
@@ -110,6 +120,18 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
         )}
       </div>
       <p className="mt-3 text-xs text-ink-faint">Calls the model server-side in the Go API — the key never reaches the browser. Every output is a draft.</p>
+      {confirmOpen && (
+        <dialog open className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-ink/40 p-5" aria-modal>
+          <div className="w-full max-w-sm rounded-[var(--radius-card)] bg-white p-6 text-center shadow-[var(--shadow-lift)]">
+            <h3 className="text-xl font-semibold text-ink">Replace current text?</h3>
+            <p className="mt-2 text-sm text-ink-muted">This will overwrite {sel.active ? "your selected text" : "what is in the field"}.</p>
+            <div className="mt-5 flex justify-center gap-3">
+              <button onClick={() => setConfirmOpen(false)} className="rounded-lg border border-sand px-5 py-2 text-sm font-semibold text-ink">Cancel</button>
+              <button onClick={applyReplace} className="rounded-lg bg-maroon-900 px-5 py-2 text-sm font-semibold text-white">Replace</button>
+            </div>
+          </div>
+        </dialog>
+      )}
     </div>
   );
 }

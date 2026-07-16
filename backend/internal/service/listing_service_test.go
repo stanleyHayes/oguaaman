@@ -241,12 +241,12 @@ func (stubFollows) MemberFollowers(context.Context, string) ([]string, error) { 
 
 type stubMembers struct{}
 
-func (stubMembers) All(context.Context) ([]domain.Member, error)                     { return nil, nil }
-func (stubMembers) ByID(context.Context, string) (*domain.Member, error)             { return nil, nil }
-func (stubMembers) BySlug(context.Context, string) (*domain.Member, error)           { return nil, nil }
-func (stubMembers) ByIdentifier(context.Context, string) (*domain.Member, error)     { return nil, nil }
-func (stubMembers) Insert(context.Context, domain.Member) error                      { return nil }
-func (stubMembers) SetPhoneVerified(context.Context, string, bool) error             { return nil }
+func (stubMembers) All(context.Context) ([]domain.Member, error)                 { return nil, nil }
+func (stubMembers) ByID(context.Context, string) (*domain.Member, error)         { return nil, nil }
+func (stubMembers) BySlug(context.Context, string) (*domain.Member, error)       { return nil, nil }
+func (stubMembers) ByIdentifier(context.Context, string) (*domain.Member, error) { return nil, nil }
+func (stubMembers) Insert(context.Context, domain.Member) error                  { return nil }
+func (stubMembers) SetPhoneVerified(context.Context, string, bool) error         { return nil }
 func (stubMembers) SetPhoneVerification(context.Context, string, string, string) error {
 	return nil
 }

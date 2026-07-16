@@ -129,6 +129,11 @@ export interface Organization {
   nhisAccredited?: boolean;
   ghanaPostGPS?: string;
   momoNumber?: string;
+  latitude?: number;
+  longitude?: number;
+  quarterTag?: string;
+  asafoTag?: string;
+  verificationArtifacts?: SocialLink[];
 }
 
 /** Public institution page payload (GET /api/institutions/:slug). */

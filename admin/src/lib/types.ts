@@ -177,6 +177,11 @@ export interface Organization {
   nhisAccredited?: boolean;
   ghanaPostGPS?: string;
   momoNumber?: string;
+  latitude?: number;
+  longitude?: number;
+  quarterTag?: string;
+  asafoTag?: string;
+  verificationArtifacts?: SocialLink[];
 }
 
 export interface Place { id: string; slug: string; name: string; kind?: "quarter" | "asafo"; blurb?: string; colors?: string[] }

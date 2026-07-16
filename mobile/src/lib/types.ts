@@ -190,6 +190,17 @@ export interface Organization {
   memberCount?: number;
   verified?: boolean;
   verifiedOn?: string;
+  gesCategory?: string;
+  boardingType?: string;
+  genderPolicy?: string;
+  nhisAccredited?: boolean;
+  ghanaPostGPS?: string;
+  momoNumber?: string;
+  latitude?: number;
+  longitude?: number;
+  quarterTag?: string;
+  asafoTag?: string;
+  verificationArtifacts?: SocialLink[];
 }
 
 export interface InstitutionView {

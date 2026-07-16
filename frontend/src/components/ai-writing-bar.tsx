@@ -104,12 +104,14 @@ export function AiWritingBar({
     setResult(null); setError(null); setLimit(false); setLoading(true);
     const text = sel.active ? body.slice(sel.start, sel.end) : body;
     try {
-      const data = await api.ai({
-        action, text,
-        language: action === "translate" ? language : undefined,
-        prompt: action === "prompt" ? promptText : undefined,
-      });
-      setResult(data.result);
+      const data = await api.aiStream(
+        {
+          action, text,
+          language: action === "translate" ? language : undefined,
+          prompt: action === "prompt" ? promptText : undefined,
+        },
+        (chunk) => setResult((prev) => `${prev ?? ""}${chunk}`),
+      );
       setSimulated(Boolean(data.simulated));
       if (typeof data.remaining === "number") setRemaining(data.remaining);
     } catch (err) {

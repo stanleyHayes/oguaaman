@@ -241,10 +241,10 @@ func (h *Handler) StartPhoneVerification(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"member":     member,
-		"code":       code,
-		"expiresAt":  expiresAt,
-		"verified":   member.PhoneVerified,
+		"member":    member,
+		"code":      code,
+		"expiresAt": expiresAt,
+		"verified":  member.PhoneVerified,
 	})
 }
 

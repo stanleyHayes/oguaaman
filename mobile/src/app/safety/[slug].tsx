@@ -8,6 +8,7 @@ import type { Incident } from "@/lib/types";
 import { CATEGORY_LABEL, STATUS_COLOR, STATUS_LABEL } from "@/lib/incidents";
 import { C, D, S } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
+import { LocationCard } from "@/components/location-card";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -45,6 +46,7 @@ export default function IncidentDetail() {
             {d.contact ? <View style={s.factRow}><Text style={s.factLabel}>CONTACT</Text><Text style={s.factValue}>{d.contact}</Text></View> : null}
             <View style={s.factRow}><Text style={s.factLabel}>REPORTED</Text><Text style={s.factValue}>{fmtDate(data.createdAt)}</Text></View>
           </View>
+          {d.location ? <View style={{ marginTop: 14 }}><LocationCard address={d.location} query={`${data.title} ${d.location}`} /></View> : null}
 
           {d.description ? <Text style={s.desc}>{d.description}</Text> : null}
 

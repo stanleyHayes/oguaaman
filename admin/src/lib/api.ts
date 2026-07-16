@@ -132,7 +132,7 @@ export const api = {
   // Configure an institution's official page (summary/history, gallery, sections).
   // Stewards may edit any org — including heritage/visitor sites — via these
   // manager endpoints (full-replace for gallery/sections). See Institution-Pages-Spec.
-  updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[] }) =>
+  updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[]; gesCategory?: string; boardingType?: string; genderPolicy?: string; nhisAccredited?: boolean | null; ghanaPostGPS?: string; momoNumber?: string; latitude?: number | null; longitude?: number | null; quarterTag?: string; asafoTag?: string; verificationArtifacts?: { label: string; url: string }[] }) =>
     post<Organization>(`/api/institutions/${slug}/profile`, body),
   institutionTeam: (slug: string) => get<TeamMember[]>(`/api/institutions/${slug}/team`),
   revokeTeamMember: (slug: string, memberId: string) =>
@@ -164,6 +164,46 @@ export const api = {
 
   ai: (body: { action: string; text?: string; language?: string; prompt?: string }) =>
     post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body),
+  aiStream: async (
+    body: { action: string; text?: string; language?: string; prompt?: string },
+    onChunk: (chunk: string) => void,
+  ) => {
+    const res = await fetch(`${BASE}/api/ai/stream`, {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw Object.assign(new Error(`POST /api/ai/stream failed (${res.status})`), { status: res.status });
+    if (!res.body) {
+      const once = await post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body);
+      onChunk(once.result);
+      return { remaining: once.remaining, simulated: once.simulated };
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    let remaining = 0;
+    let simulated = false;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const frames = buf.split("\n\n");
+      buf = frames.pop() ?? "";
+      for (const frame of frames) {
+        const lines = frame.split("\n");
+        const event = lines.find((l) => l.startsWith("event:"))?.slice(6).trim();
+        const data = lines.filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("\n");
+        if (event === "chunk") onChunk(data.replaceAll("\\n", "\n"));
+        if (event === "done") {
+          const meta = JSON.parse(data) as { remaining?: number; simulated?: boolean };
+          remaining = typeof meta.remaining === "number" ? meta.remaining : remaining;
+          simulated = Boolean(meta.simulated);
+        }
+      }
+    }
+    return { remaining, simulated };
+  },
 
   login: (identifier: string, password: string) =>
     post<LoginResult>("/api/auth/login", { identifier, password }),

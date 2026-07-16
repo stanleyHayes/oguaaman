@@ -79,7 +79,7 @@ export const api = {
   institution: (slug: string) => get<InstitutionView>(`/api/institutions/${slug}`),
   // Manager-editable official page: profile, offices, gallery, custom sections,
   // and official events (full-replace semantics, mirroring the portal editor).
-  updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[] }) =>
+  updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[]; gesCategory?: string; boardingType?: string; genderPolicy?: string; nhisAccredited?: boolean | null; ghanaPostGPS?: string; momoNumber?: string; latitude?: number | null; longitude?: number | null; quarterTag?: string; asafoTag?: string; verificationArtifacts?: { label: string; url: string }[] }) =>
     post<Organization>(`/api/institutions/${slug}/profile`, body),
   setOrgOffices: (slug: string, offices: Office[]) =>
     post<Organization>(`/api/institutions/${slug}/offices`, { offices }),

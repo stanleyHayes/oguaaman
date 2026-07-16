@@ -227,6 +227,9 @@ func (s *Service) UpdateOrgProfile(ctx context.Context, memberID, orgSlug string
 	for i := range patch.Contact {
 		patch.Contact[i].URL = safeURL(patch.Contact[i].URL) // contact links render as <a href>
 	}
+	for i := range patch.VerificationArtifacts {
+		patch.VerificationArtifacts[i].URL = safeURL(patch.VerificationArtifacts[i].URL)
+	}
 	if err := s.orgs.UpdateProfile(ctx, org.ID, patch); err != nil {
 		return nil, err
 	}

@@ -41,13 +41,36 @@ export function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organiz
   const [motto, setMotto] = useState(org.motto ?? "");
   const [history, setHistory] = useState(org.history ?? "");
   const [crestUrl, setCrestUrl] = useState(org.crestUrl ?? "");
+  const [gesCategory, setGesCategory] = useState(org.gesCategory ?? "");
+  const [boardingType, setBoardingType] = useState(org.boardingType ?? "");
+  const [genderPolicy, setGenderPolicy] = useState(org.genderPolicy ?? "");
+  const [nhisAccredited, setNhisAccredited] = useState(org.nhisAccredited ?? false);
+  const [ghanaPostGPS, setGhanaPostGPS] = useState(org.ghanaPostGPS ?? "");
+  const [momoNumber, setMomoNumber] = useState(org.momoNumber ?? "");
+  const [latitude, setLatitude] = useState(org.latitude != null ? String(org.latitude) : "");
+  const [longitude, setLongitude] = useState(org.longitude != null ? String(org.longitude) : "");
+  const [quarterTag, setQuarterTag] = useState(org.quarterTag ?? "");
+  const [asafoTag, setAsafoTag] = useState(org.asafoTag ?? "");
+  const [artifactLabel, setArtifactLabel] = useState(org.verificationArtifacts?.[0]?.label ?? "");
+  const [artifactURL, setArtifactURL] = useState(org.verificationArtifacts?.[0]?.url ?? "");
   const [state, setState] = useState<SaveState>("idle");
+  const isSchool = org.kind === "school";
+  const isHealth = org.kind === "health";
 
   async function save() {
     setState("saving");
     try {
       // Preserve existing contact links (not edited here) so they aren't cleared.
-      await api.updateOrgProfile(slug, { summary, motto, history, crestUrl, contact: org.contact ?? [] });
+      await api.updateOrgProfile(slug, {
+        summary, motto, history, crestUrl, contact: org.contact ?? [],
+        gesCategory, boardingType, genderPolicy,
+        nhisAccredited: isHealth ? nhisAccredited : undefined,
+        ghanaPostGPS, momoNumber,
+        latitude: latitude.trim() === "" || !Number.isFinite(Number(latitude)) ? undefined : Number(latitude),
+        longitude: longitude.trim() === "" || !Number.isFinite(Number(longitude)) ? undefined : Number(longitude),
+        quarterTag, asafoTag,
+        verificationArtifacts: artifactURL.trim() ? [{ label: artifactLabel.trim() || "Verification", url: artifactURL.trim() }] : [],
+      });
       setState("saved");
     } catch {
       setState("error");
@@ -74,6 +97,35 @@ export function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organiz
         <div>
           <label htmlFor="org-history" className={label}>History</label>
           <textarea id="org-history" rows={4} className={`resize-none ${field}`} value={history} onChange={(e) => setHistory(e.target.value)} />
+        </div>
+        {isSchool && (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <input className={field} value={gesCategory} onChange={(e) => setGesCategory(e.target.value)} placeholder="GES category" />
+            <input className={field} value={boardingType} onChange={(e) => setBoardingType(e.target.value)} placeholder="Boarding type" />
+            <input className={field} value={genderPolicy} onChange={(e) => setGenderPolicy(e.target.value)} placeholder="Gender policy" />
+          </div>
+        )}
+        {isHealth && (
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" checked={nhisAccredited} onChange={(e) => setNhisAccredited(e.target.checked)} className="h-4 w-4 accent-green" />
+            NHIS-accredited
+          </label>
+        )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input className={field} value={ghanaPostGPS} onChange={(e) => setGhanaPostGPS(e.target.value)} placeholder="GhanaPost GPS" />
+          <input className={field} value={momoNumber} onChange={(e) => setMomoNumber(e.target.value)} placeholder="MoMo number" />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input className={field} value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="Latitude" />
+          <input className={field} value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="Longitude" />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input className={field} value={quarterTag} onChange={(e) => setQuarterTag(e.target.value)} placeholder="Quarter tag" />
+          <input className={field} value={asafoTag} onChange={(e) => setAsafoTag(e.target.value)} placeholder="Asafo tag" />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input className={field} value={artifactLabel} onChange={(e) => setArtifactLabel(e.target.value)} placeholder="Verification artifact label" />
+          <input className={field} value={artifactURL} onChange={(e) => setArtifactURL(e.target.value)} placeholder="Verification artifact URL" />
         </div>
         <div className="flex items-center gap-3">
           <button type="button" onClick={save} disabled={state === "saving"} className={btnPrimary}>

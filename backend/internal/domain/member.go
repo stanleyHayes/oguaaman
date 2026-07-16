@@ -70,7 +70,7 @@ type Member struct {
 	Email string `json:"-" bson:"email,omitempty"`
 	// Phone verification state — used by the submit spam gate. The code hash and
 	// expiry never leave the server; the public API only exposes phoneVerified.
-	PhoneVerificationCodeHash string `json:"-" bson:"phoneVerificationCodeHash,omitempty"`
+	PhoneVerificationCodeHash  string `json:"-" bson:"phoneVerificationCodeHash,omitempty"`
 	PhoneVerificationExpiresAt string `json:"-" bson:"phoneVerificationExpiresAt,omitempty"`
 	// DateOfBirth — private; captured at signup for the 18+ self-registration gate
 	// (spec §14.4). Never serialised to any client.

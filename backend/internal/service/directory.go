@@ -61,6 +61,7 @@ func (s *Service) MemberByID(ctx context.Context, id string) (*domain.Member, er
 	return s.members.ByID(ctx, id)
 }
 func (s *Service) Places(ctx context.Context) ([]domain.Place, error) { return s.places.All(ctx) }
+
 // Institutions is the public directory: only verified institutions are listed —
 // a revoked page is offline (spec §8.13; see VerifyInstitution). The steward
 // queue uses AllInstitutions, which is unfiltered.
@@ -143,16 +144,16 @@ func (s *Service) ModerationQueue(ctx context.Context, typeFilter string) ([]dom
 
 // Stats are the home/admin headline counts (spec §4 KPIs).
 type Stats struct {
-	Members         int     `json:"members"`
-	Listings        int     `json:"listings"`
-	Schools         int     `json:"schools"`
-	Institutions    int     `json:"institutions"`
-	Artists         int     `json:"artists"`
-	Memorials       int     `json:"memorials"`
-	Memories        int     `json:"memories"`
-	Pending         int     `json:"pending"`
-	ViewsThisMonth  int     `json:"viewsThisMonth"`
-	AvgApprovalHrs  float64 `json:"avgApprovalHrs"`
+	Members        int     `json:"members"`
+	Listings       int     `json:"listings"`
+	Schools        int     `json:"schools"`
+	Institutions   int     `json:"institutions"`
+	Artists        int     `json:"artists"`
+	Memorials      int     `json:"memorials"`
+	Memories       int     `json:"memories"`
+	Pending        int     `json:"pending"`
+	ViewsThisMonth int     `json:"viewsThisMonth"`
+	AvgApprovalHrs float64 `json:"avgApprovalHrs"`
 }
 
 func (s *Service) Stats(ctx context.Context) (Stats, error) {
