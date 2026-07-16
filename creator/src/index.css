@@ -163,3 +163,20 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Circular-reveal theme toggle (View Transitions API). The theme-toggle button
+   drives document.startViewTransition and clip-paths the new root snapshot open
+   from the button's centre; suppress the default cross-fade so it doesn't fight
+   the clip animation. The JS already no-ops under reduced-motion. Kept outside
+   @layer so the ::view-transition pseudo-elements aren't scoped away. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}
+::view-transition-old(root) {
+  z-index: 0;
+}

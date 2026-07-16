@@ -35,10 +35,32 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
   return (
     <button
       type="button"
-      onClick={() => {
+      onClick={(event) => {
         const next = isDark ? "light" : "dark";
-        set(next);
-        setTheme(next);
+        const applyNext = () => {
+          set(next);
+          setTheme(next);
+        };
+        // Circular reveal from the toggle's centre via the View Transitions API.
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!document.startViewTransition || reduceMotion) {
+          applyNext();
+          return;
+        }
+        const transition = document.startViewTransition(applyNext);
+        void transition.ready.then(() => {
+          const max = Math.hypot(
+            Math.max(x, window.innerWidth - x),
+            Math.max(y, window.innerHeight - y),
+          );
+          document.documentElement.animate(
+            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${max}px at ${x}px ${y}px)`] },
+            { duration: 450, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
+          );
+        });
       }}
       aria-label={label}
       title={label}
