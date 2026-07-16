@@ -1,13 +1,20 @@
 import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { Container, Eyebrow } from "./ui";
 import { Adinkra, type AdinkraName } from "./adinkra";
 import { Parallax, Reveal } from "./motion";
+import { Breadcrumbs, HeroIcon, HeroWatermark } from "./hero-chrome";
+import { deriveCrumbs, sectionIdFromPath, type Crumb } from "@/lib/breadcrumbs";
 import { TONES, type Tone } from "@/lib/sections";
 
 /** Standard top-of-section hero — a slim accent border on the cream field.
  *  Pass `image` for the photo-forward variant: the photo carries the band under
  *  a green-900 scrim, the tonal border keeps the section's identity, and the
- *  kicker goes gold (dark-on-cream tone tokens would fail contrast on a photo). */
+ *  kicker goes gold (dark-on-cream tone tokens would fail contrast on a photo).
+ *
+ *  Every banner also carries a route-derived breadcrumb trail, a mount-animated
+ *  section icon, and a large faint corner watermark. All three auto-derive from
+ *  the current route; override with `sectionId` / `crumbs` when needed. */
 export function PageHero({
   tone,
   kicker,
@@ -16,6 +23,8 @@ export function PageHero({
   lede,
   symbol,
   image,
+  sectionId,
+  crumbs,
   children,
 }: Readonly<{
   tone: Tone;
@@ -26,9 +35,16 @@ export function PageHero({
   symbol?: AdinkraName;
   /** Optional seed photo (e.g. /uploads/seed/castle-exterior.jpg) — media variant. */
   image?: string;
+  /** SectionIcon id for the animated icon + watermark. Auto-derived from the route. */
+  sectionId?: string;
+  /** Override the auto-derived Home / Section / Page breadcrumb trail. */
+  crumbs?: Crumb[];
   children?: ReactNode;
 }>) {
   const t = TONES[tone];
+  const { pathname } = useLocation();
+  const iconId = sectionId ?? sectionIdFromPath(pathname);
+  const crumbList = crumbs ?? deriveCrumbs(pathname, typeof title === "string" ? title : undefined);
 
   if (image) {
     return (
@@ -36,14 +52,17 @@ export function PageHero({
         <img src={image} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-green-900/95 via-green-900/70 to-green-900/25" />
         <div className="absolute inset-0 bg-gradient-to-t from-green-900/70 via-transparent to-green-900/20" />
+        <HeroWatermark sectionId={iconId} onDark />
         {symbol && (
           <Parallax strength={20} className="pointer-events-none absolute right-4 top-6 hidden text-gold sm:block">
             <Adinkra name={symbol} size={120} labelled={false} className="opacity-[0.10]" />
           </Parallax>
         )}
         <Container className="relative py-16 sm:py-20">
+          <Reveal><Breadcrumbs crumbs={crumbList} onDark className="mb-5" /></Reveal>
           <Reveal>
-            <Eyebrow className="text-gold">{kicker}</Eyebrow>
+            <HeroIcon sectionId={iconId} onDark />
+            <Eyebrow className="mt-4 text-gold">{kicker}</Eyebrow>
             <h1 className="mt-3 text-4xl font-semibold text-cream sm:text-5xl">
               {title}
               {fanteName && <span className="ml-3 italic text-gold">{fanteName}</span>}
@@ -57,15 +76,18 @@ export function PageHero({
   }
 
   return (
-    <section className={`relative border-t-4 ${t.border} bg-cream`}>
+    <section className={`relative overflow-hidden border-t-4 ${t.border} bg-cream`}>
+      <HeroWatermark sectionId={iconId} toneText={t.text} />
       <Container className="relative py-14 sm:py-16">
         {symbol && (
           <Parallax strength={20} className={`pointer-events-none absolute right-4 top-6 hidden sm:block ${t.text}`}>
             <Adinkra name={symbol} size={120} labelled={false} className="opacity-[0.06]" />
           </Parallax>
         )}
+        <Reveal><Breadcrumbs crumbs={crumbList} className="mb-5" /></Reveal>
         <Reveal>
-          <Eyebrow className={t.text}>{kicker}</Eyebrow>
+          <HeroIcon sectionId={iconId} toneText={t.text} />
+          <Eyebrow className={`mt-4 ${t.text}`}>{kicker}</Eyebrow>
           <h1 className="mt-3 text-4xl font-semibold text-ink sm:text-5xl">
             {title}
             {fanteName && <span className={`ml-3 italic ${t.text}`}>{fanteName}</span>}

@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Container } from "./ui";
 import { CircularReveal, Parallax, Reveal } from "./motion";
+import { Breadcrumbs, HeroIcon, HeroWatermark } from "./hero-chrome";
+import { sectionIdFromPath, type Crumb } from "@/lib/breadcrumbs";
 import { cldCover } from "@/lib/cloudinary";
 
 const GRADIENTS = {
@@ -22,6 +24,8 @@ export function DetailHero({
   coverImageUrl,
   title,
   meta,
+  sectionId,
+  crumbs,
   children,
 }: Readonly<{
   tone: keyof typeof GRADIENTS;
@@ -30,8 +34,21 @@ export function DetailHero({
   coverImageUrl?: string;
   title: ReactNode;
   meta?: ReactNode;
+  /** SectionIcon id for the animated icon + watermark. Auto-derived from the route. */
+  sectionId?: string;
+  /** Override the auto-derived Home / Section / Page breadcrumb trail. */
+  crumbs?: Crumb[];
   children?: ReactNode;
 }>) {
+  const { pathname } = useLocation();
+  const iconId = sectionId ?? sectionIdFromPath(pathname);
+  const finalLabel = typeof title === "string" ? title : undefined;
+  const crumbList = crumbs ?? [
+    { label: "Home", to: "/" },
+    { label: backLabel, to: backTo },
+    ...(finalLabel ? [{ label: finalLabel }] : []),
+  ];
+
   return (
     <section className="on-dark on-dark-pin relative overflow-hidden text-cream">
       <Parallax strength={24} className="absolute -inset-y-6 inset-x-0">
@@ -51,12 +68,12 @@ export function DetailHero({
         </Parallax>
       )}
       <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
+      <HeroWatermark sectionId={iconId} onDark />
       <Container size="wide" className="relative py-10 sm:py-14">
-        <Reveal>
-          <Link to={backTo} className="text-sm text-cream/70 transition-colors hover:text-gold">← {backLabel}</Link>
-        </Reveal>
-        {children && <Reveal delay={0.05} className="mt-5 flex flex-wrap items-center gap-2">{children}</Reveal>}
-        <Reveal as="h1" delay={0.1} className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-5xl">{title}</Reveal>
+        <Reveal><Breadcrumbs crumbs={crumbList} onDark /></Reveal>
+        <Reveal delay={0.05} className="mt-5"><HeroIcon sectionId={iconId} onDark /></Reveal>
+        {children && <Reveal delay={0.08} className="mt-4 flex flex-wrap items-center gap-2">{children}</Reveal>}
+        <Reveal as="h1" delay={0.12} className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-5xl">{title}</Reveal>
         {meta && <Reveal delay={0.16} className="mt-3 text-sm text-cream/85 sm:text-base">{meta}</Reveal>}
       </Container>
     </section>
