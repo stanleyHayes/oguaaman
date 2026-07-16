@@ -1,4 +1,4 @@
-import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion } from "./types";
+import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink } from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -110,6 +110,12 @@ export const api = {
 
   // Profile photo — uploaded to Cloudinary on the device; we store the URL.
   setPhoto: (photoUrl: string) => post<{ photoUrl: string }>("/api/me/photo", { photoUrl }),
+  // Display name + bio setter (returns the updated member).
+  setProfile: (body: { displayName: string; bio: string }) => post<Member>("/api/me/profile", body),
+  // Off-platform links; URLs are sanitised server-side (javascript:/data: dropped).
+  setLinks: (links: SocialLink[]) => post<{ links: SocialLink[] }>("/api/me/links", { links }),
+  // Creator kinds (adds/replaces the whole set; "writer" unlocks the newsroom).
+  setCreatorTypes: (creatorTypes: string[]) => post<Member>("/api/me/creator-types", { creatorTypes }),
 
   // Browse categories + detail reads.
   people: () => get<Listing[]>("/api/people"),
@@ -146,6 +152,10 @@ export const api = {
   // News / editorial (spec §8.12) — markdown bodies.
   news: () => get<NewsArticle[]>("/api/news"),
   newsArticle: (slug: string) => get<NewsArticle>(`/api/news/${slug}`),
+  // Author a story (writers → draft in the review queue; verified-authority
+  // managers → auto-published). Body is Markdown; title 3–160 chars.
+  submitNews: (body: { title: string; summary?: string; body: string; coverColor?: string; coverImageUrl?: string; tags?: string[] }) =>
+    post<NewsArticle>("/api/news", body),
 
   // Notifications (spec §8.2, §8.11).
   notifications: () => get<Notification[]>("/api/notifications"),
@@ -226,10 +236,21 @@ export const api = {
     post<LoginResult>("/api/auth/login", { identifier, password }),
   mfaLogin: (challenge: string, code: string) =>
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
-  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string }) =>
+  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[] }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
   startPhoneVerification: () => post<PhoneVerificationResult>("/api/me/phone/verify/start", {}),
   confirmPhoneVerification: (code: string) =>
     post<PhoneVerificationResult>("/api/me/phone/verify/confirm", { code }),
   me: () => get<Member>("/api/auth/me"),
 };
+
+/**
+ * Client-side gate for the newsroom compose flow: a member may post news if they
+ * are a "writer" creator, or a verified authority manager (verified, with an org
+ * name — not the role badges). The server is the final authority (403 otherwise).
+ */
+export function canWriteNews(m: Member | null | undefined): boolean {
+  if (!m) return false;
+  if (m.creatorTypes?.includes("writer")) return true;
+  return !!m.verified && !!m.verifiedAs && m.verifiedAs !== "Curator" && m.verifiedAs !== "Steward";
+}

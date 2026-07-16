@@ -2,7 +2,7 @@ import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { NewsArticle } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container } from "@/components/ui";
+import { Container, VerifiedBadge } from "@/components/ui";
 import { Markdown } from "@/components/markdown";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
@@ -42,8 +42,10 @@ export function Component() {
           </Link>
           <h1 className="mt-5 text-4xl font-semibold leading-tight text-ink sm:text-5xl">{a.title}</h1>
           {a.summary && <p className="mt-4 font-serif text-xl italic text-ink-muted">{a.summary}</p>}
-          <p className="mt-6 border-t border-sand pt-5 text-sm text-ink-faint">
-            By {a.authorName} · {formatDate(a.publishedAt ?? a.createdAt)}
+          <p className="mt-6 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-sand pt-5 text-sm text-ink-faint">
+            <span>By <span className="font-medium text-ink-muted">{a.authorName}</span></span>
+            {a.authorVerified && <VerifiedBadge iconOnly verifiedAs={a.authorVerifiedAs} />}
+            <span>· {formatDate(a.publishedAt ?? a.createdAt)}</span>
           </p>
         </div>
 

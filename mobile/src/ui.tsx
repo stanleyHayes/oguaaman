@@ -49,6 +49,32 @@ export function Pill({ label, color, bg, border }: Readonly<{ label: string; col
   );
 }
 
+/**
+ * The verified seal — a gold check-in-circle shown next to a verified member's
+ * or author's name (curators, stewards, approved authority managers). Mirrors
+ * the web `VerifiedBadge`. Pass `onDark` on green headers/heroes; omit `label`
+ * for a compact inline seal, or pass `verifiedAs` for a labelled chip.
+ */
+export function VerifiedBadge({ label, onDark = false, size = 16 }: Readonly<{ label?: string; onDark?: boolean; size?: number }>) {
+  const { C } = useTheme();
+  const sealBg = onDark ? C.gold : C.goldBrand;
+  const checkColor = onDark ? C.green900 : C.cream;
+  const labelColor = onDark ? C.gold : C.goldText;
+  return (
+    <View
+      accessibilityLabel={label ? `Verified — ${label}` : "Verified"}
+      style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+    >
+      <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: sealBg, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: checkColor, fontSize: size * 0.6, lineHeight: size, fontWeight: "900", marginTop: -1 }}>✓</Text>
+      </View>
+      {label ? (
+        <Text style={{ color: labelColor, fontSize: 11, fontWeight: "700", letterSpacing: 0.4 }} numberOfLines={1}>{label}</Text>
+      ) : null}
+    </View>
+  );
+}
+
 /** Toned page-top hero band shared by the contribution forms (rounded base, gold kicker). */
 export function HeroBand({ tone, kicker, title, lede }: Readonly<{ tone: string; kicker: string; title: string; lede: string }>) {
   const { C } = useTheme();

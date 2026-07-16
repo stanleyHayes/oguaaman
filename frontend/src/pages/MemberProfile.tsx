@@ -4,7 +4,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { MemberView, Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { Container, Avatar, Pill } from "@/components/ui";
+import { Container, Avatar, Pill, VerifiedBadge } from "@/components/ui";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { formatDate } from "@/lib/format";
 
@@ -106,7 +106,10 @@ export function Component() {
               <p className="text-xs uppercase tracking-wide text-gold/90">
                 {roleLabel} · joined {formatDate(me.joinedAt)}
               </p>
-              <h1 className="mt-1 text-4xl font-semibold text-cream">{me.displayName}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <h1 className="text-4xl font-semibold text-cream">{me.displayName}</h1>
+                {me.verified && <VerifiedBadge onDark verifiedAs={me.verifiedAs} label={me.verifiedAs ?? "Verified"} />}
+              </div>
               {me.bio && <p className="mt-2 max-w-xl text-cream/80">{me.bio}</p>}
               <div className="mt-3 flex flex-wrap gap-2">
                 {quarter && <DarkChip>{quarter.name}</DarkChip>}

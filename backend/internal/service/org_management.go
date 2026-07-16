@@ -35,6 +35,11 @@ func (s *Service) RequestOrgClaim(ctx context.Context, memberID, orgSlug, reques
 	if err != nil {
 		return nil, err
 	}
+	// Reserved authority handles can only be assigned by a steward — a member
+	// may not self-claim an official emergency/security/local-government name.
+	if domain.IsReservedSlug(org.Slug) && !s.isSteward(ctx, memberID) {
+		return nil, &domain.ForbiddenError{Reason: "this is a reserved official handle — a steward must assign it"}
+	}
 	active, err := s.claims.HasActiveClaim(ctx, memberID, org.ID)
 	if err != nil {
 		return nil, err

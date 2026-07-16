@@ -1,48 +1,52 @@
 import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
+import { canWriteNews } from "@/lib/creator";
 import {
   Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone,
   Banknote, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing,
-  Map, PanelLeftClose, PanelLeft, type LucideIcon,
+  Map, PanelLeftClose, PanelLeft, PenLine, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
 interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
 
-const NAV_GROUPS: NavGroup[] = [
-  { title: "Dashboard", icon: Gauge, items: [{ to: "/", label: "Overview", icon: LayoutDashboard, end: true }] },
-  {
-    title: "My Work",
-    icon: Briefcase,
-    items: [
-      { to: "/work", label: "Listings", icon: List },
-      { to: "/institutions", label: "Institutions", icon: Landmark },
-      { to: "/team", label: "Team", icon: Users },
-    ],
-  },
-  {
-    title: "Grow",
-    icon: TrendingUp,
-    items: [
-      { to: "/grow", label: "Promote & plan", icon: Megaphone },
-      { to: "/money", label: "Money", icon: Banknote },
-    ],
-  },
-  {
-    title: "Account",
-    icon: UserRound,
-    items: [
-      { to: "/notifications", label: "Notifications", icon: Bell },
-      { to: "/account", label: "Profile", icon: User },
-    ],
-  },
-];
-
-const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+/**
+ * The sidebar groups. The newsroom "Write" entry only appears for members who
+ * can author news — writers or verified-authority managers — so the rail stays
+ * clean for everyone else.
+ */
+function buildNavGroups(canWrite: boolean): NavGroup[] {
+  const myWork: NavItem[] = [
+    { to: "/work", label: "Listings", icon: List },
+    { to: "/institutions", label: "Institutions", icon: Landmark },
+    { to: "/team", label: "Team", icon: Users },
+  ];
+  if (canWrite) myWork.push({ to: "/write", label: "Write", icon: PenLine });
+  return [
+    { title: "Dashboard", icon: Gauge, items: [{ to: "/", label: "Overview", icon: LayoutDashboard, end: true }] },
+    { title: "My Work", icon: Briefcase, items: myWork },
+    {
+      title: "Grow",
+      icon: TrendingUp,
+      items: [
+        { to: "/grow", label: "Promote & plan", icon: Megaphone },
+        { to: "/money", label: "Money", icon: Banknote },
+      ],
+    },
+    {
+      title: "Account",
+      icon: UserRound,
+      items: [
+        { to: "/notifications", label: "Notifications", icon: Bell },
+        { to: "/account", label: "Profile", icon: User },
+      ],
+    },
+  ];
+}
 
 export function Mark({ size = 26, color = "#C7A24A" }: Readonly<{ size?: number; color?: string }>) {
   return (
@@ -124,7 +128,7 @@ function isActivePath(pathname: string, to: string, end?: boolean): boolean {
  * strip (labels, connectors, and section headers hide via `lg:` overrides, so
  * the mobile drawer keeps the full layout untouched).
  */
-function SidebarNav({ pathname, collapsed = false, onNavigate }: Readonly<{ pathname: string; collapsed?: boolean; onNavigate?: () => void }>) {
+function SidebarNav({ groups, pathname, collapsed = false, onNavigate }: Readonly<{ groups: NavGroup[]; pathname: string; collapsed?: boolean; onNavigate?: () => void }>) {
   const [openState, setOpenState] = useState<Record<string, boolean>>(() => {
     try {
       return JSON.parse(localStorage.getItem(GROUPS_KEY) ?? "{}") as Record<string, boolean>;
@@ -161,7 +165,7 @@ function SidebarNav({ pathname, collapsed = false, onNavigate }: Readonly<{ path
       </div>
 
       <nav className="relative z-10 pb-4">
-        {NAV_GROUPS.map((group) => {
+        {groups.map((group) => {
           const hasActive = group.items.some((i) => isActivePath(pathname, i.to, i.end));
           const isOpen = hasActive || (openState[group.title] ?? true);
           const panelId = `nav-${group.title.replace(/\s+/g, "-").toLowerCase()}`;
@@ -360,7 +364,9 @@ export function CreatorLayout() {
     };
   }, [userMenu]);
 
-  const current = ALL_ITEMS.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? ALL_ITEMS[0];
+  const groups = useMemo(() => buildNavGroups(member ? canWriteNews(member) : false), [member]);
+  const allItems = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+  const current = allItems.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? allItems[0];
   const firstName = member?.displayName.split(" ")[0] ?? "";
 
   return (
@@ -374,7 +380,7 @@ export function CreatorLayout() {
           open ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "lg:w-16" : "lg:w-60"}`}
       >
-        <SidebarNav pathname={loc.pathname} collapsed={collapsed} onNavigate={() => setOpen(false)} />
+        <SidebarNav groups={groups} pathname={loc.pathname} collapsed={collapsed} onNavigate={() => setOpen(false)} />
 
         {/* Desktop collapse toggle — mobile drawer stays full width */}
         <button

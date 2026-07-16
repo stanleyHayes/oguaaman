@@ -36,6 +36,12 @@ func (s *Service) RequestNewInstitution(ctx context.Context, memberID, name, kin
 	if seat == "" {
 		return nil, fmt.Errorf("tell us where it sits (town or quarter)")
 	}
+	// A reserved authority handle (police, fire, the assembly, NADMO…) can only
+	// be created by a steward, so ordinary members can't stand up an official
+	// page under a trusted name (spec: reserved usernames).
+	if domain.IsReservedSlug(slugify(name)) && !s.isSteward(ctx, memberID) {
+		return nil, &domain.ForbiddenError{Reason: "that name is a reserved official handle — only a steward can create it"}
+	}
 	role = strings.TrimSpace(role)
 	if role == "" {
 		role = "Founder"

@@ -47,6 +47,20 @@ export function RoleBadge({ role }: Readonly<{ role: string }>) {
   return <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${m[role] ?? m.member}`}>{role}</span>;
 }
 
+/** Gold verified seal — shown when a member is a curator/steward or an approved
+ * manager of a verified authority org. `label` carries the "verifiedAs" context. */
+export function VerifiedBadge({ label = "Verified" }: Readonly<{ label?: string }>) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-border/40 bg-gold/[0.12] px-2.5 py-1 text-[0.7rem] font-semibold text-gold-text">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 2l2.4 1.8 3 .1 1 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-1 2.8-3 .1L12 22l-2.4-1.8-3-.1-1-2.8L3.2 15l.9-2.8L3.2 9.4 5.6 7.7l1-2.8 3-.1z" fill="currentColor" />
+        <path d="M8.5 12.2l2.3 2.3 4.5-4.7" stroke="var(--color-cream)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {label}
+    </span>
+  );
+}
+
 export function Pill({ children, tone = "neutral" }: Readonly<{ children: ReactNode; tone?: "neutral" | "green" | "gold" | "clay" }>) {
   const m: Record<string, string> = {
     neutral: "border-sand bg-paper text-ink-muted",

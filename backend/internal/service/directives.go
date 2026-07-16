@@ -55,8 +55,17 @@ func (s *Service) CreateDirectiveForOrg(ctx context.Context, memberID, orgSlug s
 	if err != nil {
 		return nil, err
 	}
-	if !s.isSteward(ctx, memberID) && !domain.IsAuthorityKind(org.Kind) {
-		return nil, &domain.ForbiddenError{Reason: "only recognised authorities (emergency, security or health services, or local government) can issue directives"}
+	// Stewards bypass both gates. Everyone else must manage a recognised
+	// authority whose page a steward has already verified — an authority page
+	// awaiting verification cannot yet issue notices (spec: authority claims
+	// need verification before the org can act).
+	if !s.isSteward(ctx, memberID) {
+		if !domain.IsAuthorityKind(org.Kind) {
+			return nil, &domain.ForbiddenError{Reason: "only recognised authorities (emergency, security or health services, or local government) can issue directives"}
+		}
+		if !org.Verified {
+			return nil, &domain.ForbiddenError{Reason: "this authority is awaiting steward verification before it can issue notices"}
+		}
 	}
 	return s.createDirective(ctx, memberID, org, in)
 }

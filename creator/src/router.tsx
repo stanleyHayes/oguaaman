@@ -14,6 +14,7 @@ function buildRouter() {
         { path: "institutions", lazy: () => import("./pages/Institutions") },
         { path: "team", lazy: () => import("./pages/Team") },
         { path: "team/:slug", lazy: () => import("./pages/Team") },
+        { path: "write", lazy: () => import("./pages/Write") },
         { path: "grow", lazy: () => import("./pages/Grow") },
         { path: "money", lazy: () => import("./pages/Money") },
         { path: "notifications", lazy: () => import("./pages/Notifications") },

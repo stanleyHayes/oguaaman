@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/oguaa/backend/internal/domain"
 	"github.com/oguaa/backend/internal/service"
@@ -28,6 +29,41 @@ func (h *Handler) NewsArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, a)
+}
+
+// SubmitNews (member) — a "writer" creator or a manager of a verified authority
+// institution posts a news/blog article. POST /api/news (requireAuth). Writers'
+// posts enter the newsroom as drafts for editorial review; verified-authority
+// managers auto-publish. The public GET /api/news lists published posts.
+func (h *Handler) SubmitNews(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "news-submit:"+clientKey(r), 10, time.Hour) {
+		return
+	}
+	var in service.NewsInput
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	a, err := h.svc.SubmitNews(r.Context(), m.ID, in)
+	if err != nil {
+		var fb *domain.ForbiddenError
+		var nf *domain.NotFoundError
+		if errors.As(err, &fb) || errors.As(err, &nf) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, a)
 }
 
 // ── admin (curator/steward) ───────────────────────────────────────────────────

@@ -148,6 +148,7 @@ const CREATOR_KINDS = [
   { id: "business", label: "Business owner" },
   { id: "artist", label: "Artist" },
   { id: "organiser", label: "Event organiser" },
+  { id: "writer", label: "Writer" },
   { id: "institution", label: "Institution" },
 ] as const;
 
@@ -542,7 +543,7 @@ export function Component() {
   const joinNext = () => {
     if (joinStep === 1) {
       if (asCreator && creatorTypes.length === 0) {
-        setErr("Pick at least one creator type — business, artist, organiser or institution.");
+        setErr("Pick at least one creator type — business, artist, organiser, writer or institution.");
         return;
       }
       if (!name.trim()) {

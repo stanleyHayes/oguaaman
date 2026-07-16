@@ -75,6 +75,7 @@ function RootNavigator() {
         <Stack.Screen name="memoriam/[slug]" options={{ title: "In Memoriam", headerBackTitle: "Yɛnkae" }} />
         <Stack.Screen name="signin" options={{ title: "Sign in", presentation: "modal" }} />
         <Stack.Screen name="submit" options={{ title: "Contribute", presentation: "modal", headerBackTitle: "More" }} />
+        <Stack.Screen name="write" options={{ title: "Newsroom", presentation: "modal", headerBackTitle: "Back" }} />
         <Stack.Screen name="browse/[type]" options={{ title: "Browse", headerBackTitle: "More" }} />
         <Stack.Screen name="news/index" options={{ title: "Newsroom", headerBackTitle: "More" }} />
         <Stack.Screen name="news/[slug]" options={{ title: "Newsroom", headerBackTitle: "News" }} />

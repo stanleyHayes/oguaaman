@@ -7,7 +7,7 @@ import { useApi } from "@/lib/use-api";
 import { useTheme } from "@/lib/theme-context";
 import type { NewsArticle } from "@/lib/types";
 import { D, SI, withAlpha, type Palette } from "@/theme";
-import { Loading, ErrorView, Markdown } from "@/ui";
+import { Loading, ErrorView, Markdown, VerifiedBadge } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView } from "@/components/anim";
 
@@ -42,6 +42,7 @@ export default function Article() {
           <View style={s.bylineRow}>
             <View style={s.bylineDot} />
             <Text style={s.byline}>By {data.authorName} · {newsDate(data)}</Text>
+            {data.authorVerified ? <VerifiedBadge onDark size={14} /> : null}
           </View>
         </View>
       </RevealView>

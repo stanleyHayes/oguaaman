@@ -33,6 +33,70 @@ func (s *Service) validateNews(in NewsInput) (string, error) {
 	return title, nil
 }
 
+// SubmitNews lets a member post a news/blog article from the creator app. It is
+// permitted for a "writer" creator OR a manager of a verified authority
+// institution. A writer's post enters the newsroom as a draft for editorial
+// review (the moderation queue — AllNews surfaces drafts to curators/editors);
+// a verified-authority manager auto-publishes, mirroring PostOrgEvent. Curators
+// and stewards use the admin newsroom (CreateNews) instead.
+func (s *Service) SubmitNews(ctx context.Context, memberID string, in NewsInput) (*domain.NewsArticle, error) {
+	m, err := s.members.ByID(ctx, memberID)
+	if err != nil {
+		return nil, err
+	}
+	if m == nil {
+		return nil, &domain.NotFoundError{Entity: "member"}
+	}
+	isWriter := false
+	for _, t := range m.CreatorTypes {
+		if t == domain.CreatorWriter {
+			isWriter = true
+			break
+		}
+	}
+	verified, _, err := s.memberVerified(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+	// An "authority manager" is verified through a managed authority org — not
+	// by the curator/steward role, which routes through the admin newsroom.
+	authorityManager := verified && m.Role != domain.RoleCurator && m.Role != domain.RoleSteward
+	if !isWriter && !authorityManager {
+		return nil, &domain.ForbiddenError{Reason: "only writers or verified authority managers can post news"}
+	}
+	title, err := s.validateNews(in)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+	a := domain.NewsArticle{
+		ID:            "news-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		Slug:          slugify(title) + "-" + fmt.Sprintf("%d", time.Now().UnixNano()%100000),
+		Title:         title,
+		Summary:       strings.TrimSpace(in.Summary),
+		Body:          in.Body,
+		CoverColor:    in.CoverColor,
+		CoverImageURL: strings.TrimSpace(in.CoverImageURL),
+		Tags:          in.Tags,
+		AuthorID:      m.ID,
+		AuthorName:    m.DisplayName,
+		Status:        domain.NewsDraft,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+	if a.Tags == nil {
+		a.Tags = []string{}
+	}
+	if authorityManager {
+		a.Status = domain.NewsPublished
+		a.PublishedAt = now
+	}
+	if err := s.news.Insert(ctx, a); err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
 // CreateNews drafts a new article authored by the given editor.
 func (s *Service) CreateNews(ctx context.Context, authorID, authorName string, in NewsInput) (*domain.NewsArticle, error) {
 	title, err := s.validateNews(in)

@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme-context";
 import type { MemberView } from "@/lib/types";
 import { D, S, initials, type Palette } from "@/theme";
-import { Loading, ErrorView, Thumb } from "@/ui";
+import { Loading, ErrorView, Thumb, VerifiedBadge } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
 
@@ -93,8 +93,14 @@ export default function MemberProfile() {
             ) : (
               <View style={s.avatar}><Text style={s.avatarText}>{m.initials || initials(m.displayName)}</Text></View>
             )}
-            <Text style={s.name}>{m.displayName}</Text>
+            <View style={s.nameRow}>
+              <Text style={s.name}>{m.displayName}</Text>
+              {m.verified ? <VerifiedBadge onDark size={18} /> : null}
+            </View>
             <Text style={s.role}>{roleLabel(m.role)}{m.joinedAt ? ` · joined ${m.joinedAt}` : ""}</Text>
+            {m.verified && m.verifiedAs ? (
+              <View style={{ marginTop: 8 }}><VerifiedBadge onDark label={`Verified · ${m.verifiedAs}`} /></View>
+            ) : null}
             {m.bio ? <Text style={s.bio}>{m.bio}</Text> : null}
             {(quarter || asafo || stints.length > 0) && (
               <View style={s.chipRow}>
@@ -134,7 +140,8 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 28, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
   avatarText: { color: C.cream, ...S(700), fontSize: 32 },
-  name: { ...D(700), fontSize: 26, color: C.cream, marginTop: 12 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, flexWrap: "wrap", justifyContent: "center" },
+  name: { ...D(700), fontSize: 26, color: C.cream },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
   // The header stays dark green in both themes, so this light cream bio text is
   // theme-independent — no palette token exists at alpha 0.8.

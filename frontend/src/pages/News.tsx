@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { NewsArticle } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container, CTA as Cta } from "@/components/ui";
+import { Container, CTA as Cta, VerifiedBadge } from "@/components/ui";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { LayoutPill, Reveal, Reveal3D, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
@@ -33,8 +33,10 @@ function Cover({ a, sizes }: Readonly<{ a: NewsArticle; sizes: "lg" | "sm" }>) {
 
 function Meta({ a }: Readonly<{ a: NewsArticle }>) {
   return (
-    <p className="text-xs text-ink-faint">
-      {a.authorName} · {formatDate(a.publishedAt ?? a.createdAt)}
+    <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-ink-faint">
+      <span>{a.authorName}</span>
+      {a.authorVerified && <VerifiedBadge iconOnly verifiedAs={a.authorVerifiedAs} />}
+      <span>· {formatDate(a.publishedAt ?? a.createdAt)}</span>
     </p>
   );
 }

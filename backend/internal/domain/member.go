@@ -18,12 +18,13 @@ const (
 	CreatorArtist      = "artist"
 	CreatorOrganiser   = "organiser"
 	CreatorInstitution = "institution"
+	CreatorWriter      = "writer" // authors news/blog posts (Creator Platform plan §3)
 )
 
 // ValidCreatorType reports whether t is a known creator type.
 func ValidCreatorType(t string) bool {
 	switch t {
-	case CreatorBusiness, CreatorArtist, CreatorOrganiser, CreatorInstitution:
+	case CreatorBusiness, CreatorArtist, CreatorOrganiser, CreatorInstitution, CreatorWriter:
 		return true
 	}
 	return false
@@ -55,8 +56,15 @@ type Member struct {
 	// CreatorTypes — empty means a plain citizen; any value makes the member a
 	// creator with dashboard access (Creator Platform plan §3).
 	CreatorTypes []string `json:"creatorTypes,omitempty" bson:"creatorTypes,omitempty"`
-	Suspended    bool     `json:"suspended" bson:"suspended"`
-	JoinedAt     string   `json:"joinedAt" bson:"joinedAt"`
+	// Verified / VerifiedAs are the checkmark-badge signal. They are COMPUTED at
+	// serialization time (never persisted — bson:"-"): a member is verified as a
+	// curator/steward, or as an approved manager of a verified authority-kind
+	// institution. Populated by Service.EnrichMemberBadge before a member is
+	// serialized on /api/auth/me and the public profile.
+	Verified   bool   `json:"verified" bson:"-"`
+	VerifiedAs string `json:"verifiedAs,omitempty" bson:"-"`
+	Suspended  bool   `json:"suspended" bson:"suspended"`
+	JoinedAt   string `json:"joinedAt" bson:"joinedAt"`
 	// Living-member birthday (spec §8.11). Broadcast to followers only if the
 	// member opts in. Birthday is "MM-DD" or "YYYY-MM-DD".
 	Birthday          string `json:"birthday,omitempty" bson:"birthday,omitempty"`
@@ -111,6 +119,7 @@ type MemberRepository interface {
 	SetDateOfBirth(ctx context.Context, id, dateOfBirth string) error
 	SetSchooling(ctx context.Context, id string, stints []SchoolStint) error
 	SetDiaspora(ctx context.Context, id string, d *Diaspora) error
+	SetLinks(ctx context.Context, id string, links []SocialLink) error
 	SetCreatorTypes(ctx context.Context, id string, types []string) error
 	// SetMFA persists the member's TOTP state: enabled flag, base32 secret
 	// (empty clears it), and bcrypt hashes of unused recovery codes.

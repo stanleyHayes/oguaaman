@@ -137,7 +137,7 @@ export interface Member {
   links?: SocialLink[];
   phoneVerified: boolean;
   role: "member" | "curator" | "steward" | "editor" | "moderator";
-  /** Creator kinds ("business" | "artist" | "organiser" | "institution"); empty = plain citizen. */
+  /** Creator kinds ("business" | "artist" | "organiser" | "institution" | "writer"); empty = plain citizen. */
   creatorTypes?: string[];
   joinedAt: string;
   birthday?: string;
@@ -145,6 +145,14 @@ export interface Member {
   diaspora?: Diaspora;
   /** Two-factor (authenticator app) enrolment state — secret never leaves the server. */
   mfaEnabled?: boolean;
+  /**
+   * Trust signal: true for curators/stewards and approved managers of a Verified
+   * authority org (emergency / security / health / local-government). See
+   * GET /api/members/{slug} and the auth payloads.
+   */
+  verified?: boolean;
+  /** What the member is verified as — "Curator" | "Steward" | "<authority org name>" (present when verified). */
+  verifiedAs?: string;
 }
 
 export interface SchoolStint {
@@ -277,6 +285,10 @@ export interface NewsArticle {
   tags?: string[];
   authorId: string;
   authorName: string;
+  /** Author trust signal, surfaced next to the byline when present (see Member.verified). */
+  authorVerified?: boolean;
+  /** What the author is verified as — "Curator" | "Steward" | "<authority org name>". */
+  authorVerifiedAs?: string;
   status: "draft" | "published";
   createdAt: string;
   updatedAt: string;

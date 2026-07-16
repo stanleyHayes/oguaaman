@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -124,6 +125,36 @@ func (h *Handler) SetMyPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"photoUrl": in.PhotoURL})
+}
+
+// SetMyLinks — the signed-in member replaces their social/contact links. URLs
+// are sanitized server-side. POST /api/me/links.
+func (h *Handler) SetMyLinks(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	var in struct {
+		Links []domain.SocialLink `json:"links"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	if err := h.svc.SetMemberLinks(r.Context(), m.ID, in.Links); err != nil {
+		var fb *domain.ForbiddenError
+		if errors.As(err, &fb) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"links": in.Links})
 }
 
 // MyConnections — "people you may know" for the signed-in member (spec §8.6).

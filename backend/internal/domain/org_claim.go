@@ -1,6 +1,35 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"strings"
+)
+
+// reservedSlugs are impersonation-sensitive official handles that ordinary
+// members and orgs may NOT self-claim or self-create — only stewards may assign
+// them (spec: reserved usernames). They cover the emergency/security/health and
+// local-government authorities whose name carries public trust.
+var reservedSlugs = map[string]bool{
+	"police":       true,
+	"ghana-police": true,
+	"fire":         true,
+	"fire-service": true,
+
+	"ghana-fire-service":  true,
+	"ambulance":           true,
+	"health-service":      true,
+	"assembly":            true,
+	"cape-coast-assembly": true,
+	"metro-assembly":      true,
+	"nadmo":               true,
+}
+
+// IsReservedSlug reports whether slug is a reserved authority handle. Enforced
+// at institution create/claim: a non-steward may not create or claim an org
+// whose slug is reserved. Stewards bypass.
+func IsReservedSlug(slug string) bool {
+	return reservedSlugs[strings.ToLower(strings.TrimSpace(slug))]
+}
 
 // Claim lifecycle (spec §8.13 — institutions claim their official home).
 // The team extension (Creator plan §4.1.2) adds the invitation branch: a

@@ -100,18 +100,53 @@ export function Avatar({ initials, photoUrl, size = 40, className = "" }: Readon
   );
 }
 
-export function VerifiedBadge({ label = "Verified", onDark = false }: Readonly<{ label?: string; onDark?: boolean }>) {
+/**
+ * Verified trust badge — a checkmark in a gold token tile. Used next to member
+ * and author names, and on institution pages. `verifiedAs` (e.g. "Curator",
+ * "Steward", an authority org's name) drives the "Verified — <verifiedAs>"
+ * tooltip. `iconOnly` renders just the tile (for tight bylines); otherwise a
+ * pill with `label` (defaults to "Verified"). Theme-safe via cream/gold tokens.
+ */
+export function VerifiedBadge({
+  label,
+  verifiedAs,
+  onDark = false,
+  iconOnly = false,
+  className = "",
+}: Readonly<{
+  label?: string;
+  verifiedAs?: string;
+  onDark?: boolean;
+  iconOnly?: boolean;
+  className?: string;
+}>) {
+  const title = verifiedAs ? `Verified — ${verifiedAs}` : "Verified";
+  const tone = onDark ? "border-gold/50 bg-gold/15 text-gold" : "border-gold-border/40 bg-gold/[0.12] text-gold-text";
+  const glyph = (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M12 2l2.4 1.8 3 .1 1 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-1 2.8-3 .1L12 22l-2.4-1.8-3-.1-1-2.8L3.2 15l.9-2.8L3.2 9.4 5.6 7.7l1-2.8 3-.1z" fill="currentColor" />
+      <path d="M8.5 12.2l2.3 2.3 4.5-4.7" stroke={onDark ? "#0C2C1F" : "var(--color-cream)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+  if (iconOnly) {
+    return (
+      <span
+        role="img"
+        aria-label={title}
+        title={title}
+        className={`inline-flex shrink-0 items-center justify-center rounded-full border p-1 align-middle ${tone} ${className}`}
+      >
+        {glyph}
+      </span>
+    );
+  }
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-wide ${
-        onDark ? "border-gold/50 bg-gold/15 text-gold" : "border-gold-border/40 bg-gold/[0.12] text-gold-text"
-      }`}
+      title={title}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-wide ${tone} ${className}`}
     >
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M12 2l2.4 1.8 3 .1 1 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-1 2.8-3 .1L12 22l-2.4-1.8-3-.1-1-2.8L3.2 15l.9-2.8L3.2 9.4 5.6 7.7l1-2.8 3-.1z" fill="currentColor" />
-        <path d="M8.5 12.2l2.3 2.3 4.5-4.7" stroke={onDark ? "#0C2C1F" : "var(--color-cream)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      {label}
+      {glyph}
+      {label ?? "Verified"}
     </span>
   );
 }

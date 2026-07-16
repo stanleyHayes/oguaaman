@@ -52,6 +52,7 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
+	h.svc.EnrichMemberBadge(r.Context(), member) // verified/verifiedAs badge
 	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": selfView(member)})
 }
 
@@ -90,6 +91,7 @@ func (h *Handler) AuthMFA(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
+	h.svc.EnrichMemberBadge(r.Context(), member) // verified/verifiedAs badge
 	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": selfView(member)})
 }
 
@@ -217,6 +219,7 @@ func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"mfaRequired": true, "challenge": token})
 		return
 	}
+	h.svc.EnrichMemberBadge(r.Context(), member) // verified/verifiedAs badge
 	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": selfView(member)})
 }
 
@@ -294,5 +297,6 @@ func (h *Handler) AuthMe(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusUnauthorized, "Not signed in.")
 		return
 	}
+	h.svc.EnrichMemberBadge(r.Context(), m) // verified/verifiedAs badge
 	writeJSON(w, http.StatusOK, selfView(m))
 }

@@ -3,13 +3,13 @@ import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from "react
 import { Link, router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { T as Text, TI as TextInput } from "@/components/typography";
-import { api } from "@/lib/api";
+import { api, canWriteNews } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Promotion, Listing } from "@/lib/types";
 import { D, S, initials, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
-import { Loading, ErrorView, Thumb } from "@/ui";
+import { Loading, ErrorView, Thumb, VerifiedBadge } from "@/ui";
 import { ImageField } from "@/components/image-field";
 import { DateField } from "@/components/date-field";
 import { RevealView } from "@/components/anim";
@@ -197,8 +197,10 @@ function MeLoaded({ slug, onSignOut }: Readonly<{ slug: string; onSignOut: () =>
 function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: () => void }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const { setMember } = useAuth();
+  const { member: authMember, setMember } = useAuth();
   const m = view.member;
+  // Self-view (has creatorTypes/bio) drives the editors; fall back to the public view.
+  const self = authMember ?? m;
   const places = view.places ?? [];
 
   // Rep your quarter + Asafo (spec §8.6) — optimistic, like the web.
@@ -279,8 +281,14 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
         {photo
           ? <Thumb seed={m.slug} src={photo} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
           : <View style={s.avatar}><Text style={s.avatarText}>{m.initials || initials(m.displayName)}</Text></View>}
-        <Text style={s.name}>{m.displayName}</Text>
+        <View style={s.nameRow}>
+          <Text style={s.name}>{m.displayName}</Text>
+          {m.verified ? <VerifiedBadge onDark size={18} /> : null}
+        </View>
         <Text style={s.role}>{roleLabel(m.role)}{m.joinedAt ? ` · joined ${fmtDate(m.joinedAt)}` : ""}</Text>
+        {m.verified && m.verifiedAs ? (
+          <View style={{ marginTop: 8 }}><VerifiedBadge onDark label={`Verified · ${m.verifiedAs}`} /></View>
+        ) : null}
         <View style={s.chipRow}>
           {quarter ? <View style={s.darkChip}><Text style={s.darkChipText}>{quarter.name}</Text></View> : null}
           {asafo ? <View style={s.darkChip}><Text style={s.darkChipText}>{asafo.name}</Text></View> : null}
@@ -326,6 +334,14 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
           {photoSave === "saving" && <Text style={[s.help, { marginTop: 8 }]}>Saving…</Text>}
           {photoSave === "saved" && <Text style={[s.savedNote, { marginTop: 8 }]}>Saved ✓</Text>}
           {photoSave === "error" && <Text style={[s.errNote, { marginTop: 8 }]}>Couldn&apos;t save your photo</Text>}
+        </Section>
+
+        <Section title="Your bio" help="A short line about you — it shows on your public profile.">
+          <BioCard member={self} onSaved={setMember} />
+        </Section>
+
+        <Section title="Newsroom" help="Writers can publish stories in the Oguaa Newsroom.">
+          <WriterCard member={self} onUpdated={setMember} />
         </Section>
 
         <Section title="Rep your town" help={"Wear your community pride — your quarter and your Asafo company." + (quarter ? ` You rep ${quarter.name}.` : "")}>
@@ -399,6 +415,78 @@ function RepChips({ places, selectedId, variant, onChoose }: Readonly<{ places: 
           <Text style={[s.repChipText, p.id === selectedId && s.repChipTextOn]}>{p.name}</Text>
         </Pressable>
       ))}
+    </View>
+  );
+}
+
+// Short profile bio — POST /api/me/profile keeps the display name and updates
+// the bio, returning the fresh member so the whole app reflects the change.
+function BioCard({ member: m, onSaved }: Readonly<{ member: Member; onSaved: (m: Member) => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const [bio, setBio] = useState(m.bio ?? "");
+  const [save, setSave] = useState<SaveState>("idle");
+  async function persist() {
+    setSave("saving");
+    try {
+      const updated = await api.setProfile({ displayName: m.displayName, bio: bio.trim() });
+      onSaved(updated);
+      setSave("saved");
+    } catch { setSave("error"); }
+  }
+  return (
+    <>
+      <TextInput
+        style={s.bioInput}
+        value={bio}
+        onChangeText={(v) => { setBio(v); setSave("idle"); }}
+        placeholder="Tell the town a little about yourself"
+        placeholderTextColor={C.inkFaint}
+        multiline
+        maxLength={280}
+      />
+      <View style={s.saveRow}>
+        <Pressable onPress={persist} disabled={save === "saving"} style={[s.bdaySaveBtn, save === "saving" && { opacity: 0.6 }]}>
+          <Text style={s.saveBtnText}>{save === "saving" ? "Saving…" : "Save"}</Text>
+        </Pressable>
+        {save === "saved" && <Text style={s.savedNote}>Saved ✓</Text>}
+        {save === "error" && <Text style={s.errNote}>Couldn&apos;t save</Text>}
+      </View>
+    </>
+  );
+}
+
+// Newsroom access — eligible members (writers or verified-authority managers)
+// get a link to compose; everyone else can opt in to the "writer" creator type.
+function WriterCard({ member: m, onUpdated }: Readonly<{ member: Member; onUpdated: (m: Member) => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  if (canWriteNews(m)) {
+    return (
+      <Pressable onPress={() => router.push("/write" as never)} style={s.linkRow}>
+        <Text style={s.linkRowText}>Write a story for the Newsroom</Text><Text style={s.chevron}>›</Text>
+      </Pressable>
+    );
+  }
+  async function becomeWriter() {
+    setBusy(true); setErr("");
+    try {
+      const next = Array.from(new Set([...(m.creatorTypes ?? []), "writer"]));
+      const updated = await api.setCreatorTypes(next);
+      onUpdated(updated);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't update.");
+    } finally { setBusy(false); }
+  }
+  return (
+    <View style={{ gap: 10 }}>
+      <Text style={s.help}>Become a writer to publish in the Newsroom. Your drafts go to the newsroom for review before they appear.</Text>
+      <Pressable onPress={becomeWriter} disabled={busy} style={[s.primaryBtn, { alignSelf: "flex-start", marginTop: 0 }, busy && { opacity: 0.6 }]}>
+        <Text style={s.primaryBtnText}>{busy ? "Saving…" : "Become a writer"}</Text>
+      </Pressable>
+      {err ? <Text style={s.errNote}>{err}</Text> : null}
     </View>
   );
 }
@@ -695,7 +783,8 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
   avatarText: { color: C.cream, ...S(700), fontSize: 30 },
-  name: { ...D(700), fontSize: 26, color: C.cream, marginTop: 12 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, flexWrap: "wrap", justifyContent: "center" },
+  name: { ...D(700), fontSize: 26, color: C.cream },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12, justifyContent: "center" },
   // The warn chip's bright gold (#F7C44A) has no palette base; it sits on the
@@ -729,6 +818,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   diaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   diaLabel: { color: C.ink, fontSize: 14, flex: 1 },
   diaInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14 },
+  bioInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14, minHeight: 88, textAlignVertical: "top", ...S(400) },
   codeInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14, letterSpacing: 2 },
   diaSaveBtn: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
   secondaryBtn: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16 },

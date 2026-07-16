@@ -42,10 +42,14 @@ export interface Member {
   townId?: string;
   asafoId?: string;
   role: "member" | "curator" | "steward" | "editor" | "moderator";
-  /** What they create (business/artist/organiser…); empty = plain citizen. */
+  /** What they create ("business" | "artist" | "organiser" | "institution" | "writer"…); empty = plain citizen. */
   creatorTypes?: string[];
   suspended: boolean;
   phoneVerified: boolean;
+  /** True for curators/stewards and approved managers of a verified authority org. */
+  verified?: boolean;
+  /** When verified: "Curator" | "Steward" | the authority org's name. */
+  verifiedAs?: string;
   schoolIds: string[];
   links?: SocialLink[];
   birthday?: string;
@@ -53,6 +57,27 @@ export interface Member {
   joinedAt: string;
   /** Two-factor enrolment state — secret never leaves the server. */
   mfaEnabled?: boolean;
+}
+
+/** Newsroom status: writers submit drafts for review; authority managers publish directly. */
+export type NewsStatus = "draft" | "published";
+
+/** An editorial post (news / story / blog). Bodies are Markdown, rendered client-side. */
+export interface NewsArticle {
+  id: string;
+  slug: string;
+  title: string;
+  summary?: string;
+  body: string;
+  coverColor?: string;
+  coverImageUrl?: string;
+  tags?: string[];
+  authorId: string;
+  authorName: string;
+  status: NewsStatus;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
 }
 
 export interface Office { id: string; role: string; holderId?: string; holderName?: string; verified: boolean }

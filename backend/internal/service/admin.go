@@ -163,6 +163,15 @@ func (s *Service) createOrg(ctx context.Context, name, kind, classification, sum
 		}
 		slug = fmt.Sprintf("%s-%d", base, i)
 	}
+	// Authority kinds (emergency/security/health services, local government) do
+	// NOT auto-verify: an authority page must not carry official weight until a
+	// steward verifies it via SetVerified (spec: authority claims need
+	// verification). Ordinary kinds stay verified as before.
+	verified := !domain.IsAuthorityKind(kind)
+	verifiedOn := ""
+	if verified {
+		verifiedOn = time.Now().UTC().Format(time.DateOnly)
+	}
 	org := domain.Organization{
 		ID:             "org-" + fmt.Sprintf("%d", time.Now().UnixNano()),
 		Slug:           slug,
@@ -172,8 +181,8 @@ func (s *Service) createOrg(ctx context.Context, name, kind, classification, sum
 		Summary:        strings.TrimSpace(summary),
 		Jurisdiction:   strings.TrimSpace(jurisdiction),
 		Offices:        []domain.Office{},
-		Verified:       true,
-		VerifiedOn:     time.Now().UTC().Format(time.DateOnly),
+		Verified:       verified,
+		VerifiedOn:     verifiedOn,
 	}
 	if err := s.orgs.Create(ctx, org); err != nil {
 		return nil, err

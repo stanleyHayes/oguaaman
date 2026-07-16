@@ -127,6 +127,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/featured", h.Featured)
 
 	mux.HandleFunc("GET /api/news", h.News)
+	mux.HandleFunc("POST /api/news", h.SubmitNews)
 	mux.HandleFunc("GET /api/news/{slug}", h.NewsArticle)
 
 	mux.HandleFunc("GET /api/places", h.Places)
@@ -171,6 +172,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/me/profile", h.SetMyProfile)
 	mux.HandleFunc("POST /api/me/birthday", h.SetMyBirthday)
 	mux.HandleFunc("POST /api/me/photo", h.SetMyPhoto)
+	mux.HandleFunc("POST /api/me/links", h.SetMyLinks)
 	mux.HandleFunc("POST /api/me/affiliations", h.SetMyAffiliations)
 	mux.HandleFunc("POST /api/me/schooling", h.SetMySchooling)
 	mux.HandleFunc("POST /api/me/diaspora", h.SetMyDiaspora)

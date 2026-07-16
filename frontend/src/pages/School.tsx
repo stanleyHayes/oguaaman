@@ -64,7 +64,7 @@ export function Component() {
           <div className="mx-auto w-fit"><Crest colors={org.houseColors} label={initials(org.name)} size={88} src={org.crestUrl} /></div>
           <h1 className="mt-4 text-3xl font-semibold text-cream sm:text-4xl">{org.name}</h1>
           {org.motto && <p className="mt-2 italic" style={{ color: c2 }}>{org.motto}</p>}
-          {org.verified && <div className="mt-5"><VerifiedBadge label="Verified · Official profile" onDark /></div>}
+          {org.verified && <div className="mt-5"><VerifiedBadge label="Verified · Official profile" verifiedAs={org.name} onDark /></div>}
         </Container>
       </section>
 

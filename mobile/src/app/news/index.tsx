@@ -7,7 +7,7 @@ import { useApi } from "@/lib/use-api";
 import type { NewsArticle } from "@/lib/types";
 import { D, S, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
-import { Loading, ErrorView } from "@/ui";
+import { Loading, ErrorView, VerifiedBadge } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -59,7 +59,10 @@ export default function News() {
                   <Text style={s.featuredKicker}>Featured story</Text>
                   <Text style={s.featuredTitle}>{featured.title}</Text>
                   {featured.summary ? <Text style={s.summary} numberOfLines={3}>{featured.summary}</Text> : null}
-                  <Text style={s.byline}>{featured.authorName} · {newsDate(featured)}</Text>
+                  <View style={s.bylineRow}>
+                    <Text style={s.byline}>{featured.authorName} · {newsDate(featured)}</Text>
+                    {featured.authorVerified ? <VerifiedBadge size={13} /> : null}
+                  </View>
                   <Text style={s.readMore}>Read story ↗</Text>
                 </View>
               </Pressable>
@@ -75,7 +78,10 @@ export default function News() {
                 <View style={s.cardBody}>
                   <Text style={s.title}>{a.title}</Text>
                   {a.summary ? <Text style={s.summary} numberOfLines={2}>{a.summary}</Text> : null}
-                  <Text style={s.byline}>{a.authorName} · {newsDate(a)}</Text>
+                  <View style={s.bylineRow}>
+                    <Text style={s.byline}>{a.authorName} · {newsDate(a)}</Text>
+                    {a.authorVerified ? <VerifiedBadge size={13} /> : null}
+                  </View>
                   <Text style={s.readMore}>Read story ↗</Text>
                 </View>
               </Pressable>
@@ -106,6 +112,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   cardBody: { padding: 14 },
   title: { ...S(700), fontSize: 19, color: C.ink, lineHeight: 25 },
   summary: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
-  byline: { color: C.inkFaint, fontSize: 12, marginTop: 10 },
+  bylineRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" },
+  byline: { color: C.inkFaint, fontSize: 12 },
   readMore: { color: C.green, fontSize: 13, fontWeight: "700", marginTop: 10 },
 });

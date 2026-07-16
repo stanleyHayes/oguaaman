@@ -256,6 +256,7 @@ func (stubMembers) SetBirthday(context.Context, string, string, bool) error     
 func (stubMembers) SetAffiliations(context.Context, string, string, string) error    { return nil }
 func (stubMembers) SetSchooling(context.Context, string, []domain.SchoolStint) error { return nil }
 func (stubMembers) SetDiaspora(context.Context, string, *domain.Diaspora) error      { return nil }
+func (stubMembers) SetLinks(context.Context, string, []domain.SocialLink) error      { return nil }
 func (stubMembers) SetPhoto(context.Context, string, string) error                   { return nil }
 func (stubMembers) SetProfile(context.Context, string, string, string, string) error { return nil }
 func (stubMembers) SetPasswordHash(context.Context, string, string) error            { return nil }

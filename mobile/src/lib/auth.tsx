@@ -8,6 +8,8 @@ export interface JoinInput {
   displayName: string;
   dateOfBirth: string;
   password: string;
+  /** Optional creator kinds ("writer", …) chosen at sign-up. */
+  creatorTypes?: string[];
 }
 
 interface AuthState {

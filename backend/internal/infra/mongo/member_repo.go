@@ -115,6 +115,15 @@ func (r *MemberRepo) SetDiaspora(ctx context.Context, id string, d *domain.Diasp
 	return err
 }
 
+// SetLinks replaces the member's social/contact links (Creator Platform plan §3).
+func (r *MemberRepo) SetLinks(ctx context.Context, id string, links []domain.SocialLink) error {
+	if links == nil {
+		links = []domain.SocialLink{}
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"links": links}})
+	return err
+}
+
 // SetCreatorTypes records the member's creator kinds (Creator Platform plan §3).
 func (r *MemberRepo) SetCreatorTypes(ctx context.Context, id string, types []string) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"creatorTypes": types}})

@@ -1,4 +1,4 @@
-import type { CreatorEarnings, CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, Subscription, TeamView, Ticket } from "./types";
+import type { CreatorEarnings, CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NewsArticle, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, SocialLink, Subscription, TeamView, Ticket } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -65,6 +65,18 @@ export const api = {
   creatorOverview: () => get<CreatorOverview>("/api/creator/overview"),
   creatorEarnings: () => get<CreatorEarnings>("/api/creator/earnings"),
   setCreatorTypes: (creatorTypes: string[]) => post<Member>("/api/me/creator-types", { creatorTypes }),
+
+  // Profile editing — photo (Cloudinary/first-party upload, we store the URL),
+  // display name + bio, and sanitised social links.
+  setPhoto: (photoUrl: string) => post<{ photoUrl: string }>("/api/me/photo", { photoUrl }),
+  setProfile: (body: { displayName?: string; bio?: string }) => post<Member>("/api/me/profile", body),
+  setLinks: (links: SocialLink[]) => post<{ links: SocialLink[] }>("/api/me/links", { links }),
+
+  // Newsroom authoring: writers submit drafts for review, verified-authority
+  // managers publish directly. Public listing returns published posts only.
+  news: () => get<NewsArticle[]>("/api/news"),
+  submitNews: (body: { title: string; summary?: string; body: string; coverColor?: string; coverImageUrl?: string; tags?: string[] }) =>
+    post<NewsArticle>("/api/news", body),
 
   // The member's own listings arrive on the public member view (all statuses).
   member: (slug: string) => get<MemberView>(`/api/members/${slug}`),

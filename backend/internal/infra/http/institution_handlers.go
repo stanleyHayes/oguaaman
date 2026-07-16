@@ -101,6 +101,7 @@ func (h *Handler) Member(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
+	h.svc.EnrichMemberBadge(ctx, m) // verified/verifiedAs badge next to their name
 	listings, err := h.svc.ListingsByOwner(ctx, m.ID)
 	if err != nil {
 		h.handleErr(w, err)

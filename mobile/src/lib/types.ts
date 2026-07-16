@@ -107,8 +107,16 @@ export interface Member {
   initials: string;
   bio?: string;
   photoUrl?: string;
+  /** Off-platform links (Instagram, website…) shown on the public profile. */
+  links?: SocialLink[];
   role: "member" | "curator" | "steward" | "editor";
+  /** Creator kinds ("writer" | "business" | "artist" | "organiser" | …); empty = plain citizen. */
+  creatorTypes?: string[];
   phoneVerified: boolean;
+  /** True for curators/stewards and approved managers of a verified authority org. */
+  verified?: boolean;
+  /** When verified: "Curator" | "Steward" | the authority org name. */
+  verifiedAs?: string;
   townId?: string;
   asafoId?: string;
   schoolIds?: string[];
@@ -246,9 +254,14 @@ export interface NewsArticle {
   coverColor?: string;
   coverImageUrl?: string;
   tags?: string[];
+  authorId?: string;
   authorName: string;
+  /** Present when the author is a verified member (surfaces a badge on bylines). */
+  authorVerified?: boolean;
+  authorVerifiedAs?: string;
   status: "draft" | "published";
   createdAt: string;
+  updatedAt?: string;
   publishedAt?: string;
 }
 

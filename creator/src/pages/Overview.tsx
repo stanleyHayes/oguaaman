@@ -2,14 +2,16 @@ import { useLoaderData, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PORTAL } from "@/lib/portal";
-import type { CreatorOverview } from "@/lib/types";
+import { canWriteNews } from "@/lib/creator";
+import type { CreatorOverview, Member } from "@/lib/types";
 import { MetricCard } from "@/components/metric-card";
 import { Card } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { cedis } from "@/lib/format";
 import {
   ListChecks, Hourglass, Megaphone, BadgeCheck, Ticket, HandCoins, Eye,
-  PlusCircle, TrendingUp, Landmark, type LucideIcon,
+  PlusCircle, TrendingUp, Landmark, PenLine, Briefcase, Music, CalendarDays,
+  ArrowRight, ExternalLink, type LucideIcon,
 } from "lucide-react";
 
 export async function loader(): Promise<CreatorOverview> {
@@ -25,11 +27,27 @@ const QUICK: QuickLink[] = [
   { to: "/institutions", label: "Manage institutions", desc: "Pages you run", icon: Landmark },
 ];
 
+/**
+ * Tool panels lit up by what a member creates. Each maps to one creator hat
+ * (the "writer" panel also covers verified-authority managers who can post
+ * news without holding the writer type).
+ */
+interface ToolPanel { id: string; title: string; desc: string; cta: string; icon: LucideIcon; to: string; external?: boolean; show: (m: Member) => boolean }
+
+const TOOL_PANELS: ToolPanel[] = [
+  { id: "writer", title: "Write & publish", desc: "Draft stories and news for the town.", cta: "Open the newsroom", icon: PenLine, to: "/write", show: (m) => canWriteNews(m) },
+  { id: "business", title: "Your listings", desc: "Shops, services, food & drink.", cta: "Manage listings", icon: Briefcase, to: "/work", show: (m) => m.creatorTypes?.includes("business") ?? false },
+  { id: "artist", title: "Your music", desc: "Tracks, albums and your artist page.", cta: "Add a music listing", icon: Music, to: `${PORTAL}/submit`, external: true, show: (m) => m.creatorTypes?.includes("artist") ?? false },
+  { id: "organiser", title: "Your events", desc: "Ticketed shows and gatherings.", cta: "Add an event", icon: CalendarDays, to: `${PORTAL}/submit`, external: true, show: (m) => m.creatorTypes?.includes("organiser") ?? false },
+  { id: "institution", title: "Your institutions", desc: "Schools, civic and community pages.", cta: "Manage institutions", icon: Landmark, to: "/institutions", show: (m) => m.creatorTypes?.includes("institution") ?? false },
+];
+
 export function Component() {
   const ov = useLoaderData() as CreatorOverview;
   const { member } = useAuth();
   const firstName = member?.displayName.split(" ")[0] ?? "";
   const isCreator = (member?.creatorTypes?.length ?? 0) > 0;
+  const panels = member ? TOOL_PANELS.filter((p) => p.show(member)) : [];
 
   return (
     <>
@@ -78,6 +96,37 @@ export function Component() {
           <MetricCard label="Views this month" value={ov.viewsThisMonth ?? 0} icon={<Eye size={18} />} tone="teal" sub="Unique daily views on your listings" />
         </StaggerItem>
       </Stagger>
+
+      {panels.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold text-ink">Your tools</h2>
+            <span className="text-xs text-ink-faint">Based on what you create</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {panels.map((p) => {
+              const body = (
+                <Card className="group flex h-full flex-col p-4 transition-colors hover:border-gold-border/50">
+                  <div className="flex items-start justify-between">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/[0.12] text-gold-text transition-transform group-hover:scale-105">
+                      <p.icon size={18} aria-hidden />
+                    </span>
+                    {p.external ? <ExternalLink size={14} className="text-ink-faint/50" aria-hidden /> : <ArrowRight size={14} className="text-ink-faint/50 transition-colors group-hover:text-ink" aria-hidden />}
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-ink">{p.title}</p>
+                  <p className="mt-0.5 text-xs text-ink-faint">{p.desc}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-green-text">
+                    {p.cta} <ArrowRight size={12} aria-hidden />
+                  </span>
+                </Card>
+              );
+              return p.external
+                ? <a key={p.id} href={p.to} className="block h-full">{body}</a>
+                : <Link key={p.id} to={p.to} className="block h-full">{body}</Link>;
+            })}
+          </div>
+        </section>
+      )}
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {QUICK.map((q) => {

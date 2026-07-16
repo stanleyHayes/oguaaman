@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Listing, NewsArticle } from "@/lib/types";
 import { TONES, type NavSection } from "@/lib/sections";
-import { Card, Pill } from "./ui";
+import { Card, Pill, VerifiedBadge } from "./ui";
 import { Adinkra } from "./adinkra";
 import { SectionIcon } from "./section-icon";
 import { dayMonth, formatDate, lifeDates, tagLabel, initials } from "@/lib/format";
@@ -253,7 +253,11 @@ export function NewsCard({ article, lead = false }: Readonly<{ article: NewsArti
         {lead && <p className="text-[0.66rem] font-bold uppercase tracking-wider text-gold-text">Latest</p>}
         <h3 className={`font-semibold text-ink group-hover:text-green ${lead ? "mt-1 text-2xl" : "text-xl"}`}>{article.title}</h3>
         {article.summary && <p className="mt-2 line-clamp-3 text-sm text-ink-muted">{article.summary}</p>}
-        <p className="mt-auto pt-4 text-xs text-ink-faint">{article.authorName} · {formatDate(article.publishedAt ?? article.createdAt)}</p>
+        <p className="mt-auto flex flex-wrap items-center gap-x-1.5 gap-y-1 pt-4 text-xs text-ink-faint">
+          <span>{article.authorName}</span>
+          {article.authorVerified && <VerifiedBadge iconOnly verifiedAs={article.authorVerifiedAs} />}
+          <span>· {formatDate(article.publishedAt ?? article.createdAt)}</span>
+        </p>
       </div>
     </Link>
   );
