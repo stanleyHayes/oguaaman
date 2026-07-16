@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLoaderData, useRevalidator } from "react-router-dom";
 import { api } from "@/lib/api";
-import type { CreatorOverview, MemberView, Subscription } from "@/lib/types";
+import type { CreatorOverview, MemberView, Plan, Subscription } from "@/lib/types";
 import { Card } from "@/components/ui";
 import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
@@ -12,34 +12,46 @@ interface Data {
   overview: CreatorOverview;
   view: MemberView;
   subscriptions: Subscription[];
+  plans: Plan[];
 }
 
 export async function loader(): Promise<Data> {
   const me = await api.me();
-  const [overview, view, subscriptions] = await Promise.all([
+  const [overview, view, subscriptions, plans] = await Promise.all([
     api.creatorOverview(),
     api.member(me.slug),
     api.mySubscriptions().catch(() => [] as Subscription[]),
+    api.plans().catch(() => [] as Plan[]),
   ]);
-  return { overview, view, subscriptions };
+  return { overview, view, subscriptions, plans };
 }
 
+const cedis = (pesewas: number) =>
+  `GH₵ ${(pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
+
+// The per-business price of a plan (business override, else the default).
+const businessPrice = (p: Plan) => p.prices.business ?? p.prices.default ?? 0;
+
 export function Component() {
-  const { overview, view, subscriptions } = useLoaderData() as Data;
+  const { overview, view, subscriptions, plans } = useLoaderData() as Data;
   const revalidator = useRevalidator();
-  const [busy, setBusy] = useState<string | null>(null); // listing slug being subscribed
+  const [busy, setBusy] = useState<string | null>(null); // "slug:plan" being subscribed
   const [err, setErr] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<Subscription | null>(null);
 
-  // Supporter is a per-business plan — offer it on each approved business listing.
+  // Plans are per-business subscriptions — offer each paid catalog plan on
+  // every approved business listing.
   const businesses = view.listings.filter((l) => l.type === "business" && l.status === "approved");
   const activeSubs = subscriptions.filter((s) => s.status === "success" && (s.periodEnd ?? "") > new Date().toISOString());
+  const paidPlans = plans.filter((p) => p.interval === "month" && businessPrice(p) > 0);
+  const planName = (slug: string) => plans.find((p) => p.slug === slug)?.name ?? "Supporter";
+  const currentPlan = activeSubs.length > 0 ? planName(activeSubs[0].plan) : "Starter";
 
-  async function subscribe(slug: string) {
+  async function subscribe(slug: string, plan: string) {
     setErr(null);
-    setBusy(slug);
+    setBusy(`${slug}:${plan}`);
     try {
-      const r = await api.subscribe(slug);
+      const r = await api.subscribe(slug, plan);
       if (r.simulated) {
         // Dev mode has no Paystack checkout to return from — settle in place.
         const s = await api.confirmSubscription(r.reference);
@@ -74,7 +86,7 @@ export function Component() {
 
       <Stagger className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
         <StaggerItem index={0}>
-          <MetricCard label="Your plan" value={overview.activeSubscription ? "Supporter" : "Starter"} icon={<BadgeCheck size={18} />} tone="ink" sub={overview.activeSubscription ? "★ badge + priority placement" : "Free forever"} />
+          <MetricCard label="Your plan" value={currentPlan} icon={<BadgeCheck size={18} />} tone="ink" sub={overview.activeSubscription ? "Paid plan active" : "Free forever"} />
         </StaggerItem>
         <StaggerItem index={1}>
           <MetricCard label="Active promotions" value={overview.activePromotions} icon={<Megaphone size={18} />} tone="green" sub={overview.promotionDaysLeft ? `${overview.promotionDaysLeft} days remaining` : "None running"} />
@@ -85,45 +97,68 @@ export function Component() {
       </Stagger>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card className="p-5">
-          <h2 className="text-lg font-semibold text-ink">Supporter plan</h2>
-          <p className="mt-1 text-sm text-ink-muted">
-            GH₵ 50 per month per business. A gold ★ badge, priority placement in the directory, and room for more listings.
-            Renewals stack — each payment extends your paid-until date by a month.
-          </p>
-          {activeSubs.length > 0 && (
-            <ul className="mt-4 space-y-2">
-              {activeSubs.map((s) => (
-                <li key={s.id} className="flex items-center justify-between rounded-xl bg-teal/[0.08] px-3.5 py-2.5 text-sm">
-                  <span className="font-medium text-ink">{s.listingTitle}</span>
-                  <span className="text-xs font-semibold text-teal-text">★ until {formatDate(s.periodEnd)}</span>
-                </li>
-              ))}
-            </ul>
+        <div className="space-y-4">
+          {paidPlans.length === 0 && (
+            <Card className="p-5">
+              <h2 className="text-lg font-semibold text-ink">Plans</h2>
+              <p className="mt-1 text-sm text-ink-muted">No paid plans are on sale right now — check back soon.</p>
+            </Card>
           )}
-          <div className="mt-4 space-y-2">
-            {businesses.length === 0 ? (
-              <p className="text-sm text-ink-faint">You don't have an approved business listing yet. <Link to="/work" className="font-semibold text-gold-text hover:underline">Add one first.</Link></p>
-            ) : (
-              businesses.map((b) => {
-                const active = activeSubs.some((s) => s.listingId === b.id);
-                return (
-                  <div key={b.id} className="flex items-center justify-between gap-3 rounded-xl border border-sand px-3.5 py-2.5">
-                    <span className="min-w-0 truncate text-sm font-medium text-ink">{b.title}</span>
-                    {active ? (
-                      <span className="shrink-0 text-xs font-semibold text-teal-text">Active ✓</span>
-                    ) : (
-                      <button type="button" onClick={() => subscribe(b.slug)} disabled={busy != null}
-                        className="shrink-0 rounded-full bg-gold-brand px-3.5 py-1.5 text-xs font-semibold text-green-900 transition-opacity hover:opacity-90 disabled:opacity-60">
-                        {busy === b.slug ? "Starting…" : "Subscribe · GH₵ 50"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </Card>
+          {paidPlans.map((plan) => {
+            const price = businessPrice(plan);
+            const creatorDelta = plan.prices.creator != null && plan.prices.creator !== plan.prices.default;
+            return (
+              <Card key={plan.id} className="p-5">
+                <h2 className="text-lg font-semibold text-ink">{plan.name}{plan.goldBadge ? " ★" : ""}</h2>
+                <p className="mt-1 text-sm text-ink-muted">
+                  {cedis(price)} per month per business.
+                  {creatorDelta && ` ${cedis(plan.prices.creator!)}/mo for artist & organiser creators.`}
+                  {" "}Renewals stack — each payment extends your paid-until date by a month.
+                </p>
+                {(plan.perks ?? []).length > 0 && (
+                  <ul className="mt-3 space-y-1.5">
+                    {(plan.perks ?? []).map((perk) => (
+                      <li key={perk} className="flex gap-2 text-sm text-ink-muted"><span className="text-gold-text">★</span>{perk}</li>
+                    ))}
+                  </ul>
+                )}
+                {activeSubs.length > 0 && (
+                  <ul className="mt-4 space-y-2">
+                    {activeSubs.map((s) => (
+                      <li key={s.id} className="flex items-center justify-between rounded-xl bg-teal/[0.08] px-3.5 py-2.5 text-sm">
+                        <span className="font-medium text-ink">{s.listingTitle} · {planName(s.plan)}</span>
+                        <span className="text-xs font-semibold text-teal-text">★ until {formatDate(s.periodEnd)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-4 space-y-2">
+                  {businesses.length === 0 ? (
+                    <p className="text-sm text-ink-faint">You don't have an approved business listing yet. <Link to="/work" className="font-semibold text-gold-text hover:underline">Add one first.</Link></p>
+                  ) : (
+                    businesses.map((b) => {
+                      const active = activeSubs.some((s) => s.listingId === b.id);
+                      const key = `${b.slug}:${plan.slug}`;
+                      return (
+                        <div key={key} className="flex items-center justify-between gap-3 rounded-xl border border-sand px-3.5 py-2.5">
+                          <span className="min-w-0 truncate text-sm font-medium text-ink">{b.title}</span>
+                          {active ? (
+                            <span className="shrink-0 text-xs font-semibold text-teal-text">Active ✓</span>
+                          ) : (
+                            <button type="button" onClick={() => subscribe(b.slug, plan.slug)} disabled={busy != null}
+                              className="shrink-0 rounded-full bg-gold-brand px-3.5 py-1.5 text-xs font-semibold text-green-900 transition-opacity hover:opacity-90 disabled:opacity-60">
+                              {busy === key ? "Starting…" : `Subscribe · ${cedis(price)}`}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
 
         <Card className="p-5">
           <h2 className="text-lg font-semibold text-ink">Featured promotions</h2>

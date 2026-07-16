@@ -49,6 +49,7 @@ func main() {
 		News:     mongox.NewNewsRepo(db),
 		Reports:  mongox.NewReportRepo(db),
 		Timeline: mongox.NewTimelineRepo(db),
+		Plans:    mongox.NewPlanRepo(db),
 	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db))
 	auth := newAuthService(memberRepo, cfg)
@@ -120,7 +121,7 @@ func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*se
 	}
 	payments := service.NewPaymentsService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)
 	tickets := service.NewTicketsService(mongox.NewListingRepo(db), mongox.NewTicketRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL)
-	subs := service.NewSubscriptionsService(mongox.NewListingRepo(db), mongox.NewSubscriptionRepo(db), paystack, cfg.PortalURL)
+	subs := service.NewSubscriptionsService(mongox.NewListingRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPlanRepo(db), paystack, cfg.PortalURL)
 	promotions := service.NewPromotionsService(mongox.NewListingRepo(db), mongox.NewPromotionRepo(db), paystack, cfg.PortalURL)
 	revenue := service.NewRevenueService(mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
 	return payments, tickets, subs, promotions, revenue

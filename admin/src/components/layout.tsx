@@ -34,6 +34,13 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/claims", label: "Claims", icon: BadgeCheck },
       { to: "/projects", label: "Projects", icon: HandCoins },
       { to: "/tickets", label: "Tickets", icon: Ticket },
+    ],
+  },
+  {
+    title: "Monetization",
+    icon: Banknote,
+    items: [
+      { to: "/plans", label: "Plans", icon: BadgeCheck },
       { to: "/subscriptions", label: "Subscriptions", icon: Repeat },
       { to: "/revenue", label: "Revenue", icon: Banknote },
     ],

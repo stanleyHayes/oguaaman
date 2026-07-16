@@ -1,6 +1,12 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan } from "./types";
 
 export interface NewsPayload { title: string; summary: string; body: string; coverColor: string; coverImageUrl: string; tags: string[] }
+export interface PlanPayload {
+  name: string; slug?: string; audience: "any" | "business" | "creator";
+  prices: Record<string, number>; interval: "free" | "month"; perks: string[];
+  maxListings?: number; includedPromoDays?: number; goldBadge?: boolean;
+  active: boolean; sortOrder: number;
+}
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.admin.token";
@@ -98,6 +104,12 @@ export const api = {
   // Paid promotions + platform income overview (Phase 8).
   promotions: () => get<Promotion[]>("/api/admin/promotions"),
   revenue: () => get<RevenueOverview>("/api/admin/revenue"),
+
+  // Subscription plans catalog (Creator plan §5): staff CRUD.
+  plans: () => get<Plan[]>("/api/admin/plans"),
+  planCreate: (body: PlanPayload) => post<Plan>("/api/admin/plans", body),
+  planUpdate: (id: string, body: PlanPayload) => post<Plan>(`/api/admin/plans/${id}`, body),
+  planDelete: (id: string) => del<{ status: string }>(`/api/admin/plans/${id}`),
 
   reports: () => get<Report[]>("/api/admin/reports"),
   resolveReport: (id: string, status: "actioned" | "dismissed", resolution?: string) =>

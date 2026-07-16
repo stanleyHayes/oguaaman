@@ -71,13 +71,29 @@ export interface Subscription {
   listingId: string;
   listingSlug: string;
   listingTitle: string;
-  plan: "business-supporter";
+  plan: string; // catalog plan slug (legacy rows: "business-supporter")
   amountPesewas: number;
   status: PaymentStatus;
   periodEnd?: string; // RFC3339; set on success
   simulated?: boolean;
   createdAt: string;
   confirmedAt?: string;
+}
+
+/** A subscription plan from the staff-managed catalog (Creator plan §5). */
+export interface Plan {
+  id: string;
+  slug: string;
+  name: string;
+  audience: "any" | "business" | "creator";
+  prices: Record<string, number>; // pesewas by audience key; "default" always present
+  interval: "free" | "month";
+  perks: string[];
+  maxListings?: number;
+  includedPromoDays?: number;
+  goldBadge?: boolean;
+  active: boolean;
+  sortOrder: number;
 }
 
 /** A listing owner's paid featured placement (Phase 8; amounts in pesewas). */

@@ -26,6 +26,7 @@ const (
 	collTickets       = "tickets"
 	collSubscriptions = "subscriptions"
 	collPromotions    = "promotions"
+	collPlans         = "plans"
 	collTimeline      = "timeline"
 )
 

@@ -120,6 +120,22 @@ export interface Subscription {
   confirmedAt?: string;
 }
 
+// A subscription plan from the staff-managed catalog (Creator plan §5).
+export interface Plan {
+  id: string;
+  slug: string;
+  name: string;
+  audience: "any" | "business" | "creator";
+  prices: Record<string, number>; // pesewas by audience key; "default" always present
+  interval: "free" | "month";
+  perks: string[];
+  maxListings?: number;
+  includedPromoDays?: number;
+  goldBadge?: boolean;
+  active: boolean;
+  sortOrder: number;
+}
+
 // A listing owner's paid featured placement (amounts in pesewas).
 export interface Promotion {
   id: string;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
-import type { Listing, Subscription } from "@/lib/types";
+import type { Listing, Plan, Subscription } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Container, SampleNote } from "@/components/ui";
@@ -10,11 +10,18 @@ import { SAMPLE_NOTICE } from "@/lib/content";
 import { formatDate } from "@/lib/format";
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  return api.business(params.slug!);
+  const [business, plans] = await Promise.all([
+    api.business(params.slug!),
+    api.plans().catch(() => [] as Plan[]),
+  ]);
+  return { business, plans };
 }
 
+const cedis = (pesewas: number) =>
+  `GH₵ ${(pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
+
 export function Component() {
-  const b = useLoaderData() as Listing;
+  const { business: b, plans } = useLoaderData() as { business: Listing; plans: Plan[] };
   const { member } = useAuth();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
@@ -45,12 +52,16 @@ export function Component() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The entry paid plan from the staff-managed catalog drives this panel.
+  const plan = plans.filter((p) => p.interval === "month").sort((x, y) => x.sortOrder - y.sortOrder)[0];
+  const price = plan ? (plan.prices.business ?? plan.prices.default ?? 0) : 0;
+
   async function subscribe() {
     setError(null);
     if (!member) { navigate("/signin", { state: { from: `/business/${b.slug}` } }); return; }
     setBusy(true);
     try {
-      const r = await api.subscribe(b.slug);
+      const r = await api.subscribe(b.slug, plan?.slug);
       window.location.assign(r.authorizationUrl); // off to Paystack (or straight back, in dev simulation)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not start the payment.");
@@ -116,12 +127,12 @@ export function Component() {
             )}
           </div>
 
-          {isOwner && (
+          {isOwner && plan && (
             <div className="rounded-[var(--radius-card)] border border-gold-border/40 bg-gold/[0.06] p-5">
               <p className="eyebrow text-gold-text">Support Oguaa</p>
-              <h2 className="mt-1 text-lg font-semibold text-ink">Supporter — GH₵ 50/month</h2>
+              <h2 className="mt-1 text-lg font-semibold text-ink">{plan.name} — {cedis(price)}/month</h2>
               <p className="mt-2 text-sm text-ink-muted">
-                Your GH₵ 50 a month keeps the platform running — and gives {b.title} the gold Supporter badge and priority placement in the business directory.
+                Your {cedis(price)} a month keeps the platform running — and gives {b.title} {(plan.perks ?? []).length > 0 ? (plan.perks ?? []).map((p) => p.toLowerCase()).join(", ") : "a boost in the business directory"}.
                 Renew manually: each payment adds another month.
               </p>
               {b.supporter && d.subscribedUntil && (
@@ -142,7 +153,7 @@ export function Component() {
                   <button type="button" onClick={subscribe} disabled={busy} className="w-full rounded-full bg-gold-brand py-3 text-sm font-semibold text-green-900 transition-colors hover:bg-gold disabled:opacity-60">
                     {subscribeLabel}
                   </button>
-                  <p className="mt-2 text-center text-xs text-ink-faint">Mobile money &amp; cards via Paystack. GH₵ 50 per month.</p>
+                  <p className="mt-2 text-center text-xs text-ink-faint">Mobile money &amp; cards via Paystack. {cedis(price)} per month.</p>
                 </div>
               )}
             </div>

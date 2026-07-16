@@ -1,4 +1,4 @@
-import type { CreatorOverview, Listing, Member, MemberView, NotificationItem, Organization, Promotion, Subscription, Ticket } from "./types";
+import type { CreatorOverview, Listing, Member, MemberView, NotificationItem, Organization, Plan, Promotion, Subscription, Ticket } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -75,8 +75,9 @@ export const api = {
   confirmPromotion: (reference: string) => get<Promotion>(`/api/promotions/confirm?reference=${encodeURIComponent(reference)}`),
 
   // Business Supporter subscription (GH₵50/mo, stacking renewals).
-  subscribe: (slug: string) =>
-    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, {}),
+  plans: () => get<Plan[]>("/api/plans"),
+  subscribe: (slug: string, plan?: string) =>
+    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
   confirmSubscription: (reference: string) => get<Subscription>(`/api/subscriptions/confirm?reference=${encodeURIComponent(reference)}`),
   mySubscriptions: () => get<Subscription[]>("/api/me/subscriptions"),
 

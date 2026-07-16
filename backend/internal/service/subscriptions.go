@@ -40,21 +40,50 @@ func SupporterActive(l domain.Listing, now time.Time) bool {
 type SubscriptionsService struct {
 	listings domain.ListingRepository
 	subs     domain.SubscriptionRepository
+	plans    domain.PlanRepository
 	paystack PaystackClient
 	portal   string // public portal origin for callback URLs
 }
 
-func NewSubscriptionsService(l domain.ListingRepository, s domain.SubscriptionRepository, ps PaystackClient, portalURL string) *SubscriptionsService {
-	return &SubscriptionsService{listings: l, subs: s, paystack: ps, portal: strings.TrimRight(portalURL, "/")}
+func NewSubscriptionsService(l domain.ListingRepository, s domain.SubscriptionRepository, plans domain.PlanRepository, ps PaystackClient, portalURL string) *SubscriptionsService {
+	return &SubscriptionsService{listings: l, subs: s, plans: plans, paystack: ps, portal: strings.TrimRight(portalURL, "/")}
 }
 
 // Simulated reports whether subscriptions run against the labelled simulation.
 func (s *SubscriptionsService) Simulated() bool { return s.paystack.Simulated() }
 
+// resolvePlan looks up the plan being bought and its business price. An empty
+// slug means the default Supporter plan; when the catalog has no such plan
+// (unmigrated install) the legacy constant price keeps the flow working. An
+// explicit slug is strict: it must exist and be active — staff control what's
+// for sale.
+func (s *SubscriptionsService) resolvePlan(ctx context.Context, slug string) (planSlug string, amount int64, err error) {
+	if slug == "" {
+		slug = domain.DefaultSupporterPlanSlug
+		p, lerr := s.plans.BySlug(ctx, slug)
+		if lerr != nil {
+			return domain.PlanBusinessSupporter, supporterAmountPesewas, nil // legacy fallback
+		}
+		if !p.Active {
+			return "", 0, fmt.Errorf("that plan isn't on sale right now")
+		}
+		return p.Slug, p.PriceFor("business"), nil
+	}
+	p, err := s.plans.BySlug(ctx, slug)
+	if err != nil {
+		return "", 0, err
+	}
+	if !p.Active {
+		return "", 0, fmt.Errorf("that plan isn't on sale right now")
+	}
+	return p.Slug, p.PriceFor("business"), nil
+}
+
 // StartSubscription records a pending subscription against an approved business
 // owned by the member and returns the Paystack authorization URL to redirect
-// the owner to. Only the business's owner may subscribe it.
-func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlug, memberID, email string) (authorizationURL, reference string, err error) {
+// the owner to. Only the business's owner may subscribe it. planSlug selects
+// the catalog plan ("" = the default Supporter plan).
+func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlug, memberID, email, planSlug string) (authorizationURL, reference string, err error) {
 	email = strings.TrimSpace(email)
 	if email == "" {
 		return "", "", fmt.Errorf("an email is required for the payment receipt")
@@ -66,6 +95,13 @@ func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlu
 	if listing.Status != domain.StatusApproved || listing.OwnerID == "" || listing.OwnerID != memberID {
 		return "", "", &domain.ForbiddenError{Reason: "only the owner of an approved business can subscribe it"}
 	}
+	plan, amount, err := s.resolvePlan(ctx, planSlug)
+	if err != nil {
+		return "", "", err
+	}
+	if amount <= 0 {
+		return "", "", fmt.Errorf("that plan has no paid monthly price for businesses")
+	}
 	now := time.Now().UTC()
 	reference = fmt.Sprintf("sub-%s-%d", listing.Slug, now.UnixNano())
 	sub := domain.Subscription{
@@ -75,8 +111,8 @@ func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlu
 		ListingID:     listing.ID,
 		ListingSlug:   listing.Slug,
 		ListingTitle:  listing.Title,
-		Plan:          domain.PlanBusinessSupporter,
-		AmountPesewas: supporterAmountPesewas,
+		Plan:          plan,
+		AmountPesewas: amount,
 		Status:        domain.PledgePending,
 		Simulated:     s.paystack.Simulated(),
 		CreatedAt:     now.Format(time.RFC3339),
@@ -134,6 +170,20 @@ func (s *SubscriptionsService) ConfirmSubscription(ctx context.Context, referenc
 	}
 	if err := s.listings.SetSubscribedUntil(ctx, sub.ListingID, periodEnd); err != nil {
 		return nil, err
+	}
+	// Bundled promotion days (Featured plan) auto-apply on every confirmed
+	// payment: the listing's featured window stacks from its current end,
+	// same as the paid period. Resolved at confirm time so staff price/perk
+	// edits between start and confirm take effect immediately.
+	if p, perr := s.plans.BySlug(ctx, sub.Plan); perr == nil && p.IncludedPromoDays > 0 {
+		fbase := now
+		if until, terr := time.Parse(time.RFC3339, listing.FeaturedUntil); terr == nil && until.After(fbase) {
+			fbase = until
+		}
+		featuredUntil := fbase.Add(time.Duration(p.IncludedPromoDays) * 24 * time.Hour).Format(time.RFC3339)
+		if err := s.listings.SetFeatured(ctx, sub.ListingID, true, featuredUntil); err != nil {
+			return nil, err
+		}
 	}
 	sub.Status = domain.PledgeSuccess
 	sub.PeriodEnd = periodEnd

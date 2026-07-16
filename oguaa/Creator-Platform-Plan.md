@@ -134,7 +134,7 @@ plan. Existing four revenue streams are untouched; plans just bundle them.
    curator/steward), per-type details whitelist, 60/hr rate limit.
 5. Listing view counter (`POST /api/listings/:id/view`, daily-deduped by
    member/IP hash) — powers the dashboard "views" KPI.
-6. Plans as constants in code (no new collection): ids, prices, perks.
+6. ~~Plans as constants in code (no new collection): ids, prices, perks.~~ **Superseded by §9.1** — plans live in the `plans` collection with admin CRUD (Monetization → Plans) + public `GET /api/plans`; subscribe consumes catalog prices. **SHIPPED 2026-07-16.**
 7. nginx conf + `docker-compose.yml` service `creator:3004` + verify script.
 
 ## 8. Phasing

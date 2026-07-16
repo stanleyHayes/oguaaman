@@ -97,6 +97,11 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/promotions/confirm", h.ConfirmPromotion)
 	mux.HandleFunc("GET /api/admin/promotions", h.AdminPromotions)
 	mux.HandleFunc("GET /api/admin/revenue", h.AdminRevenue)
+	mux.HandleFunc("GET /api/plans", h.Plans)
+	mux.HandleFunc("GET /api/admin/plans", h.AdminPlans)
+	mux.HandleFunc("POST /api/admin/plans", h.AdminCreatePlan)
+	mux.HandleFunc("POST /api/admin/plans/{id}", h.AdminUpdatePlan)
+	mux.HandleFunc("DELETE /api/admin/plans/{id}", h.AdminDeletePlan)
 
 	mux.HandleFunc("GET /api/events", h.Events)
 	// Event ticketing (Phase 6): detail with tiers, purchase, confirm, check-in.

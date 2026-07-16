@@ -28,7 +28,16 @@ func (h *Handler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	if email == "" {
 		email = "support@oguaa.test" // dev mode without auth — Paystack requires an email
 	}
-	authURL, reference, err := h.subs.StartSubscription(r.Context(), r.PathValue("slug"), memberID, email)
+	var in struct {
+		Plan string `json:"plan"`
+	}
+	if r.Body != nil && r.ContentLength > 0 {
+		if err := decodeBody(r, &in); err != nil {
+			fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+			return
+		}
+	}
+	authURL, reference, err := h.subs.StartSubscription(r.Context(), r.PathValue("slug"), memberID, email, in.Plan)
 	if err != nil {
 		var nf *domain.NotFoundError
 		var fb *domain.ForbiddenError
