@@ -596,6 +596,10 @@ func newMember(identifier, displayName, dateOfBirth string) *domain.Member {
 		Role:          domain.RoleMember,
 		JoinedAt:      time.Now().UTC().Format("2006-01-02"),
 		DateOfBirth:   strings.TrimSpace(dateOfBirth),
+		// Seed the (broadcastable) birthday from the sign-up date of birth so
+		// the member's /me birthday field is pre-filled rather than empty.
+		// Broadcast stays off by default — it's the member's to opt into.
+		Birthday: strings.TrimSpace(dateOfBirth),
 	}
 	if isEmail {
 		m.Email = identifier
