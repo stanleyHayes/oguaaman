@@ -4,6 +4,7 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { EventView, Ticket, TicketTierView } from "@/lib/types";
@@ -22,6 +23,7 @@ function fmtDate(iso?: string): string {
 export default function EventDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading, reload } = useApi<EventView>(() => api.eventView(slug), `event:${slug}`);
+  useRecordView(data?.event.id);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
   return <Detail view={data} slug={slug} reload={reload} />;

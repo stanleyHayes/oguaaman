@@ -158,6 +158,9 @@ export const api = {
     post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/listings/${id}/promote`, { days }),
   confirmPromotion: (reference: string) => get<Promotion>(`/api/promotions/confirm?reference=${encodeURIComponent(reference)}`),
 
+  // View counter (spec §4 / Creator §7.5): daily-deduped, fire-and-forget.
+  recordView: (id: string) => post<{ new: boolean }>(`/api/listings/${id}/view`, {}),
+
   // Community safety — rescue & early recovery. Auto-published on submit;
   // curators verify and transition the lifecycle afterwards.
   incidents: (f?: { status?: string; category?: string; town?: string }) => {

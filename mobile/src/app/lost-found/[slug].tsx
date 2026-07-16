@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { LostFound, LostFoundStatus } from "@/lib/types";
@@ -26,6 +27,7 @@ function locationLabel(d: LostFound["details"], missing: boolean): string {
 export default function LostFoundDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<LostFound>(() => api.lostFound(slug), `lost-found:${slug}`);
+  useRecordView(data?.id);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
   return <Detail notice={data} />;

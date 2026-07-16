@@ -3,6 +3,7 @@ import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import type { ReactNode } from "react";
 import type { LostFound, LostFoundStatus, Place } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill } from "@/components/ui";
 import { PageHero } from "@/components/page-hero";
@@ -24,6 +25,7 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<Data> {
 
 export function Component() {
   const { notice, places } = useLoaderData() as Data;
+  useRecordView(notice.id);
   const { member } = useAuth();
   const [lfStatus, setLfStatus] = useState<LostFoundStatus>(notice.details.lfStatus);
   const [busy, setBusy] = useState(false);

@@ -8,7 +8,7 @@ import { Card } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { cedis } from "@/lib/format";
 import {
-  ListChecks, Hourglass, Megaphone, BadgeCheck, Ticket, HandCoins,
+  ListChecks, Hourglass, Megaphone, BadgeCheck, Ticket, HandCoins, Eye,
   PlusCircle, TrendingUp, Landmark, type LucideIcon,
 } from "lucide-react";
 
@@ -73,6 +73,9 @@ export function Component() {
         </StaggerItem>
         <StaggerItem index={5}>
           <MetricCard label="Pledges raised" value={cedis(ov.pledgesRaisedPesewas)} icon={<HandCoins size={18} />} tone="gold" sub="Net to your projects" to="/money" />
+        </StaggerItem>
+        <StaggerItem index={6}>
+          <MetricCard label="Views this month" value={ov.viewsThisMonth ?? 0} icon={<Eye size={18} />} tone="teal" sub="Unique daily views on your listings" />
         </StaggerItem>
       </Stagger>
 

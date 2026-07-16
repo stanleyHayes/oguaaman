@@ -1,6 +1,7 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import type { Listing, Organization } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { Container, Pill, SampleNote } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { cldCover } from "@/lib/cloudinary";
@@ -55,6 +56,7 @@ function SvcIcon({ name, className = "" }: Readonly<{ name: Svc; className?: str
 
 export function Component() {
   const { artist, school } = useLoaderData() as Data;
+  useRecordView(artist.id);
   const d = artist.details;
 
   return (

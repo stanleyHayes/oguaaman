@@ -26,6 +26,7 @@ type CreatorOverview struct {
 	TicketsSold          int    `json:"ticketsSold"`
 	TicketsGrossPesewas  int64  `json:"ticketsGrossPesewas"`
 	PledgesRaisedPesewas int64  `json:"pledgesRaisedPesewas"` // net credited to their projects
+	ViewsThisMonth       int    `json:"viewsThisMonth"`
 }
 
 // CreatorService reads across listings + the money ledgers, scoped to one owner.
@@ -127,6 +128,13 @@ func (c *CreatorService) Overview(ctx context.Context, memberID string) (Creator
 				ov.PledgesRaisedPesewas += p.NetPesewas
 			}
 		}
+	}
+	listingIDs := make([]string, len(owned))
+	for i, l := range owned {
+		listingIDs[i] = l.ID
+	}
+	if views, err := c.listings.ViewsThisMonth(ctx, listingIDs); err == nil {
+		ov.ViewsThisMonth = views
 	}
 	return ov, nil
 }

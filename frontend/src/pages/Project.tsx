@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import type { Listing, Pledge } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill } from "@/components/ui";
 import { DetailHero } from "@/components/detail-hero";
@@ -16,6 +17,7 @@ const QUICK_AMOUNTS = [20, 50, 100, 500]; // GHS
 
 export function Component() {
   const project = useLoaderData() as Listing;
+  useRecordView(project.id);
   const { member } = useAuth();
   const navigate = useNavigate();
   const revalidator = useRevalidator();

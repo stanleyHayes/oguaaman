@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { C, D, S, fillFor, initials } from "@/theme";
@@ -26,6 +27,7 @@ export default function Artist() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Listing>(() => api.artist(slug), `artist:${slug}`);
   const { scrollY, onScroll } = useHeroParallax();
+  useRecordView(data?.id);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
   const d = data.details;

@@ -1,6 +1,7 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import type { Listing, Place, Organization } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { CandleRemember, Tributes } from "@/components/memorial-actions";
 import { ReportButton } from "@/components/report-button";
@@ -29,6 +30,7 @@ const GALLERY_GRADIENTS = [
 
 export function Component() {
   const { memorial: m, places, schools } = useLoaderData() as Data;
+  useRecordView(m.id);
   const d = m.details;
   const place = places.find((p) => p.id === m.townId) ?? null;
   const memSchools = (m.schoolIds ?? []).map((id) => schools.find((s) => s.id === id)).filter(Boolean) as Organization[];

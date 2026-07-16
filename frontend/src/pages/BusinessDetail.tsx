@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import type { Listing, Plan, Subscription } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { Container, SampleNote } from "@/components/ui";
 import { DetailHero } from "@/components/detail-hero";
@@ -22,6 +23,7 @@ const cedis = (pesewas: number) =>
 
 export function Component() {
   const { business: b, plans } = useLoaderData() as { business: Listing; plans: Plan[] };
+  useRecordView(b.id);
   const { member } = useAuth();
   const navigate = useNavigate();
   const revalidator = useRevalidator();

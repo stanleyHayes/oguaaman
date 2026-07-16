@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing, Tribute } from "@/lib/types";
@@ -66,6 +67,7 @@ function lifeDates(bornYear?: number, diedDate?: string) {
 export default function Memorial() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Listing>(() => api.memorial(slug), `memorial:${slug}`);
+  useRecordView(data?.id);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
   return <Detail m={data} slug={slug} />;

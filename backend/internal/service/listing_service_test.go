@@ -147,6 +147,11 @@ func (f *fakeRepo) SetSubscribedUntil(_ context.Context, id, until string) error
 	return &domain.NotFoundError{Entity: "listing"}
 }
 
+func (f *fakeRepo) RecordView(_ context.Context, _, _ string) (bool, error) { return true, nil }
+func (f *fakeRepo) ViewsThisMonth(_ context.Context, _ []string) (int, error) {
+	return 0, nil
+}
+
 // repository interfaces the service needs but these tests don't exercise.
 func (f *fakeRepo) All(context.Context) ([]domain.Member, error)           { return nil, nil }
 func (f *fakeRepo) ByID(context.Context, string) (*domain.Member, error)   { return nil, nil }

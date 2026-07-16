@@ -203,6 +203,9 @@ export const api = {
   confirmPromotion: (reference: string) =>
     get<Promotion>(`/api/promotions/confirm?reference=${encodeURIComponent(reference)}`),
 
+  // View counter (spec §4 / Creator §7.5): daily-deduped, fire-and-forget.
+  recordView: (id: string) => post<{ new: boolean }>(`/api/listings/${id}/view`, {}),
+
   stats: () => get<Stats>("/api/stats"),
 
   // auth (spec §8.1). dateOfBirth gates 18+ self-registration (spec §14.4).

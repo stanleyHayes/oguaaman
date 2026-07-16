@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import type { Incident } from "@/lib/types";
 import { CATEGORY_LABEL, STATUS_COLOR, STATUS_LABEL } from "@/lib/incidents";
@@ -19,6 +20,7 @@ function fmtDate(iso?: string): string {
 export default function IncidentDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Incident>(() => api.incident(slug), `incident:${slug}`);
+  useRecordView(data?.id);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
 

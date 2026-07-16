@@ -198,6 +198,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/listings", h.Submit)
 	mux.HandleFunc("POST /api/listings/{id}/edit", h.EditListing)
 	mux.HandleFunc("POST /api/listings/{id}/report", h.Report)
+	mux.HandleFunc("POST /api/listings/{id}/view", h.RecordView)
 	mux.HandleFunc("POST /api/uploads", h.Upload)
 	mux.HandleFunc("POST /api/ai", h.AI)
 

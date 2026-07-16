@@ -3,6 +3,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing } from "@/lib/types";
@@ -17,6 +18,7 @@ const QUICK = [20, 50, 100, 500]; // GHS
 export default function Project() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading, reload } = useApi<Listing>(() => api.projectDetail(slug), `project:${slug}`);
+  useRecordView(data?.id);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
   return <Detail project={data} slug={slug} reload={reload} />;

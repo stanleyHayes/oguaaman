@@ -1,6 +1,7 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { Container, Pill, SampleNote } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { ReportButton } from "@/components/report-button";
@@ -13,6 +14,7 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<Listing> {
 
 export function Component() {
   const person = useLoaderData() as Listing;
+  useRecordView(person.id);
   const d = person.details;
   const story = (d.bio ?? d.whyNotable ?? "").split("\n\n").filter(Boolean);
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import type { EventView, Ticket } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill } from "@/components/ui";
 import { DetailHero } from "@/components/detail-hero";
@@ -15,6 +16,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export function Component() {
   const { event, tiers } = useLoaderData() as EventView;
+  useRecordView(event.id);
   const { member } = useAuth();
   const navigate = useNavigate();
   const revalidator = useRevalidator();

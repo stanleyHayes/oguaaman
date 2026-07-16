@@ -2,17 +2,25 @@ package mongo
 
 import (
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/oguaa/backend/internal/domain"
 )
 
-type ListingRepo struct{ c *mongo.Collection }
+type ListingRepo struct {
+	c     *mongo.Collection
+	views *mongo.Collection
+}
 
 func NewListingRepo(db *mongo.Database) *ListingRepo {
-	return &ListingRepo{db.Collection(collListings)}
+	return &ListingRepo{
+		c:     db.Collection(collListings),
+		views: db.Collection(collListingViews),
+	}
 }
 
 func (r *ListingRepo) Find(ctx context.Context, f domain.ListingFilter) ([]domain.Listing, error) {
@@ -150,4 +158,45 @@ func (r *ListingRepo) IncrementCandles(ctx context.Context, listingID string) (i
 		return 0, notFound("listing", err)
 	}
 	return toInt(l.Details["candles"]), nil
+}
+
+// RecordView upserts a view doc keyed by "listingId:day:visitorKey". On first
+// insert (new unique daily view) it also increments the listing's viewCount.
+func (r *ListingRepo) RecordView(ctx context.Context, listingID, visitorKey string) (bool, error) {
+	day := time.Now().UTC().Format("2006-01-02")
+	key := listingID + ":" + day + ":" + visitorKey
+	res, err := r.views.UpdateOne(ctx,
+		bson.M{"_id": key},
+		bson.M{"$setOnInsert": bson.M{"_id": key, "listingId": listingID, "day": day}},
+		options.UpdateOne().SetUpsert(true),
+	)
+	if err != nil {
+		return false, err
+	}
+	isNew := res.UpsertedCount > 0
+	if isNew {
+		_, err = r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{"viewCount": 1}})
+	}
+	return isNew, err
+}
+
+// ViewsThisMonth counts unique daily view records whose day starts with the
+// current YYYY-MM prefix and whose listingId is among listingIDs.
+func (r *ListingRepo) ViewsThisMonth(ctx context.Context, listingIDs []string) (int, error) {
+	if len(listingIDs) == 0 {
+		return 0, nil
+	}
+	prefix := time.Now().UTC().Format("2006-01")
+	cur, err := r.views.Find(ctx, bson.M{
+		"listingId": bson.M{"$in": listingIDs},
+		"day":       bson.M{"$regex": "^" + prefix},
+	})
+	if err != nil {
+		return 0, err
+	}
+	var docs []bson.M
+	if err := cur.All(ctx, &docs); err != nil {
+		return 0, err
+	}
+	return len(docs), nil
 }

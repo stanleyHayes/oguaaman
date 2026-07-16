@@ -76,6 +76,7 @@ export interface Listing {
   featured?: boolean;
   featuredUntil?: string;
   supporter?: boolean;
+  viewCount?: number;
   details: ListingDetails;
   tributes?: Tribute[];
 }

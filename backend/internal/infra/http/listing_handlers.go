@@ -286,3 +286,22 @@ func (h *Handler) Tribute(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusCreated, t)
 }
+
+// RecordView — POST /api/listings/{id}/view. Daily-deduped page-view counter.
+// Uses member ID when authed, IP otherwise.
+func (h *Handler) RecordView(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	m, _ := h.requireAuth(w, r)
+	var visitorKey string
+	if m != nil {
+		visitorKey = m.ID
+	} else {
+		visitorKey = "ip:" + clientIP(r)
+	}
+	isNew, err := h.svc.RecordView(r.Context(), id, visitorKey)
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"new": isNew})
+}

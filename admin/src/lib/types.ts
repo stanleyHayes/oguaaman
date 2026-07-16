@@ -29,6 +29,7 @@ export interface Listing {
   featured?: boolean;
   featuredUntil?: string;
   coverImageUrl?: string;
+  viewCount?: number;
   details: ListingDetails;
   createdAt: string;
   submittedAt?: string;

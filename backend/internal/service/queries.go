@@ -109,6 +109,11 @@ func (s *Service) Memories(ctx context.Context) ([]domain.Listing, error) {
 	return s.approved(ctx, domain.TypeMemory)
 }
 
+// RecordView records a unique daily page-view for the given listing.
+func (s *Service) RecordView(ctx context.Context, listingID, visitorKey string) (bool, error) {
+	return s.listings.RecordView(ctx, listingID, visitorKey)
+}
+
 func (s *Service) Events(ctx context.Context) ([]domain.Listing, error) {
 	events, err := s.approved(ctx, domain.TypeEvent)
 	if err != nil {

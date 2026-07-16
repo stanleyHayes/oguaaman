@@ -280,7 +280,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 5. ~~**Request-a-new-institution flow + server-side kind catalog**~~ ✅ (`/api/institution-kinds` + requests ride the steward queue; approve creates the verified org + seats the requester).
 6. ~~**Per-listing OG cards / rich link previews**~~ ✅ — pure-Go 1200×630 renderer (`infra/http/ogcard`, vendored Fraunces/Outfit OFL fonts, cover compositing) at `GET /api/og/image/{path…}.png`; crawler meta shim at `GET /api/og/page/{path…}` (og/twitter tags + meta-refresh; unapproved listings never leak — fall back to the site card); portal nginx maps scraper UAs (facebookexternalhit, Twitterbot, WhatsApp, LinkedIn, Slack, Telegram, Discord, Pinterest, Reddit, Embedly, Applebot) onto the shim, humans get the SPA. Rate-limited 60/min; 1h cache.
 7. ~~**PWA manifest + offline shell**~~ ✅ — `manifest.webmanifest` (standalone, brand icons: any+maskable 192/512 + apple-touch 180, generated from the crab SVG); `sw.js` (navigations network-first → cached shell fallback; `/assets`+font CDNs cache-first; `/uploads` SWR; `/api` network-only); prod-only registration in `main.tsx`; nginx serves manifest as `application/manifest+json`.
-8. **View counter** (+ creator "views this month" KPI; Creator §7.5).
+8. ~~**View counter**~~ ✅ (`POST /api/listings/{id}/view` — daily-deduped by member ID / IP; `listing_views` collection; `viewCount` on listing doc; `viewsThisMonth` KPI in creator overview; `useRecordView` pings wired into all 8 portal + 8 mobile listing detail screens).
 9. **Memory-wall filters** (spec §8.7/§16).
 10. **Edit re-approval policy** (spec §17.3 — pick and implement one option).
 11. **Email/WhatsApp notification delivery** (spec §8.11/§12).

@@ -55,6 +55,7 @@ type Listing struct {
 	CoverImageURL   string         `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
 	Featured        bool           `json:"featured" bson:"featured"`                               // surfaced on front pages (paid placement, spec §8.14)
 	FeaturedUntil   string         `json:"featuredUntil,omitempty" bson:"featuredUntil,omitempty"` // RFC3339; empty = no expiry. Past = lapsed.
+	ViewCount       int            `json:"viewCount" bson:"viewCount"`
 	Details         map[string]any `json:"details" bson:"details"`
 	Tributes        []Tribute      `json:"tributes,omitempty" bson:"tributes,omitempty"`
 	CreatedAt       string         `json:"createdAt" bson:"createdAt"`
@@ -105,4 +106,11 @@ type ListingRepository interface {
 	// SetSubscribedUntil sets details.subscribedUntil (RFC3339) — the paid-until
 	// date of a business's Supporter subscription (Phase 7).
 	SetSubscribedUntil(ctx context.Context, listingID, until string) error
+	// RecordView idempotently records a unique daily page-view. visitorKey is the
+	// member ID (if authed) or "ip:"+IP (anon). Returns true when this is the
+	// first view from this visitor today (viewCount was incremented).
+	RecordView(ctx context.Context, listingID, visitorKey string) (bool, error)
+	// ViewsThisMonth sums unique daily view records for the given listing IDs in
+	// the current calendar month (YYYY-MM prefix match on the day field).
+	ViewsThisMonth(ctx context.Context, listingIDs []string) (int, error)
 }

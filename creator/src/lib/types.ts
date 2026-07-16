@@ -275,4 +275,5 @@ export interface CreatorOverview {
   ticketsSold: number;
   ticketsGrossPesewas: number;
   pledgesRaisedPesewas: number;
+  viewsThisMonth: number;  // unique daily views on all owned listings in the current month
 }

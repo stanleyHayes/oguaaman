@@ -2,6 +2,7 @@ import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import type { ReactNode } from "react";
 import type { Incident, IncidentStatusEntry, Place } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useRecordView } from "@/lib/use-record-view";
 import { Container, Pill } from "@/components/ui";
 import { PageHero } from "@/components/page-hero";
 import { formatDate } from "@/lib/format";
@@ -22,6 +23,7 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<Data> {
 
 export function Component() {
   const { incident: i, places } = useLoaderData() as Data;
+  useRecordView(i.id);
   const d = i.details;
   const town = places.find((p) => p.id === i.townId);
   const history = (d.statusHistory ?? []).slice().sort((a, b) => a.at.localeCompare(b.at));
