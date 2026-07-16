@@ -180,3 +180,11 @@
 ::view-transition-old(root) {
   z-index: 0;
 }
+
+/* Branded loading splash — indeterminate sliding bar under the crab mark. */
+@keyframes oguaa-loadbar {
+  0% { transform: translateX(-130%); }
+  100% { transform: translateX(360%); }
+}
+.oguaa-loadbar { animation: oguaa-loadbar 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .oguaa-loadbar { animation: none; } }

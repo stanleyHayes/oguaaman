@@ -13,13 +13,33 @@ export function isStaffRole(role: string): boolean {
 /** Locks the whole back-office behind a curator/steward/moderator session (spec §9). */
 export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
   const { member, loading } = useAuth();
-  if (loading) return <Backdrop><p className="text-sm text-cream/70">Loading…</p></Backdrop>;
+  if (loading) return <Backdrop><LoadingSplash tag="Admin" /></Backdrop>;
   if (!member) return <SignIn />;
   if (!isStaffRole(member.role)) return <NotAuthorized name={member.displayName} />;
   // Moderators don't get MFA enforcement (read: triage-only access is lower risk);
   // curators and stewards must enrol before the console unlocks (spec §14).
   if (member.role !== "moderator" && !member.mfaEnabled) return <ForcedMfa name={member.displayName} />;
   return <>{children}</>;
+}
+
+/** Branded loading splash — crab mark, sliding gold bar, motto. Rendered
+ * inside Backdrop, which pins the green field's colours in both themes. */
+function LoadingSplash({ tag }: Readonly<{ tag: string }>) {
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <span className="inline-flex items-center gap-2">
+        <span className="grid size-9 place-items-center rounded-lg bg-gradient-to-br from-gold to-gold-brand shadow-sm" aria-hidden>
+          <Mark size={20} color="#0C2C1F" />
+        </span>
+        <span className="text-3xl font-semibold tracking-tight text-cream">Oguaa</span>
+        <span className="rounded bg-gold/15 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-gold">{tag}</span>
+      </span>
+      <div className="mt-1 h-0.5 w-28 overflow-hidden rounded-full bg-gold/15" aria-hidden>
+        <div className="oguaa-loadbar h-full w-1/2 rounded-full bg-gold-brand" />
+      </div>
+      <p className="text-xs uppercase tracking-[0.2em] text-gold/80">Yɛn ara asaase ni</p>
+    </div>
+  );
 }
 
 const TRUST = [
@@ -32,16 +52,6 @@ const TRUST = [
 function Backdrop({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="auth-dark-pin relative flex min-h-screen items-center justify-center overflow-hidden bg-green-900 p-6">
-      {/* Low-opacity dotted texture */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-          color: "#C7A24A",
-        }}
-        aria-hidden
-      />
       {/* Blurred gold glows */}
       <div className="pointer-events-none absolute -top-24 -left-20 h-72 w-72 rounded-full bg-gold/20 blur-3xl" aria-hidden />
       <div className="pointer-events-none absolute -bottom-28 -right-16 h-80 w-80 rounded-full bg-gold/10 blur-3xl" aria-hidden />
@@ -61,11 +71,6 @@ function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="grid overflow-hidden rounded-2xl border border-sand/40 bg-paper shadow-2xl shadow-green-900/40 md:grid-cols-2">
       <aside className="relative overflow-hidden bg-gradient-to-br from-green to-green-900 p-8 text-cream">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{ backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)", backgroundSize: "20px 20px", color: "#C7A24A" }}
-          aria-hidden
-        />
         <div className="pointer-events-none absolute -bottom-8 -right-6 text-gold/15" aria-hidden>
           <Mark size={180} />
         </div>

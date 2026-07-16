@@ -27,11 +27,6 @@ function BrandPanel({ mode }: Readonly<{ mode: Mode }>) {
   const trust = isJoin ? TRUST_JOIN : TRUST_COMMON;
   return (
     <aside className="on-dark on-dark-pin relative overflow-hidden bg-gradient-to-br from-green to-green-900 p-8 text-cream lg:p-10">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
-        style={{ backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)", backgroundSize: "20px 20px", color: "#C7A24A" }}
-        aria-hidden
-      />
       <Adinkra
         name="adinkrahene"
         size={260}
