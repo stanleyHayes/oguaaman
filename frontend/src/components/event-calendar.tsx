@@ -136,18 +136,57 @@ function shiftMonth(view: { year: number; month: number }, delta: number): { yea
   return { year: view.year, month: m };
 }
 
-/** Month-grid calendar of events. Prev/next navigation, today highlighted. */
+/** Years offered in the browse header: earliest→latest event year, expanded to
+ *  cover the current year and the viewed year; current year ±2 if no events. */
+function yearOptions(events: Listing[], currentYear: number, viewYear: number): number[] {
+  const eventYears = events
+    .map((e) => Number((e.details.startsAt ?? "").slice(0, 4)))
+    .filter((y) => Number.isInteger(y) && y > 0);
+  const lo = Math.min(...(eventYears.length ? eventYears : [currentYear - 2]), currentYear, viewYear);
+  const hi = Math.max(...(eventYears.length ? eventYears : [currentYear + 2]), currentYear, viewYear);
+  return Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+}
+
+/** Month-grid calendar of events. Month/year navigation, today highlighted. */
 export function EventCalendar({ events }: Readonly<{ events: Listing[] }>) {
   const today = useMemo(() => dayKey(new Date()), []);
   const [view, setView] = useState(() => initialMonth(events, today));
   const byDay = useMemo(() => eventsByDay(events), [events]);
+  const currentYear = Number(today.slice(0, 4));
+  const years = useMemo(() => yearOptions(events, currentYear, view.year), [events, currentYear, view.year]);
   const navBtn = "flex h-8 w-8 items-center justify-center rounded-full border border-sand bg-paper text-ink transition-colors hover:border-gold-border/50 hover:text-gold-text";
+  const selectCls = "rounded-lg border border-sand bg-cream px-2 py-1 text-sm text-ink focus:border-green focus:outline-none";
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <button type="button" onClick={() => setView((v) => shiftMonth(v, -1))} aria-label="Previous month" className={navBtn}>←</button>
-        <h3 className="text-xl font-semibold text-ink">{MONTHS_LONG[view.month]} {view.year}</h3>
-        <button type="button" onClick={() => setView((v) => shiftMonth(v, 1))} aria-label="Next month" className={navBtn}>→</button>
+      <h3 className="sr-only">{MONTHS_LONG[view.month]} {view.year}</h3>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setView((v) => shiftMonth(v, -1))} aria-label="Previous month" className={navBtn}>←</button>
+          <select
+            aria-label="Month"
+            value={view.month}
+            onChange={(e) => setView((v) => ({ year: v.year, month: Number(e.target.value) }))}
+            className={selectCls}
+          >
+            {MONTHS_LONG.map((month, idx) => <option key={month} value={idx}>{month}</option>)}
+          </select>
+          <select
+            aria-label="Year"
+            value={view.year}
+            onChange={(e) => setView((v) => ({ year: Number(e.target.value), month: v.month }))}
+            className={selectCls}
+          >
+            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <button type="button" onClick={() => setView((v) => shiftMonth(v, 1))} aria-label="Next month" className={navBtn}>→</button>
+        </div>
+        <button
+          type="button"
+          onClick={() => setView({ year: currentYear, month: Number(today.slice(5, 7)) - 1 })}
+          className="h-8 rounded-full border border-sand bg-paper px-3 text-sm font-medium text-ink transition-colors hover:border-gold-border/50 hover:text-gold-text"
+        >
+          Today
+        </button>
       </div>
       <MonthGrid year={view.year} month={view.month} byDay={byDay} today={today} />
     </div>

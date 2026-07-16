@@ -25,6 +25,9 @@ export function Component() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Local YYYY-MM-DD upper bound for the picker — a "last seen" date can't be in the future.
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -73,7 +76,7 @@ export function Component() {
                   <input name="lastSeenLocation" className={inputCls} placeholder="e.g. Kotokuraba Market, main gate" />
                 </Field>
                 <Field label="Last seen when">
-                  <DatePicker name="lastSeenDate" className="w-full" />
+                  <DatePicker name="lastSeenDate" max={todayIso} className="w-full" />
                 </Field>
               </div>
               <Field label="Your contact" hint="A phone number people can reach you on — this is how you get it back.">

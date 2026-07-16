@@ -106,6 +106,9 @@ export function Component() {
   const [birthday, setBirthday] = useState("");
   const [broadcast, setBroadcast] = useState(false);
   const [bdayState, setBdayState] = useState<SaveState>("idle");
+  // Local YYYY-MM-DD upper bound for the birthday picker — birthdays are in the past.
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   // Diaspora opt-in (Phase 2 foundation).
   const [abroad, setAbroad] = useState(false);
   const [city, setCity] = useState("");
@@ -507,6 +510,7 @@ export function Component() {
               <DatePicker
                 value={birthday.length >= 10 ? birthday.slice(0, 10) : birthday}
                 onChange={(v) => { setBirthday(v); setBdayState("idle"); }}
+                max={todayIso}
                 className="w-full sm:w-auto sm:min-w-[13rem]"
               />
               <label className="inline-flex items-center gap-2 text-sm text-ink-muted">

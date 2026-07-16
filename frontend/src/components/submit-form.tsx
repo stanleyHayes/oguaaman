@@ -275,6 +275,9 @@ function TypeFields({
   onOpportunityKind,
   memorialToggles,
 }: Readonly<{ type: ListingType; opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["value"]; onOpportunityKind: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void; memorialToggles: MemorialToggles }>) {
+  // Local YYYY-MM-DD upper bound for the memorial picker — a date of passing can't be in the future.
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   return (
     <>
       {type === "artist" && (<>
@@ -332,7 +335,7 @@ function TypeFields({
             <Field label="Honorific (optional)" hint="e.g. Nana, Maame, Dr."><input name="honorific" className={inputCls} placeholder="Nana" /></Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Year of birth (optional)"><input name="bornYear" inputMode="numeric" className={inputCls} placeholder="1942" /></Field>
-              <Field label="Date of passing (optional)"><DatePicker name="diedDate" className="w-full" /></Field>
+              <Field label="Date of passing (optional)"><DatePicker name="diedDate" max={todayIso} className="w-full" /></Field>
             </div>
             <Field label="Birthday (optional)" hint="MM-DD, for yearly remembrance"><input name="birthday" className={inputCls} placeholder="03-21" /></Field>
             <Field label="Epitaph (optional)" hint="A short line of remembrance"><input name="epitaph" className={inputCls} /></Field>
