@@ -10,7 +10,7 @@ import { Panel } from "@/components/institution-panels";
 const field =
   "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
 const btnPrimary =
-  "rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60";
+  "rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60";
 
 type Flash = { kind: "ok" | "err"; text: string } | null;
 
@@ -61,7 +61,7 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
             {t.photoUrl ? (
               <img src={t.photoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" loading="lazy" />
             ) : (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green/[0.08] text-xs font-bold text-green">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green/[0.08] text-xs font-bold text-green-text">
                 {initials(t.memberName || "?")}
               </span>
             )}
@@ -80,7 +80,7 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
                   type="button"
                   disabled={busy || t.status !== "approved"}
                   onClick={() => run(() => api.setTeamScope(slug, t.memberId, t.scope === "manager" ? "officer" : "manager"), "Scope updated.")}
-                  className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-green/40 hover:text-green disabled:opacity-40"
+                  className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-green/40 hover:text-green-text disabled:opacity-40"
                 >
                   {t.scope === "manager" ? "Make officer" : "Make manager"}
                 </button>
@@ -154,7 +154,7 @@ export function InvitationsPanel({ items, onChanged }: Readonly<{ items: Invitat
             </div>
             <Pill tone={inv.scope === "manager" ? "gold" : "neutral"}>{inv.scope}</Pill>
             <span className="flex items-center gap-2">
-              <button type="button" onClick={() => respond(inv.id, true)} disabled={busy} className="rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
+              <button type="button" onClick={() => respond(inv.id, true)} disabled={busy} className="rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
                 Accept
               </button>
               <button type="button" onClick={() => respond(inv.id, false)} disabled={busy} className="rounded-full border border-sand px-4 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-clay hover:text-clay-text disabled:opacity-60">

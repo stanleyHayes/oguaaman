@@ -14,9 +14,9 @@ const field =
 const label = "mb-1.5 block text-sm font-medium text-ink";
 
 const btnPrimary =
-  "rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60";
+  "rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60";
 const btnGhost =
-  "rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green transition-colors hover:border-green";
+  "rounded-full border border-green-text/30 px-4 py-2 text-sm font-semibold text-green-text transition-colors hover:border-green-text";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -424,7 +424,7 @@ export function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; i
         {sections.map((s, i) => (
           <div key={s.id || i} className="rounded-[var(--radius-card)] border border-sand bg-paper p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-wider text-green">{sectionTypeLabel(s.type)}</span>
+              <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-wider text-green-text">{sectionTypeLabel(s.type)}</span>
               <input className={`${field} min-w-[10rem] flex-1`} value={s.title ?? ""} onChange={(e) => update(i, { title: e.target.value })} placeholder="Section title" />
               <div className="flex items-center gap-1">
                 <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move section up" className="rounded-md border border-sand px-2 py-1.5 text-sm text-ink-muted hover:border-green/40 disabled:opacity-40">↑</button>

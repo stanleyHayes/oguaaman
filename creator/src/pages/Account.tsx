@@ -110,7 +110,7 @@ export function Component() {
           {err && <p className="mt-3 rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
           <div className="mt-4 flex items-center gap-3">
             <button onClick={save} disabled={busy || !dirty}
-              className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-50">
+              className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-50">
               {busy ? "Saving…" : "Save creator types"}
             </button>
             {saved && <span className="text-sm font-medium text-teal-text">Saved ✓</span>}

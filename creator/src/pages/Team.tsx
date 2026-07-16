@@ -50,7 +50,7 @@ export function Component() {
         <div className="space-y-6">
           <InvitationsPanel items={invitations} onChanged={revalidate} />
           <Empty icon="building" title="No institutions yet" actions={
-            <Link to="/institutions" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">About institutions</Link>
+            <Link to="/institutions" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green">About institutions</Link>
           }>
             Claim your school, council or association on the portal — once a steward approves, its workspace opens here.
           </Empty>
@@ -66,7 +66,7 @@ export function Component() {
         <p className="mx-auto mt-3 max-w-md text-ink-muted">
           You don’t manage this institution yet. Open its page on the portal to request management — a steward reviews each claim.
         </p>
-        <Link to="/team" className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">
+        <Link to="/team" className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">
           Back to your workspace
         </Link>
       </div>
@@ -87,7 +87,7 @@ export function Component() {
         </div>
         <p className="mt-1 max-w-2xl text-sm text-ink-muted">
           Keep the official profile current, manage your offices, and post events.{" "}
-          <a href={`${PORTAL}/education/${slug}`} className="font-medium text-green underline">View public page →</a>
+          <a href={`${PORTAL}/education/${slug}`} className="font-medium text-green-text underline">View public page →</a>
         </p>
       </div>
 
@@ -99,8 +99,8 @@ export function Component() {
               to={`/team/${o.slug}`}
               className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
                 o.slug === slug
-                  ? "border-green bg-green/[0.08] text-green"
-                  : "border-sand bg-paper text-ink-muted hover:border-green/40 hover:text-green"
+                  ? "border-green-text bg-green/[0.08] text-green-text"
+                  : "border-sand bg-paper text-ink-muted hover:border-green/40 hover:text-green-text"
               }`}
             >
               <Landmark size={12} aria-hidden />

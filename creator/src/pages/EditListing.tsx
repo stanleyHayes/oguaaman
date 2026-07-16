@@ -106,7 +106,7 @@ export function Component() {
               ? "Incidents, lost & found notices and institution projects are edited through their own flows."
               : "This listing doesn't exist or belongs to someone else. Only the owner can edit a listing."}
           </p>
-          <Link to="/work" className="mt-5 inline-block rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream">Back to My Work</Link>
+          <Link to="/work" className="mt-5 inline-block rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green">Back to My Work</Link>
         </Card>
       </div>
     );
@@ -132,6 +132,9 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
   const [saved, setSaved] = useState<"live" | "queued" | null>(null);
 
   const resubmits = listing.status !== "approved" && listing.status !== "pending";
+
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -185,7 +188,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
         <BackLink to="/work">My work</BackLink>
         <Card className="p-8 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal/[0.12]">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0b6557" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-text" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
           </div>
           <h1 className="mt-4 text-2xl font-semibold text-ink">
             {saved === "live" ? "Changes saved — still live" : "Changes saved — back in the queue"}
@@ -195,7 +198,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
               ? "Your updates are on the public page already. A curator can spot-check the change in the audit trail."
               : "A curator will review your changes before the listing goes live again. You'll be notified."}
           </p>
-          <Link to="/work" className="mt-6 inline-block rounded-full bg-green px-6 py-2.5 text-sm font-semibold text-cream">Back to My Work</Link>
+          <Link to="/work" className="mt-6 inline-block rounded-full bg-green px-6 py-2.5 text-sm font-semibold text-on-green">Back to My Work</Link>
         </Card>
       </div>
     );
@@ -270,7 +273,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
                 <Field label="Honorific (optional)" hint="e.g. Nana, Maame, Dr."><input name="honorific" defaultValue={str(listing.details.honorific)} className={inputCls} /></Field>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Year of birth (optional)"><input name="bornYear" inputMode="numeric" defaultValue={typeof listing.details.bornYear === "number" ? String(listing.details.bornYear) : ""} className={inputCls} /></Field>
-                  <Field label="Date of passing (optional)"><DatePicker name="diedDate" value={diedDate} onChange={setDiedDate} className="w-full" /></Field>
+                  <Field label="Date of passing (optional)"><DatePicker name="diedDate" value={diedDate} onChange={setDiedDate} max={todayIso} className="w-full" /></Field>
                 </div>
                 <Field label="Birthday (optional)" hint="MM-DD, for yearly remembrance"><input name="birthday" defaultValue={str(listing.details.birthday)} className={inputCls} /></Field>
                 <Field label="Epitaph (optional)" hint="A short line of remembrance"><input name="epitaph" defaultValue={str(listing.details.epitaph)} className={inputCls} /></Field>
@@ -298,7 +301,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
           {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
 
           <div className="flex items-center gap-3">
-            <button type="submit" disabled={busy} className="rounded-full bg-green px-8 py-3 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
+            <button type="submit" disabled={busy} className="rounded-full bg-green px-8 py-3 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
               {busy ? "Saving…" : resubmits ? "Save & resubmit" : "Save changes"}
             </button>
             <Link to="/work" className="text-sm font-medium text-ink-faint hover:text-ink">Cancel</Link>

@@ -72,7 +72,7 @@ export function Component() {
             Everything you've contributed, with its review status. Promote an approved listing to feature it across the portal — GH₵ 10 per day.
           </p>
         </div>
-        <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green-900">
+        <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900">
           Add a listing
         </a>
       </div>
@@ -80,7 +80,7 @@ export function Component() {
       <div className="mb-4 flex flex-wrap gap-2">
         {(["all", "draft", "pending", "approved", "rejected"] as const).map((s) => (
           <button key={s} type="button" onClick={() => setStatusFilter(s)}
-            className={`rounded-full border px-3.5 py-1 text-sm font-medium transition-colors capitalize ${statusFilter === s ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}>
+            className={`rounded-full border px-3.5 py-1 text-sm font-medium transition-colors capitalize ${statusFilter === s ? "border-green bg-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}>
             {s} <span className="opacity-60">({counts[s]})</span>
           </button>
         ))}
@@ -92,12 +92,12 @@ export function Component() {
         </p>
       )}
       {promoError && (
-        <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-900">{promoError}</p>
+        <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-text">{promoError}</p>
       )}
 
       {filtered.length === 0 ? (
         <Empty icon="pen" title={statusFilter === "all" ? "Nothing yet" : `No ${statusFilter} listings`} actions={
-          statusFilter === "all" ? <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">Add your first listing</a> : undefined
+          statusFilter === "all" ? <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green">Add your first listing</a> : undefined
         }>
           {statusFilter === "all" ? "Your businesses, events, art and projects show up here once you submit them on the portal." : `You have no listings with "${statusFilter}" status.`}
         </Empty>
@@ -113,7 +113,7 @@ export function Component() {
                     {l.coverImageUrl ? (
                       <img src={l.coverImageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />
                     ) : (
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green/[0.08] text-xs font-bold text-green">{initials(l.title)}</span>
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green/[0.08] text-xs font-bold text-green-text">{initials(l.title)}</span>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-ink">{l.title}</p>
@@ -145,7 +145,7 @@ export function Component() {
                         <div className="flex flex-wrap items-center gap-1.5">
                           {[7, 14, 30].map((d) => (
                             <button key={d} type="button" onClick={() => promote(l, d)} disabled={promoBusy}
-                              className="rounded-full border border-green px-2.5 py-1 text-xs font-semibold text-green transition-colors hover:bg-green hover:text-cream disabled:opacity-60">
+                              className="rounded-full border border-green-text px-2.5 py-1 text-xs font-semibold text-green-text transition-colors hover:bg-green hover:text-on-green disabled:opacity-60">
                               {d}d · {cedis(d * 1000)}
                             </button>
                           ))}

@@ -69,7 +69,7 @@ export function Component() {
 
       {orgs.length === 0 ? (
         <Empty icon="building" title="No institutions yet" actions={
-          <a href={`${PORTAL}/education`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">Browse institutions on the portal</a>
+          <a href={`${PORTAL}/education`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green">Browse institutions on the portal</a>
         }>
           Find your school, council or association on the portal and tap “Claim this page” — once a steward approves, it shows up here.
         </Empty>
@@ -82,7 +82,7 @@ export function Component() {
                   {o.crestUrl ? (
                     <img src={o.crestUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />
                   ) : (
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green/[0.08] text-green"><Landmark size={18} aria-hidden /></span>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green/[0.08] text-green-text"><Landmark size={18} aria-hidden /></span>
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-ink">{o.name}</p>
@@ -132,7 +132,7 @@ export function Component() {
         </div>
         <div className="mt-4 flex items-center gap-3">
           <button type="button" onClick={submit} disabled={busy || name.trim().length < 2 || !seat.trim()}
-            className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
+            className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
             Send request
           </button>
           {flash && <span className={`text-sm ${flash.ok ? "text-teal-text" : "text-clay-text"}`}>{flash.text}</span>}

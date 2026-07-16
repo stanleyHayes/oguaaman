@@ -86,7 +86,7 @@ export function ImageUpload({
             <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="rounded-full border border-sand px-3.5 py-1.5 text-sm font-medium text-ink-muted hover:border-green/40 disabled:opacity-60">
               {busy ? `Uploading… ${progress}%` : "Replace"}
             </button>
-            <button type="button" onClick={() => onChange("")} className="rounded-full border border-maroon-900/30 px-3.5 py-1.5 text-sm font-medium text-maroon-900 hover:bg-maroon-900/[0.06]">
+            <button type="button" onClick={() => onChange("")} className="rounded-full border border-maroon-text/30 px-3.5 py-1.5 text-sm font-medium text-maroon-text hover:bg-maroon-900/[0.06]">
               Remove
             </button>
           </div>
@@ -113,7 +113,7 @@ export function ImageUpload({
             </>
           ) : (
             <>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-green" aria-hidden>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-green-text" aria-hidden>
                 <path d="M12 16V4M7 9l5-5 5 5" /><path d="M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3" />
               </svg>
               <span className="text-sm font-medium text-ink">Click to upload an image</span>
@@ -136,7 +136,7 @@ export function ImageUpload({
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-faint">
         <span>{hint}</span>
         {!value && (
-          <button type="button" onClick={() => setManual((m) => !m)} className="font-medium text-green underline">
+          <button type="button" onClick={() => setManual((m) => !m)} className="font-medium text-green-text underline">
             {manual ? "upload a file instead" : "or paste an image URL"}
           </button>
         )}

@@ -305,7 +305,7 @@ export function CreatorError() {
         <h1 className="text-4xl font-semibold">Something went wrong</h1>
         <p className="mt-3 text-ink-muted">{msg}</p>
         <p className="mt-2 text-sm text-ink-faint">Is the Go API running on :8080?</p>
-        <a href="/" className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">Reload</a>
+        <a href="/" className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">Reload</a>
       </div>
     </div>
   );

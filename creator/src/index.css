@@ -11,6 +11,7 @@
   --color-green-900: #0c2c1f;
   --color-green: #123f2d;
   --color-green-slate: #3b473d;
+  --color-green-text: #123f2d;
   --color-gold: #c7a24a;
   --color-gold-brand: #b07d32;
   --color-gold-border: #b8862f;
@@ -18,8 +19,11 @@
   --color-clay: #b0503c;
   --color-clay-text: #9a4030;
   --color-maroon-900: #7c2d2d;
+  --color-maroon-text: #7c2d2d;
   --color-teal: #0e7c6b;
   --color-teal-text: #0b6557;
+  /* Always-light text on green/maroon/navy brand fills (both themes). */
+  --color-on-green: #f6f1e7;
   /* Aura command-center sidebar palette (auraedu packages/tokens/tokens.css) */
   --color-navy: #001b50;
   --color-navy-soft: #002870;
@@ -65,6 +69,7 @@
     --color-green-900: #05150e;
     --color-green: #1a5a42;
     --color-green-slate: #2a3b33;
+    --color-green-text: #4ecf9d;
     --color-gold: #e0c270;
     --color-gold-brand: #d4a85c;
     --color-gold-border: #c99c4a;
@@ -72,8 +77,10 @@
     --color-clay: #d77a66;
     --color-clay-text: #e9a08d;
     --color-maroon-900: #5c1f1f;
+    --color-maroon-text: #e08585;
     --color-teal: #2dbfa5;
     --color-teal-text: #6ee7d2;
+    --color-on-green: #f4f0e8;
     --color-ai: #7b6fd6;
     --color-ai-tint: #1a1833;
     --color-ai-line: #3d3966;
@@ -84,7 +91,8 @@
     --color-aura-gold: #e0b055;
     --color-aura-gold-soft: #ecd778;
     --color-aura-gold-muted: #bfa76e;
-    --color-aura-cream: #0f1a2e;
+    /* Sidebar foreground on the always-dark navy rail — must stay light. */
+    --color-aura-cream: #f2ead9;
     --color-crit: #e04d3e;
   }
   html[data-theme="dark"] ::selection {
@@ -107,6 +115,24 @@
   .eyebrow {
     font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
     font-weight: 700; color: var(--color-ink-faint);
+  }
+  /* Sign-in screen (auth-gate.tsx) sits on an always-dark green field. Dark
+     mode remaps the shared tokens (cream goes dark, green shifts), which would
+     leave its cream/gold text dark-on-dark — re-pin those tokens to their
+     light-theme values so the auth surfaces render identically in both themes.
+     paper/ink/sand are deliberately NOT pinned so the form panel stays
+     theme-aware. */
+  .auth-dark-pin {
+    --color-cream: #f6f1e7;
+    --color-green: #123f2d;
+    --color-green-900: #0c2c1f;
+    --color-gold: #c7a24a;
+    --color-gold-brand: #b07d32;
+  }
+  /* Text inputs inside the pinned subtree pair bg-cream with theme-aware
+     text-ink, so cream must follow the theme there — restore the dark value. */
+  html[data-theme="dark"] .auth-dark-pin .auth-theme-cream {
+    --color-cream: #16241e;
   }
 }
 

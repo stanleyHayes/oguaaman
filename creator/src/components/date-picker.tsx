@@ -71,11 +71,11 @@ function monthHasNoSelectableDays(y: number, m: number, min?: string, max?: stri
   return true;
 }
 
-function yearBounds(min: string | undefined, max: string | undefined, fallbackYear: number) {
+function yearBounds(min: string | undefined, max: string | undefined, currentYear: number) {
   const minParsed = min ? parseDate(min) : null;
   const maxParsed = max ? parseDate(max) : null;
-  let minY = minParsed?.y ?? fallbackYear - 100;
-  let maxY = maxParsed?.y ?? fallbackYear + 20;
+  let minY = minParsed?.y ?? currentYear - 100;
+  let maxY = maxParsed?.y ?? currentYear + 20;
   if (minY > maxY) [minY, maxY] = [maxY, minY];
   return { minY, maxY };
 }
@@ -99,7 +99,7 @@ function initialView(parsed: { y: number; m: number } | null, min: string | unde
 }
 
 function dayClass(isSelected: boolean, isToday: boolean, inMonth: boolean, disabled: boolean) {
-  if (isSelected) return "bg-green font-semibold text-cream";
+  if (isSelected) return "bg-green font-semibold text-on-green";
   if (isToday) return "border border-gold-border bg-gold/[0.08] text-ink hover:bg-gold/[0.14]";
   if (inMonth) return "text-ink hover:bg-cream";
   return disabled ? "text-ink-faint opacity-30" : "text-ink-faint hover:bg-cream";
@@ -156,8 +156,12 @@ export function DatePicker({
   const grid = buildGrid(view.y, view.m);
   const selected = current || undefined;
   const dayPickerValue = clampDay(view.y, view.m, parsed?.d ?? today.getDate());
-  const { minY, maxY } = yearBounds(min, max, view.y);
-  const years = Array.from({ length: maxY - minY + 1 }, (_, i) => minY + i);
+  const { minY, maxY } = yearBounds(min, max, today.getFullYear());
+  // Extend to cover the viewed year so the select never shows a blank value
+  // (an old selected date, or arrow navigation past the fallback range).
+  const yearLo = Math.min(minY, view.y);
+  const yearHi = Math.max(maxY, view.y);
+  const years = Array.from({ length: yearHi - yearLo + 1 }, (_, i) => yearLo + i);
 
   const setVal = (v: string) => {
     if (value === undefined) setInternal(v);
@@ -295,7 +299,7 @@ export function DatePicker({
                 type="button"
                 onClick={goToday}
                 disabled={outOfRange(todayIso, min, max)}
-                className="rounded-full bg-green px-3 py-1.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-40"
+                className="rounded-full bg-green px-3 py-1.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-40"
               >
                 Today
               </button>
