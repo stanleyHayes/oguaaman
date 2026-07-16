@@ -46,6 +46,15 @@ func (r *OrgClaimRepo) ByMember(ctx context.Context, memberID string) ([]domain.
 	return out, cur.All(ctx, &out)
 }
 
+func (r *OrgClaimRepo) ByOrg(ctx context.Context, orgID string) ([]domain.OrgClaim, error) {
+	cur, err := r.c.Find(ctx, bson.M{"orgId": orgID})
+	if err != nil {
+		return nil, err
+	}
+	out := []domain.OrgClaim{}
+	return out, cur.All(ctx, &out)
+}
+
 func (r *OrgClaimRepo) UpdateStatus(ctx context.Context, id, status, reviewedBy, at string) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
 		"status": status, "reviewedById": reviewedBy, "reviewedAt": at,
@@ -53,9 +62,22 @@ func (r *OrgClaimRepo) UpdateStatus(ctx context.Context, id, status, reviewedBy,
 	return err
 }
 
+func (r *OrgClaimRepo) UpdateScope(ctx context.Context, id, scope string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"scope": scope}})
+	return err
+}
+
 func (r *OrgClaimRepo) IsManager(ctx context.Context, memberID, orgID string) (bool, error) {
 	n, err := r.c.CountDocuments(ctx, bson.M{"memberId": memberID, "orgId": orgID, "status": domain.ClaimApproved})
 	return n > 0, err
+}
+
+func (r *OrgClaimRepo) ActiveClaim(ctx context.Context, memberID, orgID string) (*domain.OrgClaim, error) {
+	var c domain.OrgClaim
+	if err := r.c.FindOne(ctx, bson.M{"memberId": memberID, "orgId": orgID, "status": domain.ClaimApproved}).Decode(&c); err != nil {
+		return nil, notFound("claim", err)
+	}
+	return &c, nil
 }
 
 func (r *OrgClaimRepo) ManagedOrgIDs(ctx context.Context, memberID string) ([]string, error) {
@@ -77,7 +99,7 @@ func (r *OrgClaimRepo) ManagedOrgIDs(ctx context.Context, memberID string) ([]st
 func (r *OrgClaimRepo) HasActiveClaim(ctx context.Context, memberID, orgID string) (bool, error) {
 	n, err := r.c.CountDocuments(ctx, bson.M{
 		"memberId": memberID, "orgId": orgID,
-		"status": bson.M{"$in": bson.A{domain.ClaimPending, domain.ClaimApproved}},
+		"status": bson.M{"$in": bson.A{domain.ClaimPending, domain.ClaimApproved, domain.ClaimInvited}},
 	})
 	return n > 0, err
 }

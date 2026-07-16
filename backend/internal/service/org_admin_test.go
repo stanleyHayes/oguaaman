@@ -155,6 +155,17 @@ func (r *recOrgs) SetVerified(_ context.Context, id string, verified bool, on st
 	return &domain.NotFoundError{Entity: "organization"}
 }
 
+// SetOffices replaces the roster (stubOrgs' is a no-op; team invites seat it).
+func (r *recOrgs) SetOffices(_ context.Context, id string, offices []domain.Office) error {
+	for i := range r.orgs {
+		if r.orgs[i].ID == id {
+			r.orgs[i].Offices = offices
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "organization"}
+}
+
 func svcWithListings(orgs domain.OrganizationRepository, repo *fakeRepo) *Service {
 	return New(Deps{Listings: repo, Members: stubMembers{}, Orgs: orgs, Places: stubPlaces{}, Mod: modRepo{repo}, Notifs: stubNotifs{}, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
 }

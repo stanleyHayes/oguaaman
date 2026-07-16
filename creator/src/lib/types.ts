@@ -132,6 +132,39 @@ export interface InstitutionView {
   officialEvents: Listing[];
 }
 
+// ── institution teams (Creator plan §4.1.2) ──
+
+/** One row of an institution's team roster. */
+export interface TeamMember {
+  claimId: string;
+  memberId: string;
+  memberName: string;
+  memberSlug: string;
+  photoUrl?: string;
+  role: string;             // the office they hold
+  scope: "manager" | "officer";
+  status: "approved" | "invited";
+  invitedByName?: string;
+}
+
+/** The roster plus the viewer's own scope (drives manager-only actions). */
+export interface TeamView {
+  viewerScope: "manager" | "officer";
+  team: TeamMember[];
+}
+
+/** A team invitation awaiting the signed-in member's answer. */
+export interface Invitation {
+  id: string;
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+  requestedRole: string;
+  scope: "manager" | "officer";
+  invitedByName?: string;
+  createdAt: string;
+}
+
 export interface MemberView { member: Member; listings: Listing[] }
 
 export interface NotificationItem {

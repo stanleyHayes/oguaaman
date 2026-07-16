@@ -2,32 +2,43 @@
 // of their approved institutions and edits its official page in place:
 // profile, custom sections, gallery, office-holders and official events.
 // Ported from the portal's manage page so managers never have to leave the app.
-import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { Link, useLoaderData, useRevalidator, type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
 import { PORTAL } from "@/lib/portal";
-import type { InstitutionView, Organization } from "@/lib/types";
+import type { InstitutionView, Invitation, Member, Organization, TeamView } from "@/lib/types";
 import { Empty, Pill } from "@/components/ui";
 import { BadgeCheck, Landmark } from "lucide-react";
 import { EventForm, GalleryForm, ProfileForm, RosterForm, SectionBuilderForm } from "@/components/institution-panels";
+import { InvitationsPanel, TeamPanel } from "@/components/team-panel";
 
 interface Data {
   orgs: Organization[];
   view: InstitutionView | null;
   slug: string | null;
   manages: boolean;
+  team: TeamView | null;
+  invitations: Invitation[];
+  me: Member | null;
 }
 
 export async function loader({ params }: LoaderFunctionArgs): Promise<Data> {
   const orgs = await api.myInstitutions().catch(() => [] as Organization[]);
   const slug = params.slug ?? orgs[0]?.slug ?? null;
-  if (!slug) return { orgs, view: null, slug: null, manages: false };
+  const invitations = await api.myInvitations().catch(() => [] as Invitation[]);
+  const me = await api.me().catch(() => null);
+  if (!slug) return { orgs, view: null, slug: null, manages: false, team: null, invitations, me };
   const manages = orgs.some((o) => o.slug === slug);
-  const view = manages ? await api.institution(slug) : null;
-  return { orgs, view, slug, manages };
+  if (!manages) return { orgs, view: null, slug, manages, team: null, invitations, me };
+  const [view, team] = await Promise.all([
+    api.institution(slug),
+    api.orgTeam(slug).catch(() => null),
+  ]);
+  return { orgs, view, slug, manages, team, invitations, me };
 }
 
 export function Component() {
-  const { orgs, view, slug, manages } = useLoaderData() as Data;
+  const { orgs, view, slug, manages, team, invitations, me } = useLoaderData() as Data;
+  const { revalidate } = useRevalidator();
 
   if (orgs.length === 0) {
     return (
@@ -36,11 +47,14 @@ export function Component() {
           <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-gold-text">My work</p>
           <h1 className="mt-1 text-3xl font-semibold text-ink">Team workspace</h1>
         </div>
-        <Empty icon="building" title="No institutions yet" actions={
-          <Link to="/institutions" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">About institutions</Link>
-        }>
-          Claim your school, council or association on the portal — once a steward approves, its workspace opens here.
-        </Empty>
+        <div className="space-y-6">
+          <InvitationsPanel items={invitations} onChanged={revalidate} />
+          <Empty icon="building" title="No institutions yet" actions={
+            <Link to="/institutions" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream">About institutions</Link>
+          }>
+            Claim your school, council or association on the portal — once a steward approves, its workspace opens here.
+          </Empty>
+        </div>
       </>
     );
   }
@@ -97,6 +111,8 @@ export function Component() {
       )}
 
       <div className="space-y-6">
+        <InvitationsPanel items={invitations} onChanged={revalidate} />
+        {team && me && <TeamPanel slug={slug} view={team} meId={me.id} onChanged={revalidate} />}
         <ProfileForm slug={slug} org={org} />
         <SectionBuilderForm slug={slug} initial={org.sections} />
         <GalleryForm slug={slug} initial={org.gallery} />

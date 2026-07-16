@@ -233,6 +233,160 @@ func (h *Handler) PostInstitutionEvent(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, l)
 }
 
+// ── team management: invitations + scopes (Creator plan §4.1.2) ─────────────
+
+// OrgTeam — a team member (either scope) or steward views the roster.
+func (h *Handler) OrgTeam(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	team, err := h.svc.OrgTeam(r.Context(), m.ID, r.PathValue("slug"))
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, team)
+}
+
+// InviteToTeam — a manager invites a citizen by email/phone + office.
+func (h *Handler) InviteToTeam(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "orginvite:"+clientKey(r), 10, time.Hour) {
+		return
+	}
+	var in struct {
+		Identifier string `json:"identifier"`
+		Role       string `json:"role"`
+		Scope      string `json:"scope"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	c, err := h.svc.InviteToTeam(r.Context(), m.ID, r.PathValue("slug"), in.Identifier, in.Role, in.Scope)
+	if err != nil {
+		var fb *domain.ForbiddenError
+		var nf *domain.NotFoundError
+		if errors.As(err, &fb) || errors.As(err, &nf) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, c)
+}
+
+// SetTeamScope — a manager promotes/demotes an approved team member.
+func (h *Handler) SetTeamScope(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	var in struct {
+		Scope string `json:"scope"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	if err := h.svc.SetTeamMemberScope(r.Context(), m.ID, r.PathValue("slug"), r.PathValue("memberId"), in.Scope); err != nil {
+		var fb *domain.ForbiddenError
+		var nf *domain.NotFoundError
+		if errors.As(err, &fb) || errors.As(err, &nf) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "updated"})
+}
+
+// RevokeTeamMember — a manager (or steward/moderator) removes a team member.
+func (h *Handler) RevokeTeamMember(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if err := h.svc.RevokeTeamMember(r.Context(), m.ID, r.PathValue("slug"), r.PathValue("memberId")); err != nil {
+		var fb *domain.ForbiddenError
+		var nf *domain.NotFoundError
+		if errors.As(err, &fb) || errors.As(err, &nf) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "revoked"})
+}
+
+// MyInvitations — the signed-in member's unanswered team invitations.
+func (h *Handler) MyInvitations(w http.ResponseWriter, r *http.Request) {
+	m := currentMember(r)
+	if m == nil {
+		writeJSON(w, http.StatusOK, []any{})
+		return
+	}
+	invites, err := h.svc.MyInvitations(r.Context(), m.ID)
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, invites)
+}
+
+// RespondToInvite — the invitee accepts or declines a team invitation.
+func (h *Handler) RespondToInvite(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	var in struct {
+		Accept bool `json:"accept"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	if err := h.svc.RespondToInvite(r.Context(), m.ID, r.PathValue("id"), in.Accept); err != nil {
+		var fb *domain.ForbiddenError
+		var nf *domain.NotFoundError
+		if errors.As(err, &fb) || errors.As(err, &nf) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"accepted": in.Accept})
+}
+
 // ── admin: review institution claims (steward) ───────────────────────────────
 
 func (h *Handler) AdminClaims(w http.ResponseWriter, r *http.Request) {

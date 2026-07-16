@@ -136,6 +136,13 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/institutions/{slug}/gallery", h.SetInstitutionGallery)
 	mux.HandleFunc("POST /api/institutions/{slug}/sections", h.SetInstitutionSections)
 	mux.HandleFunc("POST /api/institutions/{slug}/events", h.PostInstitutionEvent)
+	// Team management (Creator plan §4.1.2): invite → accept/decline → scopes.
+	mux.HandleFunc("GET /api/institutions/{slug}/team", h.OrgTeam)
+	mux.HandleFunc("POST /api/institutions/{slug}/team/invite", h.InviteToTeam)
+	mux.HandleFunc("POST /api/institutions/{slug}/team/{memberId}/scope", h.SetTeamScope)
+	mux.HandleFunc("DELETE /api/institutions/{slug}/team/{memberId}", h.RevokeTeamMember)
+	mux.HandleFunc("GET /api/me/invitations", h.MyInvitations)
+	mux.HandleFunc("POST /api/claims/{id}/respond", h.RespondToInvite)
 
 	mux.HandleFunc("GET /api/members", h.MembersList)
 	mux.HandleFunc("GET /api/members/{slug}", h.Member)

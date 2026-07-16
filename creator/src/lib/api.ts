@@ -1,4 +1,4 @@
-import type { CreatorOverview, InstitutionView, Listing, MediaAsset, Member, MemberView, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, Subscription, Ticket } from "./types";
+import type { CreatorOverview, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, Subscription, TeamView, Ticket } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -31,6 +31,13 @@ async function post<T>(path: string, body: unknown = {}): Promise<T> {
     headers: headers(true),
     body: JSON.stringify(body),
   });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error((data as { error?: string }).error ?? "Request failed"), { status: res.status, data });
+  return data as T;
+}
+
+async function del<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { method: "DELETE", headers: headers() });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error((data as { error?: string }).error ?? "Request failed"), { status: res.status, data });
   return data as T;
@@ -81,6 +88,19 @@ export const api = {
     post<Organization>(`/api/institutions/${slug}/sections`, { sections }),
   postOrgEvent: (slug: string, body: { title: string; details?: Record<string, unknown> }) =>
     post<Listing>(`/api/institutions/${slug}/events`, body),
+
+  // Team management (Creator plan §4.1.2): managers invite citizens by
+  // email/phone + office; invitees accept without steward review.
+  orgTeam: (slug: string) => get<TeamView>(`/api/institutions/${slug}/team`),
+  inviteToTeam: (slug: string, body: { identifier: string; role: string; scope?: string }) =>
+    post<{ id: string }>(`/api/institutions/${slug}/team/invite`, body),
+  setTeamScope: (slug: string, memberId: string, scope: "manager" | "officer") =>
+    post<{ status: string }>(`/api/institutions/${slug}/team/${memberId}/scope`, { scope }),
+  revokeTeamMember: (slug: string, memberId: string) =>
+    del<{ status: string }>(`/api/institutions/${slug}/team/${memberId}`),
+  myInvitations: () => get<Invitation[]>("/api/me/invitations"),
+  respondToInvite: (claimId: string, accept: boolean) =>
+    post<{ accepted: boolean }>(`/api/claims/${claimId}/respond`, { accept }),
 
   // Paid promotions: self-serve featured placements via Paystack (GH₵10/day).
   promoteListing: (id: string, days: number) =>
