@@ -125,9 +125,6 @@ export function SectionCard({ section }: Readonly<{ section: NavSection }>) {
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${t.soft} ${t.text}`}>
           <SectionIcon id={section.id} className="h-6 w-6" />
         </span>
-        {section.depth === "stub" && (
-          <span className="rounded-full border border-sand bg-paper px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-ink-faint">Coming soon</span>
-        )}
       </div>
       <h3 className="relative mt-3 text-2xl font-semibold text-ink">{section.label}</h3>
       {section.fanteName && <p className={`relative text-sm italic ${t.text}`}>{section.fanteName}</p>}

@@ -7,6 +7,7 @@ import { Container, CTA as Cta } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { LOST_FOUND_KINDS } from "@/lib/lostfound";
 import { DatePicker } from "@/components/date-picker";
+import { ImageUpload } from "@/components/image-upload";
 
 const inputCls = "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
 
@@ -25,6 +26,7 @@ export function Component() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState("");
   // Local YYYY-MM-DD upper bound for the picker — a "last seen" date can't be in the future.
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -36,6 +38,7 @@ export function Component() {
     const fd = new FormData(e.currentTarget);
     const s = (k: string) => { const v = fd.get(k); return typeof v === "string" ? v : ""; };
     try {
+      const cover = coverImageUrl.trim();
       const created = await api.createLostFound({
         title: s("title").trim(),
         kind: s("kind") as LostFoundKind,
@@ -43,7 +46,11 @@ export function Component() {
         lastSeenLocation: s("lastSeenLocation").trim(),
         lastSeenDate: s("lastSeenDate").trim(),
         contact: s("contact").trim(),
-      });
+        // coverImageUrl is a standard Listing field the backend accepts, but
+        // api.createLostFound's signature (owned elsewhere) doesn't declare it —
+        // assert through so the optional photo rides along in the JSON body.
+        coverImageUrl: cover || undefined,
+      } as Parameters<typeof api.createLostFound>[0]);
       navigate(`/lost-found/${created.slug}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not post the notice — please try again.");
@@ -71,6 +78,7 @@ export function Component() {
               <Field label="Description" hint="Who or what, and how to recognise them — a uniform, a collar, a keyring.">
                 <textarea name="description" required rows={5} className={inputCls} placeholder="Describe the item or person…" />
               </Field>
+              <ImageUpload value={coverImageUrl} onChange={setCoverImageUrl} label="Add a photo (optional)" hint="A clear photo helps people recognise them or it — JPG, PNG or WebP, up to 8 MB." />
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Last seen where" hint="A landmark, a street, a compound.">
                   <input name="lastSeenLocation" className={inputCls} placeholder="e.g. Kotokuraba Market, main gate" />

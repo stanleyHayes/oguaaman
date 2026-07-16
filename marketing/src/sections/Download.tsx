@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Section, Container, Eyebrow, Pill, CTA as Cta } from "@/components/ui";
+import { Section, Container, Eyebrow, CTA as Cta } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { CircularReveal, Reveal } from "@/components/motion";
 import { PORTAL_APP_URL, IOS_URL, ANDROID_URL } from "@/config";
@@ -7,8 +7,8 @@ import { PORTAL_APP_URL, IOS_URL, ANDROID_URL } from "@/config";
 /**
  * Download — the conversion / get-the-app band. The climax of the page:
  * one gold web-app CTA plus hand-drawn App Store / Google Play badges, and a
- * decorative "scan to open" QR square. Store links are wired to config; when a
- * store URL is still a placeholder ("#") the badge shows a "Coming soon" pill.
+ * decorative "scan to open" QR square. Store links are wired to config; a store
+ * URL that is still a placeholder ("#") renders as a normal, non-active badge.
  */
 
 interface StoreBadge {
@@ -148,23 +148,19 @@ export function Download() {
 }
 
 function StoreButton({ href, glyph, topLine, bottomLine, ariaLabel }: Readonly<StoreBadge>) {
-  const comingSoon = href === "#";
+  // A placeholder ("#") link stays non-active (no new tab) but carries no "coming soon" label.
+  const inactive = href === "#";
   return (
     <a
       href={href}
-      aria-label={comingSoon ? `${ariaLabel} — coming soon` : ariaLabel}
-      {...(comingSoon ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+      aria-label={ariaLabel}
+      {...(inactive ? {} : { target: "_blank", rel: "noopener noreferrer" })}
       className="group inline-flex min-w-[10.5rem] items-center gap-3 rounded-2xl border border-gold-border/35 bg-cream/[0.04] px-4 py-2.5 transition-colors hover:border-gold/70 hover:bg-cream/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
     >
       <span className="text-cream/90 transition-colors group-hover:text-gold">{glyph}</span>
       <span className="flex flex-col leading-none">
         <span className="text-[0.62rem] font-medium uppercase tracking-wide text-cream/55">{topLine}</span>
         <span className="mt-1 text-lg font-semibold text-cream">{bottomLine}</span>
-        {comingSoon && (
-          <Pill tone="on-dark" className="mt-1.5 self-start px-2 py-0.5 text-[0.6rem]">
-            Coming soon
-          </Pill>
-        )}
       </span>
     </a>
   );

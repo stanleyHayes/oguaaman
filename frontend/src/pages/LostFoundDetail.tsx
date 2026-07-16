@@ -67,7 +67,7 @@ export function Component() {
       </PageHero>
       <Container size="narrow" className="py-12">
         {notice.coverImageUrl && (
-          <img src={notice.coverImageUrl} alt="" className="mb-8 aspect-[16/9] w-full rounded-[var(--radius-card)] border border-sand object-cover" />
+          <img src={notice.coverImageUrl} alt={notice.title} className="mb-8 aspect-[16/9] w-full rounded-[var(--radius-card)] border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
         )}
 
         <dl className="rounded-[var(--radius-card)] border border-sand bg-cream p-6">

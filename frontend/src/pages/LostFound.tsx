@@ -4,6 +4,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { LostFound, LostFoundKind } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
+import { Thumb } from "@/components/cards";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { LayoutPill, StaggerItem } from "@/components/motion";
@@ -61,24 +62,28 @@ function NoticeCard({ notice: i }: Readonly<{ notice: LostFound }>) {
   return (
     <Link
       to={`/lost-found/${i.slug}`}
-      className={`flex h-full flex-col rounded-[var(--radius-card)] border bg-cream p-5 shadow-[var(--shadow-card)] transition-colors hover:border-gold-border ${missing ? "border-l-4 border-l-maroon-900 border-sand" : "border-sand"}`}
+      className={`flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border bg-cream shadow-[var(--shadow-card)] transition-colors hover:border-gold-border ${missing ? "border-l-4 border-l-maroon-900 border-sand" : "border-sand"}`}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${missing ? "border-maroon-900/40 bg-maroon-900/[0.08] text-maroon-text" : "border-teal/30 bg-teal/[0.09] text-teal-text"}`}>
-          {KIND_LABEL[d.kind] ?? d.kind}
-        </span>
-        <span className={`ml-auto rounded-full border px-3 py-1 text-xs font-semibold ${LF_STATUS_CLASS[d.lfStatus]}`}>
-          {LF_STATUS_LABEL[d.lfStatus] ?? d.lfStatus}
-        </span>
+      {/* Optional contributor photo — helps neighbours recognise the item or person. */}
+      {i.coverImageUrl && <Thumb seed={i.slug} label={i.title} src={i.coverImageUrl} rounded="rounded-none" className="aspect-[16/9] w-full" />}
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${missing ? "border-maroon-900/40 bg-maroon-900/[0.08] text-maroon-text" : "border-teal/30 bg-teal/[0.09] text-teal-text"}`}>
+            {KIND_LABEL[d.kind] ?? d.kind}
+          </span>
+          <span className={`ml-auto rounded-full border px-3 py-1 text-xs font-semibold ${LF_STATUS_CLASS[d.lfStatus]}`}>
+            {LF_STATUS_LABEL[d.lfStatus] ?? d.lfStatus}
+          </span>
+        </div>
+        <h3 className="mt-3 text-xl font-semibold text-ink">{i.title}</h3>
+        {d.lastSeenLocation && (
+          <p className="mt-1.5 text-sm text-ink-muted">
+            {seenLabel} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${formatDate(d.lastSeenDate)}` : ""}
+          </p>
+        )}
+        {d.description && <p className="mt-2 line-clamp-2 text-sm text-ink-faint">{d.description}</p>}
+        <p className="mt-auto pt-3 text-xs text-ink-faint">Posted {formatDate(i.createdAt)}</p>
       </div>
-      <h3 className="mt-3 text-xl font-semibold text-ink">{i.title}</h3>
-      {d.lastSeenLocation && (
-        <p className="mt-1.5 text-sm text-ink-muted">
-          {seenLabel} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${formatDate(d.lastSeenDate)}` : ""}
-        </p>
-      )}
-      {d.description && <p className="mt-2 line-clamp-2 text-sm text-ink-faint">{d.description}</p>}
-      <p className="mt-auto pt-3 text-xs text-ink-faint">Posted {formatDate(i.createdAt)}</p>
     </Link>
   );
 }

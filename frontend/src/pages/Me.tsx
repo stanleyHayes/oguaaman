@@ -10,7 +10,7 @@ import { ImageUpload } from "@/components/image-upload";
 import { SchoolingEditor, PeopleYouMayKnow } from "@/components/connections";
 import { formatDate, initials } from "@/lib/format";
 import { Thumb } from "@/components/cards";
-import { StaggerItem } from "@/components/motion";
+import { StaggerItem, LayoutPill } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { SecuritySettings, DataRightsSettings } from "@/components/security-panels";
 import { ProfileSkeleton } from "@/components/skeleton";
@@ -33,6 +33,21 @@ const STATUS_STYLE: Record<ListingStatus, string> = {
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+
+// The account page is split into sections so it never dumps everything at once.
+// The active section is held in component state and mirrored to the URL hash.
+const TABS = [
+  { id: "profile", label: "Profile", title: "Your profile", desc: "How you show up across Oguaa — your photo, the town and Asafo you rep, and your birthday." },
+  { id: "activity", label: "Activity", title: "Listings, tickets & support", desc: "Everything you've contributed, the event tickets you hold, and the businesses you back." },
+  { id: "connections", label: "Connections", title: "Your connections", desc: "Record your schooling to find classmates, neighbours and Asafo members you may know." },
+  { id: "security", label: "Security", title: "Sign-in & security", desc: "Verify your contact and turn on two-factor to keep your account safe." },
+  { id: "privacy", label: "Privacy & data", title: "Privacy & data", desc: "Take everything Oguaa holds about you with you — or close your account for good." },
+] as const;
+type TabId = (typeof TABS)[number]["id"];
+
+function isTabId(v: string): v is TabId {
+  return TABS.some((t) => t.id === v);
+}
 
 function linkFor(l: Listing): string | null {
   if (l.status !== "approved") return null;
@@ -135,6 +150,14 @@ export function Component() {
   const [verifyExpiresAt, setVerifyExpiresAt] = useState<string | null>(null);
   // Bumped after a promotion confirms so the owned listings refetch.
   const [refreshKey, setRefreshKey] = useState(0);
+  // Active account section. Seed from the URL hash, or land on Activity when
+  // returning from a promotion payment so the confirmation is visible.
+  const [tab, setTab] = useState<TabId>(() => {
+    const h = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
+    if (isTabId(h)) return h;
+    if (params.get("promo_ref")) return "activity";
+    return "profile";
+  });
 
   useEffect(() => {
     if (!member) return;
@@ -186,6 +209,13 @@ export function Component() {
   const asafos = places.filter((p) => p.kind === "asafo");
   const town = quarters.find((p) => p.id === townId);
   const asafo = asafos.find((p) => p.id === asafoId);
+  const current = TABS.find((t) => t.id === tab) ?? TABS[0];
+
+  // Change section — keep state as the source of truth, mirror to the URL hash.
+  function selectTab(id: TabId) {
+    setTab(id);
+    if (typeof window !== "undefined") window.history.replaceState(null, "", `#${id}`);
+  }
 
   async function chooseQuarter(id: string) {
     const next = townId === id ? "" : id;
@@ -314,286 +344,352 @@ export function Component() {
           {QUICK_ACTIONS.map((a, i) => <StaggerItem key={a.to} index={i}><QuickAction {...a} /></StaggerItem>)}
         </div>
 
+        {/* A slim, persistent nudge — the full verification flow lives under Security. */}
         {!me.phoneVerified && (
-          <section className="mt-8 rounded-[var(--radius-card)] border border-gold-border/40 bg-gold/[0.08] p-5 shadow-[var(--shadow-card)]">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="eyebrow text-gold-text">Verification needed</p>
-                <h2 className="mt-1 text-xl font-semibold text-ink">Verify your contact before you submit</h2>
-                <p className="mt-1 text-sm text-ink-muted">
-                  Submissions stay blocked until your account is verified. Send yourself a code, then enter it here to unlock the submit form.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={startVerification} disabled={verifyState === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
-                  {verifyState === "saving" ? "Sending…" : "Send code"}
-                </button>
-              </div>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-gold-border/40 bg-gold/[0.08] px-5 py-4 shadow-[var(--shadow-card)]">
+            <div className="min-w-0">
+              <p className="eyebrow text-gold-text">Verification needed</p>
+              <p className="mt-0.5 text-sm text-ink-muted">Verify your contact to unlock submitting listings and reports.</p>
             </div>
-            {verifySentCode && (
-              <div className="mt-4 rounded-2xl border border-green/15 bg-paper p-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-                  <label className="block flex-1">
-                    <span className="mb-1.5 block text-sm font-medium text-ink">Enter the 6-digit code</span>
-                    <input
-                      value={verifyCode}
-                      onChange={(e) => setVerifyCode(e.target.value)}
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      placeholder="123456"
-                      className="w-full rounded-xl border border-sand bg-cream px-4 py-3 text-center text-lg tracking-[0.3em] text-ink focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15"
-                    />
-                  </label>
-                  <button type="button" onClick={confirmVerification} disabled={verifyState === "saving" || verifyCode.trim() === ""} className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-cream hover:bg-clay/90 disabled:opacity-60">
-                    {verifyState === "saving" ? "Checking…" : "Confirm code"}
+            <button type="button" onClick={() => selectTab("security")} className="shrink-0 rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900">
+              Verify now →
+            </button>
+          </div>
+        )}
+
+        {/* Section navigation — pills on desktop, a select on mobile. */}
+        <div className="mt-8">
+          <div className="sm:hidden">
+            <label htmlFor="me-section" className="sr-only">Account section</label>
+            <select
+              id="me-section"
+              value={tab}
+              onChange={(e) => selectTab(e.target.value as TabId)}
+              className="w-full rounded-xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-ink focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15"
+            >
+              {TABS.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}{t.id === "security" && !me.phoneVerified ? " • action needed" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div role="tablist" aria-label="Account sections" className="hidden flex-wrap gap-2 sm:flex">
+            {TABS.map((t) => {
+              const active = tab === t.id;
+              const flag = t.id === "security" && !me.phoneVerified;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => selectTab(t.id)}
+                  className={`relative rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${active ? "border-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40 hover:text-ink"}`}
+                >
+                  {active && <LayoutPill layoutId="me-section" className="absolute inset-0 rounded-full bg-green" />}
+                  <span className="relative z-10 inline-flex items-center gap-1.5">
+                    {t.label}
+                    {flag && <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-gold" : "bg-gold-brand"}`} aria-hidden />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active-section header — a clean title + description that changes per tab. */}
+        <header className="mt-7">
+          <h2 className="text-2xl font-semibold text-ink">{current.title}</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-muted">{current.desc}</p>
+        </header>
+
+        {tab === "profile" && (
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <Panel title="Your photo" lede="Put a face to your name. It shows on your profile and across the community.">
+              <ImageUpload
+                value={photo}
+                onChange={savePhoto}
+                label="Profile photo"
+                hint="A clear headshot works best. Square images look best in the circle."
+              />
+              {photoState === "saving" && <p className="mt-2 text-sm text-ink-faint">Saving…</p>}
+              {photoState === "saved" && <p className="mt-2 text-sm text-teal-text">Saved ✓</p>}
+              {photoState === "error" && <p className="mt-2 text-sm text-clay-text">Could not save your photo. Try again.</p>}
+            </Panel>
+
+            <Panel title="Rep your town" lede="Wear your community pride — your quarter and your Asafo company.">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Quarter{town && <> · you rep <b className="text-ink-muted">{town.name}</b></>}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {quarters.map((p) => (
+                  <button key={p.id} type="button" onClick={() => chooseQuarter(p.id)} className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === townId ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>{p.name}</button>
+                ))}
+              </div>
+              <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-faint">Asafo company</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {asafos.map((p) => (
+                  <button key={p.id} type="button" onClick={() => chooseAsafo(p.id)} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === asafoId ? "border-clay bg-clay text-cream" : "border-sand bg-paper text-ink-muted hover:border-clay/40"}`}>
+                    {p.colors?.[0] && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.colors[0] }} aria-hidden />}
+                    {p.name}
                   </button>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel title="Your birthday" lede="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <DatePicker
+                  value={birthday.length >= 10 ? birthday.slice(0, 10) : birthday}
+                  onChange={(v) => { setBirthday(v); setBdayState("idle"); }}
+                  max={todayIso}
+                  className="w-full sm:w-auto sm:min-w-[13rem]"
+                />
+                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
+                  <input type="checkbox" checked={broadcast} onChange={(e) => { setBroadcast(e.target.checked); setBdayState("idle"); }} className="h-4 w-4 accent-green" />Let my followers know
+                </label>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={saveBirthday} disabled={bdayState === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
+                    {bdayState === "saving" ? "Saving…" : "Save"}
+                  </button>
+                  {bdayState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
+                  {bdayState === "error" && <span className="text-sm text-clay-text">Add a valid date first.</span>}
                 </div>
-                <div className="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
-                  {verifyExpiresAt && <span>Expires: {verifyExpiresAt}</span>}
-                  <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-green-text">Dev mode shows the code below.</span>
+              </div>
+            </Panel>
+
+            <Panel title="Oguaa abroad" lede="Living away from home? Add yourself to the diaspora — the bridge for homecomings, projects, and giving back. Off by default.">
+              <div className="space-y-3">
+                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
+                  <input type="checkbox" checked={abroad} onChange={(e) => { setAbroad(e.target.checked); setDiaState("idle"); }} className="h-4 w-4 accent-teal" />I live abroad / outside Cape Coast
+                </label>
+                {abroad && (
+                  <div className="flex flex-wrap gap-3">
+                    <input value={city} onChange={(e) => { setCity(e.target.value); setDiaState("idle"); }} placeholder="City (e.g. London)" className="min-w-0 flex-1 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
+                    <input value={country} onChange={(e) => { setCountry(e.target.value); setDiaState("idle"); }} placeholder="Country (e.g. United Kingdom)" className="min-w-0 flex-1 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={saveDiaspora} disabled={diaState === "saving"} className="rounded-full bg-teal px-5 py-2 text-sm font-semibold text-cream hover:bg-teal-text disabled:opacity-60">
+                    {diaState === "saving" ? "Saving…" : "Save"}
+                  </button>
+                  {diaState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
+                  {diaState === "error" && <span className="text-sm text-clay-text">Could not save. Try again.</span>}
                 </div>
-                {verifySentCode && (
-                  <p className="mt-3 rounded-lg border border-dashed border-green/20 bg-green/[0.04] px-3 py-2 text-sm text-ink">
-                    Code: <span className="font-mono font-semibold tracking-[0.18em] text-green-text">{verifySentCode}</span>
+              </div>
+            </Panel>
+          </div>
+        )}
+
+        {tab === "activity" && (
+          <div className="mt-6 space-y-6">
+            {/* Creator upgrade entry — shown only when the member hasn't registered as a creator */}
+            {(!me.creatorTypes || me.creatorTypes.length === 0) && (
+              <section className="rounded-[var(--radius-card)] border border-teal/25 bg-teal/[0.05] p-5 shadow-[var(--shadow-card)]">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="max-w-2xl">
+                    <p className="eyebrow text-teal-text">Oguaa Creator Studio</p>
+                    <h2 className="mt-1 text-xl font-semibold text-ink">Promote your business, art or project</h2>
+                    <p className="mt-1 text-sm text-ink-muted">
+                      Creators get a dedicated dashboard to manage listings, track views, handle subscriptions and payments, and grow their presence in Cape Coast.
+                    </p>
+                  </div>
+                  <a
+                    href={`${CREATOR}/account`}
+                    className="shrink-0 rounded-full bg-teal px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
+                  >
+                    Become a creator →
+                  </a>
+                </div>
+              </section>
+            )}
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Panel
+                title="Your listings"
+                lede="Everything you've contributed, with its review status. Promote an approved listing to feature it on the front pages — GH₵ 10 per day."
+                action={<Cta to="/submit" variant="outline" className="px-4 py-2 text-xs">+ Add</Cta>}
+              >
+                {promoConfirmed && (
+                  <p className="mb-4 rounded-lg bg-green/[0.08] px-4 py-3 text-sm font-medium text-green-text">
+                    Payment confirmed — &ldquo;{promoConfirmed.listingTitle}&rdquo; is now featured for {promoConfirmed.days} days. ✓
                   </p>
                 )}
-                {verifyError && <p className="mt-3 text-sm text-clay-text">{verifyError}</p>}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Creator upgrade entry — shown only when the member hasn't registered as a creator */}
-        {(!me.creatorTypes || me.creatorTypes.length === 0) && (
-          <section className="mt-8 rounded-[var(--radius-card)] border border-teal/25 bg-teal/[0.05] p-5 shadow-[var(--shadow-card)]">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="eyebrow text-teal-text">Oguaa Creator Studio</p>
-                <h2 className="mt-1 text-xl font-semibold text-ink">Promote your business, art or project</h2>
-                <p className="mt-1 text-sm text-ink-muted">
-                  Creators get a dedicated dashboard to manage listings, track views, handle subscriptions and payments, and grow their presence in Cape Coast.
-                </p>
-              </div>
-              <a
-                href={`${CREATOR}/account`}
-                className="shrink-0 rounded-full bg-teal px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
-              >
-                Become a creator →
-              </a>
-            </div>
-          </section>
-        )}
-
-        <div className="mt-8 gap-6 lg:columns-2">
-          <div className="mb-6 break-inside-avoid">
-<Panel title="Your photo" lede="Put a face to your name. It shows on your profile and across the community.">
-            <ImageUpload
-              value={photo}
-              onChange={savePhoto}
-              label="Profile photo"
-              hint="A clear headshot works best. Square images look best in the circle."
-            />
-            {photoState === "saving" && <p className="mt-2 text-sm text-ink-faint">Saving…</p>}
-            {photoState === "saved" && <p className="mt-2 text-sm text-teal-text">Saved ✓</p>}
-            {photoState === "error" && <p className="mt-2 text-sm text-clay-text">Could not save your photo. Try again.</p>}
-          </Panel>
-          </div>
-          <div className="mb-6 break-inside-avoid">
-<Panel
-            title="Your listings"
-            lede="Everything you've contributed, with its review status. Promote an approved listing to feature it on the front pages — GH₵ 10 per day."
-            action={<Cta to="/submit" variant="outline" className="px-4 py-2 text-xs">+ Add</Cta>}
-          >
-            {promoConfirmed && (
-              <p className="mb-4 rounded-lg bg-green/[0.08] px-4 py-3 text-sm font-medium text-green-text">
-                Payment confirmed — &ldquo;{promoConfirmed.listingTitle}&rdquo; is now featured for {promoConfirmed.days} days. ✓
-              </p>
-            )}
-            {promoError && (
-              <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-text">{promoError}</p>
-            )}
-            <ul className="divide-y divide-sand">
-              {listings.map((l) => {
-                const href = linkFor(l);
-                const featuredUntil = l.featuredUntil && l.featuredUntil > new Date().toISOString() ? l.featuredUntil : null;
-                return (
-                  <li key={l.id} className="py-3">
-                    {/* Identity row */}
-                    <div className="flex items-center gap-3">
-                      <Thumb seed={l.slug} label={initials(l.title)} src={l.coverImageUrl} rounded="rounded-lg" className="h-11 w-11 shrink-0" coverWidth={96} />
-                      <div className="min-w-0 flex-1">
-                        {href
-                          ? <Link to={href} className="block truncate font-medium text-ink hover:text-green-text hover:underline">{l.title}</Link>
-                          : <p className="truncate font-medium text-ink">{l.title}</p>}
-                        <p className="text-xs text-ink-faint">{TYPE_LABELS[l.type]}</p>
-                      </div>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${STATUS_STYLE[l.status]}`}>{l.status}</span>
-                    </div>
-                    {/* Actions row — wraps naturally on narrow screens */}
-                    <div className="mt-2 flex flex-wrap items-center gap-2 pl-14">
-                      {l.status === "approved" && featuredUntil && (
-                        <span className="rounded-full bg-gold/[0.14] px-2.5 py-1 text-xs font-semibold text-gold-text">★ Featured until {formatDate(featuredUntil)}</span>
-                      )}
-                      {EDITABLE.has(l.type) && (
-                        <a href={`${CREATOR}/work/${l.id}/edit`}
-                          className="rounded-full border border-sand px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:border-gold-border/60 hover:text-gold-text">Edit</a>
-                      )}
-                      {l.status === "approved" && (promoFor === l.id ? (
-                        <>
-                          {[7, 14, 30].map((d) => (
-                            <button key={d} type="button" onClick={() => promote(l, d)} disabled={promoBusy}
-                              className="rounded-full border border-green px-2.5 py-1 text-xs font-semibold text-green-text transition-colors hover:bg-green hover:text-on-green disabled:opacity-60">
-                              {d}d · GH₵{d * 10}
-                            </button>
+                {promoError && (
+                  <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-text">{promoError}</p>
+                )}
+                <ul className="divide-y divide-sand">
+                  {listings.map((l) => {
+                    const href = linkFor(l);
+                    const featuredUntil = l.featuredUntil && l.featuredUntil > new Date().toISOString() ? l.featuredUntil : null;
+                    return (
+                      <li key={l.id} className="py-3">
+                        {/* Identity row */}
+                        <div className="flex items-center gap-3">
+                          <Thumb seed={l.slug} label={initials(l.title)} src={l.coverImageUrl} rounded="rounded-lg" className="h-11 w-11 shrink-0" coverWidth={96} />
+                          <div className="min-w-0 flex-1">
+                            {href
+                              ? <Link to={href} className="block truncate font-medium text-ink hover:text-green-text hover:underline">{l.title}</Link>
+                              : <p className="truncate font-medium text-ink">{l.title}</p>}
+                            <p className="text-xs text-ink-faint">{TYPE_LABELS[l.type]}</p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${STATUS_STYLE[l.status]}`}>{l.status}</span>
+                        </div>
+                        {/* Actions row — wraps naturally on narrow screens */}
+                        <div className="mt-2 flex flex-wrap items-center gap-2 pl-14">
+                          {l.status === "approved" && featuredUntil && (
+                            <span className="rounded-full bg-gold/[0.14] px-2.5 py-1 text-xs font-semibold text-gold-text">★ Featured until {formatDate(featuredUntil)}</span>
+                          )}
+                          {EDITABLE.has(l.type) && (
+                            <a href={`${CREATOR}/work/${l.id}/edit`}
+                              className="rounded-full border border-sand px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:border-gold-border/60 hover:text-gold-text">Edit</a>
+                          )}
+                          {l.status === "approved" && (promoFor === l.id ? (
+                            <>
+                              {[7, 14, 30].map((d) => (
+                                <button key={d} type="button" onClick={() => promote(l, d)} disabled={promoBusy}
+                                  className="rounded-full border border-green px-2.5 py-1 text-xs font-semibold text-green-text transition-colors hover:bg-green hover:text-on-green disabled:opacity-60">
+                                  {d}d · GH₵{d * 10}
+                                </button>
+                              ))}
+                              <button type="button" onClick={() => setPromoFor(null)} className="text-xs text-ink-faint hover:text-ink">Cancel</button>
+                            </>
+                          ) : (
+                            <button type="button" onClick={() => { setPromoFor(l.id); setPromoError(null); }}
+                              className="rounded-full border border-gold-brand px-3 py-1 text-xs font-semibold text-gold-text transition-colors hover:bg-gold-brand hover:text-green-900">Promote</button>
                           ))}
-                          <button type="button" onClick={() => setPromoFor(null)} className="text-xs text-ink-faint hover:text-ink">Cancel</button>
-                        </>
-                      ) : (
-                        <button type="button" onClick={() => { setPromoFor(l.id); setPromoError(null); }}
-                          className="rounded-full border border-gold-brand px-3 py-1 text-xs font-semibold text-gold-text transition-colors hover:bg-gold-brand hover:text-green-900">Promote</button>
-                      ))}
-                    </div>
-                  </li>
-                );
-              })}
-              {listings.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="pen" size={18} />} title="Nothing yet" actions={<Link to="/submit" className="text-sm font-semibold text-green-text">Add your first →</Link>} /></li>}
-            </ul>
-          </Panel>
-          </div>
-          <div className="mb-6 break-inside-avoid">
-<Panel title="Rep your town" lede="Wear your community pride — your quarter and your Asafo company.">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Quarter{town && <> · you rep <b className="text-ink-muted">{town.name}</b></>}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {quarters.map((p) => (
-                <button key={p.id} type="button" onClick={() => chooseQuarter(p.id)} className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === townId ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>{p.name}</button>
-              ))}
-            </div>
-            <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-faint">Asafo company</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {asafos.map((p) => (
-                <button key={p.id} type="button" onClick={() => chooseAsafo(p.id)} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === asafoId ? "border-clay bg-clay text-cream" : "border-sand bg-paper text-ink-muted hover:border-clay/40"}`}>
-                  {p.colors?.[0] && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.colors[0] }} aria-hidden />}
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </Panel>
-          </div>
-          <div className="mb-6 break-inside-avoid">
-<Panel title="My tickets" lede="Your event tickets and gate codes. Show the code at the entrance.">
-            <ul className="divide-y divide-sand">
-              {tickets.map((t) => (
-                <li key={t.id}>
-                  <Link to={`/events/${t.eventSlug}`} className="flex flex-col gap-1 py-3 transition-colors hover:bg-paper sm:flex-row sm:items-center sm:gap-3 sm:py-3.5">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-ink">{t.eventTitle}</p>
-                      <p className="text-xs text-ink-faint">{t.qty} × {t.tier} · {formatDate(t.createdAt)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {t.status === "success" && t.code ? (
-                        <span className="rounded-md bg-green/[0.08] px-2.5 py-1 font-mono text-sm font-bold tracking-widest text-green-text">{t.code}</span>
-                      ) : (
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${t.status === "pending" ? "bg-gold/[0.14] text-gold-text" : "bg-maroon-900/[0.08] text-maroon-text"}`}>{t.status}</span>
-                      )}
-                      {t.checkedInAt && <span className="text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">admitted</span>}
-                    </div>
-                  </Link>
-                </li>
-              ))}
-              {tickets.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="ticket" size={18} />} title="No tickets yet" actions={<Link to="/events" className="text-sm font-semibold text-green-text">See what&rsquo;s on →</Link>} /></li>}
-            </ul>
-          </Panel>
-          </div>
-          <div className="mb-6 break-inside-avoid">
-<Panel title="Your birthday" lede="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <DatePicker
-                value={birthday.length >= 10 ? birthday.slice(0, 10) : birthday}
-                onChange={(v) => { setBirthday(v); setBdayState("idle"); }}
-                max={todayIso}
-                className="w-full sm:w-auto sm:min-w-[13rem]"
-              />
-              <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                <input type="checkbox" checked={broadcast} onChange={(e) => { setBroadcast(e.target.checked); setBdayState("idle"); }} className="h-4 w-4 accent-green" />Let my followers know
-              </label>
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={saveBirthday} disabled={bdayState === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
-                  {bdayState === "saving" ? "Saving…" : "Save"}
-                </button>
-                {bdayState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
-                {bdayState === "error" && <span className="text-sm text-clay-text">Add a valid date first.</span>}
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {listings.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="pen" size={18} />} title="Nothing yet" actions={<Link to="/submit" className="text-sm font-semibold text-green-text">Add your first →</Link>} /></li>}
+                </ul>
+              </Panel>
+
+              <div className="space-y-6">
+                <Panel title="My tickets" lede="Your event tickets and gate codes. Show the code at the entrance.">
+                  <ul className="divide-y divide-sand">
+                    {tickets.map((t) => (
+                      <li key={t.id}>
+                        <Link to={`/events/${t.eventSlug}`} className="flex flex-col gap-1 py-3 transition-colors hover:bg-paper sm:flex-row sm:items-center sm:gap-3 sm:py-3.5">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium text-ink">{t.eventTitle}</p>
+                            <p className="text-xs text-ink-faint">{t.qty} × {t.tier} · {formatDate(t.createdAt)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {t.status === "success" && t.code ? (
+                              <span className="rounded-md bg-green/[0.08] px-2.5 py-1 font-mono text-sm font-bold tracking-widest text-green-text">{t.code}</span>
+                            ) : (
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${t.status === "pending" ? "bg-gold/[0.14] text-gold-text" : "bg-maroon-900/[0.08] text-maroon-text"}`}>{t.status}</span>
+                            )}
+                            {t.checkedInAt && <span className="text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">admitted</span>}
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                    {tickets.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="ticket" size={18} />} title="No tickets yet" actions={<Link to="/events" className="text-sm font-semibold text-green-text">See what&rsquo;s on →</Link>} /></li>}
+                  </ul>
+                </Panel>
+
+                <Panel title="My subscriptions" lede="Your Supporter subscriptions — each payment adds a month to the business.">
+                  <ul className="divide-y divide-sand">
+                    {subscriptions.map((sub) => (
+                      <li key={sub.id}>
+                        <Link to={`/business/${sub.listingSlug}`} className="flex items-center gap-3 py-3.5 transition-colors hover:bg-paper">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium text-ink">{sub.listingTitle}</p>
+                            <p className="text-xs text-ink-faint">
+                              GH₵ {(sub.amountPesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}
+                              {sub.periodEnd ? ` · until ${formatDate(sub.periodEnd)}` : ""}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${subStatusStyle(sub.status)}`}>{sub.status}</span>
+                        </Link>
+                      </li>
+                    ))}
+                    {subscriptions.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="money" size={18} />} title="No subscriptions yet" /></li>}
+                  </ul>
+                </Panel>
               </div>
             </div>
-          </Panel>
           </div>
-          <div className="mb-6 break-inside-avoid">
-<Panel title="My subscriptions" lede="Your Supporter subscriptions — each payment adds a month to the business.">
-            <ul className="divide-y divide-sand">
-              {subscriptions.map((sub) => (
-                <li key={sub.id}>
-                  <Link to={`/business/${sub.listingSlug}`} className="flex items-center gap-3 py-3.5 transition-colors hover:bg-paper">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-ink">{sub.listingTitle}</p>
-                      <p className="text-xs text-ink-faint">
-                        GH₵ {(sub.amountPesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}
-                        {sub.periodEnd ? ` · until ${formatDate(sub.periodEnd)}` : ""}
-                      </p>
+        )}
+
+        {tab === "connections" && (
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <Panel title="Your schooling" lede="Add the schools you attended and the years you were there. Classmates who overlapped with you will show up beside this — the powerhouse of Oguaa's networks.">
+              <SchoolingEditor
+                schools={schools}
+                initial={me.schooling ?? []}
+                onSaved={() => setConnKey((k) => k + 1)}
+              />
+            </Panel>
+
+            <Panel title="People you may know" lede="Classmates, neighbours from your quarter, and members of your Asafo.">
+              <PeopleYouMayKnow key={connKey} />
+            </Panel>
+          </div>
+        )}
+
+        {tab === "security" && (
+          <div className="mt-6 space-y-6">
+            <Panel title="Contact verification" lede="Submissions stay blocked until your account is verified. Send yourself a code, then enter it here to unlock the submit form.">
+              {me.phoneVerified ? (
+                <div className="inline-flex items-center gap-2 rounded-xl border border-green/15 bg-green/[0.06] px-4 py-3 text-sm font-medium text-green-text">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
+                  Your contact is verified — you can submit listings and reports.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <button type="button" onClick={startVerification} disabled={verifyState === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
+                    {verifyState === "saving" ? "Sending…" : "Send code"}
+                  </button>
+                  {verifySentCode && (
+                    <div className="rounded-2xl border border-green/15 bg-paper p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                        <label className="block flex-1">
+                          <span className="mb-1.5 block text-sm font-medium text-ink">Enter the 6-digit code</span>
+                          <input
+                            value={verifyCode}
+                            onChange={(e) => setVerifyCode(e.target.value)}
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            placeholder="123456"
+                            className="w-full rounded-xl border border-sand bg-cream px-4 py-3 text-center text-lg tracking-[0.3em] text-ink focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15"
+                          />
+                        </label>
+                        <button type="button" onClick={confirmVerification} disabled={verifyState === "saving" || verifyCode.trim() === ""} className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-cream hover:bg-clay/90 disabled:opacity-60">
+                          {verifyState === "saving" ? "Checking…" : "Confirm code"}
+                        </button>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
+                        {verifyExpiresAt && <span>Expires: {verifyExpiresAt}</span>}
+                        <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-green-text">Dev mode shows the code below.</span>
+                      </div>
+                      {verifySentCode && (
+                        <p className="mt-3 rounded-lg border border-dashed border-green/20 bg-green/[0.04] px-3 py-2 text-sm text-ink">
+                          Code: <span className="font-mono font-semibold tracking-[0.18em] text-green-text">{verifySentCode}</span>
+                        </p>
+                      )}
+                      {verifyError && <p className="mt-3 text-sm text-clay-text">{verifyError}</p>}
                     </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${subStatusStyle(sub.status)}`}>{sub.status}</span>
-                  </Link>
-                </li>
-              ))}
-              {subscriptions.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="money" size={18} />} title="No subscriptions yet" /></li>}
-            </ul>
-          </Panel>
-          </div>
-          <div className="mb-6 break-inside-avoid">
-<Panel title="Oguaa abroad" lede="Living away from home? Add yourself to the diaspora — the bridge for homecomings, projects, and giving back. Off by default.">
-            <div className="space-y-3">
-              <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                <input type="checkbox" checked={abroad} onChange={(e) => { setAbroad(e.target.checked); setDiaState("idle"); }} className="h-4 w-4 accent-teal" />I live abroad / outside Cape Coast
-              </label>
-              {abroad && (
-                <div className="flex flex-wrap gap-3">
-                  <input value={city} onChange={(e) => { setCity(e.target.value); setDiaState("idle"); }} placeholder="City (e.g. London)" className="min-w-0 flex-1 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
-                  <input value={country} onChange={(e) => { setCountry(e.target.value); setDiaState("idle"); }} placeholder="Country (e.g. United Kingdom)" className="min-w-0 flex-1 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
+                  )}
                 </div>
               )}
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={saveDiaspora} disabled={diaState === "saving"} className="rounded-full bg-teal px-5 py-2 text-sm font-semibold text-cream hover:bg-teal-text disabled:opacity-60">
-                  {diaState === "saving" ? "Saving…" : "Save"}
-                </button>
-                {diaState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
-                {diaState === "error" && <span className="text-sm text-clay-text">Could not save. Try again.</span>}
-              </div>
-            </div>
-          </Panel>
-          </div>
-          <div className="mb-6 break-inside-avoid">
-<Panel title="Security" lede="Two-factor sign-in with an authenticator app — recommended, and required for curators & stewards.">
-            <SecuritySettings />
-          </Panel>
-          </div>
-          <div className="mb-6 break-inside-avoid">
-<Panel title="Your data" lede="Yours to take with you, or to erase — under Ghana's Data Protection Act (Act 843).">
-            <DataRightsSettings />
-          </Panel>
-          </div>
-        </div>
+            </Panel>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <Panel title="Your schooling" lede="Add the schools you attended and the years you were there. Classmates who overlapped with you will show up below — the powerhouse of Oguaa's networks.">
-            <SchoolingEditor
-              schools={schools}
-              initial={me.schooling ?? []}
-              onSaved={() => setConnKey((k) => k + 1)}
-            />
-          </Panel>
+            <Panel title="Two-factor authentication" lede="Two-factor sign-in with an authenticator app — recommended, and required for curators & stewards.">
+              <SecuritySettings />
+            </Panel>
+          </div>
+        )}
 
-          <Panel title="People you may know" lede="Classmates, neighbours from your quarter, and members of your Asafo.">
-            <PeopleYouMayKnow key={connKey} />
-          </Panel>
-        </div>
+        {tab === "privacy" && (
+          <div className="mt-6">
+            <Panel title="Your data" lede="Yours to take with you, or to erase — under Ghana's Data Protection Act (Act 843). Account deletion is the danger zone at the foot of this panel.">
+              <DataRightsSettings />
+            </Panel>
+          </div>
+        )}
       </Container>
     </>
   );
