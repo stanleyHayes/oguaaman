@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
 import {
   Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone,
@@ -259,6 +260,7 @@ export function CreatorLayout() {
           <NavLink to="/notifications" className="relative rounded-lg p-2 text-ink-muted hover:bg-sand" aria-label="Notifications" title="Notifications">
             <Icon name="bell" />
           </NavLink>
+          <ThemeToggle className="text-ink-muted hover:bg-sand" />
           <div className="hidden h-6 w-px bg-sand sm:block" />
           {/* User menu lives in the top bar, not the sidebar — as in Aura. */}
           <div className="relative hidden sm:block" ref={menuRef}>

@@ -334,67 +334,6 @@ func TestSubmit_validatesAndDefaults(t *testing.T) {
 		t.Error("expected error for invalid type")
 	}
 
-	func TestSubmit_opportunityMentorshipRequiresSafeguardingPolicy(t *testing.T) {
-		ctx := context.Background()
-		svc := newTestService(&fakeRepo{})
-		_, err := svc.Submit(ctx, SubmitInput{
-			Type:    domain.TypeOpportunity,
-			Title:   "Youth mentorship pilot",
-			OwnerID: "m-test",
-			Details: map[string]any{
-				"kind": "mentorship",
-			},
-		})
-		if err == nil || !strings.Contains(err.Error(), "safeguarding policy link") {
-			t.Fatalf("expected safeguarding policy validation error, got %v", err)
-		}
-	}
-
-	func TestSubmit_opportunityMentorshipMinorNeedsGuardianConsent(t *testing.T) {
-		ctx := context.Background()
-		svc := newTestService(&fakeRepo{})
-		_, err := svc.Submit(ctx, SubmitInput{
-			Type:    domain.TypeOpportunity,
-			Title:   "Youth mentorship pilot",
-			OwnerID: "m-test",
-			Details: map[string]any{
-				"kind":                 "mentorship",
-				"safeguardingPolicyUrl": "https://example.com/safeguarding",
-				"minAge":               "16",
-				"maxAge":               "19",
-			},
-		})
-		if err == nil || !strings.Contains(err.Error(), "guardian consent is required") {
-			t.Fatalf("expected guardian consent validation error, got %v", err)
-		}
-	}
-
-	func TestSubmit_opportunityKindAutoTagsListing(t *testing.T) {
-		ctx := context.Background()
-		svc := newTestService(&fakeRepo{})
-		l, err := svc.Submit(ctx, SubmitInput{
-			Type:    domain.TypeOpportunity,
-			Title:   "Coastal SMEs co-investment round",
-			OwnerID: "m-test",
-			Details: map[string]any{
-				"kind":        "investment",
-				"description": "Co-investing in local SMEs",
-			},
-		})
-		if err != nil {
-			t.Fatalf("submit failed: %v", err)
-		}
-		found := false
-		for _, t := range l.Tags {
-			if t == "investment" {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Fatalf("expected opportunity kind tag to be auto-added, tags=%v", l.Tags)
-		}
-	}
 	if _, err := svc.Submit(ctx, SubmitInput{Type: domain.TypeMemory, Title: "a"}); err == nil {
 		t.Error("expected error for too-short title")
 	}
@@ -413,6 +352,68 @@ func TestSubmit_validatesAndDefaults(t *testing.T) {
 	}
 	if l.OwnerID != "m-test" {
 		t.Errorf("owner = %q, want the supplied member id", l.OwnerID)
+	}
+}
+
+func TestSubmit_opportunityMentorshipRequiresSafeguardingPolicy(t *testing.T) {
+	ctx := context.Background()
+	svc := newTestService(&fakeRepo{})
+	_, err := svc.Submit(ctx, SubmitInput{
+		Type:    domain.TypeOpportunity,
+		Title:   "Youth mentorship pilot",
+		OwnerID: "m-test",
+		Details: map[string]any{
+			"kind": "mentorship",
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "safeguarding policy link") {
+		t.Fatalf("expected safeguarding policy validation error, got %v", err)
+	}
+}
+
+func TestSubmit_opportunityMentorshipMinorNeedsGuardianConsent(t *testing.T) {
+	ctx := context.Background()
+	svc := newTestService(&fakeRepo{})
+	_, err := svc.Submit(ctx, SubmitInput{
+		Type:    domain.TypeOpportunity,
+		Title:   "Youth mentorship pilot",
+		OwnerID: "m-test",
+		Details: map[string]any{
+			"kind":                  "mentorship",
+			"safeguardingPolicyUrl": "https://example.com/safeguarding",
+			"minAge":                "16",
+			"maxAge":                "19",
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "guardian consent is required") {
+		t.Fatalf("expected guardian consent validation error, got %v", err)
+	}
+}
+
+func TestSubmit_opportunityKindAutoTagsListing(t *testing.T) {
+	ctx := context.Background()
+	svc := newTestService(&fakeRepo{})
+	l, err := svc.Submit(ctx, SubmitInput{
+		Type:    domain.TypeOpportunity,
+		Title:   "Coastal SMEs co-investment round",
+		OwnerID: "m-test",
+		Details: map[string]any{
+			"kind":        "investment",
+			"description": "Co-investing in local SMEs",
+		},
+	})
+	if err != nil {
+		t.Fatalf("submit failed: %v", err)
+	}
+	found := false
+	for _, t := range l.Tags {
+		if t == "investment" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected opportunity kind tag to be auto-added, tags=%v", l.Tags)
 	}
 }
 

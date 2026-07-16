@@ -55,6 +55,50 @@
   :root {
     color-scheme: light;
   }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    /* Surfaces */
+    --color-paper: #0f1a15;
+    --color-cream: #16241e;
+    --color-sand: #24352d;
+    /* Ink */
+    --color-ink: #f4f0e8;
+    --color-ink-muted: #b8c4b9;
+    --color-ink-faint: #8d9a8e;
+    /* Greens */
+    --color-green-900: #05150e;
+    --color-green: #1a5a42;
+    --color-green-slate: #2a3b33;
+    /* Golds */
+    --color-gold: #e0c270;
+    --color-gold-brand: #d4a85c;
+    --color-gold-border: #c99c4a;
+    --color-gold-text: #e8d19a;
+    /* Clay */
+    --color-clay: #d77a66;
+    --color-clay-text: #e9a08d;
+    --color-maroon-900: #5c1f1f;
+    /* Teal */
+    --color-teal: #2dbfa5;
+    --color-teal-text: #6ee7d2;
+    /* AI */
+    --color-ai: #7b6fd6;
+    --color-ai-tint: #1a1833;
+    --color-ai-line: #3d3966;
+    /* Depth */
+    --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.22);
+    --shadow-lift: 0 18px 50px rgba(0, 0, 0, 0.32);
+  }
+  html[data-theme="dark"] .on-dark {
+    color: var(--color-ink);
+  }
+  html[data-theme="dark"] ::selection {
+    background: var(--color-gold);
+    color: var(--color-paper);
+  }
+  html[data-theme="dark"] .bg-dotgrid {
+    background-image: radial-gradient(rgba(199, 162, 74, 0.08) 1px, transparent 1px);
+  }
   html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
@@ -159,7 +203,7 @@
     background: linear-gradient(
       90deg,
       var(--color-sand) 25%,
-      #f3ecde 37%,
+      var(--color-cream) 37%,
       var(--color-sand) 63%
     );
     background-size: 400% 100%;

@@ -42,11 +42,6 @@ var editableDetailsKeys = map[string]map[string]bool{
 	domain.TypePerson:      {"whyNotable": true, "era": true},
 	domain.TypeMemorial:    {"honorific": true, "bornYear": true, "diedDate": true, "birthday": true, "epitaph": true, "lifeStory": true, "associations": true, "gallery": true, "observeBirthday": true, "remindersEnabled": true},
 }
-if l.Type == domain.TypeOpportunity {
-	if err := validateOpportunityDetails(details); err != nil {
-		return nil, err
-	}
-}
 
 // urlDetailKeys are scalar details values that must pass the URL guard.
 var urlDetailKeys = map[string]bool{"applyUrl": true, "link": true, "booking": true}

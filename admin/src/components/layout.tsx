@@ -9,6 +9,7 @@ import {
   LogOut, BellRing, Map, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
 interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
@@ -441,6 +442,7 @@ export function AdminLayout() {
             <NavLink to="/notifications" data-tour="bell" className="relative rounded-lg p-2 text-ink-muted hover:bg-sand" aria-label="Notifications" title="Notifications">
               <Icon name="bell" />
             </NavLink>
+            <ThemeToggle className="text-ink-muted hover:bg-sand" />
             <div className="hidden h-6 w-px bg-sand sm:block" />
             {/* User menu lives in the top bar, not the sidebar — as in Aura. */}
             <div className="relative" ref={menuRef}>

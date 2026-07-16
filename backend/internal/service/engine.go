@@ -109,13 +109,13 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 }
 
 var validOpportunityKinds = map[string]bool{
-	"scholarship":   true,
-	"internship":    true,
+	"scholarship":    true,
+	"internship":     true,
 	"apprenticeship": true,
-	"training":      true,
-	"job":           true,
-	"investment":    true,
-	"mentorship":    true,
+	"training":       true,
+	"job":            true,
+	"investment":     true,
+	"mentorship":     true,
 }
 
 func validateOpportunityDetails(details map[string]any) error {

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Wordmark } from "./wordmark";
 import { NotificationsBell } from "./notifications-bell";
 import { LanguageSwitcher } from "./language-switcher";
+import { ThemeToggle } from "./theme-toggle";
 import { LayoutPill } from "./motion";
 import { SECTIONS, TONES, type NavSection } from "@/lib/sections";
 import { useAuth } from "@/lib/auth";
@@ -203,6 +204,7 @@ export function SiteHeader() {
             </svg>
           </Link>
           <LanguageSwitcher className="hidden lg:inline-flex" />
+          <ThemeToggle className="hidden text-cream/85 hover:bg-cream/10 sm:inline-flex" />
 
           {/* Contribute — the primary action, always present */}
           <Link to="/submit" className="hidden rounded-full bg-gold-brand px-4 py-1.5 text-sm font-semibold text-green-900 transition-colors hover:bg-gold sm:inline-flex">
