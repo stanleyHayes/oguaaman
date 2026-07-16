@@ -67,7 +67,7 @@ function MyTickets() {
             <View style={s.codeChip}><Text style={s.codeText}>{t.code}</Text></View>
           ) : (
             <View style={[s.statusChip, t.status === "pending" ? s.statusPending : s.statusBad]}>
-              <Text style={[s.statusText, t.status === "pending" ? { color: C.goldText } : { color: C.maroon }]}>{t.status}</Text>
+              <Text style={[s.statusText, t.status === "pending" ? { color: C.goldText } : { color: C.maroonText }]}>{t.status}</Text>
             </View>
           )}
         </Pressable>
@@ -89,7 +89,7 @@ function MySubscriptions() {
     <View style={{ gap: 8 }}>
       {list.map((sub) => {
         const subChip = sub.status === "pending" ? s.statusPending : s.statusBad;
-        const subColor = sub.status === "pending" ? { color: C.goldText } : { color: C.maroon };
+        const subColor = sub.status === "pending" ? { color: C.goldText } : { color: C.maroonText };
         return (
           <Pressable key={sub.id} onPress={() => router.push(`/business/${sub.listingSlug}` as never)} style={s.listingRow}>
             <View style={{ flex: 1, minWidth: 0 }}>
@@ -99,7 +99,7 @@ function MySubscriptions() {
               </Text>
             </View>
             <View style={[s.statusChip, sub.status === "success" ? s.statusOk : subChip]}>
-              <Text style={[s.statusText, sub.status === "success" ? { color: C.green } : subColor]}>{sub.status}</Text>
+              <Text style={[s.statusText, sub.status === "success" ? { color: C.greenText } : subColor]}>{sub.status}</Text>
             </View>
           </Pressable>
         );
@@ -699,9 +699,9 @@ function StatusChip({ status }: Readonly<{ status: string }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const chip: Record<string, { bg: object; color: string }> = {
-    approved: { bg: s.statusOk, color: C.green },
+    approved: { bg: s.statusOk, color: C.greenText },
     pending: { bg: s.statusPending, color: C.goldText },
-    rejected: { bg: s.statusBad, color: C.maroon },
+    rejected: { bg: s.statusBad, color: C.maroonText },
   };
   const v = chip[status] ?? { bg: s.statusMuted, color: C.inkMuted };
   return (
@@ -845,7 +845,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   promoDone: { color: C.goldText, fontSize: 12, fontWeight: "700" },
   featuredNote: { color: C.goldText, fontSize: 12, fontWeight: "700", flex: 1 },
   codeChip: { backgroundColor: withAlpha(C.green, 0.08), borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  codeText: { color: C.green, fontSize: 15, fontWeight: "700", letterSpacing: 2 },
+  codeText: { color: C.greenText, fontSize: 15, fontWeight: "700", letterSpacing: 2 },
   listingTitle: { color: C.ink, fontSize: 14, fontWeight: "600" },
   listingType: { color: C.inkFaint, fontSize: 11, textTransform: "capitalize", marginTop: 1 },
   statusChip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },

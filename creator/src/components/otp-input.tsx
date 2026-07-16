@@ -78,7 +78,8 @@ export function OtpInput({
     if (e.key === "Backspace") {
       e.preventDefault();
       if (chars[index]) {
-        emit(chars.slice(0, index).join(""));
+        // Clear only the focused slot, leaving later digits intact.
+        emit(chars.slice(0, index).join("") + chars.slice(index + 1).join(""));
       } else if (index > 0) {
         emit(chars.slice(0, index - 1).join(""));
         focusBox(index - 1);

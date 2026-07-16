@@ -47,7 +47,10 @@ export function Component() {
     setPhotoState("saving");
     try {
       await api.setPhoto(url);
-      if (member) setMember({ ...member, photoUrl: url });
+      // Refetch the canonical member; the auth setMember replaces, so spreading
+      // the render-captured member here would clobber a concurrent full save.
+      const fresh = await api.me();
+      setMember(fresh);
       setPhotoState("saved");
     } catch {
       setPhotoState("error");
@@ -88,7 +91,10 @@ export function Component() {
     try {
       const res = await api.setLinks(clean);
       setLinks(res.links ?? []);
-      if (member) setMember({ ...member, links: res.links ?? [] });
+      // Refetch the canonical member instead of spreading the stale closure,
+      // which would clobber a concurrent full-member save on the replace.
+      const fresh = await api.me();
+      setMember(fresh);
       setLinksState("saved");
     } catch (e) {
       setLinksErr(e instanceof Error ? e.message : "Could not save your links.");

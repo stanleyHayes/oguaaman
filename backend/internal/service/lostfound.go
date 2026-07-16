@@ -29,6 +29,7 @@ type LostFoundInput struct {
 	LastSeenLocation string `json:"lastSeenLocation"`
 	LastSeenDate     string `json:"lastSeenDate"`
 	Contact          string `json:"contact"`
+	CoverImageURL    string `json:"coverImageUrl"`
 }
 
 // LostFoundFilters narrows the lost & found feed; empty fields are ignored.
@@ -64,17 +65,18 @@ func (s *Service) SubmitLostFound(ctx context.Context, member *domain.Member, in
 	now := time.Now().UTC().Format(time.RFC3339)
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1_000_000)
 	l := domain.Listing{
-		ID:          "lf-" + slugify(title) + "-" + suffix,
-		Slug:        slugify(title) + "-" + suffix,
-		Type:        domain.TypeLostFound,
-		OwnerID:     member.ID,
-		Title:       title,
-		Status:      domain.StatusApproved, // auto-published: time-critical
-		Tags:        []string{"lost-found", in.Kind},
-		TownID:      member.TownID,
-		CreatedAt:   now,
-		SubmittedAt: now,
-		PublishedAt: now,
+		ID:            "lf-" + slugify(title) + "-" + suffix,
+		Slug:          slugify(title) + "-" + suffix,
+		Type:          domain.TypeLostFound,
+		OwnerID:       member.ID,
+		Title:         title,
+		Status:        domain.StatusApproved, // auto-published: time-critical
+		Tags:          []string{"lost-found", in.Kind},
+		TownID:        member.TownID,
+		CoverImageURL: strings.TrimSpace(in.CoverImageURL),
+		CreatedAt:     now,
+		SubmittedAt:   now,
+		PublishedAt:   now,
 		Details: map[string]any{
 			"kind":             in.Kind,
 			"description":      description,

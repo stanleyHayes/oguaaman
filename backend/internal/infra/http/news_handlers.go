@@ -66,6 +66,26 @@ func (h *Handler) SubmitNews(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, a)
 }
 
+// MyNews (member) — the signed-in writer's OWN articles in every status (drafts
+// still "In review" + published), newest first. GET /api/me/news (requireAuth).
+// Distinct from the public GET /api/news, which lists only published posts.
+func (h *Handler) MyNews(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	items, err := h.svc.MyNews(r.Context(), m.ID)
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
+}
+
 // ── admin (curator/steward) ───────────────────────────────────────────────────
 
 func (h *Handler) AdminNewsList(w http.ResponseWriter, r *http.Request) {

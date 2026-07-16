@@ -75,6 +75,9 @@ export const api = {
   // Newsroom authoring: writers submit drafts for review, verified-authority
   // managers publish directly. Public listing returns published posts only.
   news: () => get<NewsArticle[]>("/api/news"),
+  // The signed-in member's own articles in every status (drafts included),
+  // unlike the public /api/news feed which returns published posts only.
+  myNews: () => get<NewsArticle[]>("/api/me/news"),
   submitNews: (body: { title: string; summary?: string; body: string; coverColor?: string; coverImageUrl?: string; tags?: string[] }) =>
     post<NewsArticle>("/api/news", body),
 

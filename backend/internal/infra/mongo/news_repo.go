@@ -60,6 +60,15 @@ func (r *NewsRepo) Published(ctx context.Context) ([]domain.NewsArticle, error) 
 	return out, cur.All(ctx, &out)
 }
 
+func (r *NewsRepo) ByAuthor(ctx context.Context, authorID string) ([]domain.NewsArticle, error) {
+	cur, err := r.c.Find(ctx, bson.M{"authorId": authorID})
+	if err != nil {
+		return nil, err
+	}
+	out := []domain.NewsArticle{}
+	return out, cur.All(ctx, &out)
+}
+
 func (r *NewsRepo) SetPublished(ctx context.Context, id, status, at string) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"status": status, "publishedAt": at, "updatedAt": at}})
 	return err

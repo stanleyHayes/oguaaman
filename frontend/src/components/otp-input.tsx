@@ -76,9 +76,11 @@ export function OtpInput({
     if (e.key === "Backspace") {
       e.preventDefault();
       if (chars[index]) {
-        emit(chars.slice(0, index).join(""));
+        // Remove only the focused slot; keep the rest and focus in place.
+        emit(chars.slice(0, index).join("") + chars.slice(index + 1).join(""));
       } else if (index > 0) {
-        emit(chars.slice(0, index - 1).join(""));
+        // Empty slot — remove the previous digit and step focus back.
+        emit(chars.slice(0, index - 1).join("") + chars.slice(index).join(""));
         focusBox(index - 1);
       }
     } else if (e.key === "ArrowLeft" && index > 0) {

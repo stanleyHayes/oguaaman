@@ -9,11 +9,9 @@ import { formatDate } from "@/lib/format";
 import type { NewsArticle, NewsStatus } from "@/lib/types";
 import { PenLine, Send } from "lucide-react";
 
-/** The writer's own published posts (drafts aren't publicly listable). */
+/** The writer's own posts in every status — drafts and in-review included. */
 export async function loader(): Promise<NewsArticle[]> {
-  const me = await api.me();
-  const all = await api.news().catch(() => [] as NewsArticle[]);
-  return all.filter((a) => a.authorId === me.id);
+  return api.myNews().catch(() => [] as NewsArticle[]);
 }
 
 const inputCls =
@@ -23,7 +21,7 @@ const COVER_COLORS = ["#123F2D", "#7A1F2B", "#B8862B", "#1F5E57", "#8A3B1E"];
 
 function NewsStatusBadge({ status }: Readonly<{ status: NewsStatus }>) {
   const cls = status === "published" ? "bg-green/[0.1] text-green-text" : "bg-gold/[0.18] text-gold-text";
-  const label = status === "published" ? "Published" : "In review";
+  const label = status === "published" ? "Live" : "In review";
   return <span className={`inline-block shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>{label}</span>;
 }
 

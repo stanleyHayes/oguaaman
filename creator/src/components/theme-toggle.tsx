@@ -44,7 +44,7 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
             { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${max}px at ${x}px ${y}px)`] },
             { duration: 450, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
           );
-        });
+        }).catch(() => {});
       }}
       aria-label={label}
       title={label}

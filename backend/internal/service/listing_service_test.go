@@ -215,8 +215,11 @@ func (stubNews) Get(context.Context, string) (*domain.NewsArticle, error)    { r
 func (stubNews) BySlug(context.Context, string) (*domain.NewsArticle, error) { return nil, nil }
 func (stubNews) All(context.Context) ([]domain.NewsArticle, error)           { return nil, nil }
 func (stubNews) Published(context.Context) ([]domain.NewsArticle, error)     { return nil, nil }
-func (stubNews) SetPublished(context.Context, string, string, string) error  { return nil }
-func (stubNews) Delete(context.Context, string) error                        { return nil }
+func (stubNews) ByAuthor(context.Context, string) ([]domain.NewsArticle, error) {
+	return nil, nil
+}
+func (stubNews) SetPublished(context.Context, string, string, string) error { return nil }
+func (stubNews) Delete(context.Context, string) error                       { return nil }
 
 type stubNotifs struct{}
 

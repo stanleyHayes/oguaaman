@@ -11,9 +11,16 @@ import {
 } from "@/lib/directives";
 
 const SEEN_KEY = "oguaa.alerts.seen";
+const SEEN_SEV_KEY = "oguaa.alerts.seen-sev";
 const MUTED_KEY = "oguaa.alerts.muted";
 const DISMISSED_KEY = "oguaa.alerts.dismissed";
 const POLL_MS = 20_000;
+
+// A severity is "loud" once it reaches high/critical — the band that earns a
+// sound + buzz. Used both for newly-seen alerts and for escalations.
+function isLoud(severity: string): boolean {
+  return severity === "high" || severity === "critical";
+}
 
 // ── localStorage helpers (SSR/quota-safe) ─────────────────────────────────
 function readStringSet(key: string): Set<string> {
@@ -158,7 +165,7 @@ function AlertRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.66rem] font-bold uppercase tracking-wide ${s.badge}`}>
-              {critical && <span className="h-1.5 w-1.5 rounded-full bg-maroon-900 motion-safe:animate-pulse" aria-hidden />}
+              {critical && <span className="h-1.5 w-1.5 rounded-full bg-maroon-text motion-safe:animate-pulse" aria-hidden />}
               {DIRECTIVE_KIND_LABEL[d.kind]} · {SEVERITY_LABEL[d.severity]}
             </span>
             <span className="truncate text-xs font-medium text-ink-muted">{d.issuedByName}</span>
@@ -219,7 +226,15 @@ export function AlertBanner() {
   });
   const [dismissed, setDismissed] = useState<Record<string, string>>(() => readMap(DISMISSED_KEY));
 
-  const seenRef = useRef<Set<string>>(readStringSet(SEEN_KEY));
+  // Lazily initialised so localStorage is read/parsed once, not every render.
+  const seenRef = useRef<Set<string> | null>(null);
+  if (seenRef.current === null) seenRef.current = readStringSet(SEEN_KEY);
+  // Last-seen severity per directive id, so an escalation into high/critical
+  // re-alarms even after the id was first seen at a quieter severity.
+  const seenSevRef = useRef<Map<string, string> | null>(null);
+  if (seenSevRef.current === null) {
+    seenSevRef.current = new Map(Object.entries(readMap(SEEN_SEV_KEY)));
+  }
   const mutedRef = useRef(muted);
   useEffect(() => {
     mutedRef.current = muted;
@@ -246,16 +261,55 @@ export function AlertBanner() {
         .directives(true)
         .then((list) => {
           if (!alive) return;
-          const fresh = list.filter((d) => !seenRef.current.has(d.id));
-          const alarm = fresh.some((d) => d.severity === "high" || d.severity === "critical");
+          const seen = seenRef.current!;
+          const seenSev = seenSevRef.current!;
+          // Alarm when a directive is newly seen, or when an already-seen one
+          // has escalated into the high/critical band since we last saw it.
+          const alarm = list.some((d) => {
+            if (!isLoud(d.severity)) return false;
+            if (!seen.has(d.id)) return true;
+            return !isLoud(seenSev.get(d.id) ?? "");
+          });
+          const activeIds = new Set(list.map((d) => d.id));
           let changed = false;
           for (const d of list) {
-            if (!seenRef.current.has(d.id)) {
-              seenRef.current.add(d.id);
+            if (!seen.has(d.id)) {
+              seen.add(d.id);
+              changed = true;
+            }
+            if (seenSev.get(d.id) !== d.severity) {
+              seenSev.set(d.id, d.severity);
               changed = true;
             }
           }
-          if (changed) writeStringSet(SEEN_KEY, seenRef.current);
+          // Prune both stores to currently-active ids so they can't grow forever.
+          for (const id of [...seen]) {
+            if (!activeIds.has(id)) {
+              seen.delete(id);
+              changed = true;
+            }
+          }
+          for (const id of [...seenSev.keys()]) {
+            if (!activeIds.has(id)) {
+              seenSev.delete(id);
+              changed = true;
+            }
+          }
+          if (changed) {
+            writeStringSet(SEEN_KEY, seen);
+            writeMap(SEEN_SEV_KEY, Object.fromEntries(seenSev));
+          }
+          // Drop dismissals for directives no longer active (also unbounded).
+          setDismissed((prev) => {
+            let mutated = false;
+            const next: Record<string, string> = {};
+            for (const id of Object.keys(prev)) {
+              if (activeIds.has(id)) next[id] = prev[id];
+              else mutated = true;
+            }
+            if (mutated) writeMap(DISMISSED_KEY, next);
+            return mutated ? next : prev;
+          });
           setDirectives(list);
           if (alarm) fireAlert();
         })

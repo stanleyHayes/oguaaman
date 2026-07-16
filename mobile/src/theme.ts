@@ -15,6 +15,7 @@ export interface Palette {
   green900: string;
   green: string;
   greenSlate: string;
+  greenText: string;
   gold: string;
   goldBrand: string;
   goldBorder: string;
@@ -22,6 +23,7 @@ export interface Palette {
   clay: string;
   clayText: string;
   maroon: string;
+  maroonText: string;
   teal: string;
   tealText: string;
   ai: string;
@@ -69,6 +71,7 @@ export const LIGHT: Palette = {
   green900: "#0C2C1F",
   green: "#123F2D",
   greenSlate: "#3B473D",
+  greenText: "#123F2D",
   gold: "#C7A24A",
   goldBrand: "#B07D32",
   goldBorder: "#B8862F",
@@ -76,6 +79,7 @@ export const LIGHT: Palette = {
   clay: "#B0503C",
   clayText: "#9A4030",
   maroon: "#7C2D2D",
+  maroonText: "#7C2D2D",
   teal: "#0E7C6B",
   tealText: "#0B6557",
   ai: "#4C40A8",
@@ -104,6 +108,7 @@ export const DARK: Palette = {
   green900: "#05150E",
   green: "#1A5A42",
   greenSlate: "#2A3B33",
+  greenText: "#7FD9A8",
   gold: "#E0C270",
   goldBrand: "#D4A85C",
   goldBorder: "#C99C4A",
@@ -111,6 +116,7 @@ export const DARK: Palette = {
   clay: "#D77A66",
   clayText: "#E9A08D",
   maroon: "#5C1F1F",
+  maroonText: "#E9A08D",
   teal: "#2DBFA5",
   tealText: "#6EE7D2",
   ai: "#7B6FD6",

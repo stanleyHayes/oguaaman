@@ -45,7 +45,7 @@ export const SEVERITY_LABEL: Record<IncidentSeverity, string> = Object.fromEntri
     Takes the active palette (like `fillFor`) so the colours follow the theme. */
 export function severityColors(palette: Palette = LIGHT): Record<IncidentSeverity, string> {
   return {
-    critical: palette.maroon,
+    critical: palette.maroonText,
     high: palette.clayText,
     medium: palette.goldText,
     low: palette.tealText,

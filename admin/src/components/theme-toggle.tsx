@@ -35,16 +35,18 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
           return;
         }
         const transition = document.startViewTransition(applyNext);
-        void transition.ready.then(() => {
-          const max = Math.hypot(
-            Math.max(x, window.innerWidth - x),
-            Math.max(y, window.innerHeight - y),
-          );
-          document.documentElement.animate(
-            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${max}px at ${x}px ${y}px)`] },
-            { duration: 450, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
-          );
-        });
+        void transition.ready
+          .then(() => {
+            const max = Math.hypot(
+              Math.max(x, window.innerWidth - x),
+              Math.max(y, window.innerHeight - y),
+            );
+            document.documentElement.animate(
+              { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${max}px at ${x}px ${y}px)`] },
+              { duration: 450, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
+            );
+          })
+          .catch(() => {});
       }}
       aria-label={label}
       title={label}

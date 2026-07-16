@@ -128,6 +128,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	mux.HandleFunc("GET /api/news", h.News)
 	mux.HandleFunc("POST /api/news", h.SubmitNews)
+	mux.HandleFunc("GET /api/me/news", h.MyNews) // a writer's own posts, all statuses
 	mux.HandleFunc("GET /api/news/{slug}", h.NewsArticle)
 
 	mux.HandleFunc("GET /api/places", h.Places)

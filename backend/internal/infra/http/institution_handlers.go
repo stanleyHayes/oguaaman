@@ -117,6 +117,14 @@ func (h *Handler) Member(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
+	// The birthday is seeded from the private date of birth at sign-up so the
+	// member's own /me form pre-fills. It stays private on this PUBLIC profile
+	// unless the member opted into broadcasting it — blank it here so an
+	// anonymous caller can't read an exact DOB (spec §8.11). The authenticated
+	// /me (selfView) path is separate and keeps the field for pre-fill.
+	if !m.BroadcastBirthday {
+		m.Birthday = ""
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"member": m, "listings": listings, "places": places, "schools": schools,
 	})

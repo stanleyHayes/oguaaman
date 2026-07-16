@@ -187,6 +187,18 @@ func (s *Service) PublishedNews(ctx context.Context) ([]domain.NewsArticle, erro
 	return items, nil
 }
 
+// MyNews returns the signed-in member's own articles in ALL statuses (draft +
+// published), newest first, so a writer can see posts still pending editorial
+// review ("In review") alongside their published work.
+func (s *Service) MyNews(ctx context.Context, memberID string) ([]domain.NewsArticle, error) {
+	items, err := s.news.ByAuthor(ctx, memberID)
+	if err != nil {
+		return nil, err
+	}
+	sort.SliceStable(items, func(i, j int) bool { return items[i].CreatedAt > items[j].CreatedAt })
+	return items, nil
+}
+
 // NewsBySlug returns a single published article (public).
 func (s *Service) NewsBySlug(ctx context.Context, slug string) (*domain.NewsArticle, error) {
 	a, err := s.news.BySlug(ctx, slug)

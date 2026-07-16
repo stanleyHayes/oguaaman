@@ -33,8 +33,9 @@ type NewsRepository interface {
 	Update(ctx context.Context, a NewsArticle) error
 	Get(ctx context.Context, id string) (*NewsArticle, error)
 	BySlug(ctx context.Context, slug string) (*NewsArticle, error)
-	All(ctx context.Context) ([]NewsArticle, error)       // admin: drafts + published
-	Published(ctx context.Context) ([]NewsArticle, error) // public
+	All(ctx context.Context) ([]NewsArticle, error)                       // admin: drafts + published
+	Published(ctx context.Context) ([]NewsArticle, error)                 // public
+	ByAuthor(ctx context.Context, authorID string) ([]NewsArticle, error) // a writer's own posts, all statuses
 	SetPublished(ctx context.Context, id, status, at string) error
 	Delete(ctx context.Context, id string) error
 }
