@@ -1,11 +1,12 @@
-import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
 import { useAuth } from "@/lib/auth";
 import {
   Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
-  Newspaper, Sparkles, UserRound, Bell, User, Settings, type LucideIcon,
+  Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
+  LogOut, BellRing, type LucideIcon,
 } from "lucide-react";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
@@ -251,12 +252,49 @@ function SidebarNav({ pathname, role, onNavigate }: Readonly<{ pathname: string;
   );
 }
 
+function daypart(): string {
+  const h = new Date().getHours();
+  return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+}
+
+/** Staff roles mapped to the back-office titles shown in the user menu. */
+const ROLE_LABEL: Record<string, string> = {
+  steward: "Super Admin",
+  curator: "Curator",
+  moderator: "Moderator",
+  editor: "Editor",
+  member: "Member",
+};
+
+/** Rich user-menu rows (icon + title + subtitle), RentOS-style. */
+const USER_MENU: { to: string; icon: LucideIcon; title: string; sub: string }[] = [
+  { to: "/profile", icon: User, title: "My Profile", sub: "View your account details" },
+  { to: "/settings", icon: ShieldCheck, title: "Security & 2FA", sub: "Password and two-factor authentication" },
+  { to: "/notifications", icon: BellRing, title: "Notifications", sub: "Your back-office alerts" },
+];
+
 export function AdminLayout() {
   const { member, signOut } = useAuth();
   const loc = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false); // mobile drawer
   const [userMenu, setUserMenu] = useState(false);
+  const [term, setTerm] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // "/" focuses the header search (Gmail/GitHub convention).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   // Scroll to top on navigation. (The mobile drawer closes via each link's onClick.)
   useEffect(() => {
@@ -277,6 +315,7 @@ export function AdminLayout() {
   }, [userMenu]);
 
   const current = ALL_ITEMS.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? ALL_ITEMS[0];
+  const firstName = member?.displayName.split(" ")[0] ?? "";
 
   return (
     <div className="min-h-screen bg-paper">
@@ -299,40 +338,110 @@ export function AdminLayout() {
             <Icon name="menu" />
           </button>
 
-          <div className="min-w-0 flex-1">
-            <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-ink-faint">Admin</p>
-            <h2 className="truncate text-lg font-semibold leading-none text-ink">{current.label}</h2>
+          {/* Greeting — time-of-day hello + live section context */}
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sand bg-paper text-ink-muted sm:flex">
+              <current.icon size={18} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-semibold leading-tight text-ink">
+                Good {daypart()}{firstName ? `, ${firstName}` : ""}
+              </h2>
+              <p className="flex items-center gap-1.5 text-[11px] text-ink-faint">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green" aria-hidden />
+                {loc.pathname === "/" ? "Live workspace overview" : current.label}
+              </p>
+            </div>
           </div>
 
-          <NavLink to="/notifications" className="relative rounded-lg p-2 text-ink-muted hover:bg-sand" aria-label="Notifications" title="Notifications">
-            <Icon name="bell" />
-          </NavLink>
-          <div className="hidden h-6 w-px bg-sand sm:block" />
-          {/* User menu lives in the top bar, not the sidebar — as in Aura. */}
-          <div className="relative hidden sm:block" ref={menuRef}>
-            <button
-              onClick={() => setUserMenu((v) => !v)}
-              aria-expanded={userMenu}
-              aria-haspopup="menu"
-              className="flex items-center gap-2.5 rounded-full border border-sand bg-paper py-1.5 pl-1.5 pr-4 text-sm transition-colors hover:border-gold-border/60"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gold/15 text-xs font-bold text-gold-text">
-                {member?.displayName.split(" ").map((s) => s[0]).slice(0, 2).join("") ?? "··"}
-              </span>
-              <span className="max-w-[9rem] truncate font-medium text-ink">{member?.displayName ?? "Account"}</span>
-            </button>
-            {userMenu && (
-              <div role="menu" className="absolute right-0 z-20 mt-2 w-56 rounded-2xl border border-sand bg-paper p-2 shadow-lg">
-                {member?.role && (
-                  <div className="flex items-center gap-2 px-4 py-2.5 pb-2">
-                    <span className="text-xs text-ink-faint">Signed in as</span>
-                    <RoleBadge role={member.role} />
+          {/* Centre search — jumps to the listings directory filtered */}
+          <form
+            className="relative mx-auto hidden w-full max-w-md md:block"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = term.trim();
+              navigate(q ? `/listings?q=${encodeURIComponent(q)}` : "/listings");
+            }}
+          >
+            <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
+            <input
+              ref={searchRef}
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder="Search listings…"
+              aria-label="Search listings"
+              className="w-full rounded-full border border-sand bg-paper py-2 pl-10 pr-11 text-sm text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none focus:ring-2 focus:ring-gold/20"
+            />
+            <kbd className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md border border-sand bg-cream px-1.5 py-0.5 text-[10px] font-semibold text-ink-faint">/</kbd>
+          </form>
+
+          <div className="ml-auto flex items-center gap-1.5">
+            <NavLink to="/notifications" className="relative rounded-lg p-2 text-ink-muted hover:bg-sand" aria-label="Notifications" title="Notifications">
+              <Icon name="bell" />
+            </NavLink>
+            <div className="hidden h-6 w-px bg-sand sm:block" />
+            {/* User menu lives in the top bar, not the sidebar — as in Aura. */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setUserMenu((v) => !v)}
+                aria-expanded={userMenu}
+                aria-haspopup="menu"
+                className="flex items-center gap-2.5 rounded-full border border-sand bg-paper py-1.5 pl-1.5 pr-2.5 text-sm transition-colors hover:border-gold-border/60"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gold/15 text-xs font-bold text-gold-text">
+                  {member?.displayName.split(" ").map((s) => s[0]).slice(0, 2).join("") ?? "··"}
+                </span>
+                <span className="hidden text-left sm:block">
+                  <span className="block max-w-[10rem] truncate text-sm font-semibold leading-tight text-ink">{member?.displayName ?? "Account"}</span>
+                  <span className="block text-[11px] leading-tight text-ink-faint">{ROLE_LABEL[member?.role ?? ""] ?? "Member"}</span>
+                </span>
+                <ChevronDown size={14} className={`text-ink-faint transition-transform ${userMenu ? "rotate-180" : ""}`} />
+              </button>
+              {userMenu && (
+                <div role="menu" className="absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-sand bg-paper shadow-lg">
+                  {/* Identity header */}
+                  <div className="border-b border-sand px-5 py-4">
+                    <p className="truncate text-base font-semibold text-ink">{member?.displayName}</p>
+                    {member?.email && <p className="truncate text-xs text-ink-muted">{member.email}</p>}
+                    <p className="mt-0.5 text-xs text-ink-faint">{ROLE_LABEL[member?.role ?? ""] ?? "Member"}</p>
                   </div>
-                )}
-                <Link to="/profile" role="menuitem" onClick={() => setUserMenu(false)} className="block rounded-xl px-4 py-3 text-[0.9375rem] font-medium text-ink transition-colors hover:bg-cream">Profile</Link>
-                <button role="menuitem" onClick={signOut} className="mt-0.5 block w-full rounded-xl px-4 py-3 text-left text-[0.9375rem] font-medium text-clay-text transition-colors hover:bg-cream">Sign out</button>
-              </div>
-            )}
+                  <div className="p-2">
+                    {USER_MENU.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        role="menuitem"
+                        onClick={() => setUserMenu(false)}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-cream"
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sand/70 text-ink-muted">
+                          <item.icon size={16} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-ink">{item.title}</span>
+                          <span className="block truncate text-[11px] text-ink-faint">{item.sub}</span>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="border-t border-sand p-2">
+                    <button
+                      role="menuitem"
+                      onClick={signOut}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-maroon-900/[0.05]"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-maroon-900/[0.08] text-maroon-900">
+                        <LogOut size={16} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-maroon-900">Sign out</span>
+                        <span className="block text-[11px] text-ink-faint">End your session on this device</span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

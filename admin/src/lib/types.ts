@@ -94,6 +94,9 @@ export interface Member {
   joinedAt: string;
   /** Two-factor enrolment state — required for staff roles (spec §14). */
   mfaEnabled?: boolean;
+  /** Own contact identifiers — only present on self-auth payloads. */
+  email?: string;
+  phone?: string;
 }
 
 export interface Office { id: string; role: string; holderId?: string; holderName?: string; verified: boolean }
@@ -168,6 +171,12 @@ export interface Organization {
   houseColors?: string[];
   osaName?: string;
   memberCount?: number;
+  gesCategory?: string;
+  boardingType?: string;
+  genderPolicy?: string;
+  nhisAccredited?: boolean;
+  ghanaPostGPS?: string;
+  momoNumber?: string;
 }
 
 export interface Place { id: string; slug: string; name: string; kind?: "quarter" | "asafo"; blurb?: string; colors?: string[] }
@@ -179,6 +188,8 @@ export interface InstitutionView { institution: Organization; events: Listing[];
 export interface Stats {
   members: number; listings: number; schools: number; institutions: number;
   artists: number; memorials: number; memories: number; pending: number;
+  viewsThisMonth: number;
+  avgApprovalHrs: number;
 }
 
 export interface ModerationRecord {
@@ -347,6 +358,7 @@ export interface Report {
   reviewedById?: string;
   reviewedAt?: string;
   resolution?: string;
+  keeperClaim?: boolean;
 }
 
 // A pending institution-management claim, enriched for steward review (spec §8.13).

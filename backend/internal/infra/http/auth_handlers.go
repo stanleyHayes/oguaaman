@@ -8,10 +8,24 @@ import (
 
 	"github.com/skip2/go-qrcode"
 
+	"github.com/oguaa/backend/internal/domain"
 	"github.com/oguaa/backend/internal/service"
 )
 
 // ── auth (spec §8.1) ─────────────────────────────────────────────────────────
+
+// selfMember enriches the member payload on self-facing auth endpoints with
+// the account's own contact identifiers. Everywhere else Email/Phone stay
+// json:"-" so public payloads never leak them.
+type selfMember struct {
+	*domain.Member
+	Email string `json:"email,omitempty"`
+	Phone string `json:"phone,omitempty"`
+}
+
+func selfView(m *domain.Member) selfMember {
+	return selfMember{Member: m, Email: m.Email, Phone: m.Phone}
+}
 
 func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 	var in struct {
@@ -38,7 +52,7 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": member})
+	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": selfView(member)})
 }
 
 // AuthMFA completes an MFA-gated sign-in: challenge from AuthLogin + a TOTP or
@@ -76,7 +90,7 @@ func (h *Handler) AuthMFA(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": member})
+	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": selfView(member)})
 }
 
 // MFASetup starts enrolment: a fresh secret + otpauth URL + QR PNG (data URL).
@@ -203,7 +217,7 @@ func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"mfaRequired": true, "challenge": token})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": member})
+	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": selfView(member)})
 }
 
 // StartPhoneVerification issues a short-lived verification code for the signed-in
@@ -280,5 +294,5 @@ func (h *Handler) AuthMe(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusUnauthorized, "Not signed in.")
 		return
 	}
-	writeJSON(w, http.StatusOK, m)
+	writeJSON(w, http.StatusOK, selfView(m))
 }

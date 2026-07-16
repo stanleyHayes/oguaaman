@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Listing, Member, ListingStatus } from "@/lib/types";
 import { PageHeader, Card, StatusBadge, Empty } from "@/components/ui";
@@ -18,8 +18,9 @@ export async function loader(): Promise<Data> {
 
 export function Component() {
   const { listings, members } = useLoaderData() as Data;
+  const [params] = useSearchParams();
   const [rows, setRows] = useState(listings);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(params.get("q") ?? "");
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
   const [busy, setBusy] = useState<string | null>(null);
