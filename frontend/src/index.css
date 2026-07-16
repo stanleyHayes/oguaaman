@@ -160,6 +160,17 @@
     font-weight: 600;
     color: var(--color-ink-faint);
   }
+  /* Eyebrows on dark panels (heroes, footers, the spotlight stage). `.eyebrow`
+     above wins ties against `text-*` utilities (same layer, later source), so
+     kickers on dark artwork rendered in the muted ink — and in dark theme a
+     `text-cream` override itself remaps to a dark surface colour. Pin the same
+     per-theme light ink the `.on-dark` base rules use for body text. */
+  .on-dark .eyebrow {
+    color: var(--color-cream);
+  }
+  html[data-theme="dark"] .on-dark .eyebrow {
+    color: var(--color-ink);
+  }
   .bg-dotgrid {
     background-image: radial-gradient(rgba(199, 162, 74, 0.14) 1px, transparent 1px);
     background-size: 18px 18px;
