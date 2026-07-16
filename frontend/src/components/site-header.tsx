@@ -118,7 +118,7 @@ function SectionMenuItem({ s, lang, onClick }: Readonly<{ s: NavSection; lang: R
 }
 
 const navPill = (active: boolean) =>
-  `relative inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm transition-colors ${
+  `relative inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition-colors ${
     active ? "font-semibold text-green-900" : "text-cream/85 hover:bg-cream/10 hover:text-cream"
   }`;
 
@@ -181,7 +181,7 @@ export function SiteHeader() {
 
   return (
     <header className="on-dark on-dark-pin sticky top-0 z-40 border-b border-cream/10 bg-green text-cream">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
         <Link to="/" aria-label="Oguaa — home" onClick={() => setOpen(false)} className="shrink-0">
           <Wordmark />
         </Link>
