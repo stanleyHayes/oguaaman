@@ -39,7 +39,7 @@ function NavigationProgress() {
  */
 export function HydrateFallback() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-green-900 text-cream">
+    <div className="on-dark-pin flex min-h-screen flex-col items-center justify-center gap-4 bg-green-900 text-cream">
       <motion.div
         initial={{ opacity: 0, scale: 0.94 }}
         animate={{ opacity: 1, scale: 1 }}

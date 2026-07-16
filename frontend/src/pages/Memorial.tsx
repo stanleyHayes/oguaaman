@@ -75,11 +75,11 @@ export function Component() {
           {d.epitaph && <p className="mx-auto mt-5 max-w-[30ch] text-2xl font-medium italic leading-snug text-ink">“{d.epitaph}”</p>}
 
           <div className="mt-7 flex flex-wrap justify-center gap-2">
-            {place && <span className="rounded-full border border-sand bg-paper px-3 py-1.5 text-xs text-green">{place.name}</span>}
+            {place && <span className="rounded-full border border-sand bg-paper px-3 py-1.5 text-xs text-green-text">{place.name}</span>}
             {memSchools.map((s) => (
-              <Link key={s.id} to={`/education/${s.slug}`} className="rounded-full border border-sand bg-paper px-3 py-1.5 text-xs text-green hover:border-gold-brand hover:text-gold-text">{s.name}</Link>
+              <Link key={s.id} to={`/education/${s.slug}`} className="rounded-full border border-sand bg-paper px-3 py-1.5 text-xs text-green-text hover:border-gold-brand hover:text-gold-text">{s.name}</Link>
             ))}
-            {extraAssociations.map((a) => <span key={a} className="rounded-full border border-sand bg-paper px-3 py-1.5 text-xs text-green">{a}</span>)}
+            {extraAssociations.map((a) => <span key={a} className="rounded-full border border-sand bg-paper px-3 py-1.5 text-xs text-green-text">{a}</span>)}
           </div>
 
           <CandleRemember slug={m.slug} initialCandles={d.candles ?? 0} initialRemembered={d.rememberedByCount ?? 0} />
@@ -105,7 +105,7 @@ export function Component() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {d.gallery.map((g, i) => (
                   <div key={`${g.url ?? ""}-${g.caption}`} className="relative aspect-square overflow-hidden rounded border border-sand" style={{ background: GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length] }}>
-                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-2.5 pb-1.5 pt-4 text-xs text-cream">{g.caption}</span>
+                    <span className="on-dark-pin absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-2.5 pb-1.5 pt-4 text-xs text-cream">{g.caption}</span>
                   </div>
                 ))}
               </div>
@@ -168,7 +168,7 @@ export function Component() {
                             }
                           }}
                           disabled={claimLoading}
-                          className="rounded bg-forest px-4 py-2 text-sm text-cream hover:bg-green disabled:opacity-60"
+                          className="rounded bg-green px-4 py-2 text-sm text-on-green hover:bg-green-900 disabled:opacity-60"
                         >
                           {claimLoading ? "Submitting…" : "Submit claim"}
                         </button>
@@ -178,7 +178,7 @@ export function Component() {
                   )}
                 </>
               ) : (
-                <p className="text-sm text-green">Thank you — a steward will review your claim and be in touch.</p>
+                <p className="text-sm text-green-text">Thank you — a steward will review your claim and be in touch.</p>
               )}
             </div>
           )}

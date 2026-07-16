@@ -37,7 +37,7 @@ export function ManageBar({ slug, name }: Readonly<{ slug: string; name: string 
           <p className="text-sm text-ink-muted">You manage this institution’s official presence.</p>
           <Link
             to={`/education/${slug}/manage`}
-            className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green-900"
+            className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900"
           >
             Manage {name} →
           </Link>
@@ -93,7 +93,7 @@ export function ManageBar({ slug, name }: Readonly<{ slug: string; name: string 
           type="button"
           onClick={submit}
           disabled={state === "sending" || !role.trim()}
-          className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60"
+          className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60"
         >
           {state === "sending" ? "Sending…" : "Send request"}
         </button>

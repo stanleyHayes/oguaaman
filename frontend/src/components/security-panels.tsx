@@ -84,7 +84,7 @@ export function SecuritySettings() {
         </div>
         {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
         <div className="flex items-center gap-3">
-          <button type="submit" disabled={busy} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+          <button type="submit" disabled={busy} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
             {busy ? "Verifying…" : "Verify & turn on"}
           </button>
           <button type="button" onClick={() => { setStage({ step: "idle" }); setErr(null); }} className="text-sm font-medium text-ink-muted hover:text-ink">Cancel</button>
@@ -112,7 +112,7 @@ export function SecuritySettings() {
           >
             Copy codes
           </button>
-          <button type="button" onClick={() => setStage({ step: "idle" })} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900">
+          <button type="button" onClick={() => setStage({ step: "idle" })} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900">
             I've saved them ✓
           </button>
         </div>
@@ -152,7 +152,7 @@ export function SecuritySettings() {
           </button>
         </span>
       ) : (
-        <button type="button" onClick={beginEnroll} disabled={busy} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+        <button type="button" onClick={beginEnroll} disabled={busy} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
           {busy ? "Starting…" : "Turn on two-factor"}
         </button>
       )}

@@ -20,7 +20,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark relative overflow-hidden bg-green text-cream">
+      <section className="on-dark on-dark-pin relative overflow-hidden bg-green text-cream">
         {cover && (
           <>
             <img src={cldCover(cover, 1200)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover opacity-50" />

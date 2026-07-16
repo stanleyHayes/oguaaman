@@ -172,7 +172,7 @@ export function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
             key={m.id || i}
             type="button"
             onClick={() => m.url && setOpen(m)}
-            className={`group relative block aspect-square overflow-hidden rounded-[var(--radius-card)] border border-sand bg-gradient-to-br text-left ${gradientFor((m.id || "") + (m.caption ?? ""))} ${m.url ? "cursor-zoom-in" : "cursor-default"}`}
+            className={`on-dark-pin group relative block aspect-square overflow-hidden rounded-[var(--radius-card)] border border-sand bg-gradient-to-br text-left ${gradientFor((m.id || "") + (m.caption ?? ""))} ${m.url ? "cursor-zoom-in" : "cursor-default"}`}
             aria-label={m.alt || m.caption || "Photo"}
           >
             <span className="bg-dotgrid absolute inset-0 opacity-30" aria-hidden />
@@ -218,7 +218,7 @@ function Lightbox({ asset, onClose }: Readonly<{ asset: MediaAsset; onClose: () 
       open
       aria-modal="true"
       aria-label={asset.alt ?? asset.caption ?? "Image"}
-      className="on-dark fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-black/80 p-4"
+      className="on-dark on-dark-pin fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-black/80 p-4"
     >
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 h-full w-full cursor-default" />
       <figure className="relative max-h-full max-w-3xl">
@@ -392,7 +392,7 @@ function CtaBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone
             // Primary button uses brand green; secondary is outline — both web-safe
             // (never white-on-gold), independent of the section's accent tone.
             const cls = i === 0
-              ? "inline-flex items-center rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900"
+              ? "inline-flex items-center rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900"
               : "inline-flex items-center rounded-full border border-green/30 px-5 py-2.5 text-sm font-semibold text-green hover:border-green";
             return href
               ? <a key={b.id || i} href={href} target="_blank" rel="noreferrer" className={cls}>{b.label}</a>
@@ -440,7 +440,7 @@ function GroupsBlock({ groups, tone: t }: Readonly<{ groups: SubEntity[]; tone: 
             {g.crestUrl ? (
               <img src={cldLogo(g.crestUrl, 120)} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-full border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             ) : (
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green text-sm font-semibold text-cream">{initials(g.name)}</span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green text-sm font-semibold text-on-green">{initials(g.name)}</span>
             )}
             <div className="min-w-0 flex-1">
               <p className="text-lg text-ink">{g.name}</p>
@@ -476,7 +476,7 @@ function HeroBlock({ section, tone: t }: Readonly<{ section: ProfileSection; ton
   const onImage = !!bg;
   const buttons = (section.items ?? []).filter((i) => i.label);
   return (
-    <div className={`relative overflow-hidden rounded-[var(--radius-card)] border border-sand ${onImage ? "on-dark" : t.soft}`}>
+    <div className={`relative overflow-hidden rounded-[var(--radius-card)] border border-sand ${onImage ? "on-dark on-dark-pin" : t.soft}`}>
       {onImage && (
         <>
           <img src={cld(bg, "w_1400,f_auto,q_auto")} alt={section.media?.[0]?.alt ?? ""} className="absolute inset-0 h-full w-full object-cover" />
@@ -492,7 +492,7 @@ function HeroBlock({ section, tone: t }: Readonly<{ section: ProfileSection; ton
               const href = safeHref(b.url);
               let cls: string;
               if (i === 0) {
-                cls = "inline-flex items-center rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900";
+                cls = "inline-flex items-center rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900";
               } else if (onImage) {
                 cls = "inline-flex items-center rounded-full border border-cream/40 px-5 py-2.5 text-sm font-semibold text-cream hover:border-gold";
               } else {
@@ -605,7 +605,7 @@ function MapBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone
         </svg>
         <p className="font-serif text-base leading-relaxed text-ink">{addr}</p>
       </div>
-      <a href={href} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-900">Get directions →</a>
+      <a href={href} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">Get directions →</a>
     </div>
   );
 }

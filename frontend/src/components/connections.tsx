@@ -99,7 +99,7 @@ export function SchoolingEditor({
           Add a school
         </button>
         {rows.length > 0 && (
-          <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-maroon-900 px-5 py-2 text-sm font-semibold text-cream hover:bg-maroon-900/90 disabled:opacity-60">
+          <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-maroon-900 px-5 py-2 text-sm font-semibold text-on-green hover:bg-maroon-900/90 disabled:opacity-60">
             {state === "saving" ? "Saving…" : "Save schooling"}
           </button>
         )}
@@ -135,7 +135,7 @@ function FollowChip({ slug, name }: Readonly<{ slug: string; name: string }>) {
       type="button" onClick={toggle} disabled={busy} aria-pressed={following}
       aria-label={following ? `Following ${name}` : `Follow ${name}`}
       className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-70 ${
-        following ? "border-green bg-green/[0.08] text-green" : "border-green text-green hover:bg-green hover:text-cream"
+        following ? "border-green bg-green/[0.08] text-green" : "border-green text-green hover:bg-green hover:text-on-green"
       }`}
     >
       {following ? "Following" : "Follow"}

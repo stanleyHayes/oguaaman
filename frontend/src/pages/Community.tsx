@@ -133,7 +133,7 @@ export function Component() {
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">{events.map((e, i) => <StaggerItem key={e.id} index={i} lift><EventCard event={e} /></StaggerItem>)}</div>
       </Container>
 
-      <section id="join" className="on-dark bg-green py-16 text-cream">
+      <section id="join" className="on-dark on-dark-pin bg-green py-16 text-cream">
         <Container size="narrow" className="text-center">
           <Adinkra name="funtunfunefu" size={36} className="mx-auto text-gold" />
           <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">Two crocodiles, one stomach</h2>

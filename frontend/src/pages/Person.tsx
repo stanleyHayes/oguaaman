@@ -22,7 +22,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark relative overflow-hidden bg-green text-cream">
+      <section className="on-dark on-dark-pin relative overflow-hidden bg-green text-cream">
         <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#1B5A3F,#0C2C1F)" }} aria-hidden />
         <Container size="wide" className="relative py-12 sm:py-16">
           <Link to="/people" className="text-sm text-cream/70 hover:text-gold">← Sons &amp; daughters</Link>
@@ -58,7 +58,7 @@ export function Component() {
               {d.era && (<div className="flex justify-between gap-4"><dt className="text-ink-faint">Era</dt><dd className="text-right text-ink">{d.era}</dd></div>)}
               <div className="flex justify-between gap-4"><dt className="text-ink-faint">Status</dt><dd className="text-right text-ink">{d.living ? "Living" : "Remembered"}</dd></div>
             </dl>
-            <Link to="/submit?type=person" className="mt-4 inline-block text-sm font-semibold text-green hover:underline">Know more about them? Contribute →</Link>
+            <Link to="/submit?type=person" className="mt-4 inline-block text-sm font-semibold text-green-text hover:underline">Know more about them? Contribute →</Link>
           </div>
         </aside>
       </Container>

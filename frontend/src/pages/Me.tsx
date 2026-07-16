@@ -25,9 +25,9 @@ const CREATOR = (import.meta.env.VITE_CREATOR_URL as string | undefined) ?? "htt
 // their own flows; projects belong to institutions).
 const EDITABLE = new Set(["artist", "business", "event", "memory", "opportunity", "person", "memorial"]);
 const STATUS_STYLE: Record<ListingStatus, string> = {
-  approved: "bg-green/[0.08] text-green",
+  approved: "bg-green/[0.08] text-green-text",
   pending: "bg-gold/[0.14] text-gold-text",
-  rejected: "bg-maroon-900/[0.08] text-maroon-900",
+  rejected: "bg-maroon-900/[0.08] text-maroon-text",
   draft: "bg-sand text-ink-muted",
   unpublished: "bg-sand text-ink-muted",
 };
@@ -50,9 +50,9 @@ function roleLabel(role: string): string {
 }
 
 function subStatusStyle(status: string): string {
-  if (status === "success") return "bg-green/[0.08] text-green";
+  if (status === "success") return "bg-green/[0.08] text-green-text";
   if (status === "pending") return "bg-gold/[0.14] text-gold-text";
-  return "bg-maroon-900/[0.08] text-maroon-900";
+  return "bg-maroon-900/[0.08] text-maroon-text";
 }
 
 /** A dashboard card: title + lede header, optional header action, body slot. */
@@ -84,7 +84,7 @@ function QuickAction({ to, label, desc, glyph }: Readonly<{ to: string; label: s
       to={to}
       className="group flex items-center gap-3 rounded-[var(--radius-card)] border border-sand bg-cream p-4 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-gold-border/50 hover:shadow-[var(--shadow-lift)]"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green/[0.08] text-lg text-green transition-colors group-hover:bg-gold/20 group-hover:text-gold-text" aria-hidden>{glyph}</span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green/[0.08] text-lg text-green-text transition-colors group-hover:bg-gold/20 group-hover:text-gold-text" aria-hidden>{glyph}</span>
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-ink">{label}</span>
         <span className="block truncate text-xs text-ink-faint">{desc}</span>
@@ -271,7 +271,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark relative overflow-hidden bg-green text-cream">
+      <section className="on-dark on-dark-pin relative overflow-hidden bg-green text-cream">
         <div className="absolute inset-0" style={{ background: "radial-gradient(120% 140% at 85% -20%, #1B5A3F 0%, #123F2D 50%, #0C2C1F 100%)" }} aria-hidden />
         <div className="bg-dotgrid absolute inset-0 opacity-50" aria-hidden />
         <Container size="wide" className="relative flex flex-col gap-5 py-12 sm:flex-row sm:items-center">
@@ -325,7 +325,7 @@ export function Component() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={startVerification} disabled={verifyState === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+                <button type="button" onClick={startVerification} disabled={verifyState === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
                   {verifyState === "saving" ? "Sending…" : "Send code"}
                 </button>
               </div>
@@ -350,11 +350,11 @@ export function Component() {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
                   {verifyExpiresAt && <span>Expires: {verifyExpiresAt}</span>}
-                  <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-green">Dev mode shows the code below.</span>
+                  <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-green-text">Dev mode shows the code below.</span>
                 </div>
                 {verifySentCode && (
                   <p className="mt-3 rounded-lg border border-dashed border-green/20 bg-green/[0.04] px-3 py-2 text-sm text-ink">
-                    Code: <span className="font-mono font-semibold tracking-[0.18em] text-green">{verifySentCode}</span>
+                    Code: <span className="font-mono font-semibold tracking-[0.18em] text-green-text">{verifySentCode}</span>
                   </p>
                 )}
                 {verifyError && <p className="mt-3 text-sm text-clay-text">{verifyError}</p>}
@@ -405,12 +405,12 @@ export function Component() {
             action={<Cta to="/submit" variant="outline" className="px-4 py-2 text-xs">+ Add</Cta>}
           >
             {promoConfirmed && (
-              <p className="mb-4 rounded-lg bg-green/[0.08] px-4 py-3 text-sm font-medium text-green">
+              <p className="mb-4 rounded-lg bg-green/[0.08] px-4 py-3 text-sm font-medium text-green-text">
                 Payment confirmed — &ldquo;{promoConfirmed.listingTitle}&rdquo; is now featured for {promoConfirmed.days} days. ✓
               </p>
             )}
             {promoError && (
-              <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-900">{promoError}</p>
+              <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-text">{promoError}</p>
             )}
             <ul className="divide-y divide-sand">
               {listings.map((l) => {
@@ -423,7 +423,7 @@ export function Component() {
                       <Thumb seed={l.slug} label={initials(l.title)} src={l.coverImageUrl} rounded="rounded-lg" className="h-11 w-11 shrink-0" coverWidth={96} />
                       <div className="min-w-0 flex-1">
                         {href
-                          ? <Link to={href} className="block truncate font-medium text-ink hover:text-green hover:underline">{l.title}</Link>
+                          ? <Link to={href} className="block truncate font-medium text-ink hover:text-green-text hover:underline">{l.title}</Link>
                           : <p className="truncate font-medium text-ink">{l.title}</p>}
                         <p className="text-xs text-ink-faint">{TYPE_LABELS[l.type]}</p>
                       </div>
@@ -442,7 +442,7 @@ export function Component() {
                         <>
                           {[7, 14, 30].map((d) => (
                             <button key={d} type="button" onClick={() => promote(l, d)} disabled={promoBusy}
-                              className="rounded-full border border-green px-2.5 py-1 text-xs font-semibold text-green transition-colors hover:bg-green hover:text-cream disabled:opacity-60">
+                              className="rounded-full border border-green px-2.5 py-1 text-xs font-semibold text-green-text transition-colors hover:bg-green hover:text-on-green disabled:opacity-60">
                               {d}d · GH₵{d * 10}
                             </button>
                           ))}
@@ -456,7 +456,7 @@ export function Component() {
                   </li>
                 );
               })}
-              {listings.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="pen" size={18} />} title="Nothing yet" actions={<Link to="/submit" className="text-sm font-semibold text-green">Add your first →</Link>} /></li>}
+              {listings.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="pen" size={18} />} title="Nothing yet" actions={<Link to="/submit" className="text-sm font-semibold text-green-text">Add your first →</Link>} /></li>}
             </ul>
           </Panel>
           </div>
@@ -465,7 +465,7 @@ export function Component() {
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Quarter{town && <> · you rep <b className="text-ink-muted">{town.name}</b></>}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {quarters.map((p) => (
-                <button key={p.id} type="button" onClick={() => chooseQuarter(p.id)} className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === townId ? "border-green bg-green text-cream" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>{p.name}</button>
+                <button key={p.id} type="button" onClick={() => chooseQuarter(p.id)} className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${p.id === townId ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>{p.name}</button>
               ))}
             </div>
             <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-faint">Asafo company</p>
@@ -491,16 +491,16 @@ export function Component() {
                     </div>
                     <div className="flex items-center gap-2">
                       {t.status === "success" && t.code ? (
-                        <span className="rounded-md bg-green/[0.08] px-2.5 py-1 font-mono text-sm font-bold tracking-widest text-green">{t.code}</span>
+                        <span className="rounded-md bg-green/[0.08] px-2.5 py-1 font-mono text-sm font-bold tracking-widest text-green-text">{t.code}</span>
                       ) : (
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${t.status === "pending" ? "bg-gold/[0.14] text-gold-text" : "bg-maroon-900/[0.08] text-maroon-900"}`}>{t.status}</span>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${t.status === "pending" ? "bg-gold/[0.14] text-gold-text" : "bg-maroon-900/[0.08] text-maroon-text"}`}>{t.status}</span>
                       )}
                       {t.checkedInAt && <span className="text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">admitted</span>}
                     </div>
                   </Link>
                 </li>
               ))}
-              {tickets.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="ticket" size={18} />} title="No tickets yet" actions={<Link to="/events" className="text-sm font-semibold text-green">See what&rsquo;s on →</Link>} /></li>}
+              {tickets.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="ticket" size={18} />} title="No tickets yet" actions={<Link to="/events" className="text-sm font-semibold text-green-text">See what&rsquo;s on →</Link>} /></li>}
             </ul>
           </Panel>
           </div>
@@ -517,7 +517,7 @@ export function Component() {
                 <input type="checkbox" checked={broadcast} onChange={(e) => { setBroadcast(e.target.checked); setBdayState("idle"); }} className="h-4 w-4 accent-green" />Let my followers know
               </label>
               <div className="flex items-center gap-3">
-                <button type="button" onClick={saveBirthday} disabled={bdayState === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+                <button type="button" onClick={saveBirthday} disabled={bdayState === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
                   {bdayState === "saving" ? "Saving…" : "Save"}
                 </button>
                 {bdayState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}

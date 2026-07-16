@@ -32,7 +32,7 @@ export function PageHero({
 
   if (image) {
     return (
-      <section className={`relative overflow-hidden border-t-4 ${t.border} bg-green-900`}>
+      <section className={`on-dark-pin relative overflow-hidden border-t-4 ${t.border} bg-green-900`}>
         <img src={image} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-green-900/95 via-green-900/70 to-green-900/25" />
         <div className="absolute inset-0 bg-gradient-to-t from-green-900/70 via-transparent to-green-900/20" />

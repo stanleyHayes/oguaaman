@@ -33,7 +33,7 @@ export function Component() {
         <p className="mt-3 text-ink-muted">
           You don’t manage {org.name} yet. Open its page to request management — a steward reviews each claim.
         </p>
-        <Link to={`/education/${slug}`} className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">
+        <Link to={`/education/${slug}`} className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">
           Back to {org.name}
         </Link>
       </Container>
@@ -47,7 +47,7 @@ export function Component() {
         <h1 className="text-3xl font-semibold text-ink sm:text-4xl">{org.name}</h1>
         <p className="mt-2 text-ink-muted">
           Keep the official profile current, manage your offices, and post events.{" "}
-          <Link to={`/education/${slug}`} className="text-green underline">View public page →</Link>
+          <Link to={`/education/${slug}`} className="text-green-text underline">View public page →</Link>
         </p>
       </header>
 
@@ -230,7 +230,7 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
         </div>
 
         <div className="flex items-center gap-3">
-          <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+          <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
             Save profile
           </button>
           <Saver state={state} />
@@ -289,10 +289,10 @@ function RosterForm({ slug, initial }: Readonly<{ slug: string; initial?: Office
         ))}
       </div>
       <div className="mt-4 flex items-center gap-3">
-        <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green hover:border-green">
+        <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green-text hover:border-green">
           + Add office
         </button>
-        <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+        <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
           Save roster
         </button>
         <Saver state={state} />
@@ -524,7 +524,7 @@ function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; initial?
         {sections.map((s, i) => (
           <div key={s.id || i} className="rounded-[var(--radius-card)] border border-sand bg-paper p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-wider text-green">{sectionTypeLabel(s.type)}</span>
+              <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-wider text-green-text">{sectionTypeLabel(s.type)}</span>
               <input className={`${field} min-w-[10rem] flex-1`} value={s.title ?? ""} onChange={(e) => update(i, { title: e.target.value })} placeholder="Section title" />
               <div className="flex items-center gap-1">
                 <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move section up" className="rounded-md border border-sand px-2 py-1.5 text-sm text-ink-muted hover:border-green/40 disabled:opacity-40">↑</button>
@@ -602,7 +602,7 @@ function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; initial?
       </div>
 
       <div className="mt-5 flex items-center gap-3 border-t border-dashed border-sand pt-4">
-        <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">Save sections</button>
+        <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">Save sections</button>
         <Saver state={state} />
       </div>
     </Panel>
@@ -636,7 +636,7 @@ function ItemsEditor({ type, items, onChange }: Readonly<{ type: ProfileSectionT
           <button type="button" onClick={() => remove(i)} className="mt-2 text-sm text-clay-text hover:underline">Remove</button>
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green hover:border-green">+ Add item</button>
+      <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green-text hover:border-green">+ Add item</button>
     </div>
   );
 }
@@ -658,7 +658,7 @@ function MediaItemsEditor({ media, onChange }: Readonly<{ media: MediaAsset[]; o
           <button type="button" onClick={() => remove(i)} className="mt-2 text-sm text-clay-text hover:underline">Remove photo</button>
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green hover:border-green">+ Add photo</button>
+      <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green-text hover:border-green">+ Add photo</button>
     </div>
   );
 }
@@ -689,7 +689,7 @@ function GroupsEditor({ groups, onChange }: Readonly<{ groups: SubEntity[]; onCh
           <button type="button" onClick={() => remove(i)} className="mt-2 text-sm text-clay-text hover:underline">Remove card</button>
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green hover:border-green">+ Add card</button>
+      <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green-text hover:border-green">+ Add card</button>
     </div>
   );
 }
@@ -707,7 +707,7 @@ function AttrsEditor({ attrs, onChange }: Readonly<{ attrs: SectionItem[]; onCha
           <button type="button" onClick={() => remove(i)} aria-label="Remove fact" className="rounded-full border border-sand px-3 py-2 text-sm text-ink-muted hover:border-clay hover:text-clay-text">✕</button>
         </div>
       ))}
-      <button type="button" onClick={add} className="rounded-full border border-green/30 px-3.5 py-1.5 text-sm font-semibold text-green hover:border-green">+ Add fact</button>
+      <button type="button" onClick={add} className="rounded-full border border-green/30 px-3.5 py-1.5 text-sm font-semibold text-green-text hover:border-green">+ Add fact</button>
     </div>
   );
 }
@@ -752,8 +752,8 @@ function GalleryForm({ slug, initial }: Readonly<{ slug: string; initial?: Media
         {items.length === 0 && <p className="text-sm text-ink-faint">No photos yet.</p>}
       </div>
       <div className="mt-4 flex items-center gap-3">
-        <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green hover:border-green">+ Add photo</button>
-        <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">Save gallery</button>
+        <button type="button" onClick={add} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green-text hover:border-green">+ Add photo</button>
+        <button type="button" onClick={save} disabled={state === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">Save gallery</button>
         <Saver state={state} />
       </div>
     </Panel>

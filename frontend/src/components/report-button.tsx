@@ -102,7 +102,7 @@ export function ReportButton({
               {state === "error" && <p className="text-xs text-clay-text">Could not send that. Please try again.</p>}
               <div className="flex items-center justify-end gap-2">
                 <button type="button" onClick={() => setOpen(false)} className="text-xs text-ink-muted hover:text-ink">Cancel</button>
-                <button type="submit" disabled={state === "sending"} className="rounded-full bg-clay px-4 py-1.5 text-xs font-semibold text-cream hover:bg-maroon-900 disabled:opacity-60">
+                <button type="submit" disabled={state === "sending"} className="rounded-full bg-clay px-4 py-1.5 text-xs font-semibold text-cream hover:bg-maroon-900 hover:text-on-green disabled:opacity-60">
                   {state === "sending" ? "Sending…" : "Send report"}
                 </button>
               </div>

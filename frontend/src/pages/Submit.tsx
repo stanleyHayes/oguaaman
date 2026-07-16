@@ -76,7 +76,7 @@ function ReviewSteps() {
       <ol className="relative mt-4 space-y-5 before:absolute before:bottom-2 before:left-[11px] before:top-2 before:w-px before:bg-sand">
         {REVIEW_STEPS.map(([k, v], i) => (
           <li key={k} className="relative flex items-start gap-3.5">
-            <span className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green text-xs font-bold text-cream ring-4 ring-cream">{i + 1}</span>
+            <span className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green text-xs font-bold text-on-green ring-4 ring-cream">{i + 1}</span>
             <span className="text-sm text-ink-muted"><b className="text-ink">{k}.</b> {v}</span>
           </li>
         ))}

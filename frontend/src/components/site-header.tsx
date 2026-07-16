@@ -90,7 +90,7 @@ function Dropdown({
         {trigger(open)}
       </button>
       {open && (
-        <div className={`absolute ${align === "right" ? "right-0" : "left-0"} z-50 mt-2 ${width} rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]`} role="menu">
+        <div className={`theme-surface absolute ${align === "right" ? "right-0" : "left-0"} z-50 mt-2 ${width} rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]`} role="menu">
           {children(() => setOpen(false))}
         </div>
       )}
@@ -144,7 +144,7 @@ function NavDropdown({ label, active, items, lang }: Readonly<{ label: string; a
         <span className={navPill(active || open)}><PillLabel active={active || open}>{label} <Chevron open={open} /></PillLabel></span>
       </button>
       {open && (
-        <div className="absolute left-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]" role="menu">
+        <div className="theme-surface absolute left-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]" role="menu">
           {items.map((s) => <SectionMenuItem key={s.id} s={s} lang={lang} onClick={() => setOpen(false)} />)}
         </div>
       )}
@@ -180,7 +180,7 @@ export function SiteHeader() {
   const noticesActive = groupActive(NOTICES);
 
   return (
-    <header className="on-dark sticky top-0 z-40 border-b border-cream/10 bg-green text-cream">
+    <header className="on-dark on-dark-pin sticky top-0 z-40 border-b border-cream/10 bg-green text-cream">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Link to="/" aria-label="Oguaa — home" onClick={() => setOpen(false)} className="shrink-0">
           <Wordmark />
@@ -274,7 +274,7 @@ export function SiteHeader() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 280, damping: 30 }}
-              className="on-dark fixed inset-y-0 right-0 z-50 flex w-[88vw] max-w-sm flex-col bg-green-900 shadow-2xl lg:hidden"
+              className="on-dark on-dark-pin fixed inset-y-0 right-0 z-50 flex w-[88vw] max-w-sm flex-col bg-green-900 shadow-2xl lg:hidden"
             >
               <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
               <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-cream/10 px-5">

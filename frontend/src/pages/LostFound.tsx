@@ -33,7 +33,7 @@ export function Component() {
             <button
               key={k.value}
               onClick={() => setKind(k.value)}
-              className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${kind === k.value ? "border-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
+              className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${kind === k.value ? "border-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
             >
               {kind === k.value && <LayoutPill layoutId="lf-kind" className="absolute inset-0 rounded-full bg-green" />}
               <span className="relative">{k.label}s <span className="opacity-60">({counts(k.value)})</span></span>
@@ -64,7 +64,7 @@ function NoticeCard({ notice: i }: Readonly<{ notice: LostFound }>) {
       className={`flex h-full flex-col rounded-[var(--radius-card)] border bg-cream p-5 shadow-[var(--shadow-card)] transition-colors hover:border-gold-border ${missing ? "border-l-4 border-l-maroon-900 border-sand" : "border-sand"}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${missing ? "border-maroon-900/40 bg-maroon-900/[0.08] text-maroon-900" : "border-teal/30 bg-teal/[0.09] text-teal-text"}`}>
+        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${missing ? "border-maroon-900/40 bg-maroon-900/[0.08] text-maroon-text" : "border-teal/30 bg-teal/[0.09] text-teal-text"}`}>
           {KIND_LABEL[d.kind] ?? d.kind}
         </span>
         <span className={`ml-auto rounded-full border px-3 py-1 text-xs font-semibold ${LF_STATUS_CLASS[d.lfStatus]}`}>

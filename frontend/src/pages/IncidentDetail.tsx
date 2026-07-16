@@ -66,7 +66,7 @@ export function Component() {
 
         <p className="mt-10 border-t border-sand pt-5 text-sm text-ink-faint">
           Curators verify and update this incident as the response unfolds.
-          <Link to="/safety" className="ml-2 font-semibold text-green hover:underline">← All incidents</Link>
+          <Link to="/safety" className="ml-2 font-semibold text-green-text hover:underline">← All incidents</Link>
         </p>
       </Container>
     </>

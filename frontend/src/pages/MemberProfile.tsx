@@ -98,7 +98,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark bg-green text-cream">
+      <section className="on-dark on-dark-pin bg-green text-cream">
         <Container className="flex flex-col gap-5 py-12 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <Avatar initials={me.initials} photoUrl={me.photoUrl} size={72} className="border-2 border-gold/40" />

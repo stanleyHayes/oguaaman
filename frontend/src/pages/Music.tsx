@@ -60,7 +60,7 @@ export function Component() {
           <EmptyState
             icon={<EmptyGlyph name="users" />}
             title={`No artists in “${genre}” yet`}
-            actions={<Link to="/submit?type=artist" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">Nominate one →</Link>}
+            actions={<Link to="/submit?type=artist" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">Nominate one →</Link>}
           />
         )}
 

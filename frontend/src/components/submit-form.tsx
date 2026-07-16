@@ -215,7 +215,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
         <span className="font-medium text-ink">One step before you submit:</span> your account must be verified first. If you haven't done that yet, head to My Account and request a code.
       </div>
 
-      <button type="submit" disabled={busy} className="w-full rounded-full bg-green py-3 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60 sm:w-auto sm:px-8">
+      <button type="submit" disabled={busy} className="w-full rounded-full bg-green py-3 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60 sm:w-auto sm:px-8">
         {busy ? "Submitting…" : "Submit for review"}
       </button>
     </form>
@@ -241,13 +241,13 @@ function TypePicker({ type, onChange }: Readonly<{ type: ListingType; onChange: 
             >
               {/* faint oversized watermark decoration */}
               <TypeIcon type={t.value} className={`pointer-events-none absolute -right-3 -top-3 h-16 w-16 opacity-[0.06] ${a.icon}`} />
-              <span className={`relative flex h-9 w-9 items-center justify-center rounded-lg ${on ? "bg-green text-cream" : chipCls}`}>
+              <span className={`relative flex h-9 w-9 items-center justify-center rounded-lg ${on ? "bg-green text-on-green" : chipCls}`}>
                 <TypeIcon type={t.value} className="h-[18px] w-[18px]" />
               </span>
               <span className="relative mt-2.5 block text-sm font-semibold text-ink">{t.label}</span>
               <span className="relative block text-xs leading-snug text-ink-faint">{t.hint}</span>
               {on && (
-                <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-green text-cream">
+                <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-green text-on-green">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
                 </span>
               )}
@@ -375,7 +375,7 @@ function SubmittedState({ title, onReset }: Readonly<{ title: string; onReset: (
       <ol className="mx-auto mt-7 flex max-w-sm items-center justify-between">
         {steps.map((s, i) => (
           <li key={s} className="flex flex-1 items-center">
-            <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i <= 1 ? "bg-green text-cream" : "border border-sand text-ink-faint"}`}>{i + 1}</span>
+            <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i <= 1 ? "bg-green text-on-green" : "border border-sand text-ink-faint"}`}>{i + 1}</span>
             <span className={`ml-2 text-sm ${i === 1 ? "font-semibold text-green" : "text-ink-faint"}`}>{s}</span>
             {i < steps.length - 1 && <span className="mx-2 h-px flex-1 bg-sand" />}
           </li>

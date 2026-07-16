@@ -91,7 +91,7 @@ function DayCell({ date, inMonth, isToday, events }: Readonly<{ date: Date; inMo
   const shown = events.slice(0, 3);
   const extra = events.length - shown.length;
   const dayClass = isToday
-    ? "inline-flex h-5 w-5 items-center justify-center rounded-full bg-green text-[0.7rem] font-bold text-cream"
+    ? "inline-flex h-5 w-5 items-center justify-center rounded-full bg-green text-[0.7rem] font-bold text-on-green"
     : "text-[0.7rem] font-semibold text-ink-faint";
   return (
     <div className={`flex min-h-20 flex-col gap-1 border-t border-sand p-1 sm:min-h-24 ${inMonth ? "bg-cream" : "bg-paper/60 opacity-60"}`}>

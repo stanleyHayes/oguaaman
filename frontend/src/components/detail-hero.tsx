@@ -33,7 +33,7 @@ export function DetailHero({
   children?: ReactNode;
 }>) {
   return (
-    <section className="on-dark relative overflow-hidden text-cream">
+    <section className="on-dark on-dark-pin relative overflow-hidden text-cream">
       <Parallax strength={24} className="absolute -inset-y-6 inset-x-0">
         <div className="absolute inset-0" style={{ background: GRADIENTS[tone] }} aria-hidden />
       </Parallax>

@@ -75,7 +75,7 @@ export function CandleRemember({
         type="button"
         disabled={lit}
         onClick={light}
-        className="inline-flex items-center gap-2.5 rounded-full bg-ink px-5 py-3 text-sm text-cream transition-transform hover:-translate-y-px hover:bg-green-900 disabled:cursor-default"
+        className="inline-flex items-center gap-2.5 rounded-full bg-ink px-5 py-3 text-sm text-cream transition-transform hover:-translate-y-px hover:bg-green-900 hover:text-on-green disabled:cursor-default"
       >
         <svg width="13" height="18" viewBox="0 0 24 34" fill="none" aria-hidden>
           <path d="M12 2C12 2 4 9 4 17a8 8 0 0 0 16 0c0-4-2-6-4-9-1.5 2-3 2.5-3 5 0 1.6-1 2.4-1 4" fill="#E9A23B" />
@@ -168,7 +168,7 @@ export function Tributes({ slug, initial }: Readonly<{ slug: string; initial: Tr
           placeholder="Your name (optional)"
           className="mt-3 w-full rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-brand focus:outline-none"
         />
-        <button type="submit" disabled={busy} className="mt-4 rounded-full bg-green px-7 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+        <button type="submit" disabled={busy} className="mt-4 rounded-full bg-green px-7 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
           {busy ? "Leaving…" : "Leave a tribute"}
         </button>
         <p className="mt-3 text-xs text-ink-faint">Tributes are lightly reviewed for dignity before they appear.</p>

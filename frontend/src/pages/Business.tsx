@@ -54,12 +54,12 @@ export function Component() {
           <EmptyState
             icon={<EmptyGlyph name="building" />}
             title="No businesses here yet"
-            actions={<Link to="/submit?type=business" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">List yours →</Link>}
+            actions={<Link to="/submit?type=business" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">List yours →</Link>}
           />
         )}
       </Container>
 
-      <section className="on-dark bg-green py-14 text-cream">
+      <section className="on-dark on-dark-pin bg-green py-14 text-cream">
         <Container size="narrow" className="text-center">
           <h2 className="text-3xl font-semibold">Open for trade in Oguaa?</h2>
           <p className="mx-auto mt-3 max-w-lg text-cream/80">List your business free — or become a Supporter for the gold badge and priority placement across the directory.</p>

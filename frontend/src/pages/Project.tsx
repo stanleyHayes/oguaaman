@@ -95,7 +95,7 @@ export function Component() {
 
       <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
         <div>
-          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green">{d.description}</p>
+          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green-text">{d.description}</p>
           {project.tags.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-2">{project.tags.map((t) => <Pill key={t}>#{t}</Pill>)}</div>
           )}
@@ -116,7 +116,7 @@ export function Component() {
 
             {confirmed ? (
               <div className="mt-5 rounded-lg border border-green/30 bg-green/[0.06] p-4">
-                <p className="text-lg font-semibold text-green">Medaase! 🎉</p>
+                <p className="text-lg font-semibold text-green-text">Medaase! 🎉</p>
                 <p className="mt-1 text-sm text-ink-muted">
                   Your pledge of <b>{cedis(confirmed.amountPesewas)}</b> to {confirmed.projectTitle} is confirmed.
                   {confirmed.simulated && <span className="mt-1 block text-xs text-gold-text">Simulated — dev mode, no real money moved.</span>}
@@ -127,7 +127,7 @@ export function Component() {
                 <p className="text-sm font-medium text-ink">Pledge an amount (GH₵)</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {QUICK_AMOUNTS.map((a) => (
-                    <button key={a} type="button" onClick={() => setAmount(String(a))} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${amount === String(a) ? "border-green bg-green text-cream" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>
+                    <button key={a} type="button" onClick={() => setAmount(String(a))} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${amount === String(a) ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>
                       {a}
                     </button>
                   ))}
@@ -140,7 +140,7 @@ export function Component() {
                   placeholder="Amount in GH₵"
                 />
                 {error && <p className="mt-2 text-sm text-clay-text">{error}</p>}
-                <button type="button" onClick={startPledge} disabled={busy} className="mt-4 w-full rounded-full bg-green py-3 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
+                <button type="button" onClick={startPledge} disabled={busy} className="mt-4 w-full rounded-full bg-green py-3 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
                   {pledgeLabel}
                 </button>
                 <p className="mt-2 text-center text-xs text-ink-faint">Mobile money &amp; cards via Paystack. You&rsquo;ll get a receipt by email.</p>

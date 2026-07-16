@@ -54,7 +54,7 @@ export function Component() {
         {tags.length > 0 && (
           <div className="mt-10 flex flex-wrap gap-2 border-t border-sand pt-6">
             {tags.map((t) => (
-              <span key={t} className="rounded-full bg-green/[0.07] px-3 py-1 text-xs font-medium text-green">#{t}</span>
+              <span key={t} className="rounded-full bg-green/[0.07] px-3 py-1 text-xs font-medium text-green-text">#{t}</span>
             ))}
           </div>
         )}

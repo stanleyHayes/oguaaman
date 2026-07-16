@@ -35,7 +35,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark bg-green-slate text-cream">
+      <section className="on-dark on-dark-pin bg-green-slate text-cream">
         <Container className="flex flex-col gap-4 py-10 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-wide text-gold/90">Back office · curators &amp; stewards</p>
@@ -49,7 +49,7 @@ export function Component() {
         <Container>
           <dl className="grid grid-cols-2 divide-sand sm:grid-cols-4 sm:divide-x">
             {([["Pending", stats.pending], ["Live listings", stats.listings], ["Members", stats.members], ["Institutions", stats.institutions]] as const).map(([k, v]) => (
-              <div key={k} className="px-3 py-5 text-center"><dd className="text-3xl font-semibold text-green">{v}</dd><dt className="mt-1 text-xs uppercase tracking-wide text-ink-faint">{k}</dt></div>
+              <div key={k} className="px-3 py-5 text-center"><dd className="text-3xl font-semibold text-green-text">{v}</dd><dt className="mt-1 text-xs uppercase tracking-wide text-ink-faint">{k}</dt></div>
             ))}
           </dl>
         </Container>

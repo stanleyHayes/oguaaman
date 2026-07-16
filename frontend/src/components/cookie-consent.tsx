@@ -28,7 +28,7 @@ export function CookieConsent() {
       <button
         type="button"
         onClick={accept}
-        className="shrink-0 rounded-lg bg-green px-5 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green focus-visible:ring-offset-2"
+        className="shrink-0 rounded-lg bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green focus-visible:ring-offset-2"
       >
         Got it
       </button>

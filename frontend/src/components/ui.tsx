@@ -91,7 +91,7 @@ export function Avatar({ initials, photoUrl, size = 40, className = "" }: Readon
   }
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-green text-cream ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-green text-on-green ${className}`}
       style={{ width: size, height: size, fontSize: size * 0.4 }}
       aria-hidden
     >
@@ -109,7 +109,7 @@ export function VerifiedBadge({ label = "Verified", onDark = false }: Readonly<{
     >
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
         <path d="M12 2l2.4 1.8 3 .1 1 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-1 2.8-3 .1L12 22l-2.4-1.8-3-.1-1-2.8L3.2 15l.9-2.8L3.2 9.4 5.6 7.7l1-2.8 3-.1z" fill="currentColor" />
-        <path d="M8.5 12.2l2.3 2.3 4.5-4.7" stroke={onDark ? "#0C2C1F" : "#F6F1E7"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M8.5 12.2l2.3 2.3 4.5-4.7" stroke={onDark ? "#0C2C1F" : "var(--color-cream)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       {label}
     </span>
@@ -130,7 +130,7 @@ export function CTA({
   external?: boolean;
 }>) {
   const styles: Record<string, string> = {
-    primary: "bg-green text-cream hover:bg-green-900",
+    primary: "bg-green text-on-green hover:bg-green-900",
     gold: "bg-gold-brand text-green-900 hover:bg-gold",
     outline: "border border-green/30 text-green hover:border-green",
     "outline-dark": "border border-cream/30 text-cream hover:border-gold",

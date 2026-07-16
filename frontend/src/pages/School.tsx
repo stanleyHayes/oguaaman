@@ -52,7 +52,7 @@ export function Component() {
   return (
     <article>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <section className="on-dark relative overflow-hidden text-cream" style={{ background: `radial-gradient(120% 140% at 80% -20%, ${c1}F2 0%, ${c1} 55%, ${c1}E0 100%)` }}>
+      <section className="on-dark on-dark-pin relative overflow-hidden text-cream" style={{ background: `radial-gradient(120% 140% at 80% -20%, ${c1}F2 0%, ${c1} 55%, ${c1}E0 100%)` }}>
         {SCHOOL_PHOTOS[org.slug] && (
           <>
             <img src={SCHOOL_PHOTOS[org.slug]} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover opacity-25" />
@@ -62,7 +62,7 @@ export function Component() {
         <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
         <Container className="relative py-12 text-center">
           <div className="mx-auto w-fit"><Crest colors={org.houseColors} label={initials(org.name)} size={88} src={org.crestUrl} /></div>
-          <h1 className="mt-4 text-3xl font-semibold sm:text-4xl" style={{ color: "#F6F1E7" }}>{org.name}</h1>
+          <h1 className="mt-4 text-3xl font-semibold text-cream sm:text-4xl">{org.name}</h1>
           {org.motto && <p className="mt-2 italic" style={{ color: c2 }}>{org.motto}</p>}
           {org.verified && <div className="mt-5"><VerifiedBadge label="Verified · Official profile" onDark /></div>}
         </Container>
@@ -76,18 +76,18 @@ export function Component() {
             {([["Established", org.founded ? String(org.founded) : "—"], ["Type", org.classification ?? "—"], ["Members", org.memberCount ? `${org.memberCount} on Oguaa` : "—"], ["Jurisdiction", org.jurisdiction ?? "Cape Coast"]] as const).map(([k, v]) => (
               <div key={k} className="px-3 py-4 text-center">
                 <dt className="text-[0.62rem] font-semibold uppercase tracking-wider text-ink-faint">{k}</dt>
-                <dd className="mt-1.5 text-base text-green">{v}</dd>
+                <dd className="mt-1.5 text-base text-green-text">{v}</dd>
               </div>
             ))}
           </dl>
           {(org.gesCategory || org.boardingType || org.genderPolicy || org.ghanaPostGPS || org.quarterTag || org.asafoTag) && (
             <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-sand px-4 py-3">
-              {org.gesCategory && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Category</dt><dd className="text-green">{org.gesCategory}</dd></div>}
-              {org.boardingType && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Boarding</dt><dd className="text-green capitalize">{org.boardingType}</dd></div>}
-              {org.genderPolicy && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Admission</dt><dd className="text-green capitalize">{org.genderPolicy}</dd></div>}
-              {org.ghanaPostGPS && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">GhanaPost</dt><dd className="text-green">{org.ghanaPostGPS}</dd></div>}
-              {org.quarterTag && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Quarter</dt><dd className="text-green">{org.quarterTag}</dd></div>}
-              {org.asafoTag && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Asafo</dt><dd className="text-green">{org.asafoTag}</dd></div>}
+              {org.gesCategory && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Category</dt><dd className="text-green-text">{org.gesCategory}</dd></div>}
+              {org.boardingType && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Boarding</dt><dd className="text-green-text capitalize">{org.boardingType}</dd></div>}
+              {org.genderPolicy && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Admission</dt><dd className="text-green-text capitalize">{org.genderPolicy}</dd></div>}
+              {org.ghanaPostGPS && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">GhanaPost</dt><dd className="text-green-text">{org.ghanaPostGPS}</dd></div>}
+              {org.quarterTag && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Quarter</dt><dd className="text-green-text">{org.quarterTag}</dd></div>}
+              {org.asafoTag && <div className="flex gap-2 text-xs"><dt className="font-semibold uppercase tracking-wide text-ink-faint">Asafo</dt><dd className="text-green-text">{org.asafoTag}</dd></div>}
             </dl>
           )}
         </Container>
@@ -135,13 +135,13 @@ export function Component() {
           <section>
             <SecHead>Official announcement</SecHead>
             <div className="rounded-[var(--radius-card)] border border-sand border-l-4 border-l-gold-brand bg-gradient-to-b from-[#FFFDF8] to-[#FBF8F0] p-6">
-              <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-maroon-900">Official notice</p>
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-maroon-text">Official notice</p>
               <h3 className="mt-2 text-2xl font-semibold text-ink">{announcement.title}</h3>
               <p className="mt-3 text-ink-muted">{announcement.details.description}</p>
               <div className="mt-4 flex items-center gap-3 border-t border-dashed border-sand pt-3">
                 <Avatar initials={initials((org.offices ?? [])[0]?.holderName ?? org.name)} size={34} />
                 <p className="text-sm text-ink-muted">
-                  Posted by <span className="font-medium text-ink">{(org.offices ?? [])[0]?.holderName ?? org.name}</span>{(org.offices ?? [])[0] && ` · ${(org.offices ?? [])[0].role}`}{org.verified && <span className="font-medium text-green"> · verified</span>}<br />official channel
+                  Posted by <span className="font-medium text-ink">{(org.offices ?? [])[0]?.holderName ?? org.name}</span>{(org.offices ?? [])[0] && ` · ${(org.offices ?? [])[0].role}`}{org.verified && <span className="font-medium text-green-text"> · verified</span>}<br />official channel
                 </p>
               </div>
             </div>
@@ -168,7 +168,7 @@ export function Component() {
         {(org.jurisdiction || org.name) && (
           <section>
             <SecHead>Location</SecHead>
-            {org.ghanaPostGPS && <p className="mb-3 text-sm text-ink-muted">GhanaPost GPS: <span className="font-mono text-green">{org.ghanaPostGPS}</span></p>}
+            {org.ghanaPostGPS && <p className="mb-3 text-sm text-ink-muted">GhanaPost GPS: <span className="font-mono text-green-text">{org.ghanaPostGPS}</span></p>}
             <LocationMap address={org.jurisdiction ?? "Cape Coast"} query={`${org.name} ${org.jurisdiction ?? "Cape Coast"}`} latitude={org.latitude} longitude={org.longitude} />
           </section>
         )}
@@ -178,7 +178,7 @@ export function Component() {
             <SecHead>Support</SecHead>
             <div className="rounded-lg border border-gold-border bg-paper p-4">
               <p className="text-sm font-medium text-ink">Send a gift or donation via Mobile Money</p>
-              <p className="mt-1 font-mono text-lg text-green">{org.momoNumber}</p>
+              <p className="mt-1 font-mono text-lg text-green-text">{org.momoNumber}</p>
               <p className="mt-1 text-xs text-ink-faint">MTN MoMo · Telecel Cash · AirtelTigo Money accepted.</p>
             </div>
           </section>
@@ -193,7 +193,7 @@ export function Component() {
             {[{ id: org.id, name: org.name, memberCount: org.memberCount ?? 0, slug: org.slug }, ...rivals].map((r) => (
               <div key={r.id}>
                 <div className="mb-1 flex items-center justify-between text-sm">
-                  <Link to={`/education/${r.slug}`} className={r.id === org.id ? "font-semibold text-green" : "text-ink-muted hover:text-ink"}>
+                  <Link to={`/education/${r.slug}`} className={r.id === org.id ? "font-semibold text-green-text" : "text-ink-muted hover:text-ink"}>
                     {r.name}{r.id === org.id ? " ✦" : ""}
                   </Link>
                   <span className="tabular-nums text-ink-faint">{r.memberCount}</span>
@@ -210,7 +210,7 @@ export function Component() {
         </Container>
       )}
 
-      <div className="on-dark bg-green-900 py-5 text-center text-sm text-cream/70">
+      <div className="on-dark on-dark-pin bg-green-900 py-5 text-center text-sm text-cream/70">
         An official profile on <Link to="/" className="font-semibold text-gold">Oguaa</Link>
         {org.verifiedOn && ` · Verified ${formatDate(org.verifiedOn)}`}
       </div>
@@ -224,5 +224,5 @@ function SecHead({ children }: Readonly<{ children: React.ReactNode }>) {
   return <h2 className="mb-4 flex items-center gap-3 text-xl font-semibold text-ink">{children}<span className="h-px flex-1 bg-sand" /></h2>;
 }
 function Chip({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <span className="inline-flex items-center gap-2 rounded-full border border-sand bg-cream px-3.5 py-1.5 text-sm text-green"><span className="h-1.5 w-1.5 rounded-full bg-gold-brand" aria-hidden />{children}</span>;
+  return <span className="inline-flex items-center gap-2 rounded-full border border-sand bg-cream px-3.5 py-1.5 text-sm text-green-text"><span className="h-1.5 w-1.5 rounded-full bg-gold-brand" aria-hidden />{children}</span>;
 }

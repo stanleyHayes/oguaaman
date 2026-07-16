@@ -101,7 +101,7 @@ function SocialRow() {
 
 export function SiteFooter() {
   return (
-    <footer className="on-dark relative mt-20 overflow-hidden bg-green-900 text-cream/80">
+    <footer className="on-dark on-dark-pin relative mt-20 overflow-hidden bg-green-900 text-cream/80">
       {/* gold glow */}
       <div aria-hidden className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-gold-brand/[0.07] blur-3xl" />
       <div className="relative">

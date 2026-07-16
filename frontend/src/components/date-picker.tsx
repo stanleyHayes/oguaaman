@@ -99,7 +99,7 @@ function initialView(parsed: { y: number; m: number } | null, min: string | unde
 }
 
 function dayClass(isSelected: boolean, isToday: boolean, inMonth: boolean, disabled: boolean) {
-  if (isSelected) return "bg-green font-semibold text-cream";
+  if (isSelected) return "bg-green font-semibold text-on-green";
   if (isToday) return "border border-gold-border bg-gold/[0.08] text-ink hover:bg-gold/[0.14]";
   if (inMonth) return "text-ink hover:bg-cream";
   return disabled ? "text-ink-faint opacity-30" : "text-ink-faint hover:bg-cream";
@@ -299,7 +299,7 @@ export function DatePicker({
                 type="button"
                 onClick={goToday}
                 disabled={outOfRange(todayIso, min, max)}
-                className="rounded-full bg-green px-3 py-1.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-40"
+                className="rounded-full bg-green px-3 py-1.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-40"
               >
                 Today
               </button>

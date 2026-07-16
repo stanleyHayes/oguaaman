@@ -32,7 +32,7 @@ export function Component() {
         <div className="mb-8 flex flex-wrap gap-2">
           <button
             onClick={() => setCat(null)}
-            className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === null ? "border-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
+            className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === null ? "border-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
           >
             {cat === null && <LayoutPill layoutId="safety-cat" className="absolute inset-0 rounded-full bg-green" />}
             <span className="relative">All</span>
@@ -41,7 +41,7 @@ export function Component() {
             <button
               key={c.value}
               onClick={() => setCat(cat === c.value ? null : c.value)}
-              className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === c.value ? "border-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
+              className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === c.value ? "border-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
             >
               {cat === c.value && <LayoutPill layoutId="safety-cat" className="absolute inset-0 rounded-full bg-green" />}
               <span className="relative">{c.label}</span>

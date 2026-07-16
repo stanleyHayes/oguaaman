@@ -27,10 +27,10 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<Data> {
 
 type Svc = "spotify" | "youtube" | "audiomack" | "boomplay" | "default";
 const STREAM: Record<string, { chip: string; icon: Svc }> = {
-  Spotify: { chip: "bg-green/15 text-green", icon: "spotify" },
+  Spotify: { chip: "bg-green/15 text-green-text", icon: "spotify" },
   Audiomack: { chip: "bg-clay/15 text-clay-text", icon: "audiomack" },
   Boomplay: { chip: "bg-teal/15 text-teal-text", icon: "boomplay" },
-  YouTube: { chip: "bg-maroon-900/15 text-maroon-900", icon: "youtube" },
+  YouTube: { chip: "bg-maroon-900/15 text-maroon-text", icon: "youtube" },
 };
 
 function Headphones({ className = "" }: Readonly<{ className?: string }>) {
@@ -63,7 +63,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark relative overflow-hidden text-cream">
+      <section className="on-dark on-dark-pin relative overflow-hidden text-cream">
         {/* Cover art washes the hero; a clay gradient + scrim keep it legible */}
         <div className="absolute inset-0" style={{ background: "linear-gradient(140deg,#B0503C 0%,#7C2D2D 45%,#0C2C1F 100%)" }} aria-hidden />
         {artist.coverImageUrl && (
@@ -144,7 +144,7 @@ export function Component() {
           </div>
           {school && (
             <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5 text-sm text-ink-muted">
-              Reps <Link to={`/education/${school.slug}`} className="font-medium text-maroon-900 hover:underline">{school.name}</Link>
+              Reps <Link to={`/education/${school.slug}`} className="font-medium text-maroon-text hover:underline">{school.name}</Link>
             </div>
           )}
         </aside>

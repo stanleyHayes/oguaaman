@@ -228,7 +228,7 @@ export function AiWritingBar({
               </div>
               <div className="mx-4 my-2.5 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-white p-4 text-sm leading-relaxed text-ink">{result}</div>
               <div className="flex flex-wrap gap-2 px-4 pb-4">
-                <button onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-900">Replace</button>
+                <button onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">Replace</button>
                 <button onClick={applyInsert} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold text-ink hover:border-ink">Insert below</button>
                 <button onClick={copyResult} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold text-ink hover:border-ink">Copy</button>
                 <button onClick={resetViews} className="rounded-lg border border-[#EAD7D1] px-4 py-2 text-sm font-semibold text-clay-text hover:bg-[#FCEEEA]">Discard</button>

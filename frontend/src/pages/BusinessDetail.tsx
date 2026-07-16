@@ -145,7 +145,7 @@ export function Component() {
               {confirming && <p className="mt-4 text-sm text-ink-muted">Confirming your payment…</p>}
               {confirmed ? (
                 <div className="mt-4 rounded-lg border border-green/30 bg-green/[0.06] p-4">
-                  <p className="text-base font-semibold text-green">Medaase! 🎉</p>
+                  <p className="text-base font-semibold text-green-text">Medaase! 🎉</p>
                   <p className="mt-1 text-sm text-ink-muted">
                     Your support is confirmed — {b.title} is a Supporter until <b>{confirmed.periodEnd ? formatDate(confirmed.periodEnd) : "next month"}</b>.
                     {confirmed.simulated && <span className="mt-1 block text-xs text-gold-text">Simulated — dev mode, no real money moved.</span>}

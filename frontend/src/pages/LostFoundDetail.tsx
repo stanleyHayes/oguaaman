@@ -86,26 +86,26 @@ export function Component() {
               {missing ? "Found them safe? Mark it reunited so the search can stand down." : "Back with its owner? Mark it reunited — or close the notice if it's run its course."}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <button disabled={busy} onClick={() => resolve("reunited")} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
+              <button disabled={busy} onClick={() => resolve("reunited")} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
                 Mark as reunited
               </button>
               <button disabled={busy} onClick={() => resolve("closed")} className="rounded-full border border-sand px-5 py-2 text-sm font-semibold text-ink-muted transition-colors hover:border-green/40 disabled:opacity-60">
                 Close
               </button>
             </div>
-            {error && <p className="mt-3 text-sm text-maroon-900">{error}</p>}
+            {error && <p className="mt-3 text-sm text-maroon-text">{error}</p>}
           </div>
         )}
 
         {lfStatus === "reunited" && (
-          <p className="mt-8 rounded-[var(--radius-card)] border border-green/30 bg-green/[0.06] p-5 text-sm text-green">
+          <p className="mt-8 rounded-[var(--radius-card)] border border-green/30 bg-green/[0.06] p-5 text-sm text-green-text">
             Reunited — this notice has a happy ending. Thank you, Oguaa.
           </p>
         )}
 
         <p className="mt-10 border-t border-sand pt-5 text-sm text-ink-faint">
           {isOwner ? "You posted this notice." : "Only the person who posted this notice or a curator can resolve it."}
-          <Link to="/lost-found" className="ml-2 font-semibold text-green hover:underline">← All notices</Link>
+          <Link to="/lost-found" className="ml-2 font-semibold text-green-text hover:underline">← All notices</Link>
         </p>
       </Container>
     </>

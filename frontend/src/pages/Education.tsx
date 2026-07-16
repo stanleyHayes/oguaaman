@@ -34,7 +34,7 @@ export function Component() {
           {schools.map((s, i) => (
             <StaggerItem key={s.id} index={i} lift className="h-full">
             <Link to={`/education/${s.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
-              <div className="on-dark relative flex items-center gap-4 overflow-hidden p-5" style={{ background: `linear-gradient(135deg, ${s.houseColors?.[0]}, ${s.houseColors?.[0]}E6)` }}>
+              <div className="on-dark on-dark-pin relative flex items-center gap-4 overflow-hidden p-5" style={{ background: `linear-gradient(135deg, ${s.houseColors?.[0]}, ${s.houseColors?.[0]}E6)` }}>
                 {SCHOOL_PHOTOS[s.slug] && (
                   <>
                     <img src={SCHOOL_PHOTOS[s.slug]} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover opacity-40" />
@@ -63,7 +63,7 @@ export function Component() {
 
       <section className="bg-cream py-14">
         <Container size="narrow" className="text-center">
-          <Adinkra name="dwennimmen" size={34} className="mx-auto text-maroon-900" />
+          <Adinkra name="dwennimmen" size={34} className="mx-auto text-maroon-text" />
           <h2 className="mt-5 text-2xl font-semibold text-ink">The oldest rivalry, the deepest loyalty</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-muted">
             The Mfantsipim–Adisadel rivalry — Methodist against Anglican — is the oldest in Ghana, and since 1992 the Fun Games have turned it into cooperation. Here your school is a tribe you never leave. The OSA network is the natural source of mentors and funders for today's youth.

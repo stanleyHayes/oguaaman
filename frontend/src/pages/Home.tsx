@@ -47,7 +47,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark relative overflow-hidden bg-green text-cream">
+      <section className="on-dark on-dark-pin relative overflow-hidden bg-green text-cream">
         <Parallax strength={28} className="absolute -inset-y-8 inset-x-0">
           <img src="/uploads/seed/castle-exterior.jpg" alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" aria-hidden />
           <div className="bg-dotgrid absolute inset-0 opacity-60" aria-hidden />
@@ -97,7 +97,7 @@ export function Component() {
         </section>
       )}
 
-      <section className="on-dark relative overflow-hidden text-cream">
+      <section className="on-dark on-dark-pin relative overflow-hidden text-cream">
         {/* The stage: clay-to-green wash, gold footlight glow, this week's cover bleeding through */}
         <Parallax strength={24} className="absolute -inset-y-6 inset-x-0">
           <div className="absolute inset-0" style={{ background: "linear-gradient(140deg,#B0503C 0%,#7C2D2D 45%,#0C2C1F 100%)" }} aria-hidden />
@@ -173,7 +173,7 @@ export function Component() {
           <Container size="wide">
             <div className="flex items-end justify-between gap-4">
               <Reveal><SectionHeading kicker="The Oguaa Newsroom" title="Latest headlines" accentClass="bg-green" /></Reveal>
-              <Link to="/news" className="hidden shrink-0 text-sm font-semibold text-green hover:underline sm:inline">All the news →</Link>
+              <Link to="/news" className="hidden shrink-0 text-sm font-semibold text-green-text hover:underline sm:inline">All the news →</Link>
             </div>
             <Stagger className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {headlines.map((a, i) => <StaggerItem key={a.id} lift className={i === 0 ? "sm:col-span-2 lg:col-span-1" : ""}><NewsCard article={a} lead={i === 0} /></StaggerItem>)}
@@ -296,7 +296,7 @@ export function Component() {
         </Container>
       </section>
 
-      <section className="on-dark bg-green py-16 text-cream">
+      <section className="on-dark on-dark-pin bg-green py-16 text-cream">
         <Container size="narrow" className="text-center">
           <Reveal>
             <Adinkra name="funtunfunefu" size={36} className="mx-auto text-gold" />

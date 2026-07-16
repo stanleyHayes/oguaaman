@@ -143,7 +143,7 @@ export function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[var(--radius-card)] border border-sand bg-paper text-ink shadow-[var(--shadow-lift)]">
+        <div className="theme-surface absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[var(--radius-card)] border border-sand bg-paper text-ink shadow-[var(--shadow-lift)]">
           <div className="flex items-center justify-between border-b border-sand px-4 py-3">
             <span className="text-base font-semibold text-ink">Notifications</span>
             <button type="button" onClick={markAll} className="text-xs font-medium text-teal-text hover:underline">

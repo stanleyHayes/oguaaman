@@ -44,7 +44,7 @@ export function Thumb({
   // The gradient is always the backdrop, so it shows while the image loads or if it 404s.
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden ${rounded} ${className}`}
+      className={`on-dark-pin relative flex items-center justify-center overflow-hidden ${rounded} ${className}`}
       style={{ background: `linear-gradient(135deg, ${a}, ${b})` }}
       aria-hidden={!src}
     >
@@ -90,7 +90,7 @@ export function EventCard({ event }: Readonly<{ event: Listing }>) {
         // Cover photo with a date ribbon, so the card shows the image without a redundant date box.
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg">
           <Thumb seed={event.slug} src={event.coverImageUrl} rounded="rounded-none" className="h-full w-full" coverWidth={128} />
-          <span className="absolute inset-x-0 bottom-0 bg-green/85 py-0.5 text-center text-[0.58rem] font-bold uppercase tracking-wide text-cream">{day} {mon}</span>
+          <span className="absolute inset-x-0 bottom-0 bg-green/85 py-0.5 text-center text-[0.58rem] font-bold uppercase tracking-wide text-on-green">{day} {mon}</span>
         </div>
       ) : (
         <div className="flex w-14 shrink-0 flex-col items-center rounded-lg border border-sand bg-paper py-2">
@@ -329,7 +329,7 @@ export function FeaturedCard({ listing, hero = false, index = 0 }: Readonly<{ li
   return (
     <Link
       to={featuredHref(listing)}
-      className={`group relative flex h-full flex-col justify-end overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] ${hero ? "min-h-[22rem] lg:min-h-[27rem]" : "min-h-[13rem]"}`}
+      className={`on-dark-pin group relative flex h-full flex-col justify-end overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] ${hero ? "min-h-[22rem] lg:min-h-[27rem]" : "min-h-[13rem]"}`}
     >
       <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" style={{ background: grad }} aria-hidden />
       {listing.coverImageUrl && (

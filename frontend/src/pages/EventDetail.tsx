@@ -125,7 +125,7 @@ function EventInfo({ event }: Readonly<{ event: EventView["event"] }>) {
   const d = event.details;
   return (
     <div>
-      {d.description && <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green">{d.description}</p>}
+      {d.description && <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-green-text">{d.description}</p>}
       {event.tags.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-2">{event.tags.map((t) => <Pill key={t}>#{t}</Pill>)}</div>
       )}
@@ -177,7 +177,7 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
   if (confirmed) {
     return (
       <div className="mt-4 rounded-lg border border-green/30 bg-green/[0.06] p-5 text-center">
-        <p className="text-lg font-semibold text-green">Medaase! 🎟️</p>
+        <p className="text-lg font-semibold text-green-text">Medaase! 🎟️</p>
         <p className="mt-1 text-sm text-ink-muted">
           {confirmed.qty} × {confirmed.tier} for <b>{confirmed.eventTitle}</b> ({cedis(confirmed.amountPesewas)}).
         </p>
@@ -194,7 +194,7 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
       {confirming && <p className="mt-4 text-sm text-ink-muted">Confirming your payment…</p>}
       {tiers.length === 0 ? (
         <p className="mt-4 rounded-lg border border-green/30 bg-green/[0.06] p-4 text-sm text-ink-muted">
-          <b className="text-green">Free entry</b> — no ticket needed. Just come.
+          <b className="text-green-text">Free entry</b> — no ticket needed. Just come.
         </p>
       ) : (
         <div className="mt-4 space-y-3">
@@ -218,7 +218,7 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
                     {remainingLabel}
                   </span>
                 </span>
-                <span className="shrink-0 text-lg font-semibold text-green">{cedis(t.pricePesewas)}</span>
+                <span className="shrink-0 text-lg font-semibold text-green-text">{cedis(t.pricePesewas)}</span>
               </button>
             );
           })}
@@ -238,7 +238,7 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
             </p>
           )}
           {error && <p className="text-sm text-clay-text">{error}</p>}
-          <button type="button" onClick={onBuy} disabled={busy || !tier || !!soldOut} className="w-full rounded-full bg-green py-3 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
+          <button type="button" onClick={onBuy} disabled={busy || !tier || !!soldOut} className="w-full rounded-full bg-green py-3 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
             {buyLabel}
           </button>
           <p className="text-center text-xs text-ink-faint">Mobile money &amp; cards via Paystack. Your code arrives here and by email.</p>

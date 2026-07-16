@@ -36,7 +36,7 @@ function ViewToggle({ view, onChange }: Readonly<{ view: EventsView; onChange: (
           type="button"
           aria-pressed={view === o.id}
           onClick={() => onChange(o.id)}
-          className={`relative rounded-full px-4 py-1 text-sm font-semibold transition-colors ${view === o.id ? "text-cream" : "text-ink-muted hover:text-ink"}`}
+          className={`relative rounded-full px-4 py-1 text-sm font-semibold transition-colors ${view === o.id ? "text-on-green" : "text-ink-muted hover:text-ink"}`}
         >
           {view === o.id && <LayoutPill layoutId="events-view" className="absolute inset-0 rounded-full bg-green" />}
           <span className="relative">{o.label}</span>
@@ -54,7 +54,7 @@ export function Component() {
   const anchor = all.find((e) => e.details.anchorFestival) ?? null;
   const rest = upcoming.filter((e) => e.id !== anchor?.id);
 
-  const anchorClass = "on-dark relative mb-10 block overflow-hidden rounded-[var(--radius-card)] bg-green p-6 text-cream sm:p-8";
+  const anchorClass = "on-dark on-dark-pin relative mb-10 block overflow-hidden rounded-[var(--radius-card)] bg-green p-6 text-cream sm:p-8";
   const anchorBody = anchor && (
     <>
       {anchor.coverImageUrl && (
@@ -98,7 +98,7 @@ export function Component() {
               <div key={e.id} className="rounded-[var(--radius-card)] border border-sand bg-paper p-4">
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <Link to={`/events/${e.slug}`} className="font-semibold text-ink hover:text-green">{e.title}</Link>
+                    <Link to={`/events/${e.slug}`} className="font-semibold text-ink hover:text-green-text">{e.title}</Link>
                     <p className="mt-0.5 text-sm text-ink-muted">{e.details.venue} · {formatDate(e.details.startsAt!)}</p>
                   </div>
                 </div>

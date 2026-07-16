@@ -60,7 +60,7 @@ function DiasporaCard({ member }: Readonly<{ member: Member }>) {
       {member.photoUrl ? (
         <img src={member.photoUrl} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-full border border-ink/10 object-cover" />
       ) : (
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-green text-lg font-semibold text-cream">{member.initials}</span>
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-green text-lg font-semibold text-on-green">{member.initials}</span>
       )}
       <span className="min-w-0">
         <span className="block font-semibold text-ink group-hover:underline">{member.displayName}</span>
@@ -159,7 +159,7 @@ export function Component() {
         </Container>
       </section>
 
-      <section className="on-dark bg-green py-16 text-cream">
+      <section className="on-dark on-dark-pin bg-green py-16 text-cream">
         <Container size="narrow" className="text-center">
           <Adinkra name="sankofa" size={36} className="mx-auto text-gold" />
           <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">Wherever you are, Oguaa keeps your name</h2>

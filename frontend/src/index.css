@@ -19,6 +19,7 @@
   --color-green-900: #0c2c1f;
   --color-green: #123f2d;
   --color-green-slate: #3b473d;
+  --color-green-text: #123f2d;
 
   /* Golds (Akan regalia) */
   --color-gold: #c7a24a;
@@ -30,6 +31,10 @@
   --color-clay: #b0503c;
   --color-clay-text: #9a4030;
   --color-maroon-900: #7c2d2d;
+  --color-maroon-text: #7c2d2d;
+  /* Always-light text on green/maroon brand fills (replaces the broken
+     "text-cream on bg-green" recipe, which flips dark-on-dark in dark mode). */
+  --color-on-green: #f6f1e7;
 
   /* Teal (Atlantic, Fosu Lagoon) */
   --color-teal: #0e7c6b;
@@ -69,6 +74,7 @@
     --color-green-900: #05150e;
     --color-green: #1a5a42;
     --color-green-slate: #2a3b33;
+    --color-green-text: #4ecf9d;
     /* Golds */
     --color-gold: #e0c270;
     --color-gold-brand: #d4a85c;
@@ -78,6 +84,11 @@
     --color-clay: #d77a66;
     --color-clay-text: #e9a08d;
     --color-maroon-900: #5c1f1f;
+    --color-maroon-text: #e08585;
+    --color-on-green: #f4f0e8;
+    /* The theme's cream surface value, for the .theme-surface counter-pin
+       inside .on-dark-pin stages (keep in sync with --color-cream above). */
+    --color-cream-dark: #16241e;
     /* Teal */
     --color-teal: #2dbfa5;
     --color-teal-text: #6ee7d2;
@@ -170,6 +181,18 @@
   }
   html[data-theme="dark"] .on-dark .eyebrow {
     color: var(--color-ink);
+  }
+  /* Stage pin for ALWAYS-DARK stages (fixed gradients, black scrims,
+     bg-green/green-900 heroes, the header/footer bars): re-pins --color-cream
+     so every text-cream/NN, border-cream/NN and bg-cream/10 inside resolves
+     light again in dark mode — with zero light-mode change. Any nested THEME
+     surface (dropdown menus with bg-cream text-ink, notification panels)
+     must carry .theme-surface so its cream reverts to the dark value. */
+  html[data-theme="dark"] .on-dark-pin {
+    --color-cream: #f6f1e7;
+  }
+  html[data-theme="dark"] .on-dark-pin .theme-surface {
+    --color-cream: var(--color-cream-dark, #16241e);
   }
   .bg-dotgrid {
     background-image: radial-gradient(rgba(199, 162, 74, 0.14) 1px, transparent 1px);

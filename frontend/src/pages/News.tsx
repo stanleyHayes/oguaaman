@@ -49,11 +49,11 @@ function FeaturedStory({ a }: Readonly<{ a: NewsArticle }>) {
         </span>
       </div>
       <div className="flex flex-col p-7 sm:p-9">
-        <h2 className="text-3xl font-semibold leading-tight text-ink group-hover:text-green sm:text-4xl">{a.title}</h2>
+        <h2 className="text-3xl font-semibold leading-tight text-ink group-hover:text-green-text sm:text-4xl">{a.title}</h2>
         {a.summary && <p className="mt-4 text-ink-muted">{a.summary}</p>}
         <div className="mt-auto flex items-center justify-between gap-4 border-t border-sand pt-5 text-sm">
           <Meta a={a} />
-          <span className="font-semibold text-green transition-transform group-hover:translate-x-0.5">Read story →</span>
+          <span className="font-semibold text-green-text transition-transform group-hover:translate-x-0.5">Read story →</span>
         </div>
       </div>
     </Link>
@@ -65,11 +65,11 @@ function CoverageCard({ a }: Readonly<{ a: NewsArticle }>) {
     <Link to={`/news/${a.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
       <Cover a={a} sizes="sm" />
       <div className="flex flex-1 flex-col p-6">
-        <h3 className="text-xl font-semibold text-ink group-hover:text-green">{a.title}</h3>
+        <h3 className="text-xl font-semibold text-ink group-hover:text-green-text">{a.title}</h3>
         {a.summary && <p className="mt-2 line-clamp-3 text-sm text-ink-muted">{a.summary}</p>}
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-sand pt-4 text-xs">
           <Meta a={a} />
-          <span className="font-semibold text-green">Read →</span>
+          <span className="font-semibold text-green-text">Read →</span>
         </div>
       </div>
     </Link>
@@ -80,7 +80,7 @@ function TagChips({ tags, active, onPick }: Readonly<{ tags: string[]; active: s
   if (tags.length === 0) return null;
   const chip = (on: boolean) =>
     `relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-      on ? "text-cream" : "border border-sand bg-cream text-ink-muted hover:border-green hover:text-green"
+      on ? "text-on-green" : "border border-sand bg-cream text-ink-muted hover:border-green hover:text-green-text"
     }`;
   return (
     <div className="mb-8 flex flex-wrap gap-2">
@@ -112,7 +112,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark relative overflow-hidden bg-green-900 py-14 text-cream">
+      <section className="on-dark on-dark-pin relative overflow-hidden bg-green-900 py-14 text-cream">
         <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-brand/[0.08] blur-3xl" />
         <Container className="relative">
           <Reveal>

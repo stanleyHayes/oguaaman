@@ -25,7 +25,7 @@ function BrandPanel({ mode }: Readonly<{ mode: Mode }>) {
   const isJoin = mode === "join";
   const trust = isJoin ? TRUST_JOIN : TRUST_COMMON;
   return (
-    <aside className="relative overflow-hidden bg-gradient-to-br from-green to-green-900 p-8 text-cream lg:p-10">
+    <aside className="on-dark on-dark-pin relative overflow-hidden bg-gradient-to-br from-green to-green-900 p-8 text-cream lg:p-10">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.07]"
         style={{ backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)", backgroundSize: "20px 20px", color: "#C7A24A" }}
@@ -85,7 +85,7 @@ function ModeTabs({ mode, onChange }: Readonly<{ mode: Mode; onChange: (m: Mode)
 }
 
 const submitBtnCls =
-  "w-full rounded-full bg-green py-3 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
+  "w-full rounded-full bg-green py-3 text-sm font-semibold text-on-green shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
 
 const backBtnCls =
   "rounded-full border border-sand bg-cream px-6 py-3 text-sm font-semibold text-ink-muted transition-colors hover:border-green/40 hover:text-ink";
@@ -376,7 +376,7 @@ function JoinForm({
                         const on = creatorTypes.includes(k.id);
                         return (
                           <button key={k.id} type="button" onClick={() => onToggleCreatorType(k.id)} aria-pressed={on}
-                            className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${on ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}>
+                            className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${on ? "border-green bg-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}>
                             {k.label}
                           </button>
                         );
@@ -412,8 +412,8 @@ function JoinForm({
                 <label className="flex items-start gap-2.5 rounded-xl border border-sand bg-cream px-3.5 py-3">
                   <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-green" />
                   <span className="text-xs leading-relaxed text-ink-muted">
-                    I agree to the <a href="/terms" className="font-semibold text-green underline">Terms of Use</a> and the{" "}
-                    <a href="/privacy" className="font-semibold text-green underline">Privacy Policy</a>, and I consent to Oguaa storing the details above so my account can work.
+                    I agree to the <a href="/terms" className="font-semibold text-green-text underline">Terms of Use</a> and the{" "}
+                    <a href="/privacy" className="font-semibold text-green-text underline">Privacy Policy</a>, and I consent to Oguaa storing the details above so my account can work.
                   </span>
                 </label>
               </>

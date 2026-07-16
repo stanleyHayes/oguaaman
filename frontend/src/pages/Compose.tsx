@@ -43,7 +43,7 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark bg-green-slate text-cream">
+      <section className="on-dark on-dark-pin bg-green-slate text-cream">
         <Container className="py-8">
           <p className="text-sm text-cream/70">
             <Link to="/admin" className="hover:text-gold">Dashboard</Link>
@@ -57,14 +57,14 @@ export function Component() {
       <Container size="narrow" className="py-10">
         {done ? (
           <div className="rounded-[var(--radius-card)] border border-green/30 bg-green/[0.06] p-6 text-center">
-            <p className="text-2xl font-semibold text-green">{done.published ? "Published to the Newsroom" : "Saved as a draft"}</p>
+            <p className="text-2xl font-semibold text-green-text">{done.published ? "Published to the Newsroom" : "Saved as a draft"}</p>
             <p className="mt-2 text-sm text-ink-muted">
               {done.published
                 ? "Your article is live for the community."
                 : "Stewards can publish it from the admin Newsroom."}
             </p>
             <div className="mt-5 flex justify-center gap-3">
-              {done.published && <Link to={`/news/${done.slug}`} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900">View it →</Link>}
+              {done.published && <Link to={`/news/${done.slug}`} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900">View it →</Link>}
               <button type="button" onClick={() => { setDone(null); setTitle(""); setSummary(""); setBody(""); setCoverImageUrl(""); }} className="rounded-full border border-sand px-5 py-2 text-sm font-semibold text-ink hover:border-ink">Write another</button>
             </div>
           </div>
@@ -97,7 +97,7 @@ export function Component() {
             {!canPublish && <p className="mt-4 text-sm text-gold-text">Heads up: publishing to the Newsroom needs curator or editor access.</p>}
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <button type="button" onClick={() => persist(true)} disabled={state !== "idle"} className="rounded-full bg-green px-6 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+              <button type="button" onClick={() => persist(true)} disabled={state !== "idle"} className="rounded-full bg-green px-6 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
                 {state === "publishing" ? "Publishing…" : "Publish to Newsroom"}
               </button>
               <button type="button" onClick={() => persist(false)} disabled={state !== "idle"} className="rounded-full border border-sand px-6 py-2.5 text-sm font-semibold text-ink hover:border-ink disabled:opacity-60">

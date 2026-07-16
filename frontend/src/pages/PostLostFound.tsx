@@ -82,8 +82,8 @@ export function Component() {
               <Field label="Your contact" hint="A phone number people can reach you on — this is how you get it back.">
                 <input name="contact" required className={inputCls} placeholder="e.g. 024 000 0000" />
               </Field>
-              {error && <p className="rounded-lg bg-maroon-900/[0.06] px-4 py-2.5 text-sm text-maroon-900">{error}</p>}
-              <button type="submit" disabled={busy} className="rounded-full bg-green px-6 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
+              {error && <p className="rounded-lg bg-maroon-900/[0.06] px-4 py-2.5 text-sm text-maroon-text">{error}</p>}
+              <button type="submit" disabled={busy} className="rounded-full bg-green px-6 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
                 {busy ? "Posting…" : "Post the notice"}
               </button>
             </form>
@@ -106,7 +106,7 @@ export function Component() {
                 ["Shared", "Neighbours see it, share it, keep an eye out."],
                 ["Reunited", "Back where it belongs — mark it and give thanks."],
               ].map(([k, v], i) => (
-                <li key={k} className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green text-xs font-bold text-cream">{i + 1}</span><span><b className="text-ink">{k}.</b> {v}</span></li>
+                <li key={k} className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green text-xs font-bold text-on-green">{i + 1}</span><span><b className="text-ink">{k}.</b> {v}</span></li>
               ))}
             </ol>
           </div>
