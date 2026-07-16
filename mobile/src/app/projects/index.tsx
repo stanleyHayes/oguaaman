@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, S, initials } from "@/theme";
+import { S, initials, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -13,6 +15,8 @@ export const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
 
 export function Progress({ raised, goal }: Readonly<{ raised?: number; goal?: number }>) {
+  const { C } = useTheme();
+  const p = useMemo(() => makeProgressStyles(C), [C]);
   const pct = goal ? Math.min(100, Math.round(((raised ?? 0) / goal) * 100)) : 0;
   return (
     <View>
@@ -24,7 +28,7 @@ export function Progress({ raised, goal }: Readonly<{ raised?: number; goal?: nu
     </View>
   );
 }
-const p = StyleSheet.create({
+const makeProgressStyles = (C: Palette) => StyleSheet.create({
   track: { height: 7, borderRadius: 4, backgroundColor: C.sand, overflow: "hidden" },
   fill: { height: "100%", borderRadius: 4, backgroundColor: C.green },
   row: { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
@@ -33,6 +37,8 @@ const p = StyleSheet.create({
 });
 
 export default function Projects() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading, refreshing, reload } = useApi<Listing[]>(() => api.projects(), "projects");
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
@@ -75,7 +81,7 @@ export default function Projects() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
   coverInit: { color: C.cream, ...S(700), fontSize: 32 },

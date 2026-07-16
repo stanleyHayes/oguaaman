@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { DateField } from "@/components/date-field";
 import { ImageField } from "@/components/image-field";
 import { HeroBand } from "@/ui";
-import { formStyles } from "@/components/form-styles";
-import { C } from "@/theme";
+import { makeFormStyles } from "@/components/form-styles";
+import { type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 
 const TYPES = [
   { id: "memory", label: "Memory" },
@@ -31,7 +33,7 @@ const OPPORTUNITY_KINDS = [
 
 // Per-type extra fields, mirroring the web submit form so phone submissions
 // arrive with the same structure curators expect (memorial has its own block).
-interface ExtraField { key: string; label: string; placeholder: string }
+interface ExtraField { key: string; label: string; placeholder: string; kind?: "date" }
 const TYPE_FIELDS: Record<string, ExtraField[]> = {
   artist: [
     { key: "genres", label: "GENRES", placeholder: "Comma-separated, e.g. highlife, gospel" },
@@ -42,7 +44,7 @@ const TYPE_FIELDS: Record<string, ExtraField[]> = {
     { key: "address", label: "LOCATION / ADDRESS", placeholder: "e.g. Kotokuraba Market, Cape Coast" },
   ],
   event: [
-    { key: "startsAt", label: "DATE", placeholder: "YYYY-MM-DD" },
+    { key: "startsAt", label: "DATE", placeholder: "Pick a date", kind: "date" },
     { key: "venue", label: "VENUE", placeholder: "e.g. Victoria Park" },
   ],
   memory: [{ key: "era", label: "ERA (OPTIONAL)", placeholder: "e.g. 1970s" }],
@@ -110,6 +112,8 @@ function buildDetails(
 }
 
 export default function Submit() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { member } = useAuth();
   const [type, setType] = useState<string>("memory");
   const [title, setTitle] = useState("");
@@ -129,6 +133,9 @@ export default function Submit() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   function reset() {
     setTitle("");
@@ -229,14 +236,22 @@ export default function Submit() {
       {(TYPE_FIELDS[type] ?? []).map((f) => (
         <View key={f.key}>
           <Text style={s.label}>{f.label}</Text>
-          <TextInput
-            style={s.input}
-            value={extra[f.key] ?? ""}
-            onChangeText={(v) => setExtra((cur) => ({ ...cur, [f.key]: v }))}
-            placeholder={f.placeholder}
-            placeholderTextColor={C.inkFaint}
-            autoCapitalize={f.key === "link" || f.key === "applyUrl" || f.key === "safeguardingPolicyUrl" ? "none" : "sentences"}
-          />
+          {f.kind === "date" ? (
+            <DateField
+              value={extra[f.key] ?? ""}
+              onChange={(v) => setExtra((cur) => ({ ...cur, [f.key]: v }))}
+              placeholder={f.placeholder}
+            />
+          ) : (
+            <TextInput
+              style={s.input}
+              value={extra[f.key] ?? ""}
+              onChangeText={(v) => setExtra((cur) => ({ ...cur, [f.key]: v }))}
+              placeholder={f.placeholder}
+              placeholderTextColor={C.inkFaint}
+              autoCapitalize={f.key === "link" || f.key === "applyUrl" || f.key === "safeguardingPolicyUrl" ? "none" : "sentences"}
+            />
+          )}
         </View>
       ))}
 
@@ -284,13 +299,7 @@ export default function Submit() {
           />
 
           <Text style={s.label}>DATE OF PASSING (OPTIONAL)</Text>
-          <TextInput
-            style={s.input}
-            value={diedDate}
-            onChangeText={setDiedDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={C.inkFaint}
-          />
+          <DateField value={diedDate} onChange={setDiedDate} placeholder="Pick a date" maxDate={todayIso} />
 
           <Text style={s.label}>EPITAPH (OPTIONAL)</Text>
           <TextInput
@@ -302,13 +311,7 @@ export default function Submit() {
           />
 
           <Text style={s.label}>BIRTHDAY (OPTIONAL)</Text>
-          <TextInput
-            style={s.input}
-            value={birthday}
-            onChangeText={setBirthday}
-            placeholder="MM-DD"
-            placeholderTextColor={C.inkFaint}
-          />
+          <DateField value={birthday} onChange={setBirthday} placeholder="Pick a date" maxDate={todayIso} />
 
           <Text style={s.label}>ASSOCIATIONS (OPTIONAL)</Text>
           <TextInput
@@ -335,8 +338,8 @@ export default function Submit() {
   );
 }
 
-const s = {
-  ...formStyles,
+const makeStyles = (C: Palette) => ({
+  ...makeFormStyles(C),
   ...StyleSheet.create({
     chipOn: { borderColor: C.green, backgroundColor: C.green },
     chipTextOn: { color: C.cream },
@@ -350,4 +353,4 @@ const s = {
     guardianTitle: { color: C.ink, fontWeight: "600", fontSize: 13 },
     guardianHint: { color: C.inkFaint, fontSize: 11, marginTop: 3 },
   }),
-};
+});

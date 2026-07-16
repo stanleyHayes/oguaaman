@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -9,7 +9,8 @@ import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { LostFound, LostFoundStatus } from "@/lib/types";
 import { KIND_LABEL, LF_STATUS_LABEL } from "@/lib/lostfound";
-import { C, D, S } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
+import { D, S, withAlpha, type Palette } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { LocationCard } from "@/components/location-card";
@@ -37,6 +38,8 @@ export default function LostFoundDetail() {
 function Detail({ notice }: Readonly<{ notice: LostFound }>) {
   const { member } = useAuth();
   const { scrollY, onScroll } = useHeroParallax();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const d = notice.details;
   const missing = d.kind === "missing_person";
   const [lfStatus, setLfStatus] = useState<LostFoundStatus>(d.lfStatus);
@@ -109,6 +112,8 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
 function ResolveBox({ slug, missing, onResolved }: Readonly<{ slug: string; missing: boolean; onResolved: (status: LostFoundStatus) => void }>) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
 
   async function resolve(status: LostFoundStatus) {
     setBusy(true);
@@ -142,12 +147,14 @@ function ResolveBox({ slug, missing, onResolved }: Readonly<{ slug: string; miss
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingVertical: 26 },
-  heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 24, lineHeight: 30, marginTop: 8 },
   heroChipRow: { flexDirection: "row", marginTop: 12 },
-  heroChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.4)", backgroundColor: "rgba(246,241,231,0.1)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
+  // Chip border: the hero stays a dark tone in both themes, so this light cream
+  // border is theme-independent — no palette token exists at alpha 0.4.
+  heroChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.4)", backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   heroChipText: { color: C.cream, fontSize: 12, fontWeight: "700" },
   body: { padding: 20 },
   desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
@@ -168,7 +175,7 @@ const s = StyleSheet.create({
   resolveBtnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20, minHeight: 44, justifyContent: "center" },
   resolveBtnOutlineText: { color: C.inkMuted, fontWeight: "600", fontSize: 14 },
   error: { color: C.clayText, fontSize: 13, marginTop: 10 },
-  happyBox: { marginTop: 22, backgroundColor: "rgba(18,63,45,0.06)", borderWidth: 1, borderColor: "rgba(18,63,45,0.3)", borderRadius: 12, padding: 16 },
+  happyBox: { marginTop: 22, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 16 },
   happyText: { color: C.green, fontSize: 14, lineHeight: 20 },
   foot: { color: C.inkFaint, fontSize: 12, lineHeight: 18, marginTop: 26, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 14 },
 });

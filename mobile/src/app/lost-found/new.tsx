@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { LostFoundKind } from "@/lib/types";
-import { KIND_COLOR, LOST_FOUND_KINDS } from "@/lib/lostfound";
+import { kindColor, LOST_FOUND_KINDS } from "@/lib/lostfound";
 import { HeroBand } from "@/ui";
-import { formStyles } from "@/components/form-styles";
-import { C } from "@/theme";
+import { makeFormStyles } from "@/components/form-styles";
+import { type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 
 export default function NewLostFound() {
   const { member } = useAuth();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const kindCol = useMemo(() => kindColor(C), [C]);
   const [kind, setKind] = useState<LostFoundKind>("lost_item");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -67,7 +71,7 @@ export default function NewLostFound() {
       <Text style={s.label}>WHAT KIND?</Text>
       <View style={s.chips}>
         {LOST_FOUND_KINDS.map((k) => {
-          const col = KIND_COLOR[k.value];
+          const col = kindCol[k.value];
           const on = kind === k.value;
           return (
             <Pressable key={k.value} onPress={() => setKind(k.value)} style={[s.chip, on && { borderColor: col, backgroundColor: col }]}>
@@ -114,9 +118,9 @@ export default function NewLostFound() {
   );
 }
 
-const s = {
-  ...formStyles,
+const makeStyles = (C: Palette) => ({
+  ...makeFormStyles(C),
   ...StyleSheet.create({
     btn: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
   }),
-};
+});

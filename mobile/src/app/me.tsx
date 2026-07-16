@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
 import { Link, router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -7,15 +7,19 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Promotion, Listing } from "@/lib/types";
-import { C, D, S, initials } from "@/theme";
+import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ImageField } from "@/components/image-field";
+import { DateField } from "@/components/date-field";
 import { RevealView } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 export default function Me() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { member, loading, signOut } = useAuth();
   if (loading) return <Loading />;
   if (!member) {
@@ -44,6 +48,8 @@ function roleLabel(role: string): string {
 
 // Event tickets bought via Paystack — the gate code is shown here and at the door.
 function MyTickets() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading } = useApi<Ticket[]>(() => api.myTickets(), "me:tickets");
   if (loading) return <Text style={s.help}>Loading your tickets…</Text>;
   if (error) return <Text style={s.help}>Couldn&apos;t load your tickets.</Text>;
@@ -72,6 +78,8 @@ function MyTickets() {
 
 // Supporter subscriptions — each payment adds a month to the business.
 function MySubscriptions() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading } = useApi<Subscription[]>(() => api.mySubscriptions(), "me:subscriptions");
   if (loading) return <Text style={s.help}>Loading your subscriptions…</Text>;
   if (error) return <Text style={s.help}>Couldn&apos;t load your subscriptions.</Text>;
@@ -103,6 +111,8 @@ function MySubscriptions() {
 // Paid featured placement on an owned listing — GH₵ 10/day, Paystack handoff
 // with a manual verify step, mirroring the projects pledge flow.
 function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -185,6 +195,8 @@ function MeLoaded({ slug, onSignOut }: Readonly<{ slug: string; onSignOut: () =>
 }
 
 function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { setMember } = useAuth();
   const m = view.member;
   const places = view.places ?? [];
@@ -364,6 +376,8 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
 
 // Dashboard section card — display title + optional help text wrapping a body slot.
 function Section({ title, help, children }: Readonly<{ title: string; help?: string; children: React.ReactNode }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
     <RevealView style={s.section}>
       <Text style={s.sectionTitle}>{title}</Text>
@@ -375,6 +389,8 @@ function Section({ title, help, children }: Readonly<{ title: string; help?: str
 
 // Shared chip row for "rep your quarter" / "rep your Asafo" (spec §8.6).
 function RepChips({ places, selectedId, variant, onChoose }: Readonly<{ places: Place[]; selectedId: string; variant: "green" | "clay"; onChoose: (id: string) => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={s.chipWrap}>
       {places.map((p) => (
@@ -389,9 +405,13 @@ function RepChips({ places, selectedId, variant, onChoose }: Readonly<{ places: 
 
 // Birthday + follower-broadcast opt-in (spec §8.11).
 function BirthdayCard({ member: m }: Readonly<{ member: Member }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [birthday, setBirthday] = useState(m.birthday ? m.birthday.slice(0, 10) : "");
   const [broadcast, setBroadcast] = useState(!!m.broadcastBirthday);
   const [bdaySave, setBdaySave] = useState<SaveState>("idle");
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   async function saveBirthday() {
     setBdaySave("saving");
     try {
@@ -401,13 +421,11 @@ function BirthdayCard({ member: m }: Readonly<{ member: Member }>) {
   }
   return (
     <>
-      <TextInput
-        style={s.diaInput}
+      <DateField
         value={birthday}
-        onChangeText={(v) => { setBirthday(v); setBdaySave("idle"); }}
-        placeholder="YYYY-MM-DD"
-        placeholderTextColor={C.inkFaint}
-        autoCapitalize="none"
+        onChange={(v) => { setBirthday(v); setBdaySave("idle"); }}
+        placeholder="Your birthday"
+        maxDate={todayIso}
       />
       <View style={[s.diaRow, { marginTop: 10 }]}>
         <Text style={s.diaLabel}>Let my followers know</Text>
@@ -426,6 +444,8 @@ function BirthdayCard({ member: m }: Readonly<{ member: Member }>) {
 
 // Diaspora opt-in (Phase 2 foundation).
 function DiasporaCard({ member: m }: Readonly<{ member: Member }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [abroad, setAbroad] = useState(!!m.diaspora?.abroad);
   const [city, setCity] = useState(m.diaspora?.city ?? "");
   const [country, setCountry] = useState(m.diaspora?.country ?? "");
@@ -465,6 +485,8 @@ function DiasporaCard({ member: m }: Readonly<{ member: Member }>) {
 // Schooling editor — stints drive the "people you may know" suggestions,
 // so onSaved bumps the refresh key in the parent.
 function SchoolingEditor({ member: m, schools, onSaved }: Readonly<{ member: Member; schools: Organization[]; onSaved: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [stints, setStints] = useState<SchoolStint[]>(m.schooling ?? []);
   const [save, setSave] = useState<SaveState>("idle");
   const schoolName = (id: string) => schools.find((x) => x.id === id)?.name ?? id;
@@ -533,6 +555,8 @@ const LISTING_HREF: Record<string, string> = {
 
 // Everything the member has contributed, with review status + promote control.
 function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (listings.length === 0) {
     return (
       <Pressable onPress={() => router.push("/submit")} style={s.linkRow}>
@@ -551,6 +575,8 @@ function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
 }
 
 function ListingRow({ listing: l }: Readonly<{ listing: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const base = l.status === "approved" ? LISTING_HREF[l.type] : undefined;
   const href = base ? `${base}${l.slug}` : null;
   const inner = (
@@ -582,6 +608,8 @@ function ListingRow({ listing: l }: Readonly<{ listing: Listing }>) {
 }
 
 function StatusChip({ status }: Readonly<{ status: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const chip: Record<string, { bg: object; color: string }> = {
     approved: { bg: s.statusOk, color: C.green },
     pending: { bg: s.statusPending, color: C.goldText },
@@ -596,6 +624,8 @@ function StatusChip({ status }: Readonly<{ status: string }>) {
 }
 
 function PeopleYouMayKnow({ refreshKey }: Readonly<{ refreshKey: number }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading } = useApi<Connection[]>(() => api.connections(), `connections:${refreshKey}`);
   if (loading) return <Text style={s.help}>Finding your people…</Text>;
   if (error) return <Text style={s.help}>Couldn&apos;t load suggestions.</Text>;
@@ -630,6 +660,8 @@ function PeopleYouMayKnow({ refreshKey }: Readonly<{ refreshKey: number }>) {
 }
 
 function FollowChip({ slug }: Readonly<{ slug: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [following, setFollowing] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -653,7 +685,7 @@ function FollowChip({ slug }: Readonly<{ slug: string }>) {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
@@ -666,9 +698,11 @@ const s = StyleSheet.create({
   name: { ...D(700), fontSize: 26, color: C.cream, marginTop: 12 },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12, justifyContent: "center" },
+  // The warn chip's bright gold (#F7C44A) has no palette base; it sits on the
+  // header, which stays dark green in both themes, so the literal is kept.
   warnChip: { marginTop: 12, borderWidth: 1, borderColor: "rgba(247,196,74,0.4)", backgroundColor: "rgba(247,196,74,0.14)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   warnChipText: { color: C.gold, fontSize: 12, fontWeight: "700" },
-  darkChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.3)", backgroundColor: "rgba(246,241,231,0.1)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
+  darkChip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   darkChipText: { color: C.cream, fontSize: 12 },
 
   body: { padding: 16, gap: 16 },
@@ -720,14 +754,14 @@ const s = StyleSheet.create({
   promoErr: { color: C.clayText, fontSize: 11, maxWidth: 220, textAlign: "right" },
   promoDone: { color: C.goldText, fontSize: 12, fontWeight: "700" },
   featuredNote: { color: C.goldText, fontSize: 12, fontWeight: "700", flex: 1 },
-  codeChip: { backgroundColor: "rgba(18,63,45,0.08)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  codeChip: { backgroundColor: withAlpha(C.green, 0.08), borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   codeText: { color: C.green, fontSize: 15, fontWeight: "700", letterSpacing: 2 },
   listingTitle: { color: C.ink, fontSize: 14, fontWeight: "600" },
   listingType: { color: C.inkFaint, fontSize: 11, textTransform: "capitalize", marginTop: 1 },
   statusChip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  statusOk: { backgroundColor: "rgba(18,63,45,0.08)" },
-  statusPending: { backgroundColor: "rgba(199,162,74,0.16)" },
-  statusBad: { backgroundColor: "rgba(124,45,45,0.08)" },
+  statusOk: { backgroundColor: withAlpha(C.green, 0.08) },
+  statusPending: { backgroundColor: withAlpha(C.gold, 0.16) },
+  statusBad: { backgroundColor: withAlpha(C.maroon, 0.08) },
   statusMuted: { backgroundColor: C.sand },
   statusText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
   addListingBtn: { borderWidth: 1, borderStyle: "dashed", borderColor: C.goldBrand, borderRadius: 999, paddingVertical: 10, alignItems: "center", marginTop: 2 },

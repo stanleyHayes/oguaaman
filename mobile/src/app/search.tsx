@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import type { SearchHit } from "@/lib/types";
-import { C, D, S, initials } from "@/theme";
+import { D, S, initials, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
@@ -33,18 +34,20 @@ const KIND_LABEL: Record<string, string> = {
   member: "Person", institution: "Institution", artist: "Artist", business: "Business",
   memorial: "In memoriam", person: "Son / daughter", event: "Event", memory: "Memory", opportunity: "Opportunity",
 };
-const KIND_TONE: Record<string, string> = {
+const kindTone = (C: Palette): Record<string, string> => ({
   member: C.green, institution: C.maroon, artist: C.clay, business: C.teal,
   memorial: C.goldBrand, person: C.green, event: C.goldText, memory: C.clay, opportunity: C.teal,
-};
+});
 function label(h: SearchHit): string {
   return KIND_LABEL[h.kind === "listing" ? (h.type ?? "") : h.kind] ?? "Result";
 }
-function tone(h: SearchHit): string {
-  return KIND_TONE[h.kind === "listing" ? (h.type ?? "") : h.kind] ?? C.inkFaint;
+function tone(h: SearchHit, C: Palette): string {
+  return kindTone(C)[h.kind === "listing" ? (h.type ?? "") : h.kind] ?? C.inkFaint;
 }
 
 export default function Search() {
+  const { C } = useTheme();
+  const s = useStyles();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,6 +90,7 @@ export default function Search() {
 }
 
 function Results({ q, hits, loading }: Readonly<{ q: string; hits: SearchHit[] | null; loading: boolean }>) {
+  const s = useStyles();
   if (q.trim().length < 2) return <Text style={s.hint}>Type at least two letters to search.</Text>;
   if (loading && !hits) return <Text style={s.hint}>Searching…</Text>;
   if ((hits?.length ?? 0) === 0) return <Text style={s.hint}>No matches for “{q.trim()}”.</Text>;
@@ -98,6 +102,8 @@ function Results({ q, hits, loading }: Readonly<{ q: string; hits: SearchHit[] |
 }
 
 function HitRow({ hit: h }: Readonly<{ hit: SearchHit }>) {
+  const { C } = useTheme();
+  const s = useStyles();
   const route = routeFor(h);
   const inner = (
     <View style={s.row}>
@@ -106,14 +112,19 @@ function HitRow({ hit: h }: Readonly<{ hit: SearchHit }>) {
         <Text style={s.rowTitle}>{h.title}</Text>
         {h.subtitle ? <Text style={s.rowSub} numberOfLines={1}>{h.subtitle}</Text> : null}
       </View>
-      <View style={[s.tag, { borderColor: tone(h) }]}><Text style={[s.tagText, { color: tone(h) }]}>{label(h)}</Text></View>
+      <View style={[s.tag, { borderColor: tone(h, C) }]}><Text style={[s.tagText, { color: tone(h, C) }]}>{label(h)}</Text></View>
     </View>
   );
   if (!route) return <View>{inner}</View>;
   return <Pressable onPress={() => router.push(route as never)}>{inner}</Pressable>;
 }
 
-const s = StyleSheet.create({
+function useStyles() {
+  const { C } = useTheme();
+  return useMemo(() => makeStyles(C), [C]);
+}
+
+const makeStyles = (C: Palette) => StyleSheet.create({
   pageTitle: { ...D(700), fontSize: 26, color: C.ink },
   pageLede: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 14 },
   inputWrap: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 16 },

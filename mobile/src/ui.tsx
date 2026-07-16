@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { HeroParallax } from "@/components/anim";
-import { C, D, S, SI, fillFor } from "@/theme";
+import { D, S, SI, fillFor, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { cldCover } from "@/lib/cloudinary";
 import { mediaUrl } from "@/lib/api";
 
 export function Loading() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={s.center}>
       <ActivityIndicator color={C.green} size="large" />
@@ -16,6 +19,8 @@ export function Loading() {
 }
 
 export function ErrorView({ message }: Readonly<{ message: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={s.center}>
       <Text style={s.errTitle}>Couldn&apos;t load</Text>
@@ -34,16 +39,20 @@ export function Mark({ size = 28, color }: Readonly<{ size?: number; color?: str
   );
 }
 
-export function Pill({ label, color = C.inkMuted, bg = C.cream, border = C.sand }: Readonly<{ label: string; color?: string; bg?: string; border?: string }>) {
+export function Pill({ label, color, bg, border }: Readonly<{ label: string; color?: string; bg?: string; border?: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
-    <View style={[s.pill, { backgroundColor: bg, borderColor: border }]}>
-      <Text style={[s.pillText, { color }]}>{label}</Text>
+    <View style={[s.pill, { backgroundColor: bg ?? C.cream, borderColor: border ?? C.sand }]}>
+      <Text style={[s.pillText, { color: color ?? C.inkMuted }]}>{label}</Text>
     </View>
   );
 }
 
 /** Toned page-top hero band shared by the contribution forms (rounded base, gold kicker). */
 export function HeroBand({ tone, kicker, title, lede }: Readonly<{ tone: string; kicker: string; title: string; lede: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={[s.heroBand, { backgroundColor: tone }]}>
       <Text style={s.heroKicker}>{kicker}</Text>
@@ -61,7 +70,7 @@ export function HeroBand({ tone, kicker, title, lede }: Readonly<{ tone: string;
  */
 export function PhotoHero({
   image,
-  tone = C.green900,
+  tone,
   kicker,
   title,
   fante,
@@ -80,6 +89,8 @@ export function PhotoHero({
   count?: string;
   scrollY?: SharedValue<number>;
 }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const content = (
     <>
       <Text style={s.heroKicker}>{kicker}</Text>
@@ -94,7 +105,7 @@ export function PhotoHero({
     </>
   );
   return (
-    <View style={[s.heroBand, { backgroundColor: tone }]}>
+    <View style={[s.heroBand, { backgroundColor: tone ?? C.green900 }]}>
       {image ? (
         <>
           <Image source={{ uri: mediaUrl(image) }} resizeMode="cover" style={StyleSheet.absoluteFill} />
@@ -126,8 +137,9 @@ export function Thumb({
   style?: StyleProp<ViewStyle>;
   labelStyle?: StyleProp<TextStyle>;
 }>) {
+  const { C } = useTheme();
   const [failed, setFailed] = useState(false);
-  const bg = fillFor(seed);
+  const bg = fillFor(seed, C);
   if (src && !failed) {
     return <Image source={{ uri: cldCover(mediaUrl(src), 400) }} onError={() => setFailed(true)} resizeMode="cover" style={[style as StyleProp<ImageStyle>, { backgroundColor: bg }]} />;
   }
@@ -154,6 +166,8 @@ function Inline({ text, style }: Readonly<{ text: string; style?: StyleProp<Text
 }
 
 export function Markdown({ children }: Readonly<{ children: string }>) {
+  const { C } = useTheme();
+  const md = useMemo(() => makeMdStyles(C), [C]);
   const blocks = children.replaceAll("\r\n", "\n").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   return (
     <View style={{ gap: 12 }}>
@@ -210,7 +224,7 @@ export function Markdown({ children }: Readonly<{ children: string }>) {
   );
 }
 
-const md = StyleSheet.create({
+const makeMdStyles = (C: Palette) => StyleSheet.create({
   h1: { ...D(700), fontSize: 26, color: C.ink },
   h2: { ...D(700), fontSize: 22, color: C.ink },
   h3: { ...D(700), fontSize: 18, color: C.ink },
@@ -225,7 +239,7 @@ const md = StyleSheet.create({
   th: { ...S(700), color: C.green },
 });
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, backgroundColor: C.paper, gap: 6 },
   errTitle: { fontSize: 20, fontWeight: "700", color: C.ink },
   errMsg: { color: C.clayText, textAlign: "center" },
@@ -236,8 +250,10 @@ const s = StyleSheet.create({
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 28, marginTop: 6 },
   heroFante: { color: C.gold, ...SI(), fontSize: 24 },
-  heroLede: { color: "rgba(246,241,231,0.85)", fontSize: 14, lineHeight: 20, marginTop: 6 },
-  heroCount: { color: "rgba(246,241,231,0.6)", fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },
-  heroScrim: { backgroundColor: "rgba(12,44,31,0.62)" },
-  heroScrimLow: { backgroundColor: "rgba(12,44,31,0.25)", top: "55%" },
+  heroLede: { color: C.onDarkText85, fontSize: 14, lineHeight: 20, marginTop: 6 },
+  heroCount: { color: C.onDarkText60, fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },
+  // These two scrims use bespoke alphas (0.62/0.25) with no semantic token, so
+  // they derive from green900 directly — light values are unchanged.
+  heroScrim: { backgroundColor: withAlpha(C.green900, 0.62) },
+  heroScrimLow: { backgroundColor: withAlpha(C.green900, 0.25), top: "55%" },
 });

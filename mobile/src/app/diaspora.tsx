@@ -1,13 +1,15 @@
 // The diaspora register (spec §4/§5/§15, Phase 2): sons & daughters who have
 // opted in as living away from Oguaa — "abroad" includes elsewhere in Ghana.
+import { useMemo } from "react";
 import { Link, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme-context";
 import type { Member } from "@/lib/types";
-import { C, D, S, initials } from "@/theme";
+import { D, S, initials, type Palette } from "@/theme";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
@@ -25,6 +27,8 @@ function groupByCountry(members: Member[]): Group[] {
 }
 
 function MemberCard({ m, index }: Readonly<{ m: Member; index: number }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const where = [m.diaspora?.city?.trim(), m.diaspora?.country?.trim()].filter(Boolean).join(", ");
   return (
     <StaggerIn index={index}>
@@ -47,6 +51,8 @@ export default function Diaspora() {
   const { data, error, loading } = useApi<Member[]>(() => api.diaspora(), "diaspora");
   const { member } = useAuth();
   const router = useRouter();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
 
@@ -126,7 +132,7 @@ export default function Diaspora() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   statsRow: { flexDirection: "row", gap: 12 },
   stat: { flex: 1, backgroundColor: C.paper, borderRadius: 14, borderWidth: 1, borderColor: C.sand, padding: 12, alignItems: "center" },
   statNum: { ...D(700), fontSize: 24, color: C.goldText },
@@ -155,6 +161,8 @@ const s = StyleSheet.create({
   soonChip: { ...S(600), fontSize: 10, letterSpacing: 1.2, color: C.inkFaint, marginTop: 10 },
   join: { marginTop: 28, backgroundColor: C.green, borderRadius: 20, padding: 22 },
   joinTitle: { ...D(600), fontSize: 22, color: C.cream },
+  // The join box stays dark green in both themes, so its overlay text is a
+  // theme-independent light cream — no palette token exists at alpha 0.8.
   joinBody: { ...S(), fontSize: 14, lineHeight: 21, color: "rgba(246,241,231,0.8)", marginTop: 8 },
   joinBtn: { marginTop: 16, backgroundColor: C.goldBrand, borderRadius: 999, paddingVertical: 12, alignItems: "center" },
   joinBtnText: { ...S(600), fontSize: 14, color: C.cream },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -7,7 +7,8 @@ import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing, Tribute } from "@/lib/types";
-import { C, D, S, SI, initials } from "@/theme";
+import { D, S, SI, initials, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { cldCover } from "@/lib/cloudinary";
@@ -22,6 +23,8 @@ function dayMonth(date?: string): string {
 
 // Remember/stop-remembering — the yearly-remembrance follow (spec §8.11).
 function RememberButton({ slug, initialCount }: Readonly<{ slug: string; initialCount: number }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { member } = useAuth();
   const [following, setFollowing] = useState(false);
   const [count, setCount] = useState(initialCount);
@@ -74,6 +77,8 @@ export default function Memorial() {
 }
 
 function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const d = m.details;
   const [candles, setCandles] = useState(d.candles ?? 0);
   const [lit, setLit] = useState(false);
@@ -205,7 +210,9 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
+  // #EADFC4 is a bespoke parchment tone behind the portrait with no palette
+  // token; kept as-is in both themes (decorative, photo-placeholder-like).
   portrait: { width: 110, height: 110, borderRadius: 55, backgroundColor: "#EADFC4", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
   portraitInit: { ...S(600), fontSize: 40, color: C.green },
   name: { ...D(600), fontSize: 34, color: C.ink, marginTop: 16, textAlign: "center" },

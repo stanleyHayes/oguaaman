@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { C, D, S, SI, initials } from "@/theme";
+import { D, S, SI, initials, withAlpha, type Palette } from "@/theme";
 import { Mark } from "@/ui";
 import { useAuth } from "@/lib/auth";
 import { useLang, LANGS } from "@/lib/i18n";
+import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 
 // The More tab is the account & settings hub: profile banner, quick links,
 // language, legal, and auth. Section navigation lives in the ☰ drawer.
@@ -12,6 +14,8 @@ import { useLang, LANGS } from "@/lib/i18n";
 type Row = { icon: string; label: string; href?: string; onPress?: () => void; danger?: boolean };
 
 function MenuCard({ rows }: Readonly<{ rows: Row[] }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={s.card}>
       {rows.map((r, i) => (
@@ -30,6 +34,12 @@ function MenuCard({ rows }: Readonly<{ rows: Row[] }>) {
   );
 }
 
+const THEME_OPTIONS: readonly { value: ThemeSetting; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
 function roleLabel(role: string): string {
   if (role === "curator") return "Curator";
   if (role === "steward") return "Steward";
@@ -39,6 +49,8 @@ function roleLabel(role: string): string {
 export default function More() {
   const { member, signOut } = useAuth();
   const { lang, setLang } = useLang();
+  const { C, setting, setTheme } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.paper }} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -106,6 +118,18 @@ export default function More() {
         </View>
       </View>
 
+      {/* Appearance — follows the OS by default, with a manual override */}
+      <View style={[s.card, { marginTop: 14 }]}>
+        <Text style={s.cardKicker}>APPEARANCE</Text>
+        <View style={s.langRow}>
+          {THEME_OPTIONS.map((o) => (
+            <Pressable key={o.value} onPress={() => setTheme(o.value)} style={[s.langChip, setting === o.value && s.langChipOn]}>
+              <Text style={[s.langChipText, setting === o.value && s.langChipTextOn]}>{o.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       {/* Legal */}
       <View style={{ marginTop: 14 }}>
         <MenuCard
@@ -139,7 +163,7 @@ export default function More() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   content: { padding: 20, paddingBottom: 48 },
   bannerWrap: { marginBottom: 0 },
   banner: {
@@ -152,8 +176,8 @@ const s = StyleSheet.create({
     position: "absolute",
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "rgba(199,162,74,0.35)",
-    backgroundColor: "rgba(199,162,74,0.10)",
+    borderColor: withAlpha(C.gold, 0.35),
+    backgroundColor: withAlpha(C.gold, 0.1),
   },
   avatar: {
     width: 76,

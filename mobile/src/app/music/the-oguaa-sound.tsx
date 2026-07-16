@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, D, S, initials } from "@/theme";
+import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Thumb } from "@/ui";
 
 // The long-read behind the Music section (fact-checked, agent_plan.md §1.4):
@@ -19,6 +21,8 @@ const STORY: { h?: string; p: string }[] = [
 ];
 
 export default function OguaaSound() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data } = useApi<Listing[]>(() => api.musicLegacy(), "music-legacy");
   const legacy = data ?? [];
 
@@ -65,10 +69,11 @@ export default function OguaaSound() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.clay, paddingHorizontal: 20, paddingVertical: 28, overflow: "hidden" },
-  heroScrim: { backgroundColor: "rgba(12,44,31,0.62)" },
-  heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+  // Bespoke 0.62 scrim (no semantic token at this alpha) — green900-derived.
+  heroScrim: { backgroundColor: withAlpha(C.green900, 0.62) },
+  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 6, lineHeight: 38 },
   body: { padding: 20 },
   h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },

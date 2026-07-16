@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { C, D } from "@/theme";
+import { D, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { ErrorView } from "@/ui";
 
 // Static legal drafts, ported from the portal (frontend/src/pages/Legal.tsx).
@@ -71,6 +73,8 @@ const DOCS: Record<string, Doc> = {
 };
 
 export default function Legal() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { doc } = useLocalSearchParams<{ doc: string }>();
   const d = DOCS[doc ?? ""];
   if (!d) return <ErrorView message="Unknown document" />;
@@ -92,7 +96,7 @@ export default function Legal() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 15, lineHeight: 22 },
   h: { ...D(700), fontSize: 20, color: C.ink },
   p: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 8 },

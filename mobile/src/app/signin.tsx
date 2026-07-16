@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
+import { DateField } from "@/components/date-field";
 import { useAuth } from "@/lib/auth";
-import { C, D, DI } from "@/theme";
+import { D, DI, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Mark } from "@/ui";
+
+// Latest allowed date of birth — Oguaa is 18+, mirroring the web Join form.
+function adultCutoffIso() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 const TRUST_SIGNIN = [
   "One account across web & mobile",
@@ -35,6 +44,8 @@ type FormState = {
 };
 
 function Hero({ isJoin, trust }: Readonly<{ isJoin: boolean; trust: string[] }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={s.hero}>
       <View style={s.heroMark}><Mark size={44} color={C.gold} /></View>
@@ -59,6 +70,9 @@ function Hero({ isJoin, trust }: Readonly<{ isJoin: boolean; trust: string[] }>)
 }
 
 function FormCard(f: Readonly<FormState>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const [showPw, setShowPw] = useState(false);
   let btnLabel = "Sign in";
   if (f.busy) btnLabel = f.isJoin ? "Creating…" : "Signing in…";
   else if (f.isJoin) btnLabel = "Create my account →";
@@ -89,22 +103,33 @@ function FormCard(f: Readonly<FormState>) {
       {f.isJoin && (
         <>
           <Text style={s.label}>Date of birth</Text>
-          <TextInput value={f.dob} onChangeText={f.onDob} placeholder="YYYY-MM-DD" placeholderTextColor={C.inkFaint} autoCapitalize="none" style={s.input} />
+          <DateField value={f.dob} onChange={f.onDob} placeholder="Your date of birth" maxDate={adultCutoffIso()} />
           <Text style={s.hint}>Oguaa is for ages 18 and over.</Text>
         </>
       )}
       <Text style={s.label}>Password</Text>
-      <TextInput
-        value={f.password}
-        onChangeText={f.onPassword}
-        placeholder={f.isJoin ? "Choose a password" : "Your password"}
-        placeholderTextColor={C.inkFaint}
-        secureTextEntry
-        autoCapitalize="none"
-        autoComplete={f.isJoin ? "new-password" : "password"}
-        textContentType={f.isJoin ? "newPassword" : "password"}
-        style={s.input}
-      />
+      <View style={s.pwRow}>
+        <TextInput
+          value={f.password}
+          onChangeText={f.onPassword}
+          placeholder={f.isJoin ? "Choose a password" : "Your password"}
+          placeholderTextColor={C.inkFaint}
+          secureTextEntry={!showPw}
+          autoCapitalize="none"
+          autoComplete={f.isJoin ? "new-password" : "password"}
+          textContentType={f.isJoin ? "newPassword" : "password"}
+          style={s.pwInput}
+        />
+        <Pressable
+          onPress={() => setShowPw((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={showPw ? "Hide password" : "Show password"}
+          hitSlop={8}
+          style={s.pwToggle}
+        >
+          <Text style={s.pwToggleText}>{showPw ? "Hide" : "Show"}</Text>
+        </Pressable>
+      </View>
       {f.isJoin && <Text style={s.hint}>At least 8 characters</Text>}
 
       {f.err && <Text style={s.err}>{f.err}</Text>}
@@ -120,6 +145,8 @@ function FormCard(f: Readonly<FormState>) {
 }
 
 export default function SignIn() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { signIn, completeMfa, join } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [identifier, setIdentifier] = useState("");
@@ -220,14 +247,16 @@ export default function SignIn() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 44, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   heroMark: { alignItems: "center", marginBottom: 14 },
   heroKicker: { color: C.gold, fontSize: 11, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase", textAlign: "center" },
   heroTitle: { ...D(600), color: C.cream, fontSize: 30, textAlign: "center", marginTop: 8 },
+  // #D9D2C2 / #E7E1D3: bespoke light inks on the green hero, which stays dark
+  // in both themes — no palette token matches, so they are kept as literals.
   heroSub: { color: "#D9D2C2", fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 8 },
   trustRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  trustTick: { width: 20, height: 20, borderRadius: 10, backgroundColor: "rgba(199,162,74,0.2)", alignItems: "center", justifyContent: "center", marginTop: 1 },
+  trustTick: { width: 20, height: 20, borderRadius: 10, backgroundColor: withAlpha(C.gold, 0.2), alignItems: "center", justifyContent: "center", marginTop: 1 },
   trustTickText: { color: C.gold, fontSize: 11, fontWeight: "700" },
   trustText: { color: "#E7E1D3", fontSize: 13, lineHeight: 19, flex: 1 },
   motto: { ...DI(), color: C.gold, fontSize: 14, textAlign: "center", marginTop: 18 },
@@ -241,9 +270,13 @@ const s = StyleSheet.create({
   cardSub: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: -8 },
   label: { color: C.ink, fontSize: 13, fontWeight: "600", marginBottom: -8 },
   input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, color: C.ink },
+  pwRow: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12 },
+  pwInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, color: C.ink },
+  pwToggle: { paddingHorizontal: 14, paddingVertical: 13 },
+  pwToggleText: { color: C.inkMuted, fontSize: 13, fontWeight: "700" },
   btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 15, alignItems: "center" },
   btnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
-  err: { color: C.clayText, fontSize: 14, backgroundColor: "rgba(176,80,60,0.06)", borderWidth: 1, borderColor: "rgba(176,80,60,0.3)", borderRadius: 10, padding: 10 },
+  err: { color: C.clayText, fontSize: 14, backgroundColor: C.clayTint, borderWidth: 1, borderColor: withAlpha(C.clay, 0.3), borderRadius: 10, padding: 10 },
   hint: { color: C.inkFaint, fontSize: 12, textAlign: "center" },
   back: { color: C.inkMuted, textAlign: "center", paddingVertical: 8 },
 });

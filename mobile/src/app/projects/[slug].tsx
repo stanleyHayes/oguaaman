@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -6,8 +6,9 @@ import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme-context";
 import type { Listing } from "@/lib/types";
-import { C, D, S, initials } from "@/theme";
+import { D, S, initials, withAlpha, type Palette } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { Progress, cedis } from "./index";
@@ -26,6 +27,8 @@ export default function Project() {
 
 function Detail({ project, slug, reload }: Readonly<{ project: Listing; slug: string; reload: () => void }>) {
   const d = project.details;
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
 
   return (
     <>
@@ -67,6 +70,8 @@ function Detail({ project, slug, reload }: Readonly<{ project: Listing; slug: st
 // idempotent server-side, so verifying twice is harmless.
 function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void }>) {
   const { member } = useAuth();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [amount, setAmount] = useState("50");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -161,7 +166,7 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   cover: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
   coverInit: { color: C.cream, ...S(700), fontSize: 38 },
   body: { padding: 20 },
@@ -185,7 +190,7 @@ const s = StyleSheet.create({
   pledgeBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
   pledgeBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
-  thanks: { marginTop: 18, backgroundColor: "rgba(18,63,45,0.06)", borderWidth: 1, borderColor: "rgba(18,63,45,0.3)", borderRadius: 14, padding: 16 },
+  thanks: { marginTop: 18, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 14, padding: 16 },
   thanksTitle: { ...D(700), fontSize: 20, color: C.green },
   thanksBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
 });

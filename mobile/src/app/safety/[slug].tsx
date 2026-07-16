@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { T as Text } from "@/components/typography";
@@ -6,7 +7,8 @@ import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import type { Incident } from "@/lib/types";
 import { CATEGORY_LABEL, STATUS_COLOR, STATUS_LABEL } from "@/lib/incidents";
-import { C, D, S } from "@/theme";
+import { D, S, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { LocationCard } from "@/components/location-card";
 
@@ -21,6 +23,8 @@ function fmtDate(iso?: string): string {
 export default function IncidentDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Incident>(() => api.incident(slug), `incident:${slug}`);
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   useRecordView(data?.id);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
@@ -82,9 +86,9 @@ export default function IncidentDetail() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingVertical: 26 },
-  heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 24, lineHeight: 30, marginTop: 8 },
   heroStatus: { color: C.cream, fontSize: 12, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginTop: 10 },
   body: { padding: 20 },

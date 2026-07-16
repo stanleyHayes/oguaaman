@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { LostFound, LostFoundKind } from "@/lib/types";
-import { KIND_LABEL, LF_STATUS_COLOR, LF_STATUS_LABEL } from "@/lib/lostfound";
-import { C, S } from "@/theme";
+import { KIND_LABEL, LF_STATUS_LABEL, lfStatusColor } from "@/lib/lostfound";
+import { S, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -24,9 +25,11 @@ function fmtDate(iso?: string): string {
 }
 
 function NoticeCard({ i }: Readonly<{ i: LostFound }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const d = i.details;
   const missing = d.kind === "missing_person";
-  const stColor = LF_STATUS_COLOR[d.lfStatus] ?? C.inkMuted;
+  const stColor = lfStatusColor(C)[d.lfStatus] ?? C.inkMuted;
   const whereLabel = d.kind === "lost_item" ? "Lost" : "Found";
   return (
     <Pressable onPress={() => router.push(`/lost-found/${i.slug}` as never)} style={[s.card, missing && s.cardMissing]}>
@@ -49,6 +52,8 @@ function NoticeCard({ i }: Readonly<{ i: LostFound }>) {
 }
 
 export default function LostFoundList() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [kind, setKind] = useState<LostFoundKind>("lost_item");
   const { data, error, loading, refreshing, reload } = useApi<LostFound[]>(() => api.lostFoundList(), "lost-found");
   if (loading) return <Loading />;
@@ -92,7 +97,7 @@ export default function LostFoundList() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   cta: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
   ctaText: { color: C.cream, fontWeight: "700", fontSize: 15 },

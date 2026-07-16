@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
@@ -6,7 +6,8 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Notification } from "@/lib/types";
-import { C, D, S } from "@/theme";
+import { D, S, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -18,9 +19,10 @@ function when(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-const KIND_COLOR: Record<string, string> = {
-  approved: C.teal, rejected: C.maroon, changes: C.goldBrand, remembrance: C.goldBrand,
-  birthday: C.gold, report: C.maroon, welcome: C.green,
+// Palette token per notification kind — resolved against the active theme.
+const KIND_TOKEN: Record<string, keyof Palette> = {
+  approved: "teal", rejected: "maroon", changes: "goldBrand", remembrance: "goldBrand",
+  birthday: "gold", report: "maroon", welcome: "green",
 };
 
 // Notification links are portal paths; translate them to mobile routes.
@@ -37,6 +39,8 @@ function mobileLink(link?: string): string | null {
 
 export default function Notifications() {
   const { member, loading } = useAuth();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (loading) return <Loading />;
   if (!member) {
     return (
@@ -58,6 +62,8 @@ function NotifLoaded() {
 }
 
 function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [items, setItems] = useState<Notification[]>(initial);
   const [busy, setBusy] = useState(false);
   const unread = items.filter((n) => !n.read).length;
@@ -97,7 +103,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
         return (
           <StaggerIn key={n.id} index={i}>
             <Pressable onPress={() => openItem(n)} style={[s.card, !n.read && s.cardUnread]}>
-              <View style={[s.bar, { backgroundColor: KIND_COLOR[n.kind] ?? C.inkFaint, opacity: n.read ? 0.3 : 1 }]} />
+              <View style={[s.bar, { backgroundColor: C[KIND_TOKEN[n.kind] ?? "inkFaint"], opacity: n.read ? 0.3 : 1 }]} />
               <View style={{ flex: 1 }}>
                 <View style={s.cardHead}>
                   <Text style={s.cardTitle}>{n.title}</Text>
@@ -114,7 +120,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
@@ -128,7 +134,10 @@ const s = StyleSheet.create({
   markText: { color: C.green, fontWeight: "700", fontSize: 12 },
 
   card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, overflow: "hidden" },
-  cardUnread: { backgroundColor: "#fffdf7", borderColor: C.goldBrand },
+  // Unread lift: was the off-palette #fffdf7 (≈1.5% brighter than paper), which
+  // would glare under light ink in dark mode — paper is the nearest token; the
+  // goldBrand border stays the primary unread cue.
+  cardUnread: { backgroundColor: C.paper, borderColor: C.goldBrand },
   bar: { width: 4, borderRadius: 2 },
   cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
   cardTitle: { ...S(700), fontSize: 16, color: C.ink, flexShrink: 1 },

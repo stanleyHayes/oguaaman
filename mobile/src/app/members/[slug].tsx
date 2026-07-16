@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -6,8 +6,9 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme-context";
 import type { MemberView } from "@/lib/types";
-import { C, D, S, initials } from "@/theme";
+import { D, S, initials, type Palette } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -17,6 +18,8 @@ function FollowButton({ slug }: Readonly<{ slug: string }>) {
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState<number | null>(null); // known after a toggle
   const [busy, setBusy] = useState(false);
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
 
   useEffect(() => {
     if (!member) return;
@@ -62,6 +65,8 @@ export default function MemberProfile() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<MemberView>(() => api.member(slug), `member:${slug}`);
   const { scrollY, onScroll } = useHeroParallax();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
 
@@ -125,17 +130,19 @@ export default function MemberProfile() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 28, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
   avatarText: { color: C.cream, ...S(700), fontSize: 32 },
   name: { ...D(700), fontSize: 26, color: C.cream, marginTop: 12 },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
+  // The header stays dark green in both themes, so this light cream bio text is
+  // theme-independent — no palette token exists at alpha 0.8.
   bio: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: 8, maxWidth: 320 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, justifyContent: "center" },
-  chip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.3)", backgroundColor: "rgba(246,241,231,0.1)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  chip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   chipText: { color: C.cream, fontSize: 12, fontWeight: "600" },
-  follow: { marginTop: 16, borderWidth: 1, borderColor: "rgba(246,241,231,0.5)", borderRadius: 999, paddingVertical: 9, paddingHorizontal: 26 },
+  follow: { marginTop: 16, borderWidth: 1, borderColor: C.onDarkText50, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 26 },
   followOn: { backgroundColor: C.gold, borderColor: C.gold },
   followText: { color: C.cream, fontWeight: "700" },
   followTextOn: { color: C.green900 },

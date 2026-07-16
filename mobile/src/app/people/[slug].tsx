@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -6,12 +7,15 @@ import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, D, S, SI, fillFor, initials } from "@/theme";
+import { D, S, SI, fillFor, initials, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 
 export default function Person() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Listing>(() => api.person(slug), `person:${slug}`);
   const { scrollY, onScroll } = useHeroParallax();
@@ -25,7 +29,7 @@ export default function Person() {
     <>
       <Stack.Screen options={{ title: data.title }} />
       <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <View style={[s.head, { backgroundColor: fillFor(data.slug) }]}>
+        <View style={[s.head, { backgroundColor: fillFor(data.slug, C) }]}>
           <HeroParallax scrollY={scrollY} style={{ width: "100%", alignItems: "center" }}>
             <Thumb seed={data.slug} src={data.coverImageUrl} label={initials(data.title)} style={s.thumb} labelStyle={s.thumbInit} />
             <View style={s.badge}><Text style={s.badgeText}>{d.living ? "LIVING ICON" : "IN LEGACY"}</Text></View>
@@ -60,14 +64,15 @@ export default function Person() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   head: { alignItems: "center", paddingVertical: 28, paddingHorizontal: 20 },
+  // Pure-black darkening wash over the tinted head — theme-independent.
   thumb: { width: 100, height: 100, borderRadius: 50, backgroundColor: "rgba(0,0,0,0.18)", alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, ...S(700), fontSize: 36 },
-  badge: { backgroundColor: "rgba(246,241,231,0.18)", borderWidth: 1, borderColor: "rgba(246,241,231,0.4)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, marginTop: 14 },
+  badge: { backgroundColor: withAlpha(C.cream, 0.18), borderWidth: 1, borderColor: withAlpha(C.cream, 0.4), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, marginTop: 14 },
   badgeText: { color: C.cream, fontSize: 10, letterSpacing: 1.5, fontWeight: "700" },
   name: { color: C.cream, ...D(700), fontSize: 30, marginTop: 8, textAlign: "center" },
-  era: { color: "rgba(246,241,231,0.75)", fontSize: 12, letterSpacing: 2, marginTop: 6, textTransform: "uppercase" },
+  era: { color: withAlpha(C.cream, 0.75), fontSize: 12, letterSpacing: 2, marginTop: 6, textTransform: "uppercase" },
   body: { padding: 20 },
   kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   pull: { ...SI(), fontSize: 19, lineHeight: 27, color: C.ink, marginTop: 8 },

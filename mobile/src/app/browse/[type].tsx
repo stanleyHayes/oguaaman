@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Linking, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -5,7 +6,8 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, D, S, fillFor, initials } from "@/theme";
+import { D, S, fillFor, initials, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
@@ -20,7 +22,8 @@ interface BrowseView {
   title: string;
   kicker: string;
   lede: string;
-  tone: string;
+  /** Palette token for the hero band tint — resolved against the active theme. */
+  tone: keyof Palette;
   /** Seed photo for the hero band (mirrors the portal section heroes). */
   image: string;
   countNoun: string;
@@ -35,7 +38,7 @@ const VIEWS: Record<string, BrowseView> = {
     title: "People",
     kicker: "The wall of pride",
     lede: "Sons and daughters of Oguaa — icons past and living.",
-    tone: C.green,
+    tone: "green",
     image: "/uploads/seed/fetu-queenmother.jpg",
     countNoun: "people",
     fetch: () => api.people(),
@@ -46,7 +49,7 @@ const VIEWS: Record<string, BrowseView> = {
     title: "Business",
     kicker: "The working city",
     lede: "The working city — markets, fishing, trade and the people behind them.",
-    tone: C.teal,
+    tone: "teal",
     image: "/uploads/seed/market-women.jpg",
     countNoun: "businesses",
     fetch: () => api.businesses(),
@@ -57,7 +60,7 @@ const VIEWS: Record<string, BrowseView> = {
     title: "Events",
     kicker: "The town calendar",
     lede: "From Fetu Afahye to school speech days and homecomings.",
-    tone: C.green900,
+    tone: "green900",
     image: "/uploads/seed/bakatue-2016.jpg",
     countNoun: "events",
     fetch: () => api.events(),
@@ -68,7 +71,7 @@ const VIEWS: Record<string, BrowseView> = {
     title: "Opportunities",
     kicker: "Youth & opportunity",
     lede: "Jobs, scholarships, mentorship and investment calls shared within the community.",
-    tone: C.teal,
+    tone: "teal",
     image: "/uploads/seed/school-girl-ghana.jpg",
     countNoun: "opportunities",
     fetch: () => api.opportunities(),
@@ -78,7 +81,7 @@ const VIEWS: Record<string, BrowseView> = {
     title: "Memories",
     kicker: "Old Cape Coast",
     lede: "Photos and stories of old Cape Coast, preserved.",
-    tone: C.clay,
+    tone: "clay",
     image: "/uploads/seed/fishermen.jpg",
     countNoun: "memories",
     fetch: () => api.memories(),
@@ -118,8 +121,10 @@ function groupByMonth(list: Listing[]): MonthSection[] {
   return sections;
 }
 function EventHero({ e }: Readonly<{ e: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
-    <View style={[s.hero, { backgroundColor: fillFor(e.slug) }]}>
+    <View style={[s.hero, { backgroundColor: fillFor(e.slug, C) }]}>
       {e.coverImageUrl ? <Thumb seed={e.slug} src={cldCover(e.coverImageUrl, 400)} style={s.heroImg} /> : null}
       <View style={s.heroBody}>
         <Text style={s.heroKicker}>THE ANCHOR FESTIVAL</Text>
@@ -135,6 +140,8 @@ export default function Browse() {
   const { type } = useLocalSearchParams<{ type: string }>();
   const view = VIEWS[type ?? ""];
   const { scrollY, onScroll } = useHeroParallax();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading } = useApi<Listing[]>(
     () => (view ? view.fetch() : Promise.resolve([])),
     `browse:${type}`,
@@ -185,7 +192,7 @@ export default function Browse() {
     <>
       <Stack.Screen options={{ title: view.title }} />
       <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <PhotoHero image={view.image} tone={view.tone} kicker={view.kicker} title={view.title} lede={view.lede} count={`${data.length} ${view.countNoun}`} scrollY={scrollY} />
+        <PhotoHero image={view.image} tone={C[view.tone]} kicker={view.kicker} title={view.title} lede={view.lede} count={`${data.length} ${view.countNoun}`} scrollY={scrollY} />
         <View style={{ padding: 16, gap: 12 }}>
           {anchor && <RevealView><Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable></RevealView>}
           {data.length === 0 && <EmptyState glyph="◎" title="Nothing here yet" body="Be the first to contribute." />}
@@ -203,7 +210,7 @@ export default function Browse() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   section: { gap: 12 },
   sectionHeader: { color: C.goldText, ...S(700), fontSize: 15, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
   card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
@@ -218,8 +225,10 @@ const s = StyleSheet.create({
   hero: { borderRadius: 16, overflow: "hidden" },
   heroImg: { width: "100%", height: 130 },
   heroBody: { padding: 16 },
+  // On-dark kicker at 0.8 — no palette token carries this alpha, and the hero
+  // fill stays dark in both themes, so the literal is effectively theme-proof.
   heroKicker: { color: "rgba(246,241,231,0.8)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 24, marginTop: 4 },
-  heroMeta: { color: "rgba(246,241,231,0.85)", fontSize: 13, marginTop: 4 },
-  heroDesc: { color: "rgba(246,241,231,0.85)", fontSize: 13, lineHeight: 19, marginTop: 8 },
+  heroMeta: { color: C.onDarkText85, fontSize: 13, marginTop: 4 },
+  heroDesc: { color: C.onDarkText85, fontSize: 13, lineHeight: 19, marginTop: 8 },
 });

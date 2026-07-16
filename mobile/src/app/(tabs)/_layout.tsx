@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Tabs } from "expo-router";
 import { Pressable, type ColorValue } from "react-native";
 import { T as Text } from "@/components/typography";
-import { C } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -37,6 +37,7 @@ function useUnreadCount(): number {
 // be the More tab's content).
 function HeaderMenuButton() {
   const { open } = useNavDrawer();
+  const { C } = useTheme();
   return (
     <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
       <Text style={{ fontSize: 20, color: C.cream, fontWeight: "700" }}>☰</Text>
@@ -46,6 +47,7 @@ function HeaderMenuButton() {
 
 export default function TabsLayout() {
   const { t } = useLang();
+  const { C } = useTheme();
   const unread = useUnreadCount();
   const badgeText = unread > 9 ? "9+" : unread;
   return (

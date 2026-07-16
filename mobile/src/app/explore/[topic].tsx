@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -5,7 +6,8 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HistoryView } from "@/lib/types";
-import { C, D, S } from "@/theme";
+import { D, S, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero } from "@/ui";
 import { StaggerIn, useHeroParallax } from "@/components/anim";
 
@@ -13,13 +15,14 @@ import { StaggerIn, useHeroParallax } from "@/components/anim";
 // grounded in the fact-checked Cape Coast research brief (agent_plan.md §1).
 
 interface Block { h?: string; p?: string; items?: { label: string; text?: string; colors?: string[] }[] }
-interface Topic { title: string; kicker: string; tone: string; image: string; lede: string; blocks: Block[]; link?: { label: string; href: string } }
+// `tone` is a palette token name, resolved against the active theme at render.
+interface Topic { title: string; kicker: string; tone: keyof Palette; image: string; lede: string; blocks: Block[]; link?: { label: string; href: string } }
 
 const TOPICS: Record<string, Topic> = {
   heritage: {
     title: "Heritage",
     kicker: "SANKOFA · GO BACK AND FETCH IT",
-    tone: C.green,
+    tone: "green",
     image: "/uploads/seed/castle-courtyard.jpg",
     lede: "Oguaa remembers. The Castle and the Door of No Return, the lawyers and journalists of the old capital, the country's oldest schools.",
     blocks: [], // data-driven from /api/history — see HeritageScreen below
@@ -27,11 +30,12 @@ const TOPICS: Record<string, Topic> = {
   culture: {
     title: "Culture",
     kicker: "FETU AFAHYE · THE 77 GODS",
-    tone: C.goldBrand,
+    tone: "goldBrand",
     image: "/uploads/seed/fetu-crowd.jpg",
     lede: "Oguaa celebrates. The festival, the durbar, the seven Asafo companies and the Traditional Council that binds them.",
     blocks: [
       { h: "Fetu Afahye", p: "The harvest-and-cleansing festival of the Oguaa Traditional Area climaxes on the first Saturday of September. 'Fetu' is the clearing of the dirt: a ban on drumming and noise precedes it, thanks are given to the 77 gods of Oguaa and to the sea, and the chiefs ride in palanquins under state umbrellas to the grand durbar. At Bakatue, on the Fosu Lagoon, the Omanhene casts a net three times — then the companies race canoes." },
+      // Real-world Asafo company flag colours — theme-independent by nature.
       { h: "The seven companies", items: [
         { label: "Bentsir — No. 1", colors: ["#A4161A"] },
         { label: "Anaafo — No. 2", colors: ["#1E4FA3", "#FBFBFB"] },
@@ -49,7 +53,7 @@ const TOPICS: Record<string, Topic> = {
   visit: {
     title: "Visit",
     kicker: "AKWAABA · YOU ARE WELCOME",
-    tone: C.teal,
+    tone: "teal",
     image: "/uploads/seed/kakum-canopy.jpg",
     lede: "Two hard contrasts in soft light: the bone-white Castle by the sea, the green hush of Kakum inland — and the town between them.",
     blocks: [
@@ -65,6 +69,8 @@ export default function Explore() {
   const { topic } = useLocalSearchParams<{ topic: string }>();
   const t = TOPICS[topic ?? ""];
   const { scrollY, onScroll } = useHeroParallax();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (!t) return <ErrorView message="Unknown topic" />;
   if (topic === "heritage") return <HeritageScreen topic={t} />;
 
@@ -72,7 +78,7 @@ export default function Explore() {
     <>
       <Stack.Screen options={{ title: t.title }} />
       <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <PhotoHero image={t.image} tone={t.tone} kicker={t.kicker} lede={t.lede} scrollY={scrollY} />
+        <PhotoHero image={t.image} tone={C[t.tone]} kicker={t.kicker} lede={t.lede} scrollY={scrollY} />
         <View style={s.body}>
           {t.blocks.map((b, i) => (
             <StaggerIn key={`${b.h ?? ""}-${i}`} index={i} style={{ marginTop: i === 0 ? 0 : 22 }}>
@@ -87,7 +93,7 @@ export default function Explore() {
                           {it.colors.map((c) => <View key={c} style={[s.colorDot, { backgroundColor: c }]} />)}
                         </View>
                       ) : (
-                        <Text style={[s.itemLabel, { color: t.tone }]}>{it.label}</Text>
+                        <Text style={[s.itemLabel, { color: C[t.tone] }]}>{it.label}</Text>
                       )}
                       <Text style={s.itemText}>{it.colors ? it.label : it.text}</Text>
                     </View>
@@ -112,6 +118,8 @@ export default function Explore() {
 function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
   const { data, error, loading } = useApi<HistoryView>(() => api.history(), "history");
   const { scrollY, onScroll } = useHeroParallax();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
 
@@ -119,14 +127,14 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
     <>
       <Stack.Screen options={{ title: t.title }} />
       <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <PhotoHero image={t.image} tone={t.tone} kicker={t.kicker} lede={t.lede} scrollY={scrollY} />
+        <PhotoHero image={t.image} tone={C[t.tone]} kicker={t.kicker} lede={t.lede} scrollY={scrollY} />
         <View style={s.body}>
           {/* Timeline — nkyinkyim: the path is twisted */}
           <Text style={s.h}>A timeline of Oguaa</Text>
           <View style={{ gap: 8, marginTop: 4 }}>
             {data.timeline.map((e, i) => (
               <StaggerIn key={e.id} index={i} style={s.itemRow}>
-                <Text style={[s.itemLabel, { color: t.tone }]}>{e.year}</Text>
+                <Text style={[s.itemLabel, { color: C[t.tone] }]}>{e.year}</Text>
                 <Text style={s.itemText}><Text style={{ fontWeight: "700" }}>{e.title}</Text>{e.summary ? ` — ${e.summary}` : ""}</Text>
               </StaggerIn>
             ))}
@@ -188,7 +196,7 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   body: { padding: 20 },
   h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },
   p: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },

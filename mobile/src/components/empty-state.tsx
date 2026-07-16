@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
-import { C, S } from "@/theme";
+import { S, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 
 /**
  * Shared empty state — a glyph inside a soft double-ring circle, a title, a
@@ -23,6 +25,8 @@ export function EmptyState({
   onAction?: () => void;
   compact?: boolean;
 }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (compact) {
     return (
       <View style={s.compactWrap}>
@@ -59,15 +63,15 @@ export function EmptyState({
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   wrap: { alignItems: "center", paddingVertical: 36, paddingHorizontal: 24 },
   ring: {
     padding: 10, borderRadius: 999, borderWidth: 1,
-    borderColor: "rgba(184,134,47,0.25)",
+    borderColor: withAlpha(C.goldBorder, 0.25),
   },
   circle: {
     width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(199,162,74,0.14)", borderWidth: 1, borderColor: "rgba(184,134,47,0.35)",
+    backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35,
   },
   glyph: { fontSize: 26, color: C.goldText },
   title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 16, textAlign: "center" },
@@ -78,7 +82,7 @@ const s = StyleSheet.create({
   compactWrap: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 4 },
   compactCircle: {
     width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(199,162,74,0.14)", borderWidth: 1, borderColor: "rgba(184,134,47,0.35)",
+    backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35,
   },
   compactGlyph: { fontSize: 16, color: C.goldText },
   compactTitle: { color: C.ink, fontSize: 13, fontWeight: "700" },

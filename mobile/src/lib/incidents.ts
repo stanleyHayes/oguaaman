@@ -1,4 +1,4 @@
-import { C } from "@/theme";
+import { LIGHT, type Palette } from "@/theme";
 import type { IncidentCategory, IncidentSeverity, IncidentStatus } from "./types";
 
 // Shared labels & palette for the safety (incident) screens. Severity colours
@@ -41,18 +41,31 @@ export const SEVERITY_LABEL: Record<IncidentSeverity, string> = Object.fromEntri
   INCIDENT_SEVERITIES.map((x) => [x.value, x.label]),
 ) as Record<IncidentSeverity, string>;
 
-/** Badge colour per severity (text + border; backgrounds stay on cream/sand). */
-export const SEVERITY_COLOR: Record<IncidentSeverity, string> = {
-  critical: C.maroon,
-  high: C.clayText,
-  medium: C.goldText,
-  low: C.tealText,
-};
+/** Badge colour per severity (text + border; backgrounds stay on cream/sand).
+    Takes the active palette (like `fillFor`) so the colours follow the theme. */
+export function severityColors(palette: Palette = LIGHT): Record<IncidentSeverity, string> {
+  return {
+    critical: palette.maroon,
+    high: palette.clayText,
+    medium: palette.goldText,
+    low: palette.tealText,
+  };
+}
 
-export const STATUS_COLOR: Record<IncidentStatus, string> = {
-  reported: C.goldText,
-  verified: C.tealText,
-  responding: C.clayText,
-  resolved: C.green,
-  recovered: C.green,
-};
+export function statusColors(palette: Palette = LIGHT): Record<IncidentStatus, string> {
+  return {
+    reported: palette.goldText,
+    verified: palette.tealText,
+    responding: palette.clayText,
+    resolved: palette.green,
+    recovered: palette.green,
+  };
+}
+
+/**
+ * @deprecated Static light-only maps kept for compatibility during the Phase D
+ * migration. Use `severityColors(C)` / `statusColors(C)` with the palette from
+ * `useTheme()` so badges follow the active theme.
+ */
+export const SEVERITY_COLOR: Record<IncidentSeverity, string> = severityColors();
+export const STATUS_COLOR: Record<IncidentStatus, string> = statusColors();

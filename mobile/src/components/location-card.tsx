@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
-import { C } from "@/theme";
+import { type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 
 const CAPE_COAST: [number, number] = [5.1053, -1.2466];
 const geoCache = new Map<string, [number, number]>();
@@ -11,6 +12,8 @@ function staticMap(lat: number, lng: number): string {
 }
 
 export function LocationCard({ address, query }: Readonly<{ address?: string; query?: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const rawQuery = useMemo(() => [query ?? address, "Cape Coast", "Ghana"].filter(Boolean).join(", "), [address, query]);
   const key = rawQuery.trim().toLowerCase();
   const cached = key ? geoCache.get(key) : undefined;
@@ -65,7 +68,7 @@ export function LocationCard({ address, query }: Readonly<{ address?: string; qu
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   card: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, overflow: "hidden", backgroundColor: C.cream },
   map: { width: "100%", height: 160, backgroundColor: C.sand },
   body: { padding: 14 },

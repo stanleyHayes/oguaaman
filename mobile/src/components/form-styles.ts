@@ -1,12 +1,16 @@
 import { StyleSheet } from "react-native";
-import { C, D, S } from "@/theme";
+import { D, LIGHT, S, type Palette } from "@/theme";
 
 /**
  * Shared styling for the contribution form screens (submit a listing, report an
  * incident, post a lost & found notice): a cream card on paper with paper inputs,
  * uppercase labels, and the centred gate screen for signed-out / done states.
+ *
+ * Phase D: theme-aware. Call `makeFormStyles(C)` with the active palette from
+ * useTheme() (memoized on [C] in the screen).
  */
-export const formStyles = StyleSheet.create({
+export const makeFormStyles = (C: Palette) => StyleSheet.create({
+  // shadowColor stays pure black — a shadow, theme-independent by design.
   formCard: { margin: 16, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   label: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 18, marginBottom: 8 },
   hint: { color: C.inkFaint, fontSize: 12, marginTop: -4, marginBottom: 8, lineHeight: 17 },
@@ -22,3 +26,10 @@ export const formStyles = StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
 });
+
+/**
+ * @deprecated Static light-palette snapshot kept for the screens that have not
+ * migrated to useTheme() yet (safety/report, lost-found/new). Migrated screens
+ * should build styles with `makeFormStyles(C)` instead.
+ */
+export const formStyles = makeFormStyles(LIGHT);

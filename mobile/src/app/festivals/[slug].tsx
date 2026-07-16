@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { FestivalView, Listing } from "@/lib/types";
-import { C, D, S, SI, fillFor } from "@/theme";
+import { D, S, SI, fillFor, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb, Pill } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
 
@@ -17,6 +19,8 @@ function fmtDate(iso?: string): string {
 const TODAY = new Date().toISOString().slice(0, 10);
 
 function ProgrammeList({ e }: Readonly<{ e: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const programme = e.details.programme ?? [];
   return (
     <View style={{ marginTop: 4 }}>
@@ -45,6 +49,8 @@ function ProgrammeList({ e }: Readonly<{ e: Listing }>) {
 }
 
 export default function Festival() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<FestivalView>(() => api.festival(slug), `festival:${slug}`);
   if (loading) return <Loading />;
@@ -98,10 +104,10 @@ export default function Festival() {
   );
 }
 
-const s = StyleSheet.create({
-  hero: { backgroundColor: fillFor("festival"), height: 210, justifyContent: "flex-end" },
-  heroShade: { backgroundColor: "rgba(12,44,31,0.72)", paddingHorizontal: 20, paddingVertical: 20 },
-  heroKicker: { color: "rgba(246,241,231,0.85)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+const makeStyles = (C: Palette) => StyleSheet.create({
+  hero: { backgroundColor: fillFor("festival", C), height: 210, justifyContent: "flex-end" },
+  heroShade: { backgroundColor: C.heroScrim, paddingHorizontal: 20, paddingVertical: 20 },
+  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 4 },
   heroTagline: { color: C.gold, fontSize: 14, marginTop: 6, lineHeight: 20 },
   body: { padding: 20 },

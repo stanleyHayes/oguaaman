@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
@@ -6,7 +7,8 @@ import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HomeData, Listing, NewsArticle } from "@/lib/types";
-import { C, D, S, SI, initials } from "@/theme";
+import { D, S, SI, initials, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Mark, Pill, Thumb } from "@/ui";
 import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { useNavDrawer } from "@/components/nav-drawer";
@@ -26,6 +28,8 @@ function featuredRoute(l: Listing): string {
 
 // Paid/editorial featured placements (spec §8.14) — quietly skipped when empty.
 function FeaturedRow() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data } = useApi<Listing[]>(() => api.featured(), "home:featured");
   const items = (data ?? []).slice(0, 6);
   if (items.length === 0) return null;
@@ -49,6 +53,8 @@ function FeaturedRow() {
 
 // Latest news headlines — the re-engagement strip (→ /news).
 function NewsStrip() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data } = useApi<NewsArticle[]>(() => api.news(), "home:news");
   const items = (data ?? []).slice(0, 3);
   if (items.length === 0) return null;
@@ -80,6 +86,8 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { scrollY, onScroll } = useHeroParallax();
   const { open } = useNavDrawer();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading } = useApi<HomeData>(() => api.home(), "home");
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
@@ -221,17 +229,19 @@ export default function Home() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingBottom: 24, overflow: "hidden" },
-  heroScrim: { backgroundColor: "rgba(12,44,31,0.72)" },
+  heroScrim: { backgroundColor: C.heroScrim },
   menuGlyph: { color: C.cream, fontSize: 20, fontWeight: "700" },
   eyebrow: { color: C.gold, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   heroTitle: { color: C.cream, ...D(600), fontSize: 44, marginTop: 10 },
-  heroSub: { color: "rgba(246,241,231,0.85)", fontSize: 15, lineHeight: 22, marginTop: 8 },
+  heroSub: { color: C.onDarkText85, fontSize: 15, lineHeight: 22, marginTop: 8 },
+  // On-dark hairline at 0.12 — no palette token carries this alpha, and the
+  // hero stays dark in both themes, so the literal is effectively theme-proof.
   stats: { flexDirection: "row", marginTop: 20, borderTopWidth: 1, borderTopColor: "rgba(246,241,231,0.12)", paddingTop: 14 },
   stat: { flex: 1, alignItems: "center" },
   statNum: { color: C.gold, ...S(700), fontSize: 24 },
-  statLbl: { color: "rgba(246,241,231,0.6)", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 },
+  statLbl: { color: C.onDarkText60, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 },
   section: { paddingHorizontal: 20, paddingTop: 22 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 10 },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

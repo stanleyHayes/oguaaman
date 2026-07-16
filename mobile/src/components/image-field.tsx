@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { T as Text, TI as TextInput } from "@/components/typography";
-import { C } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
+import { type Palette } from "@/theme";
 import { cldCover } from "@/lib/cloudinary";
 import { API_BASE } from "@/lib/api";
 import { getToken } from "@/lib/storage";
@@ -48,6 +49,8 @@ async function uploadImage(uri: string, name?: string, type?: string): Promise<s
 export function ImageField({ value, onChange }: Readonly<{ value: string; onChange: (url: string) => void }>) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
 
   async function pick() {
     setError("");
@@ -115,7 +118,7 @@ export function ImageField({ value, onChange }: Readonly<{ value: string; onChan
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 14 },
   thumb: { width: 84, height: 84, borderRadius: 12, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream },
   drop: { borderWidth: 2, borderStyle: "dashed", borderColor: C.sand, backgroundColor: C.cream, borderRadius: 12, paddingVertical: 28, alignItems: "center", justifyContent: "center", gap: 6 },

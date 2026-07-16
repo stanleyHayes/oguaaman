@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { Image, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
+import { useTheme } from "@/lib/theme-context";
 import type { NewsArticle } from "@/lib/types";
-import { C, D, SI } from "@/theme";
+import { D, SI, withAlpha, type Palette } from "@/theme";
 import { Loading, ErrorView, Markdown } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView } from "@/components/anim";
@@ -20,6 +22,8 @@ function newsDate(a: NewsArticle): string {
 export default function Article() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<NewsArticle>(() => api.newsArticle(slug), "news:" + slug);
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
 
@@ -29,9 +33,9 @@ export default function Article() {
         {data.coverImageUrl ? (
           <Image source={{ uri: cldCover(data.coverImageUrl, 800) }} resizeMode="cover" style={StyleSheet.absoluteFill} />
         ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: data.coverColor ?? "#123F2D" }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: data.coverColor ?? C.green }]} />
         )}
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(12,44,31,0.68)" }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(C.green900, 0.68) }]} />
         <View style={s.heroInner}>
           <Text style={s.kicker}>The Oguaa Newsroom</Text>
           <Text style={s.title}>{data.title}</Text>
@@ -51,14 +55,14 @@ export default function Article() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { minHeight: 260, justifyContent: "flex-end" },
   heroInner: { padding: 20, paddingBottom: 24 },
   kicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
   title: { color: C.cream, ...D(700), fontSize: 30, lineHeight: 38, marginTop: 8 },
   bylineRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
   bylineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.gold },
-  byline: { color: "rgba(246,241,231,0.85)", fontSize: 13 },
+  byline: { color: C.onDarkText85, fontSize: 13 },
   body: { padding: 20 },
   summary: { ...SI(), fontSize: 18, lineHeight: 27, color: C.inkMuted },
   divider: { height: 1, backgroundColor: C.sand, marginVertical: 20 },

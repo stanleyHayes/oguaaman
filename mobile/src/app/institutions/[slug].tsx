@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -7,14 +7,17 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { InstitutionView, Listing, MediaAsset, ProfileSection, SectionItem, SubEntity } from "@/lib/types";
-import { C, D, DI, S, SI, initials } from "@/theme";
+import { D, DI, S, SI, initials, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb, Markdown } from "@/ui";
 import { cldCover, cld } from "@/lib/cloudinary";
 import { HeroParallax, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 
 // Section accents map to the heritage palette (never AI purple).
-const TONE: Record<string, string> = { green: C.green, clay: C.clay, gold: C.goldBrand, maroon: C.maroon, teal: C.teal };
-const toneColor = (t?: string) => TONE[t ?? "green"] ?? C.green;
+const toneColor = (C: Palette, t?: string) => {
+  const tone: Record<string, string> = { green: C.green, clay: C.clay, gold: C.goldBrand, maroon: C.maroon, teal: C.teal };
+  return tone[t ?? "green"] ?? C.green;
+};
 
 // Only open web-safe schemes (the backend already sanitises stored URLs).
 function openURL(url?: string) {
@@ -23,6 +26,8 @@ function openURL(url?: string) {
 }
 
 export default function Institution() {
+  const { C } = useTheme();
+  const s = useStyles();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<InstitutionView>(() => api.institution(slug), "inst:" + slug);
   const { scrollY, onScroll } = useHeroParallax();
@@ -117,6 +122,7 @@ export default function Institution() {
 // "Claim this institution" — a member's request to manage the official page
 // (spec §8.13). A steward reviews it; editing itself stays on the desktop admin.
 function OfficialEventCard({ event }: Readonly<{ event: Listing }>) {
+  const s = useStyles();
   const dateStr = event.details.startsAt ? new Date(event.details.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
   return (
     <Pressable style={s.eventCard} onPress={() => router.push(`/events/${event.slug}` as never)}>      <Text style={s.eventDate}>{dateStr}</Text>
@@ -126,6 +132,8 @@ function OfficialEventCard({ event }: Readonly<{ event: Listing }>) {
 }
 
 function ClaimPanel({ slug, orgName }: Readonly<{ slug: string; orgName: string }>) {
+  const { C } = useTheme();
+  const s = useStyles();
   const { member } = useAuth();
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState("");
@@ -184,17 +192,21 @@ function ClaimPanel({ slug, orgName }: Readonly<{ slug: string; orgName: string 
   );
 }
 
-function SecTitle({ children, color = C.ink }: Readonly<{ children: ReactNode; color?: string }>) {
+function SecTitle({ children, color }: Readonly<{ children: ReactNode; color?: string }>) {
+  const { C } = useTheme();
+  const s = useStyles();
   return (
     <View style={s.secTitleRow}>
-      <Text style={[s.secTitle, { color }]}>{children}</Text>
+      <Text style={[s.secTitle, { color: color ?? C.ink }]}>{children}</Text>
       <View style={s.secRule} />
     </View>
   );
 }
 
 function SectionView({ section, index = 0 }: Readonly<{ section: ProfileSection; index?: number }>) {
-  const t = toneColor(section.tone);
+  const { C } = useTheme();
+  const s = useStyles();
+  const t = toneColor(C, section.tone);
   const items = section.items ?? [];
   const media = section.media ?? [];
   const showTitle = section.type !== "quote" && section.type !== "cta" && section.type !== "divider" && section.type !== "hero";
@@ -230,6 +242,8 @@ function SectionView({ section, index = 0 }: Readonly<{ section: ProfileSection;
 }
 
 function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
+  const { C } = useTheme();
+  const s = useStyles();
   const items = media.filter((m) => m.url || m.caption);
   if (!items.length) return null;
   return (
@@ -247,6 +261,7 @@ function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
 }
 
 function StatsBlock({ items, color }: Readonly<{ items: SectionItem[]; color: string }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.value || i.label);
   if (!list.length) return null;
   return (
@@ -262,6 +277,7 @@ function StatsBlock({ items, color }: Readonly<{ items: SectionItem[]; color: st
 }
 
 function TeamBlock({ items }: Readonly<{ items: SectionItem[] }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.value || i.label);
   if (!list.length) return null;
   return (
@@ -281,6 +297,7 @@ function TeamBlock({ items }: Readonly<{ items: SectionItem[] }>) {
 }
 
 function TimelineBlock({ items, color }: Readonly<{ items: SectionItem[]; color: string }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.label || i.value || i.detail);
   if (!list.length) return null;
   return (
@@ -300,6 +317,7 @@ function TimelineBlock({ items, color }: Readonly<{ items: SectionItem[]; color:
 }
 
 function FaqBlock({ items }: Readonly<{ items: SectionItem[] }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.label || i.value);
   if (!list.length) return null;
   return (
@@ -315,6 +333,7 @@ function FaqBlock({ items }: Readonly<{ items: SectionItem[] }>) {
 }
 
 function DocsBlock({ items }: Readonly<{ items: SectionItem[] }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.label || i.url);
   if (!list.length) return null;
   return (
@@ -333,6 +352,7 @@ function DocsBlock({ items }: Readonly<{ items: SectionItem[] }>) {
 }
 
 function QuoteBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
+  const s = useStyles();
   if (!section.body?.trim()) return null;
   return (
     <View style={[s.quote, { borderLeftColor: color }]}>
@@ -343,6 +363,7 @@ function QuoteBlock({ section, color }: Readonly<{ section: ProfileSection; colo
 }
 
 function CtaBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
+  const s = useStyles();
   const buttons = (section.items ?? []).filter((i) => i.label);
   if (!section.title && !section.body && !buttons.length) return null;
   return (
@@ -363,6 +384,7 @@ function CtaBlock({ section, color }: Readonly<{ section: ProfileSection; color:
 }
 
 function LogosBlock({ items }: Readonly<{ items: SectionItem[] }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.image || i.label);
   if (!list.length) return null;
   return (
@@ -378,6 +400,7 @@ function LogosBlock({ items }: Readonly<{ items: SectionItem[] }>) {
 }
 
 function GroupsBlock({ groups, color }: Readonly<{ groups: SubEntity[]; color: string }>) {
+  const s = useStyles();
   const list = groups.filter((g) => g.name);
   if (!list.length) return null;
   return (
@@ -418,6 +441,8 @@ function GroupsBlock({ groups, color }: Readonly<{ groups: SubEntity[]; color: s
 }
 
 function HeroBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
+  const { C } = useTheme();
+  const s = useStyles();
   const bg = section.media?.[0]?.url;
   const buttons = (section.items ?? []).filter((i) => i.label);
   return (
@@ -430,7 +455,7 @@ function HeroBlock({ section, color }: Readonly<{ section: ProfileSection; color
       ) : null}
       <View style={s.heroInner}>
         {section.title ? <Text style={[s.heroTitle, { color: bg ? C.cream : C.ink }]}>{section.title}</Text> : null}
-        {section.body ? <Text style={[s.heroBody, { color: bg ? "rgba(246,241,231,0.85)" : C.inkMuted }]}>{section.body}</Text> : null}
+        {section.body ? <Text style={[s.heroBody, { color: bg ? C.onDarkText85 : C.inkMuted }]}>{section.body}</Text> : null}
         {buttons.length ? (
           <View style={s.heroButtons}>
             {buttons.map((b, i) => {
@@ -450,6 +475,7 @@ function HeroBlock({ section, color }: Readonly<{ section: ProfileSection; color
 }
 
 function TestimonialsBlock({ items, color }: Readonly<{ items: SectionItem[]; color: string }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.value || i.label);
   if (!list.length) return null;
   return (
@@ -473,6 +499,7 @@ function TestimonialsBlock({ items, color }: Readonly<{ items: SectionItem[]; co
 }
 
 function ContactBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
+  const s = useStyles();
   const rows = (section.items ?? []).filter((i) => i.label || i.value);
   if (!section.body?.trim() && !rows.length) return null;
   return (
@@ -498,6 +525,7 @@ function ContactBlock({ section, color }: Readonly<{ section: ProfileSection; co
 }
 
 function MenuBlock({ items }: Readonly<{ items: SectionItem[] }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.label || i.value);
   if (!list.length) return null;
   return (
@@ -516,6 +544,7 @@ function MenuBlock({ items }: Readonly<{ items: SectionItem[] }>) {
 }
 
 function ScheduleBlock({ items, color }: Readonly<{ items: SectionItem[]; color: string }>) {
+  const s = useStyles();
   const list = items.filter((i) => i.label || i.value);
   if (!list.length) return null;
   return (
@@ -534,6 +563,7 @@ function ScheduleBlock({ items, color }: Readonly<{ items: SectionItem[]; color:
 }
 
 function MapBlock({ section, color }: Readonly<{ section: ProfileSection; color: string }>) {
+  const s = useStyles();
   const addr = section.body?.trim();
   if (!addr) return null;
   const href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
@@ -550,14 +580,21 @@ function MapBlock({ section, color }: Readonly<{ section: ProfileSection; color:
   );
 }
 
-const s = StyleSheet.create({
+function useStyles() {
+  const { C } = useTheme();
+  return useMemo(() => makeStyles(C), [C]);
+}
+
+const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { alignItems: "center", paddingHorizontal: 20, paddingVertical: 28 },
+  // Black/white overlays sit on the institution's own house colour, so they
+  // are theme-independent by design (like a photo scrim).
   crest: { width: 84, height: 84, borderRadius: 42, backgroundColor: "#0003" },
   crestFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FFFFFF44" },
   crestInit: { ...S(700), fontSize: 28, color: C.cream },
   heroName: { ...D(700), fontSize: 26, color: C.cream, textAlign: "center", marginTop: 14 },
   heroMotto: { ...DI(), fontSize: 15, color: C.gold, textAlign: "center", marginTop: 6 },
-  badge: { marginTop: 12, borderWidth: 1, borderColor: "#C7A24A88", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
+  badge: { marginTop: 12, borderWidth: 1, borderColor: withAlpha(C.gold, 0x88 / 255), borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
   badgeText: { color: C.gold, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
 
   facts: { flexDirection: "row", backgroundColor: C.cream, borderBottomWidth: 1, borderBottomColor: C.sand },
@@ -654,7 +691,7 @@ const s = StyleSheet.create({
   heroTitle: { ...D(700), fontSize: 26, textAlign: "center" },
   heroBody: { fontSize: 15, lineHeight: 22, textAlign: "center", marginTop: 8 },
   heroButtons: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 18 },
-  heroBtnLight: { borderWidth: 1, borderColor: "rgba(246,241,231,0.5)" },
+  heroBtnLight: { borderWidth: 1, borderColor: C.onDarkText50 },
   heroBtnLightText: { color: C.cream, fontWeight: "700", fontSize: 13 },
 
   testimCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 16 },

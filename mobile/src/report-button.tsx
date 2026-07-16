@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
-import { C } from "@/theme";
+import { type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 
 const REASONS: { value: string; label: string }[] = [
   { value: "inaccurate", label: "Not accurate" },
@@ -23,6 +24,8 @@ function bereavementFirst(a: { value: string }, b: { value: string }) {
  * `memorial` floats the bereavement reason to the top for In Memoriam screens.
  */
 export function ReportButton({ listingId, memorial = false }: Readonly<{ listingId: string; memorial?: boolean }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState(memorial ? "bereavement" : "inaccurate");
   const [detail, setDetail] = useState("");
@@ -81,7 +84,7 @@ export function ReportButton({ listingId, memorial = false }: Readonly<{ listing
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   trigger: { alignSelf: "center", paddingVertical: 8 },
   triggerText: { color: C.inkFaint, fontSize: 13, fontWeight: "600" },
   panel: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12, padding: 16, marginTop: 8 },

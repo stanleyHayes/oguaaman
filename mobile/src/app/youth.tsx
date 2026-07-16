@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
+import { useTheme } from "@/lib/theme-context";
 import type { Listing } from "@/lib/types";
-import { C, S } from "@/theme";
+import { S, type Palette } from "@/theme";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 
@@ -48,6 +49,8 @@ function initials(name: string): string {
 }
 
 export default function Youth() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [filter, setFilter] = useState<KindFilter>("all");
   const { data, error, loading, refreshing, reload } = useApi<YouthData>(
     () =>
@@ -118,6 +121,8 @@ export default function Youth() {
 }
 
 function TalentCard({ person: p }: Readonly<{ person: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const d = p.details;
   return (
     <Pressable onPress={() => router.push(`/people/${p.slug}` as never)} style={s.talentCard}>
@@ -132,6 +137,8 @@ function TalentCard({ person: p }: Readonly<{ person: Listing }>) {
 }
 
 function Chip({ label, active, onSelect }: Readonly<{ label: string; active: boolean; onSelect: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   return (
     <Pressable onPress={onSelect} style={[s.chip, active && s.chipOn]}>
       <Text style={[s.chipText, active && s.chipTextOn]}>{label}</Text>
@@ -140,6 +147,8 @@ function Chip({ label, active, onSelect }: Readonly<{ label: string; active: boo
 }
 
 function OppCard({ opp: o }: Readonly<{ opp: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const d = o.details;
   const kind = d.kind ?? "";
   return (
@@ -171,7 +180,7 @@ function OppCard({ opp: o }: Readonly<{ opp: Listing }>) {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   cta: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
   ctaText: { color: C.cream, fontWeight: "700", fontSize: 15 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700" },

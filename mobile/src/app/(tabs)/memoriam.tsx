@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, D, S, SI, initials } from "@/theme";
+import { D, S, SI, initials, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
@@ -13,6 +15,8 @@ function lifeDates(bornYear?: number, diedDate?: string) {
 }
 
 export default function Memoriam() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading } = useApi<Listing[]>(() => api.memorials(), "memorials");
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
@@ -47,11 +51,13 @@ export default function Memoriam() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   title: { ...D(600), fontSize: 34, color: C.ink, textAlign: "center" },
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10 },
   card: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 20, alignItems: "center", marginBottom: 14 },
-  portrait: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#EADFC4", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
+  // Was the hand-picked parchment "#EADFC4"; goldTint14 is the semantic token
+  // for a soft gold wash behind decorative circles, and follows the theme.
+  portrait: { width: 72, height: 72, borderRadius: 36, backgroundColor: C.goldTint14, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
   portraitInit: { ...S(600), fontSize: 24, color: C.green },
   name: { ...S(600), fontSize: 22, color: C.ink, marginTop: 12, textAlign: "center" },
   dates: { color: C.goldText, fontSize: 12, letterSpacing: 2, marginTop: 4 },

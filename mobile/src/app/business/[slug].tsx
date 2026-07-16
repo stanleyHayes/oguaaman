@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Linking, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -8,7 +8,8 @@ import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing, Subscription } from "@/lib/types";
-import { C, D, S, initials } from "@/theme";
+import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { RevealView } from "@/components/anim";
@@ -38,6 +39,8 @@ export default function Business() {
 // Owner-only Supporter subscription (GH₵ 50/month) — Paystack handoff with a
 // manual verify step, mirroring the projects pledge flow.
 function SupportCard({ business, slug, reload }: Readonly<{ business: Listing; slug: string; reload: () => void }>) {
+  const { C } = useTheme();
+  const sub = useMemo(() => makeSubStyles(C), [C]);
   const { member } = useAuth();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -101,6 +104,8 @@ function SupportCard({ business, slug, reload }: Readonly<{ business: Listing; s
 }
 
 function SupportThanks({ business, confirmed }: Readonly<{ business: Listing; confirmed: Subscription }>) {
+  const { C } = useTheme();
+  const sub = useMemo(() => makeSubStyles(C), [C]);
   return (
     <View style={sub.thanks}>
       <Text style={sub.thanksTitle}>Medaase! 🎉</Text>
@@ -113,6 +118,8 @@ function SupportThanks({ business, confirmed }: Readonly<{ business: Listing; co
 }
 
 function SupportVerify({ err, busy, verify }: Readonly<{ err: string; busy: boolean; verify: () => void }>) {
+  const { C } = useTheme();
+  const sub = useMemo(() => makeSubStyles(C), [C]);
   return (
     <>
       <Text style={[sub.body, { marginTop: 12 }]}>Complete the payment on the Paystack page that opened, then come back and verify.</Text>
@@ -125,6 +132,8 @@ function SupportVerify({ err, busy, verify }: Readonly<{ err: string; busy: bool
 }
 
 function SupportSubscribe({ business, err, busy, subscribe }: Readonly<{ business: Listing; err: string; busy: boolean; subscribe: () => void }>) {
+  const { C } = useTheme();
+  const sub = useMemo(() => makeSubStyles(C), [C]);
   const label = business.supporter ? "Renew — add another month" : "Subscribe with Paystack";
   return (
     <>
@@ -138,6 +147,8 @@ function SupportSubscribe({ business, err, busy, subscribe }: Readonly<{ busines
 }
 
 function BusinessDetail({ data, slug, reload }: Readonly<{ data: Listing; slug: string; reload: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { member } = useAuth();
   const d = data.details;
   const directions = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([data.title, d.address, "Cape Coast", "Ghana"].filter(Boolean).join(", "))}`;
@@ -213,8 +224,8 @@ function BusinessDetail({ data, slug, reload }: Readonly<{ data: Listing; slug: 
   );
 }
 
-const sub = StyleSheet.create({
-  card: { marginTop: 22, backgroundColor: "rgba(199,162,74,0.08)", borderWidth: 1, borderColor: C.gold, borderRadius: 14, padding: 16 },
+const makeSubStyles = (C: Palette) => StyleSheet.create({
+  card: { marginTop: 22, backgroundColor: withAlpha(C.gold, 0.08), borderWidth: 1, borderColor: C.gold, borderRadius: 14, padding: 16 },
   kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 4 },
   body: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
@@ -223,12 +234,12 @@ const sub = StyleSheet.create({
   btn: { backgroundColor: C.goldBrand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
   btnText: { color: C.green900, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
-  thanks: { marginTop: 12, backgroundColor: "rgba(18,63,45,0.06)", borderWidth: 1, borderColor: "rgba(18,63,45,0.3)", borderRadius: 12, padding: 14 },
+  thanks: { marginTop: 12, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 14 },
   thanksTitle: { ...S(700), fontSize: 16, color: C.green },
   thanksBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
 });
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   cover: { width: "100%", height: 180, alignItems: "center", justifyContent: "center" },
   coverInit: { color: C.cream, ...S(700), fontSize: 40 },
   body: { padding: 20 },

@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme-context";
 import type { IncidentCategory, IncidentSeverity } from "@/lib/types";
-import { INCIDENT_CATEGORIES, INCIDENT_SEVERITIES, SEVERITY_COLOR } from "@/lib/incidents";
+import { INCIDENT_CATEGORIES, INCIDENT_SEVERITIES, severityColors } from "@/lib/incidents";
 import { HeroBand } from "@/ui";
 import { formStyles } from "@/components/form-styles";
-import { C } from "@/theme";
+import { type Palette } from "@/theme";
 
 export default function ReportIncident() {
   const { member } = useAuth();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const sevColors = severityColors(C);
   const [category, setCategory] = useState<IncidentCategory>("flood");
   const [severity, setSeverity] = useState<IncidentSeverity>("medium");
   const [title, setTitle] = useState("");
@@ -74,7 +78,7 @@ export default function ReportIncident() {
       <Text style={s.hint}>Critical and high alert every curator immediately.</Text>
       <View style={s.chips}>
         {INCIDENT_SEVERITIES.map((sv) => {
-          const col = SEVERITY_COLOR[sv.value];
+          const col = sevColors[sv.value];
           const on = severity === sv.value;
           return (
             <Pressable key={sv.value} onPress={() => setSeverity(sv.value)} style={[s.chip, on && { borderColor: col, backgroundColor: col }]}>
@@ -118,11 +122,11 @@ export default function ReportIncident() {
   );
 }
 
-const s = {
+const makeStyles = (C: Palette) => ({
   ...formStyles,
   ...StyleSheet.create({
     chipOn: { borderColor: C.green, backgroundColor: C.green },
     chipTextOn: { color: C.cream },
     btn: { backgroundColor: C.maroon, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
   }),
-};
+});

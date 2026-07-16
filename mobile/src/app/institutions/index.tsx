@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Organization } from "@/lib/types";
-import { C, S, initials } from "@/theme";
+import { S, initials, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { StaggerIn } from "@/components/anim";
@@ -19,6 +21,8 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 export default function Institutions() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading, refreshing, reload } = useApi<Organization[]>(() => api.institutions(), "institutions");
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
@@ -68,7 +72,7 @@ export default function Institutions() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
   crest: { width: 52, height: 52, borderRadius: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper },
   crestInit: { color: C.cream, ...S(700), fontSize: 18 },

@@ -3,7 +3,8 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { C, D, S, SI } from "@/theme";
+import { D, S, SI, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Mark } from "@/ui";
 
 type NavItem = { label: string; blurb: string; href: string };
@@ -74,6 +75,8 @@ export function NavDrawerProvider({ children }: Readonly<{ children: ReactNode }
 // animations misfire on web once the panel scrolls. The slide-in is the
 // drawer's one motion; content renders still.
 function Drawer({ onClose }: Readonly<{ onClose: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const reduced = useReducedMotion();
   const progress = useSharedValue(0);
 
@@ -136,9 +139,9 @@ function Drawer({ onClose }: Readonly<{ onClose: () => void }>) {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   root: { ...StyleSheet.absoluteFill, zIndex: 100, elevation: 100 },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(12,44,31,0.55)" },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: C.heroScrimLow },
   panel: {
     position: "absolute",
     top: 0,

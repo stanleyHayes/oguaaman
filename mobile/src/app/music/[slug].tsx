@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Linking, StyleSheet, View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -6,7 +7,8 @@ import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { C, D, S, fillFor, initials } from "@/theme";
+import { D, S, fillFor, initials, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
@@ -14,6 +16,8 @@ import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 // "Reps <school>" — resolves the artist's first school affiliation to its
 // institution page, hiding itself if the lookup fails (mirrors the web page).
 function SchoolLink({ orgId }: Readonly<{ orgId: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data } = useApi(() => api.institution(orgId), `artist-school:${orgId}`);
   if (!data) return null;
   return (
@@ -27,6 +31,8 @@ export default function Artist() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<Listing>(() => api.artist(slug), `artist:${slug}`);
   const { scrollY, onScroll } = useHeroParallax();
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   useRecordView(data?.id);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
@@ -34,7 +40,7 @@ export default function Artist() {
 
   return (
     <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
-      <View style={[s.head, { backgroundColor: fillFor(data.slug) }]}>
+      <View style={[s.head, { backgroundColor: fillFor(data.slug, C) }]}>
         <HeroParallax scrollY={scrollY} style={{ width: "100%", alignItems: "center" }}>
           <Thumb seed={data.slug} src={data.coverImageUrl} label={initials(d.actName ?? data.title)} style={s.thumb} labelStyle={s.thumbInit} />
 
@@ -85,13 +91,14 @@ export default function Artist() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   head: { alignItems: "center", paddingVertical: 28, paddingHorizontal: 20 },
+  // Pure-black tint over the fillFor() band — theme-independent by design.
   thumb: { width: 96, height: 96, borderRadius: 16, backgroundColor: "rgba(0,0,0,0.18)", alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, ...S(700), fontSize: 36 },
   name: { color: C.cream, ...D(700), fontSize: 32, marginTop: 14, textAlign: "center" },
   genres: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10, justifyContent: "center" },
-  genrePill: { borderWidth: 1, borderColor: "rgba(246,241,231,0.5)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  genrePill: { borderWidth: 1, borderColor: C.onDarkText50, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   genrePillText: { color: C.cream, fontSize: 12 },
   body: { padding: 20 },
   kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },

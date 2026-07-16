@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
@@ -6,7 +6,8 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Incident, IncidentCategory } from "@/lib/types";
 import { CATEGORY_LABEL, INCIDENT_CATEGORIES, INCIDENT_STATUSES, SEVERITY_COLOR, STATUS_COLOR, STATUS_LABEL } from "@/lib/incidents";
-import { C, S } from "@/theme";
+import { S, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 
@@ -17,6 +18,8 @@ function fmtDate(iso?: string): string {
 }
 
 function IncidentCard({ i }: Readonly<{ i: Incident }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const sev = SEVERITY_COLOR[i.details.severity] ?? C.inkMuted;
   const st = STATUS_COLOR[i.details.incidentStatus] ?? C.inkMuted;
   return (
@@ -39,6 +42,8 @@ function IncidentCard({ i }: Readonly<{ i: Incident }>) {
 }
 
 export default function Safety() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const [cat, setCat] = useState<IncidentCategory | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const { data, error, loading, refreshing, reload } = useApi<Incident[]>(
@@ -107,7 +112,7 @@ export default function Safety() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   cta: { backgroundColor: C.maroon, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
   ctaText: { color: C.cream, fontWeight: "700", fontSize: 15 },

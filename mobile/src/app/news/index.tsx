@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { NewsArticle } from "@/lib/types";
-import { C, D, S } from "@/theme";
+import { D, S, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn } from "@/components/anim";
@@ -19,13 +21,16 @@ function newsDate(a: NewsArticle): string {
 }
 
 function Cover({ article: a, height }: Readonly<{ article: NewsArticle; height: number }>) {
+  const { C } = useTheme();
   if (a.coverImageUrl) {
     return <Image source={{ uri: cldCover(mediaUrl(a.coverImageUrl), 600) }} resizeMode="cover" style={{ width: "100%", height, backgroundColor: C.sand }} />;
   }
-  return <View style={{ width: "100%", height: Math.max(10, height * 0.35), backgroundColor: a.coverColor ?? "#123F2D" }} />;
+  return <View style={{ width: "100%", height: Math.max(10, height * 0.35), backgroundColor: a.coverColor ?? C.green }} />;
 }
 
 export default function News() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   const { data, error, loading } = useApi<NewsArticle[]>(() => api.news(), "news");
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
@@ -82,11 +87,17 @@ export default function News() {
   );
 }
 
-const s = StyleSheet.create({
+// On-dark text at a bespoke alpha (no palette token at this opacity): re-alpha
+// the palette's on-dark text base so light mode stays pixel-identical
+// (cream-based) and dark mode keeps light-on-dark text (dark-ink-based).
+const onDarkText = (C: Palette, alpha: number) => C.onDarkText85.replace(/[^,]+\)$/, `${alpha})`);
+
+const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 6 },
-  heroLede: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, marginTop: 6 },
+  heroLede: { color: onDarkText(C, 0.8), fontSize: 14, lineHeight: 20, marginTop: 6 },
+  // shadowColor stays pure black — shadows are theme-independent.
   featured: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   featuredBody: { padding: 16 },
   featuredKicker: { color: C.goldText, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },

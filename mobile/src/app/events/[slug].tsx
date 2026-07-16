@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -8,7 +8,8 @@ import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { EventView, Ticket, TicketTierView } from "@/lib/types";
-import { C, D, S, initials } from "@/theme";
+import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb, Pill } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { cedis } from "../projects/index";
@@ -31,6 +32,8 @@ export default function EventDetail() {
 }
 
 function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string; reload: () => void }>) {
+  const { C } = useTheme();
+  const s = useStyles();
   const { event } = view;
   const d = event.details;
 
@@ -144,6 +147,7 @@ function useTicketFlow(slug: string, tiers: TicketTierView[], reload: () => void
 }
 
 function TicketSection({ slug, tiers, reload }: Readonly<{ slug: string; tiers: TicketTierView[]; reload: () => void }>) {
+  const s = useStyles();
   const flow = useTicketFlow(slug, tiers, reload);
   const tier = tiers[flow.selected];
   const maxQty = tier && tier.remaining !== null ? Math.max(1, Math.min(10, tier.remaining)) : 10;
@@ -160,6 +164,8 @@ function TicketSection({ slug, tiers, reload }: Readonly<{ slug: string; tiers: 
 type TicketFlow = ReturnType<typeof useTicketFlow>;
 
 function TicketBody({ tiers, flow, maxQty, soldOut }: Readonly<{ tiers: TicketTierView[]; flow: TicketFlow; maxQty: number; soldOut: boolean }>) {
+  const { C } = useTheme();
+  const s = useStyles();
   if (flow.confirmed) return <TicketThanks confirmed={flow.confirmed} />;
   if (flow.pendingRef) return <TicketVerify err={flow.err} busy={flow.busy} verify={flow.verify} />;
   if (tiers.length === 0) {
@@ -191,6 +197,8 @@ function TicketPurchase({ tiers, selected, qty, busy, err, signedIn, maxQty, sol
   signedIn: boolean; maxQty: number; soldOut: boolean;
   onSelect: (i: number) => void; onQty: (fn: (q: number) => number) => void; onBuy: () => void;
 }>) {
+  const { C } = useTheme();
+  const s = useStyles();
   const tier = tiers[selected];
   let buyLabel = signedIn ? "Buy with Paystack" : "Sign in to buy";
   if (busy) buyLabel = "Starting…";
@@ -226,6 +234,7 @@ function TicketPurchase({ tiers, selected, qty, busy, err, signedIn, maxQty, sol
 }
 
 function TicketThanks({ confirmed }: Readonly<{ confirmed: Ticket }>) {
+  const s = useStyles();
   return (
     <View style={s.thanks}>
       <Text style={s.thanksTitle}>Medaase! 🎟️</Text>
@@ -243,6 +252,7 @@ function TicketThanks({ confirmed }: Readonly<{ confirmed: Ticket }>) {
 }
 
 function TicketVerify({ err, busy, verify }: Readonly<{ err: string; busy: boolean; verify: () => void }>) {
+  const s = useStyles();
   return (
     <View style={s.ticketBox}>
       <Text style={s.boxLabel}>FINISH IN YOUR BROWSER</Text>
@@ -256,6 +266,7 @@ function TicketVerify({ err, busy, verify }: Readonly<{ err: string; busy: boole
 }
 
 function TierRow({ tier: t, on, onPress }: Readonly<{ tier: TicketTierView; on: boolean; onPress: () => void }>) {
+  const s = useStyles();
   const out = t.remaining !== null && t.remaining <= 0;
   const remainingText = out ? "Sold out" : `${t.remaining} left`;
   return (
@@ -273,7 +284,12 @@ function TierRow({ tier: t, on, onPress }: Readonly<{ tier: TicketTierView; on: 
   );
 }
 
-const s = StyleSheet.create({
+function useStyles() {
+  const { C } = useTheme();
+  return useMemo(() => makeStyles(C), [C]);
+}
+
+const makeStyles = (C: Palette) => StyleSheet.create({
   cover: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
   coverInit: { color: C.cream, ...S(700), fontSize: 38 },
   body: { padding: 20 },
@@ -291,12 +307,12 @@ const s = StyleSheet.create({
   festivalLink: { marginTop: 18, borderWidth: 1, borderColor: C.gold, borderRadius: 999, paddingVertical: 12, alignItems: "center" },
   festivalLinkText: { color: C.goldText, fontWeight: "700", fontSize: 13 },
   ticketBox: { marginTop: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.green, borderRadius: 14, padding: 16, gap: 10 },
-  freeBox: { marginTop: 10, backgroundColor: "rgba(18,63,45,0.06)", borderWidth: 1, borderColor: "rgba(18,63,45,0.3)", borderRadius: 12, padding: 14 },
+  freeBox: { marginTop: 10, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 14 },
   freeText: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   boxLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   boxBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19 },
   tier: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, padding: 14 },
-  tierOn: { borderColor: C.green, backgroundColor: "rgba(18,63,45,0.06)" },
+  tierOn: { borderColor: C.green, backgroundColor: withAlpha(C.green, 0.06) },
   tierName: { color: C.ink, fontSize: 14, fontWeight: "600" },
   tierAvail: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
   tierPrice: { ...S(700), fontSize: 18, color: C.green },
@@ -311,7 +327,7 @@ const s = StyleSheet.create({
   buyBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 4 },
   buyBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center" },
-  thanks: { marginTop: 10, backgroundColor: "rgba(18,63,45,0.06)", borderWidth: 1, borderColor: "rgba(18,63,45,0.3)", borderRadius: 14, padding: 16, alignItems: "center" },
+  thanks: { marginTop: 10, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 14, padding: 16, alignItems: "center" },
   thanksTitle: { ...D(700), fontSize: 20, color: C.green },
   thanksBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6, textAlign: "center" },
   code: { fontSize: 30, fontWeight: "700", letterSpacing: 6, color: C.ink, marginTop: 14 },

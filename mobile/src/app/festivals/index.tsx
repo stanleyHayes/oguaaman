@@ -1,10 +1,12 @@
+import { useMemo } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
+import { useTheme } from "@/lib/theme-context";
 import type { FestivalSummary } from "@/lib/types";
-import { C, S } from "@/theme";
+import { S, type Palette } from "@/theme";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
@@ -16,6 +18,8 @@ function fmtDate(iso?: string): string {
 
 export default function Festivals() {
   const { data, error, loading, refreshing, reload } = useApi<FestivalSummary[]>(() => api.festivals(), "festivals");
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
 
@@ -53,7 +57,7 @@ export default function Festivals() {
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: Palette) => StyleSheet.create({
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
   coverLabel: { color: C.cream, ...S(700), fontSize: 24, textAlign: "center", paddingHorizontal: 16 },
