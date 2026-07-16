@@ -172,7 +172,7 @@ export function PeopleYouMayKnow() {
   }
 
   return (
-    <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+    <ul className="mt-4 grid gap-3">
       {list.map((c) => (
         <li key={c.member.id} className="flex items-center gap-3 rounded-[var(--radius-card)] border border-sand bg-cream p-4">
           <Link to={`/members/${c.member.slug}`} className="shrink-0">
@@ -184,11 +184,13 @@ export function PeopleYouMayKnow() {
             </Link>
             <div className="mt-1 flex flex-wrap gap-1.5">
               {c.reasons.map((r) => (
-                <span key={r} className="rounded-full bg-sand px-2.5 py-0.5 text-xs font-medium text-ink-muted">{r}</span>
+                <span key={r} className="whitespace-nowrap rounded-full bg-sand px-2.5 py-0.5 text-xs font-medium text-ink-muted">{r}</span>
               ))}
             </div>
           </div>
-          <FollowChip slug={c.member.slug} name={c.member.displayName} />
+          <div className="shrink-0">
+            <FollowChip slug={c.member.slug} name={c.member.displayName} />
+          </div>
         </li>
       ))}
     </ul>
