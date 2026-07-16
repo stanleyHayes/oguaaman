@@ -126,6 +126,11 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/institutions", h.Institutions)
 	mux.HandleFunc("GET /api/institutions/{slug}", h.Institution)
 
+	// Open Graph (spec §11): crawler-facing meta shim + 1200×630 card renderer.
+	// The portal's nginx maps bot user-agents onto /api/og/page/*.
+	mux.HandleFunc("GET /api/og/page/{path...}", h.OGPage)
+	mux.HandleFunc("GET /api/og/image/{path...}", h.OGImage)
+
 	// Institution management (spec §8.13): claim → steward-verify → manage.
 	mux.HandleFunc("GET /api/me/institutions", h.MyInstitutions)
 	mux.HandleFunc("POST /api/me/creator-types", h.SetMyCreatorTypes)
