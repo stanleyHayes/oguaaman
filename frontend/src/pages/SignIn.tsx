@@ -1,5 +1,6 @@
-import { useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject, type SubmitEvent } from "react";
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
 import { Adinkra } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
@@ -86,6 +87,60 @@ function ModeTabs({ mode, onChange }: Readonly<{ mode: Mode; onChange: (m: Mode)
 const submitBtnCls =
   "w-full rounded-full bg-green py-3 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
 
+const backBtnCls =
+  "rounded-full border border-sand bg-cream px-6 py-3 text-sm font-semibold text-ink-muted transition-colors hover:border-green/40 hover:text-ink";
+
+function PasswordInput({
+  value,
+  onChange,
+  autoComplete,
+  placeholder,
+  minLength,
+}: Readonly<{
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: "current-password" | "new-password";
+  placeholder: string;
+  minLength?: number;
+}>) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+        minLength={minLength}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        className={`${inputCls} pr-12`}
+      />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        aria-label={show ? "Hide password" : "Show password"}
+        aria-pressed={show}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint transition-colors hover:text-ink"
+      >
+        {show ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M3 3l18 18" />
+            <path d="M10.6 5.1A11 11 0 0 1 12 5c6 0 9.5 7 9.5 7a17.9 17.9 0 0 1-2.8 3.8" />
+            <path d="M6.1 6.1A17.5 17.5 0 0 0 2.5 12S6 19 12 19a10.6 10.6 0 0 0 4-.8" />
+            <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 function adultCutoffIso() {
   const d = new Date();
   d.setFullYear(d.getFullYear() - 18);
@@ -134,7 +189,7 @@ function SignInForm({
       </label>
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" placeholder="Your password" className={inputCls} />
+        <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" placeholder="Your password" />
       </label>
       {err && (
         <div className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">
@@ -198,7 +253,28 @@ function MfaForm({ code, setCode, busy, err, onSubmit, onCancel }: Readonly<{
   );
 }
 
+type JoinStep = 1 | 2 | 3;
+
+const JOIN_STEP_TITLES = ["Who you are", "How we reach you", "Secure your account"] as const;
+
+// Wraps one wizard step's fields; when the step is reached through Next/Back it
+// moves focus to the step's first control so keyboard & screen-reader users
+// land inside the new step.
+function JoinStepPanel({ focusOnMount, children }: Readonly<{ focusOnMount: RefObject<boolean>; children: ReactNode }>) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!focusOnMount.current) return;
+    ref.current?.querySelector<HTMLElement>('input, button, select, [tabindex]:not([tabindex="-1"])')?.focus();
+  }, [focusOnMount]);
+  return (
+    <div ref={ref} className="space-y-5">
+      {children}
+    </div>
+  );
+}
+
 function JoinForm({
+  step,
   identifier,
   setIdentifier,
   name,
@@ -215,9 +291,12 @@ function JoinForm({
   setConsent,
   busy,
   err,
+  onNext,
+  onBack,
   onSubmit,
   onSwitchMode,
 }: Readonly<{
+  step: JoinStep;
   identifier: string;
   setIdentifier: (v: string) => void;
   name: string;
@@ -234,74 +313,114 @@ function JoinForm({
   setConsent: (v: boolean) => void;
   busy: boolean;
   err: string | null;
+  onNext: () => void;
+  onBack: () => void;
   onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   onSwitchMode: (m: Mode) => void;
 }>) {
   const choiceCls = (on: boolean) =>
     `rounded-xl border px-3 py-2.5 text-left transition-colors ${on ? "border-green bg-green/[0.06]" : "border-sand bg-cream hover:border-green/40"}`;
+  // False on the form's first commit so we never steal focus on page load;
+  // true afterwards, so every step mounted via Next/Back takes focus.
+  const visited = useRef(false);
+  useEffect(() => {
+    visited.current = true;
+  }, []);
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
         <h2 className="text-2xl font-semibold text-ink">Join Oguaa</h2>
         <p className="mt-1 text-sm text-ink-muted">Create your account — one password for web & mobile.</p>
-      </div>
-      <div className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">I'm joining as</span>
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => setAsCreator(false)} className={choiceCls(!asCreator)} aria-pressed={!asCreator}>
-            <span className="block text-sm font-semibold text-ink">A citizen</span>
-            <span className="mt-0.5 block text-xs text-ink-faint">Memories, memorials, school ties</span>
-          </button>
-          <button type="button" onClick={() => setAsCreator(true)} className={choiceCls(asCreator)} aria-pressed={asCreator}>
-            <span className="block text-sm font-semibold text-ink">A creator</span>
-            <span className="mt-0.5 block text-xs text-ink-faint">Listings, promotions, a dashboard</span>
-          </button>
-        </div>
-      </div>
-      {asCreator && (
-        <div className="block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">
-            What do you create? <span className="font-normal text-ink-faint">pick all that apply</span>
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {CREATOR_KINDS.map((k) => {
-              const on = creatorTypes.includes(k.id);
-              return (
-                <button key={k.id} type="button" onClick={() => onToggleCreatorType(k.id)} aria-pressed={on}
-                  className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${on ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}>
-                  {k.label}
-                </button>
-              );
-            })}
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <p className="text-xs font-medium text-ink-muted">
+            Step {step} of 3 · {JOIN_STEP_TITLES[step - 1]}
+          </p>
+          <div className="flex gap-1.5" aria-hidden>
+            {JOIN_STEP_TITLES.map((t, i) => (
+              <span key={t} className={`h-1.5 w-6 rounded-full transition-colors ${i < step ? "bg-green" : "bg-sand"}`} />
+            ))}
           </div>
-          <p className="mt-1.5 text-xs text-ink-faint">Creators get a dashboard to add listings, promote them and manage a plan.</p>
         </div>
-      )}
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Your name</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" placeholder="Display name" className={inputCls} />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
-        <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="+233… or you@email" className={inputCls} />
-      </label>
-      <div className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth</span>
-        <DatePicker value={dob} onChange={setDob} max={adultCutoffIso()} placeholder="dd/mm/yyyy" className="w-full" />
-        <span className="mt-1.5 block text-xs text-ink-faint">Oguaa is for ages 18 and over.</span>
       </div>
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Choose a password" className={inputCls} />
-        <span className="mt-1.5 block text-xs text-ink-faint">At least 8 characters</span>
-      </label>
-      <label className="flex items-start gap-2.5 rounded-xl border border-sand bg-cream px-3.5 py-3">
-        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-green" />
-        <span className="text-xs leading-relaxed text-ink-muted">
-          I agree to the <a href="/terms" className="font-semibold text-green underline">Terms of Use</a> and the{" "}
-          <a href="/privacy" className="font-semibold text-green underline">Privacy Policy</a>, and I consent to Oguaa storing the details above so my account can work.
-        </span>
-      </label>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 6, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 6, scale: 0.98 }}
+          transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <JoinStepPanel focusOnMount={visited}>
+            {step === 1 ? (
+              <>
+                <div className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">I'm joining as</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setAsCreator(false)} className={choiceCls(!asCreator)} aria-pressed={!asCreator}>
+                      <span className="block text-sm font-semibold text-ink">A citizen</span>
+                      <span className="mt-0.5 block text-xs text-ink-faint">Memories, memorials, school ties</span>
+                    </button>
+                    <button type="button" onClick={() => setAsCreator(true)} className={choiceCls(asCreator)} aria-pressed={asCreator}>
+                      <span className="block text-sm font-semibold text-ink">A creator</span>
+                      <span className="mt-0.5 block text-xs text-ink-faint">Listings, promotions, a dashboard</span>
+                    </button>
+                  </div>
+                </div>
+                {asCreator && (
+                  <div className="block">
+                    <span className="mb-1.5 block text-sm font-medium text-ink">
+                      What do you create? <span className="font-normal text-ink-faint">pick all that apply</span>
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {CREATOR_KINDS.map((k) => {
+                        const on = creatorTypes.includes(k.id);
+                        return (
+                          <button key={k.id} type="button" onClick={() => onToggleCreatorType(k.id)} aria-pressed={on}
+                            className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${on ? "border-green bg-green text-cream" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}>
+                            {k.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-1.5 text-xs text-ink-faint">Creators get a dashboard to add listings, promote them and manage a plan.</p>
+                  </div>
+                )}
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">Your name</span>
+                  <input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" placeholder="Display name" className={inputCls} />
+                </label>
+              </>
+            ) : step === 2 ? (
+              <>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
+                  <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="+233… or you@email" className={inputCls} />
+                </label>
+                <div className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth</span>
+                  <DatePicker value={dob} onChange={setDob} max={adultCutoffIso()} placeholder="dd/mm/yyyy" className="w-full" />
+                  <span className="mt-1.5 block text-xs text-ink-faint">Oguaa is for ages 18 and over.</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
+                  <PasswordInput value={password} onChange={setPassword} minLength={8} autoComplete="new-password" placeholder="Choose a password" />
+                  <span className="mt-1.5 block text-xs text-ink-faint">At least 8 characters</span>
+                </label>
+                <label className="flex items-start gap-2.5 rounded-xl border border-sand bg-cream px-3.5 py-3">
+                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-green" />
+                  <span className="text-xs leading-relaxed text-ink-muted">
+                    I agree to the <a href="/terms" className="font-semibold text-green underline">Terms of Use</a> and the{" "}
+                    <a href="/privacy" className="font-semibold text-green underline">Privacy Policy</a>, and I consent to Oguaa storing the details above so my account can work.
+                  </span>
+                </label>
+              </>
+            )}
+          </JoinStepPanel>
+        </motion.div>
+      </AnimatePresence>
       {err && (
         <div className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">
           <p>{err}</p>
@@ -312,9 +431,22 @@ function JoinForm({
           )}
         </div>
       )}
-      <button type="submit" disabled={busy} className={submitBtnCls}>
-        {busy ? "Creating…" : "Create my account →"}
-      </button>
+      <div className="flex gap-3">
+        {step > 1 && (
+          <button type="button" onClick={onBack} className={backBtnCls}>
+            ← Back
+          </button>
+        )}
+        {step < 3 ? (
+          <button type="button" onClick={onNext} className={`${submitBtnCls} flex-1`}>
+            Next →
+          </button>
+        ) : (
+          <button type="submit" disabled={busy} className={`${submitBtnCls} flex-1`}>
+            {busy ? "Creating…" : "Create my account →"}
+          </button>
+        )}
+      </div>
       <p className="text-center text-xs text-ink-faint">Try a seeded account: <code className="font-mono">akua-pratt@oguaa.test</code> (curator)</p>
     </form>
   );
@@ -342,6 +474,7 @@ export function Component() {
   const [creatorTypes, setCreatorTypes] = useState<string[]>([]);
   const [password, setPassword] = useState("");
   const [consent, setConsent] = useState(false);
+  const [joinStep, setJoinStep] = useState<JoinStep>(1);
   const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -354,6 +487,7 @@ export function Component() {
     setErr(null);
     setPassword("");
     setMfaChallenge(null);
+    setJoinStep(1);
   };
 
   const submitSignIn = async (e: SubmitEvent<HTMLFormElement>) => {
@@ -384,21 +518,46 @@ export function Component() {
     } finally { setBusy(false); }
   };
 
+  // Validates the current wizard step; only a clean step advances.
+  const joinNext = () => {
+    if (joinStep === 1) {
+      if (asCreator && creatorTypes.length === 0) {
+        setErr("Pick at least one creator type — business, artist, organiser or institution.");
+        return;
+      }
+      if (!name.trim()) {
+        setErr("Please enter your name.");
+        return;
+      }
+    } else if (joinStep === 2) {
+      if (!identifier.trim()) {
+        setErr("Please enter your phone or email.");
+        return;
+      }
+      if (!dob) {
+        setErr("Please choose your date of birth.");
+        return;
+      }
+    }
+    setErr(null);
+    setJoinStep((s) => (s === 1 ? 2 : 3));
+  };
+
+  const joinBack = () => {
+    setErr(null);
+    setJoinStep((s) => (s === 3 ? 2 : 1));
+  };
+
   const submitJoin = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setBusy(true); setErr(null);
-    if (!dob) {
-      setErr("Please choose your date of birth.");
-      setBusy(false);
+    // Enter inside a step-1/2 field submits the form — treat it as Next.
+    if (joinStep < 3) {
+      joinNext();
       return;
     }
+    setBusy(true); setErr(null);
     if (password.length < 8) {
       setErr("Your password must be at least 8 characters.");
-      setBusy(false);
-      return;
-    }
-    if (asCreator && creatorTypes.length === 0) {
-      setErr("Pick at least one creator type — business, artist, organiser or institution.");
       setBusy(false);
       return;
     }
@@ -443,6 +602,7 @@ export function Component() {
             />
           ) : (
             <JoinForm
+              step={joinStep}
               identifier={identifier}
               setIdentifier={setIdentifier}
               name={name}
@@ -459,6 +619,8 @@ export function Component() {
               setConsent={setConsent}
               busy={busy}
               err={err}
+              onNext={joinNext}
+              onBack={joinBack}
               onSubmit={submitJoin}
               onSwitchMode={switchMode}
             />

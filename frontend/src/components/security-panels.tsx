@@ -168,6 +168,7 @@ export function DataRightsSettings() {
   const [exportErr, setExportErr] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
 
@@ -221,21 +222,32 @@ export function DataRightsSettings() {
           <form onSubmit={doDelete} className="space-y-3 rounded-xl border border-clay/30 bg-clay/[0.04] p-4">
             <p className="text-sm font-semibold text-clay-text">This can't be undone.</p>
             <p className="text-sm text-ink-muted">Your profile, contact details, schooling and settings are wiped and the account is closed. Enter your password to confirm.</p>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              placeholder="Your password"
-              className={`${inputCls} max-w-xs`}
-            />
+            <div className="relative max-w-xs">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="Your password"
+                className={`${inputCls} pr-12`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint transition-colors hover:text-ink"
+              >
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
             {deleteErr && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{deleteErr}</p>}
             <div className="flex items-center gap-3">
               <button type="submit" disabled={deleteBusy} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-cream hover:bg-clay-text disabled:opacity-60">
                 {deleteBusy ? "Deleting…" : "Yes — delete everything"}
               </button>
-              <button type="button" onClick={() => { setConfirming(false); setPassword(""); setDeleteErr(null); }} className="text-sm font-medium text-ink-muted hover:text-ink">
+              <button type="button" onClick={() => { setConfirming(false); setPassword(""); setShowPassword(false); setDeleteErr(null); }} className="text-sm font-medium text-ink-muted hover:text-ink">
                 Cancel
               </button>
             </div>
@@ -243,5 +255,25 @@ export function DataRightsSettings() {
         )}
       </div>
     </div>
+  );
+}
+
+/* Hand-rolled eye / eye-off for the password reveal toggle — no icon library
+   in this app, so these match the house 24px stroke style (see section-icon.tsx). */
+function EyeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <path d="M1 1l22 22" />
+    </svg>
   );
 }
