@@ -47,7 +47,7 @@ export function Component() {
       >
         <div className="flex flex-wrap gap-3">
           <Cta to="/submit?type=opportunity" variant="gold">Post mentorship programme</Cta>
-          <Cta to="/acceptable-use" variant="outline-dark">Read safeguarding rules</Cta>
+          <Cta to="/safeguarding" variant="outline-dark">Read safeguarding rules</Cta>
         </div>
       </PageHero>
       <Container size="wide" className="py-12">

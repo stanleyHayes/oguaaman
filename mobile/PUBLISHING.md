@@ -83,6 +83,17 @@ eas submit -p android --profile production
 `eas update` apply to builds that share the same app version. To enable, run
 `eas update:configure` and `eas update --branch production`.
 
+## 7. Store listing legal URLs (required)
+
+Use the live portal legal pages for both App Store Connect and Google Play:
+
+- Privacy Policy: `https://oguaa.vercel.app/privacy`
+- Terms of Use: `https://oguaa.vercel.app/terms`
+- Acceptable Use: `https://oguaa.vercel.app/acceptable-use`
+- Safeguarding Policy (youth/mentorship): `https://oguaa.vercel.app/safeguarding`
+
+These routes are mirrored in-app under **More → Legal**.
+
 ## Notes
 
 - Brand colors already wired in: green-900 `#0C2C1F` (splash + adaptive icon

@@ -102,10 +102,10 @@ export function SiteFooter() {
           </div>
 
           <nav aria-label="Legal" className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-gold-brand/25 pt-6 text-xs text-cream/60 sm:justify-start">
-            <Link to="/privacy" className="hover:text-gold">Privacy</Link>
+            <Link to="/privacy" className="hover:text-gold">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-gold">Terms of Use</Link>
             <Link to="/acceptable-use" className="hover:text-gold">Acceptable Use</Link>
-            <Link to="/safeguarding" className="hover:text-gold">Safeguarding</Link>
+            <Link to="/safeguarding" className="hover:text-gold">Safeguarding Policy</Link>
             <Link to="/search" className="hover:text-gold">Search</Link>
           </nav>
 

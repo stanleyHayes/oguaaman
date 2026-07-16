@@ -87,10 +87,10 @@ export function Component() {
         </article>
         <p className="mt-12 border-t border-sand pt-6 text-sm italic text-ink-faint">{UPDATED}</p>
         <nav className="mt-6 flex flex-wrap gap-4 text-sm">
-          <Link to="/privacy" className="text-teal-text hover:underline">Privacy</Link>
-          <Link to="/terms" className="text-teal-text hover:underline">Terms</Link>
+          <Link to="/privacy" className="text-teal-text hover:underline">Privacy Policy</Link>
+          <Link to="/terms" className="text-teal-text hover:underline">Terms of Use</Link>
           <Link to="/acceptable-use" className="text-teal-text hover:underline">Acceptable Use</Link>
-          <Link to="/safeguarding" className="text-teal-text hover:underline">Safeguarding</Link>
+          <Link to="/safeguarding" className="text-teal-text hover:underline">Safeguarding Policy</Link>
         </nav>
       </Container>
     </>
