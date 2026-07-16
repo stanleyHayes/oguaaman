@@ -5,54 +5,90 @@ import { Wordmark } from "@/components/wordmark";
 import { Reveal } from "@/components/motion";
 import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL } from "@/config";
 
+// Hand-rolled inline icon set — no icon library is installed here, so we mirror
+// the house style used by SocialIcon: 24×24 grid, 1.7 stroke, currentColor so
+// each glyph inherits the surrounding text tone on this always-dark stage.
+type IconName =
+  | "compass" | "smartphone" | "mail"
+  | "scroll" | "palette" | "sparkles" | "graduation" | "map-pin" | "crown" | "newspaper"
+  | "app-window" | "login";
+
+function FooterIcon({ name, className = "" }: Readonly<{ name: IconName; className?: string }>) {
+  const body = {
+    compass: <><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88" /></>,
+    smartphone: <><rect x="5" y="2" width="14" height="20" rx="2.5" /><line x1="11" y1="18" x2="13" y2="18" /></>,
+    mail: <><rect x="2" y="4" width="20" height="16" rx="2.5" /><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></>,
+    scroll: <><path d="M19 17V5a2 2 0 0 0-2-2H4" /><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" /></>,
+    palette: <><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.6 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1a1.6 1.6 0 0 1 1.6-1.6h1.9c3 0 5.5-2.5 5.5-5.6C22 6 17.5 2 12 2Z" /><circle cx="8.5" cy="8" r=".9" fill="currentColor" stroke="none" /><circle cx="13.5" cy="6.5" r=".9" fill="currentColor" stroke="none" /><circle cx="17.5" cy="10" r=".9" fill="currentColor" stroke="none" /><circle cx="6.5" cy="12.5" r=".9" fill="currentColor" stroke="none" /></>,
+    sparkles: <><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-5.6-1.44a.5.5 0 0 1 0-.96l5.6-1.44A2 2 0 0 0 9.94 8.5l1.44-5.6a.5.5 0 0 1 .96 0l1.44 5.6a2 2 0 0 0 1.44 1.44l5.6 1.44a.5.5 0 0 1 0 .96l-5.6 1.44a2 2 0 0 0-1.44 1.44l-1.44 5.6a.5.5 0 0 1-.96 0Z" /><path d="M19 4v3" /><path d="M20.5 5.5h-3" /></>,
+    graduation: <><path d="M12 4 2 9l10 5 10-5Z" /><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" /><path d="M22 9v5" /></>,
+    "map-pin": <><path d="M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></>,
+    crown: <><path d="M4 8l3.5 3 4.5-6 4.5 6L20 8l-1.5 10h-13Z" /><line x1="4" y1="21" x2="20" y2="21" /></>,
+    newspaper: <><path d="M4 22a2 2 0 0 1-2-2V9a1 1 0 0 1 1-1h3" /><path d="M6 20V5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2Z" /><path d="M10 8h7" /><path d="M10 12h7" /><path d="M10 16h4" /></>,
+    "app-window": <><rect x="2" y="4" width="20" height="16" rx="2.5" /><path d="M2 9h20" /><circle cx="5.5" cy="6.5" r=".6" fill="currentColor" stroke="none" /><circle cx="8" cy="6.5" r=".6" fill="currentColor" stroke="none" /></>,
+    login: <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></>,
+  }[name];
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      {body}
+    </svg>
+  );
+}
+
 interface FooterLink {
   label: string;
   to?: string;   // internal route
   href?: string; // external / mailto
   external?: boolean;
+  icon: IconName;
 }
 
 interface FooterColumn {
   heading: string;
+  icon: IconName;
   links: FooterLink[];
 }
 
 const COLUMNS: FooterColumn[] = [
   {
     heading: "Discover",
+    icon: "compass",
     links: [
-      { label: "History", to: "/history" },
-      { label: "Culture", to: "/culture" },
-      { label: "Festivals", to: "/festivals" },
-      { label: "Education", to: "/education" },
-      { label: "Visit", to: "/visit" },
-      { label: "Leadership", to: "/leadership" },
-      { label: "News", to: "/news" },
+      { label: "History", to: "/history", icon: "scroll" },
+      { label: "Culture", to: "/culture", icon: "palette" },
+      { label: "Festivals", to: "/festivals", icon: "sparkles" },
+      { label: "Education", to: "/education", icon: "graduation" },
+      { label: "Visit", to: "/visit", icon: "map-pin" },
+      { label: "Leadership", to: "/leadership", icon: "crown" },
+      { label: "News", to: "/news", icon: "newspaper" },
     ],
   },
   {
     heading: "The app",
+    icon: "smartphone",
     links: [
-      { label: "Open the web app", href: PORTAL_APP_URL, external: true },
-      { label: "Sign in", href: PORTAL_JOIN_URL, external: true },
+      { label: "Open the web app", href: PORTAL_APP_URL, external: true, icon: "app-window" },
+      { label: "Sign in", href: PORTAL_JOIN_URL, external: true, icon: "login" },
     ],
   },
   {
     heading: "Connect",
-    links: [{ label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` }],
+    icon: "mail",
+    links: [{ label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}`, icon: "mail" }],
   },
 ];
 
 function FooterLinkItem({ link }: Readonly<{ link: FooterLink }>) {
-  const cls = "inline-block py-0.5 text-cream/70 transition-colors hover:text-gold";
+  const cls = "inline-flex items-center gap-2 py-0.5 text-cream/70 transition-colors hover:text-gold";
   const externalProps = link.external ? { target: "_blank", rel: "noopener noreferrer" } : {};
+  const icon = <FooterIcon name={link.icon} className="h-4 w-4 shrink-0 opacity-70" />;
   return (
     <li>
       {link.to ? (
-        <Link to={link.to} className={cls}>{link.label}</Link>
+        <Link to={link.to} className={cls}>{icon}<span>{link.label}</span></Link>
       ) : (
         <a href={link.href} className={cls} {...externalProps}>
-          {link.label}
+          {icon}<span>{link.label}</span>
         </a>
       )}
     </li>
@@ -63,7 +99,10 @@ function LinkColumn({ column }: Readonly<{ column: FooterColumn }>) {
   return (
     <div>
       <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-cream/55">
-        {column.heading}
+        <span className="inline-flex items-center gap-1.5">
+          <FooterIcon name={column.icon} className="h-3.5 w-3.5 text-gold-brand/80" />
+          {column.heading}
+        </span>
         <span aria-hidden className="mt-2 block h-0.5 w-6 rounded-full bg-gold-brand" />
       </h3>
       <ul className="mt-4 space-y-1 text-sm">
@@ -163,7 +202,10 @@ export function Footer() {
 
             <div>
               <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-cream/55">
-                {connect.heading}
+                <span className="inline-flex items-center gap-1.5">
+                  <FooterIcon name={connect.icon} className="h-3.5 w-3.5 text-gold-brand/80" />
+                  {connect.heading}
+                </span>
                 <span aria-hidden className="mt-2 block h-0.5 w-6 rounded-full bg-gold-brand" />
               </h3>
               <ul className="mt-4 space-y-1 text-sm">
