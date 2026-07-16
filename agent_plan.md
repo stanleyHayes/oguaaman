@@ -232,7 +232,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 **Phase 2 (§15) — half delivered.** Diaspora register ✅ (`/diaspora` portal + mobile) · adopt-a-project funding ✅ (Paystack pledges) · investment opportunities ☐ · mentor-to-youth matching ☐ *(blocked on the unwritten §14.4 safeguarding policy)*.
 
 **Partial / open Phase 1 items:**
-- ☐ §8.1 **Phone/WhatsApp OTP verification** — the spec's *primary spam gate*. No endpoints, no provider, `PhoneVerified` never set, submit ungated. *(Password auth shipped instead; OTP is the open hole.)*
+- ◐ §8.1 **Phone/WhatsApp OTP verification** — *◐ delivered 2026-07-15 (`d97c11c`): start/confirm endpoints (hashed code, 10-min TTL), `phoneVerified` gate on submit, portal + mobile verification UI, dev-mode code display. Still open: real SMS/WhatsApp provider delivery (ties to backlog #10) and the broader verification-badge surface.*
 - ◐ §8.2 **Edit re-approval policy** (Open Decision #3) — *today every owner edit of an approved listing publishes immediately; neither the minor/major split nor the all-edits-reviewed flag exists.*
 - ◐ §8.5 **Rivalry signals** — *only static memberCount chips; no computed cross-school comparisons.*
 - ◐ §8.7 **Memory-wall filters** by school/town/era/festival — *tags exist in the model; no query params or UI.*
@@ -273,7 +273,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 
 ### 7.4 Prioritized backlog (next-up order)
 
-1. **OTP verification + submit gate** (spec §8.1/§16 — the primary spam gate; highest-impact Phase 1 hole).
+1. ~~OTP verification + submit gate~~ ✅ core slice (`d97c11c` — codes, gate, UI; **provider delivery remains**, folded into #10).
 2. ~~Memorial keeper reminder controls~~ ✅ (§8.11 — submit defaults, edit whitelist + carryover, portal/creator toggles, `RunRemembrance` test coverage).
 3. ~~Revoke-verification takes the page offline + conditional badge~~ ✅ (Institution §6 — verified-only directory, gated detail, events demote/restore, conditional badges, admin list endpoint).
 4. **Creator Phase 2 remainder** — plans catalog → institution workspace port → team/officer invitations (Creator §4.1/§5; resolve the §5-vs-§7.6 contradiction first).
