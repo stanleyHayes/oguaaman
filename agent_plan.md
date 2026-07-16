@@ -287,7 +287,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 12. **Maps depth** — per-listing geocoded pins, events map, mobile (spec §12).
 13. **Institution localization pack + schema.org** (Institution §4/§7).
 14. **AI bar polish** — streaming, replace-confirmation, mount on all admin rich-text fields (spec §8.12).
-15. **Admin moderator-role SPA gating + queue type filter** (Creator §9.3, spec §8.10).
+15. ~~**Admin moderator-role SPA gating + queue type filter**~~ ✅ (auth-gate now admits moderator role; MFA not enforced for moderators; nav filtered to queue/listings/reports/incidents for moderators; `RoleBadge` chip in user menu; `?type=` filter dropdown on Moderation queue page).
 16. **Cookie notice, legal depth, guardian-consent flow** (spec §14.4/§14.6/§16).
 17. **Phase 2 spec remainder** — investment opportunities; mentor-to-youth matching *(both gated on the §14.4 safeguarding policy, itself unwritten)*.
 18. **Smaller items** — school rivalry signals; official-announcements type; contested-claim hold; funeral details; media Credit capture; mobile institution events + manager editing; creator mobile section (explicitly future); `/me` creator upgrade entry; Drafts view; Payouts ledger; migrations + verify script; mobile maps.

@@ -3,20 +3,26 @@ import { useAuth } from "@/lib/auth";
 import { Mark } from "./layout";
 import { MfaEnroll } from "./mfa";
 
-/** Locks the whole back-office behind a curator/steward session (spec §9). */
+/** Returns true when this role may access the back-office at all. */
+export function isStaffRole(role: string): boolean {
+  return role === "curator" || role === "steward" || role === "moderator";
+}
+
+/** Locks the whole back-office behind a curator/steward/moderator session (spec §9). */
 export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
   const { member, loading } = useAuth();
   if (loading) return <Backdrop><p className="text-sm text-cream/70">Loading…</p></Backdrop>;
   if (!member) return <SignIn />;
-  if (member.role !== "curator" && member.role !== "steward") return <NotAuthorized name={member.displayName} />;
-  // Staff accounts must enrol in two-factor before the console unlocks (spec §14).
-  if (!member.mfaEnabled) return <ForcedMfa name={member.displayName} />;
+  if (!isStaffRole(member.role)) return <NotAuthorized name={member.displayName} />;
+  // Moderators don't get MFA enforcement (read: triage-only access is lower risk);
+  // curators and stewards must enrol before the console unlocks (spec §14).
+  if (member.role !== "moderator" && !member.mfaEnabled) return <ForcedMfa name={member.displayName} />;
   return <>{children}</>;
 }
 
 const TRUST = [
-  "Curators and stewards only",
-  "Two-factor sign-in on every staff account",
+  "Curators, stewards, and moderators only",
+  "Two-factor sign-in on curator and steward accounts",
   "Every back-office action is audited",
 ];
 
@@ -172,7 +178,7 @@ function NotAuthorized({ name }: Readonly<{ name: string }>) {
       <Shell>
         <div className="flex h-full flex-col justify-center text-center">
           <h2 className="text-3xl font-semibold text-ink">Not authorised</h2>
-          <p className="mt-3 text-sm text-ink-muted">Hi {name} — this back-office is for curators and stewards. Ask a steward to grant you a role.</p>
+          <p className="mt-3 text-sm text-ink-muted">Hi {name} — this back-office is for curators, stewards, and moderators. Ask a steward to grant you a role.</p>
           <button onClick={signOut} className="mx-auto mt-6 rounded-full border border-gold-border/60 px-5 py-2 text-sm font-semibold text-gold-text transition-colors hover:bg-gold/10">Sign out</button>
         </div>
       </Shell>

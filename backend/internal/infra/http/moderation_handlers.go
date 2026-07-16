@@ -8,7 +8,8 @@ func (h *Handler) Queue(w http.ResponseWriter, r *http.Request) {
 	if _, ok := h.requireRole(w, r, "curator", "moderator"); !ok {
 		return
 	}
-	items, err := h.svc.ModerationQueue(r.Context())
+	typeFilter := r.URL.Query().Get("type")
+	items, err := h.svc.ModerationQueue(r.Context(), typeFilter)
 	if err != nil {
 		h.handleErr(w, err)
 		return

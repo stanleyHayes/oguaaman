@@ -11,6 +11,18 @@ import { cldCover } from "@/lib/cloudinary";
 interface Data { queue: Listing[]; members: Member[] }
 interface Log { action: string; title: string; reason?: string; tone: "ok" | "bad" | "warn" }
 
+const LISTING_TYPES = [
+  { value: "", label: "All types" },
+  { value: "artist", label: "Artist" },
+  { value: "business", label: "Business" },
+  { value: "event", label: "Event" },
+  { value: "memorial", label: "Memorial" },
+  { value: "memory", label: "Memory" },
+  { value: "opportunity", label: "Opportunity" },
+  { value: "person", label: "Person" },
+  { value: "project", label: "Project" },
+];
+
 function toneClass(tone: Log["tone"]): string {
   if (tone === "ok") return "text-green";
   if (tone === "bad") return "text-maroon-900";
@@ -29,12 +41,29 @@ function snippet(l: Listing): string {
 
 export function Component() {
   const { queue, members } = useLoaderData() as Data;
+  const [allItems] = useState(queue);
   const [items, setItems] = useState(queue);
+  const [typeFilter, setTypeFilter] = useState("");
   const [log, setLog] = useState<Log[]>([]);
   const [rejecting, setRejecting] = useState<{ id: string; mode: "reject" | "changes" } | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [loadingFilter, setLoadingFilter] = useState(false);
   const nameOf = (id: string) => members.find((m) => m.id === id)?.displayName ?? "A member";
+
+  async function applyTypeFilter(type: string) {
+    setTypeFilter(type);
+    setLoadingFilter(true);
+    try {
+      const filtered = await api.queue(type || undefined);
+      setItems(filtered);
+    } catch {
+      // fall back to client-side filter if request fails
+      setItems(type ? allItems.filter((i) => i.type === type) : allItems);
+    } finally {
+      setLoadingFilter(false);
+    }
+  }
 
   async function act(l: Listing, action: string, entry: Log, why?: string) {
     setBusy(l.id);
@@ -54,7 +83,17 @@ export function Component() {
           <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-gold-text">Moderation</p>
           <h1 className="mt-1 text-3xl font-semibold text-ink">Review queue</h1>
         </div>
-        <span className="rounded-full bg-gold/[0.16] px-3 py-1 text-sm font-semibold text-gold-text">{items.length} pending</span>
+        <div className="flex items-center gap-3">
+          <select
+            value={typeFilter}
+            onChange={(e) => applyTypeFilter(e.target.value)}
+            disabled={loadingFilter}
+            className="rounded-xl border border-sand bg-paper px-3 py-1.5 text-sm font-medium text-ink focus:border-gold-border focus:outline-none focus:ring-2 focus:ring-gold/20 disabled:opacity-60"
+          >
+            {LISTING_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          <span className="rounded-full bg-gold/[0.16] px-3 py-1 text-sm font-semibold text-gold-text">{items.length} pending</span>
+        </div>
       </div>
 
       <div>

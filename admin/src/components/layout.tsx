@@ -66,6 +66,28 @@ const NAV_GROUPS: NavGroup[] = [
 
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
+// Moderators can only access triage-focused routes.
+const MODERATOR_PATHS = new Set(["/moderation", "/listings", "/reports", "/incidents"]);
+
+function visibleGroups(role: string | undefined): NavGroup[] {
+  if (role !== "moderator") return NAV_GROUPS;
+  return NAV_GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((i) => MODERATOR_PATHS.has(i.to)) }))
+    .filter((g) => g.items.length > 0);
+}
+
+/** Role badge chip shown next to the username in the top-bar user menu. */
+export function RoleBadge({ role }: Readonly<{ role: string }>) {
+  const map: Record<string, string> = {
+    steward: "bg-green text-cream",
+    curator: "bg-teal/20 text-teal-text",
+    moderator: "bg-gold/20 text-gold-text",
+    editor: "bg-clay/15 text-clay-text",
+  };
+  const cls = map[role] ?? "bg-sand text-ink-muted";
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cls}`}>{role}</span>;
+}
+
 export function Mark({ size = 26, color = "#C7A24A" }: Readonly<{ size?: number; color?: string }>) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -131,7 +153,8 @@ function isActivePath(pathname: string, to: string, end?: boolean): boolean {
  * (auraedu/packages/ui/src/components/app-sidebar.tsx). Groups persist their
  * open state; the group holding the active route is always open.
  */
-function SidebarNav({ pathname, onNavigate }: Readonly<{ pathname: string; onNavigate?: () => void }>) {
+function SidebarNav({ pathname, role, onNavigate }: Readonly<{ pathname: string; role?: string; onNavigate?: () => void }>) {
+  const groups = visibleGroups(role);
   const [openState, setOpenState] = useState<Record<string, boolean>>(() => {
     try {
       return JSON.parse(localStorage.getItem(GROUPS_KEY) ?? "{}") as Record<string, boolean>;
@@ -168,7 +191,7 @@ function SidebarNav({ pathname, onNavigate }: Readonly<{ pathname: string; onNav
       </div>
 
       <nav className="relative z-10 pb-4">
-        {NAV_GROUPS.map((group) => {
+        {groups.map((group) => {
           const hasActive = group.items.some((i) => isActivePath(pathname, i.to, i.end));
           const isOpen = hasActive || (openState[group.title] ?? true);
           const panelId = `nav-${group.title.replace(/\s+/g, "-").toLowerCase()}`;
@@ -266,7 +289,7 @@ export function AdminLayout() {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <SidebarNav pathname={loc.pathname} onNavigate={() => setOpen(false)} />
+        <SidebarNav pathname={loc.pathname} role={member?.role} onNavigate={() => setOpen(false)} />
       </aside>
 
       {/* Content column, offset by the fixed 240px sidebar on desktop */}
@@ -300,6 +323,12 @@ export function AdminLayout() {
             </button>
             {userMenu && (
               <div role="menu" className="absolute right-0 z-20 mt-2 w-56 rounded-2xl border border-sand bg-paper p-2 shadow-lg">
+                {member?.role && (
+                  <div className="flex items-center gap-2 px-4 py-2.5 pb-2">
+                    <span className="text-xs text-ink-faint">Signed in as</span>
+                    <RoleBadge role={member.role} />
+                  </div>
+                )}
                 <Link to="/profile" role="menuitem" onClick={() => setUserMenu(false)} className="block rounded-xl px-4 py-3 text-[0.9375rem] font-medium text-ink transition-colors hover:bg-cream">Profile</Link>
                 <button role="menuitem" onClick={signOut} className="mt-0.5 block w-full rounded-xl px-4 py-3 text-left text-[0.9375rem] font-medium text-clay-text transition-colors hover:bg-cream">Sign out</button>
               </div>

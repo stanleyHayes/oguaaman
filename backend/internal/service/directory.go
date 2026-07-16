@@ -128,8 +128,12 @@ func (s *Service) DiasporaMembers(ctx context.Context) ([]domain.Member, error) 
 
 // ── moderation queue & stats ─────────────────────────────────────────────────
 
-func (s *Service) ModerationQueue(ctx context.Context) ([]domain.Listing, error) {
-	pending, err := s.listings.Find(ctx, domain.ListingFilter{Status: domain.StatusPending})
+func (s *Service) ModerationQueue(ctx context.Context, typeFilter string) ([]domain.Listing, error) {
+	f := domain.ListingFilter{Status: domain.StatusPending}
+	if typeFilter != "" {
+		f.Type = typeFilter
+	}
+	pending, err := s.listings.Find(ctx, f)
 	if err != nil {
 		return nil, err
 	}

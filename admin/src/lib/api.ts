@@ -62,7 +62,7 @@ export interface LoginResult {
 
 export const api = {
   stats: () => get<Stats>("/api/stats"),
-  queue: () => get<Listing[]>("/api/admin/queue"),
+  queue: (type?: string) => get<Listing[]>(`/api/admin/queue${type ? `?type=${encodeURIComponent(type)}` : ""}`),
   listings: () => get<Listing[]>("/api/admin/listings"),
   audit: () => get<ModerationRecord[]>("/api/admin/audit"),
   members: () => get<Member[]>("/api/members"),

@@ -83,7 +83,7 @@ export interface Member {
   photoUrl?: string;
   townId?: string;
   asafoId?: string;
-  role: "member" | "curator" | "steward" | "editor";
+  role: "member" | "curator" | "steward" | "editor" | "moderator";
   suspended: boolean;
   phoneVerified: boolean;
   schoolIds: string[];
