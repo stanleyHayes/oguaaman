@@ -206,6 +206,74 @@ func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": member})
 }
 
+// StartPhoneVerification issues a short-lived verification code for the signed-in
+// member. In dev, the code is returned so the UI can surface it without an SMS
+// provider; production can swap this out for real delivery later.
+func (h *Handler) StartPhoneVerification(w http.ResponseWriter, r *http.Request) {
+	m, authed := h.requireAuth(w, r)
+	if !authed {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "phone-verify-start:"+clientKey(r), 5, time.Hour) {
+		return
+	}
+	member, code, expiresAt, err := h.auth.StartPhoneVerification(r.Context(), m.ID)
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"member":     member,
+		"code":       code,
+		"expiresAt":  expiresAt,
+		"verified":   member.PhoneVerified,
+	})
+}
+
+// ConfirmPhoneVerification checks a one-time code and marks the member verified.
+func (h *Handler) ConfirmPhoneVerification(w http.ResponseWriter, r *http.Request) {
+	m, authed := h.requireAuth(w, r)
+	if !authed {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "phone-verify-confirm:"+clientKey(r), 10, 5*time.Minute) {
+		return
+	}
+	var in struct {
+		Code string `json:"code"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	member, err := h.auth.ConfirmPhoneVerification(r.Context(), m.ID, in.Code)
+	if errors.Is(err, service.ErrPhoneVerificationNotSetup) {
+		fail(w, http.StatusBadRequest, "Start verification first — no code is waiting.")
+		return
+	}
+	if errors.Is(err, service.ErrPhoneVerificationExpired) {
+		fail(w, http.StatusUnauthorized, "That verification code expired — please request a new one.")
+		return
+	}
+	if errors.Is(err, service.ErrInvalidPhoneVerificationCode) {
+		fail(w, http.StatusUnauthorized, "That verification code didn't work.")
+		return
+	}
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"member": member, "verified": member.PhoneVerified})
+}
+
 func (h *Handler) AuthMe(w http.ResponseWriter, r *http.Request) {
 	m := currentMember(r)
 	if m == nil {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
 import { Link, router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -185,6 +185,7 @@ function MeLoaded({ slug, onSignOut }: Readonly<{ slug: string; onSignOut: () =>
 }
 
 function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: () => void }>) {
+  const { setMember } = useAuth();
   const m = view.member;
   const places = view.places ?? [];
 
@@ -212,6 +213,12 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
   // Profile photo.
   const [photo, setPhoto] = useState(m.photoUrl ?? "");
   const [photoSave, setPhotoSave] = useState<SaveState>("idle");
+  const [verified, setVerified] = useState(m.phoneVerified);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyState, setVerifyState] = useState<SaveState>("idle");
+  const [verifyError, setVerifyError] = useState("");
+  const [verifySentCode, setVerifySentCode] = useState("");
+  const [verifyExpiresAt, setVerifyExpiresAt] = useState("");
   async function savePhoto(url: string) {
     setPhoto(url);
     setPhotoSave("saving");
@@ -219,6 +226,38 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
       await api.setPhoto(url);
       setPhotoSave("saved");
     } catch { setPhotoSave("error"); }
+  }
+  async function startVerification() {
+    setVerifyError("");
+    setVerifyState("saving");
+    try {
+      const res = await api.startPhoneVerification();
+      setVerified(res.member.phoneVerified);
+      setMember(res.member);
+      setVerifySentCode(res.code ?? "");
+      setVerifyExpiresAt(res.expiresAt ?? "");
+      setVerifyCode("");
+      setVerifyState("saved");
+    } catch (e) {
+      setVerifyError(e instanceof Error ? e.message : "Could not send a verification code.");
+      setVerifyState("error");
+    }
+  }
+  async function confirmVerification() {
+    setVerifyError("");
+    setVerifyState("saving");
+    try {
+      const res = await api.confirmPhoneVerification(verifyCode);
+      setVerified(res.member.phoneVerified);
+      setMember(res.member);
+      setVerifySentCode("");
+      setVerifyExpiresAt("");
+      setVerifyCode("");
+      setVerifyState("saved");
+    } catch (e) {
+      setVerifyError(e instanceof Error ? e.message : "Could not confirm the verification code.");
+      setVerifyState("error");
+    }
   }
 
   return (
@@ -234,9 +273,42 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
           {quarter ? <View style={s.darkChip}><Text style={s.darkChipText}>{quarter.name}</Text></View> : null}
           {asafo ? <View style={s.darkChip}><Text style={s.darkChipText}>{asafo.name}</Text></View> : null}
         </View>
+        {!verified && <View style={s.warnChip}><Text style={s.warnChipText}>Verification needed</Text></View>}
       </View>
 
       <View style={s.body}>
+        {!verified && (
+          <Section title="Verification needed" help="Submissions stay blocked until your account is verified. Send a code, then enter it here to unlock the submit form.">
+            <Pressable onPress={startVerification} disabled={verifyState === "saving"} style={[s.primaryBtn, { alignSelf: "flex-start" }, verifyState === "saving" && { opacity: 0.6 }]}>
+              <Text style={s.primaryBtnText}>{verifyState === "saving" ? "Sending…" : "Send code"}</Text>
+            </Pressable>
+            {verifySentCode ? (
+              <View style={{ gap: 10, marginTop: 12 }}>
+                <TextInput
+                  value={verifyCode}
+                  onChangeText={setVerifyCode}
+                  placeholder="123456"
+                  keyboardType="number-pad"
+                  autoComplete="one-time-code"
+                  style={s.codeInput}
+                />
+                <View style={{ flexDirection: "row", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <Pressable
+                    onPress={confirmVerification}
+                    disabled={verifyState === "saving" || verifyCode.trim() === ""}
+                    style={[s.secondaryBtn, (verifyState === "saving" || verifyCode.trim() === "") && { opacity: 0.6 }]}
+                  >
+                    <Text style={s.secondaryBtnText}>{verifyState === "saving" ? "Checking…" : "Confirm code"}</Text>
+                  </Pressable>
+                  {verifyExpiresAt ? <Text style={s.help}>Expires: {verifyExpiresAt}</Text> : null}
+                </View>
+                <Text style={s.help}>Dev mode shows the code here: <Text style={s.mono}>{verifySentCode}</Text></Text>
+              </View>
+            ) : null}
+            {verifyError ? <Text style={[s.errNote, { marginTop: 10 }]}>{verifyError}</Text> : null}
+          </Section>
+        )}
+
         <Section title="Your photo" help="Put a face to your name. It shows on your profile and across the community.">
           <ImageField value={photo} onChange={savePhoto} />
           {photoSave === "saving" && <Text style={[s.help, { marginTop: 8 }]}>Saving…</Text>}
@@ -594,6 +666,8 @@ const s = StyleSheet.create({
   name: { ...D(700), fontSize: 26, color: C.cream, marginTop: 12 },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12, justifyContent: "center" },
+  warnChip: { marginTop: 12, borderWidth: 1, borderColor: "rgba(247,196,74,0.4)", backgroundColor: "rgba(247,196,74,0.14)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
+  warnChipText: { color: C.gold, fontSize: 12, fontWeight: "700" },
   darkChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.3)", backgroundColor: "rgba(246,241,231,0.1)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   darkChipText: { color: C.cream, fontSize: 12 },
 
@@ -621,7 +695,10 @@ const s = StyleSheet.create({
   diaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   diaLabel: { color: C.ink, fontSize: 14, flex: 1 },
   diaInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14 },
+  codeInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14, letterSpacing: 2 },
   diaSaveBtn: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
+  secondaryBtn: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16 },
+  secondaryBtnText: { color: C.green, fontWeight: "700", fontSize: 13 },
 
   repChip: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   repChipOnGreen: { backgroundColor: C.green, borderColor: C.green },
@@ -661,6 +738,7 @@ const s = StyleSheet.create({
   saveBtnText: { color: C.cream, fontWeight: "700", fontSize: 14 },
   savedNote: { color: C.tealText, fontSize: 13, fontWeight: "600" },
   errNote: { color: C.clayText, fontSize: 13 },
+  mono: { fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }), color: C.green },
 
   connCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12 },
   connAvatar: { borderRadius: 22 },

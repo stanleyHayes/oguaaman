@@ -17,6 +17,7 @@ interface AuthState {
   completeMfa: (challenge: string, code: string) => Promise<void>;
   join: (input: JoinInput) => Promise<void>;
   signOut: () => void;
+  setMember: (m: Member) => void;
 }
 
 /** What signIn resolves to: a session, or an MFA challenge to complete. */
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setMember(null);
   }, []);
 
-  const value = useMemo(() => ({ member, loading, signIn, completeMfa, join, signOut }), [member, loading, signIn, completeMfa, join, signOut]);
+  const value = useMemo(() => ({ member, loading, signIn, completeMfa, join, signOut, setMember }), [member, loading, signIn, completeMfa, join, signOut, setMember]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

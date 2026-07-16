@@ -1,7 +1,9 @@
 package service
 
 import (
+	crypto_rand "crypto/rand"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"strings"
@@ -40,12 +42,25 @@ var ErrMFANotSetup = errors.New("two-factor authentication isn't set up on this 
 // ErrInvalidChallenge is returned for an expired/forged MFA login challenge.
 var ErrInvalidChallenge = errors.New("your sign-in challenge expired — please sign in again")
 
+// ErrPhoneVerificationNotSetup is returned when a verification code is checked
+// before one was issued.
+var ErrPhoneVerificationNotSetup = errors.New("phone verification hasn't been started on this account")
+
+// ErrPhoneVerificationExpired is returned when the verification code has timed out.
+var ErrPhoneVerificationExpired = errors.New("that verification code expired — please request a new one")
+
+// ErrInvalidPhoneVerificationCode is returned when the verification code doesn't match.
+var ErrInvalidPhoneVerificationCode = errors.New("that verification code didn't work")
+
 // minSignupAge is the self-registration floor; minors join only via a guardian
 // (a deferred flow). See spec §14.4.
 const minSignupAge = 18
 
 // minPasswordLen is the floor for password sign-up.
 const minPasswordLen = 8
+
+// phoneVerificationTTL bounds the contact-verification window.
+const phoneVerificationTTL = 10 * time.Minute
 
 // AuthService implements password-based sign-in → JWT sessions (spec §8.1, §9).
 type AuthService struct {
@@ -204,6 +219,67 @@ func (a *AuthService) Login(ctx context.Context, identifier, password string) (s
 		return "", nil, err
 	}
 	return token, member, nil
+}
+
+// StartPhoneVerification generates a short-lived verification code, stores its
+// hash on the member record, and returns the code so the caller can deliver it
+// out-of-band (or display it in dev mode where no SMS/WhatsApp provider exists).
+func (a *AuthService) StartPhoneVerification(ctx context.Context, memberID string) (*domain.Member, string, string, error) {
+	m, err := a.members.ByID(ctx, memberID)
+	if err != nil {
+		return nil, "", "", err
+	}
+	if m.PhoneVerified {
+		return m, "", "", nil
+	}
+	code, err := newVerificationCode()
+	if err != nil {
+		return nil, "", "", err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(code), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, "", "", err
+	}
+	expiresAt := time.Now().UTC().Add(phoneVerificationTTL).Format(time.RFC3339)
+	if err := a.members.SetPhoneVerification(ctx, m.ID, string(hash), expiresAt); err != nil {
+		return nil, "", "", err
+	}
+	m.PhoneVerificationCodeHash = string(hash)
+	m.PhoneVerificationExpiresAt = expiresAt
+	m.PhoneVerified = false
+	return m, code, expiresAt, nil
+}
+
+// ConfirmPhoneVerification checks a verification code and marks the member as
+// verified once it matches and hasn't expired yet.
+func (a *AuthService) ConfirmPhoneVerification(ctx context.Context, memberID, code string) (*domain.Member, error) {
+	m, err := a.members.ByID(ctx, memberID)
+	if err != nil {
+		return nil, err
+	}
+	if m.PhoneVerified {
+		return m, nil
+	}
+	if m.PhoneVerificationCodeHash == "" || m.PhoneVerificationExpiresAt == "" {
+		return nil, ErrPhoneVerificationNotSetup
+	}
+	expiresAt, err := time.Parse(time.RFC3339, m.PhoneVerificationExpiresAt)
+	if err != nil {
+		return nil, ErrPhoneVerificationNotSetup
+	}
+	if time.Now().UTC().After(expiresAt) {
+		return nil, ErrPhoneVerificationExpired
+	}
+	if bcrypt.CompareHashAndPassword([]byte(m.PhoneVerificationCodeHash), []byte(normalizeVerificationCode(code))) != nil {
+		return nil, ErrInvalidPhoneVerificationCode
+	}
+	if err := a.members.SetPhoneVerified(ctx, m.ID, true); err != nil {
+		return nil, err
+	}
+	m.PhoneVerified = true
+	m.PhoneVerificationCodeHash = ""
+	m.PhoneVerificationExpiresAt = ""
+	return m, nil
 }
 
 // DeleteAccount verifies the member's password, then anonymises the account
@@ -432,6 +508,25 @@ func normalizeIdentifier(s string) string {
 		return strings.ToLower(s)
 	}
 	return s
+}
+
+func newVerificationCode() (string, error) {
+	var n uint32
+	if err := binary.Read(crypto_rand.Reader, binary.BigEndian, &n); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", n%1_000_000), nil
+}
+
+func normalizeVerificationCode(code string) string {
+	var b strings.Builder
+	b.Grow(len(code))
+	for _, r := range strings.TrimSpace(code) {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // isAdult reports whether someone born on dob ("YYYY-MM-DD") is at least

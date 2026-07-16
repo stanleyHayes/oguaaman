@@ -53,7 +53,20 @@ func (r *MemberRepo) Insert(ctx context.Context, m domain.Member) error {
 }
 
 func (r *MemberRepo) SetPhoneVerified(ctx context.Context, id string, verified bool) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"phoneVerified": verified}})
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"phoneVerified": verified,
+		"phoneVerificationCodeHash": "",
+		"phoneVerificationExpiresAt": "",
+	}})
+	return err
+}
+
+func (r *MemberRepo) SetPhoneVerification(ctx context.Context, id, codeHash, expiresAt string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"phoneVerified": false,
+		"phoneVerificationCodeHash": codeHash,
+		"phoneVerificationExpiresAt": expiresAt,
+	}})
 	return err
 }
 
@@ -136,6 +149,7 @@ func (r *MemberRepo) Anonymize(ctx context.Context, id string) error {
 			"suspended": true,
 			"birthday":  "", "broadcastBirthday": false, "diaspora": nil,
 			"dateOfBirth": "", "passwordHash": "",
+			"phoneVerificationCodeHash": "", "phoneVerificationExpiresAt": "",
 			"mfaEnabled": false, "totpSecret": "", "mfaRecoveryHashes": []string{},
 		},
 		"$unset": bson.M{"email": "", "phone": ""},

@@ -93,7 +93,7 @@ function QuickAction({ to, label, desc, glyph }: Readonly<{ to: string; label: s
 }
 
 export function Component() {
-  const { member, loading } = useAuth();
+  const { member, loading, setMember } = useAuth();
   const [view, setView] = useState<MemberView | null>(null);
   // Profile photo (seeded from the loaded profile).
   const [photo, setPhoto] = useState("");
@@ -122,6 +122,12 @@ export function Component() {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoConfirmed, setPromoConfirmed] = useState<Promotion | null>(null);
   const promoConfirmedRef = useRef(false);
+  // Phone/contact verification gate for submissions.
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyState, setVerifyState] = useState<SaveState>("idle");
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifySentCode, setVerifySentCode] = useState<string | null>(null);
+  const [verifyExpiresAt, setVerifyExpiresAt] = useState<string | null>(null);
   // Bumped after a promotion confirms so the owned listings refetch.
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -214,6 +220,38 @@ export function Component() {
       setDiaState("error");
     }
   }
+  async function startVerification() {
+    setVerifyError(null);
+    setVerifyState("saving");
+    try {
+      const res = await api.startPhoneVerification();
+      setVerifySentCode(res.code ?? null);
+      setVerifyExpiresAt(res.expiresAt ?? null);
+      setVerifyCode("");
+      setVerifyState("saved");
+      setMember(res.member);
+      setView((cur) => (cur ? { ...cur, member: res.member } : cur));
+    } catch (e) {
+      setVerifyError(e instanceof Error ? e.message : "Could not send a verification code.");
+      setVerifyState("error");
+    }
+  }
+  async function confirmVerification() {
+    setVerifyError(null);
+    setVerifyState("saving");
+    try {
+      const res = await api.confirmPhoneVerification(verifyCode);
+      setMember(res.member);
+      setVerifySentCode(null);
+      setVerifyExpiresAt(null);
+      setVerifyCode("");
+      setVerifyState("saved");
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      setVerifyError(e instanceof Error ? e.message : "Could not confirm the verification code.");
+      setVerifyState("error");
+    }
+  }
   async function promote(l: Listing, days: number) {
     setPromoError(null);
     setPromoBusy(true);
@@ -248,10 +286,16 @@ export function Component() {
                   {asafo.name}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 text-xs text-cream/60">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
-                Phone verified
-              </span>
+              {me.phoneVerified ? (
+                <span className="inline-flex items-center gap-1.5 text-xs text-cream/60">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
+                  Contact verified
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/20 px-2.5 py-1 text-xs text-gold">
+                  Verification needed
+                </span>
+              )}
             </div>
           </div>
           <div className="sm:ml-auto">
@@ -264,6 +308,55 @@ export function Component() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {QUICK_ACTIONS.map((a, i) => <StaggerItem key={a.to} index={i}><QuickAction {...a} /></StaggerItem>)}
         </div>
+
+        {!me.phoneVerified && (
+          <section className="mt-8 rounded-[var(--radius-card)] border border-gold-border/40 bg-gold/[0.08] p-5 shadow-[var(--shadow-card)]">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="eyebrow text-gold-text">Verification needed</p>
+                <h2 className="mt-1 text-xl font-semibold text-ink">Verify your contact before you submit</h2>
+                <p className="mt-1 text-sm text-ink-muted">
+                  Submissions stay blocked until your account is verified. Send yourself a code, then enter it here to unlock the submit form.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={startVerification} disabled={verifyState === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+                  {verifyState === "saving" ? "Sending…" : "Send code"}
+                </button>
+              </div>
+            </div>
+            {verifySentCode && (
+              <div className="mt-4 rounded-2xl border border-green/15 bg-paper p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                  <label className="block flex-1">
+                    <span className="mb-1.5 block text-sm font-medium text-ink">Enter the 6-digit code</span>
+                    <input
+                      value={verifyCode}
+                      onChange={(e) => setVerifyCode(e.target.value)}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="123456"
+                      className="w-full rounded-xl border border-sand bg-cream px-4 py-3 text-center text-lg tracking-[0.3em] text-ink focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15"
+                    />
+                  </label>
+                  <button type="button" onClick={confirmVerification} disabled={verifyState === "saving" || verifyCode.trim() === ""} className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-cream hover:bg-clay/90 disabled:opacity-60">
+                    {verifyState === "saving" ? "Checking…" : "Confirm code"}
+                  </button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
+                  {verifyExpiresAt && <span>Expires: {verifyExpiresAt}</span>}
+                  <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-green">Dev mode shows the code below.</span>
+                </div>
+                {verifySentCode && (
+                  <p className="mt-3 rounded-lg border border-dashed border-green/20 bg-green/[0.04] px-3 py-2 text-sm text-ink">
+                    Code: <span className="font-mono font-semibold tracking-[0.18em] text-green">{verifySentCode}</span>
+                  </p>
+                )}
+                {verifyError && <p className="mt-3 text-sm text-clay-text">{verifyError}</p>}
+              </div>
+            )}
+          </section>
+        )}
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
           {/* Left — identity & settings */}

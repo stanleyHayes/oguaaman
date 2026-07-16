@@ -194,6 +194,10 @@ func (h *Handler) Submit(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if m != nil && !m.PhoneVerified {
+		fail(w, http.StatusForbidden, "Verify your phone or contact before you submit.")
+		return
+	}
 	if h.rateLimited(w, r, "submit:"+clientKey(r), 15, time.Hour) {
 		return
 	}

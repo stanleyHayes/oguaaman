@@ -68,6 +68,10 @@ type Member struct {
 	// Auth identifiers — private; never serialised to the public API (spec §11: phone private).
 	Phone string `json:"-" bson:"phone,omitempty"`
 	Email string `json:"-" bson:"email,omitempty"`
+	// Phone verification state — used by the submit spam gate. The code hash and
+	// expiry never leave the server; the public API only exposes phoneVerified.
+	PhoneVerificationCodeHash string `json:"-" bson:"phoneVerificationCodeHash,omitempty"`
+	PhoneVerificationExpiresAt string `json:"-" bson:"phoneVerificationExpiresAt,omitempty"`
 	// DateOfBirth — private; captured at signup for the 18+ self-registration gate
 	// (spec §14.4). Never serialised to any client.
 	DateOfBirth string `json:"-" bson:"dateOfBirth,omitempty"`
@@ -96,6 +100,7 @@ type MemberRepository interface {
 	ByIdentifier(ctx context.Context, identifier string) (*Member, error) // phone or email
 	Insert(ctx context.Context, m Member) error
 	SetPhoneVerified(ctx context.Context, id string, verified bool) error
+	SetPhoneVerification(ctx context.Context, id, codeHash, expiresAt string) error
 	UpdateRole(ctx context.Context, id, role string) error
 	SetSuspended(ctx context.Context, id string, suspended bool) error
 	SetBirthday(ctx context.Context, id, birthday string, broadcast bool) error

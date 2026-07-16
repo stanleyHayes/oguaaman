@@ -76,6 +76,13 @@ export interface LoginResult {
   challenge?: string;
 }
 
+export interface PhoneVerificationResult {
+  member: Member;
+  code?: string;
+  expiresAt?: string;
+  verified: boolean;
+}
+
 export const api = {
   home: () => get<HomeData>("/api/home"),
   stats: () => get<Stats>("/api/stats"),
@@ -250,6 +257,9 @@ export const api = {
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
   register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[] }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
+  startPhoneVerification: () => post<PhoneVerificationResult>("/api/me/phone/verify/start", {}),
+  confirmPhoneVerification: (code: string) =>
+    post<PhoneVerificationResult>("/api/me/phone/verify/confirm", { code }),
   // MFA enrolment + account data rights (Act 843, spec §14).
   mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup", {}),
   mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
