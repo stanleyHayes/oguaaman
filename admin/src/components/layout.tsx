@@ -6,7 +6,7 @@ import {
   Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
   Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
-  LogOut, BellRing, Map, type LucideIcon,
+  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -93,14 +93,26 @@ export function RoleBadge({ role }: Readonly<{ role: string }>) {
 
 export function Mark({ size = 26, color = "#C7A24A" }: Readonly<{ size?: number; color?: string }>) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M4.6 13.4c0-3 3.3-4.6 7.4-4.6s7.4 1.6 7.4 4.6c0 2.4-3.3 3.9-7.4 3.9s-7.4-1.5-7.4-3.9Z" />
-      <path d="M9.6 9V6.4M14.4 9V6.4" />
-      <circle cx="9.6" cy="5.7" r="0.7" fill={color} stroke="none" />
-      <circle cx="14.4" cy="5.7" r="0.7" fill={color} stroke="none" />
-      <path d="M5.2 12.3 2.3 9.6M2.3 9.6l1.9-.2M2.3 9.6l.1 1.9" />
-      <path d="M18.8 12.3 21.7 9.6M21.7 9.6l-1.9-.2M21.7 9.6l.1 1.9" />
-      <path d="M6.2 15.4 3.2 17M7.4 16.8 5.2 19.6M16.6 16.8 18.8 19.6M17.8 15.4 20.8 17" />
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <g transform="translate(0,-1)">
+        <path d="M43 32.5C47 31 50 30.5 52 28" />
+        <path d="M52 28C56 27 59.2 23.4 55.6 20.4 54 19.1 52.4 20.2 52.9 22" />
+        <path d="M52 28C54.6 28.9 57 27.6 57.2 25.2" />
+        <path d="M43.5 40.5C47.5 41.5 50.6 43.4 52.6 46.4" />
+        <path d="M42.5 43C45.6 44.4 48 46.4 49.5 49.4" />
+        <path d="M40.6 45C42.6 47 43.8 49 44.8 51.7" />
+        <path d="M21 32.5C17 31 14 30.5 12 28" />
+        <path d="M12 28C8 27 4.8 23.4 8.4 20.4 10 19.1 11.6 20.2 11.1 22" />
+        <path d="M12 28C9.4 28.9 7 27.6 6.8 25.2" />
+        <path d="M20.5 40.5C16.5 41.5 13.4 43.4 11.4 46.4" />
+        <path d="M21.5 43C18.4 44.4 16 46.4 14.5 49.4" />
+        <path d="M23.4 45C21.4 47 20.2 49 19.2 51.7" />
+        <path d="M20 39C20 32 25.5 28.5 32 28.5 38.5 28.5 44 32 44 39 44 44 39 46.5 32 46.5 25 46.5 20 44 20 39Z" />
+        <path d="M28 29L28 24" />
+        <path d="M36 29L36 24" />
+        <circle cx="28" cy="22.4" r="2" fill={color} stroke="none" />
+        <circle cx="36" cy="22.4" r="2" fill={color} stroke="none" />
+      </g>
     </svg>
   );
 }
@@ -125,13 +137,13 @@ function Tick({ className }: Readonly<{ className?: string }>) {
 }
 
 /** Curved file-tree connector from the group trunk into each item (Aura app-sidebar). */
-function Connector({ last, active }: Readonly<{ last: boolean; active: boolean }>) {
+function Connector({ last, active, collapsed }: Readonly<{ last: boolean; active: boolean; collapsed?: boolean }>) {
   return (
     <svg
       viewBox="0 0 24 40"
       preserveAspectRatio="none"
       aria-hidden="true"
-      className={`absolute left-[18px] top-0 h-full w-5 transition-colors ${active ? "text-aura-gold" : "text-navy-muted"}`}
+      className={`absolute left-[18px] top-0 h-full w-5 transition-colors ${active ? "text-aura-gold" : "text-navy-muted"} ${collapsed ? "lg:hidden" : ""}`}
     >
       <path
         d={last ? "M7 0 V17 Q7 23 13 23 H24" : "M7 0 V40 M7 23 Q7 23 13 23 H24"}
@@ -145,6 +157,7 @@ function Connector({ last, active }: Readonly<{ last: boolean; active: boolean }
 }
 
 const GROUPS_KEY = "oguaa.admin.nav.groups";
+const COLLAPSE_KEY = "oguaa.admin.nav.collapsed";
 
 function isActivePath(pathname: string, to: string, end?: boolean): boolean {
   return end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
@@ -156,7 +169,7 @@ function isActivePath(pathname: string, to: string, end?: boolean): boolean {
  * (auraedu/packages/ui/src/components/app-sidebar.tsx). Groups persist their
  * open state; the group holding the active route is always open.
  */
-function SidebarNav({ pathname, role, onNavigate }: Readonly<{ pathname: string; role?: string; onNavigate?: () => void }>) {
+function SidebarNav({ pathname, role, onNavigate, collapsed = false, onToggleCollapsed }: Readonly<{ pathname: string; role?: string; onNavigate?: () => void; collapsed?: boolean; onToggleCollapsed?: () => void }>) {
   const groups = visibleGroups(role);
   const [openState, setOpenState] = useState<Record<string, boolean>>(() => {
     try {
@@ -183,14 +196,29 @@ function SidebarNav({ pathname, role, onNavigate }: Readonly<{ pathname: string;
         O
       </span>
 
-      <div className="relative z-10 px-4 pb-3 pt-4">
-        <Link to="/" onClick={onNavigate} className="flex items-center gap-2.5 text-[0.9375rem] font-extrabold tracking-tight text-aura-cream">
-          <span className="grid size-7 place-items-center rounded-md bg-gradient-to-br from-aura-gold to-aura-gold-soft shadow-sm" aria-hidden>
+      <div className={`relative z-10 flex items-center justify-between gap-2 px-4 pb-3 pt-4 ${collapsed ? "lg:flex-col lg:gap-3 lg:px-0" : ""}`}>
+        <Link
+          to="/"
+          onClick={onNavigate}
+          title={collapsed ? "Oguaa Admin" : undefined}
+          className="flex items-center gap-2.5 text-[0.9375rem] font-extrabold tracking-tight text-aura-cream"
+        >
+          <span className="grid size-7 shrink-0 place-items-center rounded-md bg-gradient-to-br from-aura-gold to-aura-gold-soft shadow-sm" aria-hidden>
             <Mark size={16} color="#001b50" />
           </span>
-          Oguaa
-          <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-aura-gold-muted">Admin</span>
+          <span className={collapsed ? "lg:hidden" : ""}>Oguaa</span>
+          <span className={`font-mono text-[9px] uppercase tracking-[0.18em] text-aura-gold-muted ${collapsed ? "lg:hidden" : ""}`}>Admin</span>
         </Link>
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-pressed={collapsed}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="hidden shrink-0 rounded-md p-1.5 text-aura-cream/60 transition-colors hover:bg-navy-soft hover:text-aura-cream lg:inline-flex"
+        >
+          {collapsed ? <PanelLeft size={18} aria-hidden /> : <PanelLeftClose size={18} aria-hidden />}
+        </button>
       </div>
 
       <nav className="relative z-10 pb-4">
@@ -205,13 +233,14 @@ function SidebarNav({ pathname, role, onNavigate }: Readonly<{ pathname: string;
                 onClick={() => toggle(group.title)}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                className="flex w-full items-center justify-between px-[18px] py-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-aura-gold-muted transition-colors hover:text-aura-gold-soft"
+                title={collapsed ? group.title : undefined}
+                className={`flex w-full items-center justify-between px-[18px] py-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-aura-gold-muted transition-colors hover:text-aura-gold-soft ${collapsed ? "lg:justify-center lg:px-0" : ""}`}
               >
                 <span className="flex items-center gap-2">
                   <group.icon size={12} className="shrink-0" aria-hidden />
-                  {group.title}
+                  <span className={collapsed ? "lg:hidden" : ""}>{group.title}</span>
                 </span>
-                <svg viewBox="0 0 24 24" className={`size-3 transition-transform ${isOpen ? "" : "-rotate-90"}`} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round">
+                <svg viewBox="0 0 24 24" className={`size-3 transition-transform ${isOpen ? "" : "-rotate-90"} ${collapsed ? "lg:hidden" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round">
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </button>
@@ -228,18 +257,19 @@ function SidebarNav({ pathname, role, onNavigate }: Readonly<{ pathname: string;
                         to={item.to}
                         onClick={onNavigate}
                         aria-current={active ? "page" : undefined}
+                        title={collapsed ? item.label : undefined}
                         className={`relative flex h-[38px] items-center gap-2 pl-10 pr-3.5 text-[13.5px] transition-colors ${
-                          active ? "font-semibold text-aura-gold" : "text-aura-cream/70 hover:text-aura-cream"
-                        }`}
+                          collapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""
+                        } ${active ? "font-semibold text-aura-gold" : "text-aura-cream/70 hover:text-aura-cream"}`}
                       >
-                        <Connector last={i === group.items.length - 1} active={active} />
+                        <Connector last={i === group.items.length - 1} active={active} collapsed={collapsed} />
                         {active && <span aria-hidden className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r bg-aura-gold" />}
                         <item.icon size={15} className="shrink-0" aria-hidden />
-                        <span className="truncate">{item.label}</span>
+                        <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>{item.label}</span>
                         {item.badge ? (
-                          <span className="ml-auto rounded-full bg-crit px-1.5 font-mono text-[10px] text-white">{item.badge}</span>
+                          <span className={`ml-auto rounded-full bg-crit px-1.5 font-mono text-[10px] text-white ${collapsed ? "lg:hidden" : ""}`}>{item.badge}</span>
                         ) : active ? (
-                          <Tick className="ml-auto w-3.5 text-aura-gold" />
+                          <Tick className={`ml-auto w-3.5 text-aura-gold ${collapsed ? "lg:hidden" : ""}`} />
                         ) : null}
                       </Link>
                     );
@@ -325,6 +355,13 @@ export function AdminLayout() {
   const loc = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false); // mobile drawer
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(COLLAPSE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }); // desktop rail (lg+)
   const [userMenu, setUserMenu] = useState(false);
   const [term, setTerm] = useState("");
   const [tour, setTour] = useState(false);
@@ -376,6 +413,17 @@ export function AdminLayout() {
     };
   }, [userMenu]);
 
+  // Desktop-only: collapse the 240px sidebar to a 64px icon rail (persisted).
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   const current = ALL_ITEMS.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? ALL_ITEMS[0];
   const firstName = member?.displayName.split(" ")[0] ?? "";
 
@@ -386,15 +434,15 @@ export function AdminLayout() {
 
       <aside
         aria-label="Primary"
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col overflow-y-auto border-r border-navy-soft bg-navy text-aura-cream transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col overflow-y-auto border-r border-navy-soft bg-navy text-aura-cream transition-[transform,width] duration-200 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        } ${collapsed ? "lg:w-16" : "lg:w-60"}`}
       >
-        <SidebarNav pathname={loc.pathname} role={member?.role} onNavigate={() => setOpen(false)} />
+        <SidebarNav pathname={loc.pathname} role={member?.role} onNavigate={() => setOpen(false)} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </aside>
 
-      {/* Content column, offset by the fixed 240px sidebar on desktop */}
-      <div className="flex min-h-screen flex-col lg:pl-60">
+      {/* Content column, offset by the fixed sidebar on desktop (240px → 64px when collapsed) */}
+      <div className={`flex min-h-screen flex-col transition-[padding] duration-200 ${collapsed ? "lg:pl-16" : "lg:pl-60"}`}>
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-sand bg-cream/90 px-4 backdrop-blur sm:px-6">
           <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-ink-muted hover:bg-sand lg:hidden" aria-label="Open menu">
             <Icon name="menu" />
