@@ -15,6 +15,9 @@ type recOrgs struct {
 	orgs []domain.Organization
 }
 
+func (r *recOrgs) All(context.Context) ([]domain.Organization, error) {
+	return append([]domain.Organization(nil), r.orgs...), nil
+}
 func (r *recOrgs) BySlug(_ context.Context, slug string) (*domain.Organization, error) {
 	for i := range r.orgs {
 		if r.orgs[i].Slug == slug {
@@ -137,5 +140,102 @@ func TestUpdateOrgProfile_nonManagerRefused(t *testing.T) {
 
 	if _, err := s.UpdateOrgProfile(context.Background(), "m1", "cape-coast-castle", domain.OrgProfilePatch{Summary: "x"}); err == nil {
 		t.Error("a non-manager, non-steward member must be refused")
+	}
+}
+
+// SetVerified records the call and mutates the store (stubOrgs' is a no-op).
+func (r *recOrgs) SetVerified(_ context.Context, id string, verified bool, on string) error {
+	for i := range r.orgs {
+		if r.orgs[i].ID == id {
+			r.orgs[i].Verified = verified
+			r.orgs[i].VerifiedOn = on
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "organization"}
+}
+
+func svcWithListings(orgs domain.OrganizationRepository, repo *fakeRepo) *Service {
+	return New(Deps{Listings: repo, Members: stubMembers{}, Orgs: orgs, Places: stubPlaces{}, Mod: modRepo{repo}, Notifs: stubNotifs{}, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
+}
+
+// Revoking verification takes the page offline AND sends the institution's
+// self-published events back to the review queue; other orgs' events and
+// already-pending events are untouched (spec §8.13).
+func TestVerifyInstitution_revokeDemotesOfficialEvents(t *testing.T) {
+	orgs := &recOrgs{orgs: []domain.Organization{{ID: "org-ucc", Slug: "ucc", Verified: true, VerifiedOn: "2026-05-14"}}}
+	repo := &fakeRepo{listings: []domain.Listing{
+		{ID: "ev-1", Type: domain.TypeEvent, Status: domain.StatusApproved, PostedByOrgID: "org-ucc"},
+		{ID: "ev-2", Type: domain.TypeEvent, Status: domain.StatusApproved, PostedByOrgID: "org-ucc"},
+		{ID: "ev-other", Type: domain.TypeEvent, Status: domain.StatusApproved, PostedByOrgID: "org-other"},
+		{ID: "ev-pending", Type: domain.TypeEvent, Status: domain.StatusPending, PostedByOrgID: "org-ucc"},
+	}}
+	s := svcWithListings(orgs, repo)
+
+	if err := s.VerifyInstitution(context.Background(), "org-ucc", false); err != nil {
+		t.Fatalf("VerifyInstitution returned error: %v", err)
+	}
+	if orgs.orgs[0].Verified || orgs.orgs[0].VerifiedOn != "" {
+		t.Errorf("org should be unverified with empty verifiedOn, got %+v", orgs.orgs[0])
+	}
+	for _, l := range repo.listings {
+		switch l.ID {
+		case "ev-1", "ev-2":
+			if l.Status != domain.StatusPending {
+				t.Errorf("%s: status = %q, want pending (back to review queue)", l.ID, l.Status)
+			}
+		case "ev-other":
+			if l.Status != domain.StatusApproved {
+				t.Errorf("another org's event must stay approved, got %q", l.Status)
+			}
+		case "ev-pending":
+			if l.Status != domain.StatusPending {
+				t.Errorf("already-pending event must stay pending, got %q", l.Status)
+			}
+		}
+	}
+}
+
+// Verifying sets the date and leaves the org's events alone.
+func TestVerifyInstitution_verifySetsDateKeepsEvents(t *testing.T) {
+	orgs := &recOrgs{orgs: []domain.Organization{{ID: "org-ucc", Slug: "ucc"}}}
+	repo := &fakeRepo{listings: []domain.Listing{
+		{ID: "ev-1", Type: domain.TypeEvent, Status: domain.StatusApproved, PostedByOrgID: "org-ucc"},
+	}}
+	s := svcWithListings(orgs, repo)
+
+	if err := s.VerifyInstitution(context.Background(), "org-ucc", true); err != nil {
+		t.Fatalf("VerifyInstitution returned error: %v", err)
+	}
+	if !orgs.orgs[0].Verified || orgs.orgs[0].VerifiedOn == "" {
+		t.Errorf("org should be verified with a date, got %+v", orgs.orgs[0])
+	}
+	if repo.listings[0].Status != domain.StatusApproved {
+		t.Errorf("verifying must not touch events, got %q", repo.listings[0].Status)
+	}
+}
+
+// The public directory only lists verified institutions; the steward's
+// AllInstitutions queue keeps the rest (spec §8.13).
+func TestInstitutions_publicDirectoryExcludesUnverified(t *testing.T) {
+	orgs := &recOrgs{orgs: []domain.Organization{
+		{ID: "org-mfantsipim", Slug: "mfantsipim", Kind: "school", Verified: true},
+		{ID: "org-kotokuraba", Slug: "kotokuraba-traders", Kind: "association"},
+	}}
+	s := svcWithListings(orgs, &fakeRepo{})
+
+	public, err := s.Institutions(context.Background())
+	if err != nil {
+		t.Fatalf("Institutions returned error: %v", err)
+	}
+	if len(public) != 1 || public[0].ID != "org-mfantsipim" {
+		t.Errorf("public directory should list only verified orgs, got %+v", public)
+	}
+	queue, err := s.AllInstitutions(context.Background())
+	if err != nil {
+		t.Fatalf("AllInstitutions returned error: %v", err)
+	}
+	if len(queue) != 2 {
+		t.Errorf("steward queue should list all orgs, got %d", len(queue))
 	}
 }

@@ -34,7 +34,7 @@ export function Component() {
           <div className="mx-auto w-fit"><Crest colors={org.houseColors} label={initials(org.name)} size={88} src={org.crestUrl} /></div>
           <h1 className="mt-4 text-3xl font-semibold sm:text-4xl" style={{ color: "#F6F1E7" }}>{org.name}</h1>
           {org.motto && <p className="mt-2 italic" style={{ color: c2 }}>{org.motto}</p>}
-          <div className="mt-5"><VerifiedBadge label="Verified · Official profile" onDark /></div>
+          {org.verified && <div className="mt-5"><VerifiedBadge label="Verified · Official profile" onDark /></div>}
         </Container>
       </section>
 
@@ -101,7 +101,7 @@ export function Component() {
               <div className="mt-4 flex items-center gap-3 border-t border-dashed border-sand pt-3">
                 <Avatar initials={initials((org.offices ?? [])[0]?.holderName ?? org.name)} size={34} />
                 <p className="text-sm text-ink-muted">
-                  Posted by <span className="font-medium text-ink">{(org.offices ?? [])[0]?.holderName ?? org.name}</span>{(org.offices ?? [])[0] && ` · ${(org.offices ?? [])[0].role}`} <span className="font-medium text-green">· verified</span><br />official channel
+                  Posted by <span className="font-medium text-ink">{(org.offices ?? [])[0]?.holderName ?? org.name}</span>{(org.offices ?? [])[0] && ` · ${(org.offices ?? [])[0].role}`}{org.verified && <span className="font-medium text-green"> · verified</span>}<br />official channel
                 </p>
               </div>
             </div>

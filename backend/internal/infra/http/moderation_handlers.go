@@ -152,6 +152,21 @@ func (h *Handler) AdminSuspend(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]bool{"suspended": in.Suspended})
 }
 
+// AdminInstitutions is the steward's unfiltered institution directory — the
+// verification queue. The public /api/institutions hides unverified orgs, so
+// the queue would be blind without it (spec §8.13).
+func (h *Handler) AdminInstitutions(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.requireRole(w, r); !ok { // steward only
+		return
+	}
+	items, err := h.svc.AllInstitutions(r.Context())
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
+}
+
 func (h *Handler) AdminVerify(w http.ResponseWriter, r *http.Request) {
 	if _, ok := h.requireRole(w, r); !ok { // steward only
 		return

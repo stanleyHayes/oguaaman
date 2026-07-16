@@ -61,11 +61,32 @@ func (s *Service) MemberByID(ctx context.Context, id string) (*domain.Member, er
 	return s.members.ByID(ctx, id)
 }
 func (s *Service) Places(ctx context.Context) ([]domain.Place, error) { return s.places.All(ctx) }
+// Institutions is the public directory: only verified institutions are listed —
+// a revoked page is offline (spec §8.13; see VerifyInstitution). The steward
+// queue uses AllInstitutions, which is unfiltered.
 func (s *Service) Institutions(ctx context.Context) ([]domain.Organization, error) {
-	return s.orgs.All(ctx)
+	all, err := s.orgs.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return verifiedOnly(all), nil
 }
 func (s *Service) Schools(ctx context.Context) ([]domain.Organization, error) {
-	return s.orgs.ByKind(ctx, "school")
+	all, err := s.orgs.ByKind(ctx, "school")
+	if err != nil {
+		return nil, err
+	}
+	return verifiedOnly(all), nil
+}
+
+func verifiedOnly(orgs []domain.Organization) []domain.Organization {
+	out := make([]domain.Organization, 0, len(orgs))
+	for _, o := range orgs {
+		if o.Verified {
+			out = append(out, o)
+		}
+	}
+	return out
 }
 func (s *Service) InstitutionBySlug(ctx context.Context, slug string) (*domain.Organization, error) {
 	return s.orgs.BySlug(ctx, slug)

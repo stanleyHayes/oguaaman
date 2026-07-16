@@ -60,9 +60,11 @@ export const api = {
   listings: () => get<Listing[]>("/api/admin/listings"),
   audit: () => get<ModerationRecord[]>("/api/admin/audit"),
   members: () => get<Member[]>("/api/members"),
+  // Steward view: the unfiltered directory (verification queue). The public
+  // /api/institutions hides unverified/revoked institutions on purpose.
   institutions: (kind?: string) => {
     const q = kind ? `?kind=${encodeURIComponent(kind)}` : "";
-    return get<Organization[]>(`/api/institutions${q}`);
+    return get<Organization[]>(`/api/admin/institutions${q}`);
   },
 
   // Detail views reuse the public read endpoints (rich, ready-made views).

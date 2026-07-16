@@ -155,6 +155,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/admin/members/invite", h.AdminInviteMember)
 	mux.HandleFunc("POST /api/admin/members/{id}/role", h.AdminSetRole)
 	mux.HandleFunc("POST /api/admin/members/{id}/suspend", h.AdminSuspend)
+	mux.HandleFunc("GET /api/admin/institutions", h.AdminInstitutions)
 	mux.HandleFunc("POST /api/admin/institutions", h.AdminCreateInstitution)
 	mux.HandleFunc("POST /api/admin/institutions/{id}/verify", h.AdminVerify)
 	mux.HandleFunc("POST /api/admin/run-remembrance", h.AdminRunRemembrance)

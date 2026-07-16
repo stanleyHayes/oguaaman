@@ -49,7 +49,7 @@ export function Component() {
                 {s.motto && <p className="text-sm italic text-gold-text">{s.motto}</p>}
                 <p className="mt-2 text-sm text-ink-muted">{s.classification}</p>
                 <div className="mt-auto flex items-center justify-between pt-4">
-                  <VerifiedBadge label="Official" />
+                  {s.verified && <VerifiedBadge label="Official" />}
                   {s.osaName && <span className="text-xs text-ink-faint">{s.osaName}</span>}
                 </div>
               </div>

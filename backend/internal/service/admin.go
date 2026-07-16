@@ -102,7 +102,34 @@ func (s *Service) VerifyInstitution(ctx context.Context, id string, verified boo
 	if verified {
 		on = time.Now().UTC().Format(time.DateOnly)
 	}
-	return s.orgs.SetVerified(ctx, id, verified, on)
+	if err := s.orgs.SetVerified(ctx, id, verified, on); err != nil {
+		return err
+	}
+	if verified {
+		return nil
+	}
+	// Revocation takes the page offline: the public directory/detail endpoints
+	// hide unverified institutions, and the org's self-published events must
+	// not stay live either. They go back to the review queue (pending) — after
+	// a later re-verification a curator restores them through normal review;
+	// nothing is deleted and nothing returns without a second look.
+	events, err := s.listings.Find(ctx, domain.ListingFilter{Type: domain.TypeEvent, Status: domain.StatusApproved, PostedByOrgID: id})
+	if err != nil {
+		return err
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+	for _, e := range events {
+		if err := s.listings.UpdateStatus(ctx, e.ID, domain.StatusPending, "steward", "institution verification revoked", now); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// AllInstitutions is the steward's unfiltered directory (verification queue):
+// it includes unverified/revoked institutions that the public endpoints hide.
+func (s *Service) AllInstitutions(ctx context.Context) ([]domain.Organization, error) {
+	return s.orgs.All(ctx)
 }
 
 // CreateOrg creates a new institution (steward action — e.g. a heritage/visitor

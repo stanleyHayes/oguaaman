@@ -30,6 +30,9 @@ func (f *fakeRepo) Find(_ context.Context, q domain.ListingFilter) ([]domain.Lis
 		if q.OwnerID != "" && l.OwnerID != q.OwnerID {
 			continue
 		}
+		if q.PostedByOrgID != "" && l.PostedByOrgID != q.PostedByOrgID {
+			continue
+		}
 		out = append(out, l)
 	}
 	return out, nil

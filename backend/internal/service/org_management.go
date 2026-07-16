@@ -192,6 +192,14 @@ func (s *Service) requireManager(ctx context.Context, memberID, orgSlug string) 
 	return org, nil
 }
 
+// CanManageInstitution reports whether the member manages the institution
+// (approved claim) or is a steward. The public institution endpoint uses it to
+// let managers and stewards view a page that revocation has taken offline.
+func (s *Service) CanManageInstitution(ctx context.Context, memberID, orgSlug string) bool {
+	_, err := s.requireManager(ctx, memberID, orgSlug)
+	return err == nil
+}
+
 // UpdateOrgProfile lets a manager edit the institution's soft profile fields.
 func (s *Service) UpdateOrgProfile(ctx context.Context, memberID, orgSlug string, patch domain.OrgProfilePatch) (*domain.Organization, error) {
 	org, err := s.requireManager(ctx, memberID, orgSlug)

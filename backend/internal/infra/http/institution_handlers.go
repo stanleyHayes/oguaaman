@@ -53,6 +53,12 @@ func (h *Handler) Institution(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
+	// A revoked institution is offline (spec §8.13): the public gets a plain
+	// 404; only its managers and stewards may still view the page.
+	if !org.Verified && !h.canManageInstitution(r, org.Slug) {
+		fail(w, http.StatusNotFound, "institution not found")
+		return
+	}
 	events, err := h.svc.EventsForOrg(ctx, org.ID)
 	if err != nil {
 		h.handleErr(w, err)
@@ -66,6 +72,17 @@ func (h *Handler) Institution(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"institution": org, "events": events, "officialEvents": official,
 	})
+}
+
+// canManageInstitution reports whether the request's (optional) signed-in
+// member manages the institution or is a steward — the viewers allowed past
+// the revoked-page gate in Institution.
+func (h *Handler) canManageInstitution(r *http.Request, slug string) bool {
+	m := currentMember(r)
+	if m == nil {
+		return false
+	}
+	return h.svc.CanManageInstitution(r.Context(), m.ID, slug)
 }
 
 func (h *Handler) MembersList(w http.ResponseWriter, r *http.Request) {

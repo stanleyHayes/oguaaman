@@ -27,10 +27,12 @@ func (fakeOrgs) SetGallery(context.Context, string, []domain.MediaAsset) error  
 func (fakeOrgs) SetSections(context.Context, string, []domain.ProfileSection) error  { return nil }
 
 func TestInstitutionsHandler_kindFilter(t *testing.T) {
+	// Public directory fixtures are verified — the service now hides unverified
+	// orgs from /api/institutions (revocation takes a page offline, spec §8.13).
 	orgs := fakeOrgs{list: []domain.Organization{
-		{ID: "1", Slug: "cape-coast-castle", Kind: "heritage", Name: "Cape Coast Castle"},
-		{ID: "2", Slug: "mfantsipim", Kind: "school", Name: "Mfantsipim School"},
-		{ID: "3", Slug: "kakum", Kind: "heritage", Name: "Kakum National Park"},
+		{ID: "1", Slug: "cape-coast-castle", Kind: "heritage", Name: "Cape Coast Castle", Verified: true},
+		{ID: "2", Slug: "mfantsipim", Kind: "school", Name: "Mfantsipim School", Verified: true},
+		{ID: "3", Slug: "kakum", Kind: "heritage", Name: "Kakum National Park", Verified: true},
 	}}
 	// Only s.orgs is touched by Institutions; the other repos can be nil.
 	svc := service.New(service.Deps{Orgs: orgs})
