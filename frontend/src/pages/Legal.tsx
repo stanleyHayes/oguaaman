@@ -26,7 +26,7 @@ const DOCS: Record<string, Doc> = {
       ] },
       { h: "What stays private", p: ["Your phone number and email are never shown on the public site. Your date of birth is never shown. We do not sell your data, and we do not run third-party advertising trackers."] },
       { h: "What is public", p: ["Approved listings, your display name, and the profile details you add are visible to others — that is the point of a community platform. You choose what to add, and you can ask a steward to remove it."] },
-      { h: "Your choices", p: ["You can edit your profile, opt out of birthday broadcasts, and report or request removal of content about you. To close your account or request your data, contact a steward.", "You can export your account data and request account erasure from your profile controls (Act 843 rights flow)."] },
+      { h: "Your choices", p: ["You can edit your profile, opt out of birthday broadcasts, and report or request removal of content about you.", "You can export your account data and request account erasure from your profile controls (Act 843 rights flow). If you cannot access your account, contact a steward for manual support."] },
       { h: "Retention and deletion", p: ["We retain account and moderation records only as long as needed to operate the service safely, comply with legal duties, and preserve auditability.", "When an account is erased, personal identifiers are anonymised in place and private identifiers are removed from unique indexes."] },
       { h: "Payments and processors", p: ["Paid features (tickets, subscriptions, promotions, project pledges) are processed by Paystack. Oguaa stores only transaction references and status metadata needed for receipts, support and reconciliation."] },
     ],
@@ -38,7 +38,7 @@ const DOCS: Record<string, Doc> = {
     sections: [
       { h: "Who can join", p: ["Oguaa is for people aged 18 and over. By signing in you confirm you meet that age. Accounts found to belong to minors will be removed."] },
       { h: "Your contributions", p: ["You keep ownership of what you contribute, and you grant Oguaa permission to display it on the platform. Only submit things that are real, local, and yours to share."] },
-      { h: "Moderation", p: ["Every contribution is reviewed before it appears. Stewards may decline, unpublish, or hold contested content. Reasons are given on rejection, and you can resubmit."] },
+      { h: "Moderation", p: ["Most contributions are reviewed before they appear. Time-critical safety and lost-and-found notices are published immediately, then reviewed after publication.", "Stewards may decline, unpublish, or hold contested content. Reasons are given on rejection, and you can resubmit."] },
       { h: "Memorials", p: ["Memorials honour real people who have passed. They receive heightened care. The family of the deceased may ask a steward to correct or remove a memorial at any time."] },
       { h: "Liability", p: ["Oguaa is a community vehicle offered as-is. We do our best to keep information accurate, but we cannot guarantee it. Use of the platform is at your own discretion."] },
       { h: "Financial and opportunity notices", p: ["Investment and opportunity listings are informational notices unless explicitly stated by the issuer. Oguaa is not a broker, custodian, lender, or investment adviser.", "Users are responsible for due diligence and independent verification before any financial commitment."] },
