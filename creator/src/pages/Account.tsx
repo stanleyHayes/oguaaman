@@ -4,12 +4,13 @@ import { useAuth } from "@/lib/auth";
 import { PORTAL } from "@/lib/portal";
 import { Card } from "@/components/ui";
 import { formatDate, initials } from "@/lib/format";
-import { Briefcase, Palette, CalendarDays, type LucideIcon } from "lucide-react";
+import { Briefcase, Palette, CalendarDays, Landmark, type LucideIcon } from "lucide-react";
 
 const CREATOR_TYPES: { id: string; label: string; desc: string; icon: LucideIcon }[] = [
   { id: "business", label: "Business owner", desc: "Shops, services, food & drink", icon: Briefcase },
   { id: "artist", label: "Artist", desc: "Music, craft, performance", icon: Palette },
   { id: "organiser", label: "Event organiser", desc: "Ticketed shows and gatherings", icon: CalendarDays },
+  { id: "institution", label: "Institution manager", desc: "Schools, heritage, civic and community bodies", icon: Landmark },
 ];
 
 function roleLabel(role: string): string {
