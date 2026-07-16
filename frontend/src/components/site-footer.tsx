@@ -105,6 +105,7 @@ export function SiteFooter() {
             <Link to="/privacy" className="hover:text-gold">Privacy</Link>
             <Link to="/terms" className="hover:text-gold">Terms of Use</Link>
             <Link to="/acceptable-use" className="hover:text-gold">Acceptable Use</Link>
+            <Link to="/safeguarding" className="hover:text-gold">Safeguarding</Link>
             <Link to="/search" className="hover:text-gold">Search</Link>
           </nav>
 

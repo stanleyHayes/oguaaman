@@ -115,8 +115,12 @@ export function Component() {
       </PageHero>
 
       <Container size="wide" className="py-12">
-        <Reveal><SectionHeading kicker="Youth opportunities · information & links only" title="Open doors for the young" lede="Scholarships, internships, apprenticeships, training and jobs. Browse and follow the outbound link to apply — no private adult-to-minor contact runs through the platform." accentClass="bg-teal" /></Reveal>
+        <Reveal><SectionHeading kicker="Youth opportunities · information & links only" title="Open doors for the young" lede="Scholarships, internships, apprenticeships, training, jobs, investment calls and mentorship programmes. Browse and follow the outbound link to apply — no private adult-to-minor contact runs through the platform." accentClass="bg-teal" /></Reveal>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{opps.map((o, i) => <StaggerItem key={o.id} index={i} lift><OpportunityCard opp={o} /></StaggerItem>)}</div>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Cta to="/investment" variant="outline">Investment opportunities</Cta>
+          <Cta to="/mentorship" variant="outline">Mentorship matching</Cta>
+        </div>
       </Container>
 
       <MemoryWall initial={memories} schools={schools} places={places} />

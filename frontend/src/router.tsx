@@ -39,6 +39,8 @@ export const router = createBrowserRouter([
       { path: "lost-found/new", lazy: () => import("./pages/PostLostFound") },
       { path: "lost-found/:slug", lazy: () => import("./pages/LostFoundDetail") },
       { path: "community", lazy: () => import("./pages/Community") },
+      { path: "investment", lazy: () => import("./pages/Investment") },
+      { path: "mentorship", lazy: () => import("./pages/Mentorship") },
       { path: "diaspora", lazy: () => import("./pages/Diaspora") },
       { path: "youth", lazy: () => import("./pages/Youth") },
       { path: "news", lazy: () => import("./pages/News") },
@@ -53,6 +55,7 @@ export const router = createBrowserRouter([
       { path: "privacy", lazy: () => import("./pages/Legal") },
       { path: "terms", lazy: () => import("./pages/Legal") },
       { path: "acceptable-use", lazy: () => import("./pages/Legal") },
+      { path: "safeguarding", lazy: () => import("./pages/Legal") },
     ],
   },
 ]);

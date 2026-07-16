@@ -38,9 +38,14 @@ var editableDetailsKeys = map[string]map[string]bool{
 	domain.TypeBusiness:    {"category": true, "description": true, "address": true, "openingHours": true, "services": true, "contact": true},
 	domain.TypeEvent:       {"description": true, "startsAt": true, "venue": true, "organiser": true},
 	domain.TypeMemory:      {"text": true, "era": true},
-	domain.TypeOpportunity: {"kind": true, "description": true, "eligibility": true, "deadline": true, "applyUrl": true, "provider": true},
+	domain.TypeOpportunity: {"kind": true, "description": true, "eligibility": true, "deadline": true, "applyUrl": true, "provider": true, "safeguardingPolicyUrl": true, "minAge": true, "maxAge": true, "guardianConsentRequired": true},
 	domain.TypePerson:      {"whyNotable": true, "era": true},
 	domain.TypeMemorial:    {"honorific": true, "bornYear": true, "diedDate": true, "birthday": true, "epitaph": true, "lifeStory": true, "associations": true, "gallery": true, "observeBirthday": true, "remindersEnabled": true},
+}
+if l.Type == domain.TypeOpportunity {
+	if err := validateOpportunityDetails(details); err != nil {
+		return nil, err
+	}
 }
 
 // urlDetailKeys are scalar details values that must pass the URL guard.

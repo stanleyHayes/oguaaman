@@ -193,7 +193,7 @@ export function BusinessCard({ business }: Readonly<{ business: Listing }>) {
 }
 
 const OPP_LABEL: Record<string, string> = {
-  scholarship: "Scholarship", internship: "Internship", apprenticeship: "Apprenticeship", training: "Training", job: "Job",
+  scholarship: "Scholarship", internship: "Internship", apprenticeship: "Apprenticeship", training: "Training", job: "Job", investment: "Investment", mentorship: "Mentorship",
 };
 export function OpportunityCard({ opp }: Readonly<{ opp: Listing }>) {
   const d = opp.details;
@@ -207,6 +207,9 @@ export function OpportunityCard({ opp }: Readonly<{ opp: Listing }>) {
       <h3 className="mt-3 text-xl font-semibold text-ink">{opp.title}</h3>
       <p className="mt-2 text-sm text-ink-muted">{d.description}</p>
       <p className="mt-3 text-xs text-ink-faint"><span className="font-medium text-ink-muted">Eligibility:</span> {d.eligibility}</p>
+      {d.guardianConsentRequired === true && (
+        <p className="mt-2 text-xs text-maroon-900">Guardian consent required for under-18 participants.</p>
+      )}
       <div className="mt-auto pt-4">
         <span className="text-xs text-ink-faint">{d.provider}</span>
         {d.applyUrl && (

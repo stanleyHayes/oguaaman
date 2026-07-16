@@ -6,7 +6,7 @@
 > companion to `oguaa/Oguaa-Platform-Specification.md` (the product spec) — read that for *why*; read
 > this for *how it's being built*.
 >
-> **Status:** Phase 1 shipped (all ten build-order items plus extras: safety/incidents, lost & found, festivals archive, history hub, newsroom, ticketing, subscriptions, promotions, the creator app). Phase 2 in progress — diaspora register and adopt-a-project funding delivered; investment opportunities and mentor-to-youth matching (gated on the §14.4 safeguarding policy) remain. **§7 is the living implementation-status and backlog section — this file is the single source of truth.**
+> **Status:** Phase 1 shipped (all ten build-order items plus extras: safety/incidents, lost & found, festivals archive, history hub, newsroom, ticketing, subscriptions, promotions, the creator app). Phase 2 in progress — diaspora register and adopt-a-project funding delivered; investment opportunities and mentorship matching are now live as opportunity flows with safeguarding gates and dedicated portal surfaces. **§7 is the living implementation-status and backlog section — this file is the single source of truth.**
 
 ---
 
@@ -202,7 +202,7 @@ The spec defers native apps (§6); this delivers them now. **Expo + React Native
 
 **Phase 1 — all ten items delivered** (foundation; Home + Music deep; Yɛnkae; institutions; listing engine UI; admin + AI bar; Memory Wall/events/youth; showcase sections; PWA+SEO/low-bandwidth; verify). Extras beyond the order: safety/incidents, lost & found, festivals archive, history hub, newsroom + AI bar, event ticketing, business subscriptions, paid promotions, revenue, the creator app, the diaspora register.
 
-*Phase 2 (spec §15):* diaspora register **(delivered — opt-in member field, `/api/diaspora`, public `/diaspora` page on portal + mobile)**; adopt-a-project funding **(delivered — Paystack pledges, see money-flows convention)**; investment opportunities and mentor-to-youth matching (gated on the §14.4 safeguarding policy) remain.
+*Phase 2 (spec §15):* diaspora register **(delivered — opt-in member field, `/api/diaspora`, public `/diaspora` page on portal + mobile)**; adopt-a-project funding **(delivered — Paystack pledges, see money-flows convention)**; investment opportunities and mentorship matching **(delivered as safeguarded opportunity kinds + dedicated `/investment` and `/mentorship` boards)**.
 
 ---
 
@@ -212,7 +212,7 @@ The spec defers native apps (§6); this delivers them now. **Expo + React Native
 
 **Authentication (delivered).** Password sign-in → **JWT sessions** (`POST /api/auth/{register,login}`), 18+ DOB gate on self-registration, optional **TOTP MFA** with recovery codes (staff force-enrolled before the admin console unlocks), and Act 843 data rights (`GET /api/me/export`, `DELETE /api/me` — erasure anonymises in place and `$unset`s the sparse-unique email/phone). Roles: member, curator, steward, editor, plus a scoped **moderator** (queue/listings/reports/incidents only). `AUTH_REQUIRED=true` enforces sign-in on writes/admin in production; reads stay open.
 
-**Deferred (documented, interfaces ready):** investment opportunities; mentor-to-youth matching (blocked on the unwritten §14.4 safeguarding policy); and the §14 legal pages drafted with counsel. The full status + backlog lives in §7.
+**Deferred (documented, interfaces ready):** final legal counsel sign-off for §14 policy pages and any regulator-specific wording for investment notices. The full status + backlog lives in §7.
 
 ---
 
@@ -229,7 +229,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 
 **Phase 1 (§15) — delivered.** Foundation, listing engine + lifecycle, accounts, moderation/admin, music flagship, business directory, rep school/town, memory wall, Yɛnkae, events/calendar, youth board + talent spotlight, institutions registry (schools first), AI writing bar. Plus beyond-spec extras: safety/incidents, lost & found, festivals archive, history hub, newsroom, event ticketing, subscriptions, promotions, revenue, creator app, MFA.
 
-**Phase 2 (§15) — half delivered.** Diaspora register ✅ (`/diaspora` portal + mobile) · adopt-a-project funding ✅ (Paystack pledges) · investment opportunities ☐ · mentor-to-youth matching ☐ *(blocked on the unwritten §14.4 safeguarding policy)*.
+**Phase 2 (§15) — delivered with safeguarding guardrails.** Diaspora register ✅ (`/diaspora` portal + mobile) · adopt-a-project funding ✅ (Paystack pledges) · investment opportunities ✅ (`kind=investment` plus `/investment` board) · mentor-to-youth matching ✅ (`kind=mentorship`, safeguarding policy URL required, guardian-consent gate for under-18 programmes, `/mentorship` board).
 
 **Partial / open Phase 1 items:**
 - ◐ §8.1 **Phone/WhatsApp OTP verification** — *◐ delivered: start/confirm endpoints (hashed code, 10-min TTL), `phoneVerified` gate on submit, portal + mobile verification UI, and provider wiring to WhatsApp Cloud API when credentials are configured. Remaining: broader verification-badge surface and fallback SMS-channel strategy.*
@@ -240,7 +240,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 - ✅ §8.12 **AI bar** — *streaming endpoint + client consumption shipped (`POST /api/ai/stream`), replace-confirmation shipped, and bar mounted on admin Compose/newsroom/listing detail/institution detail rich-text workflows.*
 - ◐ §8.13 **Institution announcements** — *no notice type distinct from events; no contested-claim "held and referred" state.*
 - ◐ §11 **Non-functional** — PWA manifest + offline shell ✅ *(installable, boots offline once visited; `/api` stays network-only)*; per-listing 1200×630 OG share cards ✅ *(pure-Go renderer + crawler meta shim; scraper UAs mapped in portal nginx — every public page now shares a branded card)*; per-page titles/meta in the SPA itself ✅ *(`usePageTitle` hook + all 30+ pages wired; dynamic titles on detail pages)*; maps ✅ *(Leaflet map cards now geocode listing locations for explicit pins; mobile map parity shipped via LocationCard in business/event/incident/lost-found details)*; localisation ◐ *(UI-chrome i18n switcher exists; no field-level/message-catalog scaffolding)*.
-- ◐ §14 **Legal/compliance** — *cookie/consent notice ✅ (dismissible banner, `localStorage` persisted); guardian-consent flow for featuring minors ☐; privacy/terms/acceptable-use published but shallow drafts pending counsel.*
+- ◐ §14 **Legal/compliance** — *cookie/consent notice ✅ (dismissible banner, `localStorage` persisted); legal depth expanded ✅ (privacy/terms/acceptable-use + new safeguarding policy pages on web/mobile); guardian-consent flow for minors ✅ for mentorship opportunities (submission validation + listing flag + policy links). Remaining: final counsel wording/approval pass.*
 - ✅ §8.10 **Queue type filter** — *type filter chips on admin Moderation page (all existing listing types + incident + lostfound); backend `GET /api/admin/queue?type=` already supported.*
 - ◐ §4 **KPI instrumentation** — *`PlatformViewsThisMonth` added to backend Stats + admin Overview shows "Views this month" metric tile ✅; average approval time now shipped (`avgApprovalHrs` backend metric + admin Overview card) ✅; click-through metrics still absent.*
 
@@ -289,8 +289,8 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 14. ~~**AI bar polish**~~ ✅ — streaming (`/api/ai/stream`), replace-confirmation, and admin rich-text mounts (Compose + newsroom + listing/institution detail).
 15. ~~**Admin moderator-role SPA gating + queue type filter**~~ ✅ (auth-gate now admits moderator role; MFA not enforced for moderators; nav filtered to queue/listings/reports/incidents for moderators; `RoleBadge` chip in user menu; `?type=` filter dropdown on Moderation queue page).
 16. ~~**Admin first-login guided tour**~~ ✅ — hand-rolled spotlight walkthrough (`tour.tsx`, zero deps): 7 steps (welcome, sidebar sections, review queue, global search, notifications, account menu, workspace), dim panes cut around a gold-ringed target, popover clamped into the viewport, Escape/←/→ keyboard support; auto-opens 900 ms after first dashboard paint, once per member (`localStorage oguaa.admin.tourSeen.<id>`); "Replay tour" row in the user dropdown re-opens it. E2E 12/12.
-17. **Legal depth + guardian-consent flow** (spec §14.4/§14.6/§16) — cookie notice is shipped.
-18. **Phase 2 spec remainder** — investment opportunities; mentor-to-youth matching *(both gated on the §14.4 safeguarding policy, itself unwritten)*.
+17. ~~**Legal depth + guardian-consent flow**~~ ✅ (spec §14.4/§14.6/§16) — legal docs expanded on portal + mobile (`/privacy`, `/terms`, `/acceptable-use`, `/safeguarding`); mentorship opportunities now require a safeguarding policy link, and guardian consent is enforced when min age is under 18.
+18. ~~**Phase 2 spec remainder**~~ ✅ — investment opportunities (`kind=investment`, seeded examples, `/investment` page) and mentor-to-youth matching (`kind=mentorship`, age-band filtering on `/mentorship`, safeguarding + guardian-consent gates) now shipped.
 19. **Smaller items** — school rivalry signals ✅; official-announcements type; contested-claim hold; funeral details; mobile institution events ✅ (Events & Announcements section from `officialEvents`); mobile manager editing; creator mobile section (explicitly future); `/me` creator upgrade entry ✅ (Become a creator CTA panel for members with no creatorTypes); media Credit capture ✅ (credit input in gallery + section-media editors); Drafts view ✅ (status-filter tabs on MyWork: All/Draft/Pending/Approved/Rejected); Payouts ledger; migrations + verify script; mobile maps; schema.org JSON-LD per institution ✅ (Organization/EducationalOrganization block on School.tsx); "Trade in Oguaa" home band ✅ (category chips + 4-card grid + link to /business); per-page document titles ✅ (`usePageTitle` hook, 30+ pages); cookie consent banner ✅.
 20. **Mobile-web hydration noise** — every dynamic route (`[type]`, `[topic]`, `[slug]`) on the Expo static web export logs React #418 (server HTML ≠ client) on load; screens recover and render fine. Pre-existing (verified against untouched `[slug]` routes), cosmetic but noisy — likely an expo-router static-render + RN-web mismatch; consider client-only rendering for dynamic routes.
 21. **Dark theme rollout (planning started, 2026-07-16)** — Phase A: token architecture (`[data-theme="dark"]` maps for paper/cream/sand/ink/gold/clay/teal + shadows, no per-component hardcoded dark colors), Phase B: app shell toggle + persisted preference (`localStorage` with OS fallback), Phase C: component pass (cards/forms/modals/date-picker + on-dark hero sections), Phase D: cross-app parity (frontend/admin/creator + mobile theme token equivalents), Phase E: contrast audit (WCAG AA minimum on all text states; focus/hover/error states included). Immediate quick-win done: the homepage "Rotating spotlight · the flagship" eyebrow now uses high-contrast text for readability.

@@ -45,7 +45,7 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
       { label: "Festivals", blurb: "Fetu Afahye, Edina Bakatue, PANAFEST — every edition, year by year.", href: "/festivals" },
       { label: "Adopt a project", blurb: "Concrete, costed improvements — proposed by verified institutions, funded by us together.", href: "/projects" },
       { label: "Diaspora register", blurb: "Sons & daughters everywhere — the bridge home.", href: "/diaspora" },
-      { label: "Opportunities", blurb: "Jobs, scholarships and mentorship shared within the community.", href: "/browse/opportunities" },
+      { label: "Opportunities", blurb: "Jobs, scholarships, mentorship and investment calls shared within the community.", href: "/browse/opportunities" },
     ],
   },
 ];

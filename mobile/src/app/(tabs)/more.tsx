@@ -113,6 +113,7 @@ export default function More() {
             { icon: "ℹ", label: "Terms of Service", href: "/legal/terms" },
             { icon: "ℹ", label: "Privacy Policy", href: "/legal/privacy" },
             { icon: "ℹ", label: "Acceptable Use", href: "/legal/acceptable-use" },
+            { icon: "ℹ", label: "Safeguarding Policy", href: "/legal/safeguarding" },
           ]}
         />
       </View>

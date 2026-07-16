@@ -10,7 +10,7 @@ const TYPES: { value: ListingType; label: string; hint: string }[] = [
   { value: "business", label: "Business", hint: "A shop, service or trade" },
   { value: "event", label: "Event", hint: "Something happening" },
   { value: "memory", label: "Memory", hint: "A story of old Oguaa" },
-  { value: "opportunity", label: "Opportunity", hint: "Scholarship, job, training" },
+  { value: "opportunity", label: "Opportunity", hint: "Scholarship, job, investment, mentorship" },
   { value: "person", label: "Person", hint: "A son or daughter of Oguaa" },
   { value: "memorial", label: "Memorial", hint: "Honour someone who has passed" },
 ];
@@ -85,6 +85,15 @@ const AI_FIELD: Record<ListingType, { name: string; label: string; rows: number;
 };
 
 const inputCls = "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
+const OPPORTUNITY_KINDS = [
+  { value: "scholarship", label: "Scholarship" },
+  { value: "internship", label: "Internship" },
+  { value: "apprenticeship", label: "Apprenticeship" },
+  { value: "training", label: "Training" },
+  { value: "job", label: "Job" },
+  { value: "investment", label: "Investment" },
+  { value: "mentorship", label: "Mentorship programme" },
+] as const;
 
 /** Build the details payload from the form data + the AI-driven text field. */
 function collectDetails(fd: FormData, type: ListingType, aiText: string): Record<string, unknown> {
@@ -131,10 +140,12 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
   // they're controlled state merged into the payload on submit.
   const [reminders, setReminders] = useState(true);
   const [observeBday, setObserveBday] = useState(false);
+  const [oppKind, setOppKind] = useState<(typeof OPPORTUNITY_KINDS)[number]["value"]>("scholarship");
 
   function changeType(next: ListingType) {
     setType(next);
     setAiText("");
+    if (next !== "opportunity") setOppKind("scholarship");
   }
 
   if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); }} />;
@@ -146,6 +157,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
     const s = (k: string) => { const v = fd.get(k); return typeof v === "string" ? v : ""; };
     const title = s("title").trim();
     const details = collectDetails(fd, type, aiText);
+    if (type === "opportunity") details.kind = oppKind;
     if (type === "artist") details.actName = title;
     if (type === "memorial") {
       details.remindersEnabled = reminders;
@@ -177,7 +189,12 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
 
       <ImageUpload value={coverImageUrl} onChange={setCoverImageUrl} label={cover.label} hint={cover.hint} />
 
-      <TypeFields type={type} memorialToggles={{ reminders, observeBday, onReminders: setReminders, onObserveBday: setObserveBday }} />
+      <TypeFields
+        type={type}
+        opportunityKind={oppKind}
+        onOpportunityKind={setOppKind}
+        memorialToggles={{ reminders, observeBday, onReminders: setReminders, onObserveBday: setObserveBday }}
+      />
 
       {aiField && (
         <div>
@@ -252,7 +269,12 @@ type MemorialToggles = {
 };
 
 // The type-specific extra fields — uncontrolled inputs inside the shared form.
-function TypeFields({ type, memorialToggles }: Readonly<{ type: ListingType; memorialToggles: MemorialToggles }>) {
+function TypeFields({
+  type,
+  opportunityKind,
+  onOpportunityKind,
+  memorialToggles,
+}: Readonly<{ type: ListingType; opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["value"]; onOpportunityKind: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void; memorialToggles: MemorialToggles }>) {
   return (
     <>
       {type === "artist" && (<>
@@ -271,8 +293,33 @@ function TypeFields({ type, memorialToggles }: Readonly<{ type: ListingType; mem
         <Field label="Era" hint="e.g. 1980s"><input name="era" className={inputCls} placeholder="1980s" /></Field>
       )}
       {type === "opportunity" && (<>
-        <Field label="Type"><select name="kind" className={inputCls}><option value="scholarship">Scholarship</option><option value="internship">Internship</option><option value="apprenticeship">Apprenticeship</option><option value="training">Training</option><option value="job">Job</option></select></Field>
+        <Field label="Type">
+          <select name="kind" value={opportunityKind} onChange={(e) => onOpportunityKind(e.target.value as (typeof OPPORTUNITY_KINDS)[number]["value"])} className={inputCls}>
+            {OPPORTUNITY_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+          </select>
+        </Field>
         <Field label="Description"><textarea name="description" rows={2} className={inputCls} /></Field>
+        <Field label="Provider / programme owner"><input name="provider" className={inputCls} placeholder="Institution, company or verified organisation" /></Field>
+        {(opportunityKind === "investment" || opportunityKind === "mentorship") && (
+          <Field label="Safeguarding / policy link" hint="Required for mentorship programmes and recommended for investment calls.">
+            <input name="safeguardingPolicyUrl" className={inputCls} placeholder="https://…" />
+          </Field>
+        )}
+        {opportunityKind === "mentorship" && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Minimum age (optional)"><input name="minAge" inputMode="numeric" className={inputCls} placeholder="16" /></Field>
+            <Field label="Maximum age (optional)"><input name="maxAge" inputMode="numeric" className={inputCls} placeholder="19" /></Field>
+          </div>
+        )}
+        {opportunityKind === "mentorship" && (
+          <label className="flex items-start gap-2.5 rounded-lg border border-sand bg-paper p-3.5 text-sm text-ink">
+            <input type="checkbox" name="guardianConsentRequired" defaultChecked className="mt-0.5 accent-green" />
+            <span>
+              Require guardian consent for minors
+              <span className="block text-xs text-ink-faint">If min age is under 18, this must stay enabled.</span>
+            </span>
+          </label>
+        )}
         <Field label="How to apply (link)" hint="Information and outbound links only."><input name="applyUrl" className={inputCls} placeholder="https://…" /></Field>
       </>)}
       {type === "person" && (

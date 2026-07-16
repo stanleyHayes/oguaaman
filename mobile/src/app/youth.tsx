@@ -10,7 +10,7 @@ import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
-const KINDS = ["scholarship", "internship", "apprenticeship", "training", "job"] as const;
+const KINDS = ["scholarship", "internship", "apprenticeship", "training", "job", "investment", "mentorship"] as const;
 type Kind = (typeof KINDS)[number];
 type KindFilter = Kind | "all";
 
@@ -20,6 +20,8 @@ const KIND_LABEL: Record<Kind, string> = {
   apprenticeship: "Apprenticeships",
   training: "Training",
   job: "Jobs",
+  investment: "Investment",
+  mentorship: "Mentorship",
 };
 
 const YOUNG_TALENT_TAG = "young-talent";
@@ -71,7 +73,7 @@ export default function Youth() {
         tone={C.teal}
         kicker="Training the youth"
         title="Youth & opportunity"
-        lede="Scholarships, internships, apprenticeships, training and jobs for the young of Cape Coast — plus a spotlight on rising talent. Information and outbound links only: no private adult-to-minor contact ever runs through Oguaa."
+        lede="Scholarships, internships, apprenticeships, training, jobs, investment windows and mentorship programmes for the young of Cape Coast — plus a spotlight on rising talent. Information and outbound links only: no private adult-to-minor contact ever runs through Oguaa."
       />
       <View style={{ padding: 16 }}>
       <Pressable onPress={() => router.push("/submit" as never)} style={s.cta}>
@@ -156,6 +158,7 @@ function OppCard({ opp: o }: Readonly<{ opp: Listing }>) {
           {d.eligibility}
         </Text>
       ) : null}
+      {d.guardianConsentRequired === true ? <Text style={s.guardian}>Guardian consent required for under-18 participants.</Text> : null}
       <View style={s.foot}>
         <Text style={s.provider} numberOfLines={1}>{d.provider}</Text>
         {d.applyUrl ? (
@@ -193,6 +196,7 @@ const s = StyleSheet.create({
   desc: { color: C.inkFaint, fontSize: 13, lineHeight: 19, marginTop: 6 },
   eligibility: { color: C.inkMuted, fontSize: 12, lineHeight: 18, marginTop: 8 },
   eligibilityLabel: { fontWeight: "700" },
+  guardian: { color: C.maroon, fontSize: 11, marginTop: 6, fontWeight: "600" },
   foot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
   provider: { flex: 1, color: C.inkFaint, fontSize: 11 },
   applyBtn: { borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },

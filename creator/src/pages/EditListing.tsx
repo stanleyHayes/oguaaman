@@ -53,7 +53,7 @@ const MANAGED_KEYS: Record<string, string[]> = {
   business: ["category", "address", "description"],
   event: ["startsAt", "venue", "description"],
   memory: ["era", "text"],
-  opportunity: ["kind", "description", "applyUrl", "eligibility"],
+  opportunity: ["kind", "description", "applyUrl", "eligibility", "provider", "safeguardingPolicyUrl", "minAge", "maxAge", "guardianConsentRequired"],
   person: ["era", "whyNotable"],
   memorial: ["honorific", "bornYear", "diedDate", "birthday", "epitaph", "associations", "lifeStory", "observeBirthday", "remindersEnabled"],
 };
@@ -65,7 +65,7 @@ const WHITELIST: Record<string, string[]> = {
   business: ["category", "description", "address", "openingHours", "services", "contact"],
   event: ["description", "startsAt", "venue", "organiser"],
   memory: ["text", "era"],
-  opportunity: ["kind", "description", "eligibility", "deadline", "applyUrl", "provider"],
+  opportunity: ["kind", "description", "eligibility", "deadline", "applyUrl", "provider", "safeguardingPolicyUrl", "minAge", "maxAge", "guardianConsentRequired"],
   person: ["whyNotable", "era"],
   memorial: ["honorific", "bornYear", "diedDate", "birthday", "epitaph", "lifeStory", "associations", "gallery", "observeBirthday", "remindersEnabled"],
 };
@@ -247,8 +247,18 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
             <Field label="Era" hint="e.g. 1980s"><input name="era" defaultValue={str(listing.details.era)} className={inputCls} /></Field>
           )}
           {type === "opportunity" && (<>
-            <Field label="Type"><select name="kind" defaultValue={str(listing.details.kind) || "scholarship"} className={inputCls}><option value="scholarship">Scholarship</option><option value="internship">Internship</option><option value="apprenticeship">Apprenticeship</option><option value="training">Training</option><option value="job">Job</option></select></Field>
+            <Field label="Type"><select name="kind" defaultValue={str(listing.details.kind) || "scholarship"} className={inputCls}><option value="scholarship">Scholarship</option><option value="internship">Internship</option><option value="apprenticeship">Apprenticeship</option><option value="training">Training</option><option value="job">Job</option><option value="investment">Investment</option><option value="mentorship">Mentorship programme</option></select></Field>
             <Field label="Description"><textarea name="description" rows={2} defaultValue={str(listing.details.description)} className={inputCls} /></Field>
+            <Field label="Provider / programme owner"><input name="provider" defaultValue={str(listing.details.provider)} className={inputCls} /></Field>
+            <Field label="Safeguarding / policy link (required for mentorship)"><input name="safeguardingPolicyUrl" defaultValue={str(listing.details.safeguardingPolicyUrl)} className={inputCls} /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Minimum age (optional)"><input name="minAge" inputMode="numeric" defaultValue={str(listing.details.minAge)} className={inputCls} /></Field>
+              <Field label="Maximum age (optional)"><input name="maxAge" inputMode="numeric" defaultValue={str(listing.details.maxAge)} className={inputCls} /></Field>
+            </div>
+            <label className="flex items-start gap-2.5 rounded-lg border border-sand bg-paper p-3.5 text-sm text-ink">
+              <input type="checkbox" name="guardianConsentRequired" defaultChecked={listing.details.guardianConsentRequired !== false} className="mt-0.5 accent-green" />
+              <span>Require guardian consent for minors<span className="block text-xs text-ink-faint">Mandatory when mentorship includes under-18s.</span></span>
+            </label>
             <Field label="How to apply (link)" hint="Information and outbound links only."><input name="applyUrl" defaultValue={str(listing.details.applyUrl)} className={inputCls} /></Field>
           </>)}
           {type === "person" && (

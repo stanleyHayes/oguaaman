@@ -9,6 +9,7 @@ export interface ListingDetails {
   whyNotable?: string; era?: string; living?: boolean;
   text?: string; description?: string; startsAt?: string; venue?: string; organiser?: string;
   kind?: string; eligibility?: string; provider?: string; deadline?: string; applyUrl?: string;
+  safeguardingPolicyUrl?: string; minAge?: number; maxAge?: number; guardianConsentRequired?: boolean;
   category?: string; address?: string; openingHours?: string;
   services?: { name: string; price?: string; note?: string }[];
   honorific?: string; epitaph?: string; lifeStory?: string; candles?: number;

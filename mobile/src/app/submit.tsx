@@ -19,6 +19,16 @@ const TYPES = [
   { id: "memorial", label: "Memorial" },
 ] as const;
 
+const OPPORTUNITY_KINDS = [
+  { id: "scholarship", label: "Scholarship" },
+  { id: "internship", label: "Internship" },
+  { id: "apprenticeship", label: "Apprenticeship" },
+  { id: "training", label: "Training" },
+  { id: "job", label: "Job" },
+  { id: "investment", label: "Investment" },
+  { id: "mentorship", label: "Mentorship" },
+] as const;
+
 // Per-type extra fields, mirroring the web submit form so phone submissions
 // arrive with the same structure curators expect (memorial has its own block).
 interface ExtraField { key: string; label: string; placeholder: string }
@@ -41,7 +51,10 @@ const TYPE_FIELDS: Record<string, ExtraField[]> = {
     { key: "whyNotable", label: "WHY OGUAA IS PROUD (OPTIONAL)", placeholder: "One line on what they mean to the town" },
   ],
   opportunity: [
-    { key: "kind", label: "KIND", placeholder: "e.g. Scholarship, Job, Training" },
+    { key: "provider", label: "PROVIDER / PROGRAMME OWNER", placeholder: "Institution, company or verified organisation" },
+    { key: "safeguardingPolicyUrl", label: "SAFEGUARDING / POLICY LINK", placeholder: "https://…" },
+    { key: "minAge", label: "MINIMUM AGE (OPTIONAL)", placeholder: "16" },
+    { key: "maxAge", label: "MAXIMUM AGE (OPTIONAL)", placeholder: "19" },
     { key: "applyUrl", label: "HOW TO APPLY (LINK)", placeholder: "https://…" },
   ],
 };
@@ -78,10 +91,21 @@ function addMemorialDetails(details: Record<string, unknown>, m: MemorialFields)
   if (assoc.length) details.associations = assoc;
 }
 
-function buildDetails(type: string, description: string, extra: Record<string, string>, memorial: MemorialFields): Record<string, unknown> {
+function buildDetails(
+  type: string,
+  description: string,
+  extra: Record<string, string>,
+  memorial: MemorialFields,
+  opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["id"],
+  guardianConsentRequired: boolean,
+): Record<string, unknown> {
   const details: Record<string, unknown> = { description: description.trim() };
   addTypeExtras(details, type, extra);
   if (type === "memorial") addMemorialDetails(details, memorial);
+  if (type === "opportunity") {
+    details.kind = opportunityKind;
+    if (opportunityKind === "mentorship") details.guardianConsentRequired = guardianConsentRequired;
+  }
   return details;
 }
 
@@ -100,6 +124,8 @@ export default function Submit() {
   const [associations, setAssociations] = useState("");
   // Per-type extra fields (TYPE_FIELDS), keyed by field key.
   const [extra, setExtra] = useState<Record<string, string>>({});
+  const [opportunityKind, setOpportunityKind] = useState<(typeof OPPORTUNITY_KINDS)[number]["id"]>("scholarship");
+  const [guardianConsentRequired, setGuardianConsentRequired] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
@@ -115,6 +141,8 @@ export default function Submit() {
     setBirthday("");
     setAssociations("");
     setExtra({});
+    setOpportunityKind("scholarship");
+    setGuardianConsentRequired(true);
   }
 
   async function submit() {
@@ -126,7 +154,7 @@ export default function Submit() {
     setBusy(true);
     setError("");
 
-    const details = buildDetails(type, description, extra, { honorific, bornYear, diedDate, epitaph, birthday, associations });
+    const details = buildDetails(type, description, extra, { honorific, bornYear, diedDate, epitaph, birthday, associations }, opportunityKind, guardianConsentRequired);
     const cover = coverImageUrl.trim();
     try {
       await api.submit({ type, title: t, details, ...(cover ? { coverImageUrl: cover } : {}) });
@@ -207,10 +235,32 @@ export default function Submit() {
             onChangeText={(v) => setExtra((cur) => ({ ...cur, [f.key]: v }))}
             placeholder={f.placeholder}
             placeholderTextColor={C.inkFaint}
-            autoCapitalize={f.key === "link" || f.key === "applyUrl" ? "none" : "sentences"}
+            autoCapitalize={f.key === "link" || f.key === "applyUrl" || f.key === "safeguardingPolicyUrl" ? "none" : "sentences"}
           />
         </View>
       ))}
+
+      {type === "opportunity" && (
+        <>
+          <Text style={s.label}>OPPORTUNITY TYPE</Text>
+          <View style={s.chips}>
+            {OPPORTUNITY_KINDS.map((k) => (
+              <Pressable key={k.id} onPress={() => setOpportunityKind(k.id)} style={[s.chip, opportunityKind === k.id && s.chipOn]}>
+                <Text style={[s.chipText, opportunityKind === k.id && s.chipTextOn]}>{k.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {opportunityKind === "mentorship" && (
+            <Pressable onPress={() => setGuardianConsentRequired((v) => !v)} style={s.guardianRow}>
+              <View style={[s.guardianBox, guardianConsentRequired && s.guardianBoxOn]}>{guardianConsentRequired && <Text style={s.guardianTick}>✓</Text>}</View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.guardianTitle}>Require guardian consent for minors</Text>
+                <Text style={s.guardianHint}>Mandatory when mentorship includes under-18 participants.</Text>
+              </View>
+            </Pressable>
+          )}
+        </>
+      )}
 
       {type === "memorial" && (
         <>
@@ -293,5 +343,11 @@ const s = {
     btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
     btnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 12 },
     btnOutlineText: { color: C.ink, fontWeight: "600" },
+    guardianRow: { marginTop: 8, flexDirection: "row", gap: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.paper, padding: 12 },
+    guardianBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.sand, alignItems: "center", justifyContent: "center", marginTop: 1 },
+    guardianBoxOn: { backgroundColor: C.green, borderColor: C.green },
+    guardianTick: { color: C.cream, fontWeight: "700", fontSize: 12 },
+    guardianTitle: { color: C.ink, fontWeight: "600", fontSize: 13 },
+    guardianHint: { color: C.inkFaint, fontSize: 11, marginTop: 3 },
   }),
 };

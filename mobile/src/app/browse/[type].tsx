@@ -67,7 +67,7 @@ const VIEWS: Record<string, BrowseView> = {
   opportunities: {
     title: "Opportunities",
     kicker: "Youth & opportunity",
-    lede: "Jobs, scholarships and mentorship shared within the community.",
+    lede: "Jobs, scholarships, mentorship and investment calls shared within the community.",
     tone: C.teal,
     image: "/uploads/seed/school-girl-ghana.jpg",
     countNoun: "opportunities",

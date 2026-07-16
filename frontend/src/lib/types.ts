@@ -414,6 +414,10 @@ export interface ListingDetails {
   deadline?: string;
   applyUrl?: string;
   provider?: string;
+  safeguardingPolicyUrl?: string;
+  minAge?: number;
+  maxAge?: number;
+  guardianConsentRequired?: boolean;
   // business
   category?: string;
   services?: { name: string; price?: string; note?: string }[];

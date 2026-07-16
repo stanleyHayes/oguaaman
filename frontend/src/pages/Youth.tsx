@@ -11,7 +11,7 @@ import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { SAMPLE_NOTICE } from "@/lib/content";
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
-const KINDS = ["scholarship", "internship", "apprenticeship", "training", "job"] as const;
+const KINDS = ["scholarship", "internship", "apprenticeship", "training", "job", "investment", "mentorship"] as const;
 type Kind = (typeof KINDS)[number];
 type KindFilter = Kind | "all";
 
@@ -21,6 +21,8 @@ const KIND_LABEL: Record<Kind, string> = {
   apprenticeship: "Apprenticeships",
   training: "Training",
   job: "Jobs",
+  investment: "Investment",
+  mentorship: "Mentorship",
 };
 
 const YOUNG_TALENT_TAG = "young-talent";
@@ -46,9 +48,13 @@ export function Component() {
         title="Youth & opportunity"
         symbol="funtunfunefu"
         image="/uploads/seed/outdoor-classroom-ghana.jpg"
-        lede="Scholarships, internships, apprenticeships, training and jobs for the young of Cape Coast — plus a spotlight on rising talent. Information and outbound links only: no private adult-to-minor contact ever runs through Oguaa."
+        lede="Scholarships, internships, apprenticeships, training, jobs, investment windows and mentorship programmes for the young of Cape Coast — plus a spotlight on rising talent. Information and outbound links only: no private adult-to-minor contact ever runs through Oguaa."
       >
-        <Cta to="/submit?type=opportunity" variant="gold">Post an opportunity</Cta>
+        <div className="flex flex-wrap gap-3">
+          <Cta to="/submit?type=opportunity" variant="gold">Post an opportunity</Cta>
+          <Cta to="/mentorship" variant="outline-dark">Mentorship matching</Cta>
+          <Cta to="/investment" variant="outline-dark">Investment calls</Cta>
+        </div>
       </PageHero>
       <Spotlight talents={talents} />
       <Board opps={opps} />

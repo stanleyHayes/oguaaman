@@ -7,6 +7,8 @@ export interface ListingDetails {
   actName?: string; genres?: string[]; bio?: string; booking?: string;
   streamingLinks?: SocialLink[]; socials?: SocialLink[];
   text?: string; description?: string; startsAt?: string; venue?: string; organiser?: string;
+  kind?: string; eligibility?: string; provider?: string; deadline?: string; applyUrl?: string;
+  safeguardingPolicyUrl?: string; minAge?: number; maxAge?: number; guardianConsentRequired?: boolean;
   category?: string; address?: string; openingHours?: string;
   services?: { name: string; price?: string; note?: string }[];
   [k: string]: unknown;

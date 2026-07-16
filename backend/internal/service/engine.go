@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,6 +49,23 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 	if details == nil {
 		details = map[string]any{}
 	}
+	if in.Type == domain.TypeOpportunity {
+		if err := validateOpportunityDetails(details); err != nil {
+			return nil, err
+		}
+		if kind, _ := details["kind"].(string); strings.TrimSpace(kind) != "" {
+			tagged := false
+			for _, t := range in.Tags {
+				if t == kind {
+					tagged = true
+					break
+				}
+			}
+			if !tagged {
+				in.Tags = append(in.Tags, kind)
+			}
+		}
+	}
 	if in.Type == domain.TypeMemorial {
 		if _, ok := details["candles"]; !ok {
 			details["candles"] = 0
@@ -87,6 +106,102 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 		return nil, err
 	}
 	return &l, nil
+}
+
+var validOpportunityKinds = map[string]bool{
+	"scholarship":   true,
+	"internship":    true,
+	"apprenticeship": true,
+	"training":      true,
+	"job":           true,
+	"investment":    true,
+	"mentorship":    true,
+}
+
+func validateOpportunityDetails(details map[string]any) error {
+	kind := strings.TrimSpace(asStringAny(details["kind"]))
+	if !validOpportunityKinds[kind] {
+		return fmt.Errorf("opportunity kind must be one of scholarship, internship, apprenticeship, training, job, investment, mentorship")
+	}
+	details["kind"] = kind
+	if u := strings.TrimSpace(asStringAny(details["applyUrl"])); u != "" {
+		details["applyUrl"] = safeURL(u)
+	}
+	if kind != "mentorship" {
+		return nil
+	}
+	// Safeguarding gate: mentorship listings must always link an explicit
+	// safeguarding policy and, when minors are allowed, require guardian consent.
+	policyURL := strings.TrimSpace(asStringAny(details["safeguardingPolicyUrl"]))
+	if policyURL == "" {
+		return fmt.Errorf("mentorship opportunities must include a safeguarding policy link")
+	}
+	parsed, err := url.ParseRequestURI(policyURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return fmt.Errorf("safeguarding policy link must be a valid http(s) URL")
+	}
+	details["safeguardingPolicyUrl"] = safeURL(policyURL)
+	minAge, hasMinAge := asIntAny(details["minAge"])
+	if !hasMinAge {
+		minAge = 18
+	}
+	maxAge, hasMaxAge := asIntAny(details["maxAge"])
+	if hasMaxAge && maxAge < minAge {
+		return fmt.Errorf("maxAge cannot be less than minAge")
+	}
+	if minAge < 13 {
+		return fmt.Errorf("mentorship minimum age cannot be below 13")
+	}
+	if minAge < 18 && !asBoolAny(details["guardianConsentRequired"]) {
+		return fmt.Errorf("guardian consent is required when mentorship includes minors")
+	}
+	if hasMinAge {
+		details["minAge"] = minAge
+	}
+	if hasMaxAge {
+		details["maxAge"] = maxAge
+	}
+	details["guardianConsentRequired"] = asBoolAny(details["guardianConsentRequired"])
+	return nil
+}
+
+func asStringAny(v any) string {
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return ""
+}
+
+func asBoolAny(v any) bool {
+	switch x := v.(type) {
+	case bool:
+		return x
+	case string:
+		switch strings.ToLower(strings.TrimSpace(x)) {
+		case "1", "true", "yes", "on":
+			return true
+		}
+	}
+	return false
+}
+
+func asIntAny(v any) (int, bool) {
+	switch x := v.(type) {
+	case int:
+		return x, true
+	case int32:
+		return int(x), true
+	case int64:
+		return int(x), true
+	case float64:
+		return int(x), true
+	case string:
+		n, err := strconv.Atoi(strings.TrimSpace(x))
+		if err == nil {
+			return n, true
+		}
+	}
+	return 0, false
 }
 
 // Moderation actions accepted by Moderate.
