@@ -121,7 +121,7 @@ export function Component() {
                       <button
                         disabled={busy === i.id || cur.status === i.details.incidentStatus}
                         onClick={() => transition(i)}
-                        className="rounded-full bg-green px-4 py-2 text-xs font-semibold text-cream hover:bg-green-900 disabled:opacity-50"
+                        className="rounded-full bg-green px-4 py-2 text-xs font-semibold text-on-green hover:bg-green-900 disabled:opacity-50"
                       >
                         {busy === i.id ? "Updating…" : "Update status"}
                       </button>

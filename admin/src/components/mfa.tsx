@@ -6,7 +6,7 @@ const inputCls =
   "w-full rounded-xl border border-sand bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
 
 const primaryBtn =
-  "rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
+  "rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
 
 type Stage =
   | { step: "qr"; secret: string; qr: string }
@@ -64,7 +64,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigator.clipboard?.writeText(stage.codes.join("\n"))} className="rounded-full border border-green/30 px-4 py-2 text-sm font-semibold text-green hover:border-green">
+          <button type="button" onClick={() => navigator.clipboard?.writeText(stage.codes.join("\n"))} className="rounded-full border border-green-text/30 px-4 py-2 text-sm font-semibold text-green-text hover:border-green-text">
             Copy codes
           </button>
           <button type="button" onClick={finish} className={primaryBtn}>{doneLabel} ✓</button>
@@ -81,7 +81,9 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
           <li>Enter the 6-digit code it shows.</li>
         </ol>
         <div className="flex flex-wrap items-start gap-4">
-          <img src={stage.qr} alt="Authenticator QR code" className="h-36 w-36 rounded-xl border border-sand bg-paper p-2" />
+          {/* Deliberately hardcoded white tile: authenticator cameras need a light, high-contrast
+              backing to scan the QR — bg-paper would go dark in dark mode and break scanning. */}
+          <img src={stage.qr} alt="Authenticator QR code" className="h-36 w-36 rounded-xl border border-sand bg-white p-2" />
           <div className="min-w-[11rem] flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Can't scan? Enter this key</p>
             <p className="mt-1 break-all rounded-lg border border-sand bg-cream px-3 py-2 font-mono text-xs text-ink">{stage.secret}</p>
@@ -141,7 +143,7 @@ export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
       <input value={code} onChange={(e) => setCode(e.target.value)} required inputMode="numeric" autoComplete="one-time-code" placeholder="123 456" className={`${inputCls} max-w-[12rem] text-center tracking-[0.3em]`} />
       {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={busy} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-cream hover:bg-clay-text disabled:opacity-60">
+        <button type="submit" disabled={busy} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-on-green hover:bg-clay-text disabled:opacity-60">
           {busy ? "Turning off…" : "Turn off two-factor"}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="text-sm font-medium text-ink-muted hover:text-ink">Keep it on</button>
@@ -159,7 +161,7 @@ export function MfaManage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-muted">Two-factor is on — sign-ins need your authenticator app.</p>
         <span className="inline-flex items-center gap-3">
-          <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green">On</span>
+          <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green-text">On</span>
           <MfaDisable />
         </span>
       </div>

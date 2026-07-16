@@ -66,7 +66,7 @@ export function Component() {
                     <span className="text-xs uppercase tracking-wide text-ink-faint">{r.listingType}</span>
                     {r.status !== "open" && <span className="text-xs font-semibold capitalize text-ink-muted">· {r.status}</span>}
                   </div>
-                  <Link to={`/listings/${r.listingId}`} className="mt-2 block text-lg font-semibold text-green hover:underline">
+                  <Link to={`/listings/${r.listingId}`} className="mt-2 block text-lg font-semibold text-green-text hover:underline">
                     {r.listingTitle}
                   </Link>
                   {r.detail && <p className="mt-1.5 max-w-xl text-sm italic text-ink-faint">“{r.detail}”</p>}
@@ -87,7 +87,7 @@ export function Component() {
                             setRows((prev) => prev.map((x) => x.id === r.id ? { ...x, status: "actioned" } : x));
                           } finally { setBusy(null); }
                         }}
-                        className="rounded-full bg-forest px-4 py-2 text-xs font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
+                        className="rounded-full bg-green px-4 py-2 text-xs font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-50"
                       >
                         Grant keeper
                       </button>

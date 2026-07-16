@@ -18,9 +18,9 @@ const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
 
 const STATUS_TONE: Record<Pledge["status"], string> = {
-  success: "bg-green/[0.1] text-green",
+  success: "bg-green/[0.1] text-green-text",
   pending: "bg-gold/[0.16] text-gold-text",
-  failed: "bg-maroon-900/[0.1] text-maroon-900",
+  failed: "bg-maroon-900/[0.1] text-maroon-text",
 };
 
 export function Component() {
@@ -79,7 +79,7 @@ export function Component() {
                     />
                   </div>
                   <p className="mt-auto pt-3 text-sm text-ink-muted">
-                    <b className="text-green">{cedis(raised)}</b> of {cedis(goal)} · {(p.details.backers as number) ?? 0} backers
+                    <b className="text-green-text">{cedis(raised)}</b> of {cedis(goal)} · {(p.details.backers as number) ?? 0} backers
                     {typeof p.details.deadline === "string" && <span className="text-ink-faint"> · closes {p.details.deadline}</span>}
                   </p>
                 </Card>
@@ -94,7 +94,7 @@ export function Component() {
         <h2 className="text-lg font-semibold text-ink">Pledge ledger</h2>
         <div className="inline-flex rounded-full border border-sand bg-paper p-0.5 text-xs">
           {(["all", "success", "pending", "failed"] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-cream" : "text-ink-muted hover:text-ink"}`}>
+            <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>
               {f}
             </button>
           ))}
@@ -129,7 +129,7 @@ export function Component() {
               {shown.map((p, idx) => (
                 <StaggerItem as="tr" key={p.id} index={idx} className="hover:bg-paper">
                   <td className="max-w-[14rem] truncate px-4 py-3 font-medium text-ink">{p.projectTitle}</td>
-                  <td className="px-4 py-3 font-semibold text-green">{cedis(p.amountPesewas)}</td>
+                  <td className="px-4 py-3 font-semibold text-green-text">{cedis(p.amountPesewas)}</td>
                   <td className="px-4 py-3 text-ink-muted">{p.feePesewas ? cedis(p.feePesewas) : <span className="text-ink-faint">—</span>}</td>
                   <td className="px-4 py-3 text-ink-muted">{p.netPesewas ? cedis(p.netPesewas) : <span className="text-ink-faint">—</span>}</td>
                   <td className="px-4 py-3 text-ink-muted">{p.memberId || <span className="text-ink-faint">—</span>}</td>

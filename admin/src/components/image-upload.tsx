@@ -10,7 +10,7 @@ const PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefin
 const cloudinaryConfigured = Boolean(CLOUD && PRESET);
 
 const inputCls =
-  "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
+  "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green-text focus:outline-none focus:ring-2 focus:ring-green/15";
 
 function xhrUpload(url: string, fd: FormData, auth: boolean, pick: (r: Record<string, unknown>) => string | undefined, onProgress: (pct: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -83,10 +83,10 @@ export function ImageUpload({
         <div className="flex items-center gap-3">
           <img src={value} alt="" className="h-20 w-28 shrink-0 rounded-lg border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="rounded-full border border-sand px-3.5 py-1.5 text-sm font-medium text-ink-muted hover:border-green/40 disabled:opacity-60">
+            <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="rounded-full border border-sand px-3.5 py-1.5 text-sm font-medium text-ink-muted hover:border-green-text/40 disabled:opacity-60">
               {busy ? `Uploading… ${progress}%` : "Replace"}
             </button>
-            <button type="button" onClick={() => onChange("")} className="rounded-full border border-maroon-900/30 px-3.5 py-1.5 text-sm font-medium text-maroon-900 hover:bg-maroon-900/[0.06]">
+            <button type="button" onClick={() => onChange("")} className="rounded-full border border-maroon-text/30 px-3.5 py-1.5 text-sm font-medium text-maroon-text hover:bg-maroon-900/[0.06]">
               Remove
             </button>
           </div>
@@ -102,7 +102,7 @@ export function ImageUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={busy}
-          className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-sand bg-paper px-4 py-7 text-center transition-colors hover:border-green/40 disabled:opacity-70"
+          className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-sand bg-paper px-4 py-7 text-center transition-colors hover:border-green-text/40 disabled:opacity-70"
         >
           {busy ? (
             <>
@@ -113,7 +113,7 @@ export function ImageUpload({
             </>
           ) : (
             <>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-green" aria-hidden>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-green-text" aria-hidden>
                 <path d="M12 16V4M7 9l5-5 5 5" /><path d="M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3" />
               </svg>
               <span className="text-sm font-medium text-ink">Click to upload an image</span>
@@ -136,7 +136,7 @@ export function ImageUpload({
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-faint">
         <span>{hint}</span>
         {!value && (
-          <button type="button" onClick={() => setManual((m) => !m)} className="font-medium text-green underline">
+          <button type="button" onClick={() => setManual((m) => !m)} className="font-medium text-green-text underline">
             {manual ? "upload a file instead" : "or paste an image URL"}
           </button>
         )}

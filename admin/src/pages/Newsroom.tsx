@@ -14,7 +14,7 @@ export async function loader() {
 type Filter = "all" | "published" | "draft";
 
 function StatusChip({ status }: Readonly<{ status: NewsArticle["status"] }>) {
-  const cls = status === "published" ? "bg-green/[0.1] text-green" : "bg-gold/[0.16] text-gold-text";
+  const cls = status === "published" ? "bg-green/[0.1] text-green-text" : "bg-gold/[0.16] text-gold-text";
   const dot = status === "published" ? "bg-green" : "bg-gold-brand";
   return (
     <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold capitalize ${cls}`}>
@@ -55,7 +55,7 @@ export function Component() {
   return (
     <>
       <PageHeader kicker="Editorial" title="Newsroom">
-        <Link to="/newsroom/new" className="inline-flex items-center gap-1.5 rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green-900">
+        <Link to="/newsroom/new" className="inline-flex items-center gap-1.5 rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
           New article
         </Link>
@@ -65,8 +65,8 @@ export function Component() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex rounded-full border border-sand bg-paper p-0.5 text-sm">
           {(["all", "published", "draft"] as Filter[]).map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3.5 py-1.5 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-cream" : "text-ink-muted hover:text-ink"}`}>
-              {f} <span className={filter === f ? "text-cream/70" : "text-ink-faint"}>{counts[f]}</span>
+            <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3.5 py-1.5 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>
+              {f} <span className={filter === f ? "text-on-green/70" : "text-ink-faint"}>{counts[f]}</span>
             </button>
           ))}
         </div>
@@ -77,7 +77,7 @@ export function Component() {
       </div>
 
       {filtered.length === 0 ? (
-        <Empty icon="pen" title={list.length === 0 ? "No articles yet" : "No matches"} actions={list.length === 0 ? <Link to="/newsroom/new" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-900">+ Write the first article</Link> : undefined}>
+        <Empty icon="pen" title={list.length === 0 ? "No articles yet" : "No matches"} actions={list.length === 0 ? <Link to="/newsroom/new" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">+ Write the first article</Link> : undefined}>
           {list.length === 0 ? "The Newsroom is empty. Write Cape Coast's first notice." : "Try a different search or filter."}
         </Empty>
       ) : (

@@ -26,8 +26,8 @@ const LISTING_TYPES = [
 ];
 
 function toneClass(tone: Log["tone"]): string {
-  if (tone === "ok") return "text-green";
-  if (tone === "bad") return "text-maroon-900";
+  if (tone === "ok") return "text-green-text";
+  if (tone === "bad") return "text-maroon-text";
   return "text-gold-text";
 }
 
@@ -148,7 +148,7 @@ export function Component() {
                       >
                         <textarea autoFocus value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder={rejecting.mode === "reject" ? "Reason (sent to owner)…" : "What changes are needed?"} className="w-full rounded-lg border border-sand bg-paper p-3 text-sm focus:border-gold-border focus:outline-none" />
                         <div className="mt-2 flex gap-2">
-                          <button disabled={busy === l.id} onClick={() => act(l, rejecting.mode === "reject" ? "reject" : "request-changes", { action: rejecting.mode === "reject" ? "Rejected" : "Requested changes to", title: l.title, reason: reason.trim() || "(none)", tone: rejecting.mode === "reject" ? "bad" : "warn" }, reason.trim())} className="rounded-full bg-maroon-900 px-4 py-2 text-sm font-semibold text-cream disabled:opacity-60">Confirm</button>
+                          <button disabled={busy === l.id} onClick={() => act(l, rejecting.mode === "reject" ? "reject" : "request-changes", { action: rejecting.mode === "reject" ? "Rejected" : "Requested changes to", title: l.title, reason: reason.trim() || "(none)", tone: rejecting.mode === "reject" ? "bad" : "warn" }, reason.trim())} className="rounded-full bg-maroon-900 px-4 py-2 text-sm font-semibold text-on-green disabled:opacity-60">Confirm</button>
                           <button onClick={() => setRejecting(null)} className="rounded-full border border-sand px-4 py-2 text-sm font-semibold">Cancel</button>
                         </div>
                       </motion.div>
@@ -156,9 +156,9 @@ export function Component() {
                   </AnimatePresence>
                   {rejecting?.id !== l.id && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button disabled={busy === l.id} onClick={() => act(l, "approve", { action: "Approved", title: l.title, tone: "ok" })} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">Approve</button>
+                      <button disabled={busy === l.id} onClick={() => act(l, "approve", { action: "Approved", title: l.title, tone: "ok" })} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">Approve</button>
                       <button onClick={() => setRejecting({ id: l.id, mode: "changes" })} className="rounded-full border border-gold-border/50 px-4 py-2 text-sm font-semibold text-gold-text hover:bg-gold/[0.08]">Request changes</button>
-                      <button onClick={() => setRejecting({ id: l.id, mode: "reject" })} className="rounded-full border border-maroon-900/40 px-4 py-2 text-sm font-semibold text-maroon-900 hover:bg-maroon-900/[0.06]">Reject</button>
+                      <button onClick={() => setRejecting({ id: l.id, mode: "reject" })} className="rounded-full border border-maroon-text/40 px-4 py-2 text-sm font-semibold text-maroon-text hover:bg-maroon-900/[0.06]">Reject</button>
                     </div>
                   )}
                 </div>

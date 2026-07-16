@@ -38,7 +38,7 @@ function RemembranceCard() {
         <p className="mt-1 text-sm text-ink-muted">The scheduler runs each day at 06:00. Trigger it manually or back-fill a date (steward only).</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <input value={date} onChange={(e) => setDate(e.target.value)} placeholder="MM-DD (optional)" className="w-32 rounded-lg border border-sand bg-cream px-3 py-2 text-sm focus:border-gold-border focus:outline-none" />
-          <button onClick={run} disabled={busy} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-60">
+          <button onClick={run} disabled={busy} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
             {busy ? "Running…" : "Run remembrance"}
           </button>
           {result && <span className="text-sm text-ink-muted">{result}</span>}
@@ -71,7 +71,7 @@ export function Component() {
             </div>
             <p className="mt-2 text-xs text-ink-faint">To change your name, bio or photo, use your <Link to="/profile" className="font-medium text-ai underline">Profile</Link>.</p>
           </div>
-          <button onClick={signOut} className="rounded-full border border-maroon-900/50 px-5 py-2.5 text-sm font-semibold text-maroon-900 transition-colors hover:bg-maroon-900/[0.06]">
+          <button onClick={signOut} className="rounded-full border border-maroon-text/50 px-5 py-2.5 text-sm font-semibold text-maroon-text transition-colors hover:bg-maroon-900/[0.06]">
             Sign out
           </button>
         </div>

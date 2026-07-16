@@ -17,9 +17,9 @@ const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
 
 const STATUS_TONE: Record<Subscription["status"], string> = {
-  success: "bg-green/[0.1] text-green",
+  success: "bg-green/[0.1] text-green-text",
   pending: "bg-gold/[0.16] text-gold-text",
-  failed: "bg-maroon-900/[0.1] text-maroon-900",
+  failed: "bg-maroon-900/[0.1] text-maroon-text",
 };
 
 // Labels for plan slugs no longer in the catalog (deleted/renamed plans).
@@ -73,7 +73,7 @@ export function Component() {
                   <td className="px-4 py-3 text-ink-muted">{s.memberId || <span className="text-ink-faint">—</span>}</td>
                   <td className="px-4 py-3 font-medium text-ink">{s.listingTitle}</td>
                   <td className="px-4 py-3 text-ink-muted">{planLabel(s.plan)}</td>
-                  <td className="px-4 py-3 font-semibold text-green">{cedis(s.amountPesewas)}</td>
+                  <td className="px-4 py-3 font-semibold text-green-text">{cedis(s.amountPesewas)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{s.periodEnd ? formatDate(s.periodEnd) : "—"}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold capitalize ${STATUS_TONE[s.status]}`}>{s.status}</span>

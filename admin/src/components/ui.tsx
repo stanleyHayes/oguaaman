@@ -27,9 +27,9 @@ export function Card({ children, className = "" }: Readonly<{ children: ReactNod
 }
 
 const STATUS_STYLE: Record<ListingStatus, string> = {
-  approved: "bg-green/[0.1] text-green",
+  approved: "bg-green/[0.1] text-green-text",
   pending: "bg-gold/[0.18] text-gold-text",
-  rejected: "bg-maroon-900/[0.1] text-maroon-900",
+  rejected: "bg-maroon-900/[0.1] text-maroon-text",
   draft: "bg-sand text-ink-muted",
   unpublished: "bg-sand text-ink-muted",
 };
@@ -39,7 +39,7 @@ export function StatusBadge({ status }: Readonly<{ status: ListingStatus }>) {
 
 export function RoleBadge({ role }: Readonly<{ role: string }>) {
   const m: Record<string, string> = {
-    steward: "bg-maroon-900/[0.1] text-maroon-900",
+    steward: "bg-maroon-900/[0.1] text-maroon-text",
     curator: "bg-ai/[0.1] text-ai",
     editor: "bg-teal/[0.12] text-teal-text",
     member: "bg-sand text-ink-muted",
@@ -50,7 +50,7 @@ export function RoleBadge({ role }: Readonly<{ role: string }>) {
 export function Pill({ children, tone = "neutral" }: Readonly<{ children: ReactNode; tone?: "neutral" | "green" | "gold" | "clay" }>) {
   const m: Record<string, string> = {
     neutral: "border-sand bg-paper text-ink-muted",
-    green: "border-green/30 bg-green/[0.06] text-green",
+    green: "border-green/30 bg-green/[0.06] text-green-text",
     gold: "border-gold-border/40 bg-gold/[0.12] text-gold-text",
     clay: "border-clay/30 bg-clay/[0.08] text-clay-text",
   };
@@ -171,7 +171,7 @@ const EMPTY_ICONS: Record<EmptyIconName, ReactNode> = {
 type EmptyTone = "gold" | "green" | "ai";
 const EMPTY_TONES: Record<EmptyTone, string> = {
   gold: "border-gold-border/30 bg-gold/[0.12] text-gold-text",
-  green: "border-green/25 bg-green/[0.08] text-green",
+  green: "border-green/25 bg-green/[0.08] text-green-text",
   ai: "border-ai/25 bg-ai-tint text-ai",
 };
 

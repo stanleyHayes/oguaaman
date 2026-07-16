@@ -98,7 +98,7 @@ export function Component() {
         <div className="flex items-center justify-between gap-3 border-b border-sand px-5 py-3">
           <div className="inline-flex rounded-full border border-sand bg-paper p-0.5 text-sm">
             {(["write", "preview"] as const).map((m) => (
-              <button key={m} onClick={() => setMode(m)} className={`rounded-full px-3 py-1 font-medium capitalize transition-colors ${mode === m ? "bg-green text-cream" : "text-ink-muted hover:text-ink"}`}>{m}</button>
+              <button key={m} onClick={() => setMode(m)} className={`rounded-full px-3 py-1 font-medium capitalize transition-colors ${mode === m ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>{m}</button>
             ))}
           </div>
           <span className="text-[0.7rem] text-ink-faint">{words} words · {mins} min read</span>
@@ -127,7 +127,7 @@ function eyebrowLabel(isNew: boolean, article: NewsArticle | null): string {
 
 function SaveIndicator({ dirty, savedFlash }: Readonly<{ dirty: boolean; savedFlash: boolean }>) {
   if (dirty) return <span className="text-xs font-medium text-clay-text">● Unsaved changes</span>;
-  if (savedFlash) return <span className="text-xs font-medium text-green">Saved ✓</span>;
+  if (savedFlash) return <span className="text-xs font-medium text-green-text">Saved ✓</span>;
   return null;
 }
 
@@ -156,8 +156,8 @@ function EditorHeader({ article, isNew, dirty, savedFlash, busy, onSave, onToggl
         </button>
         {article && (
           <button onClick={onTogglePublish} disabled={busy} className={article.status === "published"
-            ? "rounded-full border border-maroon-900/50 px-4 py-1.5 text-xs font-semibold text-maroon-900 transition-colors hover:bg-maroon-900/[0.06] disabled:opacity-50"
-            : "rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-50"}>
+            ? "rounded-full border border-maroon-text/50 px-4 py-1.5 text-xs font-semibold text-maroon-text transition-colors hover:bg-maroon-900/[0.06] disabled:opacity-50"
+            : "rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-50"}>
             {article.status === "published" ? "Unpublish" : "Publish"}
           </button>
         )}
@@ -179,7 +179,7 @@ function EditorHeader({ article, isNew, dirty, savedFlash, busy, onSave, onToggl
           </AnimatePresence>
         )}
         {article && !confirmDel && (
-          <button onClick={() => setConfirmDel(true)} className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-maroon-900 hover:text-maroon-900">Delete</button>
+          <button onClick={() => setConfirmDel(true)} className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-maroon-text hover:text-maroon-text">Delete</button>
         )}
       </div>
     </div>
@@ -241,7 +241,7 @@ function WritePane({ form, setForm, bodyRef }: Readonly<{
           {(form.tags ?? []).map((t) => (
             <span key={t} className="inline-flex items-center gap-1 rounded-full border border-sand bg-paper px-2.5 py-1 text-xs text-ink-muted">
               {t}
-              <button type="button" onClick={() => removeTag(t)} className="text-ink-faint hover:text-maroon-900" aria-label={`Remove ${t}`}>×</button>
+              <button type="button" onClick={() => removeTag(t)} className="text-ink-faint hover:text-maroon-text" aria-label={`Remove ${t}`}>×</button>
             </span>
           ))}
           <input

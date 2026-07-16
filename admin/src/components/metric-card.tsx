@@ -14,12 +14,12 @@ import { ArrowUpRight } from "lucide-react";
 export type MetricTone = "green" | "teal" | "gold" | "clay" | "maroon" | "ink";
 
 const TONE_ACCENT: Record<MetricTone, string> = {
-  green: "#123f2d",
-  teal: "#0e7c6b",
-  gold: "#b07d32",
-  clay: "#b0503c",
-  maroon: "#7c2d2d",
-  ink: "#3b473d",
+  green: "var(--color-green)",
+  teal: "var(--color-teal)",
+  gold: "var(--color-gold-brand)",
+  clay: "var(--color-clay)",
+  maroon: "var(--color-maroon-900)",
+  ink: "var(--color-green-slate)",
 };
 
 interface MetricCardProps {
@@ -46,7 +46,7 @@ export function MetricCard({ label, value, icon, tone = "green", sub, to }: Read
       style={{
         borderLeftWidth: 3,
         borderLeftColor: accent,
-        background: `linear-gradient(135deg, ${accent}12, var(--color-cream) 58%)`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${accent} 7%, transparent), var(--color-cream) 58%)`,
       }}
     >
       {watermark && (
@@ -58,7 +58,7 @@ export function MetricCard({ label, value, icon, tone = "green", sub, to }: Read
         <div className="mb-3 flex items-start justify-between">
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
-            style={{ backgroundColor: `${accent}18`, color: accent }}
+            style={{ backgroundColor: `color-mix(in srgb, ${accent} 9%, transparent)`, color: accent }}
           >
             {icon}
           </div>

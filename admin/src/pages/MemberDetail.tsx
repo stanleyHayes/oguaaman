@@ -42,12 +42,12 @@ export function Component() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           {m.photoUrl
             ? <img src={cldAvatar(m.photoUrl, 80)} alt="" className="h-20 w-20 shrink-0 rounded-full border border-sand object-cover" />
-            : <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-green text-2xl font-semibold text-cream">{initials(m.displayName)}</span>}
+            : <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-green text-2xl font-semibold text-on-green">{initials(m.displayName)}</span>}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <RoleBadge role={m.role} />
-              {m.suspended && <span className="rounded-full bg-maroon-900/[0.1] px-2.5 py-0.5 text-xs font-semibold text-maroon-900">Suspended</span>}
-              {m.phoneVerified && <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green">Verified</span>}
+              {m.suspended && <span className="rounded-full bg-maroon-900/[0.1] px-2.5 py-0.5 text-xs font-semibold text-maroon-text">Suspended</span>}
+              {m.phoneVerified && <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green-text">Verified</span>}
             </div>
             <h1 className="mt-1.5 text-3xl font-semibold text-ink">{m.displayName}</h1>
             {m.bio && <p className="mt-1 max-w-2xl text-sm text-ink-muted">{m.bio}</p>}
@@ -80,7 +80,7 @@ export function Component() {
                 <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option>
               </select>
             </label>
-            <button disabled={busy} onClick={toggleSuspend} className={`mt-3 w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${m.suspended ? "border-green/40 text-green hover:bg-green/[0.06]" : "border-maroon-900/40 text-maroon-900 hover:bg-maroon-900/[0.06]"}`}>
+            <button disabled={busy} onClick={toggleSuspend} className={`mt-3 w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${m.suspended ? "border-green-text/40 text-green-text hover:bg-green/[0.06]" : "border-maroon-text/40 text-maroon-text hover:bg-maroon-900/[0.06]"}`}>
               {m.suspended ? "Unsuspend member" : "Suspend member"}
             </button>
             <p className="mt-2 text-xs text-ink-faint">Role &amp; suspension are steward actions.</p>

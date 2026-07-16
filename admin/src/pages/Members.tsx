@@ -62,7 +62,7 @@ export function Component() {
             </select>
           </label>
           <button onClick={invite} disabled={inviteBusy} className="rounded-full bg-ai px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">{inviteBusy ? "Inviting…" : "Invite"}</button>
-          {inviteMsg && <span className={`text-sm ${inviteMsg.ok ? "text-green" : "text-clay-text"}`}>{inviteMsg.text}</span>}
+          {inviteMsg && <span className={`text-sm ${inviteMsg.ok ? "text-green-text" : "text-clay-text"}`}>{inviteMsg.text}</span>}
         </div>
       </Card>
 
@@ -78,9 +78,9 @@ export function Component() {
                   <div className="flex items-center gap-3">
                     {m.photoUrl
                       ? <img src={cldAvatar(m.photoUrl, 36)} alt="" className="h-9 w-9 shrink-0 rounded-full border border-sand object-cover" />
-                      : <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-green text-xs font-semibold text-cream">{initials(m.displayName)}</span>}
+                      : <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-green text-xs font-semibold text-on-green">{initials(m.displayName)}</span>}
                     <div>
-                      <div className="font-medium"><Link to={`/members/${m.slug}`} className="hover:text-gold-text hover:underline">{m.displayName}</Link> {m.suspended && <span className="ml-1 text-xs font-semibold text-maroon-900">· suspended</span>}</div>
+                      <div className="font-medium"><Link to={`/members/${m.slug}`} className="hover:text-gold-text hover:underline">{m.displayName}</Link> {m.suspended && <span className="ml-1 text-xs font-semibold text-maroon-text">· suspended</span>}</div>
                       {m.bio && <div className="text-xs text-ink-faint">{m.bio}</div>}
                     </div>
                   </div>
@@ -92,7 +92,7 @@ export function Component() {
                     <select disabled={busy === m.id} value={m.role} onChange={(e) => changeRole(m, e.target.value)} className="rounded-lg border border-sand bg-cream px-2 py-1 text-xs capitalize focus:border-ai focus:outline-none">
                       <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option>
                     </select>
-                    <button disabled={busy === m.id} onClick={() => toggleSuspend(m)} className={`rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-50 ${m.suspended ? "border-green/40 text-green" : "border-maroon-900/40 text-maroon-900"}`}>
+                    <button disabled={busy === m.id} onClick={() => toggleSuspend(m)} className={`rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-50 ${m.suspended ? "border-green-text/40 text-green-text" : "border-maroon-text/40 text-maroon-text"}`}>
                       {m.suspended ? "Unsuspend" : "Suspend"}
                     </button>
                   </div>

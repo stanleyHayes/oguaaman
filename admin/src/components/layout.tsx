@@ -82,7 +82,7 @@ function visibleGroups(role: string | undefined): NavGroup[] {
 /** Role badge chip shown next to the username in the top-bar user menu. */
 export function RoleBadge({ role }: Readonly<{ role: string }>) {
   const map: Record<string, string> = {
-    steward: "bg-green text-cream",
+    steward: "bg-green text-on-green",
     curator: "bg-teal/20 text-teal-text",
     moderator: "bg-gold/20 text-gold-text",
     editor: "bg-clay/15 text-clay-text",
@@ -511,11 +511,11 @@ export function AdminLayout() {
                       onClick={signOut}
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-maroon-900/[0.05]"
                     >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-maroon-900/[0.08] text-maroon-900">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-maroon-900/[0.08] text-maroon-text">
                         <LogOut size={16} />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-maroon-900">Sign out</span>
+                        <span className="block text-sm font-semibold text-maroon-text">Sign out</span>
                         <span className="block text-[11px] text-ink-faint">End your session on this device</span>
                       </span>
                     </button>
@@ -549,7 +549,7 @@ export function AdminError() {
         <h1 className="text-4xl font-semibold">Something went wrong</h1>
         <p className="mt-3 text-ink-muted">{msg}</p>
         <p className="mt-2 text-sm text-ink-faint">Is the Go API running on :8080?</p>
-        <a href="/" className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream">Reload</a>
+        <a href="/" className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">Reload</a>
       </div>
     </div>
   );

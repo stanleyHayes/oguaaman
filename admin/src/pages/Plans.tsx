@@ -12,7 +12,7 @@ export async function loader() {
 const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
 
-const inputCls = "w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
+const inputCls = "w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-green-text focus:outline-none focus:ring-2 focus:ring-green/15";
 const labelCls = "mb-1 block text-xs font-medium text-ink-muted";
 
 interface FormState {
@@ -102,7 +102,7 @@ export function Component() {
   return (
     <>
       <PageHeader kicker="Monetization" title="Plans">
-        <button type="button" onClick={openNew} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-800">
+        <button type="button" onClick={openNew} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">
           New plan
         </button>
       </PageHeader>
@@ -144,7 +144,7 @@ export function Component() {
           </div>
           {error && <p className="mt-3 text-sm text-clay-text">{error}</p>}
           <div className="mt-4 flex gap-3">
-            <button type="button" onClick={save} disabled={busy} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-800 disabled:opacity-50">
+            <button type="button" onClick={save} disabled={busy} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">
               {busy ? "Saving…" : "Save plan"}
             </button>
             <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-sand px-4 py-2 text-sm text-ink-muted hover:bg-paper">Cancel</button>
@@ -192,7 +192,7 @@ export function Component() {
                   </td>
                   <td className="px-4 py-3 text-xs text-ink-faint">{formatDate(p.updatedAt)}</td>
                   <td className="px-4 py-3 text-right">
-                    <button type="button" onClick={() => openEdit(p)} className="mr-3 text-sm font-medium text-green hover:underline">Edit</button>
+                    <button type="button" onClick={() => openEdit(p)} className="mr-3 text-sm font-medium text-green-text hover:underline">Edit</button>
                     <button type="button" onClick={() => remove(p)} disabled={busy} className="text-sm font-medium text-clay-text hover:underline disabled:opacity-50">Delete</button>
                   </td>
                 </tr>

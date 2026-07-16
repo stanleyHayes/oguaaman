@@ -91,38 +91,38 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
 
         {mode === "prompt" && (
           <div className="mt-3 flex flex-wrap gap-2">
-            <input autoFocus value={promptText} onChange={(e) => setPromptText(e.target.value)} placeholder="Describe what you want…" className="min-w-[12rem] flex-1 rounded-lg border border-ai-line bg-white px-3 py-2 text-sm focus:border-ai focus:outline-none" />
+            <input autoFocus value={promptText} onChange={(e) => setPromptText(e.target.value)} placeholder="Describe what you want…" className="min-w-[12rem] flex-1 rounded-lg border border-ai-line bg-paper px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none" />
             <button onClick={() => go("prompt")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Generate</button>
           </div>
         )}
         {mode === "lang" && (
           <div className="mt-3 flex flex-wrap gap-2">
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="min-w-[10rem] flex-1 rounded-lg border border-ai-line bg-white px-3 py-2 text-sm focus:border-ai focus:outline-none">{LANGS.map((l) => <option key={l}>{l}</option>)}</select>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="min-w-[10rem] flex-1 rounded-lg border border-ai-line bg-paper px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none">{LANGS.map((l) => <option key={l}>{l}</option>)}</select>
             <button onClick={() => go("translate")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Translate</button>
           </div>
         )}
 
         {loading && <p className="mt-4 text-sm font-medium text-ai">Writing…</p>}
-        {error && <p className="mt-4 rounded-lg border border-[#F0D2C9] bg-[#FCEEEA] px-3 py-2 text-sm text-clay-text">{error}{lastAction && <button onClick={() => go(lastAction)} className="ml-3 font-semibold underline">Try again</button>}</p>}
-        {limit && <p className="mt-4 rounded-lg border border-[#F0E0BB] bg-[#FFF7E8] px-3 py-2 text-center text-sm text-gold-text">Daily AI limit reached. Resets at midnight.</p>}
+        {error && <p className="mt-4 rounded-lg border border-clay/30 bg-clay/10 px-3 py-2 text-sm text-clay-text">{error}{lastAction && <button onClick={() => go(lastAction)} className="ml-3 font-semibold underline">Try again</button>}</p>}
+        {limit && <p className="mt-4 rounded-lg border border-gold-border/40 bg-gold/[0.1] px-3 py-2 text-center text-sm text-gold-text">Daily AI limit reached. Resets at midnight.</p>}
 
         {result != null && (
           <div className="mt-4 border-t border-ai-line pt-3">
             <div className="flex items-center justify-between"><span className="text-sm font-semibold">Preview</span><span className="text-xs text-ink-faint">{lastAction}{simulated ? " · simulated" : ""}</span></div>
-            <div className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-white p-4 text-sm leading-relaxed">{result}</div>
+            <div className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-paper p-4 text-sm leading-relaxed text-ink">{result}</div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-cream">Replace</button>
-              <button onClick={() => { setBody(body.trimEnd() + "\n\n" + result); setResult(null); }} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold">Insert below</button>
-              <button onClick={() => { navigator.clipboard?.writeText(result).catch(() => {}); }} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold">Copy</button>
-              <button onClick={() => setResult(null)} className="rounded-lg border border-[#EAD7D1] px-4 py-2 text-sm font-semibold text-clay-text">Discard</button>
+              <button onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green">Replace</button>
+              <button onClick={() => { setBody(body.trimEnd() + "\n\n" + result); setResult(null); }} className="rounded-lg border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink">Insert below</button>
+              <button onClick={() => { navigator.clipboard?.writeText(result).catch(() => {}); }} className="rounded-lg border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink">Copy</button>
+              <button onClick={() => setResult(null)} className="rounded-lg border border-clay/30 px-4 py-2 text-sm font-semibold text-clay-text">Discard</button>
             </div>
           </div>
         )}
       </div>
       <p className="mt-3 text-xs text-ink-faint">Calls the model server-side in the Go API — the key never reaches the browser. Every output is a draft.</p>
       {confirmOpen && (
-        <dialog open className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-ink/40 p-5" aria-modal>
-          <div className="w-full max-w-sm rounded-[var(--radius-card)] bg-white p-6 text-center shadow-[var(--shadow-lift)]">
+        <dialog open className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-black/45 p-5" aria-modal>
+          <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-sand bg-paper p-6 text-center shadow-[var(--shadow-lift)]">
             <h3 className="text-xl font-semibold text-ink">Replace current text?</h3>
             <p className="mt-2 text-sm text-ink-muted">This will overwrite {sel.active ? "your selected text" : "what is in the field"}.</p>
             <div className="mt-5 flex justify-center gap-3">
@@ -137,5 +137,5 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
 }
 
 function Btn({ onClick, children }: Readonly<{ onClick: () => void; children: React.ReactNode }>) {
-  return <button type="button" onClick={onClick} className="rounded-lg border border-ai-line bg-white px-3 py-2 text-sm font-medium hover:border-ai hover:text-ai">{children}</button>;
+  return <button type="button" onClick={onClick} className="rounded-lg border border-ai-line bg-cream px-3 py-2 text-sm font-medium text-ink hover:border-ai hover:text-ai">{children}</button>;
 }

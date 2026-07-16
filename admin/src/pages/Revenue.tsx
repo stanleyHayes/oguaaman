@@ -22,9 +22,9 @@ const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
 
 const STATUS_TONE: Record<string, string> = {
-  success: "bg-green/[0.1] text-green",
+  success: "bg-green/[0.1] text-green-text",
   pending: "bg-gold/[0.16] text-gold-text",
-  failed: "bg-maroon-900/[0.1] text-maroon-900",
+  failed: "bg-maroon-900/[0.1] text-maroon-text",
 };
 
 // One row in the cross-stream recent-activity feed.
@@ -61,37 +61,37 @@ export function Component() {
       <PageHeader kicker="Money" title="Revenue" />
 
       {/* platform income — the headline number */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-card)] bg-green p-6 text-cream">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-card)] bg-green p-6 text-on-green">
         <div>
-          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-cream/70">Platform income (confirmed)</p>
+          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-on-green/70">Platform income (confirmed)</p>
           <p className="mt-1 text-4xl font-semibold">{cedis(overview.totalPesewas)}</p>
         </div>
-        <p className="max-w-xs text-sm text-cream/70">Pledge fees plus the full proceeds of ticket sales, subscriptions and promotions.</p>
+        <p className="max-w-xs text-sm text-on-green/70">Pledge fees plus the full proceeds of ticket sales, subscriptions and promotions.</p>
       </div>
 
       {/* one card per stream */}
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Crowdfunding fees</p>
-          <p className="mt-2 text-2xl font-semibold text-green">{cedis(overview.pledges.feePesewas)}</p>
+          <p className="mt-2 text-2xl font-semibold text-green-text">{cedis(overview.pledges.feePesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">Platform fee on pledges</p>
           <p className="mt-1 text-xs text-ink-faint">{cedis(overview.pledges.grossPesewas)} pledged · {cedis(overview.pledges.netPesewas)} to projects</p>
         </Card>
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Ticket sales</p>
-          <p className="mt-2 text-2xl font-semibold text-green">{cedis(overview.tickets.grossPesewas)}</p>
+          <p className="mt-2 text-2xl font-semibold text-green-text">{cedis(overview.tickets.grossPesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">{overview.tickets.count} confirmed sales</p>
           <p className="mt-1 text-xs text-ink-faint">Per-event ledgers under Tickets</p>
         </Card>
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Subscriptions</p>
-          <p className="mt-2 text-2xl font-semibold text-green">{cedis(overview.subscriptions.grossPesewas)}</p>
+          <p className="mt-2 text-2xl font-semibold text-green-text">{cedis(overview.subscriptions.grossPesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">{overview.subscriptions.count} payments · {overview.subscriptions.active} active</p>
           <p className="mt-1 text-xs text-ink-faint">Supporter plan renewals</p>
         </Card>
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Promotions</p>
-          <p className="mt-2 text-2xl font-semibold text-green">{cedis(overview.promotions.grossPesewas)}</p>
+          <p className="mt-2 text-2xl font-semibold text-green-text">{cedis(overview.promotions.grossPesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">{overview.promotions.count} featured placements</p>
           <p className="mt-1 text-xs text-ink-faint">GH₵ 10/day, owner self-serve</p>
         </Card>
@@ -126,7 +126,7 @@ export function Component() {
                 <StaggerItem as="tr" key={a.id} index={idx} className="hover:bg-paper">
                   <td className="px-4 py-3 text-ink-muted">{a.stream}</td>
                   <td className="px-4 py-3 font-medium text-ink">{a.title}</td>
-                  <td className="px-4 py-3 font-semibold text-green">{cedis(a.amountPesewas)}</td>
+                  <td className="px-4 py-3 font-semibold text-green-text">{cedis(a.amountPesewas)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold capitalize ${STATUS_TONE[a.status]}`}>{a.status}</span>
                     {a.simulated && <span className="ml-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">sim</span>}

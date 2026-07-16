@@ -66,7 +66,8 @@ const KIND_LABEL: Record<string, string> = {
   faith: "Faith", civic: "Civic", business: "Business", asafo: "Asafo",
 };
 const STATUS_COLOR: Record<string, string> = {
-  approved: "#0e7c6b", pending: "#b07d32", rejected: "#9a4030", unpublished: "#6e7a70", draft: "#3b473d",
+  approved: "var(--color-teal)", pending: "var(--color-gold-brand)", rejected: "var(--color-clay-text)",
+  unpublished: "var(--color-ink-faint)", draft: "var(--color-green-slate)",
 };
 
 // ── small presentational pieces ──────────────────────────────────────────────
@@ -137,8 +138,8 @@ export function Component() {
 
   const verified = institutions.filter((o) => o.verified).length;
   const verifyMix: Datum[] = [
-    { label: "Verified", value: verified, color: "#0e7c6b" },
-    { label: "Unverified", value: institutions.length - verified, color: "#ece4d3" },
+    { label: "Verified", value: verified, color: "var(--color-teal)" },
+    { label: "Unverified", value: institutions.length - verified, color: "var(--color-sand)" },
   ].filter((d) => d.value > 0);
 
   return (

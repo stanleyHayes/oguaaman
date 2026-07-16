@@ -51,6 +51,8 @@ export function InstitutionLogo({
   const src = org.crestUrl ?? LOGOS[org.slug];
   const [failed, setFailed] = useState(false);
   if (src && !failed) {
+    // bg-white is deliberate: supplied logos are designed for light tiles, so
+    // the tile stays white in dark mode rather than following the theme.
     return (
       <span
         className="flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-sand bg-white"

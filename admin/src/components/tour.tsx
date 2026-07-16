@@ -84,17 +84,17 @@ export function Tour({ steps, onDone }: Readonly<{ steps: TourStep[]; onDone: ()
       {/* Dim panes (or a full dim for centred steps) */}
       {rect ? (
         <>
-          <div className="absolute inset-x-0 top-0 bg-ink/55" style={{ height: Math.max(0, rect.top - PAD) }} />
-          <div className="absolute inset-x-0 bottom-0 bg-ink/55" style={{ top: rect.bottom + PAD }} />
-          <div className="absolute bg-ink/55" style={{ top: rect.top - PAD, height: rect.height + PAD * 2, left: 0, width: Math.max(0, rect.left - PAD) }} />
-          <div className="absolute bg-ink/55" style={{ top: rect.top - PAD, height: rect.height + PAD * 2, right: 0, left: rect.right + PAD }} />
+          <div className="absolute inset-x-0 top-0 bg-black/55" style={{ height: Math.max(0, rect.top - PAD) }} />
+          <div className="absolute inset-x-0 bottom-0 bg-black/55" style={{ top: rect.bottom + PAD }} />
+          <div className="absolute bg-black/55" style={{ top: rect.top - PAD, height: rect.height + PAD * 2, left: 0, width: Math.max(0, rect.left - PAD) }} />
+          <div className="absolute bg-black/55" style={{ top: rect.top - PAD, height: rect.height + PAD * 2, right: 0, left: rect.right + PAD }} />
           <div
             className="absolute rounded-xl border-2 border-gold-brand shadow-[0_0_0_4px_rgba(199,162,74,0.25)]"
             style={{ top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2 }}
           />
         </>
       ) : (
-        <div className="absolute inset-0 bg-ink/55" />
+        <div className="absolute inset-0 bg-black/55" />
       )}
 
       {/* Popover card */}
@@ -119,7 +119,7 @@ export function Tour({ steps, onDone }: Readonly<{ steps: TourStep[]; onDone: ()
             )}
             <button
               onClick={() => (last ? done() : setI(i + 1))}
-              className="inline-flex items-center gap-1 rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-cream transition-colors hover:bg-green-900"
+              className="inline-flex items-center gap-1 rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-on-green transition-colors hover:bg-green-900"
             >
               {last ? "Done" : "Next"} {last ? null : <ArrowRight size={12} />}
             </button>

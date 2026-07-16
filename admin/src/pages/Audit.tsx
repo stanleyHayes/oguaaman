@@ -13,7 +13,7 @@ export async function loader(): Promise<Data> {
 }
 
 const ACTION_TONE: Record<string, string> = {
-  approve: "text-green", reject: "text-maroon-900", "request-changes": "text-gold-text",
+  approve: "text-green-text", reject: "text-maroon-text", "request-changes": "text-gold-text",
   unpublish: "text-ink-muted", flag: "text-clay-text",
 };
 

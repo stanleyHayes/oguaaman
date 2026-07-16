@@ -166,7 +166,7 @@ export function Component() {
                       <p className="font-medium text-ink">{off.role}</p>
                       {off.holderName && <p className="text-xs text-ink-faint">{off.holderName}</p>}
                     </div>
-                    {off.verified && <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green">verified</span>}
+                    {off.verified && <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green-text">verified</span>}
                   </li>
                 ))}
               </ul>
@@ -209,7 +209,7 @@ export function Component() {
             <h2 className="text-xl font-semibold text-ink">Official page</h2>
             <p className="text-sm text-ink-muted">Configure this place's summary, history, sections and photos — it renders live on the public site.</p>
           </div>
-          <button type="button" onClick={() => setEditing((v) => !v)} className="shrink-0 rounded-full border border-green/40 px-4 py-2 text-sm font-semibold text-green hover:border-green">
+          <button type="button" onClick={() => setEditing((v) => !v)} className="shrink-0 rounded-full border border-green-text/40 px-4 py-2 text-sm font-semibold text-green-text hover:border-green-text">
             {editing ? "Close editor" : "Configure page"}
           </button>
         </div>

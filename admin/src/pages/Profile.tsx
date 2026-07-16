@@ -64,7 +64,7 @@ export function Component() {
       <Card className="overflow-hidden">
         <div className="h-16 w-full bg-green-900" aria-hidden />
         <div className="flex flex-wrap items-end gap-4 px-6 pb-5">
-          <span className="-mt-9 inline-flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-cream bg-green text-2xl font-semibold text-cream shadow-[var(--shadow-card)]">
+          <span className="-mt-9 inline-flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-cream bg-green text-2xl font-semibold text-on-green shadow-[var(--shadow-card)]">
             {member.photoUrl ? <img src={member.photoUrl} alt="" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : avatarInitials}
           </span>
           <div className="min-w-0 pb-1">
@@ -93,10 +93,10 @@ export function Component() {
             </label>
             {err && <p className="text-sm text-clay-text">{err}</p>}
             <div className="flex items-center gap-3">
-              <button onClick={saveProfile} disabled={!dirty || state === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream transition-colors hover:bg-green-900 disabled:opacity-50">
+              <button onClick={saveProfile} disabled={!dirty || state === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-50">
                 {state === "saving" ? "Saving…" : "Save changes"}
               </button>
-              {state === "saved" && <span className="text-sm text-green">Saved ✓</span>}
+              {state === "saved" && <span className="text-sm text-green-text">Saved ✓</span>}
             </div>
           </div>
         </Section>
@@ -110,7 +110,7 @@ export function Component() {
               <KeyVal label="Member ID"><span className="font-mono text-xs text-ink-muted">{member.id}</span></KeyVal>
               <KeyVal label="Phone">
                 <span className="inline-flex items-center gap-2">
-                  <span className={member.phoneVerified ? "text-green" : "text-ink-muted"}>{member.phoneVerified ? "Verified" : "Not verified"}</span>
+                  <span className={member.phoneVerified ? "text-green-text" : "text-ink-muted"}>{member.phoneVerified ? "Verified" : "Not verified"}</span>
                   <span className="text-xs text-ink-faint">· kept private</span>
                 </span>
               </KeyVal>
@@ -140,7 +140,7 @@ export function Component() {
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link to="/settings" className="rounded-full border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-gold-border hover:text-gold-text">Settings</Link>
           <Link to="/notifications" className="rounded-full border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-gold-border hover:text-gold-text">Notifications</Link>
-          <button onClick={signOut} className="ml-auto rounded-full border border-maroon-900/50 px-4 py-2 text-sm font-semibold text-maroon-900 transition-colors hover:bg-maroon-900/[0.06]">Sign out</button>
+          <button onClick={signOut} className="ml-auto rounded-full border border-maroon-text/50 px-4 py-2 text-sm font-semibold text-maroon-text transition-colors hover:bg-maroon-900/[0.06]">Sign out</button>
         </div>
       </Card>
     </>

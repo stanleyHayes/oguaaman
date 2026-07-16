@@ -3,10 +3,11 @@ import { motion } from "motion/react";
 
 // Bespoke, dependency-free charts in the Oguaa palette. All animate on data
 // change (transition on width/height) so the live-refreshing dashboard feels
-// alive without a charting library.
+// alive without a charting library. PALETTE points at the theme tokens —
+// inline styles and SVG attributes accept var() — so charts retint in dark mode.
 const PALETTE = {
-  green: "#123f2d", greenLt: "#3b473d", gold: "#b07d32", goldLt: "#c7a24a",
-  clay: "#b0503c", teal: "#0e7c6b", maroon: "#7c2d2d", sand: "#ece4d3",
+  green: "var(--color-green)", greenLt: "var(--color-green-slate)", gold: "var(--color-gold-brand)", goldLt: "var(--color-gold)",
+  clay: "var(--color-clay)", teal: "var(--color-teal)", maroon: "var(--color-maroon-900)", sand: "var(--color-sand)",
 };
 export const CHART_COLORS = [
   PALETTE.green, PALETTE.gold, PALETTE.clay, PALETTE.teal, PALETTE.maroon, PALETTE.goldLt, PALETTE.greenLt,

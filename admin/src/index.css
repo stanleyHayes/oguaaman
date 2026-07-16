@@ -20,6 +20,13 @@
   --color-maroon-900: #7c2d2d;
   --color-teal: #0e7c6b;
   --color-teal-text: #0b6557;
+  /* Foreground-grade brand tones — the green/maroon fill tokens above stay
+     dark in dark mode, so text/borders on theme surfaces need these. */
+  --color-green-text: #123f2d;
+  --color-maroon-text: #7c2d2d;
+  /* Always-light text on green/maroon/navy brand fills (replaces the broken
+     "text-cream on bg-green" recipe, which flips dark-on-dark in dark mode). */
+  --color-on-green: #f6f1e7;
   /* Aura command-center sidebar palette (auraedu packages/tokens/tokens.css) */
   --color-navy: #001b50;
   --color-navy-soft: #002870;
@@ -38,6 +45,10 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --radius-card: 12px;
+
+  /* Depth (shared with frontend/creator index.css) */
+  --shadow-card: 0 12px 30px rgba(30, 28, 25, 0.06);
+  --shadow-lift: 0 18px 50px rgba(18, 40, 28, 0.12);
 
   /* Empty-state icon motion (see components/ui.tsx Empty) */
   --animate-empty-float: empty-float 3.2s ease-in-out infinite;
@@ -74,6 +85,9 @@
     --color-maroon-900: #5c1f1f;
     --color-teal: #2dbfa5;
     --color-teal-text: #6ee7d2;
+    --color-green-text: #4ecf9d;
+    --color-maroon-text: #e08585;
+    --color-on-green: #f4f0e8;
     --color-ai: #7b6fd6;
     --color-ai-tint: #1a1833;
     --color-ai-line: #3d3966;
@@ -84,8 +98,12 @@
     --color-aura-gold: #e0b055;
     --color-aura-gold-soft: #ecd778;
     --color-aura-gold-muted: #bfa76e;
-    --color-aura-cream: #0f1a2e;
+    /* aura-cream is only ever foreground text on the always-dark navy
+       sidebar — keep it light (gently tinted) so that text stays readable. */
+    --color-aura-cream: #f2ead9;
     --color-crit: #e04d3e;
+    --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.22);
+    --shadow-lift: 0 18px 50px rgba(0, 0, 0, 0.32);
   }
   html[data-theme="dark"] ::selection {
     background: var(--color-gold);
@@ -107,6 +125,24 @@
   .eyebrow {
     font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
     font-weight: 700; color: var(--color-ink-faint);
+  }
+  /* Sign-in screen (auth-gate.tsx) sits on an always-dark green field. Dark
+     mode remaps the shared tokens (cream goes dark, green shifts), which would
+     leave its cream/gold text dark-on-dark — re-pin those tokens to their
+     light-theme values so the auth surfaces render identically in both themes.
+     paper/ink/sand are deliberately NOT pinned so the form panel stays
+     theme-aware. */
+  .auth-dark-pin {
+    --color-cream: #f6f1e7;
+    --color-green: #123f2d;
+    --color-green-900: #0c2c1f;
+    --color-gold: #c7a24a;
+    --color-gold-brand: #b07d32;
+  }
+  /* Text inputs inside the pinned subtree pair bg-cream with theme-aware
+     text-ink, so cream must follow the theme there — restore the dark value. */
+  html[data-theme="dark"] .auth-dark-pin .auth-theme-cream {
+    --color-cream: #16241e;
   }
 }
 

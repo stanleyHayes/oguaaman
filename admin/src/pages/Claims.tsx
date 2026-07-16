@@ -44,9 +44,9 @@ export function Component() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="font-medium">
-                    <span className="text-green">{c.memberName || c.memberId}</span>
+                    <span className="text-green-text">{c.memberName || c.memberId}</span>
                     <span className="text-ink-muted">{c.newOrg ? " requests a new institution " : " wants to manage "}</span>
-                    <span className="text-green">{c.orgName || c.newOrg?.name || c.orgId}</span>
+                    <span className="text-green-text">{c.orgName || c.newOrg?.name || c.orgId}</span>
                     {c.newOrg && <span className="ml-2 rounded-full bg-gold/[0.18] px-2.5 py-0.5 text-xs font-semibold text-gold-text">new · {c.newOrg.kind} · {c.newOrg.seat}</span>}
                   </div>
                   <div className="mt-1 text-sm text-ink-muted">

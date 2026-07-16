@@ -21,9 +21,9 @@ const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
 
 const STATUS_TONE: Record<Ticket["status"], string> = {
-  success: "bg-green/[0.1] text-green",
+  success: "bg-green/[0.1] text-green-text",
   pending: "bg-gold/[0.16] text-gold-text",
-  failed: "bg-maroon-900/[0.1] text-maroon-900",
+  failed: "bg-maroon-900/[0.1] text-maroon-text",
 };
 
 export function Component() {
@@ -106,7 +106,7 @@ export function Component() {
                       <td className="px-4 py-3 text-ink-muted">{t.memberId || <span className="text-ink-faint">—</span>}</td>
                       <td className="px-4 py-3 font-medium text-ink">{t.tier}</td>
                       <td className="px-4 py-3 text-ink-muted">{t.qty}</td>
-                      <td className="px-4 py-3 font-semibold text-green">{cedis(t.amountPesewas)}</td>
+                      <td className="px-4 py-3 font-semibold text-green-text">{cedis(t.amountPesewas)}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold capitalize ${STATUS_TONE[t.status]}`}>{t.status}</span>
                         {t.simulated && <span className="ml-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink-faint">sim</span>}
@@ -137,14 +137,14 @@ export function Component() {
             onKeyDown={(e) => { if (e.key === "Enter") checkIn(); }}
             maxLength={8}
             placeholder="AB12CD34"
-            className="w-40 rounded-lg border border-sand bg-paper px-3 py-2 font-mono text-lg tracking-widest text-ink focus:border-green focus:outline-none"
+            className="w-40 rounded-lg border border-sand bg-paper px-3 py-2 font-mono text-lg tracking-widest text-ink focus:border-green-text focus:outline-none"
           />
-          <button onClick={checkIn} disabled={checking || code.trim().length === 0} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+          <button onClick={checkIn} disabled={checking || code.trim().length === 0} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
             {checking ? "Checking…" : "Admit"}
           </button>
         </div>
         {result && (
-          <p className={`mt-3 rounded-lg px-3 py-2 text-sm font-medium ${result.ok ? "bg-green/[0.08] text-green" : "bg-maroon-900/[0.08] text-maroon-900"}`}>
+          <p className={`mt-3 rounded-lg px-3 py-2 text-sm font-medium ${result.ok ? "bg-green/[0.08] text-green-text" : "bg-maroon-900/[0.08] text-maroon-text"}`}>
             {result.msg}
           </p>
         )}
@@ -157,7 +157,7 @@ export function Component() {
         <>
           <div className="mb-4 flex flex-wrap gap-2">
             {events.map((e) => (
-              <button key={e.id} onClick={() => setSlug(e.slug)} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${slug === e.slug ? "border-green bg-green text-cream" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>
+              <button key={e.id} onClick={() => setSlug(e.slug)} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${slug === e.slug ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green-text/40"}`}>
                 {e.title}
               </button>
             ))}

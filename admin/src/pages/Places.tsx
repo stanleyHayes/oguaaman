@@ -63,7 +63,7 @@ function NewPlaceForm({ onClose }: Readonly<{ onClose: () => void }>) {
           <AiWritingBar initialTitle={name} initialBody={summary} />
         </div>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={create} disabled={busy || !name.trim()} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-cream hover:bg-green-900 disabled:opacity-60">
+          <button type="button" onClick={create} disabled={busy || !name.trim()} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
             {busy ? "Creating…" : "Create & configure →"}
           </button>
           <button type="button" onClick={onClose} className="text-sm font-medium text-ink-muted hover:text-ink">Cancel</button>
@@ -83,7 +83,7 @@ export function Component() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageHeader kicker="Visit · marketing site" title="Heritage & visitor places" />
         {!adding && (
-          <button type="button" onClick={() => setAdding(true)} className="shrink-0 rounded-full bg-green px-4 py-2 text-sm font-semibold text-cream hover:bg-green-900">
+          <button type="button" onClick={() => setAdding(true)} className="shrink-0 rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">
             + New place
           </button>
         )}
@@ -113,7 +113,7 @@ export function Component() {
                 {p.summary && <p className="mt-3 line-clamp-3 text-sm text-ink-muted">{p.summary}</p>}
                 <div className="mt-auto flex items-center justify-between border-t border-sand pt-3 text-xs text-ink-faint">
                   <span>{count(p.sections?.length, "section", "sections")} · {count(p.gallery?.length, "photo", "photos")}</span>
-                  <span className="font-semibold text-green opacity-0 transition-opacity group-hover:opacity-100">Configure →</span>
+                  <span className="font-semibold text-green-text opacity-0 transition-opacity group-hover:opacity-100">Configure →</span>
                 </div>
               </Card>
             </Link>
