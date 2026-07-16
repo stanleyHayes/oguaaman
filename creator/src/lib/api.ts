@@ -1,4 +1,4 @@
-import type { CreatorOverview, Listing, Member, MemberView, NotificationItem, Organization, Plan, Promotion, Subscription, Ticket } from "./types";
+import type { CreatorOverview, InstitutionView, Listing, MediaAsset, Member, MemberView, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, Subscription, Ticket } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -68,6 +68,19 @@ export const api = {
 
   // Institutions the member manages (claim → steward-verify → manage, spec §8.13).
   myInstitutions: () => get<Organization[]>("/api/me/institutions"),
+  institution: (slug: string) => get<InstitutionView>(`/api/institutions/${slug}`),
+  // Manager-editable official page: profile, offices, gallery, custom sections,
+  // and official events (full-replace semantics, mirroring the portal editor).
+  updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[] }) =>
+    post<Organization>(`/api/institutions/${slug}/profile`, body),
+  setOrgOffices: (slug: string, offices: Office[]) =>
+    post<Organization>(`/api/institutions/${slug}/offices`, { offices }),
+  setOrgGallery: (slug: string, gallery: MediaAsset[]) =>
+    post<Organization>(`/api/institutions/${slug}/gallery`, { gallery }),
+  setOrgSections: (slug: string, sections: ProfileSection[]) =>
+    post<Organization>(`/api/institutions/${slug}/sections`, { sections }),
+  postOrgEvent: (slug: string, body: { title: string; details?: Record<string, unknown> }) =>
+    post<Listing>(`/api/institutions/${slug}/events`, body),
 
   // Paid promotions: self-serve featured placements via Paystack (GH₵10/day).
   promoteListing: (id: string, days: number) =>

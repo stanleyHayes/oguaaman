@@ -55,6 +55,57 @@ export interface Member {
 
 export interface Office { id: string; role: string; holderId?: string; holderName?: string; verified: boolean }
 
+/** An image (or other media) with metadata, used in institution galleries. */
+export interface MediaAsset {
+  id: string;
+  url: string;
+  kind?: string;          // photo | logo | cover | document | video
+  alt?: string;           // accessibility + load fallback
+  caption?: string;
+  credit?: string;
+  moderation?: string;    // approved | pending | rejected
+}
+
+/** One row in a list-style section (stat, team member, timeline, FAQ, doc). */
+export interface SectionItem {
+  id?: string;
+  label?: string;   // stat label · team role · timeline date · faq question · doc title
+  value?: string;   // stat value · team name · timeline heading · faq answer
+  detail?: string;  // team bio · timeline body · doc note
+  image?: string;   // team photo · timeline image (URL)
+  url?: string;     // doc/file link · external link
+}
+
+export type ProfileSectionType =
+  | "richtext" | "gallery" | "stats" | "team" | "timeline" | "faq" | "docs"
+  | "quote" | "cta" | "logos" | "divider" | "groups"
+  | "hero" | "testimonials" | "contact" | "menu" | "schedule" | "map";
+
+/** A child body shown as a card in a "groups" section (house, department, Asafo company, year group, lineage). */
+export interface SubEntity {
+  id: string;
+  name: string;
+  subtitle?: string;
+  crestUrl?: string;
+  colors?: string[];
+  summary?: string;
+  attrs?: SectionItem[];  // Label/Value facts
+}
+
+/** An author-composed block on an institution's official page. */
+export interface ProfileSection {
+  id: string;
+  type: ProfileSectionType;
+  title?: string;
+  anchor?: string;
+  tone?: string;          // green | clay | gold | maroon | teal
+  hidden?: boolean;       // zero value (absent) = visible
+  body?: string;          // richtext: Markdown
+  media?: MediaAsset[];   // gallery
+  items?: SectionItem[];  // stats | team | timeline | faq | docs
+  groups?: SubEntity[];   // groups (sub-entity cards)
+}
+
 export interface Organization {
   id: string;
   slug: string;
@@ -64,9 +115,21 @@ export interface Organization {
   motto?: string;
   crestUrl?: string;
   summary: string;
+  history?: string;
+  founded?: number;
   classification?: string;
-  offices: Office[];
+  contact?: SocialLink[];
+  offices?: Office[];
+  gallery?: MediaAsset[];
+  sections?: ProfileSection[];
   verified: boolean;
+}
+
+/** Public institution page payload (GET /api/institutions/:slug). */
+export interface InstitutionView {
+  institution: Organization;
+  events: Listing[];
+  officialEvents: Listing[];
 }
 
 export interface MemberView { member: Member; listings: Listing[] }

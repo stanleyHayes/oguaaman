@@ -263,7 +263,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 
 **Phase 2 (money & team) — in progress.** Owner listing editor shipped (slice 1, `02fde49`). Remaining:
 - ☐ **Plans catalog (§5)** — `plans` collection + admin **Monetization → Plans** CRUD + `GET /api/plans`, seeded Starter/Supporter/Featured; nothing price-related hardcoded client-side. **SHIPPED 2026-07-16** — the §5/§9.1-vs-§7.6 contradiction resolved for the collection (§9.1 is the later, explicit decision): `Plan` domain + repo, admin CRUD (curator/steward), subscribe consumes catalog prices (explicit-plan strict, default-plan legacy fallback), Featured bundle auto-applies its 7 promo days on every confirmed payment, creator Grow + portal subscribe panel + admin Subscriptions labels all read the catalog.
-- ☐ **Institution workspace port (§4.1.3)** — the five manage panels into the creator app + TEAM sidebar + institution switcher.
+- ☐ **Institution workspace port (§4.1.3)** — the five manage panels into the creator app + TEAM sidebar + institution switcher. **SHIPPED 2026-07-16** — `/team` + `/team/:slug` routes, org-switcher chips, the portal manage page ported verbatim (profile, custom sections builder with all 18 types, gallery, offices, official events) into `institution-panels.tsx` restyled to creator conventions; Institutions page now links internally; zero backend changes. E2E 17/17 (save-profile persist, section add/save/persist, verified-event publish → live on portal).
 - ☐ **Team/officer invitations (§4.1.2)** — `invited` claim status + `invitedById`, invite/accept/decline/revoke endpoints, manager-vs-officer scopes, team list UI.
 - ☐ **Request-a-new-institution flow + server-side kind catalog** (school, traditional-authority, association, faith, civic, asafo, heritage).
 
@@ -276,7 +276,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 1. ~~OTP verification + submit gate~~ ✅ core slice (`d97c11c` — codes, gate, UI; **provider delivery remains**, folded into #10).
 2. ~~Memorial keeper reminder controls~~ ✅ (§8.11 — submit defaults, edit whitelist + carryover, portal/creator toggles, `RunRemembrance` test coverage).
 3. ~~Revoke-verification takes the page offline + conditional badge~~ ✅ (Institution §6 — verified-only directory, gated detail, events demote/restore, conditional badges, admin list endpoint).
-4. **Creator Phase 2 remainder** — ~~plans catalog~~ ✅ (`GET /api/plans` + admin CRUD + subscribe consumes it) → institution workspace port → team/officer invitations (Creator §4.1/§5).
+4. **Creator Phase 2 remainder** — ~~plans catalog~~ ✅ (`GET /api/plans` + admin CRUD + subscribe consumes it) → ~~institution workspace port~~ ✅ (`/team` workspace, five panels, org switcher) → team/officer invitations (Creator §4.1/§5).
 5. **Per-listing OG cards / rich link previews** (spec §11 — the growth engine).
 6. **PWA manifest + offline shell** (spec §11).
 7. **View counter** (+ creator "views this month" KPI; Creator §7.5).

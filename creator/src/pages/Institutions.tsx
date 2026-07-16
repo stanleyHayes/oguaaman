@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router-dom";
+import { Link, useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import { PORTAL } from "@/lib/portal";
 import type { Organization } from "@/lib/types";
@@ -46,10 +46,10 @@ export function Component() {
                     <p className="text-xs capitalize text-ink-faint">{o.kind}{o.classification ? ` · ${o.classification}` : ""}</p>
                   </div>
                   {o.verified && <Pill tone="green"><BadgeCheck size={12} className="mr-1" aria-hidden />Verified</Pill>}
-                  <a href={`${PORTAL}/education/${o.slug}/manage`}
+                  <Link to={`/team/${o.slug}`}
                     className="shrink-0 rounded-full border border-gold-brand px-3.5 py-1.5 text-xs font-semibold text-gold-text transition-colors hover:bg-gold-brand hover:text-green-900">
-                    Manage page
-                  </a>
+                    Open workspace
+                  </Link>
                 </div>
               </StaggerItem>
             ))}
@@ -58,7 +58,7 @@ export function Component() {
       )}
 
       <p className="mt-4 text-xs text-ink-faint">
-        Editing an institution's profile, offices, gallery and events happens in the portal's page editor — it opens in the same account.
+        Open a workspace to edit the institution's profile, sections, gallery, offices and events — right here in the app.
       </p>
     </>
   );

@@ -4,7 +4,7 @@ import { PageTransition } from "@/components/page-transition";
 import { useAuth } from "@/lib/auth";
 import {
   Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone,
-  Banknote, UserRound, Bell, User, type LucideIcon,
+  Banknote, UserRound, Bell, User, Users, type LucideIcon,
 } from "lucide-react";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
@@ -18,6 +18,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: "/work", label: "Listings", icon: List },
       { to: "/institutions", label: "Institutions", icon: Landmark },
+      { to: "/team", label: "Team", icon: Users },
     ],
   },
   {
