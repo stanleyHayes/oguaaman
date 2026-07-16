@@ -110,7 +110,7 @@ export function Component() {
         <Container size="wide" className="relative py-16 sm:py-20">
           <div className="flex items-end justify-between gap-4">
             <Reveal>
-              <Eyebrow className="text-gold/90">Rotating spotlight · the flagship</Eyebrow>
+              <Eyebrow className="text-cream">Rotating spotlight · the flagship</Eyebrow>
               <h2 className="mt-2 text-4xl font-semibold leading-[1.05] sm:text-5xl">On the <span className="text-gold">bandstand</span></h2>
               <p className="mt-3 max-w-xl text-cream/75">Each week one act takes the stage — the sound of Oguaa, front and centre.</p>
             </Reveal>
