@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { Adinkra } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
 import { DatePicker } from "@/components/date-picker";
+import { OtpInput } from "@/components/otp-input";
 
 const inputCls =
   "w-full rounded-xl border border-sand bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
@@ -222,24 +223,48 @@ function MfaForm({ code, setCode, busy, err, onSubmit, onCancel }: Readonly<{
   onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }>) {
+  // The verify step accepts either a 6-digit authenticator code (the OtpInput)
+  // or a longer alphanumeric recovery code — a single free-text field the user
+  // can switch to. Both bind to the same `code` state so submit logic is unchanged.
+  const [recovery, setRecovery] = useState(false);
+  const formRef = useRef<HTMLFormElement | null>(null);
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form ref={formRef} onSubmit={onSubmit} className="space-y-5">
       <div>
         <h2 className="text-2xl font-semibold text-ink">Two-factor check</h2>
         <p className="mt-1 text-sm text-ink-muted">Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
       </div>
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          required
-          autoComplete="one-time-code"
-          inputMode="numeric"
-          placeholder="123 456"
-          className={`${inputCls} text-center text-lg tracking-[0.3em]`}
-        />
-      </label>
+      {recovery ? (
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-ink">Recovery code</span>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            required
+            autoFocus
+            autoComplete="one-time-code"
+            placeholder="xxxx-xxxx-xxxx"
+            className={inputCls}
+          />
+          <button type="button" onClick={() => { setRecovery(false); setCode(""); }} className="mt-2 text-xs font-medium text-ink-muted underline hover:text-ink">
+            Use authenticator code
+          </button>
+        </label>
+      ) : (
+        <div className="block">
+          <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
+          <OtpInput
+            value={code}
+            onChange={setCode}
+            onComplete={() => formRef.current?.requestSubmit()}
+            autoFocus
+            ariaLabel="Authenticator code"
+          />
+          <button type="button" onClick={() => { setRecovery(true); setCode(""); }} className="mt-2 text-xs font-medium text-ink-muted underline hover:text-ink">
+            Use a recovery code instead
+          </button>
+        </div>
+      )}
       {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
       <button type="submit" disabled={busy} className={submitBtnCls}>
         {busy ? "Verifying…" : "Verify & sign in"}

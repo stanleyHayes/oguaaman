@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "./layout";
 import { MfaEnroll } from "./mfa";
+import { OtpInput } from "./otp-input";
 
 /** Returns true when this role may access the back-office at all. */
 export function isStaffRole(role: string): boolean {
@@ -105,8 +106,10 @@ function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [challenge, setChallenge] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  const [recovery, setRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const codeFormRef = useRef<HTMLFormElement | null>(null);
 
   async function submit(e: React.SubmitEvent) {
     e.preventDefault(); setBusy(true); setErr(null);
@@ -128,19 +131,28 @@ function SignIn() {
     return (
       <Backdrop>
         <Shell>
-          <form onSubmit={submitCode} className="space-y-5">
+          <form ref={codeFormRef} onSubmit={submitCode} className="space-y-5">
             <div>
               <h2 className="text-2xl font-semibold text-ink">Two-factor check</h2>
               <p className="mt-1 text-sm text-ink-muted">Enter the 6-digit code from your authenticator app, or a recovery code.</p>
             </div>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
-              <input value={code} onChange={(e) => setCode(e.target.value)} required autoComplete="one-time-code" inputMode="numeric" placeholder="123 456" className={`${inputCls} text-center text-lg tracking-[0.3em]`} />
-            </label>
+            {recovery ? (
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium text-ink">Recovery code</span>
+                <input value={code} onChange={(e) => setCode(e.target.value)} required autoFocus autoComplete="one-time-code" placeholder="xxxx-xxxx-xxxx" className={inputCls} />
+                <button type="button" onClick={() => { setRecovery(false); setCode(""); }} className="mt-2 text-xs font-medium text-ink-muted underline hover:text-ink">Use authenticator code</button>
+              </label>
+            ) : (
+              <div className="block">
+                <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
+                <OtpInput value={code} onChange={setCode} onComplete={() => codeFormRef.current?.requestSubmit()} autoFocus ariaLabel="Authenticator code" />
+                <button type="button" onClick={() => { setRecovery(true); setCode(""); }} className="mt-2 text-xs font-medium text-ink-muted underline hover:text-ink">Use a recovery code instead</button>
+              </div>
+            )}
             {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
             <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Verifying…" : "Verify & sign in"}</button>
             <p className="text-center text-xs text-ink-faint">
-              <button type="button" onClick={() => { setChallenge(null); setErr(null); setPassword(""); }} className="font-medium text-ink-muted underline hover:text-ink">← Back to sign in</button>
+              <button type="button" onClick={() => { setChallenge(null); setErr(null); setPassword(""); setRecovery(false); }} className="font-medium text-ink-muted underline hover:text-ink">← Back to sign in</button>
             </p>
           </form>
         </Shell>

@@ -1,6 +1,8 @@
-import { useState, type SubmitEvent } from "react";
+import { useRef, useState, type SubmitEvent } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { Mark } from "@/components/layout";
+import { OtpInput } from "@/components/otp-input";
 
 const inputCls =
   "w-full rounded-xl border border-sand bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
@@ -22,6 +24,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const begin = async () => {
     setBusy(true); setErr(null);
@@ -75,7 +78,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
 
   if (stage?.step === "qr") {
     return (
-      <form onSubmit={confirm} className="space-y-4">
+      <form ref={formRef} onSubmit={confirm} className="space-y-4">
         <ol className="list-decimal space-y-1.5 pl-5 text-sm text-ink-muted">
           <li>Scan this QR with your authenticator app (Google Authenticator, 1Password, Aegis…).</li>
           <li>Enter the 6-digit code it shows.</li>
@@ -83,12 +86,22 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
         <div className="flex flex-wrap items-start gap-4">
           {/* Deliberately hardcoded white tile: authenticator cameras need a light, high-contrast
               backing to scan the QR — bg-paper would go dark in dark mode and break scanning. */}
-          <img src={stage.qr} alt="Authenticator QR code" className="h-36 w-36 rounded-xl border border-sand bg-white p-2" />
+          <div className="relative h-36 w-36 shrink-0">
+            <img src={stage.qr} alt="Authenticator QR code" className="h-36 w-36 rounded-xl border border-sand bg-white p-2" />
+            {/* Oguaa mark branded into the QR centre. Kept small (~19% of the code's
+                width) so the QR's error correction still scans cleanly. */}
+            <span className="absolute left-1/2 top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-black/5">
+              <Mark size={22} />
+            </span>
+          </div>
           <div className="min-w-[11rem] flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Can't scan? Enter this key</p>
             <p className="mt-1 break-all rounded-lg border border-sand bg-cream px-3 py-2 font-mono text-xs text-ink">{stage.secret}</p>
-            <input value={code} onChange={(e) => setCode(e.target.value)} required inputMode="numeric" autoComplete="one-time-code" placeholder="123 456" className={`${inputCls} mt-3 text-center tracking-[0.3em]`} />
           </div>
+        </div>
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-ink">Enter the 6-digit code</p>
+          <OtpInput value={code} onChange={setCode} onComplete={() => formRef.current?.requestSubmit()} ariaLabel="Authenticator code" />
         </div>
         {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
         <div className="flex items-center gap-3">
@@ -114,6 +127,7 @@ export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
   const { setMember } = useAuth();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
+  const [recovery, setRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -132,7 +146,7 @@ export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
 
   if (!open) {
     return (
-      <button type="button" onClick={() => { setOpen(true); setCode(""); setErr(null); }} className="text-sm font-medium text-clay-text hover:underline">
+      <button type="button" onClick={() => { setOpen(true); setCode(""); setErr(null); setRecovery(false); }} className="text-sm font-medium text-clay-text hover:underline">
         Turn off
       </button>
     );
@@ -140,7 +154,17 @@ export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
   return (
     <form onSubmit={confirm} className="space-y-3">
       <p className="text-sm text-ink-muted">Enter a current authenticator or recovery code to turn two-factor off.</p>
-      <input value={code} onChange={(e) => setCode(e.target.value)} required inputMode="numeric" autoComplete="one-time-code" placeholder="123 456" className={`${inputCls} max-w-[12rem] text-center tracking-[0.3em]`} />
+      {recovery ? (
+        <div>
+          <input value={code} onChange={(e) => setCode(e.target.value)} required autoFocus autoComplete="one-time-code" placeholder="xxxx-xxxx-xxxx" className={`${inputCls} max-w-[12rem]`} />
+          <button type="button" onClick={() => { setRecovery(false); setCode(""); }} className="mt-2 block text-xs font-medium text-ink-muted underline hover:text-ink">Use authenticator code</button>
+        </div>
+      ) : (
+        <div>
+          <OtpInput value={code} onChange={setCode} ariaLabel="Authenticator code" />
+          <button type="button" onClick={() => { setRecovery(true); setCode(""); }} className="mt-2 block text-xs font-medium text-ink-muted underline hover:text-ink">Use a recovery code instead</button>
+        </div>
+      )}
       {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
       <div className="flex items-center gap-3">
         <button type="submit" disabled={busy} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-on-green hover:bg-clay-text disabled:opacity-60">
