@@ -261,7 +261,7 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 
 **Phase 1 (foundation) — shipped 2026-07-15.** `members.creatorTypes` + register payload, portal join citizen/creator picker, moderator role (backend), `GET /api/creator/overview`, `POST /api/me/creator-types`, the `creator/` app on :3004 (auth gate, Aura sidebar, Overview KPIs, My Work with in-place promote, Grow/Plan, Money, Institutions, Account, Notifications).
 
-**Phase 2 (money & team) — in progress.** Owner listing editor shipped (slice 1, `02fde49`). Remaining:
+**Phase 2 (money & team) — nearly done.** Owner listing editor shipped (slice 1, `02fde49`); plans catalog, institution workspace port and team/officer invitations shipped 2026-07-16. Remaining:
 - ☐ **Plans catalog (§5)** — `plans` collection + admin **Monetization → Plans** CRUD + `GET /api/plans`, seeded Starter/Supporter/Featured; nothing price-related hardcoded client-side. **SHIPPED 2026-07-16** — the §5/§9.1-vs-§7.6 contradiction resolved for the collection (§9.1 is the later, explicit decision): `Plan` domain + repo, admin CRUD (curator/steward), subscribe consumes catalog prices (explicit-plan strict, default-plan legacy fallback), Featured bundle auto-applies its 7 promo days on every confirmed payment, creator Grow + portal subscribe panel + admin Subscriptions labels all read the catalog.
 - ☐ **Institution workspace port (§4.1.3)** — the five manage panels into the creator app + TEAM sidebar + institution switcher. **SHIPPED 2026-07-16** — `/team` + `/team/:slug` routes, org-switcher chips, the portal manage page ported verbatim (profile, custom sections builder with all 18 types, gallery, offices, official events) into `institution-panels.tsx` restyled to creator conventions; Institutions page now links internally; zero backend changes. E2E 17/17 (save-profile persist, section add/save/persist, verified-event publish → live on portal).
 - ☐ **Team/officer invitations (§4.1.2)** — `invited` claim status + `invitedById`, invite/accept/decline/revoke endpoints, manager-vs-officer scopes, team list UI. **SHIPPED 2026-07-16** — claim lifecycle extended (`invited`/`declined`/`revoked` + `scope` + `invitedById`; scope-less approved claims = managers), `POST .../team/invite` (manager-scope only), `GET .../team` roster (viewerScope), `POST .../team/{id}/scope`, `DELETE .../team/{id}` (managers + steward/moderator override, no self-revoke), `GET /api/me/invitations`, `POST /api/claims/{id}/respond` (accept = approved, no steward review, office auto-seated; both sides notified). Creator Team page: roster panel (invite form + promote/demote/remove, manager-only) + "Invitations for you" accept/decline (also shown to members with no orgs yet — it's their entry point). 11 service tests (recClaims/teamMembers fakes); e2e 16/16 full cycle + workspace suite 17/17.
@@ -277,17 +277,18 @@ Memorial name diacritics (**Yɛnkae**); whether "town" should mean quarters; the
 2. ~~Memorial keeper reminder controls~~ ✅ (§8.11 — submit defaults, edit whitelist + carryover, portal/creator toggles, `RunRemembrance` test coverage).
 3. ~~Revoke-verification takes the page offline + conditional badge~~ ✅ (Institution §6 — verified-only directory, gated detail, events demote/restore, conditional badges, admin list endpoint).
 4. ~~**Creator Phase 2 remainder**~~ ✅ — plans catalog (`GET /api/plans` + admin CRUD + subscribe consumes it) → institution workspace port (`/team` workspace, five panels, org switcher) → team/officer invitations (claim lifecycle + scopes + roster UI).
-5. **Per-listing OG cards / rich link previews** (spec §11 — the growth engine).
-6. **PWA manifest + offline shell** (spec §11).
-7. **View counter** (+ creator "views this month" KPI; Creator §7.5).
-8. **Memory-wall filters** (spec §8.7/§16).
-9. **Edit re-approval policy** (spec §17.3 — pick and implement one option).
-10. **Email/WhatsApp notification delivery** (spec §8.11/§12).
-11. **Maps depth** — per-listing geocoded pins, events map, mobile (spec §12).
-12. **Institution localization pack + schema.org** (Institution §4/§7).
-13. **AI bar polish** — streaming, replace-confirmation, mount on all admin rich-text fields (spec §8.12).
-14. **Admin moderator-role SPA gating + queue type filter** (Creator §9.3, spec §8.10).
-15. **Cookie notice, legal depth, guardian-consent flow** (spec §14.4/§14.6/§16).
-16. **Phase 2 spec remainder** — investment opportunities; mentor-to-youth matching *(both gated on the §14.4 safeguarding policy, itself unwritten)*.
-17. **Smaller items** — school rivalry signals; official-announcements type; contested-claim hold; funeral details; media Credit capture; mobile institution events + manager editing; creator mobile section (explicitly future); `/me` creator upgrade entry; Drafts view; Payouts ledger; migrations + verify script; mobile maps.
+5. **Request-a-new-institution flow + server-side kind catalog** (Creator §4.1.1 — name/kind/seat/note → steward creates + verifies, claim auto-approved; kinds: school, traditional-authority, association, faith, civic, asafo, heritage).
+6. **Per-listing OG cards / rich link previews** (spec §11 — the growth engine).
+7. **PWA manifest + offline shell** (spec §11).
+8. **View counter** (+ creator "views this month" KPI; Creator §7.5).
+9. **Memory-wall filters** (spec §8.7/§16).
+10. **Edit re-approval policy** (spec §17.3 — pick and implement one option).
+11. **Email/WhatsApp notification delivery** (spec §8.11/§12).
+12. **Maps depth** — per-listing geocoded pins, events map, mobile (spec §12).
+13. **Institution localization pack + schema.org** (Institution §4/§7).
+14. **AI bar polish** — streaming, replace-confirmation, mount on all admin rich-text fields (spec §8.12).
+15. **Admin moderator-role SPA gating + queue type filter** (Creator §9.3, spec §8.10).
+16. **Cookie notice, legal depth, guardian-consent flow** (spec §14.4/§14.6/§16).
+17. **Phase 2 spec remainder** — investment opportunities; mentor-to-youth matching *(both gated on the §14.4 safeguarding policy, itself unwritten)*.
+18. **Smaller items** — school rivalry signals; official-announcements type; contested-claim hold; funeral details; media Credit capture; mobile institution events + manager editing; creator mobile section (explicitly future); `/me` creator upgrade entry; Drafts view; Payouts ledger; migrations + verify script; mobile maps.
 18. **Mobile-web hydration noise** — every dynamic route (`[type]`, `[topic]`, `[slug]`) on the Expo static web export logs React #418 (server HTML ≠ client) on load; screens recover and render fine. Pre-existing (verified against untouched `[slug]` routes), cosmetic but noisy — likely an expo-router static-render + RN-web mismatch; consider client-only rendering for dynamic routes.
