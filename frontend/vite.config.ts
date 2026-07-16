@@ -11,6 +11,6 @@ export default defineConfig({
   },
   server: {
     // Proxy API calls to the Go backend in dev (no CORS, relative /api paths).
-    proxy: { "/api": "http://localhost:8080" },
+    proxy: { "/api": "http://localhost:8080", "/uploads": "http://localhost:8080" },
   },
 });
