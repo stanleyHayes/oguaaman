@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 
 /** Report reason categories, mirroring the Go domain (domain.Reason*). */

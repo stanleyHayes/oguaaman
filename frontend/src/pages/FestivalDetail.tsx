@@ -1,4 +1,5 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import type { ReactNode } from "react";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { FestivalView } from "@/lib/types";
 import { api } from "@/lib/api";
