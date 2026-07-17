@@ -160,6 +160,68 @@ export function SecuritySettings() {
   );
 }
 
+/**
+ * Change password — current + new + confirm, posting to /api/me/password (the
+ * server re-verifies the current password). Mirrors the creator studio's
+ * Settings form so members get the same self-service as staff.
+ */
+export function ChangePasswordSettings() {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const clearStatus = () => { setErr(null); setDone(false); };
+
+  const submit = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    clearStatus();
+    if (next.length < 8) { setErr("Your new password must be at least 8 characters."); return; }
+    if (next !== confirm) { setErr("The new passwords don't match."); return; }
+    if (next === current) { setErr("Choose a new password that's different from your current one."); return; }
+    setBusy(true);
+    try {
+      await api.changePassword(current, next);
+      setDone(true);
+      setCurrent(""); setNext(""); setConfirm("");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't change your password — try again.");
+    } finally { setBusy(false); }
+  };
+
+  const type = show ? "text" : "password";
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <div>
+        <label htmlFor="pw-current" className="mb-1 block text-sm font-medium text-ink">Current password</label>
+        <input id="pw-current" type={type} value={current} onChange={(e) => { setCurrent(e.target.value); clearStatus(); }} required autoComplete="current-password" placeholder="Your current password" className={inputCls} />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label htmlFor="pw-new" className="mb-1 block text-sm font-medium text-ink">New password</label>
+          <input id="pw-new" type={type} value={next} onChange={(e) => { setNext(e.target.value); clearStatus(); }} required autoComplete="new-password" placeholder="At least 8 characters" className={inputCls} />
+        </div>
+        <div>
+          <label htmlFor="pw-confirm" className="mb-1 block text-sm font-medium text-ink">Confirm new password</label>
+          <input id="pw-confirm" type={type} value={confirm} onChange={(e) => { setConfirm(e.target.value); clearStatus(); }} required autoComplete="new-password" placeholder="Re-enter new password" className={inputCls} />
+        </div>
+      </div>
+      <label className="flex w-fit items-center gap-2 text-sm text-ink-muted">
+        <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} className="h-4 w-4 rounded border-sand text-green focus:ring-2 focus:ring-green/30" />
+        Show passwords
+      </label>
+      {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
+      {done && <p className="rounded-lg border border-green/30 bg-green/[0.06] px-3 py-2 text-sm text-green-text">Password changed ✓</p>}
+      <button type="submit" disabled={busy} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
+        {busy ? "Saving…" : "Update password"}
+      </button>
+    </form>
+  );
+}
+
 /** Act 843 data rights — export everything, or erase the account. */
 export function DataRightsSettings() {
   const { signOut } = useAuth();

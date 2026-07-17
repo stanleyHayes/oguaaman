@@ -12,7 +12,7 @@ import { formatDate, initials } from "@/lib/format";
 import { Thumb } from "@/components/cards";
 import { StaggerItem, LayoutPill } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
-import { SecuritySettings, DataRightsSettings } from "@/components/security-panels";
+import { SecuritySettings, ChangePasswordSettings, DataRightsSettings } from "@/components/security-panels";
 import { ProfileSkeleton } from "@/components/skeleton";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -675,6 +675,10 @@ export function Component() {
                   )}
                 </div>
               )}
+            </Panel>
+
+            <Panel title="Password" lede="Change your password. You'll need your current one to confirm it's you.">
+              <ChangePasswordSettings />
             </Panel>
 
             <Panel title="Two-factor authentication" lede="Two-factor sign-in with an authenticator app — recommended, and required for curators & stewards.">

@@ -350,6 +350,9 @@ export const api = {
   confirmPhoneVerification: (code: string) =>
     post<PhoneVerificationResult>("/api/me/phone/verify/confirm", { code }),
   // MFA enrolment + account data rights (Act 843, spec §14).
+  // Authenticated password change — the server re-verifies the current password.
+  changePassword: (currentPassword: string, newPassword: string) =>
+    post<{ ok: boolean }>("/api/me/password", { currentPassword, newPassword }),
   mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup", {}),
   mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
   mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
