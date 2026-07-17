@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { S, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
+import { BellIcon } from "@/components/icons";
 import {
   useDirectives,
   directiveFill,
@@ -74,7 +75,7 @@ export function AlertBanner() {
               <Text style={[s.dismissText, { color: fg }]}>✕</Text>
             </Pressable>
           ) : (
-            <Text style={[s.dismissText, { color: fg }]}>🔔</Text>
+            <BellIcon size={15} color={fg} strokeWidth={2} />
           )}
         </View>
 

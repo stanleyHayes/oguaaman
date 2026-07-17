@@ -1,28 +1,31 @@
 import { useMemo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, type GestureResponderEvent } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 import { useDirectives } from "@/lib/directives";
-import type { Palette } from "@/theme";
+import { BellIcon, MoonIcon, SearchIcon, SunIcon, SystemIcon, type IconProps } from "@/components/icons";
+import { ON_GREEN, type Palette } from "@/theme";
 
 // The shared header action cluster — theme toggle, alerts bell (badged with the
 // count of active high/critical directives), and search. Rendered on the RIGHT
 // of every tab's green header (via Tabs headerRight) AND inside the home hero,
-// so the same three actions sit on top of every tab. Glyphs are cream text on
-// the dark-green header (which stays dark in both palettes), matching the ☰.
+// so the same three actions sit on top of every tab. Icons are cream vector
+// glyphs on the dark-green header (which stays dark in both palettes).
 
-// Theme cycles System → Light → Dark → System. The glyph reflects the current
+const ICON_SIZE = 24;
+
+// Theme cycles System → Light → Dark → System. The icon reflects the current
 // stored setting so the control shows where you are, not just that it toggles.
 const THEME_NEXT: Record<ThemeSetting, ThemeSetting> = {
   system: "light",
   light: "dark",
   dark: "system",
 };
-const THEME_GLYPH: Record<ThemeSetting, string> = {
-  system: "◐",
-  light: "☀",
-  dark: "☾",
+const THEME_ICON: Record<ThemeSetting, (p: IconProps) => React.JSX.Element> = {
+  system: SystemIcon,
+  light: SunIcon,
+  dark: MoonIcon,
 };
 const THEME_LABEL: Record<ThemeSetting, string> = {
   system: "System theme",
@@ -39,17 +42,20 @@ export function TopBarActions() {
   // and alerts screen read from — no extra network).
   const urgent = active.filter((d) => d.severity === "high" || d.severity === "critical").length;
   const badge = urgent > 9 ? "9+" : String(urgent);
+  const ThemeIcon = THEME_ICON[setting];
 
   return (
     <View style={s.row}>
       <Pressable
-        onPress={() => setTheme(THEME_NEXT[setting])}
+        onPress={(e: GestureResponderEvent) =>
+          setTheme(THEME_NEXT[setting], { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY })
+        }
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel={`${THEME_LABEL[setting]}. Tap to change.`}
         style={s.action}
       >
-        <Text style={s.glyph}>{THEME_GLYPH[setting]}</Text>
+        <ThemeIcon size={ICON_SIZE} color={ON_GREEN} strokeWidth={2} />
       </Pressable>
 
       <Pressable
@@ -59,7 +65,7 @@ export function TopBarActions() {
         accessibilityLabel={urgent > 0 ? `Alerts, ${urgent} active` : "Alerts"}
         style={s.action}
       >
-        <Text style={s.bellGlyph}>🔔</Text>
+        <BellIcon size={ICON_SIZE} color={ON_GREEN} strokeWidth={2} />
         {urgent > 0 ? (
           <View style={s.badge}>
             <Text style={s.badgeText}>{badge}</Text>
@@ -74,7 +80,7 @@ export function TopBarActions() {
         accessibilityLabel="Search"
         style={s.action}
       >
-        <Text style={s.glyph}>⌕</Text>
+        <SearchIcon size={ICON_SIZE} color={ON_GREEN} strokeWidth={2} />
       </Pressable>
     </View>
   );
@@ -83,10 +89,6 @@ export function TopBarActions() {
 const makeStyles = (C: Palette) => StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 4, paddingRight: 10 },
   action: { paddingHorizontal: 7, paddingVertical: 6, alignItems: "center", justifyContent: "center" },
-  glyph: { color: C.cream, fontSize: 19, fontWeight: "700" },
-  // The bell is an emoji (renders its own colour, like the row icons in More);
-  // sized to sit level with the cream theme/search glyphs beside it.
-  bellGlyph: { fontSize: 18, lineHeight: 22 },
   badge: {
     position: "absolute",
     top: -2,
@@ -101,5 +103,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeText: { color: C.cream, fontSize: 10, fontWeight: "800", lineHeight: 13 },
+  badgeText: { color: ON_GREEN, fontSize: 10, fontWeight: "800", lineHeight: 13 },
 });

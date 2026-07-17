@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { D, S, SI, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
+import { SearchIcon } from "@/components/icons";
 import { Mark } from "@/ui";
 
 type NavItem = { label: string; blurb: string; href: string };
@@ -116,7 +117,10 @@ function Drawer({ onClose }: Readonly<{ onClose: () => void }>) {
           </Text>
 
           <Pressable onPress={() => go("/search")} style={s.searchBtn}>
-            <Text style={s.searchText}>🔍  Search people, places & memories</Text>
+            <View style={s.searchRow}>
+              <SearchIcon size={16} color={C.inkMuted} strokeWidth={2} />
+              <Text style={s.searchText}>Search people, places & memories</Text>
+            </View>
           </Pressable>
 
           {GROUPS.map((g) => (
@@ -170,6 +174,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   body: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 10, textAlign: "center" },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 24, marginBottom: 10 },
   searchBtn: { marginTop: 18, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 18, alignItems: "center" },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   searchText: { color: C.inkMuted, fontSize: 14, fontWeight: "600" },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, marginBottom: 10 },
   cardTitle: { ...S(700), fontSize: 18, color: C.ink },

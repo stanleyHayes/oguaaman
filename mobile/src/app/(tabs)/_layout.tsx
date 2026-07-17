@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { Pressable, View, type ColorValue } from "react-native";
 import { T as Text } from "@/components/typography";
 import { useTheme } from "@/lib/theme-context";
+import { ON_GREEN } from "@/theme";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -43,7 +44,7 @@ function HeaderMenuButton() {
   const { C } = useTheme();
   return (
     <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
-      <Text style={{ fontSize: 20, color: C.cream, fontWeight: "700" }}>☰</Text>
+      <Text style={{ fontSize: 20, color: ON_GREEN, fontWeight: "700" }}>☰</Text>
     </Pressable>
   );
 }
@@ -65,9 +66,9 @@ export default function TabsLayout() {
           tabBarActiveTintColor: C.green,
           tabBarInactiveTintColor: C.inkFaint,
           tabBarStyle: { backgroundColor: C.cream, borderTopColor: C.sand },
-          tabBarBadgeStyle: { backgroundColor: C.clay, color: C.cream, fontSize: 11 },
+          tabBarBadgeStyle: { backgroundColor: C.clay, color: ON_GREEN, fontSize: 11 },
           headerStyle: { backgroundColor: C.green },
-          headerTintColor: C.cream,
+          headerTintColor: ON_GREEN,
           headerTitleStyle: { fontWeight: "600" },
           headerStatusBarHeight: bannerVisible ? 0 : undefined,
           headerLeft: () => <HeaderMenuButton />,

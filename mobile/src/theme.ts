@@ -5,6 +5,12 @@
 
 export type ThemeName = "light" | "dark";
 
+// Foreground for the always-dark-green top bar / hero (☰, title, action icons).
+// The header stays green in BOTH themes, but `cream` inverts to a dark surface
+// in dark mode — so header content must use this stable light cream, not C.cream,
+// or it turns near-black-on-green in dark mode.
+export const ON_GREEN = "#F6F1E7";
+
 export interface Palette {
   paper: string;
   cream: string;
