@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { Container, Eyebrow } from "./ui";
-import { Parallax, Stagger, StaggerItem } from "./motion";
+import { Parallax, Stagger, StaggerItem, WordReveal } from "./motion";
 import { Breadcrumbs, HeroIcon, HeroWatermark } from "./hero-chrome";
 import { deriveCrumbs, sectionIdFromPath, type Crumb } from "@/lib/breadcrumbs";
 
@@ -66,9 +66,16 @@ export function PageHero({
             <HeroIcon sectionId={iconId} onDark />
             <Eyebrow className="mt-4 text-gold">{kicker}</Eyebrow>
           </StaggerItem>
-          <StaggerItem index={2}>
-            <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] text-cream sm:text-6xl">{title}</h1>
-          </StaggerItem>
+          {typeof title === "string" ? (
+            <WordReveal
+              text={title}
+              className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] text-cream sm:text-6xl"
+            />
+          ) : (
+            <StaggerItem index={2}>
+              <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] text-cream sm:text-6xl">{title}</h1>
+            </StaggerItem>
+          )}
           {lede && (
             <StaggerItem index={3}>
               <p className="mt-5 max-w-2xl text-lg leading-relaxed text-cream/85">{lede}</p>

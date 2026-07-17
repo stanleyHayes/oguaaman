@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { Container } from "./ui";
-import { CircularReveal, Parallax, Reveal } from "./motion";
+import { CircularReveal, Parallax, Reveal, WordReveal } from "./motion";
 import { Breadcrumbs, HeroIcon, HeroWatermark } from "./hero-chrome";
 import { sectionIdFromPath, type Crumb } from "@/lib/breadcrumbs";
 import { cldCover } from "@/lib/cloudinary";
@@ -73,7 +73,11 @@ export function DetailHero({
         <Reveal><Breadcrumbs crumbs={crumbList} onDark /></Reveal>
         <Reveal delay={0.05} className="mt-5"><HeroIcon sectionId={iconId} onDark /></Reveal>
         {children && <Reveal delay={0.08} className="mt-4 flex flex-wrap items-center gap-2">{children}</Reveal>}
-        <Reveal as="h1" delay={0.12} className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-5xl">{title}</Reveal>
+        {finalLabel ? (
+          <WordReveal as="h1" text={finalLabel} className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-5xl" />
+        ) : (
+          <Reveal as="h1" delay={0.12} className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-5xl">{title}</Reveal>
+        )}
         {meta && <Reveal delay={0.16} className="mt-3 text-sm text-cream/85 sm:text-base">{meta}</Reveal>}
       </Container>
     </section>
