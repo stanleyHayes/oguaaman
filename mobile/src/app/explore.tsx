@@ -97,7 +97,7 @@ function DirectionsButton({ lat, lng, to, small = false }: Readonly<{ lat: numbe
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   return (
-    <Pressable accessibilityRole="button"
+    <Pressable
       onPress={() => openWalkingDirections(lat, lng)}
       style={({ pressed }) => [s.dirBtn, small && s.dirBtnSmall, pressed && { opacity: 0.75 }]}
       accessibilityRole="button"

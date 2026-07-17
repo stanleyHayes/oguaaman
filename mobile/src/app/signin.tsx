@@ -120,8 +120,7 @@ function FormCard(f: Readonly<FormState>) {
           textContentType={f.isJoin ? "newPassword" : "password"}
           style={s.pwInput}
         />
-        <Pressable accessibilityRole="button"
-          onPress={() => setShowPw((v) => !v)}
+        <Pressable          onPress={() => setShowPw((v) => !v)}
           accessibilityRole="button"
           accessibilityLabel={showPw ? "Hide password" : "Show password"}
           hitSlop={8}

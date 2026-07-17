@@ -3,7 +3,7 @@ import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Link } from "expo-router";
+import { Link, type Href } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
@@ -18,7 +18,7 @@ import { useDirectives } from "@/lib/directives";
 import { TopBarActions } from "@/components/top-bar-actions";
 
 // Route a featured listing to its canonical screen (any type can be featured).
-function featuredRoute(l: Listing): string {
+function featuredRoute(l: Listing): Href {
   switch (l.type) {
     case "artist": return route.music(l.slug);
     case "memorial": return route.memoriam(l.slug);

@@ -82,7 +82,7 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
           )}
 
           {d.festival ? (
-            <Pressable accessibilityRole="button" onPress={() => push(route.festival(d.festival))} style={s.festivalLink}>
+            <Pressable accessibilityRole="button" onPress={() => push(route.festival(d.festival!))} style={s.festivalLink}>
               <Text style={s.festivalLinkText}>See every edition in the festival archive →</Text>
             </Pressable>
           ) : null}

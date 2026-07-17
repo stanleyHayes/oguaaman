@@ -4,11 +4,11 @@
 // migration to generated typed routes straightforward.
 import { router, type Href } from "expo-router";
 
-export function push(href: string) {
+export function push(href: string | Href) {
   router.push(href as Href);
 }
 
-export function replace(href: string) {
+export function replace(href: string | Href) {
   router.replace(href as Href);
 }
 

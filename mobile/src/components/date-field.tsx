@@ -95,8 +95,7 @@ function Column({ title, items, onPick }: Readonly<{ title: string; items: Colum
         }}
       >
         {items.map((it) => (
-          <Pressable accessibilityRole="button"
-            key={it.value}
+          <Pressable            key={it.value}
             onPress={() => onPick(it.value)}
             disabled={it.disabled}
             accessibilityRole="button"

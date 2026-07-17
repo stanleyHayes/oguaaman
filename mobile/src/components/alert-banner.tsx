@@ -46,8 +46,7 @@ export function AlertBanner() {
       {/* Gold (medium) is a light fill, so the status-bar icons flip dark; the
           darker fills keep the app's light icons. Overrides the root while shown. */}
       <StatusBar style={visible.severity === "medium" ? "dark" : "light"} />
-      <Pressable accessibilityRole="button"
-        onPress={() => push(ROUTES.alerts)}
+      <Pressable        onPress={() => push(ROUTES.alerts)}
         accessibilityRole="button"
         accessibilityLabel={`Safety ${DIRECTIVE_KIND_LABEL[visible.kind]}: ${visible.title}. Open alerts.`}
         style={s.body}
@@ -60,8 +59,7 @@ export function AlertBanner() {
             </Text>
           </View>
           {dismissable ? (
-            <Pressable accessibilityRole="button"
-              onPress={() => dismiss(visible.id)}
+            <Pressable              onPress={() => dismiss(visible.id)}
               hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel="Dismiss alert"

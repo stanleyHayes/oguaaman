@@ -48,8 +48,7 @@ export function TopBarActions() {
 
   return (
     <View style={s.row}>
-      <Pressable accessibilityRole="button"
-        onPress={(e: GestureResponderEvent) =>
+      <Pressable        onPress={(e: GestureResponderEvent) =>
           setTheme(THEME_NEXT[setting], { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY })
         }
         hitSlop={10}
@@ -60,8 +59,7 @@ export function TopBarActions() {
         <ThemeIcon size={ICON_SIZE} color={ON_GREEN} strokeWidth={2} />
       </Pressable>
 
-      <Pressable accessibilityRole="button"
-        onPress={() => push(ROUTES.alerts)}
+      <Pressable        onPress={() => push(ROUTES.alerts)}
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel={urgent > 0 ? `Alerts, ${urgent} active` : "Alerts"}
@@ -75,8 +73,7 @@ export function TopBarActions() {
         ) : null}
       </Pressable>
 
-      <Pressable accessibilityRole="button"
-        onPress={() => push(ROUTES.search)}
+      <Pressable        onPress={() => push(ROUTES.search)}
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel="Search"

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -28,12 +28,12 @@ const KIND_TOKEN: Record<string, keyof Palette> = {
 };
 
 // Notification links are portal paths; translate them to mobile routes.
-function mobileLink(link?: string): string | null {
+function mobileLink(link?: string): Href | null {
   if (!link) return null;
   // The directive broadcast links to the alerts screen.
-  if (link === ROUTES.alerts || link.startsWith(ROUTES.alerts)) return ROUTES.alerts;
+  if (link === ROUTES.alerts || link.startsWith(ROUTES.alerts)) return ROUTES.alerts as Href;
   // Same-shaped routes pass straight through.
-  if (["/memoriam/", "/members/", "/news/", "/music/", "/people/", "/business/", "/institutions/", "/projects/"].some((r) => link.startsWith(r))) return link;
+  if (["/memoriam/", "/members/", "/news/", "/music/", "/people/", "/business/", "/institutions/", "/projects/"].some((r) => link.startsWith(r))) return link as Href;
   // Portal paths with a different mobile home.
   if (link.startsWith("/education/")) return route.institution(link.slice("/education/".length));
   if (link === "/events" || link.startsWith("/events")) return ROUTES.browseEvents;

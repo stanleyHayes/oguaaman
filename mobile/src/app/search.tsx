@@ -1,4 +1,5 @@
 import { route, ROUTES } from "@/lib/routes";
+import type { Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -22,13 +23,13 @@ const LISTING_ROUTE: Record<string, { base: string; withSlug: boolean }> = {
   memory: { base: ROUTES.browseMemories, withSlug: false },
   opportunity: { base: ROUTES.browseOpportunities, withSlug: false },
 };
-function routeFor(h: SearchHit): string | null {
+function routeFor(h: SearchHit): Href | null {
   if (h.kind === "member") return route.member(h.slug);
   if (h.kind === "institution") return route.institution(h.slug);
   if (h.kind !== "listing" || !h.type) return null;
   const r = LISTING_ROUTE[h.type];
   if (!r) return null;
-  return r.withSlug ? `${r.base}${h.slug}` : r.base;
+  return (r.withSlug ? `${r.base}${h.slug}` : r.base) as Href;
 }
 
 const KIND_LABEL: Record<string, string> = {

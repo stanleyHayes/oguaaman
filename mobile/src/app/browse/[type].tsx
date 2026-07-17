@@ -2,7 +2,7 @@ import { route } from "@/lib/routes";
 import { useMemo } from "react";
 import { push } from "@/lib/router";
 import { Linking, RefreshControl, StyleSheet, View, Pressable } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, type Href } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
@@ -38,7 +38,7 @@ interface BrowseView {
   load: PageFetcher<Listing>;
   sub: (l: Listing) => string;
   /** Route for a card tap; undefined = not navigable. */
-  href?: (l: Listing) => string;
+  href?: (l: Listing) => Href;
 }
 
 const VIEWS: Record<string, BrowseView> = {
