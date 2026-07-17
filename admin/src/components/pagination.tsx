@@ -147,10 +147,13 @@ export function LoadMore({
  * identity during render — the React-endorsed alternative to a useEffect reset.
  */
 export function usePagedRows<T>(data: Paged<T>): [T[], Dispatch<SetStateAction<T[]>>] {
-  const [rows, setRows] = useState(data.items);
+  // Tolerate a non-paginated (plain-array) response so a shape mismatch
+  // degrades to "show everything" instead of crashing on rows.map.
+  const itemsOf = (d: Paged<T>): T[] => (Array.isArray(d) ? (d as T[]) : (d?.items ?? []));
+  const [rows, setRows] = useState<T[]>(() => itemsOf(data));
   const [snapshot, setSnapshot] = useState(data);
   if (snapshot !== data) {
-    setRows(data.items);
+    setRows(itemsOf(data));
     setSnapshot(data);
   }
   return [rows, setRows];

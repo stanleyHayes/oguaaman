@@ -165,7 +165,7 @@ func (h *Handler) AdminInstitutions(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 func (h *Handler) AdminVerify(w http.ResponseWriter, r *http.Request) {
