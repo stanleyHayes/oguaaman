@@ -102,6 +102,7 @@ export default function More() {
                 { icon: "✎", label: "Contribute", href: "/submit" },
                 { icon: "🔔", label: "Notifications", href: "/notifications" },
                 { icon: "🔍", label: "Search", href: "/search" },
+                { icon: "⚙", label: "Settings — security & preferences", href: "/settings" },
               ]
             : [
                 { icon: "🗺", label: "Explore the map", href: "/explore" },

@@ -103,6 +103,7 @@ function RootNavigator() {
         <Stack.Screen name="notifications" options={{ title: "Notifications", headerBackTitle: "Back" }} />
         <Stack.Screen name="alerts" options={{ title: "Alerts", headerBackTitle: "Back" }} />
         <Stack.Screen name="search" options={{ title: "Search", headerBackTitle: "More" }} />
+        <Stack.Screen name="settings" options={{ title: "Settings", headerBackTitle: "Back" }} />
       </Stack>
     </>
   );

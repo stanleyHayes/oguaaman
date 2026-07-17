@@ -381,6 +381,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
         </Section>
 
         <Section title="Account">
+          <Pressable onPress={() => router.push("/settings" as never)} style={s.linkRow}><Text style={s.linkRowText}>Settings — security & preferences</Text><Text style={s.chevron}>›</Text></Pressable>
           <Pressable onPress={() => router.push("/notifications")} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><Text style={s.chevron}>›</Text></Pressable>
           <Pressable onPress={() => router.push("/submit")} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><Text style={s.chevron}>›</Text></Pressable>
           <Pressable onPress={() => router.push(`/members/${m.slug}`)} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><Text style={s.chevron}>›</Text></Pressable>

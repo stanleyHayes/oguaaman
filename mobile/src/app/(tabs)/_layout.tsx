@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { useDirectives } from "@/lib/directives";
 import { AlertBanner } from "@/components/alert-banner";
 import { useNavDrawer } from "@/components/nav-drawer";
+import { TopBarActions } from "@/components/top-bar-actions";
 
 const icon = (glyph: string) => {
   // Named so it has a display name (react/display-name) for the tab bar.
@@ -70,6 +71,9 @@ export default function TabsLayout() {
           headerTitleStyle: { fontWeight: "600" },
           headerStatusBarHeight: bannerVisible ? 0 : undefined,
           headerLeft: () => <HeaderMenuButton />,
+          // Shared action cluster on every tab: theme toggle, alerts bell
+          // (badged from the directives poll), and search.
+          headerRight: () => <TopBarActions />,
         }}
       >
         <Tabs.Screen name="index" options={{ title: t("nav.home"), headerShown: false, tabBarIcon: icon("◎") }} />

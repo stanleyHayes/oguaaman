@@ -309,6 +309,19 @@ export const api = {
   startPhoneVerification: () => post<PhoneVerificationResult>("/api/me/phone/verify/start", {}),
   confirmPhoneVerification: (code: string) =>
     post<PhoneVerificationResult>("/api/me/phone/verify/confirm", { code }),
+
+  // ── Settings: security (spec §14) — mirrors the web creator/admin signatures. ──
+  // Authenticated password change — the server re-verifies the current password
+  // (bcrypt) and enforces the 8-char floor; the existing session stays valid.
+  changePassword: (currentPassword: string, newPassword: string) =>
+    post<{ ok: boolean }>("/api/me/password", { currentPassword, newPassword }),
+  // Two-factor (TOTP) self-enrolment. The secret and recovery-code hashes never
+  // leave the server; enrolment returns the QR (a data-URI PNG, rendered inline)
+  // plus the otpauth:// URL (deep-linkable to an authenticator app) and codes.
+  mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup"),
+  mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
+  mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
+
   me: () => get<Member>("/api/auth/me"),
 };
 

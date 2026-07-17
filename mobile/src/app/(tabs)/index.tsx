@@ -13,6 +13,7 @@ import { Loading, ErrorView, Mark, Pill, Thumb } from "@/ui";
 import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { useNavDrawer } from "@/components/nav-drawer";
 import { useDirectives } from "@/lib/directives";
+import { TopBarActions } from "@/components/top-bar-actions";
 
 // Route a featured listing to its canonical screen (any type can be featured).
 function featuredRoute(l: Listing): string {
@@ -113,6 +114,9 @@ export default function Home() {
             </Pressable>
             <Mark size={26} />
             <Text style={s.eyebrow}>CAPE COAST · GHANA</Text>
+            <View style={{ flex: 1 }} />
+            {/* Same shared top-bar actions the other tabs carry in their header. */}
+            <TopBarActions />
           </View>
           <Text style={s.heroTitle}>
             This is <Text style={{ color: C.gold }}>Oguaa.</Text>
