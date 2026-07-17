@@ -291,6 +291,79 @@ func (h *Handler) ConfirmPhoneVerification(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, map[string]any{"member": member, "verified": member.PhoneVerified})
 }
 
+// StartPasswordReset issues a short-lived reset code for the account matching
+// the identifier and delivers it over email/WhatsApp. The response is always a
+// generic 200 {ok:true} so account existence never leaks. In dev
+// (AUTH_REQUIRED=false) the code is echoed as {devCode} so the flow is testable
+// without email/WhatsApp configured — mirroring the phone-verify dev behaviour.
+func (h *Handler) StartPasswordReset(w http.ResponseWriter, r *http.Request) {
+	if h.rateLimited(w, r, "pw-reset-start:"+clientKey(r), 5, time.Hour) {
+		return
+	}
+	var in struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	member, code, err := h.auth.StartPasswordReset(r.Context(), in.Identifier)
+	if errors.Is(err, service.ErrResetAccountNotFound) {
+		// Unknown account — return the same generic success as a real send.
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+		return
+	}
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	out := map[string]any{"ok": true}
+	// Echo the code only in dev so it's testable without a delivery channel.
+	if !h.authRequired && member != nil {
+		out["devCode"] = code
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// ConfirmPasswordReset checks a reset code and sets a new password. It never
+// issues a session — the member signs back in with the new password.
+func (h *Handler) ConfirmPasswordReset(w http.ResponseWriter, r *http.Request) {
+	if h.rateLimited(w, r, "pw-reset-confirm:"+clientKey(r), 10, 5*time.Minute) {
+		return
+	}
+	var in struct {
+		Identifier  string `json:"identifier"`
+		Code        string `json:"code"`
+		NewPassword string `json:"newPassword"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	err := h.auth.ConfirmPasswordReset(r.Context(), in.Identifier, in.Code, in.NewPassword)
+	if errors.Is(err, service.ErrResetNotStarted) {
+		fail(w, http.StatusBadRequest, "Start a password reset first — no code is waiting.")
+		return
+	}
+	if errors.Is(err, service.ErrResetExpired) {
+		fail(w, http.StatusBadRequest, "That reset code expired — please request a new one.")
+		return
+	}
+	if errors.Is(err, service.ErrInvalidResetCode) {
+		fail(w, http.StatusBadRequest, "That reset code didn't work.")
+		return
+	}
+	if errors.Is(err, service.ErrResetPasswordTooShort) {
+		fail(w, http.StatusBadRequest, "Your new password must be at least 8 characters.")
+		return
+	}
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
 func (h *Handler) AuthMe(w http.ResponseWriter, r *http.Request) {
 	m := currentMember(r)
 	if m == nil {

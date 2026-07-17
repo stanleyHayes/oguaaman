@@ -86,6 +86,11 @@ type Member struct {
 	// PasswordHash — private; bcrypt hash of the member's password. Empty means
 	// the account predates password sign-in and can be claimed via the Join flow.
 	PasswordHash string `json:"-" bson:"passwordHash,omitempty"`
+	// Password-reset state — mirrors phone verification: a short-lived bcrypt code
+	// hash + expiry backing the "forgot password" flow. Both never leave the
+	// server and are cleared once a reset completes.
+	PasswordResetCodeHash  string `json:"-" bson:"passwordResetCodeHash,omitempty"`
+	PasswordResetExpiresAt string `json:"-" bson:"passwordResetExpiresAt,omitempty"`
 	// MFA (TOTP, RFC 6238 — authenticator apps). MFAEnabled is safe to expose so
 	// clients can render the security state; the secret and recovery-code hashes
 	// never leave the server.
@@ -109,6 +114,9 @@ type MemberRepository interface {
 	Insert(ctx context.Context, m Member) error
 	SetPhoneVerified(ctx context.Context, id string, verified bool) error
 	SetPhoneVerification(ctx context.Context, id, codeHash, expiresAt string) error
+	// SetPasswordReset stores (or, with empty args, clears) the password-reset
+	// code hash and expiry backing the "forgot password" flow.
+	SetPasswordReset(ctx context.Context, id, codeHash, expiresAt string) error
 	UpdateRole(ctx context.Context, id, role string) error
 	SetSuspended(ctx context.Context, id string, suspended bool) error
 	SetBirthday(ctx context.Context, id, birthday string, broadcast bool) error

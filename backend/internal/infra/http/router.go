@@ -30,6 +30,9 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/auth/register", h.AuthRegister)
 	mux.HandleFunc("POST /api/auth/login", h.AuthLogin)
 	mux.HandleFunc("POST /api/auth/mfa", h.AuthMFA)
+	// Public "forgot password" flow — issue a reset code, then set a new password.
+	mux.HandleFunc("POST /api/auth/password/reset/start", h.StartPasswordReset)
+	mux.HandleFunc("POST /api/auth/password/reset/confirm", h.ConfirmPasswordReset)
 	mux.HandleFunc("GET /api/auth/me", h.AuthMe)
 	mux.HandleFunc("POST /api/me/phone/verify/start", h.StartPhoneVerification)
 	mux.HandleFunc("POST /api/me/phone/verify/confirm", h.ConfirmPhoneVerification)

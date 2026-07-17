@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "./layout";
 import { MfaEnroll } from "./mfa";
@@ -114,6 +115,10 @@ function SignIn() {
   const [recovery, setRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // "reset" swaps the card to the forgot-password flow; banner confirms a
+  // completed reset back on the sign-in form.
+  const [mode, setMode] = useState<"signin" | "reset">("signin");
+  const [banner, setBanner] = useState<string | null>(null);
   const codeFormRef = useRef<HTMLFormElement | null>(null);
 
   async function submit(e: React.SubmitEvent) {
@@ -130,6 +135,16 @@ function SignIn() {
     setBusy(true); setErr(null);
     try { await completeMfa(challenge, code.trim()); }
     catch (e) { setErr(e instanceof Error ? e.message : "That code didn't work."); } finally { setBusy(false); }
+  }
+
+  if (mode === "reset") {
+    return (
+      <ResetPassword
+        initialIdentifier={identifier}
+        onBack={() => { setMode("signin"); setErr(null); }}
+        onDone={(msg) => { setMode("signin"); setErr(null); setPassword(""); setBanner(msg); }}
+      />
+    );
   }
 
   if (challenge) {
@@ -173,6 +188,7 @@ function SignIn() {
             <h2 className="text-2xl font-semibold text-ink">Curator sign in</h2>
             <p className="mt-1 text-sm text-ink-muted">Enter your phone or email and your password.</p>
           </div>
+          {banner && <p className="rounded-lg border border-green/30 bg-green/5 px-3 py-2 text-sm text-green-900">{banner}</p>}
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
             <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="username" placeholder="+233… or you@email" className={inputCls} />
@@ -191,10 +207,112 @@ function SignIn() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            <div className="mt-2 text-right">
+              <button type="button" onClick={() => { setMode("reset"); setErr(null); setBanner(null); }} className="text-xs font-medium text-ink-muted underline hover:text-ink">Forgot password?</button>
+            </div>
           </label>
           {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
           <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Signing in…" : "Sign in"}</button>
           <p className="text-center text-xs text-ink-faint">Seeded steward: <code className="font-mono">nana-essien@oguaa.test</code></p>
+        </form>
+      </Shell>
+    </Backdrop>
+  );
+}
+
+/** Forgot-password flow: request a code (step 1), then set a new password
+ * (step 2). Mirrors the phone-verification pattern — a 6-box code + a new
+ * password — and never reveals whether an account exists. */
+function ResetPassword({ initialIdentifier, onBack, onDone }: Readonly<{ initialIdentifier: string; onBack: () => void; onDone: (msg: string) => void }>) {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [identifier, setIdentifier] = useState(initialIdentifier);
+  const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [devCode, setDevCode] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function sendCode(e: React.SubmitEvent) {
+    e.preventDefault(); setBusy(true); setErr(null);
+    try {
+      const res = await api.startPasswordReset(identifier.trim());
+      setDevCode(res.devCode ?? null);
+      setCode("");
+      setStep(2);
+    } catch (e) { setErr(e instanceof Error ? e.message : "Couldn't send a reset code."); } finally { setBusy(false); }
+  }
+
+  async function resetPassword(e: React.SubmitEvent) {
+    e.preventDefault(); setBusy(true); setErr(null);
+    try {
+      await api.confirmPasswordReset(identifier.trim(), code.trim(), newPassword);
+      onDone("Password reset — sign in with your new password.");
+    } catch (e) { setErr(e instanceof Error ? e.message : "Couldn't reset your password."); } finally { setBusy(false); }
+  }
+
+  const backBtn = (
+    <p className="text-center text-xs text-ink-faint">
+      <button type="button" onClick={onBack} className="font-medium text-ink-muted underline hover:text-ink">← Back to sign in</button>
+    </p>
+  );
+
+  if (step === 1) {
+    return (
+      <Backdrop>
+        <Shell>
+          <form onSubmit={sendCode} className="space-y-5">
+            <div>
+              <h2 className="text-2xl font-semibold text-ink">Reset your password</h2>
+              <p className="mt-1 text-sm text-ink-muted">Enter the phone or email on your account and we'll send a reset code.</p>
+            </div>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
+              <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoFocus autoComplete="username" placeholder="+233… or you@email" className={inputCls} />
+            </label>
+            {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
+            <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Sending…" : "Send reset code"}</button>
+            {backBtn}
+          </form>
+        </Shell>
+      </Backdrop>
+    );
+  }
+
+  return (
+    <Backdrop>
+      <Shell>
+        <form onSubmit={resetPassword} className="space-y-5">
+          <div>
+            <h2 className="text-2xl font-semibold text-ink">Enter your reset code</h2>
+            <p className="mt-1 text-sm text-ink-muted">If that account exists, we've sent a reset code. Enter it below and choose a new password.</p>
+          </div>
+          {devCode && <p className="rounded-lg border border-gold-border/40 bg-gold/10 px-3 py-2 text-xs text-gold-text">Dev code: <code className="font-mono font-semibold">{devCode}</code></p>}
+          <div className="block">
+            <span className="mb-1.5 block text-sm font-medium text-ink">Reset code</span>
+            <OtpInput value={code} onChange={setCode} autoFocus ariaLabel="Password reset code" />
+          </div>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-ink">New password</span>
+            <div className="relative">
+              <input type={showPassword ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="At least 8 characters" className={`${inputCls} pr-12`} />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint transition-colors hover:text-ink"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </label>
+          {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
+          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Resetting…" : "Reset password"}</button>
+          <p className="text-center text-xs text-ink-faint">
+            <button type="button" onClick={() => { setStep(1); setErr(null); }} className="font-medium text-ink-muted underline hover:text-ink">Use a different account</button>
+          </p>
+          {backBtn}
         </form>
       </Shell>
     </Backdrop>

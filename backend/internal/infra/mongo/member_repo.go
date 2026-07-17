@@ -70,6 +70,16 @@ func (r *MemberRepo) SetPhoneVerification(ctx context.Context, id, codeHash, exp
 	return err
 }
 
+// SetPasswordReset stores (or clears, with empty args) the password-reset code
+// hash and expiry backing the "forgot password" flow. Mirrors SetPhoneVerification.
+func (r *MemberRepo) SetPasswordReset(ctx context.Context, id, codeHash, expiresAt string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"passwordResetCodeHash":  codeHash,
+		"passwordResetExpiresAt": expiresAt,
+	}})
+	return err
+}
+
 func (r *MemberRepo) UpdateRole(ctx context.Context, id, role string) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"role": role}})
 	return err
@@ -159,6 +169,7 @@ func (r *MemberRepo) Anonymize(ctx context.Context, id string) error {
 			"birthday":  "", "broadcastBirthday": false, "diaspora": nil,
 			"dateOfBirth": "", "passwordHash": "",
 			"phoneVerificationCodeHash": "", "phoneVerificationExpiresAt": "",
+			"passwordResetCodeHash": "", "passwordResetExpiresAt": "",
 			"mfaEnabled": false, "totpSecret": "", "mfaRecoveryHashes": []string{},
 		},
 		"$unset": bson.M{"email": "", "phone": ""},

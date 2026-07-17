@@ -60,7 +60,7 @@ func main() {
 		Log:        log,
 	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db))
-	auth := newAuthService(memberRepo, cfg, wa)
+	auth := newAuthService(memberRepo, cfg, email, wa)
 	ensureUploadDir(log, cfg)
 	payments, tickets, subs, promotions, revenue := moneyServices(db, cfg, log)
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
@@ -106,9 +106,11 @@ func connectMongo(ctx context.Context, log *slog.Logger, cfg config.Config) (*mo
 	return client, db
 }
 
-func newAuthService(members domain.MemberRepository, cfg config.Config, wa wax.Sender) *service.AuthService {
+func newAuthService(members domain.MemberRepository, cfg config.Config, email service.EmailSender, wa wax.Sender) *service.AuthService {
 	auth := service.NewAuthService(members, cfg.JWTSecret)
-	return auth.WithOTPSender(wa)
+	// OTPSender delivers phone-verification codes; the notifiers deliver
+	// password-reset codes over email/WhatsApp (mirrors notifyOutOfBand).
+	return auth.WithOTPSender(wa).WithNotifiers(email, wa)
 }
 
 func ensureUploadDir(log *slog.Logger, cfg config.Config) {

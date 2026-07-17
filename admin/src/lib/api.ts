@@ -243,6 +243,12 @@ export const api = {
     post<LoginResult>("/api/auth/login", { identifier, password }),
   mfaLogin: (challenge: string, code: string) =>
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
+  // Forgot-password flow. The start call always resolves 200 {ok} so account
+  // existence never leaks; devCode is only present when AUTH_REQUIRED=false.
+  startPasswordReset: (identifier: string) =>
+    post<{ ok: boolean; devCode?: string }>("/api/auth/password/reset/start", { identifier }),
+  confirmPasswordReset: (identifier: string, code: string, newPassword: string) =>
+    post<{ ok: boolean }>("/api/auth/password/reset/confirm", { identifier, code, newPassword }),
   // MFA enrolment (TOTP) — required for staff roles (spec §14).
   mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup"),
   mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),

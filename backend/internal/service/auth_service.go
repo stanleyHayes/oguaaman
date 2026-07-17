@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"html"
 	"log/slog"
 	"strings"
 	"time"
@@ -53,6 +54,23 @@ var ErrPhoneVerificationExpired = errors.New("that verification code expired —
 // ErrInvalidPhoneVerificationCode is returned when the verification code doesn't match.
 var ErrInvalidPhoneVerificationCode = errors.New("that verification code didn't work")
 
+// ErrResetAccountNotFound is returned by StartPasswordReset when no account
+// matches the identifier. The handler maps it to a GENERIC success so the
+// public endpoint never reveals whether an account exists.
+var ErrResetAccountNotFound = errors.New("no account matches that identifier")
+
+// ErrResetNotStarted is returned when a reset code is confirmed before one was issued.
+var ErrResetNotStarted = errors.New("no password reset is in progress on this account")
+
+// ErrResetExpired is returned when the reset code has timed out.
+var ErrResetExpired = errors.New("that reset code expired — please request a new one")
+
+// ErrInvalidResetCode is returned when the reset code doesn't match.
+var ErrInvalidResetCode = errors.New("that reset code didn't work")
+
+// ErrResetPasswordTooShort is returned when the new password is below the floor.
+var ErrResetPasswordTooShort = fmt.Errorf("password must be at least %d characters", minPasswordLen)
+
 // minSignupAge is the self-registration floor; minors join only via a guardian
 // (a deferred flow). See spec §14.4.
 const minSignupAge = 18
@@ -63,12 +81,19 @@ const minPasswordLen = 8
 // phoneVerificationTTL bounds the contact-verification window.
 const phoneVerificationTTL = 10 * time.Minute
 
+// passwordResetTTL bounds the "forgot password" code window.
+const passwordResetTTL = 10 * time.Minute
+
 // AuthService implements password-based sign-in → JWT sessions (spec §8.1, §9).
 type AuthService struct {
 	members domain.MemberRepository
 	secret  []byte
 	otp     OTPSender // nil = return code in response (dev mode)
-	log     *slog.Logger
+	// email/wa deliver password-reset codes out-of-band (mirrors notifyOutOfBand).
+	// Either may be nil; in dev the code is echoed by the handler instead.
+	email EmailSender
+	wa    MessageSender
+	log   *slog.Logger
 }
 
 // OTPSender delivers a one-time code to a phone number out-of-band.
@@ -84,6 +109,14 @@ func NewAuthService(members domain.MemberRepository, secret string) *AuthService
 // WithOTPSender attaches an out-of-band OTP delivery channel.
 func (a *AuthService) WithOTPSender(s OTPSender) *AuthService {
 	a.otp = s
+	return a
+}
+
+// WithNotifiers attaches the email/WhatsApp channels used to deliver
+// password-reset codes out-of-band. Either may be nil.
+func (a *AuthService) WithNotifiers(email EmailSender, wa MessageSender) *AuthService {
+	a.email = email
+	a.wa = wa
 	return a
 }
 
@@ -308,6 +341,102 @@ func (a *AuthService) ConfirmPhoneVerification(ctx context.Context, memberID, co
 	m.PhoneVerificationCodeHash = ""
 	m.PhoneVerificationExpiresAt = ""
 	return m, nil
+}
+
+// StartPasswordReset issues a short-lived password-reset code for the account
+// matching identifier (the same lookup Login uses), stores its bcrypt hash, and
+// delivers it out-of-band via email/WhatsApp. To avoid leaking whether an
+// account exists, an unknown identifier returns ErrResetAccountNotFound, which
+// the handler maps to the same generic success. The plaintext code is returned
+// so the handler can echo it in dev (mirrors the phone-verification flow).
+func (a *AuthService) StartPasswordReset(ctx context.Context, identifier string) (*domain.Member, string, error) {
+	identifier = normalizeIdentifier(identifier)
+	m, err := a.members.ByIdentifier(ctx, identifier)
+	if err != nil {
+		var nf *domain.NotFoundError
+		if errors.As(err, &nf) {
+			return nil, "", ErrResetAccountNotFound
+		}
+		return nil, "", err
+	}
+	code, err := newVerificationCode()
+	if err != nil {
+		return nil, "", err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(code), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, "", err
+	}
+	expiresAt := time.Now().UTC().Add(passwordResetTTL).Format(time.RFC3339)
+	if err := a.members.SetPasswordReset(ctx, m.ID, string(hash), expiresAt); err != nil {
+		return nil, "", err
+	}
+	m.PasswordResetCodeHash = string(hash)
+	m.PasswordResetExpiresAt = expiresAt
+	a.deliverResetCode(ctx, m, code)
+	return m, code, nil
+}
+
+// ConfirmPasswordReset checks a reset code and, when it matches and hasn't
+// expired, sets a new password and clears the reset state. It never issues a
+// session — the member signs in fresh with the new password.
+func (a *AuthService) ConfirmPasswordReset(ctx context.Context, identifier, code, newPassword string) error {
+	identifier = normalizeIdentifier(identifier)
+	m, err := a.members.ByIdentifier(ctx, identifier)
+	if err != nil {
+		var nf *domain.NotFoundError
+		if errors.As(err, &nf) {
+			// Don't reveal non-existence — treat as "no reset in progress".
+			return ErrResetNotStarted
+		}
+		return err
+	}
+	if m.PasswordResetCodeHash == "" || m.PasswordResetExpiresAt == "" {
+		return ErrResetNotStarted
+	}
+	expiresAt, err := time.Parse(time.RFC3339, m.PasswordResetExpiresAt)
+	if err != nil {
+		return ErrResetNotStarted
+	}
+	if time.Now().UTC().After(expiresAt) {
+		return ErrResetExpired
+	}
+	if bcrypt.CompareHashAndPassword([]byte(m.PasswordResetCodeHash), []byte(normalizeVerificationCode(code))) != nil {
+		return ErrInvalidResetCode
+	}
+	if len(newPassword) < minPasswordLen {
+		return ErrResetPasswordTooShort
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	if err := a.members.SetPasswordHash(ctx, m.ID, string(hash)); err != nil {
+		return err
+	}
+	// Clear the reset state so the code can't be reused.
+	if err := a.members.SetPasswordReset(ctx, m.ID, "", ""); err != nil {
+		return err
+	}
+	return nil
+}
+
+// deliverResetCode mirrors notifyOutOfBand: emails and/or WhatsApps the reset
+// code to the account's reachable channels. Failures are logged, not fatal —
+// in dev the handler echoes the code so the flow stays testable.
+func (a *AuthService) deliverResetCode(ctx context.Context, m *domain.Member, code string) {
+	body := fmt.Sprintf("Your Oguaa password reset code is %s. It expires in 10 minutes. Do not share it.", code)
+	if a.email != nil && strings.TrimSpace(m.Email) != "" {
+		htmlBody := "<p>" + html.EscapeString(body) + "</p>"
+		if e := a.email.Send(ctx, m.Email, "Your Oguaa password reset code", htmlBody); e != nil {
+			a.log.Warn("password-reset email failed", "memberId", m.ID, "err", e)
+		}
+	}
+	if a.wa != nil && strings.TrimSpace(m.Phone) != "" {
+		if e := a.wa.SendMessage(ctx, m.Phone, body); e != nil {
+			a.log.Warn("password-reset whatsapp failed", "memberId", m.ID, "err", e)
+		}
+	}
 }
 
 // DeleteAccount verifies the member's password, then anonymises the account
