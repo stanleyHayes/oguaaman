@@ -1,45 +1,60 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { motion } from "motion/react";
 import { Wordmark } from "@/components/wordmark";
 import { CTA as Cta } from "@/components/ui";
 import { PORTAL_APP_URL } from "@/config";
+import { SectionIcon } from "@/components/section-icon";
 
-// One stroke-icon per section — mirrors the portal's section-icon set so the
-// menu and the app read as one product. Inherit currentColor.
-const ICONS: Record<string, ReactNode> = {
-  history: <><path d="M4 9h16M5 9v8M9 9v8M15 9v8M19 9v8M3 21h18M3 17h18" /><path d="M12 3 20 7H4Z" /></>,
-  culture: <><circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></>,
-  festivals: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /><path d="M8 14l2.5 2.5L16 11" /></>,
-  education: <><path d="M12 4 2 9l10 5 10-5-10-5Z" /><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5" /></>,
-  visit: <><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z" /><circle cx="12" cy="10" r="2.5" /></>,
-  leadership: <><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="M16 6.5a3 3 0 0 1 0 5.8" /><path d="M17 14.5a5.5 5.5 0 0 1 3.5 4.5" /></>,
-  news: <><path d="M4 5h12v14H5a1 1 0 0 1-1-1Z" /><path d="M16 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1" /><path d="M7 8h6M7 11h6M7 14h4" /></>,
+// Per-item accent tone for the "More" dropdown rows — mirrors the portal's
+// tone system (see frontend/src/lib/sections.ts) closely enough that the icon
+// tile + corner watermark read the same way across both apps.
+type Tone = "green" | "gold" | "maroon" | "teal";
+const TONE: Record<Tone, { text: string; soft: string }> = {
+  green: { text: "text-green", soft: "bg-green/[0.06]" },
+  gold: { text: "text-gold-text", soft: "bg-gold/[0.12]" },
+  maroon: { text: "text-maroon-900", soft: "bg-maroon-900/[0.07]" },
+  teal: { text: "text-teal-text", soft: "bg-teal/[0.09]" },
 };
 
-function MenuIcon({ id, className = "" }: Readonly<{ id: string; className?: string }>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
-      {ICONS[id] ?? ICONS.history}
-    </svg>
-  );
-}
-
-interface NavItem { to: string; label: string; note: string; icon: string }
+interface NavItem { to: string; label: string; note: string; icon: string; tone: Tone }
 
 /** Single source of truth for every top-level destination. */
 const NAV_LINKS: NavItem[] = [
-  { to: "/history", label: "History", note: "From a crab market to a place of return.", icon: "history" },
-  { to: "/culture", label: "Culture", note: "The companies, the shrines, the flags.", icon: "culture" },
-  { to: "/festivals", label: "Festivals", note: "Fetu Afahye and the great durbar.", icon: "festivals" },
-  { to: "/education", label: "Education", note: "The citadel that taught a country.", icon: "education" },
-  { to: "/visit", label: "Visit", note: "Castle, Kakum, the lagoon, the shore.", icon: "visit" },
-  { to: "/leadership", label: "Leadership", note: "The stool and the civic assembly.", icon: "leadership" },
-  { to: "/news", label: "News", note: "Notices and stories from the town.", icon: "news" },
+  { to: "/history", label: "History", note: "From a crab market to a place of return.", icon: "history", tone: "green" },
+  { to: "/culture", label: "Culture", note: "The companies, the shrines, the flags.", icon: "culture", tone: "gold" },
+  { to: "/festivals", label: "Festivals", note: "Fetu Afahye and the great durbar.", icon: "festivals", tone: "gold" },
+  { to: "/education", label: "Education", note: "The citadel that taught a country.", icon: "education", tone: "maroon" },
+  { to: "/visit", label: "Visit", note: "Castle, Kakum, the lagoon, the shore.", icon: "visit", tone: "teal" },
+  { to: "/leadership", label: "Leadership", note: "The stool and the civic assembly.", icon: "leadership", tone: "green" },
+  { to: "/news", label: "News", note: "Notices and stories from the town.", icon: "news", tone: "gold" },
 ];
 
 const LINKS = NAV_LINKS.slice(0, 5);
 const MORE_LINKS = NAV_LINKS.slice(5);
+
+/** One rich row inside the "More" popover: icon tile + title + one-line note,
+ *  with a large faint watermark of the same glyph in the bottom-right corner. */
+function MoreMenuItem({ item, onClick }: Readonly<{ item: NavItem; onClick: () => void }>) {
+  const t = TONE[item.tone];
+  return (
+    <Link
+      to={item.to}
+      role="menuitem"
+      onClick={onClick}
+      className="group relative flex items-start gap-3 overflow-hidden rounded-lg px-3 py-2.5 transition-colors hover:bg-paper"
+    >
+      <SectionIcon id={item.icon} className={`pointer-events-none absolute -bottom-3 -right-2 h-14 w-14 opacity-[0.06] transition-opacity group-hover:opacity-[0.11] ${t.text}`} />
+      <span className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${t.soft} ${t.text}`}>
+        <SectionIcon id={item.icon} className="h-[18px] w-[18px]" />
+      </span>
+      <span className="relative">
+        <span className="block text-sm font-semibold text-ink">{item.label}</span>
+        <span className="block text-xs leading-snug text-ink-muted">{item.note}</span>
+      </span>
+    </Link>
+  );
+}
 
 function MoreMenu({ onLight }: Readonly<{ onLight: boolean }>) {
   const [open, setOpen] = useState(false);
@@ -73,12 +88,9 @@ function MoreMenu({ onLight }: Readonly<{ onLight: boolean }>) {
         </svg>
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]">
+        <div role="menu" className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]">
           {MORE_LINKS.map((l) => (
-            <Link key={l.to} to={l.to} role="menuitem" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 transition-colors hover:bg-paper">
-              <span className="block text-sm font-semibold text-ink">{l.label}</span>
-              <span className="block text-xs leading-snug text-ink-muted">{l.note}</span>
-            </Link>
+            <MoreMenuItem key={l.to} item={l} onClick={() => setOpen(false)} />
           ))}
         </div>
       )}
@@ -192,7 +204,7 @@ export function Nav() {
                         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                           isActive ? "bg-green text-cream" : "bg-green/[0.08] text-green"
                         }`}>
-                          <MenuIcon id={link.icon} className="h-5 w-5" />
+                          <SectionIcon id={link.icon} className="h-5 w-5" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-[0.95rem] font-semibold text-ink">{link.label}</span>
