@@ -18,9 +18,18 @@ interface PageData extends InstitutionView { team: TeamMember[] }
 export async function loader({ params }: LoaderFunctionArgs): Promise<PageData> {
   const [view, team] = await Promise.all([
     api.institution(params.slug!),
-    api.institutionTeam(params.slug!).catch(() => []),
+    api.institutionTeam(params.slug!).catch(() => [] as TeamMember[]),
   ]);
-  return { ...view, team };
+  // Coerce every list to an array: a 200 with a null/error-shaped body (e.g. an
+  // endpoint that lost its data) would otherwise slip past the .catch above and
+  // crash the render with "x.map is not a function".
+  const asArray = <U,>(v: unknown): U[] => (Array.isArray(v) ? (v as U[]) : []);
+  return {
+    ...view,
+    events: asArray<Listing>(view.events),
+    officialEvents: asArray<Listing>(view.officialEvents),
+    team: asArray<TeamMember>(team),
+  };
 }
 
 function EventList({ title, items }: Readonly<{ title: string; items: Listing[] }>) {

@@ -1,6 +1,10 @@
 package http
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/oguaa/backend/internal/domain"
+)
 
 // ── moderation queue & actions ───────────────────────────────────────────────
 
@@ -164,6 +168,19 @@ func (h *Handler) AdminInstitutions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.handleErr(w, err)
 		return
+	}
+	// Optional ?kind= filter so a single directory endpoint can back both the
+	// full verification queue (no filter) and kind-scoped views like the Visit
+	// "Heritage & visitor places" editor (?kind=heritage). Without this the
+	// editor showed every org — schools, authorities — not just heritage places.
+	if kind := r.URL.Query().Get("kind"); kind != "" {
+		filtered := make([]domain.Organization, 0, len(items))
+		for _, o := range items {
+			if o.Kind == kind {
+				filtered = append(filtered, o)
+			}
+		}
+		items = filtered
 	}
 	writeList(w, r, items)
 }
