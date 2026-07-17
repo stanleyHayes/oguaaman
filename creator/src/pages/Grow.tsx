@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLoaderData, useRevalidator } from "react-router-dom";
 import { api } from "@/lib/api";
+import { completePayment } from "@/lib/paystack";
 import type { CreatorOverview, MemberView, Plan, Subscription } from "@/lib/types";
 import { Card } from "@/components/ui";
 import { MetricCard } from "@/components/metric-card";
@@ -63,13 +64,22 @@ export function Component() {
         // Dev mode has no Paystack checkout to return from — settle in place.
         const s = await api.confirmSubscription(r.reference);
         setConfirmed(s);
-        setBusy(null);
         revalidator.revalidate();
       } else {
-        window.location.assign(r.authorizationUrl); // off to Paystack
+        // Open the in-app Paystack modal; confirm in place on payer success.
+        // When the modal can't run, completePayment redirects to the hosted
+        // page and the return-URL flow confirms on the way back.
+        await completePayment(r, {
+          onSuccess: async () => {
+            const s = await api.confirmSubscription(r.reference);
+            setConfirmed(s);
+            revalidator.revalidate();
+          },
+        });
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");
+    } finally {
       setBusy(null);
     }
   }

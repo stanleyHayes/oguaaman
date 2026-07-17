@@ -166,7 +166,7 @@ export const api = {
   projects: () => get<Listing[]>("/api/projects"),
   project: (slug: string) => get<Listing>(`/api/projects/${slug}`),
   pledge: (slug: string, body: { amountPesewas: number; email?: string }) =>
-    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/projects/${slug}/pledge`, body),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/projects/${slug}/pledge`, body),
   confirmPledge: (reference: string) => get<Pledge>(`/api/pledges/confirm?reference=${encodeURIComponent(reference)}`),
   myPledges: () => get<Pledge[]>("/api/me/pledges"),
 
@@ -218,13 +218,13 @@ export const api = {
   // Business subscriptions (Phase 7): plans come from the staff-managed catalog.
   plans: () => get<Plan[]>("/api/plans"),
   subscribe: (slug: string, plan?: string) =>
-    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
   confirmSubscription: (reference: string) => get<Subscription>(`/api/subscriptions/confirm?reference=${encodeURIComponent(reference)}`),
   mySubscriptions: () => get<Subscription[]>("/api/me/subscriptions"),
 
   // Paid promotions (Phase 8): self-serve featured placements via Paystack.
   promoteListing: (id: string, days: number) =>
-    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/listings/${id}/promote`, { days }),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/listings/${id}/promote`, { days }),
   confirmPromotion: (reference: string) => get<Promotion>(`/api/promotions/confirm?reference=${encodeURIComponent(reference)}`),
 
   // View counter (spec §4 / Creator §7.5): daily-deduped, fire-and-forget.
@@ -279,7 +279,7 @@ export const api = {
   // Event detail + ticketing (Phase 6; amounts in pesewas).
   eventView: (slug: string) => get<EventView>(`/api/events/${slug}`),
   buyTicket: (slug: string, body: { tier: string; qty: number }) =>
-    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/events/${slug}/tickets`, body),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/events/${slug}/tickets`, body),
   confirmTicket: (reference: string) => get<Ticket>(`/api/tickets/confirm?reference=${encodeURIComponent(reference)}`),
   myTickets: () => get<Ticket[]>("/api/me/tickets"),
   // The festival archive — the coast's festivals, edition by edition.

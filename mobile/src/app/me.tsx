@@ -129,8 +129,20 @@ function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
         setConfirmed(p);
         setOpen(false);
       } else {
-        setPendingRef(r.reference);
-        WebBrowser.openBrowserAsync(r.authorizationUrl).catch(() => setErr("Could not open the payment page."));
+        // Open Paystack in an in-app browser, then auto-verify when the payer
+        // returns (browser dismissed) — no manual "verify" tap in the happy path.
+        const opened = await WebBrowser.openBrowserAsync(r.authorizationUrl).then(() => true).catch(() => false);
+        if (!opened) {
+          setErr("Could not open the payment page.");
+        } else {
+          try {
+            setConfirmed(await api.confirmPromotion(r.reference));
+            setOpen(false);
+          } catch {
+            setPendingRef(r.reference); // not confirmed yet — offer manual Verify
+            setErr("Payment not confirmed yet. If you completed it, tap Verify.");
+          }
+        }
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");

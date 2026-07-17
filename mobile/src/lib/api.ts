@@ -152,7 +152,7 @@ export const api = {
   projects: () => get<Listing[]>("/api/projects"),
   projectDetail: (slug: string) => get<Listing>(`/api/projects/${slug}`),
   pledge: (slug: string, body: { amountPesewas: number; email?: string }) =>
-    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/projects/${slug}/pledge`, body),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/projects/${slug}/pledge`, body),
   confirmPledge: (reference: string) =>
     get<{ status: string; amountPesewas: number; projectTitle: string; simulated?: boolean }>(`/api/pledges/confirm?reference=${encodeURIComponent(reference)}`),
 

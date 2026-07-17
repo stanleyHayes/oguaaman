@@ -71,8 +71,21 @@ export default function StudioGrow() {
         setPending(null);
         reload();
       } else {
-        setPending({ key, reference: r.reference });
-        WebBrowser.openBrowserAsync(r.authorizationUrl).catch(() => setErr("Could not open the payment page."));
+        // Open Paystack in an in-app browser, then auto-verify when the payer
+        // returns (browser dismissed) — no manual "verify" tap in the happy path.
+        const opened = await WebBrowser.openBrowserAsync(r.authorizationUrl).then(() => true).catch(() => false);
+        if (!opened) {
+          setErr("Could not open the payment page.");
+        } else {
+          try {
+            setConfirmed(await api.confirmSubscription(r.reference));
+            setPending(null);
+            reload();
+          } catch {
+            setPending({ key, reference: r.reference }); // offer manual Verify
+            setErr("Payment not confirmed yet. If you completed it, tap Verify.");
+          }
+        }
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");

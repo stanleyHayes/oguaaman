@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { MemberView, Listing, ListingStatus, Ticket, Subscription, Promotion } from "@/lib/types";
 import { api } from "@/lib/api";
+import { completePayment } from "@/lib/paystack";
 import { useAuth } from "@/lib/auth";
 import { DatePicker } from "@/components/date-picker";
 import { Container, CTA as Cta, Avatar } from "@/components/ui";
@@ -292,9 +293,28 @@ export function Component() {
     setPromoBusy(true);
     try {
       const r = await api.promoteListing(l.id, days);
-      window.location.assign(r.authorizationUrl); // off to Paystack (or straight back, in dev simulation)
+      // Complete in the in-app Paystack modal. On payer success we confirm the
+      // reference and update the UI in place — mirroring the ?promo_ref= return
+      // handler above (which stays as the redirect-fallback path). If the modal
+      // can't run, completePayment redirects to authorizationUrl and that
+      // handler confirms on the way back.
+      await completePayment(r, {
+        onSuccess: async () => {
+          try {
+            const p = await api.confirmPromotion(r.reference);
+            setPromoConfirmed(p);
+            setPromoFor(null);
+            setRefreshKey((k) => k + 1);
+          } catch {
+            setPromoError("We couldn't confirm that payment. If you were charged, it will reconcile shortly.");
+          }
+        },
+      });
     } catch (e) {
       setPromoError(e instanceof Error ? e.message : "Could not start the payment.");
+    } finally {
+      // Modal path (success/cancel) clears busy here; on the redirect fallback
+      // the page unloads before this runs, which is fine.
       setPromoBusy(false);
     }
   }

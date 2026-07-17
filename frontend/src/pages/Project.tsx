@@ -3,6 +3,7 @@ import { useLoaderData, useNavigate, useRevalidator, useSearchParams, type Loade
 import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing, Pledge } from "@/lib/types";
 import { api } from "@/lib/api";
+import { completePayment } from "@/lib/paystack";
 import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill } from "@/components/ui";
@@ -58,9 +59,24 @@ export function Component() {
     setBusy(true);
     try {
       const r = await api.pledge(project.slug, { amountPesewas: Math.round(cedisNum * 100) });
-      window.location.assign(r.authorizationUrl); // off to Paystack (or straight back, in dev simulation)
+      // In-app Paystack modal; on success we confirm + update in place (no
+      // navigation). Simulated/blocked → completePayment redirects instead.
+      await completePayment(r, {
+        onSuccess: async () => {
+          setConfirming(true);
+          try {
+            setConfirmed(await api.confirmPledge(r.reference));
+            revalidator.revalidate(); // refresh the raised total in place
+          } catch {
+            setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly.");
+          } finally {
+            setConfirming(false);
+          }
+        },
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not start the payment.");
+    } finally {
       setBusy(false);
     }
   }

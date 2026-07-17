@@ -173,13 +173,13 @@ export const api = {
 
   // Paid promotions: self-serve featured placements via Paystack (GH₵10/day).
   promoteListing: (id: string, days: number) =>
-    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/listings/${id}/promote`, { days }),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/listings/${id}/promote`, { days }),
   confirmPromotion: (reference: string) => get<Promotion>(`/api/promotions/confirm?reference=${encodeURIComponent(reference)}`),
 
   // Business Supporter subscription (GH₵50/mo, stacking renewals).
   plans: () => get<Plan[]>("/api/plans"),
   subscribe: (slug: string, plan?: string) =>
-    post<{ authorizationUrl: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
   confirmSubscription: (reference: string) => get<Subscription>(`/api/subscriptions/confirm?reference=${encodeURIComponent(reference)}`),
   mySubscriptions: () => get<Subscription[]>("/api/me/subscriptions"),
 
