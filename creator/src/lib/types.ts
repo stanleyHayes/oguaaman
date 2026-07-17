@@ -57,6 +57,11 @@ export interface Member {
   joinedAt: string;
   /** Two-factor enrolment state — secret never leaves the server. */
   mfaEnabled?: boolean;
+  /** Own contact identifiers — only present on self-facing auth endpoints
+   * (/api/auth/me, login), where the server enriches the payload. Private
+   * everywhere else. */
+  email?: string;
+  phone?: string;
 }
 
 /** Newsroom status: writers submit drafts for review; authority managers publish directly. */

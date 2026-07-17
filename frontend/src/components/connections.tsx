@@ -4,6 +4,7 @@ import type { Connection, Organization, SchoolStint } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Avatar } from "@/components/ui";
 import { EmptyState } from "@/components/empty-state";
+import { SchoolCombobox } from "@/components/school-combobox";
 
 /**
  * SchoolingEditor — members record the schools they attended and the years they
@@ -61,16 +62,12 @@ export function SchoolingEditor({
     <div className="mt-4 space-y-3">
       {rows.map((row, i) => (
         <div key={row._key} className="flex flex-wrap items-center gap-2 rounded-[var(--radius-card)] border border-sand bg-cream p-3">
-          <select
+          <SchoolCombobox
+            schools={schools}
             value={row.schoolId}
-            onChange={(e) => update(i, { schoolId: e.target.value })}
-            className="min-w-[12rem] flex-1 rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-maroon-900 focus:outline-none"
-          >
-            <option value="">Choose a school…</option>
-            {schools.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+            onSelect={(schoolId) => update(i, { schoolId })}
+            className="min-w-[12rem] flex-1"
+          />
           <input
             type="number" inputMode="numeric" placeholder="From" min={1900} max={2100}
             value={row.fromYear ?? ""}

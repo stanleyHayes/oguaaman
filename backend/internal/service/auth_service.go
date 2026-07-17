@@ -71,6 +71,10 @@ var ErrInvalidResetCode = errors.New("that reset code didn't work")
 // ErrResetPasswordTooShort is returned when the new password is below the floor.
 var ErrResetPasswordTooShort = fmt.Errorf("password must be at least %d characters", minPasswordLen)
 
+// ErrCurrentPasswordWrong is returned by ChangePassword when the supplied
+// current password doesn't match the account's stored hash.
+var ErrCurrentPasswordWrong = errors.New("your current password is incorrect")
+
 // minSignupAge is the self-registration floor; minors join only via a guardian
 // (a deferred flow). See spec §14.4.
 const minSignupAge = 18
@@ -452,6 +456,35 @@ func (a *AuthService) DeleteAccount(ctx context.Context, memberID, password stri
 		return ErrInvalidCredentials
 	}
 	return a.members.Anonymize(ctx, m.ID)
+}
+
+// ChangePassword re-verifies the signed-in member's current password, then sets
+// a new one (self-service credential rotation). The new password must clear the
+// same length floor as sign-up. It does not rotate the session — the caller's
+// existing JWT stays valid.
+func (a *AuthService) ChangePassword(ctx context.Context, memberID, currentPassword, newPassword string) error {
+	m, err := a.members.ByID(ctx, memberID)
+	if err != nil {
+		return err
+	}
+	if m.PasswordHash == "" {
+		return ErrNoPassword
+	}
+	if bcrypt.CompareHashAndPassword([]byte(m.PasswordHash), []byte(currentPassword)) != nil {
+		return ErrCurrentPasswordWrong
+	}
+	if len(newPassword) < minPasswordLen {
+		return ErrResetPasswordTooShort
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	if err := a.members.SetPasswordHash(ctx, m.ID, string(hash)); err != nil {
+		return err
+	}
+	m.PasswordHash = string(hash)
+	return nil
 }
 
 // ── MFA (TOTP — spec §14; authenticator apps) ────────────────────────────────

@@ -61,6 +61,17 @@ export const api = {
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
   me: () => get<Member>("/api/auth/me"),
 
+  // ── Settings: security (spec §14) ──
+  // Authenticated password change — the server re-verifies the current password
+  // (bcrypt) and enforces the 8-char floor; the existing session stays valid.
+  changePassword: (currentPassword: string, newPassword: string) =>
+    post<{ ok: boolean }>("/api/me/password", { currentPassword, newPassword }),
+  // Two-factor (TOTP) self-enrolment — mirrors the admin console. The secret and
+  // recovery-code hashes never leave the server; enrolment returns the QR + codes.
+  mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup"),
+  mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
+  mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
+
   // Owner-scoped dashboard aggregation (Creator Platform plan §4).
   creatorOverview: () => get<CreatorOverview>("/api/creator/overview"),
   creatorEarnings: () => get<CreatorEarnings>("/api/creator/earnings"),

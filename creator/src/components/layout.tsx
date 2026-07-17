@@ -7,7 +7,7 @@ import { canWriteNews } from "@/lib/creator";
 import {
   Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone,
   Banknote, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing,
-  Map, PanelLeftClose, PanelLeft, PenLine, type LucideIcon,
+  Map, PanelLeftClose, PanelLeft, PenLine, Settings, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 
@@ -43,6 +43,7 @@ function buildNavGroups(canWrite: boolean): NavGroup[] {
       items: [
         { to: "/notifications", label: "Notifications", icon: Bell },
         { to: "/account", label: "Profile", icon: User },
+        { to: "/settings", label: "Settings", icon: Settings },
       ],
     },
   ];
@@ -244,6 +245,7 @@ const ROLE_LABEL: Record<string, string> = {
 const USER_MENU: { to: string; icon: LucideIcon; title: string; sub: string }[] = [
   { to: "/account", icon: User, title: "My Profile", sub: "View your account details" },
   { to: "/notifications", icon: BellRing, title: "Notifications", sub: "Your creator alerts" },
+  { to: "/settings", icon: Settings, title: "Settings", sub: "Password, two-factor & preferences" },
 ];
 
 /** First-login walkthrough — "show me around". Selectors fall back to a

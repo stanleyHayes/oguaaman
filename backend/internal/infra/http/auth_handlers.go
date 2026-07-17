@@ -364,6 +364,49 @@ func (h *Handler) ConfirmPasswordReset(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
+// ChangeMyPassword re-verifies the signed-in member's current password and sets
+// a new one. The existing session (JWT) stays valid — this is a self-service
+// rotation, not a sign-out.
+func (h *Handler) ChangeMyPassword(w http.ResponseWriter, r *http.Request) {
+	m, authed := h.requireAuth(w, r)
+	if !authed {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "change-password:"+clientKey(r), 10, time.Hour) {
+		return
+	}
+	var in struct {
+		CurrentPassword string `json:"currentPassword"`
+		NewPassword     string `json:"newPassword"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	err := h.auth.ChangePassword(r.Context(), m.ID, in.CurrentPassword, in.NewPassword)
+	if errors.Is(err, service.ErrCurrentPasswordWrong) {
+		fail(w, http.StatusForbidden, "Your current password is incorrect.")
+		return
+	}
+	if errors.Is(err, service.ErrNoPassword) {
+		fail(w, http.StatusBadRequest, "This account has no password yet.")
+		return
+	}
+	if errors.Is(err, service.ErrResetPasswordTooShort) {
+		fail(w, http.StatusBadRequest, "Your new password must be at least 8 characters.")
+		return
+	}
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
 func (h *Handler) AuthMe(w http.ResponseWriter, r *http.Request) {
 	m := currentMember(r)
 	if m == nil {

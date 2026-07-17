@@ -1,6 +1,6 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
-import { type Theme, getInitialTheme, setTheme } from "@/lib/theme";
+import { type Theme, getInitialTheme, onThemeChange, setTheme } from "@/lib/theme";
 
 export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>) {
   const [theme, set] = useState<Theme>(getInitialTheme);
@@ -10,7 +10,13 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
       if (e.key === "oguaa.theme") set((e.newValue as Theme) ?? getInitialTheme());
     };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    // Same-tab sync: the Settings segmented control changes the theme via the
+    // theme system, which dispatches this event (storage only fires cross-tab).
+    const off = onThemeChange(() => set(getInitialTheme()));
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      off();
+    };
   }, []);
 
   const isDark = theme === "dark";

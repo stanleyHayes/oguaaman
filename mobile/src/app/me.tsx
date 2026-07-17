@@ -14,6 +14,7 @@ import { ImageField } from "@/components/image-field";
 import { DateField } from "@/components/date-field";
 import { RevealView } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { SchoolCombobox } from "@/components/school-combobox";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -616,11 +617,7 @@ function SchoolingEditor({ member: m, schools, onSaved }: Readonly<{ member: Mem
       {available.length > 0 && (
         <View style={s.addWrap}>
           <Text style={s.addLabel}>Add a school</Text>
-          <View style={s.chipWrap}>
-            {available.map((sc) => (
-              <Pressable key={sc.id} onPress={() => add(sc.id)} style={s.addChip}><Text style={s.addChipText}>+ {sc.name}</Text></Pressable>
-            ))}
-          </View>
+          <SchoolCombobox schools={available} onSelect={add} />
         </View>
       )}
 
@@ -812,8 +809,6 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   addWrap: { marginTop: 2 },
   addLabel: { color: C.inkFaint, fontSize: 12, fontWeight: "600", marginBottom: 8 },
   chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  addChip: { borderWidth: 1, borderStyle: "dashed", borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
-  addChipText: { color: C.goldText, fontSize: 13, fontWeight: "600" },
 
   diaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   diaLabel: { color: C.ink, fontSize: 14, flex: 1 },
