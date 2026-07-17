@@ -54,10 +54,6 @@ function daysInMonth(y: number, m: number) {
   return new Date(y, m + 1, 0).getDate();
 }
 
-function clampDay(y: number, m: number, d: number) {
-  return Math.max(1, Math.min(daysInMonth(y, m), d));
-}
-
 function outOfRange(value: string, min?: string, max?: string) {
   if (min && value < min) return true;
   if (max && value > max) return true;
@@ -155,7 +151,6 @@ export function DatePicker({
 
   const grid = buildGrid(view.y, view.m);
   const selected = current || undefined;
-  const dayPickerValue = clampDay(view.y, view.m, parsed?.d ?? today.getDate());
   const { minY, maxY } = yearBounds(min, max, today.getFullYear());
   // Extend to cover the viewed year so the select never shows a blank value
   // (an old selected date, or arrow navigation past the fallback range).
@@ -215,7 +210,7 @@ export function DatePicker({
             aria-label="Choose a date"
             className="absolute z-30 mt-2 w-full min-w-[17rem] overflow-hidden rounded-2xl border border-sand bg-paper p-4 shadow-xl"
           >
-            <div className="mb-3 flex items-center gap-2">
+            <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
               <button type="button" onClick={prev} className="rounded-lg p-2 text-ink-muted hover:bg-cream" aria-label="Previous month">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
               </button>
@@ -240,21 +235,6 @@ export function DatePicker({
                 {years.map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
-              </select>
-              <select
-                aria-label="Day"
-                value={dayPickerValue}
-                onChange={(e) => pick(iso(view.y, view.m, Number(e.target.value)))}
-                className="rounded-lg border border-sand bg-cream px-2 py-1 text-sm text-ink focus:border-green focus:outline-none"
-              >
-                {Array.from({ length: daysInMonth(view.y, view.m) }, (_, i) => i + 1).map((d) => {
-                  const dateIso = iso(view.y, view.m, d);
-                  return (
-                    <option key={d} value={d} disabled={outOfRange(dateIso, min, max)}>
-                      {d}
-                    </option>
-                  );
-                })}
               </select>
               <button type="button" onClick={next} className="rounded-lg p-2 text-ink-muted hover:bg-cream" aria-label="Next month">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
