@@ -583,3 +583,68 @@ export interface Directive {
   createdAt: string;       // RFC3339
   createdById: string;
 }
+
+/**
+ * ── Explore map (GET /api/map) ───────────────────────────────────────────
+ * One public payload that aggregates every geo-tagged entity across the
+ * platform; the client filters layers locally. Only entities WITH
+ * coordinates are returned (the API never geocodes). Slices are always
+ * non-null ([] not null). Mirrors backend service/mapdata.go.
+ */
+export type MapPointKind =
+  | "business" | "event" | "institution" | "school" | "incident"
+  | "lostfound" | "landmark" | "service" | "transport";
+
+export type MapLayer =
+  | "business" | "events" | "institutions" | "safety"
+  | "lostfound" | "landmarks" | "services" | "transport";
+
+export interface MapPoint {
+  id: string;
+  kind: MapPointKind;
+  layer: MapLayer;
+  title: string;
+  subtitle?: string;
+  lat: number;
+  lng: number;
+  slug?: string;
+  href?: string;                 // existing frontend route (e.g. /business/{slug}); absent on non-org POIs
+  category?: string;
+  severity?: IncidentSeverity;   // present only on incidents
+  quarter?: string;              // resolved from the listing's townId
+}
+
+export interface MapTrailStop {
+  n: number;
+  title: string;
+  lat: number;
+  lng: number;
+  story?: string;
+}
+
+export interface MapTrail {
+  id: string;
+  kind: "heritage" | "festival";
+  title: string;
+  description?: string;
+  color?: string;                // hex, e.g. "#B07D32"
+  stops: MapTrailStop[];
+  path: [number, number][];      // [[lat,lng], …] connecting polyline
+}
+
+export interface MapArea {
+  id: string;
+  title: string;
+  kind: "directive";
+  severity: DirectiveSeverity;
+  lat: number;
+  lng: number;
+  radiusM: number;
+  until?: string;                // RFC3339 effectiveUntil
+}
+
+export interface MapData {
+  points: MapPoint[];
+  trails: MapTrail[];
+  areas: MapArea[];
+}

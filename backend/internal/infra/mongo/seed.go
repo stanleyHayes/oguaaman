@@ -108,6 +108,7 @@ func Seed(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 	allOrgs := append(append([]domain.Organization{}, seedOrgs...), seedExtraOrgs...)
+	applyOrgCoords(allOrgs) // stamp map pins (seedMap) onto orgs
 	if err := insertAll(ctx, db.Collection(collOrgs), allOrgs); err != nil {
 		return err
 	}
@@ -115,6 +116,7 @@ func Seed(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 	allListings := append(append(append(seedListings(), seedExtraListings()...), seedIncidents()...), seedLostFound()...)
+	applyListingCoords(allListings) // stamp map pins (seedMap) onto listings
 	if err := insertAll(ctx, db.Collection(collListings), allListings); err != nil {
 		return err
 	}
@@ -766,6 +768,8 @@ func seedDirectives() []domain.Directive {
 		cleanupFrom  = "2026-07-16T06:00:00Z"
 		cleanupUntil = "2026-07-16T10:00:00Z"
 		advisoryFrom = "2026-07-10T08:00:00Z"
+		worksFrom    = "2026-07-14T06:00:00Z"
+		worksUntil   = "2026-07-31T18:00:00Z" // open past the demo "today", so it stays active
 	)
 	return []domain.Directive{
 		{
@@ -787,6 +791,19 @@ func seedDirectives() []domain.Directive {
 			IssuedByOrgID: "inst-cc-fire", IssuedByOrgSlug: "cape-coast-fire-rescue-service", IssuedByName: "Cape Coast Fire & Rescue Service",
 			EffectiveFrom: advisoryFrom, EffectiveUntil: "",
 			Status: domain.DirectiveStatusActive, CreatedAt: advisoryFrom, CreatedByID: memberNana,
+		},
+		{
+			// Carries geo (Bakaano, ~400 m) so it renders as a live safety area on
+			// the town map. Its window stays open past the demo "today".
+			ID: "dir-ccma-bakaano-drain-works", Slug: "bakaano-lagoon-road-drain-works",
+			Title:    "Bakaano lagoon-road drain works — road partly closed",
+			Body:     "The Assembly is desilting the storm drains along the Bakaano lagoon road ahead of the rains. A stretch of the road is partly closed to vehicles; pedestrians should keep clear of the excavators and follow the marshals.",
+			Severity: domain.DirectiveSeverityHigh, Kind: domain.DirectiveKindDirective,
+			Action: "Use the Aboom bypass; keep children away from the trenches", Area: "Bakaano", TownID: "oguaa",
+			IssuedByOrgID: "ccma", IssuedByOrgSlug: "cape-coast-metropolitan-assembly", IssuedByName: "Cape Coast Metropolitan Assembly",
+			EffectiveFrom: worksFrom, EffectiveUntil: worksUntil,
+			Latitude: fptr(5.1035), Longitude: fptr(-1.2555), RadiusM: fptr(400),
+			Status: domain.DirectiveStatusActive, CreatedAt: worksFrom, CreatedByID: memberNana,
 		},
 	}
 }

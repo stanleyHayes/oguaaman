@@ -59,7 +59,19 @@ function AlertsNavLink() {
 }
 
 const byId = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<string, NavSection>;
-const DISCOVER = ["heritage", "culture", "people", "visit"].map((id) => byId[id]).filter(Boolean);
+
+// The interactive city map — not in SECTIONS, so it carries a minimal
+// NavSection-shaped literal, appended to Discover (desktop dropdown + drawer).
+const MAP_ENTRY: NavSection = {
+  id: "map",
+  href: "/map",
+  label: "Explore Cape Coast",
+  tagline: "The whole town on one map — heritage trails, markets, safety.",
+  tone: "teal",
+  depth: "live",
+};
+
+const DISCOVER = [...["heritage", "culture", "people", "visit"].map((id) => byId[id]).filter(Boolean), MAP_ENTRY];
 const CITY = ["education", "business", "youth", "community"].map((id) => byId[id]).filter(Boolean);
 
 // Time-sensitive postings get their own group; the section entries below are

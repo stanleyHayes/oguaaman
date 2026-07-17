@@ -25,6 +25,7 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
   {
     heading: "CITY",
     items: [
+      { label: "Explore map", blurb: "Every place on the coast — businesses, heritage, safety notices and walking trails, with directions on foot.", href: "/explore" },
       { label: "Institutions", blurb: "Schools, the traditional council, churches and the Asafo companies — official, verified pages.", href: "/institutions" },
       { label: "Business", blurb: "The working city — markets, fishing, trade and the people behind them.", href: "/browse/business" },
       { label: "Youth", blurb: "Opportunities board and a spotlight on the young talents coming up in Cape Coast.", href: "/youth" },

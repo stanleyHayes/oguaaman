@@ -480,3 +480,72 @@ export interface HomeData {
   memorial: Listing | null;
   stats: Stats;
 }
+
+/**
+ * The map / Explore payload (GET /api/map, public). The backend returns only
+ * entities that carry coordinates — no server-side geocoding — and the client
+ * filters layers locally. Slices are always non-null (`[]`, never null).
+ * Cape Coast centre ≈ [5.1053, -1.2466].
+ */
+export type MapPointKind =
+  | "business" | "event" | "institution" | "school" | "incident"
+  | "lostfound" | "landmark" | "service" | "transport";
+export type MapLayer =
+  | "business" | "events" | "institutions" | "safety"
+  | "lostfound" | "landmarks" | "services" | "transport";
+
+export interface MapPoint {
+  id: string;
+  kind: MapPointKind;
+  layer: MapLayer;
+  title: string;
+  subtitle?: string;
+  lat: number;
+  lng: number;
+  slug?: string;
+  /** Web-app route to the detail page; absent when the POI has no detail page. */
+  href?: string;
+  category?: string;
+  /** Present only on incidents (kind "incident"). */
+  severity?: IncidentSeverity;
+  /** Resolved from the listing's townId when available. */
+  quarter?: string;
+}
+
+export interface MapTrailStop {
+  n: number;
+  title: string;
+  lat: number;
+  lng: number;
+  story?: string;
+}
+
+export interface MapTrail {
+  id: string;
+  kind: "heritage" | "festival";
+  title: string;
+  description?: string;
+  /** Hex accent for the trail line/badges (e.g. "#B07D32"). */
+  color?: string;
+  stops: MapTrailStop[];
+  /** Polyline as [lat, lng] pairs. */
+  path: [number, number][];
+}
+
+export interface MapArea {
+  id: string;
+  title: string;
+  kind: "directive";
+  severity: DirectiveSeverity;
+  lat: number;
+  lng: number;
+  radiusM: number;
+  /** RFC3339 effectiveUntil, when the directive carries one. */
+  until?: string;
+}
+
+export interface MapData {
+  points: MapPoint[];
+  trails: MapTrail[];
+  areas: MapArea[];
+}

@@ -1,7 +1,7 @@
 // Thin client for the Go API. In dev, calls go to relative /api (Vite proxies to
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
-  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive,
+  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData,
 } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
@@ -235,6 +235,10 @@ export const api = {
   news: () => get<NewsArticle[]>("/api/news"),
   newsArticle: (slug: string) => get<NewsArticle>(`/api/news/${slug}`),
 
+  // Explore map — one public payload of every geo-tagged entity (points,
+  // heritage/festival trails, active directive areas). Clients filter locally.
+  mapData: () => get<MapData>("/api/map"),
+
   places: () => get<Place[]>("/api/places"),
   schools: () => get<Organization[]>("/api/schools"),
   institutions: () => get<Organization[]>("/api/institutions"),
@@ -303,6 +307,12 @@ export const api = {
     post<{ status: string }>("/api/admin/moderate", body),
 
   submit: (body: { type: string; title: string; tags?: string[]; townId?: string; coverImageUrl?: string; details?: Record<string, unknown> }) =>
+    post<Listing>("/api/listings", body),
+
+  // submitListing is submit + an optional exact pin ("claim your spot on the
+  // map"). The backend stores latitude/longitude on the listing and the town
+  // map (GET /api/map) surfaces located business/event pins once approved.
+  submitListing: (body: { type: string; title: string; tags?: string[]; townId?: string; coverImageUrl?: string; latitude?: number; longitude?: number; details?: Record<string, unknown> }) =>
     post<Listing>("/api/listings", body),
 
   // Newsroom (curator/editor) — used by the AI-assisted Compose page (spec §8.12).

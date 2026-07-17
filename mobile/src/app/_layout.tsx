@@ -85,6 +85,7 @@ function RootNavigator() {
         <Stack.Screen name="people/[slug]" options={{ title: "Person", headerBackTitle: "Back" }} />
         <Stack.Screen name="business/[slug]" options={{ title: "Business", headerBackTitle: "Back" }} />
         <Stack.Screen name="legal/[doc]" options={{ title: "Legal", headerBackTitle: "More" }} />
+        <Stack.Screen name="explore" options={{ title: "Explore", headerBackTitle: "More" }} />
         <Stack.Screen name="explore/[topic]" options={{ title: "Explore", headerBackTitle: "More" }} />
         <Stack.Screen name="projects/index" options={{ title: "Adopt a project", headerBackTitle: "More" }} />
         <Stack.Screen name="projects/[slug]" options={{ title: "Project", headerBackTitle: "Projects" }} />

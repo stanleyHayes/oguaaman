@@ -97,12 +97,16 @@ export default function More() {
         rows={
           member
             ? [
+                { icon: "🗺", label: "Explore the map", href: "/explore" },
                 { icon: "☺", label: "My Profile", href: "/me" },
                 { icon: "✎", label: "Contribute", href: "/submit" },
                 { icon: "🔔", label: "Notifications", href: "/notifications" },
                 { icon: "🔍", label: "Search", href: "/search" },
               ]
-            : [{ icon: "🔍", label: "Search people, places & memories", href: "/search" }]
+            : [
+                { icon: "🗺", label: "Explore the map", href: "/explore" },
+                { icon: "🔍", label: "Search people, places & memories", href: "/search" },
+              ]
         }
       />
 

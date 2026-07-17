@@ -41,6 +41,12 @@ type DirectiveInput struct {
 	EffectiveFrom  string `json:"effectiveFrom"`
 	EffectiveUntil string `json:"effectiveUntil"`
 
+	// Optional geo footprint — when a directive/closure covers a known place, it
+	// is drawn as a circular area on the town map. All three must be present.
+	Latitude  *float64 `json:"latitude"`
+	Longitude *float64 `json:"longitude"`
+	RadiusM   *float64 `json:"radiusM"`
+
 	// Admin-only: choose the issuing authority.
 	IssuedByOrgID   string `json:"issuedByOrgId"`
 	IssuedByOrgSlug string `json:"issuedByOrgSlug"`
@@ -138,6 +144,10 @@ func (s *Service) createDirective(ctx context.Context, creatorID string, org *do
 		Status:          domain.DirectiveStatusActive,
 		CreatedAt:       now.Format(time.RFC3339),
 		CreatedByID:     creatorID,
+	}
+	// Geo is drawn as a map area only when the full centre + radius is given.
+	if in.Latitude != nil && in.Longitude != nil && in.RadiusM != nil && *in.RadiusM > 0 {
+		d.Latitude, d.Longitude, d.RadiusM = in.Latitude, in.Longitude, in.RadiusM
 	}
 	if err := s.directives.Insert(ctx, d); err != nil {
 		return nil, err

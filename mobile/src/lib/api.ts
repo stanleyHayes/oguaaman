@@ -1,4 +1,4 @@
-import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink } from "./types";
+import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData } from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -204,6 +204,11 @@ export const api = {
 
   // The history hub — timeline + heritage sites + people + memories.
   history: () => get<HistoryView>("/api/history"),
+
+  // The map / Explore feed — every coordinate-bearing entity across the pillars,
+  // plus heritage/festival trails and active geo-directives. Public; the client
+  // filters layers locally (see app/explore.tsx).
+  mapData: () => get<MapData>("/api/map"),
 
   // Event detail + Paystack tickets (amounts in pesewas).
   eventView: (slug: string) => get<EventView>(`/api/events/${slug}`),

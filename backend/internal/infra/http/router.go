@@ -26,6 +26,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	mux.HandleFunc("GET /api/health", h.Health)
 	mux.HandleFunc("GET /api/home", h.Home)
+	mux.HandleFunc("GET /api/map", h.Map)
 
 	mux.HandleFunc("POST /api/auth/register", h.AuthRegister)
 	mux.HandleFunc("POST /api/auth/login", h.AuthLogin)

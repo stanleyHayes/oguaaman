@@ -42,15 +42,20 @@ type Tribute struct {
 // Type-specific fields live in Details (a free-form object), which is the natural
 // fit for MongoDB's document model and keeps the engine to one collection.
 type Listing struct {
-	ID              string         `json:"id" bson:"_id"`
-	Slug            string         `json:"slug" bson:"slug"`
-	Type            string         `json:"type" bson:"type"`
-	OwnerID         string         `json:"ownerId" bson:"ownerId"`
-	Title           string         `json:"title" bson:"title"`
-	Status          string         `json:"status" bson:"status"`
-	Tags            []string       `json:"tags" bson:"tags"`
-	TownID          string         `json:"townId,omitempty" bson:"townId,omitempty"`
-	SchoolIDs       []string       `json:"schoolIds,omitempty" bson:"schoolIds,omitempty"`
+	ID        string   `json:"id" bson:"_id"`
+	Slug      string   `json:"slug" bson:"slug"`
+	Type      string   `json:"type" bson:"type"`
+	OwnerID   string   `json:"ownerId" bson:"ownerId"`
+	Title     string   `json:"title" bson:"title"`
+	Status    string   `json:"status" bson:"status"`
+	Tags      []string `json:"tags" bson:"tags"`
+	TownID    string   `json:"townId,omitempty" bson:"townId,omitempty"`
+	SchoolIDs []string `json:"schoolIds,omitempty" bson:"schoolIds,omitempty"`
+	// Optional map pin. Only set when the listing has a real, known coordinate
+	// (no server-side geocoding); businesses/events/incidents/lostfound carry it
+	// so the town map can drop an accurate pin. Both must be set to be usable.
+	Latitude        *float64       `json:"latitude,omitempty" bson:"latitude,omitempty"`
+	Longitude       *float64       `json:"longitude,omitempty" bson:"longitude,omitempty"`
 	PostedByOrgID   string         `json:"postedByOrgId,omitempty" bson:"postedByOrgId,omitempty"`
 	CoverImageURL   string         `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
 	Featured        bool           `json:"featured" bson:"featured"`                               // surfaced on front pages (paid placement, spec §8.14)

@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { Container } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { DatePicker } from "@/components/date-picker";
+import { LocationPicker, type LatLng } from "@/components/location-picker";
 import type { Tone } from "@/lib/sections";
 
 interface Data {
@@ -104,6 +105,26 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
   const isSchool = org.kind === "school";
   const isHealth = org.kind === "health";
 
+  // The map picker and the raw lat/lng inputs share one source of truth. The pin
+  // is shown only when both fields hold a finite number; dragging/tapping writes
+  // back to the same fields (prefilled from the org's saved coords on edit).
+  const latNum = Number(latitude);
+  const lngNum = Number(longitude);
+  const pin: LatLng | null =
+    latitude.trim() !== "" && longitude.trim() !== "" && Number.isFinite(latNum) && Number.isFinite(lngNum)
+      ? [latNum, lngNum]
+      : null;
+  function setPin(next: LatLng | null) {
+    if (next) {
+      setLatitude(next[0].toFixed(6));
+      setLongitude(next[1].toFixed(6));
+    } else {
+      setLatitude("");
+      setLongitude("");
+    }
+    setState("idle");
+  }
+
   async function save() {
     setState("saving");
     try {
@@ -198,14 +219,20 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
           <input id="org-momo" className={`mt-1.5 ${field}`} value={momoNumber} onChange={(e) => setMomoNumber(e.target.value)} placeholder="e.g. 024 000 0000" />
           <p className="mt-1 text-xs text-ink-faint">The number supporters can send donations to via MTN MoMo, Telecel Cash, or AirtelTigo.</p>
         </div>
+        <LocationPicker
+          value={pin}
+          onChange={setPin}
+          label="Pin on the map"
+          hint="Optional — tap the map or drag the pin to place this institution on the town map. The latitude and longitude below stay in sync."
+        />
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="org-lat" className={label}>Latitude</label>
-            <input id="org-lat" className={`mt-1.5 ${field}`} value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="e.g. 5.1053" />
+            <input id="org-lat" className={`mt-1.5 ${field}`} value={latitude} onChange={(e) => { setLatitude(e.target.value); setState("idle"); }} placeholder="e.g. 5.1053" />
           </div>
           <div>
             <label htmlFor="org-lng" className={label}>Longitude</label>
-            <input id="org-lng" className={`mt-1.5 ${field}`} value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="e.g. -1.2466" />
+            <input id="org-lng" className={`mt-1.5 ${field}`} value={longitude} onChange={(e) => { setLongitude(e.target.value); setState("idle"); }} placeholder="e.g. -1.2466" />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

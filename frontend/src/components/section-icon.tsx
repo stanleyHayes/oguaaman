@@ -19,6 +19,7 @@ const PATHS: Record<string, ReactNode> = {
   events: <><rect x="3.5" y="5" width="17" height="16" rx="2" /><path d="M3.5 9.5h17M8 3v4M16 3v4" /><path d="M8 14h.01M12 14h.01M16 14h.01" /></>,
   youth: <><circle cx="12" cy="8" r="3.2" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /><path d="m19 4 .8 2 2 .8-2 .8L19 10l-.8-2-2-.8 2-.8Z" /></>,
   diaspora: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a13.6 13.6 0 0 1 0 18" /><path d="M12 3a13.6 13.6 0 0 0 0 18" /></>,
+  map: <><path d="M9 4 3 6.2v13.8l6-2.2 6 2.2 6-2.2V3.8l-6 2.2-6-2.2Z" /><path d="M9 4v13.8M15 6.2V20" /></>,
 };
 
 export function SectionIcon({ id, className = "" }: Readonly<{ id: string; className?: string }>) {

@@ -22,6 +22,13 @@ type Directive struct {
 	Area     string `json:"area,omitempty" bson:"area,omitempty"`
 	TownID   string `json:"townId,omitempty" bson:"townId,omitempty"`
 
+	// Optional geo: when a directive/closure covers a known place, these draw it
+	// as a circular area on the town map (centre + radius in metres). All three
+	// must be set for the area to render; no server-side geocoding.
+	Latitude  *float64 `json:"latitude,omitempty" bson:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty" bson:"longitude,omitempty"`
+	RadiusM   *float64 `json:"radiusM,omitempty" bson:"radiusM,omitempty"`
+
 	// Attribution — copied off the issuing authority at creation so the notice
 	// stays legible even if the org is later renamed.
 	IssuedByOrgID   string `json:"issuedByOrgId" bson:"issuedByOrgId"`

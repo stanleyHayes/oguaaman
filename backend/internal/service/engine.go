@@ -21,7 +21,12 @@ type SubmitInput struct {
 	Tags          []string       `json:"tags"`
 	TownID        string         `json:"townId"`
 	CoverImageURL string         `json:"coverImageUrl"`
-	Details       map[string]any `json:"details"`
+	// Optional exact coordinates — "claim your spot on the map". Only business
+	// and event listings surface on the town map (see mapdata.listingPoint); a
+	// pin is stored when both are present and in range, and ignored otherwise.
+	Latitude  *float64       `json:"latitude"`
+	Longitude *float64       `json:"longitude"`
+	Details   map[string]any `json:"details"`
 }
 
 var validTypes = map[string]bool{
@@ -102,10 +107,25 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 	if l.Tags == nil {
 		l.Tags = []string{}
 	}
+	l.Latitude, l.Longitude = sanitizeCoords(in.Latitude, in.Longitude)
 	if err := s.listings.Insert(ctx, l); err != nil {
 		return nil, err
 	}
 	return &l, nil
+}
+
+// sanitizeCoords returns the pin only when both coordinates are present and fall
+// within valid lat/lng ranges; otherwise it returns (nil, nil) so a partial or
+// out-of-range pin is simply dropped rather than stored.
+func sanitizeCoords(lat, lng *float64) (*float64, *float64) {
+	if lat == nil || lng == nil {
+		return nil, nil
+	}
+	if *lat < -90 || *lat > 90 || *lng < -180 || *lng > 180 {
+		return nil, nil
+	}
+	la, ln := *lat, *lng
+	return &la, &ln
 }
 
 var validOpportunityKinds = map[string]bool{

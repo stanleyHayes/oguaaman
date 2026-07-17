@@ -4,6 +4,11 @@ import { api } from "@/lib/api";
 import { AiWritingBar } from "@/components/ai-writing-bar";
 import { DatePicker } from "@/components/date-picker";
 import { ImageUpload } from "@/components/image-upload";
+import { LocationPicker, type LatLng } from "@/components/location-picker";
+
+// Listing types that appear on the town map (GET /api/map) and so can carry an
+// optional exact pin. Other types have no coordinates.
+const MAPPABLE_TYPES = new Set<ListingType>(["business", "event"]);
 
 const TYPES: { value: ListingType; label: string; hint: string }[] = [
   { value: "artist", label: "Artist", hint: "A musician or act" },
@@ -136,6 +141,9 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
   // The primary free-text field for the current type, driven by the AI bar.
   const [aiText, setAiText] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  // Optional exact pin ("claim your spot on the map") — only business/event
+  // listings surface on the town map, so the picker is shown just for those.
+  const [location, setLocation] = useState<LatLng | null>(null);
   // Memorial keeper controls (spec §8.11) — booleans can't ride FormData, so
   // they're controlled state merged into the payload on submit.
   const [reminders, setReminders] = useState(true);
@@ -148,7 +156,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
     if (next !== "opportunity") setOppKind("scholarship");
   }
 
-  if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); }} />;
+  if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); setLocation(null); }} />;
 
   async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -164,9 +172,18 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
       details.observeBirthday = observeBday;
     }
     const cover = coverImageUrl.trim();
+    // The optional pin only applies to mappable types; ignored otherwise.
+    const pin = MAPPABLE_TYPES.has(type) ? location : null;
     setBusy(true);
     try {
-      await api.submit({ type, title, details, coverImageUrl: cover || undefined });
+      await api.submitListing({
+        type,
+        title,
+        details,
+        coverImageUrl: cover || undefined,
+        latitude: pin ? pin[0] : undefined,
+        longitude: pin ? pin[1] : undefined,
+      });
       setSubmitted(title || "Your listing");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -195,6 +212,16 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
         onOpportunityKind={setOppKind}
         memorialToggles={{ reminders, observeBday, onReminders: setReminders, onObserveBday: setObserveBday }}
       />
+
+      {MAPPABLE_TYPES.has(type) && (
+        <LocationPicker
+          value={location}
+          onChange={setLocation}
+          hint={type === "event"
+            ? "Optional — tap the map or drag the pin to the venue. This is what places the event on the town map."
+            : "Optional — tap the map or drag the pin to your storefront. This is what claims your spot on the town map."}
+        />
+      )}
 
       {aiField && (
         <div>
