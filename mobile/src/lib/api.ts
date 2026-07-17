@@ -1,4 +1,4 @@
-import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData } from "./types";
+import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest } from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -198,6 +198,58 @@ export const api = {
   claimInstitution: (slug: string, body: { requestedRole: string; note?: string }) =>
     post<{ id: string; status: string }>(`/api/institutions/${slug}/claim`, body),
 
+  // ── Creator Studio (Phase 2 mobile parity) ──
+  // These mirror creator/src/lib/api.ts EXACTLY (same paths + bodies) so the
+  // studio screens reuse the web creator app's backend contract unchanged.
+
+  // Owner-scoped dashboard aggregation + earnings (Creator Platform plan §4).
+  creatorOverview: () => get<CreatorOverview>("/api/creator/overview"),
+  creatorEarnings: () => get<CreatorEarnings>("/api/creator/earnings"),
+
+  // Owner listing editor: full-replace title/cover/whitelisted details.
+  // Approved listings stay live; non-live ones re-queue for review.
+  updateListing: (id: string, body: { title: string; coverImageUrl?: string; details: Record<string, unknown> }) =>
+    post<Listing>(`/api/listings/${id}/edit`, body),
+
+  // Institutions the member manages (claim → steward-verify → manage, spec §8.13).
+  myInstitutions: () => get<Organization[]>("/api/me/institutions"),
+  // Manager-editable official page: profile, offices, gallery, custom sections,
+  // and official events (full-replace semantics, mirroring the portal editor).
+  updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[]; gesCategory?: string; boardingType?: string; genderPolicy?: string; nhisAccredited?: boolean | null; ghanaPostGPS?: string; momoNumber?: string; latitude?: number | null; longitude?: number | null; quarterTag?: string; asafoTag?: string; verificationArtifacts?: { label: string; url: string }[] }) =>
+    post<Organization>(`/api/institutions/${slug}/profile`, body),
+  setOrgOffices: (slug: string, offices: Office[]) =>
+    post<Organization>(`/api/institutions/${slug}/offices`, { offices }),
+  setOrgGallery: (slug: string, gallery: MediaAsset[]) =>
+    post<Organization>(`/api/institutions/${slug}/gallery`, { gallery }),
+  setOrgSections: (slug: string, sections: ProfileSection[]) =>
+    post<Organization>(`/api/institutions/${slug}/sections`, { sections }),
+  postOrgEvent: (slug: string, body: { title: string; details?: Record<string, unknown> }) =>
+    post<Listing>(`/api/institutions/${slug}/events`, body),
+
+  // Team management (Creator plan §4.1.2): managers invite citizens by
+  // email/phone + office; invitees accept without steward review. Mirrors
+  // creator/src/lib/api.ts exactly (same paths + bodies).
+  orgTeam: (slug: string) => get<TeamView>(`/api/institutions/${slug}/team`),
+  inviteToTeam: (slug: string, body: { identifier: string; role: string; scope?: string }) =>
+    post<{ id: string }>(`/api/institutions/${slug}/team/invite`, body),
+  setTeamScope: (slug: string, memberId: string, scope: "manager" | "officer") =>
+    post<{ status: string }>(`/api/institutions/${slug}/team/${memberId}/scope`, { scope }),
+  revokeTeamMember: (slug: string, memberId: string) =>
+    del<{ status: string }>(`/api/institutions/${slug}/team/${memberId}`),
+  myInvitations: () => get<Invitation[]>("/api/me/invitations"),
+  respondToInvite: (claimId: string, accept: boolean) =>
+    post<{ accepted: boolean }>(`/api/claims/${claimId}/respond`, { accept }),
+
+  // Request-a-new-institution (Creator plan §4.1.1): kinds from the server
+  // catalog; a steward creates + verifies the org on approve.
+  institutionKinds: () => get<InstitutionKind[]>("/api/institution-kinds"),
+  requestInstitution: (body: { name: string; kind: string; seat: string; role?: string; note?: string }) =>
+    post<{ id: string }>("/api/institution-requests", body),
+  myInstitutionRequests: () => get<InstitutionRequest[]>("/api/me/institution-requests"),
+
+  // Subscription plans catalog (Creator plan §5).
+  plans: () => get<Plan[]>("/api/plans"),
+
   // Member profiles + member↔member follows.
   member: (slug: string) => get<MemberView>(`/api/members/${slug}`),
   memberFollowState: (slug: string) => get<{ following: boolean }>(`/api/members/${slug}/follow`),
@@ -281,9 +333,10 @@ export const api = {
     get<Ticket>(`/api/tickets/confirm?reference=${encodeURIComponent(reference)}`),
   myTickets: () => get<Ticket[]>("/api/me/tickets"),
 
-  // Business Supporter subscriptions (owner-only; GH₵ 50/month).
-  subscribe: (slug: string) =>
-    post<{ authorizationUrl: string; reference: string; simulated?: boolean }>(`/api/businesses/${slug}/subscribe`, {}),
+  // Business Supporter subscriptions (owner-only; GH₵ 50/month). `plan` selects a
+  // catalog plan slug (Creator plan §5); omit for the default Supporter plan.
+  subscribe: (slug: string, plan?: string) =>
+    post<{ authorizationUrl: string; reference: string; simulated?: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
   confirmSubscription: (reference: string) =>
     get<Subscription>(`/api/subscriptions/confirm?reference=${encodeURIComponent(reference)}`),
   mySubscriptions: () => get<Subscription[]>("/api/me/subscriptions"),
@@ -333,5 +386,20 @@ export const api = {
 export function canWriteNews(m: Member | null | undefined): boolean {
   if (!m) return false;
   if (m.creatorTypes?.includes("writer")) return true;
+  return !!m.verified && !!m.verifiedAs && m.verifiedAs !== "Curator" && m.verifiedAs !== "Steward";
+}
+
+/**
+ * Client-side gate for the Creator Studio entry points (Me screen Account area +
+ * More tab). A member qualifies if they create something (any creator type) or
+ * run a verified-authority institution (verified, with an org name — not a role
+ * badge like "Curator"/"Steward"). This is a cheap synchronous check for menus;
+ * the studio hub itself does the authoritative check via api.myInstitutions(),
+ * which also catches managers of non-authority institutions that hold no creator
+ * type. The server remains the final authority (403 on the owner-scoped reads).
+ */
+export function canUseStudio(m: Member | null | undefined): boolean {
+  if (!m) return false;
+  if ((m.creatorTypes?.length ?? 0) > 0) return true;
   return !!m.verified && !!m.verifiedAs && m.verifiedAs !== "Curator" && m.verifiedAs !== "Steward";
 }

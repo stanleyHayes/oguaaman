@@ -3,7 +3,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from "react
 import { Link, router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { T as Text, TI as TextInput } from "@/components/typography";
-import { api, canWriteNews } from "@/lib/api";
+import { api, canWriteNews, canUseStudio } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Promotion, Listing } from "@/lib/types";
@@ -381,6 +381,9 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
         </Section>
 
         <Section title="Account">
+          {canUseStudio(self) && (
+            <Pressable onPress={() => router.push("/studio" as never)} style={s.linkRow}><Text style={s.linkRowText}>Creator studio</Text><Text style={s.chevron}>›</Text></Pressable>
+          )}
           <Pressable onPress={() => router.push("/settings" as never)} style={s.linkRow}><Text style={s.linkRowText}>Settings — security & preferences</Text><Text style={s.chevron}>›</Text></Pressable>
           <Pressable onPress={() => router.push("/notifications")} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><Text style={s.chevron}>›</Text></Pressable>
           <Pressable onPress={() => router.push("/submit")} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><Text style={s.chevron}>›</Text></Pressable>

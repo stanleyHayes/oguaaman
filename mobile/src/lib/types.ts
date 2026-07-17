@@ -549,3 +549,112 @@ export interface MapData {
   trails: MapTrail[];
   areas: MapArea[];
 }
+
+// ── Creator Studio (Phase 2 mobile parity) ──
+// These mirror creator/src/lib/types.ts exactly so the mobile studio screens
+// reuse the same backend shapes the web creator app already consumes. Office,
+// MediaAsset, ProfileSection, Organization, Listing, Ticket etc. are declared
+// above and shared with the public reads.
+
+/** A subscription plan from the staff-managed catalog (Creator plan §5). */
+export interface Plan {
+  id: string;
+  slug: string;
+  name: string;
+  audience: "any" | "business" | "creator";
+  prices: Record<string, number>; // pesewas by audience key; "default" always present
+  interval: "free" | "month";
+  perks: string[];
+  maxListings?: number;
+  includedPromoDays?: number;
+  goldBadge?: boolean;
+  active: boolean;
+  sortOrder: number;
+}
+
+/** Owner-scoped dashboard KPIs (GET /api/creator/overview; amounts in pesewas). */
+export interface CreatorOverview {
+  listings: number;
+  live: number;
+  pending: number;
+  activePromotions: number;
+  promotionDaysLeft: number;
+  activeSubscription: boolean;
+  plan?: string;
+  ticketsSold: number;
+  ticketsGrossPesewas: number;
+  pledgesRaisedPesewas: number;
+  viewsThisMonth: number;  // unique daily views on all owned listings this month
+}
+
+/** A backer's pledge to an adopt-a-project (amounts in pesewas). */
+export interface Pledge {
+  id: string;
+  reference: string;
+  projectId: string;
+  projectSlug: string;
+  projectTitle: string;
+  memberId?: string;
+  amountPesewas: number;
+  feePesewas?: number;
+  netPesewas?: number;
+  currency: string;
+  status: string;
+  simulated?: boolean;
+  createdAt: string;
+  confirmedAt?: string;
+}
+
+/** Owner earnings breakdown (GET /api/creator/earnings). */
+export interface CreatorEarnings {
+  ticketSales: Ticket[];
+  pledges: Pledge[];
+}
+
+// ── institution teams (Creator plan §4.1.2) ──
+
+/** One row of an institution's team roster. */
+export interface TeamMember {
+  claimId: string;
+  memberId: string;
+  memberName: string;
+  memberSlug: string;
+  photoUrl?: string;
+  role: string;             // the office they hold
+  scope: "manager" | "officer";
+  status: "approved" | "invited";
+  invitedByName?: string;
+}
+
+/** The roster plus the viewer's own scope (drives manager-only actions). */
+export interface TeamView {
+  viewerScope: "manager" | "officer";
+  team: TeamMember[];
+}
+
+/** A team invitation awaiting the signed-in member's answer. */
+export interface Invitation {
+  id: string;
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+  requestedRole: string;
+  scope: "manager" | "officer";
+  invitedByName?: string;
+  createdAt: string;
+}
+
+// ── request-a-new-institution (Creator plan §4.1.1) ──
+
+/** One entry of the server-side institution kind catalog. */
+export interface InstitutionKind { slug: string; label: string }
+
+/** The member's own request to create a missing institution. */
+export interface InstitutionRequest {
+  id: string;
+  requestedRole: string;
+  note?: string;
+  status: "pending" | "approved" | "rejected";
+  newOrg: { name: string; kind: string; seat: string };
+  createdAt: string;
+}

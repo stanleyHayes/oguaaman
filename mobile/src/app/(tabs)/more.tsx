@@ -5,6 +5,7 @@ import { T as Text } from "@/components/typography";
 import { D, S, SI, initials, withAlpha, type Palette } from "@/theme";
 import { Mark } from "@/ui";
 import { useAuth } from "@/lib/auth";
+import { canUseStudio } from "@/lib/api";
 import { useLang, LANGS } from "@/lib/i18n";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 
@@ -99,6 +100,7 @@ export default function More() {
             ? [
                 { icon: "🗺", label: "Explore the map", href: "/explore" },
                 { icon: "☺", label: "My Profile", href: "/me" },
+                ...(canUseStudio(member) ? [{ icon: "✦", label: "Creator studio", href: "/studio" }] : []),
                 { icon: "✎", label: "Contribute", href: "/submit" },
                 { icon: "🔔", label: "Notifications", href: "/notifications" },
                 { icon: "🔍", label: "Search", href: "/search" },

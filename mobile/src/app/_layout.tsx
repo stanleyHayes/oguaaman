@@ -104,6 +104,15 @@ function RootNavigator() {
         <Stack.Screen name="alerts" options={{ title: "Alerts", headerBackTitle: "Back" }} />
         <Stack.Screen name="search" options={{ title: "Search", headerBackTitle: "More" }} />
         <Stack.Screen name="settings" options={{ title: "Settings", headerBackTitle: "Back" }} />
+        {/* Creator studio (Phase 2 mobile parity). studio/index is the hub +
+            Overview; the other tool screens are filled in by the screens agents. */}
+        <Stack.Screen name="studio/index" options={{ title: "Creator studio", headerBackTitle: "Back" }} />
+        <Stack.Screen name="studio/work" options={{ title: "My work", headerBackTitle: "Studio" }} />
+        <Stack.Screen name="studio/grow" options={{ title: "Grow", headerBackTitle: "Studio" }} />
+        <Stack.Screen name="studio/money" options={{ title: "Money", headerBackTitle: "Studio" }} />
+        <Stack.Screen name="studio/team" options={{ title: "Team", headerBackTitle: "Studio" }} />
+        <Stack.Screen name="institutions/[slug]/manage" options={{ title: "Manage", headerBackTitle: "Back" }} />
+        <Stack.Screen name="listings/[id]/edit" options={{ title: "Edit listing", headerBackTitle: "Back" }} />
       </Stack>
     </>
   );
