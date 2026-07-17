@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useTheme } from "@/lib/theme-context";
 import type { NewsArticle } from "@/lib/types";
-import { D, SI, withAlpha, type Palette } from "@/theme";
+import { D, SI, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { Loading, ErrorView, Markdown, VerifiedBadge } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView } from "@/components/anim";
@@ -60,7 +60,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { minHeight: 260, justifyContent: "flex-end" },
   heroInner: { padding: 20, paddingBottom: 24 },
   kicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  title: { color: C.cream, ...D(700), fontSize: 30, lineHeight: 38, marginTop: 8 },
+  title: { color: ON_GREEN, ...D(700), fontSize: 30, lineHeight: 38, marginTop: 8 },
   bylineRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
   bylineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.gold },
   byline: { color: C.onDarkText85, fontSize: 13 },

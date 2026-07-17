@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { CreatorOverview, MemberView, Plan, Subscription } from "@/lib/types";
-import { D, S, withAlpha, type Palette } from "@/theme";
+import { D, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, HeroBand } from "@/ui";
 import { MetricCard, cedis, fmtDate } from "@/components/studio-kit";
@@ -272,7 +272,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 
   body: { padding: 16, gap: 16 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
@@ -317,7 +317,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   subBtn: { backgroundColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   subBtnText: { color: C.green900, fontSize: 12, fontWeight: "700" },
   verifyBtn: { backgroundColor: C.green },
-  verifyBtnText: { color: C.cream, fontSize: 12, fontWeight: "700" },
+  verifyBtnText: { color: ON_GREEN, fontSize: 12, fontWeight: "700" },
 
   promoHead: { flexDirection: "row", alignItems: "center", gap: 10 },
   promoIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: withAlpha(C.gold, 0.15), alignItems: "center", justifyContent: "center" },

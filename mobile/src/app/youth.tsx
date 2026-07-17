@@ -205,7 +205,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   desc: { color: C.inkFaint, fontSize: 13, lineHeight: 19, marginTop: 6 },
   eligibility: { color: C.inkMuted, fontSize: 12, lineHeight: 18, marginTop: 8 },
   eligibilityLabel: { fontWeight: "700" },
-  guardian: { color: C.maroon, fontSize: 11, marginTop: 6, fontWeight: "600" },
+  guardian: { color: C.maroonText, fontSize: 11, marginTop: 6, fontWeight: "600" },
   foot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
   provider: { flex: 1, color: C.inkFaint, fontSize: 11 },
   applyBtn: { borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },

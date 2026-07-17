@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, StyleSheet, View, type ImageStyle, type Style
 import type { SharedValue } from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { HeroParallax } from "@/components/anim";
-import { D, S, SI, fillFor, withAlpha, type Palette } from "@/theme";
+import { D, S, SI, ON_GREEN, fillFor, onFill, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { cldCover } from "@/lib/cloudinary";
 import { mediaUrl } from "@/lib/api";
@@ -13,7 +13,7 @@ export function Loading() {
   const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={s.center}>
-      <ActivityIndicator color={C.green} size="large" />
+      <ActivityIndicator color={C.greenText} size="large" />
     </View>
   );
 }
@@ -171,7 +171,9 @@ export function Thumb({
   }
   return (
     <View style={[style, { backgroundColor: bg, alignItems: "center", justifyContent: "center" }]}>
-      {label ? <Text style={labelStyle}>{label}</Text> : null}
+      {/* Force a contrast-aware colour over the fill (labelStyle's own colour,
+          often C.cream, goes dark-on-dark on dark fills in dark mode). */}
+      {label ? <Text style={[labelStyle, { color: onFill(bg) }]}>{label}</Text> : null}
     </View>
   );
 }
@@ -262,7 +264,7 @@ const makeMdStyles = (C: Palette) => StyleSheet.create({
   trowBorder: { borderBottomWidth: 1, borderBottomColor: C.sand },
   thead: { backgroundColor: C.cream, borderBottomWidth: 1, borderBottomColor: C.sand },
   cell: { flex: 1, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, lineHeight: 20, color: C.ink, ...S(400) },
-  th: { ...S(700), color: C.green },
+  th: { ...S(700), color: C.greenText },
 });
 
 const makeStyles = (C: Palette) => StyleSheet.create({
@@ -274,7 +276,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   pillText: { fontSize: 12, fontWeight: "600" },
   heroBand: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22, overflow: "hidden" },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  heroTitle: { color: C.cream, ...D(700), fontSize: 28, marginTop: 6 },
+  heroTitle: { color: ON_GREEN, ...D(700), fontSize: 28, marginTop: 6 },
   heroFante: { color: C.gold, ...SI(), fontSize: 24 },
   heroLede: { color: C.onDarkText85, fontSize: 14, lineHeight: 20, marginTop: 6 },
   heroCount: { color: C.onDarkText60, fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },

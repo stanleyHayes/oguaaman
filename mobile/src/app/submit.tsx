@@ -8,7 +8,7 @@ import { DateField } from "@/components/date-field";
 import { ImageField } from "@/components/image-field";
 import { HeroBand } from "@/ui";
 import { makeFormStyles } from "@/components/form-styles";
-import { type Palette } from "@/theme";
+import { ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 const TYPES = [
@@ -342,14 +342,14 @@ const makeStyles = (C: Palette) => ({
   ...makeFormStyles(C),
   ...StyleSheet.create({
     chipOn: { borderColor: C.green, backgroundColor: C.green },
-    chipTextOn: { color: C.cream },
+    chipTextOn: { color: ON_GREEN },
     btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
     btnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 12 },
     btnOutlineText: { color: C.ink, fontWeight: "600" },
     guardianRow: { marginTop: 8, flexDirection: "row", gap: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.paper, padding: 12 },
     guardianBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.sand, alignItems: "center", justifyContent: "center", marginTop: 1 },
     guardianBoxOn: { backgroundColor: C.green, borderColor: C.green },
-    guardianTick: { color: C.cream, fontWeight: "700", fontSize: 12 },
+    guardianTick: { color: ON_GREEN, fontWeight: "700", fontSize: 12 },
     guardianTitle: { color: C.ink, fontWeight: "600", fontSize: 13 },
     guardianHint: { color: C.inkFaint, fontSize: 11, marginTop: 3 },
   }),

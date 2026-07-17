@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { D, S, SI, initials, withAlpha, type Palette } from "@/theme";
+import { D, S, SI, ON_GREEN, initials, withAlpha, type Palette } from "@/theme";
 import { Mark } from "@/ui";
 import { useAuth } from "@/lib/auth";
 import { canUseStudio } from "@/lib/api";
@@ -225,7 +225,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   langChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   langChipOn: { borderColor: C.green, backgroundColor: C.green },
   langChipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
-  langChipTextOn: { color: C.cream },
+  langChipTextOn: { color: ON_GREEN },
   foot: { ...SI(), color: C.goldText, textAlign: "center", marginTop: 28, fontSize: 16 },
   version: { color: C.inkMuted, fontSize: 12, textAlign: "center", marginTop: 10, fontWeight: "600" },
   note: { color: C.inkFaint, fontSize: 12, textAlign: "center", marginTop: 4 },

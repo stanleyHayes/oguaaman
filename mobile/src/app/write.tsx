@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { ImageField } from "@/components/image-field";
 import { HeroBand } from "@/ui";
 import { makeFormStyles } from "@/components/form-styles";
-import { type Palette } from "@/theme";
+import { ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import type { NewsArticle } from "@/lib/types";
 
@@ -191,6 +191,6 @@ const makeStyles = (C: Palette) => ({
     swatch: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
     swatchOn: { borderColor: C.green, backgroundColor: C.green },
     swatchDot: { width: 14, height: 14, borderRadius: 7 },
-    swatchTextOn: { color: C.cream },
+    swatchTextOn: { color: ON_GREEN },
   }),
 });

@@ -5,7 +5,7 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { FestivalView, Listing } from "@/lib/types";
-import { D, S, SI, fillFor, type Palette } from "@/theme";
+import { D, S, SI, fillFor, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb, Pill } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
@@ -79,7 +79,7 @@ export default function Festival() {
             {data.editions.map((ed, idx) => {
               const upcoming = ed.events.some((e) => (e.details.startsAt ?? "") >= TODAY);
               const last = idx === data.editions.length - 1;
-              const recapPill = ed.recap ? <Pill label="Recap" color={C.green} bg={C.cream} border={C.green} /> : null;
+              const recapPill = ed.recap ? <Pill label="Recap" color={C.greenText} bg={C.cream} border={C.green} /> : null;
               return (
                 <StaggerIn key={ed.year} index={idx} style={s.tlRow}>
                   <View style={s.tlRail}>
@@ -108,7 +108,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: fillFor("festival", C), height: 210, justifyContent: "flex-end" },
   heroShade: { backgroundColor: C.heroScrim, paddingHorizontal: 20, paddingVertical: 20 },
   heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 4 },
+  heroTitle: { color: ON_GREEN, ...D(700), fontSize: 30, marginTop: 4 },
   heroTagline: { color: C.gold, fontSize: 14, marginTop: 6, lineHeight: 20 },
   body: { padding: 20 },
   history: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },

@@ -7,7 +7,7 @@ import { api, canWriteNews, canUseStudio } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Promotion, Listing } from "@/lib/types";
-import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { D, S, initials, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb, VerifiedBadge } from "@/ui";
 import { ImageField } from "@/components/image-field";
@@ -779,13 +779,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 
   header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
-  avatarText: { color: C.cream, ...S(700), fontSize: 30 },
+  avatarText: { color: ON_GREEN, ...S(700), fontSize: 30 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, flexWrap: "wrap", justifyContent: "center" },
-  name: { ...D(700), fontSize: 26, color: C.cream },
+  name: { ...D(700), fontSize: 26, color: ON_GREEN },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12, justifyContent: "center" },
   // The warn chip's bright gold (#F7C44A) has no palette base; it sits on the
@@ -793,7 +793,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   warnChip: { marginTop: 12, borderWidth: 1, borderColor: "rgba(247,196,74,0.4)", backgroundColor: "rgba(247,196,74,0.14)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   warnChipText: { color: C.gold, fontSize: 12, fontWeight: "700" },
   darkChip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
-  darkChipText: { color: C.cream, fontSize: 12 },
+  darkChipText: { color: ON_GREEN, fontSize: 12 },
 
   body: { padding: 16, gap: 16 },
   section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
@@ -821,13 +821,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   codeInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14, letterSpacing: 2 },
   diaSaveBtn: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
   secondaryBtn: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16 },
-  secondaryBtnText: { color: C.green, fontWeight: "700", fontSize: 13 },
+  secondaryBtnText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
 
   repChip: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   repChipOnGreen: { backgroundColor: C.green, borderColor: C.green },
   repChipOnClay: { backgroundColor: C.clay, borderColor: C.clay },
   repChipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
-  repChipTextOn: { color: C.cream },
+  repChipTextOn: { color: ON_GREEN },
   asafoDot: { width: 9, height: 9, borderRadius: 5 },
   bdaySaveBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
 
@@ -837,7 +837,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   promoBtn: { borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },
   promoBtnText: { color: C.goldText, fontSize: 12, fontWeight: "700" },
   promoDayBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, alignItems: "center", minWidth: 52, minHeight: 44, justifyContent: "center" },
-  promoDayText: { color: C.green, fontSize: 13, fontWeight: "700" },
+  promoDayText: { color: C.greenText, fontSize: 13, fontWeight: "700" },
   promoDayPrice: { color: C.inkFaint, fontSize: 10, marginTop: 1 },
   promoCancel: { color: C.inkFaint, fontSize: 12, fontWeight: "600" },
   promoErr: { color: C.clayText, fontSize: 11, maxWidth: 220, textAlign: "right" },
@@ -858,23 +858,23 @@ const makeStyles = (C: Palette) => StyleSheet.create({
 
   saveRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
   saveBtn: { backgroundColor: C.maroon, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
-  saveBtnText: { color: C.cream, fontWeight: "700", fontSize: 14 },
+  saveBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
   savedNote: { color: C.tealText, fontSize: 13, fontWeight: "600" },
   errNote: { color: C.clayText, fontSize: 13 },
-  mono: { fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }), color: C.green },
+  mono: { fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }), color: C.greenText },
 
   connCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12 },
   connAvatar: { borderRadius: 22 },
   connAvatarBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
-  connAvatarText: { color: C.cream, ...S(700), fontSize: 16 },
+  connAvatarText: { color: ON_GREEN, ...S(700), fontSize: 16 },
   connName: { ...S(700), fontSize: 17, color: C.ink },
   reasonWrap: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   reason: { backgroundColor: C.sand, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   reasonText: { color: C.inkMuted, fontSize: 11, fontWeight: "500" },
   followChip: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   followChipOn: { backgroundColor: C.green },
-  followChipText: { color: C.green, fontWeight: "700", fontSize: 13 },
-  followChipTextOn: { color: C.cream },
+  followChipText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
+  followChipTextOn: { color: ON_GREEN },
 
   linkRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 8 },
   linkRowText: { color: C.ink, fontSize: 15, fontWeight: "600" },

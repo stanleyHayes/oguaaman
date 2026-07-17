@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing, ListingDetails, MemberView } from "@/lib/types";
-import { D, S, withAlpha, type Palette } from "@/theme";
+import { D, S, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { DateField } from "@/components/date-field";
@@ -438,7 +438,7 @@ const makeStyles = (C: Palette) => ({
   ...makeFormStyles(C),
   ...StyleSheet.create({
     primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, alignItems: "center" },
-    primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+    primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 
     header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 6 },
     backRow: { alignSelf: "flex-start", paddingVertical: 4 },
@@ -454,7 +454,7 @@ const makeStyles = (C: Palette) => ({
     bannerLiveText: { color: C.tealText, fontSize: 13, lineHeight: 19 },
 
     chipOn: { borderColor: C.green, backgroundColor: C.green },
-    chipTextOn: { color: C.cream },
+    chipTextOn: { color: ON_GREEN },
     btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
     btnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 12 },
     btnOutlineText: { color: C.ink, fontWeight: "600" },
@@ -462,7 +462,7 @@ const makeStyles = (C: Palette) => ({
     checkRow: { marginTop: 12, flexDirection: "row", gap: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.paper, padding: 12 },
     checkBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.sand, alignItems: "center", justifyContent: "center", marginTop: 1 },
     checkBoxOn: { backgroundColor: C.green, borderColor: C.green },
-    checkTick: { color: C.cream, fontWeight: "700", fontSize: 12 },
+    checkTick: { color: ON_GREEN, fontWeight: "700", fontSize: 12 },
     checkTitle: { color: C.ink, fontWeight: "600", fontSize: 13 },
     checkHint: { color: C.inkFaint, fontSize: 11, marginTop: 3, lineHeight: 16 },
 

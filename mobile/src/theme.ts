@@ -188,3 +188,18 @@ export function fillFor(seed: string, palette: Palette = LIGHT): string {
 export function initials(name: string): string {
   return name.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
+
+// Readable foreground for text sitting on an arbitrary fill colour (e.g. avatar
+// initials over fillFor()). fillFor returns a mix of dark accents (green,
+// greenSlate, maroon) and light ones (goldBrand, clay, teal); a fixed cream is
+// dark-on-dark in dark mode on the dark fills. Pick light or dark text from the
+// fill's luminance so it reads on any fill, in either theme.
+export function onFill(hex: string): string {
+  const h = hex.replace("#", "");
+  if (h.length < 6) return ON_GREEN;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? "#0A140F" : ON_GREEN; // dark ink on light fills, else light cream
+}

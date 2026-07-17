@@ -96,7 +96,7 @@ export function ImageField({ value, onChange }: Readonly<{ value: string; onChan
     <View>
       <Pressable onPress={pick} disabled={busy} style={s.drop}>
         {busy ? (
-          <ActivityIndicator color={C.green} />
+          <ActivityIndicator color={C.greenText} />
         ) : (
           <>
             <Text style={s.dropText}>Tap to upload an image</Text>

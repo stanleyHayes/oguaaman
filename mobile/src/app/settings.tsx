@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 import type { Member } from "@/lib/types";
-import { D, S, withAlpha, type Palette } from "@/theme";
+import { D, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import { Loading, VerifiedBadge } from "@/ui";
 
 // The mobile Settings screen — parity with the web creator Settings page
@@ -537,7 +537,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 
   kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   pageTitle: { ...D(700), fontSize: 30, color: C.ink, marginTop: 4 },
@@ -572,7 +572,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   segmentBtn: { flex: 1, borderRadius: 9, paddingVertical: 9, alignItems: "center" },
   segmentBtnOn: { backgroundColor: C.green },
   segmentText: { color: C.inkMuted, fontSize: 13, fontWeight: "700" },
-  segmentTextOn: { color: C.cream },
+  segmentTextOn: { color: ON_GREEN },
 
   toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
   toggleRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.sand },
@@ -588,7 +588,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
 
   saveRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 4 },
   primaryBtnSm: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20 },
-  primaryBtnSmText: { color: C.cream, fontWeight: "700", fontSize: 14 },
+  primaryBtnSmText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
   secondaryBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 18 },
   secondaryBtnText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
   cancelText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },

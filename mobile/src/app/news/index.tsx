@@ -5,7 +5,7 @@ import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { usePaginatedList } from "@/lib/use-paginated";
 import type { NewsArticle } from "@/lib/types";
-import { D, S, type Palette } from "@/theme";
+import { D, S, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, VerifiedBadge } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
@@ -89,7 +89,7 @@ export default function News() {
       ListHeaderComponent={header}
       onEndReached={() => loadMore()}
       onEndReachedThreshold={0.5}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.green} colors={[C.green]} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.greenText} colors={[C.greenText]} />}
       renderItem={({ item: a, index }) => (
         <View style={[s.pad, { paddingTop: 14 }]}>
           <StaggerIn index={index + 1}>
@@ -131,7 +131,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   pad: { paddingHorizontal: 16 },
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 6 },
+  heroTitle: { color: ON_GREEN, ...D(700), fontSize: 30, marginTop: 6 },
   heroLede: { color: onDarkText(C, 0.8), fontSize: 14, lineHeight: 20, marginTop: 6 },
   // shadowColor stays pure black — shadows are theme-independent.
   featured: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
@@ -144,5 +144,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   summary: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
   bylineRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" },
   byline: { color: C.inkFaint, fontSize: 12 },
-  readMore: { color: C.green, fontSize: 13, fontWeight: "700", marginTop: 10 },
+  readMore: { color: C.greenText, fontSize: 13, fontWeight: "700", marginTop: 10 },
 });

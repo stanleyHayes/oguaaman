@@ -7,7 +7,7 @@ import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HomeData, Listing, NewsArticle } from "@/lib/types";
-import { D, S, SI, initials, type Palette } from "@/theme";
+import { D, S, SI, ON_GREEN, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Mark, Pill, Thumb } from "@/ui";
 import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
@@ -240,9 +240,9 @@ export default function Home() {
 const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingBottom: 24, overflow: "hidden" },
   heroScrim: { backgroundColor: C.heroScrim },
-  menuGlyph: { color: C.cream, fontSize: 20, fontWeight: "700" },
+  menuGlyph: { color: ON_GREEN, fontSize: 20, fontWeight: "700" },
   eyebrow: { color: C.gold, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, ...D(600), fontSize: 44, marginTop: 10 },
+  heroTitle: { color: ON_GREEN, ...D(600), fontSize: 44, marginTop: 10 },
   heroSub: { color: C.onDarkText85, fontSize: 15, lineHeight: 22, marginTop: 8 },
   // On-dark hairline at 0.12 — no palette token carries this alpha, and the
   // hero stays dark in both themes, so the literal is effectively theme-proof.

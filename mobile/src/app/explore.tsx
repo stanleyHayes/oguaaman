@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { MapArea, MapData, MapLayer, MapPoint, MapTrail } from "@/lib/types";
 import { severityColors } from "@/lib/incidents";
-import { S, withAlpha, type Palette } from "@/theme";
+import { ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Pill } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
@@ -217,7 +217,7 @@ export default function Explore() {
     <ScrollView
       style={{ backgroundColor: C.paper }}
       contentContainerStyle={{ paddingBottom: 48 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.greenText} />}
     >
       <PhotoHero
         kicker="The map · Cape Coast"
@@ -282,7 +282,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   filter: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   filterOn: { borderColor: C.green, backgroundColor: C.green },
   filterText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
-  filterTextOn: { color: C.cream },
+  filterTextOn: { color: ON_GREEN },
   section: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700" },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   pointHead: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
@@ -293,7 +293,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center", marginTop: 8 },
   chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700", marginLeft: 4 },
   dirBtn: { alignSelf: "flex-start", marginTop: 12, backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
-  dirBtnText: { color: C.cream, fontWeight: "700", fontSize: 13 },
+  dirBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 13 },
   dirBtnSmall: { marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: C.paper, borderWidth: 1, borderColor: C.green },
   dirBtnTextSmall: { color: C.greenText, fontSize: 12 },
   stopRow: { flexDirection: "row", gap: 12 },

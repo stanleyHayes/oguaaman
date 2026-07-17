@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { DateField } from "@/components/date-field";
 import { useAuth } from "@/lib/auth";
-import { D, DI, withAlpha, type Palette } from "@/theme";
+import { D, DI, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Mark } from "@/ui";
 
@@ -250,7 +250,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 44, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   heroMark: { alignItems: "center", marginBottom: 14 },
   heroKicker: { color: C.gold, fontSize: 11, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase", textAlign: "center" },
-  heroTitle: { ...D(600), color: C.cream, fontSize: 30, textAlign: "center", marginTop: 8 },
+  heroTitle: { ...D(600), color: ON_GREEN, fontSize: 30, textAlign: "center", marginTop: 8 },
   // #D9D2C2 / #E7E1D3: bespoke light inks on the green hero, which stays dark
   // in both themes — no palette token matches, so they are kept as literals.
   heroSub: { color: "#D9D2C2", fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 8 },
@@ -264,7 +264,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   tab: { flex: 1, alignItems: "center", borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 9 },
   tabOn: { borderColor: C.green, backgroundColor: C.green },
   tabText: { color: C.inkMuted, fontSize: 14, fontWeight: "600" },
-  tabTextOn: { color: C.cream },
+  tabTextOn: { color: ON_GREEN },
   cardTitle: { ...D(600), fontSize: 24, color: C.ink },
   cardSub: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: -8 },
   label: { color: C.ink, fontSize: 13, fontWeight: "600", marginBottom: -8 },
@@ -274,7 +274,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   pwToggle: { paddingHorizontal: 14, paddingVertical: 13 },
   pwToggleText: { color: C.inkMuted, fontSize: 13, fontWeight: "700" },
   btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 15, alignItems: "center" },
-  btnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  btnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
   err: { color: C.clayText, fontSize: 14, backgroundColor: C.clayTint, borderWidth: 1, borderColor: withAlpha(C.clay, 0.3), borderRadius: 10, padding: 10 },
   hint: { color: C.inkFaint, fontSize: 12, textAlign: "center" },
   back: { color: C.inkMuted, textAlign: "center", paddingVertical: 8 },

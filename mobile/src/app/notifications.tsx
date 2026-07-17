@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Notification } from "@/lib/types";
-import { D, S, type Palette } from "@/theme";
+import { D, S, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
@@ -127,13 +127,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
   pageTitle: { ...D(700), fontSize: 26, color: C.ink },
   count: { color: C.goldText, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginTop: 2 },
   markBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
-  markText: { color: C.green, fontWeight: "700", fontSize: 12 },
+  markText: { color: C.greenText, fontWeight: "700", fontSize: 12 },
 
   card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, overflow: "hidden" },
   // Unread lift: was the off-palette #fffdf7 (≈1.5% brighter than paper), which

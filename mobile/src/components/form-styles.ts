@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { D, LIGHT, S, type Palette } from "@/theme";
+import { ON_GREEN, D, LIGHT, S, type Palette } from "@/theme";
 
 /**
  * Shared styling for the contribution form screens (submit a listing, report an
@@ -21,7 +21,7 @@ export const makeFormStyles = (C: Palette) => StyleSheet.create({
   area: { minHeight: 110, textAlignVertical: "top", ...S(400) },
   error: { color: C.clayText, marginTop: 12, fontSize: 13 },
   note: { color: C.inkFaint, fontSize: 12, textAlign: "center", marginTop: 12, lineHeight: 18 },
-  btnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  btnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
   gate: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },

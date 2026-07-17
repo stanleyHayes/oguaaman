@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Incident, IncidentCategory } from "@/lib/types";
 import { CATEGORY_LABEL, INCIDENT_CATEGORIES, INCIDENT_STATUSES, SEVERITY_COLOR, STATUS_COLOR, STATUS_LABEL } from "@/lib/incidents";
-import { S, type Palette } from "@/theme";
+import { ON_GREEN, S, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
@@ -115,12 +115,12 @@ export default function Safety() {
 const makeStyles = (C: Palette) => StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   cta: { backgroundColor: C.maroon, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
-  ctaText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  ctaText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
   filters: { flexDirection: "row", gap: 8, marginTop: 14, paddingRight: 8 },
   filter: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   filterOn: { borderColor: C.green, backgroundColor: C.green },
   filterText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
-  filterTextOn: { color: C.cream },
+  filterTextOn: { color: ON_GREEN },
   section: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 2 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" },

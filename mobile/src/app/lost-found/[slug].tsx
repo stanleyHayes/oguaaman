@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth";
 import type { LostFound, LostFoundStatus } from "@/lib/types";
 import { KIND_LABEL, LF_STATUS_LABEL } from "@/lib/lostfound";
 import { useTheme } from "@/lib/theme-context";
-import { D, S, withAlpha, type Palette } from "@/theme";
+import { D, S, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { LocationCard } from "@/components/location-card";
@@ -150,12 +150,12 @@ function ResolveBox({ slug, missing, onResolved }: Readonly<{ slug: string; miss
 const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingVertical: 26 },
   heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, ...D(700), fontSize: 24, lineHeight: 30, marginTop: 8 },
+  heroTitle: { color: ON_GREEN, ...D(700), fontSize: 24, lineHeight: 30, marginTop: 8 },
   heroChipRow: { flexDirection: "row", marginTop: 12 },
   // Chip border: the hero stays a dark tone in both themes, so this light cream
   // border is theme-independent — no palette token exists at alpha 0.4.
   heroChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.4)", backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
-  heroChipText: { color: C.cream, fontSize: 12, fontWeight: "700" },
+  heroChipText: { color: ON_GREEN, fontSize: 12, fontWeight: "700" },
   body: { padding: 20 },
   desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
   facts: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, marginTop: 16 },
@@ -171,11 +171,11 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   resolveHelp: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   resolveRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 },
   resolveBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20, minHeight: 44, justifyContent: "center" },
-  resolveBtnText: { color: C.cream, fontWeight: "700", fontSize: 14 },
+  resolveBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
   resolveBtnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20, minHeight: 44, justifyContent: "center" },
   resolveBtnOutlineText: { color: C.inkMuted, fontWeight: "600", fontSize: 14 },
   error: { color: C.clayText, fontSize: 13, marginTop: 10 },
   happyBox: { marginTop: 22, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 16 },
-  happyText: { color: C.green, fontSize: 14, lineHeight: 20 },
+  happyText: { color: C.greenText, fontSize: 14, lineHeight: 20 },
   foot: { color: C.inkFaint, fontSize: 12, lineHeight: 18, marginTop: 26, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 14 },
 });

@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { InstitutionView, Listing, MediaAsset, ProfileSection, SectionItem, SubEntity } from "@/lib/types";
-import { D, DI, S, SI, initials, withAlpha, type Palette } from "@/theme";
+import { D, DI, S, SI, initials, withAlpha, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb, Markdown } from "@/ui";
 import { cldCover, cld } from "@/lib/cloudinary";
@@ -454,7 +454,7 @@ function HeroBlock({ section, color }: Readonly<{ section: ProfileSection; color
         </>
       ) : null}
       <View style={s.heroInner}>
-        {section.title ? <Text style={[s.heroTitle, { color: bg ? C.cream : C.ink }]}>{section.title}</Text> : null}
+        {section.title ? <Text style={[s.heroTitle, { color: bg ? ON_GREEN : C.ink }]}>{section.title}</Text> : null}
         {section.body ? <Text style={[s.heroBody, { color: bg ? C.onDarkText85 : C.inkMuted }]}>{section.body}</Text> : null}
         {buttons.length ? (
           <View style={s.heroButtons}>
@@ -592,7 +592,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   crest: { width: 84, height: 84, borderRadius: 42, backgroundColor: "#0003" },
   crestFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FFFFFF44" },
   crestInit: { ...S(700), fontSize: 28, color: C.cream },
-  heroName: { ...D(700), fontSize: 26, color: C.cream, textAlign: "center", marginTop: 14 },
+  heroName: { ...D(700), fontSize: 26, color: ON_GREEN, textAlign: "center", marginTop: 14 },
   heroMotto: { ...DI(), fontSize: 15, color: C.gold, textAlign: "center", marginTop: 6 },
   badge: { marginTop: 12, borderWidth: 1, borderColor: withAlpha(C.gold, 0x88 / 255), borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
   badgeText: { color: C.gold, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
@@ -600,7 +600,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   facts: { flexDirection: "row", backgroundColor: C.cream, borderBottomWidth: 1, borderBottomColor: C.sand },
   factCell: { flex: 1, alignItems: "center", paddingVertical: 14, paddingHorizontal: 4 },
   factDivider: { borderRightWidth: 1, borderRightColor: C.sand },
-  factVal: { ...S(600), fontSize: 15, color: C.green },
+  factVal: { ...S(600), fontSize: 15, color: C.greenText },
   factKey: { fontSize: 9, color: C.inkFaint, marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 },
 
   body: { padding: 20 },
@@ -659,9 +659,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   ctaButtons: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 16 },
   ctaBtn: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 },
   ctaBtnPrimary: { backgroundColor: C.green },
-  ctaBtnPrimaryText: { color: C.cream, fontWeight: "700", fontSize: 13 },
+  ctaBtnPrimaryText: { color: ON_GREEN, fontWeight: "700", fontSize: 13 },
   ctaBtnOutline: { borderWidth: 1, borderColor: C.green },
-  ctaBtnOutlineText: { color: C.green, fontWeight: "700", fontSize: 13 },
+  ctaBtnOutlineText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
 
   logosWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   logoCell: { width: "31%", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, paddingVertical: 14, paddingHorizontal: 6 },
@@ -678,7 +678,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   groupCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
   groupCrest: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: C.sand, backgroundColor: C.greenSlate },
   groupCrestFallback: { alignItems: "center", justifyContent: "center", backgroundColor: C.green },
-  groupCrestInit: { ...S(700), fontSize: 15, color: C.cream },
+  groupCrestInit: { ...S(700), fontSize: 15, color: ON_GREEN },
   groupName: { ...S(400), fontSize: 17, color: C.ink },
   groupSubtitle: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
   colorDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: C.sand },
@@ -692,7 +692,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   heroBody: { fontSize: 15, lineHeight: 22, textAlign: "center", marginTop: 8 },
   heroButtons: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 18 },
   heroBtnLight: { borderWidth: 1, borderColor: C.onDarkText50 },
-  heroBtnLightText: { color: C.cream, fontWeight: "700", fontSize: 13 },
+  heroBtnLightText: { color: ON_GREEN, fontWeight: "700", fontSize: 13 },
 
   testimCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 16 },
   testimQuote: { ...SI(), fontSize: 17, lineHeight: 25, color: C.ink },
@@ -713,7 +713,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   claimTitle: { ...D(700), fontSize: 18, color: C.ink },
   claimBody: { fontSize: 13, lineHeight: 19, color: C.inkMuted, marginTop: 6 },
   claimBtn: { alignSelf: "flex-start", backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10, marginTop: 12 },
-  claimBtnText: { color: C.cream, fontWeight: "700", fontSize: 13 },
+  claimBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 13 },
   claimInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: C.ink },
   claimErr: { color: C.clayText, fontSize: 13 },
 

@@ -5,7 +5,7 @@ import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { D, S, ON_GREEN, initials, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Thumb } from "@/ui";
 
@@ -74,7 +74,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   // Bespoke 0.62 scrim (no semantic token at this alpha) — green900-derived.
   heroScrim: { backgroundColor: withAlpha(C.green900, 0.62) },
   heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 6, lineHeight: 38 },
+  heroTitle: { color: ON_GREEN, ...D(700), fontSize: 30, marginTop: 6, lineHeight: 38 },
   body: { padding: 20 },
   h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },
   p: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },

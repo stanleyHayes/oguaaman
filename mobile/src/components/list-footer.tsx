@@ -29,7 +29,7 @@ export function ListFooter({
   if (loadingMore) {
     return (
       <View style={s.wrap}>
-        <ActivityIndicator color={C.green} />
+        <ActivityIndicator color={C.greenText} />
         <Text style={s.hint}>Loading more…</Text>
       </View>
     );

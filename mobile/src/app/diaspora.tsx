@@ -9,7 +9,7 @@ import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme-context";
 import type { Member } from "@/lib/types";
-import { D, S, initials, type Palette } from "@/theme";
+import { D, S, ON_GREEN, initials, type Palette } from "@/theme";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 
@@ -160,7 +160,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   bridgeCardBody: { ...S(), fontSize: 13, lineHeight: 19, color: C.inkMuted, marginTop: 4 },
   soonChip: { ...S(600), fontSize: 10, letterSpacing: 1.2, color: C.inkFaint, marginTop: 10 },
   join: { marginTop: 28, backgroundColor: C.green, borderRadius: 20, padding: 22 },
-  joinTitle: { ...D(600), fontSize: 22, color: C.cream },
+  joinTitle: { ...D(600), fontSize: 22, color: ON_GREEN },
   // The join box stays dark green in both themes, so its overlay text is a
   // theme-independent light cream — no palette token exists at alpha 0.8.
   joinBody: { ...S(), fontSize: 14, lineHeight: 21, color: "rgba(246,241,231,0.8)", marginTop: 8 },

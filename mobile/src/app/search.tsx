@@ -44,6 +44,15 @@ function label(h: SearchHit): string {
 function tone(h: SearchHit, C: Palette): string {
   return kindTone(C)[h.kind === "listing" ? (h.type ?? "") : h.kind] ?? C.inkFaint;
 }
+// Readable-on-dark variant for tag TEXT: green/maroon flip to near-black in dark
+// mode, so use their *Text tokens (a no-op in light mode where they're equal).
+// The tag border keeps `tone` (borders aren't a contrast problem).
+function toneText(h: SearchHit, C: Palette): string {
+  const t = tone(h, C);
+  if (t === C.green) return C.greenText;
+  if (t === C.maroon) return C.maroonText;
+  return t;
+}
 
 export default function Search() {
   const { C } = useTheme();
@@ -112,7 +121,7 @@ function HitRow({ hit: h }: Readonly<{ hit: SearchHit }>) {
         <Text style={s.rowTitle}>{h.title}</Text>
         {h.subtitle ? <Text style={s.rowSub} numberOfLines={1}>{h.subtitle}</Text> : null}
       </View>
-      <View style={[s.tag, { borderColor: tone(h, C) }]}><Text style={[s.tagText, { color: tone(h, C) }]}>{label(h)}</Text></View>
+      <View style={[s.tag, { borderColor: tone(h, C) }]}><Text style={[s.tagText, { color: toneText(h, C) }]}>{label(h)}</Text></View>
     </View>
   );
   if (!route) return <View>{inner}</View>;

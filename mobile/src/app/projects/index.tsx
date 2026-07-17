@@ -32,7 +32,7 @@ const makeProgressStyles = (C: Palette) => StyleSheet.create({
   track: { height: 7, borderRadius: 4, backgroundColor: C.sand, overflow: "hidden" },
   fill: { height: "100%", borderRadius: 4, backgroundColor: C.green },
   row: { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-  raised: { color: C.green, fontSize: 12, fontWeight: "700" },
+  raised: { color: C.greenText, fontSize: 12, fontWeight: "700" },
   goal: { color: C.inkFaint, fontSize: 12 },
 });
 
@@ -47,7 +47,7 @@ export default function Projects() {
     <ScrollView
       style={{ backgroundColor: C.paper }}
       contentContainerStyle={{ paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.greenText} />}
     >
       <PhotoHero
         image="/uploads/seed/town-view.jpg"

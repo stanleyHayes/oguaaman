@@ -235,7 +235,7 @@ const makeSubStyles = (C: Palette) => StyleSheet.create({
   btnText: { color: C.green900, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
   thanks: { marginTop: 12, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 14 },
-  thanksTitle: { ...S(700), fontSize: 16, color: C.green },
+  thanksTitle: { ...S(700), fontSize: 16, color: C.greenText },
   thanksBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
 });
 

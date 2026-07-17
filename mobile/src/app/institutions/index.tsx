@@ -31,7 +31,7 @@ export default function Institutions() {
     <ScrollView
       style={{ backgroundColor: C.paper }}
       contentContainerStyle={{ paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.greenText} />}
     >
       <PhotoHero
         image="/uploads/seed/mfantsipim-campus.jpg"

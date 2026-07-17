@@ -6,7 +6,7 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { usePaginatedList, wholeListAsPage, type PageFetcher } from "@/lib/use-paginated";
 import type { Listing } from "@/lib/types";
-import { D, S, fillFor, initials, type Palette } from "@/theme";
+import { D, S, ON_GREEN, fillFor, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
@@ -288,7 +288,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   // On-dark kicker at 0.8 — no palette token carries this alpha, and the hero
   // fill stays dark in both themes, so the literal is effectively theme-proof.
   heroKicker: { color: "rgba(246,241,231,0.8)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  heroTitle: { color: C.cream, ...D(700), fontSize: 24, marginTop: 4 },
+  heroTitle: { color: ON_GREEN, ...D(700), fontSize: 24, marginTop: 4 },
   heroMeta: { color: C.onDarkText85, fontSize: 13, marginTop: 4 },
   heroDesc: { color: C.onDarkText85, fontSize: 13, lineHeight: 19, marginTop: 8 },
 });

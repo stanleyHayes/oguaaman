@@ -12,7 +12,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Invitation, Organization, TeamMember, TeamView } from "@/lib/types";
-import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { D, ON_GREEN, S, initials, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
@@ -285,11 +285,11 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 22, marginTop: 18 },
-  primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 
   header: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 24, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   headerKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
-  headerTitle: { color: C.cream, ...D(700), fontSize: 28, marginTop: 6 },
+  headerTitle: { color: ON_GREEN, ...D(700), fontSize: 28, marginTop: 6 },
   headerLede: { color: C.onDarkText85, fontSize: 14, lineHeight: 20, marginTop: 6 },
 
   body: { padding: 16, gap: 16 },
@@ -311,7 +311,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   inviteRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   inviteActions: { flexDirection: "row", gap: 8 },
   acceptBtn: { backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
-  acceptBtnText: { color: C.cream, fontSize: 13, fontWeight: "700" },
+  acceptBtnText: { color: ON_GREEN, fontSize: 13, fontWeight: "700" },
   declineBtn: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
   declineBtnText: { color: C.inkMuted, fontSize: 13, fontWeight: "700" },
 
@@ -336,6 +336,6 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   scopeChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   scopeChipOn: { borderColor: C.green, backgroundColor: C.green },
   scopeChipText: { color: C.inkMuted, fontSize: 12, fontWeight: "600" },
-  scopeChipTextOn: { color: C.cream },
+  scopeChipTextOn: { color: ON_GREEN },
   saveRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 2 },
 });

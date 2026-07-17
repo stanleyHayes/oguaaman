@@ -8,7 +8,7 @@ import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme-context";
 import type { MemberView } from "@/lib/types";
-import { D, S, initials, type Palette } from "@/theme";
+import { D, S, ON_GREEN, initials, type Palette } from "@/theme";
 import { Loading, ErrorView, Thumb, VerifiedBadge } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
@@ -139,19 +139,19 @@ export default function MemberProfile() {
 const makeStyles = (C: Palette) => StyleSheet.create({
   header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 28, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
-  avatarText: { color: C.cream, ...S(700), fontSize: 32 },
+  avatarText: { color: ON_GREEN, ...S(700), fontSize: 32 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, flexWrap: "wrap", justifyContent: "center" },
-  name: { ...D(700), fontSize: 26, color: C.cream },
+  name: { ...D(700), fontSize: 26, color: ON_GREEN },
   role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
   // The header stays dark green in both themes, so this light cream bio text is
   // theme-independent — no palette token exists at alpha 0.8.
   bio: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: 8, maxWidth: 320 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, justifyContent: "center" },
   chip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  chipText: { color: C.cream, fontSize: 12, fontWeight: "600" },
+  chipText: { color: ON_GREEN, fontSize: 12, fontWeight: "600" },
   follow: { marginTop: 16, borderWidth: 1, borderColor: C.onDarkText50, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 26 },
   followOn: { backgroundColor: C.gold, borderColor: C.gold },
-  followText: { color: C.cream, fontWeight: "700" },
+  followText: { color: ON_GREEN, fontWeight: "700" },
   followTextOn: { color: C.green900 },
   body: { padding: 16 },
   sectionCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },

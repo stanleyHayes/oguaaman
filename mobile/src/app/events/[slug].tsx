@@ -8,7 +8,7 @@ import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { EventView, Ticket, TicketTierView } from "@/lib/types";
-import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { D, S, ON_GREEN, initials, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb, Pill } from "@/ui";
 import { ReportButton } from "@/report-button";
@@ -171,7 +171,7 @@ function TicketBody({ tiers, flow, maxQty, soldOut }: Readonly<{ tiers: TicketTi
   if (tiers.length === 0) {
     return (
       <View style={s.freeBox}>
-        <Text style={s.freeText}><Text style={{ color: C.green, fontWeight: "700" }}>Free entry</Text> — no ticket needed. Just come.</Text>
+        <Text style={s.freeText}><Text style={{ color: C.greenText, fontWeight: "700" }}>Free entry</Text> — no ticket needed. Just come.</Text>
       </View>
     );
   }
@@ -315,7 +315,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   tierOn: { borderColor: C.green, backgroundColor: withAlpha(C.green, 0.06) },
   tierName: { color: C.ink, fontSize: 14, fontWeight: "600" },
   tierAvail: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
-  tierPrice: { ...S(700), fontSize: 18, color: C.green },
+  tierPrice: { ...S(700), fontSize: 18, color: C.greenText },
   qtyRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   qtyLabel: { color: C.ink, fontSize: 14, fontWeight: "600" },
   qtyControls: { flexDirection: "row", alignItems: "center", gap: 14 },
@@ -325,10 +325,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   total: { color: C.inkMuted, fontSize: 14, textAlign: "right" },
   err: { color: C.clayText, fontSize: 13 },
   buyBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 4 },
-  buyBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  buyBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center" },
   thanks: { marginTop: 10, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 14, padding: 16, alignItems: "center" },
-  thanksTitle: { ...D(700), fontSize: 20, color: C.green },
+  thanksTitle: { ...D(700), fontSize: 20, color: C.greenText },
   thanksBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6, textAlign: "center" },
   code: { fontSize: 30, fontWeight: "700", letterSpacing: 6, color: C.ink, marginTop: 14 },
   codeHint: { color: C.inkFaint, fontSize: 12, marginTop: 4 },

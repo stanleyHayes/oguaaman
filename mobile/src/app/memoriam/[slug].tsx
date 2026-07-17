@@ -7,7 +7,7 @@ import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing, Tribute } from "@/lib/types";
-import { D, S, SI, initials, type Palette } from "@/theme";
+import { D, S, SI, ON_GREEN, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
@@ -236,13 +236,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   story: { ...S(400), fontSize: 17, lineHeight: 26, color: C.ink },
   tribute: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 16, marginBottom: 12 },
   tributeMsg: { ...S(400), fontSize: 15, color: C.ink, lineHeight: 22 },
-  tributeWho: { color: C.green, fontWeight: "600", fontSize: 13, marginTop: 8 },
+  tributeWho: { color: C.greenText, fontWeight: "600", fontSize: 13, marginTop: 8 },
   tributeEmpty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginBottom: 12 },
   form: { marginTop: 8, borderWidth: 1, borderColor: C.sand, borderStyle: "dashed", borderRadius: 12, padding: 16 },
   input: { minHeight: 70, borderWidth: 1, borderColor: C.sand, borderRadius: 8, backgroundColor: C.paper, padding: 12, ...S(400), fontSize: 15, color: C.ink, textAlignVertical: "top" },
   inputSm: { marginTop: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 8, backgroundColor: C.paper, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: C.ink },
   submit: { marginTop: 14, alignSelf: "center", backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 26, paddingVertical: 12 },
-  submitText: { color: C.cream, fontWeight: "600", fontSize: 14 },
+  submitText: { color: ON_GREEN, fontWeight: "600", fontSize: 14 },
   formNote: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 10 },
   mark: { ...S(400), fontSize: 26, color: C.goldText, textAlign: "center", marginTop: 30 },
   markSub: { color: C.inkFaint, fontSize: 11, letterSpacing: 3, textAlign: "center", marginTop: 4 },

@@ -63,7 +63,7 @@ export default function TabsLayout() {
       <AlertBanner />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: C.green,
+          tabBarActiveTintColor: C.greenText,
           tabBarInactiveTintColor: C.inkFaint,
           tabBarStyle: { backgroundColor: C.cream, borderTopColor: C.sand },
           tabBarBadgeStyle: { backgroundColor: C.clay, color: ON_GREEN, fontSize: 11 },

@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 import { useTheme } from "@/lib/theme-context";
 import { ImageField } from "@/components/image-field";
 import { DateField } from "@/components/date-field";
-import { D, S, withAlpha, type Palette } from "@/theme";
+import { D, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import type { MediaAsset, Office, Organization, ProfileSection, ProfileSectionType, SectionItem, SocialLink, SubEntity } from "@/lib/types";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -741,7 +741,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   rowItem: { flexDirection: "row", alignItems: "center", gap: 8 },
 
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20 },
-  primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 14 },
+  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
   goldBtn: { backgroundColor: C.goldBrand, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20 },
   goldBtnText: { color: C.cream, fontWeight: "700", fontSize: 14 },
   ghostBtn: { alignSelf: "flex-start", borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
@@ -761,7 +761,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   checkRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
   checkBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.sand, alignItems: "center", justifyContent: "center" },
   checkBoxOn: { backgroundColor: C.green, borderColor: C.green },
-  checkTick: { color: C.cream, fontWeight: "700", fontSize: 12 },
+  checkTick: { color: ON_GREEN, fontWeight: "700", fontSize: 12 },
   checkLabel: { color: C.ink, fontSize: 14 },
 
   itemCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.paper, padding: 12 },
@@ -778,7 +778,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   toneChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   toneChipOn: { backgroundColor: C.green, borderColor: C.green },
   toneChipText: { color: C.inkMuted, fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
-  toneChipTextOn: { color: C.cream },
+  toneChipTextOn: { color: ON_GREEN },
 
   addWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   addChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },

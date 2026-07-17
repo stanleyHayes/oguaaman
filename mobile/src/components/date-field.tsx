@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
-import { D, type Palette } from "@/theme";
+import { D, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -225,11 +225,11 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   row: { height: ROW_H, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   rowOn: { backgroundColor: C.green },
   rowText: { color: C.ink, fontSize: 15 },
-  rowTextOn: { color: C.cream, fontWeight: "700" },
+  rowTextOn: { color: ON_GREEN, fontWeight: "700" },
   rowTextOff: { color: C.inkFaint, opacity: 0.4 },
   actions: { flexDirection: "row", gap: 10, marginTop: 16 },
   cancelBtn: { flex: 1, borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
   cancelText: { color: C.ink, fontWeight: "600", fontSize: 15 },
   doneBtn: { flex: 1, backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
-  doneText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  doneText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 });

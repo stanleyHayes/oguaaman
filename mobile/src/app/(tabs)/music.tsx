@@ -5,7 +5,7 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { D, S, initials, type Palette } from "@/theme";
+import { D, S, ON_GREEN, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Pill, Thumb } from "@/ui";
 import { PressScale, StaggerIn } from "@/components/anim";
@@ -95,7 +95,7 @@ const onDarkText = (C: Palette, alpha: number) => C.onDarkText85.replace(/[^,]+\
 const makeStyles = (C: Palette) => StyleSheet.create({
   soundCard: { backgroundColor: C.green900, borderRadius: 14, padding: 16 },
   soundKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
-  soundTitle: { color: C.cream, ...D(700), fontSize: 20, marginTop: 4 },
+  soundTitle: { color: ON_GREEN, ...D(700), fontSize: 20, marginTop: 4 },
   soundSub: { color: onDarkText(C, 0.75), fontSize: 13, lineHeight: 19, marginTop: 4 },
   genreChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   genreChipOn: { backgroundColor: C.clay, borderColor: C.clay },

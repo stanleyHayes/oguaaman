@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
-import { S, withAlpha, type Palette } from "@/theme";
+import { ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 /**
@@ -77,7 +77,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 16, textAlign: "center" },
   body: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6, textAlign: "center", maxWidth: 300 },
   btn: { marginTop: 16, backgroundColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
-  btnText: { color: C.cream, fontSize: 13, fontWeight: "700" },
+  btnText: { color: ON_GREEN, fontSize: 13, fontWeight: "700" },
 
   compactWrap: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 4 },
   compactCircle: {
@@ -87,5 +87,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   compactGlyph: { fontSize: 16, color: C.goldText },
   compactTitle: { color: C.ink, fontSize: 13, fontWeight: "700" },
   compactBody: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 2 },
-  compactAction: { color: C.green, fontSize: 12, fontWeight: "700", marginTop: 4 },
+  compactAction: { color: C.greenText, fontSize: 12, fontWeight: "700", marginTop: 4 },
 });

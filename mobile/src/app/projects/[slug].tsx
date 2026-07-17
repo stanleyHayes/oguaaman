@@ -8,7 +8,7 @@ import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme-context";
 import type { Listing } from "@/lib/types";
-import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { D, S, ON_GREEN, initials, withAlpha, type Palette } from "@/theme";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { Progress, cedis } from "./index";
@@ -170,7 +170,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   cover: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
   coverInit: { color: C.cream, ...S(700), fontSize: 38 },
   body: { padding: 20 },
-  kicker: { color: C.green, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  kicker: { color: C.greenText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   title: { ...D(700), fontSize: 27, color: C.ink, marginTop: 6 },
   organiser: { color: C.goldText, fontSize: 13, marginTop: 4 },
   meta: { color: C.inkFaint, fontSize: 12, marginTop: 6 },
@@ -184,13 +184,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
   chipOn: { backgroundColor: C.green, borderColor: C.green },
   chipText: { color: C.inkMuted, fontSize: 14, fontWeight: "700" },
-  chipTextOn: { color: C.cream },
+  chipTextOn: { color: ON_GREEN },
   input: { marginTop: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: C.ink },
   err: { color: C.clayText, fontSize: 13, marginTop: 10 },
   pledgeBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
-  pledgeBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  pledgeBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
   thanks: { marginTop: 18, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 14, padding: 16 },
-  thanksTitle: { ...D(700), fontSize: 20, color: C.green },
+  thanksTitle: { ...D(700), fontSize: 20, color: C.greenText },
   thanksBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
 });

@@ -134,7 +134,7 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
           <View style={{ gap: 8, marginTop: 4 }}>
             {data.timeline.map((e, i) => (
               <StaggerIn key={e.id} index={i} style={s.itemRow}>
-                <Text style={[s.itemLabel, { color: C[t.tone] }]}>{e.year}</Text>
+                <Text style={[s.itemLabel, { color: C.greenText }]}>{e.year}</Text>
                 <Text style={s.itemText}><Text style={{ fontWeight: "700" }}>{e.title}</Text>{e.summary ? ` — ${e.summary}` : ""}</Text>
               </StaggerIn>
             ))}
@@ -205,7 +205,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   itemText: { color: C.ink, fontSize: 14, flex: 1, lineHeight: 20 },
   colorDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: C.sand },
   linkCard: { marginTop: 24, borderWidth: 1, borderColor: C.green, borderRadius: 12, paddingVertical: 13, alignItems: "center" },
-  linkText: { color: C.green, fontWeight: "700", fontSize: 14 },
+  linkText: { color: C.greenText, fontWeight: "700", fontSize: 14 },
   placeCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 12 },
   placeName: { ...S(700), fontSize: 16, color: C.ink },
   placeClass: { color: C.goldText, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, marginTop: 2, textTransform: "uppercase" },

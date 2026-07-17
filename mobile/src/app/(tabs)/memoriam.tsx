@@ -58,7 +58,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   // Was the hand-picked parchment "#EADFC4"; goldTint14 is the semantic token
   // for a soft gold wash behind decorative circles, and follows the theme.
   portrait: { width: 72, height: 72, borderRadius: 36, backgroundColor: C.goldTint14, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
-  portraitInit: { ...S(600), fontSize: 24, color: C.green },
+  portraitInit: { ...S(600), fontSize: 24, color: C.greenText },
   name: { ...S(600), fontSize: 22, color: C.ink, marginTop: 12, textAlign: "center" },
   dates: { color: C.goldText, fontSize: 12, letterSpacing: 2, marginTop: 4 },
   epitaph: { ...SI(), color: C.inkMuted, textAlign: "center", marginTop: 8 },

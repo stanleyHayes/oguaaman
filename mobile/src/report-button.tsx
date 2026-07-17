@@ -101,6 +101,6 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   cancel: { color: C.inkMuted, fontSize: 14, fontWeight: "600" },
   send: { backgroundColor: C.clay, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 9 },
   sendText: { color: C.cream, fontSize: 13, fontWeight: "700" },
-  thanks: { fontSize: 15, fontWeight: "700", color: C.green },
+  thanks: { fontSize: 15, fontWeight: "700", color: C.greenText },
   thanksBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 10 },
 });

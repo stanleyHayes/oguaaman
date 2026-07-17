@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { Listing, MemberView, Promotion } from "@/lib/types";
-import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { D, S, initials, withAlpha, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, HeroBand, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
@@ -294,14 +294,14 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 
   body: { padding: 16 },
   chips: { flexDirection: "row", gap: 8, paddingBottom: 14 },
   chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   chipOn: { borderColor: C.green, backgroundColor: C.green },
   chipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600", textTransform: "capitalize" },
-  chipTextOn: { color: C.cream },
+  chipTextOn: { color: ON_GREEN },
   chipCount: { opacity: 0.7 },
 
   emptyCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16 },
@@ -329,7 +329,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   promoBtn: { borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },
   promoBtnText: { color: C.goldText, fontSize: 12, fontWeight: "700" },
   promoDayBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, alignItems: "center", minWidth: 52, minHeight: 44, justifyContent: "center" },
-  promoDayText: { color: C.green, fontSize: 13, fontWeight: "700" },
+  promoDayText: { color: C.greenText, fontSize: 13, fontWeight: "700" },
   promoDayPrice: { color: C.inkFaint, fontSize: 10, marginTop: 1 },
   promoCancel: { color: C.inkFaint, fontSize: 12, fontWeight: "600" },
   promoErr: { color: C.clayText, fontSize: 11, maxWidth: 220, textAlign: "right" },

@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
-import { D, S, fillFor, initials, type Palette } from "@/theme";
+import { ON_GREEN, D, S, fillFor, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
@@ -22,7 +22,7 @@ function SchoolLink({ orgId }: Readonly<{ orgId: string }>) {
   if (!data) return null;
   return (
     <Pressable onPress={() => router.push(`/institutions/${data.institution.slug}` as never)} style={s.school}>
-      <Text style={s.schoolText}>Reps <Text style={{ fontWeight: "700", color: C.maroon }}>{data.institution.name}</Text> ›</Text>
+      <Text style={s.schoolText}>Reps <Text style={{ fontWeight: "700", color: C.maroonText }}>{data.institution.name}</Text> ›</Text>
     </Pressable>
   );
 }
@@ -96,10 +96,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   // Pure-black tint over the fillFor() band — theme-independent by design.
   thumb: { width: 96, height: 96, borderRadius: 16, backgroundColor: "rgba(0,0,0,0.18)", alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, ...S(700), fontSize: 36 },
-  name: { color: C.cream, ...D(700), fontSize: 32, marginTop: 14, textAlign: "center" },
+  name: { color: ON_GREEN, ...D(700), fontSize: 32, marginTop: 14, textAlign: "center" },
   genres: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10, justifyContent: "center" },
   genrePill: { borderWidth: 1, borderColor: C.onDarkText50, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  genrePillText: { color: C.cream, fontSize: 12 },
+  genrePillText: { color: ON_GREEN, fontSize: 12 },
   body: { padding: 20 },
   kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
   bio: { color: C.ink, ...S(400), fontSize: 17, lineHeight: 25, marginTop: 8 },
@@ -107,8 +107,8 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   releaseTitle: { ...S(400), fontSize: 20, color: C.ink, marginTop: 6 },
   linkNote: { color: C.inkFaint, fontSize: 12, marginTop: 4 },
   stream: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.green, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12 },
-  streamLabel: { color: C.green, fontWeight: "700" },
-  streamArrow: { color: C.green },
+  streamLabel: { color: C.greenText, fontWeight: "700" },
+  streamArrow: { color: C.greenText },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 20 },
   school: { marginTop: 20, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
   schoolText: { color: C.inkMuted, fontSize: 14 },

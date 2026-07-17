@@ -6,7 +6,7 @@ import { api, canUseStudio } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import type { CreatorOverview, Organization } from "@/lib/types";
-import { D, S, initials, withAlpha, type Palette } from "@/theme";
+import { D, ON_GREEN, S, initials, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, HeroBand, Thumb } from "@/ui";
 import { MetricCard, cedis } from "@/components/studio-kit";
@@ -173,7 +173,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: C.cream, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
 
   body: { padding: 16 },
   statusLine: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginBottom: 14 },
@@ -192,7 +192,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   toolLabel: { color: C.ink, fontSize: 15, fontWeight: "700" },
   toolDesc: { color: C.inkFaint, fontSize: 12, marginTop: 2 },
   crest: { width: 40, height: 40, borderRadius: 12, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
-  crestText: { color: C.cream, ...S(700), fontSize: 15 },
+  crestText: { color: ON_GREEN, ...S(700), fontSize: 15 },
   chevron: { color: C.inkFaint, fontSize: 20, fontWeight: "700" },
 
   addListingBtn: { borderWidth: 1, borderStyle: "dashed", borderColor: C.goldBrand, borderRadius: 999, paddingVertical: 12, alignItems: "center", marginTop: 22 },

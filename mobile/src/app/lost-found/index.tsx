@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { LostFound, LostFoundKind } from "@/lib/types";
 import { KIND_LABEL, LF_STATUS_LABEL, lfStatusColor } from "@/lib/lostfound";
-import { S, type Palette } from "@/theme";
+import { S, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { StaggerIn } from "@/components/anim";
@@ -35,7 +35,7 @@ function NoticeCard({ i }: Readonly<{ i: LostFound }>) {
     <Pressable onPress={() => router.push(`/lost-found/${i.slug}` as never)} style={[s.card, missing && s.cardMissing]}>
       <View style={s.chipRow}>
         <View style={[s.chip, { borderColor: missing ? C.maroon : C.teal }]}>
-          <Text style={[s.chipText, { color: missing ? C.maroon : C.tealText }]}>{KIND_LABEL[d.kind] ?? d.kind}</Text>
+          <Text style={[s.chipText, { color: missing ? C.maroonText : C.tealText }]}>{KIND_LABEL[d.kind] ?? d.kind}</Text>
         </View>
         <Text style={[s.status, { color: stColor }]}>{LF_STATUS_LABEL[d.lfStatus] ?? d.lfStatus}</Text>
       </View>
@@ -66,7 +66,7 @@ export default function LostFoundList() {
     <ScrollView
       style={{ backgroundColor: C.paper }}
       contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.greenText} />}
     >
       <Text style={s.lede}>
         Lost a phone, found a bunch of keys, searching for someone? Post here — notices go live immediately, and the town helps. When it works out, mark it reunited and share the good news.
@@ -105,7 +105,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   tab: { flex: 1, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 4, alignItems: "center", minHeight: 44, justifyContent: "center" },
   tabOn: { borderColor: C.green, backgroundColor: C.green },
   tabText: { color: C.inkMuted, fontSize: 12, fontWeight: "700", textAlign: "center" },
-  tabTextOn: { color: C.cream },
+  tabTextOn: { color: ON_GREEN },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   cardMissing: { borderLeftWidth: 4, borderLeftColor: C.maroon },
   chipRow: { flexDirection: "row", alignItems: "center", gap: 6 },

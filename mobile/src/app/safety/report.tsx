@@ -9,7 +9,7 @@ import type { IncidentCategory, IncidentSeverity } from "@/lib/types";
 import { INCIDENT_CATEGORIES, INCIDENT_SEVERITIES, severityColors } from "@/lib/incidents";
 import { HeroBand } from "@/ui";
 import { formStyles } from "@/components/form-styles";
-import { type Palette } from "@/theme";
+import { ON_GREEN, type Palette } from "@/theme";
 
 export default function ReportIncident() {
   const { member } = useAuth();
@@ -126,7 +126,7 @@ const makeStyles = (C: Palette) => ({
   ...formStyles,
   ...StyleSheet.create({
     chipOn: { borderColor: C.green, backgroundColor: C.green },
-    chipTextOn: { color: C.cream },
+    chipTextOn: { color: ON_GREEN },
     btn: { backgroundColor: C.maroon, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
   }),
 });
