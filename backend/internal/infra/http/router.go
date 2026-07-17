@@ -63,6 +63,8 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/pledges/confirm", h.ConfirmPledge)
 	mux.HandleFunc("GET /api/me/pledges", h.MyPledges)
 	mux.HandleFunc("POST /api/payments/paystack/webhook", h.PaystackWebhook)
+	mux.HandleFunc("POST /api/payments/stripe/intent", h.StripeIntent)
+	mux.HandleFunc("POST /api/payments/stripe/confirm", h.StripeConfirm)
 
 	// Community safety — rescue & early recovery (auto-published; curators transition).
 	mux.HandleFunc("GET /api/incidents", h.Incidents)

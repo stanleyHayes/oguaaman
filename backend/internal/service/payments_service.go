@@ -222,19 +222,36 @@ func (s *PaymentsService) ConfirmPledge(ctx context.Context, reference string) (
 	if err != nil {
 		return nil, err
 	}
+	return s.fulfillPledge(ctx, pledge, success, amount)
+}
+
+// FulfillPledge marks a pledge successful using an amount already verified by
+// another gateway (e.g. Stripe). It is idempotent.
+func (s *PaymentsService) FulfillPledge(ctx context.Context, reference string, amountPesewas int64) (*domain.Pledge, error) {
+	pledge, err := s.pledges.ByReference(ctx, reference)
+	if err != nil {
+		return nil, err
+	}
+	if pledge.Status == domain.PledgeSuccess {
+		return pledge, nil
+	}
+	return s.fulfillPledge(ctx, pledge, true, amountPesewas)
+}
+
+func (s *PaymentsService) fulfillPledge(ctx context.Context, pledge *domain.Pledge, success bool, amount int64) (*domain.Pledge, error) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	if !success || (amount > 0 && amount < pledge.AmountPesewas) {
-		_ = s.pledges.UpdateStatus(ctx, reference, domain.PledgeFailed, now)
+		_ = s.pledges.UpdateStatus(ctx, pledge.Reference, domain.PledgeFailed, now)
 		return nil, fmt.Errorf("payment was not completed")
 	}
-	if err := s.pledges.UpdateStatus(ctx, reference, domain.PledgeSuccess, now); err != nil {
+	if err := s.pledges.UpdateStatus(ctx, pledge.Reference, domain.PledgeSuccess, now); err != nil {
 		return nil, err
 	}
 	// Split the platform fee (integer pesewas, rounded down); the project is
 	// credited the NET. The fee is recorded on the pledge for the steward ledger.
 	fee := pledge.AmountPesewas * int64(s.feePercent) / 100
 	net := pledge.AmountPesewas - fee
-	if err := s.pledges.SetFeeNet(ctx, reference, fee, net); err != nil {
+	if err := s.pledges.SetFeeNet(ctx, pledge.Reference, fee, net); err != nil {
 		return nil, err
 	}
 	if err := s.listings.IncrementRaised(ctx, pledge.ProjectID, net); err != nil {

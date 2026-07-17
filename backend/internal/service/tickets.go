@@ -251,19 +251,36 @@ func (s *TicketsService) ConfirmTicket(ctx context.Context, reference string) (*
 	if err != nil {
 		return nil, err
 	}
+	return s.fulfillTicket(ctx, ticket, success, amount)
+}
+
+// FulfillTicket marks a ticket successful using an amount already verified by
+// another gateway (e.g. Stripe). It is idempotent.
+func (s *TicketsService) FulfillTicket(ctx context.Context, reference string, amountPesewas int64) (*domain.Ticket, error) {
+	ticket, err := s.tickets.ByReference(ctx, reference)
+	if err != nil {
+		return nil, err
+	}
+	if ticket.Status == domain.PledgeSuccess {
+		return ticket, nil
+	}
+	return s.fulfillTicket(ctx, ticket, true, amountPesewas)
+}
+
+func (s *TicketsService) fulfillTicket(ctx context.Context, ticket *domain.Ticket, success bool, amount int64) (*domain.Ticket, error) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	if !success || (amount > 0 && amount < ticket.AmountPesewas) {
-		_ = s.tickets.UpdateStatus(ctx, reference, domain.PledgeFailed, now)
+		_ = s.tickets.UpdateStatus(ctx, ticket.Reference, domain.PledgeFailed, now)
 		return nil, fmt.Errorf("payment was not completed")
 	}
 	code, err := s.uniqueCode(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.tickets.UpdateStatus(ctx, reference, domain.PledgeSuccess, now); err != nil {
+	if err := s.tickets.UpdateStatus(ctx, ticket.Reference, domain.PledgeSuccess, now); err != nil {
 		return nil, err
 	}
-	if err := s.tickets.SetCode(ctx, reference, code); err != nil {
+	if err := s.tickets.SetCode(ctx, ticket.Reference, code); err != nil {
 		return nil, err
 	}
 	ticket.Status = domain.PledgeSuccess

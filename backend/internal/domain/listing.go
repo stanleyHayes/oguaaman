@@ -13,11 +13,11 @@ const (
 
 // Operational status values for time-critical listing types.
 const (
-	IncidentStatusReported  = "reported"
-	IncidentStatusVerified  = "verified"
+	IncidentStatusReported   = "reported"
+	IncidentStatusVerified   = "verified"
 	IncidentStatusResponding = "responding"
-	IncidentStatusResolved    = "resolved"
-	IncidentStatusRecovered   = "recovered"
+	IncidentStatusResolved   = "resolved"
+	IncidentStatusRecovered  = "recovered"
 
 	LostFoundStatusOpen     = "open"
 	LostFoundStatusReunited = "reunited"
@@ -33,6 +33,7 @@ const (
 	PrefixReport       = "rpt-"
 	PrefixClaim        = "clm-"
 	PrefixNews         = "news-"
+	PrefixStripeIntent = "sti-"
 )
 
 // Listing types (spec §8.3; project = adopt-a-project, spec §4/§6/§15 Phase 2;

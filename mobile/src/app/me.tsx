@@ -1,5 +1,5 @@
-import { openInAppBrowser } from "@/lib/webbrowser";
 import { useEffect, useMemo, useState } from "react";
+import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
@@ -126,25 +126,24 @@ function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
     setBusy(true); setErr("");
     try {
       const r = await api.promoteListing(listing.id, days);
-      if (r.simulated) {
+      const amountPesewas = days * 10 * 100;
+      const result = await presentCheckout(
+        sessionFromStartResponse(r, { amountPesewas, flow: "promotion", metadata: { listingId: listing.id, days: String(days) } })
+      );
+      if (result.kind === "error") {
+        setErr(result.message);
+      } else if (result.kind === "cancelled") {
+        // keep the picker open
+      } else if (result.provider === "simulated") {
+        const p = await api.confirmPromotion(r.reference);
+        setConfirmed(p);
+        setOpen(false);
+      } else if (result.provider === "stripe") {
         const p = await api.confirmPromotion(r.reference);
         setConfirmed(p);
         setOpen(false);
       } else {
-        // Open Paystack in an in-app browser, then auto-verify when the payer
-        // returns (browser dismissed) — no manual "verify" tap in the happy path.
-        const opened = await openInAppBrowser(r.authorizationUrl);
-        if (!opened) {
-          setErr("Could not open the payment page.");
-        } else {
-          try {
-            setConfirmed(await api.confirmPromotion(r.reference));
-            setOpen(false);
-          } catch {
-            setPendingRef(r.reference); // not confirmed yet — offer manual Verify
-            setErr("Payment not confirmed yet. If you completed it, tap Verify.");
-          }
-        }
+        setPendingRef(r.reference);
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");

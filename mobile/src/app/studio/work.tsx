@@ -1,5 +1,5 @@
-import { openInAppBrowser } from "@/lib/webbrowser";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -227,15 +227,26 @@ function PromoteControl({ listing, onDone }: Readonly<{ listing: Listing; onDone
     setBusy(true); setErr("");
     try {
       const r = await api.promoteListing(listing.id, days);
-      if (r.simulated) {
+      const amountPesewas = days * 10 * 100;
+      const result = await presentCheckout(
+        sessionFromStartResponse(r, { amountPesewas, flow: "promotion", metadata: { listingId: listing.id, days: String(days) } })
+      );
+      if (result.kind === "error") {
+        setErr(result.message);
+      } else if (result.kind === "cancelled") {
+        // keep the picker open
+      } else if (result.provider === "simulated") {
+        const p = await api.confirmPromotion(r.reference);
+        setConfirmed(p);
+        setOpen(false);
+        onDone();
+      } else if (result.provider === "stripe") {
         const p = await api.confirmPromotion(r.reference);
         setConfirmed(p);
         setOpen(false);
         onDone();
       } else {
         setPendingRef(r.reference);
-        const opened = await openInAppBrowser(r.authorizationUrl);
-        if (!opened) setErr("Could not open the payment page.");
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");

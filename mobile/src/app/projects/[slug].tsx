@@ -1,6 +1,7 @@
 import { ROUTES } from "@/lib/routes";
 import { useMemo, useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
@@ -87,13 +88,24 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
     setBusy(true);
     try {
       const r = await api.pledge(slug, { amountPesewas: Math.round(cedisNum * 100) });
-      if (r.simulated) {
+      const amountPesewas = Math.round(cedisNum * 100);
+      const result = await presentCheckout(
+        sessionFromStartResponse(r, { amountPesewas, flow: "pledge", metadata: { projectSlug: slug } })
+      );
+      if (result.kind === "error") {
+        setErr(result.message);
+      } else if (result.kind === "cancelled") {
+        // User closed the sheet/browser without paying — keep the form open.
+      } else if (result.provider === "simulated") {
         const p = await api.confirmPledge(r.reference);
         setConfirmed({ amount: p.amountPesewas, simulated: true });
         reload();
+      } else if (result.provider === "stripe") {
+        const p = await api.confirmPledge(r.reference);
+        setConfirmed({ amount: p.amountPesewas, simulated: p.simulated });
+        reload();
       } else {
         setPendingRef(r.reference);
-        Linking.openURL(r.authorizationUrl).catch(() => setErr("Could not open the payment page."));
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");

@@ -41,6 +41,7 @@ type Config struct {
 	// flow runs a clearly-labelled simulation. PortalURL builds the Paystack
 	// callback (where the payer returns after paying).
 	PaystackSecretKey  string
+	StripeSecretKey    string // optional; enables Stripe PaymentSheet mobile checkouts
 	PortalURL          string
 	PlatformFeePercent int // kept by the platform on each confirmed pledge; net goes to the project
 
@@ -109,6 +110,7 @@ func load() Config {
 		PublicBaseURL: os.Getenv("PUBLIC_API_URL"),
 
 		PaystackSecretKey:  os.Getenv("PAYSTACK_SECRET_KEY"),
+		StripeSecretKey:    os.Getenv("STRIPE_SECRET_KEY"),
 		PortalURL:          env("PUBLIC_PORTAL_URL", "http://localhost:5173"),
 		PlatformFeePercent: envInt("PLATFORM_FEE_PERCENT", 5),
 

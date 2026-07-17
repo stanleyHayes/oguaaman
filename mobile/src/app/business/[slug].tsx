@@ -1,5 +1,5 @@
-import { openInAppBrowser } from "@/lib/webbrowser";
 import { ROUTES } from "@/lib/routes";
+import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { useMemo, useState, type ReactNode } from "react";
 import { Linking, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
@@ -54,14 +54,23 @@ function SupportCard({ business, slug, reload }: Readonly<{ business: Listing; s
     setBusy(true);
     try {
       const r = await api.subscribe(slug);
-      if (r.simulated) {
+      const result = await presentCheckout(
+        sessionFromStartResponse(r, { amountPesewas: 5_000, flow: "subscription", metadata: { businessSlug: slug } })
+      );
+      if (result.kind === "error") {
+        setErr(result.message);
+      } else if (result.kind === "cancelled") {
+        // keep the card open
+      } else if (result.provider === "simulated") {
+        const sub = await api.confirmSubscription(r.reference);
+        setConfirmed(sub);
+        reload();
+      } else if (result.provider === "stripe") {
         const sub = await api.confirmSubscription(r.reference);
         setConfirmed(sub);
         reload();
       } else {
         setPendingRef(r.reference);
-        const opened = await openInAppBrowser(r.authorizationUrl);
-        if (!opened) setErr("Could not open the payment page.");
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");

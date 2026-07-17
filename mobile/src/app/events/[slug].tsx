@@ -1,5 +1,5 @@
-import { openInAppBrowser } from "@/lib/webbrowser";
 import { useMemo, useState } from "react";
+import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -117,14 +117,24 @@ function useTicketFlow(slug: string, tiers: TicketTierView[], reload: () => void
     setBusy(true);
     try {
       const r = await api.buyTicket(slug, { tier: tier.name, qty });
-      if (r.simulated) {
+      const amountPesewas = Number(tier.pricePesewas) * qty;
+      const result = await presentCheckout(
+        sessionFromStartResponse(r, { amountPesewas, flow: "ticket", metadata: { eventSlug: slug, tier: tier.name, qty: String(qty) } })
+      );
+      if (result.kind === "error") {
+        setErr(result.message);
+      } else if (result.kind === "cancelled") {
+        // keep the picker open
+      } else if (result.provider === "simulated") {
+        const t = await api.confirmTicket(r.reference);
+        setConfirmed(t);
+        reload();
+      } else if (result.provider === "stripe") {
         const t = await api.confirmTicket(r.reference);
         setConfirmed(t);
         reload();
       } else {
         setPendingRef(r.reference);
-        const opened = await openInAppBrowser(r.authorizationUrl);
-        if (!opened) setErr("Could not open the payment page.");
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");

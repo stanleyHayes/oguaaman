@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Tabs } from "expo-router";
-import { Pressable, View, type ColorValue } from "react-native";
+import { Pressable, View, Animated, Easing, type ColorValue, type ViewStyle } from "react-native";
 import { T as Text } from "@/components/typography";
 import { useTheme } from "@/lib/theme-context";
 import { ON_GREEN, S, D } from "@/theme";
@@ -11,6 +11,22 @@ import { useDirectives } from "@/lib/directives";
 import { AlertBanner } from "@/components/alert-banner";
 import { useNavDrawer } from "@/components/nav-drawer";
 import { TopBarActions } from "@/components/top-bar-actions";
+
+const WEB_EASE = Easing.bezier(0.22, 1, 0.36, 1);
+
+// Match the portal's page-transition feel: the entering tab rises 14pt and
+// fades in while the leaving tab fades out. Symmetric inputRange keeps the
+// animation consistent regardless of whether the new tab is left or right.
+function tabSceneInterpolator({ current }: Readonly<{ current: { progress: Animated.Value } }>) {
+  return {
+    sceneStyle: {
+      opacity: current.progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }),
+      transform: [
+        { translateY: current.progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [14, 0, 14] }) },
+      ],
+    } as Animated.AnimatedStyleProp<ViewStyle>,
+  };
+}
 
 const icon = (glyph: string) => {
   // Named so it has a display name (react/display-name) for the tab bar.
@@ -63,9 +79,11 @@ export default function TabsLayout() {
       <AlertBanner />
       <Tabs
         screenOptions={{
-          // Crossfade between tab screens so switching tabs feels as smooth as
+          // Custom fade-and-rise transition so switching tabs feels as smooth as
           // the web's page transition, instead of an instant hard cut.
           animation: "fade",
+          transitionSpec: { animation: "timing", config: { duration: 220, easing: WEB_EASE } },
+          sceneStyleInterpolator: tabSceneInterpolator,
           tabBarActiveTintColor: C.greenText,
           tabBarInactiveTintColor: C.inkFaint,
           tabBarStyle: { backgroundColor: C.cream, borderTopColor: C.sand },

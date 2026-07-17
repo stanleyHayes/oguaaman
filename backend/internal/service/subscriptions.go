@@ -145,10 +145,27 @@ func (s *SubscriptionsService) ConfirmSubscription(ctx context.Context, referenc
 	if err != nil {
 		return nil, err
 	}
+	return s.fulfillSubscription(ctx, sub, success, amount)
+}
+
+// FulfillSubscription marks a subscription successful using an amount already
+// verified by another gateway (e.g. Stripe). It is idempotent.
+func (s *SubscriptionsService) FulfillSubscription(ctx context.Context, reference string, amountPesewas int64) (*domain.Subscription, error) {
+	sub, err := s.subs.ByReference(ctx, reference)
+	if err != nil {
+		return nil, err
+	}
+	if sub.Status == domain.PledgeSuccess {
+		return sub, nil
+	}
+	return s.fulfillSubscription(ctx, sub, true, amountPesewas)
+}
+
+func (s *SubscriptionsService) fulfillSubscription(ctx context.Context, sub *domain.Subscription, success bool, amount int64) (*domain.Subscription, error) {
 	now := time.Now().UTC()
 	nowStr := now.Format(time.RFC3339)
 	if !success || (amount > 0 && amount < sub.AmountPesewas) {
-		_ = s.subs.UpdateStatus(ctx, reference, domain.PledgeFailed, nowStr)
+		_ = s.subs.UpdateStatus(ctx, sub.Reference, domain.PledgeFailed, nowStr)
 		return nil, fmt.Errorf("payment was not completed")
 	}
 	listing, err := s.listings.GetByID(ctx, sub.ListingID)
@@ -162,10 +179,10 @@ func (s *SubscriptionsService) ConfirmSubscription(ctx context.Context, referenc
 		}
 	}
 	periodEnd := base.Add(supporterPeriod).Format(time.RFC3339)
-	if err := s.subs.UpdateStatus(ctx, reference, domain.PledgeSuccess, nowStr); err != nil {
+	if err := s.subs.UpdateStatus(ctx, sub.Reference, domain.PledgeSuccess, nowStr); err != nil {
 		return nil, err
 	}
-	if err := s.subs.SetPeriodEnd(ctx, reference, periodEnd); err != nil {
+	if err := s.subs.SetPeriodEnd(ctx, sub.Reference, periodEnd); err != nil {
 		return nil, err
 	}
 	if err := s.listings.SetSubscribedUntil(ctx, sub.ListingID, periodEnd); err != nil {

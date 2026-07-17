@@ -107,10 +107,27 @@ func (s *PromotionsService) ConfirmPromotion(ctx context.Context, reference stri
 	if err != nil {
 		return nil, err
 	}
+	return s.fulfillPromotion(ctx, promo, success, amount)
+}
+
+// FulfillPromotion marks a promotion successful using an amount already verified
+// by another gateway (e.g. Stripe). It is idempotent.
+func (s *PromotionsService) FulfillPromotion(ctx context.Context, reference string, amountPesewas int64) (*domain.Promotion, error) {
+	promo, err := s.promotions.ByReference(ctx, reference)
+	if err != nil {
+		return nil, err
+	}
+	if promo.Status == domain.PledgeSuccess {
+		return promo, nil
+	}
+	return s.fulfillPromotion(ctx, promo, true, amountPesewas)
+}
+
+func (s *PromotionsService) fulfillPromotion(ctx context.Context, promo *domain.Promotion, success bool, amount int64) (*domain.Promotion, error) {
 	now := time.Now().UTC()
 	nowStr := now.Format(time.RFC3339)
 	if !success || (amount > 0 && amount < promo.AmountPesewas) {
-		_ = s.promotions.UpdateStatus(ctx, reference, domain.PledgeFailed, nowStr)
+		_ = s.promotions.UpdateStatus(ctx, promo.Reference, domain.PledgeFailed, nowStr)
 		return nil, fmt.Errorf("payment was not completed")
 	}
 	listing, err := s.listings.GetByID(ctx, promo.ListingID)
@@ -122,7 +139,7 @@ func (s *PromotionsService) ConfirmPromotion(ctx context.Context, reference stri
 		base = until // stack onto the current featured period
 	}
 	featuredUntil := base.Add(time.Duration(promo.Days) * 24 * time.Hour).Format(time.RFC3339)
-	if err := s.promotions.UpdateStatus(ctx, reference, domain.PledgeSuccess, nowStr); err != nil {
+	if err := s.promotions.UpdateStatus(ctx, promo.Reference, domain.PledgeSuccess, nowStr); err != nil {
 		return nil, err
 	}
 	if err := s.listings.SetFeatured(ctx, promo.ListingID, true, featuredUntil); err != nil {

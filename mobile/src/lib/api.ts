@@ -152,9 +152,15 @@ export const api = {
   projects: () => get<Listing[]>("/api/projects"),
   projectDetail: (slug: string) => get<Listing>(`/api/projects/${slug}`),
   pledge: (slug: string, body: { amountPesewas: number; email?: string }) =>
-    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/projects/${slug}/pledge`, body),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean; provider?: "paystack" | "stripe" }>(`/api/projects/${slug}/pledge`, body),
   confirmPledge: (reference: string) =>
     get<{ status: string; amountPesewas: number; projectTitle: string; simulated?: boolean }>(`/api/pledges/confirm?reference=${encodeURIComponent(reference)}`),
+
+  // Stripe PaymentSheet support (alternative to Paystack hosted checkout).
+  stripeIntent: (body: { reference: string; amountPesewas: number; currency?: string; flow: "pledge" | "ticket" | "subscription" | "promotion"; metadata?: Record<string, string> }) =>
+    post<{ clientSecret: string; reference: string; paymentIntentId: string }>("/api/payments/stripe/intent", body),
+  confirmStripe: (reference: string) =>
+    post<{ status: string; reference: string }>(`/api/payments/stripe/confirm?reference=${encodeURIComponent(reference)}`, {}),
 
   // Cross-pillar search (spec §12).
   search: (q: string) => get<SearchHit[]>(`/api/search?q=${encodeURIComponent(q)}`),
@@ -328,7 +334,7 @@ export const api = {
   // Event detail + Paystack tickets (amounts in pesewas).
   eventView: (slug: string) => get<EventView>(`/api/events/${slug}`),
   buyTicket: (slug: string, body: { tier: string; qty: number }) =>
-    post<{ authorizationUrl: string; reference: string; simulated?: boolean }>(`/api/events/${slug}/tickets`, body),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated?: boolean; provider?: "paystack" | "stripe" }>(`/api/events/${slug}/tickets`, body),
   confirmTicket: (reference: string) =>
     get<Ticket>(`/api/tickets/confirm?reference=${encodeURIComponent(reference)}`),
   myTickets: () => get<Ticket[]>("/api/me/tickets"),
@@ -336,14 +342,14 @@ export const api = {
   // Business Supporter subscriptions (owner-only; GH₵ 50/month). `plan` selects a
   // catalog plan slug (Creator plan §5); omit for the default Supporter plan.
   subscribe: (slug: string, plan?: string) =>
-    post<{ authorizationUrl: string; reference: string; simulated?: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated?: boolean; provider?: "paystack" | "stripe" }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
   confirmSubscription: (reference: string) =>
     get<Subscription>(`/api/subscriptions/confirm?reference=${encodeURIComponent(reference)}`),
   mySubscriptions: () => get<Subscription[]>("/api/me/subscriptions"),
 
   // Paid featured placement on an owned listing (GH₵ 10/day).
   promoteListing: (id: string, days: number) =>
-    post<{ authorizationUrl: string; reference: string; simulated?: boolean }>(`/api/listings/${id}/promote`, { days }),
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated?: boolean; provider?: "paystack" | "stripe" }>(`/api/listings/${id}/promote`, { days }),
   confirmPromotion: (reference: string) =>
     get<Promotion>(`/api/promotions/confirm?reference=${encodeURIComponent(reference)}`),
 

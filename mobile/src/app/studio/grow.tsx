@@ -1,5 +1,5 @@
-import { openInAppBrowser } from "@/lib/webbrowser";
 import { useMemo, useState } from "react";
+import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -61,33 +61,31 @@ export default function StudioGrow() {
   const [confirmed, setConfirmed] = useState<Subscription | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  async function subscribe(slug: string, plan: string) {
+  async function subscribe(slug: string, plan: string, amountPesewas: number) {
     const key = `${slug}:${plan}`;
     setErr(null);
     setBusyKey(key);
     try {
       const r = await api.subscribe(slug, plan);
-      if (r.simulated) {
+      const result = await presentCheckout(
+        sessionFromStartResponse(r, { amountPesewas, flow: "subscription", metadata: { businessSlug: slug, plan } })
+      );
+      if (result.kind === "error") {
+        setErr(result.message);
+      } else if (result.kind === "cancelled") {
+        // keep the picker open
+      } else if (result.provider === "simulated") {
+        const sub = await api.confirmSubscription(r.reference);
+        setConfirmed(sub);
+        setPending(null);
+        reload();
+      } else if (result.provider === "stripe") {
         const sub = await api.confirmSubscription(r.reference);
         setConfirmed(sub);
         setPending(null);
         reload();
       } else {
-        // Open Paystack in an in-app browser, then auto-verify when the payer
-        // returns (browser dismissed) — no manual "verify" tap in the happy path.
-        const opened = await openInAppBrowser(r.authorizationUrl);
-        if (!opened) {
-          setErr("Could not open the payment page.");
-        } else {
-          try {
-            setConfirmed(await api.confirmSubscription(r.reference));
-            setPending(null);
-            reload();
-          } catch {
-            setPending({ key, reference: r.reference }); // offer manual Verify
-            setErr("Payment not confirmed yet. If you completed it, tap Verify.");
-          }
-        }
+        setPending({ key, reference: r.reference });
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");
@@ -236,7 +234,7 @@ export default function StudioGrow() {
                                 <Text style={s.verifyBtnText}>{isBusy ? "Checking…" : "I've paid — verify"}</Text>
                               </Pressable>
                             ) : (
-                              <Pressable accessibilityRole="button" onPress={() => subscribe(b.slug, plan.slug)} disabled={busyKey != null} style={[s.subBtn, busyKey != null && { opacity: 0.6 }]}>
+                              <Pressable accessibilityRole="button" onPress={() => subscribe(b.slug, plan.slug, price)} disabled={busyKey != null} style={[s.subBtn, busyKey != null && { opacity: 0.6 }]}>
                                 <Text style={s.subBtnText}>{isBusy ? "Starting…" : `Subscribe · ${cedis(price)}`}</Text>
                               </Pressable>
                             )}

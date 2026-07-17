@@ -12,6 +12,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
 import { DirectivesProvider } from "@/lib/directives";
 import { NavDrawerProvider } from "@/components/nav-drawer";
+import { StripeProvider } from "@stripe/stripe-react-native";
 
 // Keep the splash screen up until the brand fonts are ready, so the first
 // frame never flashes system type.
@@ -38,6 +39,8 @@ void SplashScreen.preventAutoHideAsync().catch(() => {});
  * This file has no StyleSheet, so its migration is just reading C from
  * useTheme() inside RootNavigator below.
  */
+
+const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
 
 function RootNavigator() {
   const { C } = useTheme();
@@ -132,7 +135,13 @@ export default function RootLayout() {
         <AuthProvider>
           <DirectivesProvider>
             <NavDrawerProvider>
-              <RootNavigator />
+              {STRIPE_PK ? (
+                <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="gh.oguaa.app.stripe">
+                  <RootNavigator />
+                </StripeProvider>
+              ) : (
+                <RootNavigator />
+              )}
             </NavDrawerProvider>
           </DirectivesProvider>
         </AuthProvider>

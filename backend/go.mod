@@ -7,7 +7,9 @@ require (
 	github.com/graphql-go/graphql v0.8.1
 	github.com/graphql-go/handler v0.2.4
 	github.com/joho/godotenv v1.5.1
+	github.com/resend/resend-go/v2 v2.28.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	github.com/stripe/stripe-go/v81 v81.4.0
 	go.mongodb.org/mongo-driver/v2 v2.6.0
 	golang.org/x/crypto v0.48.0
 	golang.org/x/image v0.44.0
@@ -17,7 +19,6 @@ require (
 
 require (
 	github.com/klauspost/compress v1.17.6 // indirect
-	github.com/resend/resend-go/v2 v2.28.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.2.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
