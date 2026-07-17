@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Tabs } from "expo-router";
+import { Tabs, TransitionPresets } from "expo-router";
 import { Pressable, View, Animated, Easing, type ColorValue, type ViewStyle } from "react-native";
 import { T as Text } from "@/components/typography";
 import { useTheme } from "@/lib/theme-context";
@@ -14,15 +14,17 @@ import { TopBarActions } from "@/components/top-bar-actions";
 
 const WEB_EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
-// Match the portal's page-transition feel: the entering tab rises 14pt and
-// fades in while the leaving tab fades out. Symmetric inputRange keeps the
-// animation consistent regardless of whether the new tab is left or right.
+// Match the portal's page-transition feel: the entering tab rises, scales in,
+// and fades in while the leaving tab fades out. The larger translate/scale
+// values and longer duration make the motion obvious on real devices.
 function tabSceneInterpolator({ current }: Readonly<{ current: { progress: Animated.Value } }>) {
+  const progress = current.progress;
   return {
     sceneStyle: {
-      opacity: current.progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }),
+      opacity: progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }),
       transform: [
-        { translateY: current.progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [14, 0, 14] }) },
+        { translateY: progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [28, 0, 28] }) },
+        { scale: progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.96, 1, 0.96] }) },
       ],
     } as Animated.AnimatedStyleProp<ViewStyle>,
   };
@@ -79,10 +81,11 @@ export default function TabsLayout() {
       <AlertBanner />
       <Tabs
         screenOptions={{
-          // Custom fade-and-rise transition so switching tabs feels as smooth as
-          // the web's page transition, instead of an instant hard cut.
-          animation: "fade",
-          transitionSpec: { animation: "timing", config: { duration: 220, easing: WEB_EASE } },
+          // Use React Navigation's built-in fade preset so the interpolator is
+          // actually wired, then override it with the portal's page-transition
+          // feel (fade + rise + scale) and a longer, smoother duration.
+          ...TransitionPresets.FadeTransition,
+          transitionSpec: { animation: "timing", config: { duration: 320, easing: WEB_EASE } },
           sceneStyleInterpolator: tabSceneInterpolator,
           tabBarActiveTintColor: C.greenText,
           tabBarInactiveTintColor: C.inkFaint,
