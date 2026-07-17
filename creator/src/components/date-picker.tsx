@@ -208,35 +208,37 @@ export function DatePicker({
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
             role="dialog"
             aria-label="Choose a date"
-            className="absolute z-30 mt-2 w-full min-w-[17rem] overflow-hidden rounded-2xl border border-sand bg-paper p-4 shadow-xl"
+            className="absolute z-30 mt-2 w-full min-w-[20rem] overflow-hidden rounded-2xl border border-sand bg-paper p-4 shadow-xl"
           >
-            <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
-              <button type="button" onClick={prev} className="rounded-lg p-2 text-ink-muted hover:bg-cream" aria-label="Previous month">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <button type="button" onClick={prev} className="shrink-0 rounded-lg p-2 text-ink-muted hover:bg-cream" aria-label="Previous month">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
               </button>
-              <select
-                aria-label="Month"
-                value={view.m}
-                onChange={(e) => setView((v) => ({ y: v.y, m: Number(e.target.value) }))}
-                className="rounded-lg border border-sand bg-cream px-2 py-1 text-sm text-ink focus:border-green focus:outline-none"
-              >
-                {MONTHS.map((month, idx) => (
-                  <option key={month} value={idx} disabled={monthHasNoSelectableDays(view.y, idx, min, max)}>
-                    {month}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Year"
-                value={view.y}
-                onChange={(e) => setView((v) => ({ y: Number(e.target.value), m: v.m }))}
-                className="rounded-lg border border-sand bg-cream px-2 py-1 text-sm text-ink focus:border-green focus:outline-none"
-              >
-                {years.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <button type="button" onClick={next} className="rounded-lg p-2 text-ink-muted hover:bg-cream" aria-label="Next month">
+              <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+                <select
+                  aria-label="Month"
+                  value={view.m}
+                  onChange={(e) => setView((v) => ({ y: v.y, m: Number(e.target.value) }))}
+                  className="min-w-0 flex-1 rounded-lg border border-sand bg-cream px-2 py-1 text-sm text-ink focus:border-green focus:outline-none"
+                >
+                  {MONTHS.map((month, idx) => (
+                    <option key={month} value={idx} disabled={monthHasNoSelectableDays(view.y, idx, min, max)}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  aria-label="Year"
+                  value={view.y}
+                  onChange={(e) => setView((v) => ({ y: Number(e.target.value), m: v.m }))}
+                  className="shrink-0 rounded-lg border border-sand bg-cream px-2 py-1 text-sm text-ink focus:border-green focus:outline-none"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <button type="button" onClick={next} className="shrink-0 rounded-lg p-2 text-ink-muted hover:bg-cream" aria-label="Next month">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
               </button>
             </div>
