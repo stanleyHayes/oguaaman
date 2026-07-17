@@ -156,7 +156,7 @@ export function Component() {
               : "The moderation queue is clear. The town is in good order."}
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => revalidator.revalidate()}
           className="inline-flex items-center gap-2 rounded-full border border-sand bg-cream px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-gold-border/50"
           title={`Auto-refreshes every ${REFRESH_MS / 1000}s`}

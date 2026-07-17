@@ -42,7 +42,7 @@ export function Component() {
         <ol className="space-y-10">
           {festival.editions.map((ed) => {
             const upcoming = ed.events.some((e) => (e.details.startsAt ?? "") >= TODAY);
-            let badge: React.ReactNode = null;
+            let badge: ReactNode = null;
             if (upcoming) badge = <Pill tone="gold">Upcoming</Pill>;
             else if (ed.recap) badge = <Pill tone="green">Recap</Pill>;
             return (

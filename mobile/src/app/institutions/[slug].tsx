@@ -1,4 +1,6 @@
+import { route, ROUTES } from "@/lib/routes";
 import { useMemo, useState, type ReactNode } from "react";
+import { push } from "@/lib/router";
 import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -125,7 +127,7 @@ function OfficialEventCard({ event }: Readonly<{ event: Listing }>) {
   const s = useStyles();
   const dateStr = event.details.startsAt ? new Date(event.details.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
   return (
-    <Pressable style={s.eventCard} onPress={() => router.push(`/events/${event.slug}` as never)}>      <Text style={s.eventDate}>{dateStr}</Text>
+    <Pressable accessibilityRole="button" style={s.eventCard} onPress={() => push(route.event(event.slug))}>      <Text style={s.eventDate}>{dateStr}</Text>
       <Text style={s.eventTitle} numberOfLines={2}>{event.title}</Text>
     </Pressable>
   );
@@ -155,7 +157,7 @@ function ClaimPanel({ slug, orgName }: Readonly<{ slug: string; orgName: string 
       <View style={s.claimCard}>
         <Text style={s.claimTitle}>Speak for {orgName}?</Text>
         <Text style={s.claimBody}>Office-holders can claim this page to keep it official. Sign in to make a claim.</Text>
-        <Pressable onPress={() => router.push("/signin")} style={s.claimBtn}><Text style={s.claimBtnText}>Sign in</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.signIn)} style={s.claimBtn}><Text style={s.claimBtnText}>Sign in</Text></Pressable>
       </View>
     );
   }
@@ -177,13 +179,13 @@ function ClaimPanel({ slug, orgName }: Readonly<{ slug: string; orgName: string 
       <Text style={s.claimTitle}>Speak for {orgName}?</Text>
       <Text style={s.claimBody}>If you hold an office here, claim the page so the institution&apos;s presence stays official. A steward verifies every claim.</Text>
       {!open ? (
-        <Pressable onPress={() => setOpen(true)} style={s.claimBtn}><Text style={s.claimBtnText}>Claim this institution</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={s.claimBtn}><Text style={s.claimBtnText}>Claim this institution</Text></Pressable>
       ) : (
         <View style={{ marginTop: 12, gap: 8 }}>
           <TextInput style={s.claimInput} value={role} onChangeText={(v) => { setRole(v); setState("idle"); }} placeholder="Your office (e.g. Headmaster, PTA Chair)" placeholderTextColor={C.inkFaint} />
           <TextInput style={[s.claimInput, { minHeight: 64, textAlignVertical: "top" }]} value={note} onChangeText={setNote} placeholder="Anything that helps verify you (optional)" placeholderTextColor={C.inkFaint} multiline />
           {state === "error" && <Text style={s.claimErr}>{errMsg}</Text>}
-          <Pressable onPress={submit} disabled={state === "sending"} style={[s.claimBtn, state === "sending" && { opacity: 0.6 }]}>
+          <Pressable accessibilityRole="button" onPress={submit} disabled={state === "sending"} style={[s.claimBtn, state === "sending" && { opacity: 0.6 }]}>
             <Text style={s.claimBtnText}>{state === "sending" ? "Submitting…" : "Submit claim"}</Text>
           </Pressable>
         </View>
@@ -339,7 +341,7 @@ function DocsBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   return (
     <View style={s.boxWrap}>
       {list.map((i, idx) => (
-        <Pressable key={i.id || idx} onPress={() => openURL(i.url)} style={[s.docRow, idx > 0 && s.topBorder]}>
+        <Pressable accessibilityRole="button" key={i.id || idx} onPress={() => openURL(i.url)} style={[s.docRow, idx > 0 && s.topBorder]}>
           <View style={{ flex: 1 }}>
             <Text style={s.docTitle}>{i.label || i.url}</Text>
             {i.detail ? <Text style={s.docNote}>{i.detail}</Text> : null}
@@ -373,7 +375,7 @@ function CtaBlock({ section, color }: Readonly<{ section: ProfileSection; color:
       {buttons.length ? (
         <View style={s.ctaButtons}>
           {buttons.map((b, i) => (
-            <Pressable key={b.id || i} onPress={() => openURL(b.url)} style={[s.ctaBtn, i === 0 ? s.ctaBtnPrimary : s.ctaBtnOutline]}>
+            <Pressable accessibilityRole="button" key={b.id || i} onPress={() => openURL(b.url)} style={[s.ctaBtn, i === 0 ? s.ctaBtnPrimary : s.ctaBtnOutline]}>
               <Text style={i === 0 ? s.ctaBtnPrimaryText : s.ctaBtnOutlineText}>{b.label}</Text>
             </Pressable>
           ))}
@@ -390,7 +392,7 @@ function LogosBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   return (
     <View style={s.logosWrap}>
       {list.map((i, idx) => (
-        <Pressable key={i.id || idx} onPress={() => openURL(i.url)} style={s.logoCell}>
+        <Pressable accessibilityRole="button" key={i.id || idx} onPress={() => openURL(i.url)} style={s.logoCell}>
           {i.image ? <Image source={{ uri: cld(i.image, "c_fit,w_240,f_auto,q_auto") }} resizeMode="contain" style={s.logoImg} /> : null}
           {i.label ? <Text style={s.logoLabel} numberOfLines={2}>{i.label}</Text> : null}
         </Pressable>
@@ -462,7 +464,7 @@ function HeroBlock({ section, color }: Readonly<{ section: ProfileSection; color
               const btnStyle = bg ? s.heroBtnLight : s.ctaBtnOutline;
               const btnTextStyle = bg ? s.heroBtnLightText : s.ctaBtnOutlineText;
               return (
-                <Pressable key={b.id || i} onPress={() => openURL(b.url)} style={[s.ctaBtn, i === 0 ? s.ctaBtnPrimary : btnStyle]}>
+                <Pressable accessibilityRole="button" key={b.id || i} onPress={() => openURL(b.url)} style={[s.ctaBtn, i === 0 ? s.ctaBtnPrimary : btnStyle]}>
                   <Text style={i === 0 ? s.ctaBtnPrimaryText : btnTextStyle}>{b.label}</Text>
                 </Pressable>
               );
@@ -573,7 +575,7 @@ function MapBlock({ section, color }: Readonly<{ section: ProfileSection; color:
         <Text style={{ fontSize: 16, color }}>📍</Text>
         <Text style={[s.contactAddress, { flex: 1 }]}>{addr}</Text>
       </View>
-      <Pressable onPress={() => openURL(href)} style={[s.ctaBtn, s.ctaBtnPrimary, { marginTop: 14, alignSelf: "flex-start" }]}>
+      <Pressable accessibilityRole="button" onPress={() => openURL(href)} style={[s.ctaBtn, s.ctaBtnPrimary, { marginTop: 14, alignSelf: "flex-start" }]}>
         <Text style={s.ctaBtnPrimaryText}>Get directions →</Text>
       </Pressable>
     </View>
@@ -590,12 +592,12 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   // Black/white overlays sit on the institution's own house colour, so they
   // are theme-independent by design (like a photo scrim).
   crest: { width: 84, height: 84, borderRadius: 42, backgroundColor: "#0003" },
-  crestFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FFFFFF44" },
+  crestFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: withAlpha(ON_GREEN, 0.27) },
   crestInit: { ...S(700), fontSize: 28, color: C.cream },
   heroName: { ...D(700), fontSize: 26, color: ON_GREEN, textAlign: "center", marginTop: 14 },
   heroMotto: { ...DI(), fontSize: 15, color: C.gold, textAlign: "center", marginTop: 6 },
   badge: { marginTop: 12, borderWidth: 1, borderColor: withAlpha(C.gold, 0x88 / 255), borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
-  badgeText: { color: C.gold, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
+  badgeText: { color: C.gold, fontSize: 11, ...S(700), letterSpacing: 0.5, textTransform: "uppercase" },
 
   facts: { flexDirection: "row", backgroundColor: C.cream, borderBottomWidth: 1, borderBottomColor: C.sand },
   factCell: { flex: 1, alignItems: "center", paddingVertical: 14, paddingHorizontal: 4 },
@@ -629,7 +631,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   avatar: { width: 44, height: 44, borderRadius: 22 },
   avatarInit: { ...S(700), fontSize: 16, color: C.cream },
   teamName: { ...S(600), fontSize: 16, color: C.ink },
-  teamRole: { fontSize: 11, color: C.goldText, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4, marginTop: 2 },
+  teamRole: { fontSize: 11, color: C.goldText, ...S(700), textTransform: "uppercase", letterSpacing: 0.4, marginTop: 2 },
   teamBio: { fontSize: 13, lineHeight: 19, color: C.inkMuted, marginTop: 4 },
 
   timelineRow: { flexDirection: "row", gap: 12 },
@@ -641,17 +643,17 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   boxWrap: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, overflow: "hidden", backgroundColor: C.cream },
   topBorder: { borderTopWidth: 1, borderTopColor: C.sand },
   faqItem: { paddingHorizontal: 14, paddingVertical: 12 },
-  faqQ: { fontSize: 15, fontWeight: "600", color: C.ink },
+  faqQ: { fontSize: 15, ...S(600), color: C.ink },
   faqA: { fontSize: 14, lineHeight: 21, color: C.inkMuted, marginTop: 6 },
 
   docRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
-  docTitle: { fontSize: 15, fontWeight: "500", color: C.ink },
+  docTitle: { fontSize: 15, ...S(500), color: C.ink },
   docNote: { fontSize: 11, color: C.inkFaint, marginTop: 2 },
-  docOpen: { fontSize: 12, fontWeight: "700", color: C.tealText },
+  docOpen: { fontSize: 12, ...S(700), color: C.tealText },
 
   quote: { borderLeftWidth: 3, paddingLeft: 16, paddingVertical: 4 },
   quoteText: { ...SI(), fontSize: 21, lineHeight: 29, color: C.ink },
-  quoteAttr: { fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 10 },
+  quoteAttr: { fontSize: 12, ...S(700), textTransform: "uppercase", letterSpacing: 0.5, marginTop: 10 },
 
   cta: { borderWidth: 1, borderRadius: 14, padding: 22, alignItems: "center", backgroundColor: C.cream },
   ctaTitle: { ...D(700), fontSize: 22, color: C.ink, textAlign: "center" },
@@ -659,9 +661,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   ctaButtons: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 16 },
   ctaBtn: { borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 },
   ctaBtnPrimary: { backgroundColor: C.green },
-  ctaBtnPrimaryText: { color: ON_GREEN, fontWeight: "700", fontSize: 13 },
+  ctaBtnPrimaryText: { color: ON_GREEN, ...S(700), fontSize: 13 },
   ctaBtnOutline: { borderWidth: 1, borderColor: C.green },
-  ctaBtnOutlineText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
+  ctaBtnOutlineText: { color: C.greenText, ...S(700), fontSize: 13 },
 
   logosWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   logoCell: { width: "31%", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, paddingVertical: 14, paddingHorizontal: 6 },
@@ -669,10 +671,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   logoLabel: { fontSize: 12, color: C.ink, textAlign: "center" },
 
   officeCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
-  officeRole: { fontSize: 11, color: C.goldText, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
+  officeRole: { fontSize: 11, color: C.goldText, ...S(700), textTransform: "uppercase", letterSpacing: 0.4 },
   eventCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
-  eventDate: { fontSize: 11, color: C.teal, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
-  eventTitle: { fontSize: 14, color: C.ink, marginTop: 3, fontWeight: "600" },
+  eventDate: { fontSize: 11, color: C.teal, ...S(700), textTransform: "uppercase", letterSpacing: 0.4 },
+  eventTitle: { fontSize: 14, color: C.ink, marginTop: 3, ...D(600) },
   officeHolder: { ...S(400), fontSize: 17, color: C.ink, marginTop: 4 },
 
   groupCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
@@ -680,11 +682,11 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   groupCrestFallback: { alignItems: "center", justifyContent: "center", backgroundColor: C.green },
   groupCrestInit: { ...S(700), fontSize: 15, color: ON_GREEN },
   groupName: { ...S(400), fontSize: 17, color: C.ink },
-  groupSubtitle: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
+  groupSubtitle: { fontSize: 11, ...D(700), textTransform: "uppercase", letterSpacing: 0.4 },
   colorDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: C.sand },
   groupSummary: { fontSize: 14, lineHeight: 21, color: C.inkMuted, marginTop: 8 },
   attrLabel: { fontSize: 13, color: C.inkFaint },
-  attrValue: { fontSize: 13, color: C.ink, fontWeight: "500", flex: 1 },
+  attrValue: { fontSize: 13, color: C.ink, ...S(500), flex: 1 },
 
   heroCard: { borderRadius: 14, overflow: "hidden" },
   heroInner: { paddingHorizontal: 20, paddingVertical: 32, alignItems: "center" },
@@ -692,20 +694,20 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   heroBody: { fontSize: 15, lineHeight: 22, textAlign: "center", marginTop: 8 },
   heroButtons: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 18 },
   heroBtnLight: { borderWidth: 1, borderColor: C.onDarkText50 },
-  heroBtnLightText: { color: ON_GREEN, fontWeight: "700", fontSize: 13 },
+  heroBtnLightText: { color: ON_GREEN, ...D(700), fontSize: 13 },
 
   testimCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 16 },
   testimQuote: { ...SI(), fontSize: 17, lineHeight: 25, color: C.ink },
   testimFoot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14 },
   testimAvatar: { width: 36, height: 36, borderRadius: 18 },
   testimAvatarInit: { ...S(700), fontSize: 14, color: C.cream },
-  testimAuthor: { fontSize: 14, fontWeight: "600", color: C.ink },
-  testimRole: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4, marginTop: 1 },
+  testimAuthor: { fontSize: 14, ...S(600), color: C.ink },
+  testimRole: { fontSize: 10, ...S(700), textTransform: "uppercase", letterSpacing: 0.4, marginTop: 1 },
 
   contactCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 16 },
   contactAddress: { ...S(400), fontSize: 15, lineHeight: 23, color: C.ink },
   contactRowsTop: { marginTop: 12, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 12 },
-  contactLabel: { width: 92, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
+  contactLabel: { width: 92, fontSize: 10, ...S(700), textTransform: "uppercase", letterSpacing: 0.4 },
   contactValue: { fontSize: 14, color: C.ink },
   contactLink: { color: C.tealText },
 
@@ -713,17 +715,17 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   claimTitle: { ...D(700), fontSize: 18, color: C.ink },
   claimBody: { fontSize: 13, lineHeight: 19, color: C.inkMuted, marginTop: 6 },
   claimBtn: { alignSelf: "flex-start", backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10, marginTop: 12 },
-  claimBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 13 },
+  claimBtnText: { color: ON_GREEN, ...S(700), fontSize: 13 },
   claimInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: C.ink },
   claimErr: { color: C.clayText, fontSize: 13 },
 
   listCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, overflow: "hidden" },
   listRow: { flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 14, paddingVertical: 12 },
   listRowBorder: { borderBottomWidth: 1, borderBottomColor: C.sand },
-  menuName: { fontSize: 15, fontWeight: "600", color: C.ink },
+  menuName: { fontSize: 15, ...S(600), color: C.ink },
   menuDesc: { fontSize: 13, lineHeight: 18, color: C.inkMuted, marginTop: 2 },
   menuPrice: { ...S(700), fontSize: 16, color: C.goldText },
   schedWhen: { width: 120, ...S(400), fontSize: 15 },
-  schedTime: { fontSize: 14, fontWeight: "600", color: C.ink },
+  schedTime: { fontSize: 14, ...S(600), color: C.ink },
   schedNote: { fontSize: 13, color: C.inkMuted, marginTop: 2 },
 });

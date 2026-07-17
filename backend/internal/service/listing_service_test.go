@@ -57,10 +57,15 @@ func (f *fakeRepo) GetByID(_ context.Context, id string) (*domain.Listing, error
 	}
 	return nil, &domain.NotFoundError{Entity: "listing"}
 }
-func (f *fakeRepo) UpdateStatus(_ context.Context, id, status, _, _, _ string) error {
+func (f *fakeRepo) UpdateStatus(_ context.Context, id, status, _, reason, _ string) error {
 	for i := range f.listings {
 		if f.listings[i].ID == id {
 			f.listings[i].Status = status
+			if status == domain.StatusApproved {
+				f.listings[i].RejectionReason = ""
+			} else if reason != "" {
+				f.listings[i].RejectionReason = reason
+			}
 			return nil
 		}
 	}
@@ -244,12 +249,12 @@ func (stubFollows) MemberFollowers(context.Context, string) ([]string, error) { 
 
 type stubMembers struct{}
 
-func (stubMembers) All(context.Context) ([]domain.Member, error)                 { return nil, nil }
-func (stubMembers) ByID(context.Context, string) (*domain.Member, error)         { return nil, nil }
-func (stubMembers) BySlug(context.Context, string) (*domain.Member, error)       { return nil, nil }
-func (stubMembers) ByIdentifier(context.Context, string) (*domain.Member, error) { return nil, nil }
-func (stubMembers) Insert(context.Context, domain.Member) error                  { return nil }
-func (stubMembers) SetPhoneVerified(context.Context, string, bool) error         { return nil }
+func (stubMembers) All(context.Context) ([]domain.Member, error)                   { return nil, nil }
+func (stubMembers) ByID(context.Context, string) (*domain.Member, error)           { return nil, nil }
+func (stubMembers) BySlug(context.Context, string) (*domain.Member, error)         { return nil, nil }
+func (stubMembers) ByIdentifier(context.Context, string) (*domain.Member, error)   { return nil, nil }
+func (stubMembers) Insert(context.Context, domain.Member) error                    { return nil }
+func (stubMembers) SetPhoneVerified(context.Context, string, bool) error           { return nil }
 func (stubMembers) SetPasswordReset(context.Context, string, string, string) error { return nil }
 func (stubMembers) SetPhoneVerification(context.Context, string, string, string) error {
 	return nil

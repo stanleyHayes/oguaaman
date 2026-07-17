@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { getToken } from "@/lib/api";
 
 // Image upload. Prefers Cloudinary (unsigned preset) when configured; otherwise
@@ -61,7 +61,7 @@ export function ImageUpload({
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Please choose an image file."); return; }
@@ -77,7 +77,7 @@ export function ImageUpload({
     }
   }
 
-  let picker: React.ReactNode;
+  let picker: ReactNode;
   if (value) {
     picker = (
         <div className="flex items-center gap-3">

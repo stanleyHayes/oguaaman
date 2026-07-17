@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode} from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import type { InstitutionView, MediaAsset, Office, Organization, ProfileSection, ProfileSectionType, SectionItem, SubEntity } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -61,7 +61,7 @@ export function Component() {
   );
 }
 
-function Panel({ title, children }: Readonly<{ title: string; children: React.ReactNode }>) {
+function Panel({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
   return (
     <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-6">
       <h2 className="mb-4 text-xl font-semibold text-ink">{title}</h2>

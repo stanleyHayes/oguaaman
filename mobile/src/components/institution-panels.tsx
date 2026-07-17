@@ -47,7 +47,7 @@ function FieldLabel({ children }: Readonly<{ children: React.ReactNode }>) {
 function CheckRow({ value, onValueChange, label }: Readonly<{ value: boolean; onValueChange: (v: boolean) => void; label: string }>) {
   const s = usePanelStyles();
   return (
-    <Pressable onPress={() => onValueChange(!value)} style={s.checkRow}>
+    <Pressable accessibilityRole="button" onPress={() => onValueChange(!value)} style={s.checkRow}>
       <View style={[s.checkBox, value && s.checkBoxOn]}>{value ? <Text style={s.checkTick}>✓</Text> : null}</View>
       <Text style={s.checkLabel}>{label}</Text>
     </Pressable>
@@ -175,10 +175,10 @@ export function ProfilePanel({ slug, org }: Readonly<{ slug: string; org: Organi
               <View key={i} style={s.rowItem}>
                 <TextInput style={[s.input, { flex: 1 }]} value={c.label} onChangeText={(v) => updateContact(i, { label: v })} placeholder="Label (e.g. Website)" placeholderTextColor={C.inkFaint} />
                 <TextInput style={[s.input, { flex: 1 }]} value={c.url} onChangeText={(v) => updateContact(i, { url: v })} placeholder="https://…" placeholderTextColor={C.inkFaint} autoCapitalize="none" keyboardType="url" />
-                <Pressable onPress={() => removeContact(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => removeContact(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
               </View>
             ))}
-            <Pressable onPress={addContact} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add contact</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={addContact} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add contact</Text></Pressable>
           </View>
         </View>
 
@@ -191,7 +191,7 @@ export function ProfilePanel({ slug, org }: Readonly<{ slug: string; org: Organi
         </View>
 
         <View style={s.saveRow}>
-          <Pressable onPress={save} disabled={state === "saving"} style={[s.primaryBtn, state === "saving" && s.dim]}>
+          <Pressable accessibilityRole="button" onPress={save} disabled={state === "saving"} style={[s.primaryBtn, state === "saving" && s.dim]}>
             <Text style={s.primaryBtnText}>Save profile</Text>
           </Pressable>
           <Saver state={state} />
@@ -235,15 +235,15 @@ export function OfficesPanel({ slug, initial }: Readonly<{ slug: string; initial
           <View key={o.id || i} style={{ gap: 8 }}>
             <View style={s.rowItem}>
               <TextInput style={[s.input, { flex: 1 }]} value={o.role} onChangeText={(v) => update(i, { role: v })} placeholder="Office (e.g. Headmaster)" placeholderTextColor={C.inkFaint} />
-              <Pressable onPress={() => remove(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
             </View>
             <TextInput style={s.input} value={o.holderName ?? ""} onChangeText={(v) => update(i, { holderName: v })} placeholder="Holder's name" placeholderTextColor={C.inkFaint} />
           </View>
         ))}
       </View>
       <View style={[s.saveRow, { marginTop: 14 }]}>
-        <Pressable onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add office</Text></Pressable>
-        <Pressable onPress={save} disabled={state === "saving"} style={[s.primaryBtn, state === "saving" && s.dim]}>
+        <Pressable accessibilityRole="button" onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add office</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={save} disabled={state === "saving"} style={[s.primaryBtn, state === "saving" && s.dim]}>
           <Text style={s.primaryBtnText}>Save roster</Text>
         </Pressable>
         <Saver state={state} />
@@ -298,7 +298,7 @@ export function EventPanel({ slug, verified }: Readonly<{ slug: string; verified
           <TextInput style={[s.input, s.inputArea]} value={description} onChangeText={setDescription} placeholder="What's happening, who it's for" placeholderTextColor={C.inkFaint} multiline />
         </View>
         <View style={s.saveRow}>
-          <Pressable onPress={post} disabled={state === "saving" || !title.trim()} style={[s.goldBtn, (state === "saving" || !title.trim()) && s.dim]}>
+          <Pressable accessibilityRole="button" onPress={post} disabled={state === "saving" || !title.trim()} style={[s.goldBtn, (state === "saving" || !title.trim()) && s.dim]}>
             <Text style={s.goldBtnText}>{verified ? "Publish event" : "Submit event"}</Text>
           </Pressable>
           {msg ? <Text style={state === "error" ? s.saverErr : s.saverOk}>{msg}</Text> : <Saver state={state} />}
@@ -346,14 +346,14 @@ export function GalleryPanel({ slug, initial }: Readonly<{ slug: string; initial
               <TextInput style={s.input} value={m.alt ?? ""} onChangeText={(v) => update(i, { alt: v })} placeholder="Alt text (describe the image)" placeholderTextColor={C.inkFaint} />
               <TextInput style={s.input} value={m.credit ?? ""} onChangeText={(v) => update(i, { credit: v })} placeholder="Photo credit / source (optional)" placeholderTextColor={C.inkFaint} />
             </View>
-            <Pressable onPress={() => remove(i)} hitSlop={6} style={{ marginTop: 8 }}><Text style={s.removeLink}>Remove photo</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={{ marginTop: 8 }}><Text style={s.removeLink}>Remove photo</Text></Pressable>
           </View>
         ))}
         {items.length === 0 ? <Text style={s.help}>No photos yet.</Text> : null}
       </View>
       <View style={[s.saveRow, { marginTop: 14 }]}>
-        <Pressable onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add photo</Text></Pressable>
-        <Pressable onPress={save} disabled={state === "saving"} style={[s.primaryBtn, state === "saving" && s.dim]}>
+        <Pressable accessibilityRole="button" onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add photo</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={save} disabled={state === "saving"} style={[s.primaryBtn, state === "saving" && s.dim]}>
           <Text style={s.primaryBtnText}>Save gallery</Text>
         </Pressable>
         <Saver state={state} />
@@ -524,9 +524,9 @@ export function SectionsPanel({ slug, initial }: Readonly<{ slug: string; initia
             <View style={s.sectionHead}>
               <View style={s.typeBadge}><Text style={s.typeBadgeText}>{sectionTypeLabel(sec.type)}</Text></View>
               <View style={s.moveGroup}>
-                <Pressable onPress={() => move(i, -1)} disabled={i === 0} style={[s.moveBtn, i === 0 && s.dim]}><Text style={s.moveBtnText}>↑</Text></Pressable>
-                <Pressable onPress={() => move(i, 1)} disabled={i === sections.length - 1} style={[s.moveBtn, i === sections.length - 1 && s.dim]}><Text style={s.moveBtnText}>↓</Text></Pressable>
-                <Pressable onPress={() => remove(i)} style={s.moveBtn}><Text style={[s.moveBtnText, { color: C.clayText }]}>✕</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => move(i, -1)} disabled={i === 0} style={[s.moveBtn, i === 0 && s.dim]}><Text style={s.moveBtnText}>↑</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => move(i, 1)} disabled={i === sections.length - 1} style={[s.moveBtn, i === sections.length - 1 && s.dim]}><Text style={s.moveBtnText}>↓</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => remove(i)} style={s.moveBtn}><Text style={[s.moveBtnText, { color: C.clayText }]}>✕</Text></Pressable>
               </View>
             </View>
             <TextInput style={[s.input, { marginTop: 8 }]} value={sec.title ?? ""} onChangeText={(v) => update(i, { title: v })} placeholder="Section title" placeholderTextColor={C.inkFaint} />
@@ -534,7 +534,7 @@ export function SectionsPanel({ slug, initial }: Readonly<{ slug: string; initia
             <View style={s.toneRow}>
               <Text style={s.toneLabel}>Accent</Text>
               {TONE_OPTIONS.map((t) => (
-                <Pressable key={t} onPress={() => update(i, { tone: t })} style={[s.toneChip, (sec.tone ?? "green") === t && s.toneChipOn]}>
+                <Pressable accessibilityRole="button" key={t} onPress={() => update(i, { tone: t })} style={[s.toneChip, (sec.tone ?? "green") === t && s.toneChipOn]}>
                   <Text style={[s.toneChipText, (sec.tone ?? "green") === t && s.toneChipTextOn]}>{t}</Text>
                 </Pressable>
               ))}
@@ -595,14 +595,14 @@ export function SectionsPanel({ slug, initial }: Readonly<{ slug: string; initia
       <Text style={[s.subLabel, { marginTop: 16 }]}>Add a section</Text>
       <View style={s.addWrap}>
         {SECTION_TYPES.map((st) => (
-          <Pressable key={st.type} onPress={() => addType(st.type)} style={s.addChip}>
+          <Pressable accessibilityRole="button" key={st.type} onPress={() => addType(st.type)} style={s.addChip}>
             <Text style={s.addChipText}>+ {st.label}</Text>
           </Pressable>
         ))}
       </View>
 
       <View style={[s.saveRow, s.saveDivider]}>
-        <Pressable onPress={save} disabled={state === "saving"} style={[s.primaryBtn, state === "saving" && s.dim]}>
+        <Pressable accessibilityRole="button" onPress={save} disabled={state === "saving"} style={[s.primaryBtn, state === "saving" && s.dim]}>
           <Text style={s.primaryBtnText}>Save sections</Text>
         </Pressable>
         <Saver state={state} />
@@ -643,10 +643,10 @@ function ItemsEditor({ type, items, onChange }: Readonly<{ type: ProfileSectionT
               </View>
             ) : null}
           </View>
-          <Pressable onPress={() => remove(i)} hitSlop={6} style={{ marginTop: 8 }}><Text style={s.removeLink}>Remove</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={{ marginTop: 8 }}><Text style={s.removeLink}>Remove</Text></Pressable>
         </View>
       ))}
-      <Pressable onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add item</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add item</Text></Pressable>
     </View>
   );
 }
@@ -668,10 +668,10 @@ function MediaItemsEditor({ media, onChange }: Readonly<{ media: MediaAsset[]; o
             <TextInput style={s.input} value={m.alt ?? ""} onChangeText={(v) => update(i, { alt: v })} placeholder="Alt text — describe the image" placeholderTextColor={C.inkFaint} />
             <TextInput style={s.input} value={m.credit ?? ""} onChangeText={(v) => update(i, { credit: v })} placeholder="Photo credit / source (optional)" placeholderTextColor={C.inkFaint} />
           </View>
-          <Pressable onPress={() => remove(i)} hitSlop={6} style={{ marginTop: 8 }}><Text style={s.removeLink}>Remove photo</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={{ marginTop: 8 }}><Text style={s.removeLink}>Remove photo</Text></Pressable>
         </View>
       ))}
-      <Pressable onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add photo</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add photo</Text></Pressable>
     </View>
   );
 }
@@ -699,10 +699,10 @@ function GroupsEditor({ groups, onChange }: Readonly<{ groups: SubEntity[]; onCh
           </View>
           <Text style={[s.subLabel, { marginTop: 10 }]}>Facts</Text>
           <AttrsEditor attrs={g.attrs ?? []} onChange={(attrs) => update(i, { attrs })} />
-          <Pressable onPress={() => remove(i)} hitSlop={6} style={{ marginTop: 8 }}><Text style={s.removeLink}>Remove card</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={{ marginTop: 8 }}><Text style={s.removeLink}>Remove card</Text></Pressable>
         </View>
       ))}
-      <Pressable onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add card</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add card</Text></Pressable>
     </View>
   );
 }
@@ -719,10 +719,10 @@ function AttrsEditor({ attrs, onChange }: Readonly<{ attrs: SectionItem[]; onCha
         <View key={a.id || i} style={s.rowItem}>
           <TextInput style={[s.input, { flex: 1 }]} value={a.label ?? ""} onChangeText={(v) => update(i, { label: v })} placeholder="Label (e.g. Housemaster)" placeholderTextColor={C.inkFaint} />
           <TextInput style={[s.input, { flex: 1 }]} value={a.value ?? ""} onChangeText={(v) => update(i, { value: v })} placeholder="Value" placeholderTextColor={C.inkFaint} />
-          <Pressable onPress={() => remove(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
         </View>
       ))}
-      <Pressable onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add fact</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add fact</Text></Pressable>
     </View>
   );
 }
@@ -731,8 +731,8 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   panel: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   panelTitle: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 4 },
   panelIntro: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginBottom: 14 },
-  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginBottom: 8 },
-  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, fontWeight: "700", textTransform: "uppercase" },
+  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...S(700), textTransform: "uppercase", marginBottom: 8 },
+  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, ...S(700), textTransform: "uppercase" },
   help: { color: C.inkFaint, fontSize: 13, lineHeight: 19 },
 
   input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
@@ -741,46 +741,46 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   rowItem: { flexDirection: "row", alignItems: "center", gap: 8 },
 
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 14 },
   goldBtn: { backgroundColor: C.goldBrand, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20 },
-  goldBtnText: { color: C.cream, fontWeight: "700", fontSize: 14 },
+  goldBtnText: { color: C.cream, ...S(700), fontSize: 14 },
   ghostBtn: { alignSelf: "flex-start", borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
-  ghostBtnText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
+  ghostBtnText: { color: C.greenText, ...S(700), fontSize: 13 },
   dim: { opacity: 0.5 },
 
   removeBtn: { width: 40, height: 40, borderWidth: 1, borderColor: C.sand, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  removeText: { color: C.inkMuted, fontSize: 15, fontWeight: "700" },
-  removeLink: { color: C.clayText, fontSize: 13, fontWeight: "600" },
+  removeText: { color: C.inkMuted, fontSize: 15, ...S(700) },
+  removeLink: { color: C.clayText, fontSize: 13, ...S(600) },
 
   saveRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 4 },
   saveDivider: { marginTop: 16, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 16 },
   saverMuted: { color: C.inkFaint, fontSize: 13 },
-  saverOk: { color: C.tealText, fontSize: 13, fontWeight: "600" },
+  saverOk: { color: C.tealText, fontSize: 13, ...S(600) },
   saverErr: { color: C.clayText, fontSize: 13 },
 
   checkRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
   checkBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.sand, alignItems: "center", justifyContent: "center" },
   checkBoxOn: { backgroundColor: C.green, borderColor: C.green },
-  checkTick: { color: ON_GREEN, fontWeight: "700", fontSize: 12 },
+  checkTick: { color: ON_GREEN, ...S(700), fontSize: 12 },
   checkLabel: { color: C.ink, fontSize: 14 },
 
   itemCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.paper, padding: 12 },
   sectionCard: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.paper, padding: 12 },
   sectionHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   typeBadge: { backgroundColor: withAlpha(C.green, 0.08), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  typeBadgeText: { color: C.greenText, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6 },
+  typeBadgeText: { color: C.greenText, fontSize: 10, ...S(700), textTransform: "uppercase", letterSpacing: 0.6 },
   moveGroup: { flexDirection: "row", gap: 6 },
   moveBtn: { width: 34, height: 34, borderWidth: 1, borderColor: C.sand, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  moveBtnText: { color: C.inkMuted, fontSize: 15, fontWeight: "700" },
+  moveBtnText: { color: C.inkMuted, fontSize: 15, ...S(700) },
 
   toneRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 10 },
   toneLabel: { color: C.inkMuted, fontSize: 12, marginRight: 2 },
   toneChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   toneChipOn: { backgroundColor: C.green, borderColor: C.green },
-  toneChipText: { color: C.inkMuted, fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
+  toneChipText: { color: C.inkMuted, fontSize: 12, ...S(600), textTransform: "capitalize" },
   toneChipTextOn: { color: ON_GREEN },
 
   addWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   addChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  addChipText: { color: C.ink, fontSize: 13, fontWeight: "600" },
+  addChipText: { color: C.ink, fontSize: 13, ...S(600) },
 });

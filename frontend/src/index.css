@@ -243,6 +243,28 @@
     background-size: 400% 100%;
     animation: oguaa-shimmer 1.6s ease-in-out infinite;
   }
+  .text-shimmer-gold {
+    background: linear-gradient(92deg, #e7c878, #c7a24a 55%, #b07d32);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: oguaa-text-shimmer 4s ease-in-out infinite;
+  }
+  @keyframes oguaa-text-shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  .aurora-bg {
+    background: radial-gradient(120% 120% at 30% 20%, rgba(199,162,74,0.18), rgba(14,124,107,0.10) 40%, transparent 70%),
+                radial-gradient(120% 120% at 80% 80%, rgba(176,80,60,0.14), transparent 60%);
+    background-size: 200% 200%;
+    animation: oguaa-aurora 14s ease-in-out infinite alternate;
+  }
+  @keyframes oguaa-aurora {
+    0% { background-position: 0% 0%, 100% 100%; }
+    100% { background-position: 100% 100%, 0% 0%; }
+  }
   @keyframes oguaa-shimmer {
     0% { background-position: 100% 0; }
     100% { background-position: 0 0; }
@@ -255,7 +277,9 @@
     }
     .oguaa-float { animation: none; }
     .oguaa-pulse-ring::after { animation: none; opacity: 0; }
-    .skeleton { animation: none; }
+    .skeleton,
+    .text-shimmer-gold,
+    .aurora-bg { animation: none; }
     html {
       scroll-behavior: auto;
     }

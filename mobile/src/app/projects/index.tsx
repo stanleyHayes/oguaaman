@@ -1,3 +1,4 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
@@ -32,7 +33,7 @@ const makeProgressStyles = (C: Palette) => StyleSheet.create({
   track: { height: 7, borderRadius: 4, backgroundColor: C.sand, overflow: "hidden" },
   fill: { height: "100%", borderRadius: 4, backgroundColor: C.green },
   row: { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-  raised: { color: C.greenText, fontSize: 12, fontWeight: "700" },
+  raised: { color: C.greenText, fontSize: 12, ...S(700) },
   goal: { color: C.inkFaint, fontSize: 12 },
 });
 
@@ -60,8 +61,8 @@ export default function Projects() {
       {data.length === 0 && <EmptyState glyph="◈" title="No open projects yet" body="The first campaigns are being costed." />}
       {data.map((l, i) => (
         <StaggerIn key={l.id} index={i}>
-          <Link href={`/projects/${l.slug}` as never} asChild>
-            <Pressable style={s.card}>
+          <Link href={route.project(l.slug)} asChild>
+            <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={l.title}>
             <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cover} labelStyle={s.coverInit} />
             <View style={{ padding: 14 }}>
               <Text style={s.title}>{l.title}</Text>

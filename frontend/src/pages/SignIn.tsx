@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
@@ -168,7 +168,7 @@ function SignInForm({
   setPassword: (v: string) => void;
   busy: boolean;
   err: string | null;
-  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   onSwitchMode: (m: Mode) => void;
 }>) {
   // The backend's specific 401 when the account exists but was never given a
@@ -216,7 +216,7 @@ function MfaForm({ code, setCode, busy, err, onSubmit, onCancel }: Readonly<{
   setCode: (v: string) => void;
   busy: boolean;
   err: string | null;
-  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }>) {
   // The verify step accepts either a 6-digit authenticator code (the OtpInput)
@@ -336,7 +336,7 @@ function JoinForm({
   err: string | null;
   onNext: () => void;
   onBack: () => void;
-  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   onSwitchMode: (m: Mode) => void;
 }>) {
   const choiceCls = (on: boolean) =>
@@ -419,7 +419,7 @@ function JoinForm({
                 </label>
                 <div className="block">
                   <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth</span>
-                  <DatePicker value={dob} onChange={setDob} max={adultCutoffIso()} placeholder="dd/mm/yyyy" className="w-full" />
+                  <DatePicker value={dob} onChange={setDob} max={adultCutoffIso()} placeholder="dd/mm/yyyy" aria-label="Date of birth" className="w-full" />
                   <span className="mt-1.5 block text-xs text-ink-faint">Oguaa is for ages 18 and over.</span>
                 </div>
               </>
@@ -510,7 +510,7 @@ export function Component() {
     setJoinStep(1);
   };
 
-  const submitSignIn = async (e: SubmitEvent<HTMLFormElement>) => {
+  const submitSignIn = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
@@ -526,7 +526,7 @@ export function Component() {
     } finally { setBusy(false); }
   };
 
-  const submitMfa = async (e: SubmitEvent<HTMLFormElement>) => {
+  const submitMfa = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!mfaChallenge) return;
     setBusy(true); setErr(null);
@@ -568,7 +568,7 @@ export function Component() {
     setJoinStep((s) => (s === 3 ? 2 : 1));
   };
 
-  const submitJoin = async (e: SubmitEvent<HTMLFormElement>) => {
+  const submitJoin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Enter inside a step-1/2 field submits the form — treat it as Next.
     if (joinStep < 3) {

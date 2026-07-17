@@ -1,6 +1,6 @@
 import { useMemo } from "react";
+import { push } from "@/lib/router";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { S, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -93,7 +93,7 @@ export function MetricCard({
 
   return (
     <View style={[s.slot, style]}>
-      {href ? <Pressable onPress={() => router.push(href as never)} style={s.fill}>{card}</Pressable> : card}
+      {href ? <Pressable accessibilityRole="button" onPress={() => push(href)} style={s.fill}>{card}</Pressable> : card}
     </View>
   );
 }
@@ -125,11 +125,11 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
   iconChip: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  iconGlyph: { fontSize: 16, fontWeight: "700" },
-  arrow: { color: C.inkFaint, fontSize: 13, fontWeight: "700", opacity: 0.5 },
+  iconGlyph: { fontSize: 16, ...S(700) },
+  arrow: { color: C.inkFaint, fontSize: 13, ...S(700), opacity: 0.5 },
   value: { ...S(700), fontSize: 21, color: C.ink },
   label: { color: C.inkFaint, fontSize: 11, marginTop: 2 },
-  sub: { fontSize: 10, fontWeight: "700", marginTop: 4 },
+  sub: { fontSize: 10, ...S(700), marginTop: 4 },
   pill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, alignSelf: "flex-start" },
-  pillText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
+  pillText: { fontSize: 11, ...S(700), textTransform: "capitalize" },
 });

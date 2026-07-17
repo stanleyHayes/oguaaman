@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent} from "react";
 import type { Organization } from "@/lib/types";
 
 // Matches the SchoolingEditor's native-select idiom so the swap is invisible.
@@ -97,7 +97,7 @@ export function SchoolCombobox({
     inputRef.current?.blur();
   }
 
-  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();

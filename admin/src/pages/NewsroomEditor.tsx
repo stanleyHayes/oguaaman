@@ -98,7 +98,7 @@ export function Component() {
         <div className="flex items-center justify-between gap-3 border-b border-sand px-5 py-3">
           <div className="inline-flex rounded-full border border-sand bg-paper p-0.5 text-sm">
             {(["write", "preview"] as const).map((m) => (
-              <button key={m} onClick={() => setMode(m)} className={`rounded-full px-3 py-1 font-medium capitalize transition-colors ${mode === m ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>{m}</button>
+              <button type="button" key={m} onClick={() => setMode(m)} className={`rounded-full px-3 py-1 font-medium capitalize transition-colors ${mode === m ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>{m}</button>
             ))}
           </div>
           <span className="text-[0.7rem] text-ink-faint">{words} words · {mins} min read</span>
@@ -151,11 +151,11 @@ function EditorHeader({ article, isNew, dirty, savedFlash, busy, onSave, onToggl
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <SaveIndicator dirty={dirty} savedFlash={savedFlash} />
-        <button onClick={onSave} disabled={busy || !dirty} className="rounded-full border border-sand bg-paper px-4 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-gold-border hover:text-gold-text disabled:opacity-40">
+        <button type="button" onClick={onSave} disabled={busy || !dirty} className="rounded-full border border-sand bg-paper px-4 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-gold-border hover:text-gold-text disabled:opacity-40">
           {isNew ? "Save draft" : "Save"}
         </button>
         {article && (
-          <button onClick={onTogglePublish} disabled={busy} className={article.status === "published"
+          <button type="button" onClick={onTogglePublish} disabled={busy} className={article.status === "published"
             ? "rounded-full border border-maroon-text/50 px-4 py-1.5 text-xs font-semibold text-maroon-text transition-colors hover:bg-maroon-900/[0.06] disabled:opacity-50"
             : "rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-50"}>
             {article.status === "published" ? "Unpublish" : "Publish"}
@@ -172,14 +172,14 @@ function EditorHeader({ article, isNew, dirty, savedFlash, busy, onSave, onToggl
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
               >
-                <button onClick={onDelete} disabled={busy} className="rounded-full bg-maroon-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Confirm delete</button>
-                <button onClick={() => setConfirmDel(false)} className="rounded-full px-2 py-1.5 text-xs font-medium text-ink-muted hover:text-ink">Cancel</button>
+                <button type="button" onClick={onDelete} disabled={busy} className="rounded-full bg-maroon-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Confirm delete</button>
+                <button type="button" onClick={() => setConfirmDel(false)} className="rounded-full px-2 py-1.5 text-xs font-medium text-ink-muted hover:text-ink">Cancel</button>
               </motion.span>
             )}
           </AnimatePresence>
         )}
         {article && !confirmDel && (
-          <button onClick={() => setConfirmDel(true)} className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-maroon-text hover:text-maroon-text">Delete</button>
+          <button type="button" onClick={() => setConfirmDel(true)} className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-maroon-text hover:text-maroon-text">Delete</button>
         )}
       </div>
     </div>
@@ -220,8 +220,8 @@ function WritePane({ form, setForm, bodyRef }: Readonly<{
 
   return (
     <div className="space-y-3 p-5">
-      <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Headline" className="w-full rounded-lg border border-sand bg-cream px-3.5 py-2.5 text-2xl font-semibold text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
-      <input value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="One-line summary — shown on the news cards" className="w-full rounded-lg border border-sand bg-cream px-3.5 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
+      <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Headline" aria-label="Article headline" className="w-full rounded-lg border border-sand bg-cream px-3.5 py-2.5 text-2xl font-semibold text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
+      <input value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="One-line summary — shown on the news cards" aria-label="Article summary" className="w-full rounded-lg border border-sand bg-cream px-3.5 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
 
       <div className="flex flex-wrap items-center gap-1 rounded-lg border border-sand bg-paper px-2 py-1.5">
         {/* Inline handlers so ref access stays inside event handlers (eslint react-hooks/refs). */}
@@ -233,7 +233,7 @@ function WritePane({ form, setForm, bodyRef }: Readonly<{
         <button type="button" onClick={() => surround("[", "](https://)")} title="Link" className={toolBtn}>🔗</button>
       </div>
 
-      <textarea ref={bodyRef} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Write in Markdown — # heading, **bold**, - lists, > quote, [link](url)…" rows={16} className="w-full resize-y rounded-lg border border-sand bg-cream px-3.5 py-3 font-mono text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
+      <textarea ref={bodyRef} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Write in Markdown — # heading, **bold**, - lists, > quote, [link](url)…" rows={16} aria-label="Article body" className="w-full resize-y rounded-lg border border-sand bg-cream px-3.5 py-3 font-mono text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:border-gold-border focus:outline-none" />
 
       <div>
         <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Tags</span>
@@ -266,7 +266,7 @@ function WritePane({ form, setForm, bodyRef }: Readonly<{
           <span className="mb-1.5 block text-sm font-medium text-ink">Cover colour</span>
           <div className="flex flex-wrap gap-2">
             {COVERS.map((c) => (
-              <button key={c} onClick={() => setForm({ ...form, coverColor: c })} aria-label={`cover ${c}`} className={`h-7 w-7 rounded-full transition-shadow ${form.coverColor === c ? "ring-2 ring-gold ring-offset-2 ring-offset-cream" : ""}`} style={{ backgroundColor: c }} />
+              <button type="button" key={c} onClick={() => setForm({ ...form, coverColor: c })} aria-label={`cover ${c}`} className={`h-7 w-7 rounded-full transition-shadow ${form.coverColor === c ? "ring-2 ring-gold ring-offset-2 ring-offset-cream" : ""}`} style={{ backgroundColor: c }} />
             ))}
           </div>
         </div>

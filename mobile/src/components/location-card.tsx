@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
-import { type Palette } from "@/theme";
+import { type Palette, S } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 const CAPE_COAST: [number, number] = [5.1053, -1.2466];
@@ -57,7 +57,7 @@ export function LocationCard({ address, query }: Readonly<{ address?: string; qu
       <Image source={{ uri: staticMap(resolvedCoords[0], resolvedCoords[1]) }} style={s.map} resizeMode="cover" />
       <View style={s.body}>
         {address ? <Text style={s.addr}>📍 {address}</Text> : null}
-        <Pressable style={s.btn} onPress={() => Linking.openURL(directions).catch(() => {})}>
+        <Pressable accessibilityRole="button" style={s.btn} onPress={() => Linking.openURL(directions).catch(() => {})}>
           <Text style={s.btnText}>Get directions ↗</Text>
         </Pressable>
         <Text style={s.meta}>
@@ -74,6 +74,6 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   body: { padding: 14 },
   addr: { color: C.ink, fontSize: 14 },
   btn: { marginTop: 10, alignSelf: "flex-start", backgroundColor: C.teal, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  btnText: { color: C.cream, fontWeight: "700", fontSize: 13 },
+  btnText: { color: C.cream, ...S(700), fontSize: 13 },
   meta: { marginTop: 8, color: C.inkFaint, fontSize: 11, lineHeight: 16 },
 });

@@ -5,7 +5,7 @@
 // only update happens inside the fetch's .then guarded by a `cancelled` flag,
 // and any failure keeps the fallback silently (a marketing page shows no errors).
 import { useEffect, useState } from "react";
-import type { Pill } from "@/components/ui";
+import { Pill } from "@/components/ui";
 import { PORTAL_APP_URL } from "@/config";
 
 export interface Listing {

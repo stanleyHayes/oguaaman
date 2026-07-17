@@ -65,13 +65,18 @@ func clientIP(r *http.Request) string {
 	// X-Forwarded-For can be spoofed by clients. In a single-proxy deployment
 	// (nginx / cloud LB) the proxy appends the real client IP as the rightmost
 	// entry — clients control only leftmost entries. We walk right-to-left and
-	// take the first non-private IP, falling back to RemoteAddr when absent.
+	// take the first syntactically valid, non-private IP, falling back to
+	// RemoteAddr when absent or when every XFF entry is invalid/private.
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		parts := strings.Split(xff, ",")
 		for i := len(parts) - 1; i >= 0; i-- {
-			ip := strings.TrimSpace(parts[i])
-			if ip != "" && !isPrivateIP(ip) {
-				return ip
+			raw := strings.TrimSpace(parts[i])
+			if raw == "" {
+				continue
+			}
+			// net.ParseIP accepts "1.2.3.4" and "::1"; reject hostnames.
+			if ip := net.ParseIP(raw); ip != nil && !isPrivateIP(ip) {
+				return raw
 			}
 		}
 	}
@@ -81,13 +86,9 @@ func clientIP(r *http.Request) string {
 	return r.RemoteAddr
 }
 
-// isPrivateIP reports whether an IP string is a loopback or RFC-1918/4193
-// private address — these are injected by internal infrastructure, not clients.
-func isPrivateIP(s string) bool {
-	ip := net.ParseIP(s)
-	if ip == nil {
-		return false
-	}
+// isPrivateIP reports whether an IP is a loopback or RFC-1918/4193 private
+// address — these are injected by internal infrastructure, not clients.
+func isPrivateIP(ip net.IP) bool {
 	private := []string{
 		"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
 		"fc00::/7", "127.0.0.0/8", "::1/128",

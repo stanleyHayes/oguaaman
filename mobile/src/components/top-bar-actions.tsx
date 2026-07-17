@@ -1,11 +1,13 @@
 import { useMemo } from "react";
+import { ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, StyleSheet, View, type GestureResponderEvent } from "react-native";
-import { router } from "expo-router";
+
 import { T as Text } from "@/components/typography";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 import { useDirectives } from "@/lib/directives";
 import { BellIcon, MoonIcon, SearchIcon, SunIcon, SystemIcon, type IconProps } from "@/components/icons";
-import { ON_GREEN, type Palette } from "@/theme";
+import { ON_GREEN, type Palette, S } from "@/theme";
 
 // The shared header action cluster — theme toggle, alerts bell (badged with the
 // count of active high/critical directives), and search. Rendered on the RIGHT
@@ -46,7 +48,7 @@ export function TopBarActions() {
 
   return (
     <View style={s.row}>
-      <Pressable
+      <Pressable accessibilityRole="button"
         onPress={(e: GestureResponderEvent) =>
           setTheme(THEME_NEXT[setting], { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY })
         }
@@ -58,8 +60,8 @@ export function TopBarActions() {
         <ThemeIcon size={ICON_SIZE} color={ON_GREEN} strokeWidth={2} />
       </Pressable>
 
-      <Pressable
-        onPress={() => router.push("/alerts" as never)}
+      <Pressable accessibilityRole="button"
+        onPress={() => push(ROUTES.alerts)}
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel={urgent > 0 ? `Alerts, ${urgent} active` : "Alerts"}
@@ -73,8 +75,8 @@ export function TopBarActions() {
         ) : null}
       </Pressable>
 
-      <Pressable
-        onPress={() => router.push("/search")}
+      <Pressable accessibilityRole="button"
+        onPress={() => push(ROUTES.search)}
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel="Search"
@@ -103,5 +105,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeText: { color: ON_GREEN, fontSize: 10, fontWeight: "800", lineHeight: 13 },
+  badgeText: { color: ON_GREEN, fontSize: 10, ...S(700), lineHeight: 13 },
 });

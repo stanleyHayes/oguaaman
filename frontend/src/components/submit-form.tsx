@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode, type FormEvent} from "react";
 import type { ListingType } from "@/lib/types";
 import { api } from "@/lib/api";
 import { AiWritingBar } from "@/components/ai-writing-bar";
@@ -42,7 +42,7 @@ const COVER_COPY: Record<ListingType, { label: string; hint: string }> = {
 };
 
 // Per-type icon + accent, for the picker cards. Icons inherit currentColor.
-const ICONS: Record<ListingType, React.ReactNode> = {
+const ICONS: Record<ListingType, ReactNode> = {
   artist: <><path d="M9 18V5l10-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="16" cy="16" r="3" /></>,
   business: <><path d="M3 9l1.5-5h15L21 9" /><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9" /><path d="M3 9h18M9 20v-6h6v6" /></>,
   event: <><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 2.5v4M16 2.5v4" /></>,
@@ -123,7 +123,7 @@ function collectDetails(fd: FormData, type: ListingType, aiText: string): Record
   return details;
 }
 
-function Field({ label, children, hint }: Readonly<{ label: string; children: React.ReactNode; hint?: string }>) {
+function Field({ label, children, hint }: Readonly<{ label: string; children: ReactNode; hint?: string }>) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
@@ -158,7 +158,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
 
   if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); setLocation(null); }} />;
 
-  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);

@@ -1,7 +1,8 @@
+import { openInAppBrowser } from "@/lib/webbrowser";
+import { ROUTES } from "@/lib/routes";
 import { useMemo, useState, type ReactNode } from "react";
 import { Linking, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
@@ -49,7 +50,7 @@ function SupportCard({ business, slug, reload }: Readonly<{ business: Listing; s
 
   async function subscribe() {
     setErr("");
-    if (!member) { router.push("/signin"); return; }
+    if (!member) { router.push(ROUTES.signIn); return; }
     setBusy(true);
     try {
       const r = await api.subscribe(slug);
@@ -59,7 +60,8 @@ function SupportCard({ business, slug, reload }: Readonly<{ business: Listing; s
         reload();
       } else {
         setPendingRef(r.reference);
-        WebBrowser.openBrowserAsync(r.authorizationUrl).catch(() => setErr("Could not open the payment page."));
+        const opened = await openInAppBrowser(r.authorizationUrl);
+        if (!opened) setErr("Could not open the payment page.");
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");
@@ -124,7 +126,7 @@ function SupportVerify({ err, busy, verify }: Readonly<{ err: string; busy: bool
     <>
       <Text style={[sub.body, { marginTop: 12 }]}>Complete the payment on the Paystack page that opened, then come back and verify.</Text>
       {err !== "" && <Text style={sub.err}>{err}</Text>}
-      <Pressable onPress={verify} disabled={busy} style={[sub.btn, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[sub.btn, busy && { opacity: 0.6 }]}>
         <Text style={sub.btnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
       </Pressable>
     </>
@@ -138,7 +140,7 @@ function SupportSubscribe({ business, err, busy, subscribe }: Readonly<{ busines
   return (
     <>
       {err !== "" && <Text style={sub.err}>{err}</Text>}
-      <Pressable onPress={subscribe} disabled={busy} style={[sub.btn, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={subscribe} disabled={busy} style={[sub.btn, busy && { opacity: 0.6 }]}>
         <Text style={sub.btnText}>{busy ? "Starting…" : label}</Text>
       </Pressable>
       <Text style={sub.note}>Mobile money &amp; cards via Paystack. GH₵ 50 per month.</Text>
@@ -194,13 +196,13 @@ function BusinessDetail({ data, slug, reload }: Readonly<{ data: Listing; slug: 
 
           <View style={{ gap: 8, marginTop: 12 }}>
             {(d.contact ?? []).map((c) => (
-              <Pressable key={c.label} style={s.contact} onPress={() => openURL(c.url)}>
+              <Pressable accessibilityRole="button" key={c.label} style={s.contact} onPress={() => openURL(c.url)}>
                 <Text style={s.contactLabel}>{c.label}</Text>
                 <Text style={s.contactArrow}>↗</Text>
               </Pressable>
             ))}
             {d.address ? (
-              <Pressable style={[s.contact, s.directions]} onPress={() => openURL(directions)}>
+              <Pressable accessibilityRole="button" style={[s.contact, s.directions]} onPress={() => openURL(directions)}>
                 <Text style={[s.contactLabel, { color: C.cream }]}>Get directions</Text>
                 <Text style={[s.contactArrow, { color: C.cream }]}>↗</Text>
               </Pressable>
@@ -226,13 +228,13 @@ function BusinessDetail({ data, slug, reload }: Readonly<{ data: Listing; slug: 
 
 const makeSubStyles = (C: Palette) => StyleSheet.create({
   card: { marginTop: 22, backgroundColor: withAlpha(C.gold, 0.08), borderWidth: 1, borderColor: C.gold, borderRadius: 14, padding: 16 },
-  kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, ...D(700) },
   title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 4 },
   body: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
-  active: { color: C.goldText, fontSize: 13, fontWeight: "700", marginTop: 10 },
+  active: { color: C.goldText, fontSize: 13, ...S(700), marginTop: 10 },
   err: { color: C.clayText, fontSize: 13, marginTop: 10 },
   btn: { backgroundColor: C.goldBrand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
-  btnText: { color: C.green900, fontWeight: "700", fontSize: 15 },
+  btnText: { color: C.green900, ...S(700), fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
   thanks: { marginTop: 12, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 14 },
   thanksTitle: { ...S(700), fontSize: 16, color: C.greenText },
@@ -246,16 +248,16 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   name: { ...D(700), fontSize: 28, color: C.ink, marginTop: 10 },
   desc: { ...S(400), fontSize: 16, lineHeight: 24, color: C.ink, marginTop: 10 },
-  kicker: { color: C.tealText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  kicker: { color: C.tealText, fontSize: 11, letterSpacing: 2, ...D(700) },
   services: { borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, marginTop: 10, overflow: "hidden" },
   serviceRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.sand },
-  serviceName: { color: C.ink, fontSize: 14, fontWeight: "600" },
+  serviceName: { color: C.ink, fontSize: 14, ...S(600) },
   serviceNote: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
-  servicePrice: { color: C.tealText, fontSize: 14, fontWeight: "700" },
+  servicePrice: { color: C.tealText, fontSize: 14, ...S(700) },
   fact: { color: C.ink, fontSize: 14, marginTop: 8 },
   contact: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.teal, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12 },
   directions: { backgroundColor: C.teal, borderColor: C.teal },
-  contactLabel: { color: C.tealText, fontWeight: "700" },
+  contactLabel: { color: C.tealText, ...S(700) },
   contactArrow: { color: C.tealText },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 20 },
 });

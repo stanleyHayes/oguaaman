@@ -94,7 +94,7 @@ export function Component() {
         <h2 className="text-lg font-semibold text-ink">Pledge ledger</h2>
         <div className="inline-flex rounded-full border border-sand bg-paper p-0.5 text-xs">
           {(["all", "success", "pending", "failed"] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>
+            <button type="button" key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>
               {f}
             </button>
           ))}

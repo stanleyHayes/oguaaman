@@ -1,6 +1,7 @@
+import { route, ROUTES } from "@/lib/routes";
 import { useEffect, useMemo, useState } from "react";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import type { SearchHit } from "@/lib/types";
@@ -17,13 +18,13 @@ const LISTING_ROUTE: Record<string, { base: string; withSlug: boolean }> = {
   person: { base: "/people/", withSlug: true },
   business: { base: "/business/", withSlug: true },
   project: { base: "/projects/", withSlug: true },
-  event: { base: "/browse/events", withSlug: false },
-  memory: { base: "/browse/memories", withSlug: false },
-  opportunity: { base: "/browse/opportunities", withSlug: false },
+  event: { base: ROUTES.browseEvents, withSlug: false },
+  memory: { base: ROUTES.browseMemories, withSlug: false },
+  opportunity: { base: ROUTES.browseOpportunities, withSlug: false },
 };
 function routeFor(h: SearchHit): string | null {
-  if (h.kind === "member") return `/members/${h.slug}`;
-  if (h.kind === "institution") return `/institutions/${h.slug}`;
+  if (h.kind === "member") return route.member(h.slug);
+  if (h.kind === "institution") return route.institution(h.slug);
   if (h.kind !== "listing" || !h.type) return null;
   const r = LISTING_ROUTE[h.type];
   if (!r) return null;
@@ -125,7 +126,7 @@ function HitRow({ hit: h }: Readonly<{ hit: SearchHit }>) {
     </View>
   );
   if (!route) return <View>{inner}</View>;
-  return <Pressable onPress={() => router.push(route as never)}>{inner}</Pressable>;
+  return <Pressable accessibilityRole="button" onPress={() => push(route)}>{inner}</Pressable>;
 }
 
 function useStyles() {
@@ -137,7 +138,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   pageTitle: { ...D(700), fontSize: 26, color: C.ink },
   pageLede: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 14 },
   inputWrap: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 16 },
-  inputIcon: { color: C.goldText, fontSize: 18, fontWeight: "700" },
+  inputIcon: { color: C.goldText, fontSize: 18, ...S(700) },
   input: { flex: 1, paddingVertical: 12, fontSize: 16, color: C.ink },
   hint: { color: C.inkFaint, textAlign: "center", marginTop: 28, fontSize: 14 },
   row: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
@@ -146,5 +147,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   rowTitle: { ...S(700), fontSize: 16, color: C.ink },
   rowSub: { color: C.inkMuted, fontSize: 13, marginTop: 2 },
   tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  tagText: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+  tagText: { fontSize: 10, ...S(700), textTransform: "uppercase", letterSpacing: 0.5 },
 });

@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
+import { push } from "@/lib/router";
 import { Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { MapArea, MapData, MapLayer, MapPoint, MapTrail } from "@/lib/types";
 import { severityColors } from "@/lib/incidents";
-import { ON_GREEN, S, withAlpha, type Palette } from "@/theme";
+import { ON_GREEN, S, withAlpha, type Palette, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Pill } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
@@ -97,7 +97,7 @@ function DirectionsButton({ lat, lng, to, small = false }: Readonly<{ lat: numbe
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   return (
-    <Pressable
+    <Pressable accessibilityRole="button"
       onPress={() => openWalkingDirections(lat, lng)}
       style={({ pressed }) => [s.dirBtn, small && s.dirBtnSmall, pressed && { opacity: 0.75 }]}
       accessibilityRole="button"
@@ -138,7 +138,7 @@ function PointCard({ p }: Readonly<{ p: MapPoint }>) {
   return (
     <View style={s.card}>
       {route ? (
-        <Pressable onPress={() => router.push(route as never)} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+        <Pressable accessibilityRole="button" onPress={() => push(route)} style={({ pressed }) => pressed && { opacity: 0.7 }}>
           {head}
         </Pressable>
       ) : head}
@@ -229,11 +229,11 @@ export default function Explore() {
       <View style={{ padding: 16, gap: 18 }}>
         {presentLayers.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filters}>
-            <Pressable onPress={() => setLayer(null)} style={[s.filter, layer === null && s.filterOn]}>
+            <Pressable accessibilityRole="button" onPress={() => setLayer(null)} style={[s.filter, layer === null && s.filterOn]}>
               <Text style={[s.filterText, layer === null && s.filterTextOn]}>All</Text>
             </Pressable>
             {presentLayers.map((m) => (
-              <Pressable
+              <Pressable accessibilityRole="button"
                 key={m.layer}
                 onPress={() => setLayer(layer === m.layer ? null : m.layer)}
                 style={[s.filter, layer === m.layer && s.filterOn]}
@@ -281,9 +281,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   filters: { flexDirection: "row", gap: 8, paddingRight: 8 },
   filter: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   filterOn: { borderColor: C.green, backgroundColor: C.green },
-  filterText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
+  filterText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   filterTextOn: { color: ON_GREEN },
-  section: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700" },
+  section: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...D(700) },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   pointHead: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   pointGlyph: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.paper },
@@ -291,14 +291,14 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   pointTitle: { ...S(700), fontSize: 16, color: C.ink },
   pointSub: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 3 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center", marginTop: 8 },
-  chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700", marginLeft: 4 },
+  chevron: { color: C.inkFaint, fontSize: 22, ...S(700), marginLeft: 4 },
   dirBtn: { alignSelf: "flex-start", marginTop: 12, backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
-  dirBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 13 },
+  dirBtnText: { color: ON_GREEN, ...S(700), fontSize: 13 },
   dirBtnSmall: { marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: C.paper, borderWidth: 1, borderColor: C.green },
   dirBtnTextSmall: { color: C.greenText, fontSize: 12 },
   stopRow: { flexDirection: "row", gap: 12 },
   stopNum: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center", marginTop: 2 },
-  stopNumText: { color: "#FFFFFF", fontWeight: "800", fontSize: 13 },
+  stopNumText: { color: ON_GREEN, ...S(700), fontSize: 13 },
   stopTitle: { ...S(700), fontSize: 15, color: C.ink },
   stopStory: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 3 },
 });

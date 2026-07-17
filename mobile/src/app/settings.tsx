@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ROUTES } from "@/lib/routes";
 import { Image, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
@@ -43,7 +44,7 @@ export default function Settings() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Settings</Text>
         <Text style={s.gateBody}>Sign in to manage your password, two-factor sign-in, and preferences.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}>
           <Text style={s.primaryBtnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -131,7 +132,7 @@ function AccountCard({ member: m }: Readonly<{ member: Member }>) {
         <Text style={s.metaKey}>Phone</Text>
         <Text style={s.metaVal}>{m.phoneVerified ? "Verified" : "Not verified"}</Text>
       </View>
-      <Pressable onPress={() => router.push("/me")} style={s.profileLink}>
+      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.me)} style={s.profileLink}>
         <Text style={s.profileLinkText}>Edit name, photo, bio & links in your Profile</Text>
         <Text style={s.chevron}>›</Text>
       </Pressable>
@@ -156,7 +157,7 @@ function ThemeControl() {
         {THEME_OPTIONS.map((o) => {
           const on = setting === o.value;
           return (
-            <Pressable key={o.value} onPress={() => setTheme(o.value)} style={[s.segmentBtn, on && s.segmentBtnOn]}>
+            <Pressable accessibilityRole="button" key={o.value} onPress={() => setTheme(o.value)} style={[s.segmentBtn, on && s.segmentBtnOn]}>
               <Text style={[s.segmentText, on && s.segmentTextOn]}>{o.glyph}  {o.label}</Text>
             </Pressable>
           );
@@ -274,7 +275,7 @@ function PasswordField({ label, value, onChange, autoComplete, placeholder }: Re
           placeholderTextColor={C.inkFaint}
           style={s.input}
         />
-        <Pressable onPress={() => setShow((v) => !v)} hitSlop={8} accessibilityLabel={show ? "Hide password" : "Show password"}>
+        <Pressable accessibilityRole="button" onPress={() => setShow((v) => !v)} hitSlop={8} accessibilityLabel={show ? "Hide password" : "Show password"}>
           <Text style={s.showText}>{show ? "Hide" : "Show"}</Text>
         </Pressable>
       </View>
@@ -316,7 +317,7 @@ function ChangePassword() {
       <PasswordField label="Confirm new password" value={confirm} onChange={(v) => { setConfirm(v); setState("idle"); }} autoComplete="new-password" placeholder="Re-enter it" />
       {err ? <Text style={s.errNote}>{err}</Text> : null}
       <View style={s.saveRow}>
-        <Pressable onPress={submit} disabled={!canSubmit} style={[s.primaryBtnSm, !canSubmit && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={submit} disabled={!canSubmit} style={[s.primaryBtnSm, !canSubmit && { opacity: 0.6 }]}>
           <Text style={s.primaryBtnSmText}>{state === "saving" ? "Saving…" : "Update password"}</Text>
         </Pressable>
         {state === "saved" ? <Text style={s.savedNote}>Password updated ✓</Text> : null}
@@ -393,20 +394,20 @@ function MfaEnroll({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
       <View style={{ gap: 12 }}>
         <View style={s.recoveryBanner}>
           <Text style={s.recoveryBannerText}>
-            <Text style={{ fontWeight: "800" }}>Save these recovery codes now.</Text> Each works once if you lose your phone — they won&apos;t be shown again.
+            <Text style={{ ...S(700) }}>Save these recovery codes now.</Text> Each works once if you lose your phone — they won&apos;t be shown again.
           </Text>
         </View>
         <View style={s.codeGrid}>
           {stage.codes.map((c) => <Text key={c} style={s.recoveryCode}>{c}</Text>)}
         </View>
         <View style={{ flexDirection: "row", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <Pressable
+          <Pressable accessibilityRole="button"
             onPress={() => { Share.share({ message: stage.codes.join("\n") }).catch(() => {}); }}
             style={s.secondaryBtn}
           >
             <Text style={s.secondaryBtnText}>Share / save codes</Text>
           </Pressable>
-          <Pressable onPress={finish} style={s.primaryBtnSm}>
+          <Pressable accessibilityRole="button" onPress={finish} style={s.primaryBtnSm}>
             <Text style={s.primaryBtnSmText}>Done ✓</Text>
           </Pressable>
         </View>
@@ -425,7 +426,7 @@ function MfaEnroll({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
           <View style={{ flex: 1, minWidth: 150, gap: 8 }}>
             <Text style={s.subLabel}>CAN&apos;T SCAN? USE THIS KEY</Text>
             <Text selectable style={s.secretText}>{stage.secret}</Text>
-            <Pressable onPress={() => Linking.openURL(stage.otpauthUrl).catch(() => {})} style={s.linkBtn}>
+            <Pressable accessibilityRole="button" onPress={() => Linking.openURL(stage.otpauthUrl).catch(() => {})} style={s.linkBtn}>
               <Text style={s.linkBtnText}>Open in authenticator app ↗</Text>
             </Pressable>
           </View>
@@ -443,10 +444,10 @@ function MfaEnroll({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
         />
         {err ? <Text style={s.errNote}>{err}</Text> : null}
         <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-          <Pressable onPress={confirm} disabled={busy || code.trim().length < 6} style={[s.primaryBtnSm, (busy || code.trim().length < 6) && { opacity: 0.6 }]}>
+          <Pressable accessibilityRole="button" onPress={confirm} disabled={busy || code.trim().length < 6} style={[s.primaryBtnSm, (busy || code.trim().length < 6) && { opacity: 0.6 }]}>
             <Text style={s.primaryBtnSmText}>{busy ? "Verifying…" : "Verify & turn on"}</Text>
           </Pressable>
-          <Pressable onPress={() => { setStage({ step: "start" }); setErr(null); }} hitSlop={6}>
+          <Pressable accessibilityRole="button" onPress={() => { setStage({ step: "start" }); setErr(null); }} hitSlop={6}>
             <Text style={s.cancelText}>Cancel</Text>
           </Pressable>
         </View>
@@ -457,7 +458,7 @@ function MfaEnroll({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
   return (
     <View style={{ gap: 8 }}>
       {err ? <Text style={s.errNote}>{err}</Text> : null}
-      <Pressable onPress={begin} disabled={busy} style={[s.primaryBtnSm, { alignSelf: "flex-start" }, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={begin} disabled={busy} style={[s.primaryBtnSm, { alignSelf: "flex-start" }, busy && { opacity: 0.6 }]}>
         <Text style={s.primaryBtnSmText}>{busy ? "Starting…" : "Set up two-factor"}</Text>
       </Pressable>
     </View>
@@ -486,7 +487,7 @@ function MfaDisable({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
 
   if (!open) {
     return (
-      <Pressable onPress={() => { setOpen(true); setCode(""); setErr(null); setRecovery(false); }} style={s.disableLink}>
+      <Pressable accessibilityRole="button" onPress={() => { setOpen(true); setCode(""); setErr(null); setRecovery(false); }} style={s.disableLink}>
         <Text style={s.disableLinkText}>Turn off two-factor</Text>
       </Pressable>
     );
@@ -516,15 +517,15 @@ function MfaDisable({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
           style={s.codeInput}
         />
       )}
-      <Pressable onPress={() => { setRecovery((v) => !v); setCode(""); }} hitSlop={6}>
+      <Pressable accessibilityRole="button" onPress={() => { setRecovery((v) => !v); setCode(""); }} hitSlop={6}>
         <Text style={s.toggleModeText}>{recovery ? "Use an authenticator code instead" : "Use a recovery code instead"}</Text>
       </Pressable>
       {err ? <Text style={s.errNote}>{err}</Text> : null}
       <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-        <Pressable onPress={confirm} disabled={busy || code.trim() === ""} style={[s.dangerBtn, (busy || code.trim() === "") && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={confirm} disabled={busy || code.trim() === ""} style={[s.dangerBtn, (busy || code.trim() === "") && { opacity: 0.6 }]}>
           <Text style={s.dangerBtnText}>{busy ? "Turning off…" : "Turn off two-factor"}</Text>
         </Pressable>
-        <Pressable onPress={() => setOpen(false)} hitSlop={6}>
+        <Pressable accessibilityRole="button" onPress={() => setOpen(false)} hitSlop={6}>
           <Text style={s.cancelText}>Keep it on</Text>
         </Pressable>
       </View>
@@ -537,9 +538,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
-  kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, ...D(700) },
   pageTitle: { ...D(700), fontSize: 30, color: C.ink, marginTop: 4 },
   pageLede: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
 
@@ -550,7 +551,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   sectionTitle: { ...S(700), fontSize: 18, color: C.ink },
   sectionDesc: { color: C.inkMuted, fontSize: 13, marginTop: 1 },
 
-  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", marginBottom: 8 },
+  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...S(700), marginBottom: 8 },
   hr: { height: StyleSheet.hairlineWidth, backgroundColor: C.sand, marginVertical: 18 },
   hint: { color: C.inkFaint, fontSize: 12, marginTop: 8, lineHeight: 17 },
 
@@ -559,59 +560,59 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   accountName: { ...S(700), fontSize: 17, color: C.ink },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" },
   roleChip: { backgroundColor: withAlpha(C.green, 0.1), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  roleChipText: { color: C.greenText, fontSize: 11, fontWeight: "700" },
+  roleChipText: { color: C.greenText, fontSize: 11, ...S(700) },
   metaFaint: { color: C.inkFaint, fontSize: 12 },
   metaLine: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10, gap: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.sand, paddingTop: 10 },
-  metaKey: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, fontWeight: "700", textTransform: "uppercase" },
+  metaKey: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, ...S(700), textTransform: "uppercase" },
   metaVal: { color: C.ink, fontSize: 14, flexShrink: 1, textAlign: "right" },
   profileLink: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.sand, paddingTop: 12 },
-  profileLinkText: { color: C.goldText, fontSize: 13, fontWeight: "600", flex: 1 },
-  chevron: { color: C.inkFaint, fontSize: 20, fontWeight: "700" },
+  profileLinkText: { color: C.goldText, fontSize: 13, ...S(600), flex: 1 },
+  chevron: { color: C.inkFaint, fontSize: 20, ...S(700) },
 
   segment: { flexDirection: "row", backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 4, gap: 4 },
   segmentBtn: { flex: 1, borderRadius: 9, paddingVertical: 9, alignItems: "center" },
   segmentBtnOn: { backgroundColor: C.green },
-  segmentText: { color: C.inkMuted, fontSize: 13, fontWeight: "700" },
+  segmentText: { color: C.inkMuted, fontSize: 13, ...S(700) },
   segmentTextOn: { color: ON_GREEN },
 
   toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
   toggleRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.sand },
-  toggleLabel: { color: C.ink, fontSize: 14, fontWeight: "600" },
+  toggleLabel: { color: C.ink, fontSize: 14, ...S(600) },
   toggleDesc: { color: C.inkFaint, fontSize: 12, marginTop: 2, lineHeight: 16 },
   deviceNote: { color: C.inkFaint, fontSize: 12, lineHeight: 17, marginTop: 12, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
 
-  fieldLabel: { color: C.ink, fontSize: 13, fontWeight: "600", marginBottom: 6 },
+  fieldLabel: { color: C.ink, fontSize: 13, ...S(600), marginBottom: 6 },
   inputWrap: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 14 },
   input: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.ink },
-  showText: { color: C.goldText, fontSize: 13, fontWeight: "700" },
+  showText: { color: C.goldText, fontSize: 13, ...S(700) },
   codeInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.ink, fontSize: 18, letterSpacing: 4 },
 
   saveRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 4 },
   primaryBtnSm: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20 },
-  primaryBtnSmText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
+  primaryBtnSmText: { color: ON_GREEN, ...S(700), fontSize: 14 },
   secondaryBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 18 },
-  secondaryBtnText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
-  cancelText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
-  savedNote: { color: C.tealText, fontSize: 13, fontWeight: "600" },
+  secondaryBtnText: { color: C.greenText, ...S(700), fontSize: 13 },
+  cancelText: { color: C.inkMuted, fontSize: 13, ...S(600) },
+  savedNote: { color: C.tealText, fontSize: 13, ...S(600) },
   errNote: { color: C.clayText, fontSize: 13, marginBottom: 10, lineHeight: 18 },
 
   mfaStatusRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
-  mfaOnPill: { backgroundColor: withAlpha(C.green, 0.1), color: C.greenText, fontSize: 12, fontWeight: "800", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, overflow: "hidden" },
+  mfaOnPill: { backgroundColor: withAlpha(C.green, 0.1), color: C.greenText, fontSize: 12, ...S(700), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, overflow: "hidden" },
   mfaStatusText: { color: C.inkMuted, fontSize: 13, lineHeight: 19, flex: 1 },
 
-  qrTile: { padding: 8, backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: C.sand },
+  qrTile: { padding: 8, backgroundColor: ON_GREEN, borderRadius: 12, borderWidth: 1, borderColor: C.sand },
   secretText: { fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }), color: C.ink, fontSize: 13, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
   linkBtn: { paddingVertical: 4 },
-  linkBtnText: { color: C.goldText, fontSize: 13, fontWeight: "700" },
+  linkBtnText: { color: C.goldText, fontSize: 13, ...S(700) },
 
   recoveryBanner: { borderWidth: 1, borderColor: C.goldBorder35, backgroundColor: C.goldTint14, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   recoveryBannerText: { color: C.goldText, fontSize: 13, lineHeight: 19 },
   codeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   recoveryCode: { width: "47%", textAlign: "center", fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }), color: C.ink, fontSize: 13, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 8, paddingVertical: 8 },
-  toggleModeText: { color: C.inkMuted, fontSize: 12, fontWeight: "600", textDecorationLine: "underline" },
+  toggleModeText: { color: C.inkMuted, fontSize: 12, ...S(600), textDecorationLine: "underline" },
 
   disableLink: { alignSelf: "flex-start" },
-  disableLinkText: { color: C.clayText, fontSize: 14, fontWeight: "700" },
+  disableLinkText: { color: C.clayText, fontSize: 14, ...S(700) },
   dangerBtn: { backgroundColor: C.clay, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20 },
-  dangerBtnText: { color: C.cream, fontWeight: "700", fontSize: 14 },
+  dangerBtnText: { color: C.cream, ...S(700), fontSize: 14 },
 });

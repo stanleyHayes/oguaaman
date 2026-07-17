@@ -91,7 +91,7 @@ export function Component() {
                       Reported {formatDate(i.createdAt)}{i.details.contact ? <> · contact: {i.details.contact}</> : null}
                     </p>
                   </div>
-                  <button onClick={() => setExpanded(open ? null : i.id)} className="shrink-0 rounded-full border border-sand px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-paper">
+                  <button type="button" onClick={() => setExpanded(open ? null : i.id)} className="shrink-0 rounded-full border border-sand px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-paper">
                     {open ? "Hide timeline" : "Timeline & transition"}
                   </button>
                 </div>
@@ -109,16 +109,17 @@ export function Component() {
                       ))}
                     </ol>
                     <div className="flex flex-wrap items-center gap-2">
-                      <select value={cur.status} onChange={(e) => setD(i.id, { status: e.target.value }, i.details.incidentStatus)} className={inputCls}>
+                      <select value={cur.status} onChange={(e) => setD(i.id, { status: e.target.value }, i.details.incidentStatus)} aria-label="New incident status" className={inputCls}>
                         {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                       </select>
                       <input
                         value={cur.note}
                         onChange={(e) => setD(i.id, { note: e.target.value }, i.details.incidentStatus)}
+                        aria-label="Timeline note"
                         placeholder="Note for the timeline (optional)"
                         className={`${inputCls} min-w-[16rem] flex-1`}
                       />
-                      <button
+                      <button type="button"
                         disabled={busy === i.id || cur.status === i.details.incidentStatus}
                         onClick={() => transition(i)}
                         className="rounded-full bg-green px-4 py-2 text-xs font-semibold text-on-green hover:bg-green-900 disabled:opacity-50"

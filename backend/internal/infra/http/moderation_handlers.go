@@ -39,7 +39,7 @@ func (h *Handler) Moderate(w http.ResponseWriter, r *http.Request) {
 	if m != nil {
 		in.ModeratorID = m.ID
 	} else if !h.authRequired {
-		in.ModeratorID = "m-nana" // dev convenience only — never reached when AUTH_REQUIRED=true
+		in.ModeratorID = domain.DevDemoModeratorID // dev convenience only — never reached when AUTH_REQUIRED=true
 	}
 	if err := h.svc.Moderate(r.Context(), in.ListingID, in.Action, in.Reason, in.ModeratorID); err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
@@ -232,7 +232,7 @@ func (h *Handler) AdminUnpublish(w http.ResponseWriter, r *http.Request) {
 	if m != nil {
 		modID = m.ID
 	} else if !h.authRequired {
-		modID = "m-nana" // dev convenience only — never reached when AUTH_REQUIRED=true
+		modID = domain.DevDemoModeratorID // dev convenience only — never reached when AUTH_REQUIRED=true
 	}
 	if err := h.svc.Moderate(r.Context(), r.PathValue("id"), "unpublish", "", modID); err != nil {
 		fail(w, http.StatusBadRequest, err.Error())

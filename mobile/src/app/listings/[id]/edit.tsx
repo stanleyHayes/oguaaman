@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { ROUTES } from "@/lib/routes";
+import { replace } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -125,7 +127,7 @@ function strList(v: unknown): string {
 
 function backToWork() {
   if (router.canGoBack()) router.back();
-  else router.replace("/studio/work" as never);
+  else replace(ROUTES.studioWork);
 }
 
 export default function EditListingScreen() {
@@ -148,7 +150,7 @@ export default function EditListingScreen() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Edit listing</Text>
         <Text style={s.gateBody}>Sign in to edit your listings.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}>
           <Text style={s.primaryBtnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -160,7 +162,7 @@ export default function EditListingScreen() {
   if (!listing || !WHITELIST[listing.type]) {
     return (
       <View style={s.notMineWrap}>
-        <Pressable onPress={backToWork} style={s.backRow} hitSlop={8}>
+        <Pressable accessibilityRole="button" onPress={backToWork} style={s.backRow} hitSlop={8}>
           <Text style={s.backText}>‹ My work</Text>
         </Pressable>
         <View style={s.notMineCard}>
@@ -170,7 +172,7 @@ export default function EditListingScreen() {
               ? "Incidents, lost & found notices and institution projects are edited through their own flows."
               : "This listing doesn't exist or belongs to someone else. Only the owner can edit a listing."}
           </Text>
-          <Pressable onPress={backToWork} style={[s.primaryBtn, { alignSelf: "center", marginTop: 18 }]}>
+          <Pressable accessibilityRole="button" onPress={backToWork} style={[s.primaryBtn, { alignSelf: "center", marginTop: 18 }]}>
             <Text style={s.primaryBtnText}>Back to My Work</Text>
           </Pressable>
         </View>
@@ -281,7 +283,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
             ? "Your updates are on the public page already. A curator can spot-check the change in the audit trail."
             : "A curator will review your changes before the listing goes live again. You'll be notified."}
         </Text>
-        <Pressable onPress={backToWork} style={[s.primaryBtn, { marginTop: 22 }]}>
+        <Pressable accessibilityRole="button" onPress={backToWork} style={[s.primaryBtn, { marginTop: 22 }]}>
           <Text style={s.primaryBtnText}>Back to My Work</Text>
         </Pressable>
       </View>
@@ -291,7 +293,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
       <View style={s.header}>
-        <Pressable onPress={backToWork} style={s.backRow} hitSlop={8}>
+        <Pressable accessibilityRole="button" onPress={backToWork} style={s.backRow} hitSlop={8}>
           <Text style={s.backText}>‹ My work</Text>
         </Pressable>
         <Text style={s.kicker}>Edit {TYPE_LABELS[type] ?? type}</Text>
@@ -325,7 +327,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
             <Text style={s.label}>OPPORTUNITY TYPE</Text>
             <View style={s.chips}>
               {OPPORTUNITY_KINDS.map((k) => (
-                <Pressable key={k.id} onPress={() => setOpportunityKind(k.id)} style={[s.chip, opportunityKind === k.id && s.chipOn]}>
+                <Pressable accessibilityRole="button" key={k.id} onPress={() => setOpportunityKind(k.id)} style={[s.chip, opportunityKind === k.id && s.chipOn]}>
                   <Text style={[s.chipText, opportunityKind === k.id && s.chipTextOn]}>{k.label}</Text>
                 </Pressable>
               ))}
@@ -362,7 +364,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
         })}
 
         {type === "opportunity" && (
-          <Pressable onPress={() => setGuardianConsent((v) => !v)} style={s.checkRow}>
+          <Pressable accessibilityRole="button" onPress={() => setGuardianConsent((v) => !v)} style={s.checkRow}>
             <View style={[s.checkBox, guardianConsent && s.checkBoxOn]}>{guardianConsent && <Text style={s.checkTick}>✓</Text>}</View>
             <View style={{ flex: 1 }}>
               <Text style={s.checkTitle}>Require guardian consent for minors</Text>
@@ -379,14 +381,14 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
             <Text style={s.label}>DATE OF PASSING (OPTIONAL)</Text>
             <DateField value={diedDate} onChange={setDiedDate} placeholder="Pick a date" maxDate={todayIso} />
 
-            <Pressable onPress={() => setReminders((v) => !v)} style={s.checkRow}>
+            <Pressable accessibilityRole="button" onPress={() => setReminders((v) => !v)} style={s.checkRow}>
               <View style={[s.checkBox, reminders && s.checkBoxOn]}>{reminders && <Text style={s.checkTick}>✓</Text>}</View>
               <View style={{ flex: 1 }}>
                 <Text style={s.checkTitle}>Yearly remembrance</Text>
                 <Text style={s.checkHint}>A gentle reminder reaches those who remember them, each year on the passing anniversary.</Text>
               </View>
             </Pressable>
-            <Pressable onPress={() => setObserveBday((v) => !v)} style={s.checkRow}>
+            <Pressable accessibilityRole="button" onPress={() => setObserveBday((v) => !v)} style={s.checkRow}>
               <View style={[s.checkBox, observeBday && s.checkBoxOn]}>{observeBday && <Text style={s.checkTick}>✓</Text>}</View>
               <View style={{ flex: 1 }}>
                 <Text style={s.checkTitle}>Also observe the birthday</Text>
@@ -405,10 +407,10 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
 
         {err !== "" && <Text style={s.error}>{err}</Text>}
 
-        <Pressable onPress={onSubmit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={onSubmit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
           <Text style={s.btnText}>{busy ? "Saving…" : resubmits ? "Save & resubmit" : "Save changes"}</Text>
         </Pressable>
-        <Pressable onPress={backToWork} style={s.btnOutline}>
+        <Pressable accessibilityRole="button" onPress={backToWork} style={s.btnOutline}>
           <Text style={s.btnOutlineText}>Cancel</Text>
         </Pressable>
       </View>
@@ -438,18 +440,18 @@ const makeStyles = (C: Palette) => ({
   ...makeFormStyles(C),
   ...StyleSheet.create({
     primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, alignItems: "center" },
-    primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+    primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
     header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 6 },
     backRow: { alignSelf: "flex-start", paddingVertical: 4 },
-    backText: { color: C.greenText, fontSize: 14, fontWeight: "700" },
-    kicker: { color: C.goldText, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginTop: 8 },
+    backText: { color: C.greenText, fontSize: 14, ...S(700) },
+    kicker: { color: C.goldText, fontSize: 11, letterSpacing: 1.5, ...D(700), textTransform: "uppercase", marginTop: 8 },
     titleRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4, flexWrap: "wrap" },
     headerTitle: { ...D(700), fontSize: 26, color: C.ink, flexShrink: 1 },
 
     banner: { marginHorizontal: 16, marginTop: 8, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
     bannerWarn: { backgroundColor: withAlpha(C.gold, 0.12) },
-    bannerWarnText: { color: C.goldText, fontSize: 13, fontWeight: "600", lineHeight: 19 },
+    bannerWarnText: { color: C.goldText, fontSize: 13, ...S(600), lineHeight: 19 },
     bannerLive: { backgroundColor: withAlpha(C.teal, 0.1) },
     bannerLiveText: { color: C.tealText, fontSize: 13, lineHeight: 19 },
 
@@ -457,17 +459,17 @@ const makeStyles = (C: Palette) => ({
     chipTextOn: { color: ON_GREEN },
     btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
     btnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 12 },
-    btnOutlineText: { color: C.ink, fontWeight: "600" },
+    btnOutlineText: { color: C.ink, ...S(600) },
 
     checkRow: { marginTop: 12, flexDirection: "row", gap: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.paper, padding: 12 },
     checkBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.sand, alignItems: "center", justifyContent: "center", marginTop: 1 },
     checkBoxOn: { backgroundColor: C.green, borderColor: C.green },
-    checkTick: { color: ON_GREEN, fontWeight: "700", fontSize: 12 },
-    checkTitle: { color: C.ink, fontWeight: "600", fontSize: 13 },
+    checkTick: { color: ON_GREEN, ...S(700), fontSize: 12 },
+    checkTitle: { color: C.ink, ...D(600), fontSize: 13 },
     checkHint: { color: C.inkFaint, fontSize: 11, marginTop: 3, lineHeight: 16 },
 
     statusPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-    statusPillText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
+    statusPillText: { fontSize: 11, ...S(700), textTransform: "capitalize" },
 
     notMineWrap: { flex: 1, backgroundColor: C.paper, padding: 16 },
     notMineCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 24, marginTop: 12, alignItems: "center" },
@@ -476,7 +478,7 @@ const makeStyles = (C: Palette) => ({
 
     savedWrap: { flex: 1, backgroundColor: C.paper, padding: 28, justifyContent: "center", alignItems: "center" },
     savedIcon: { width: 60, height: 60, borderRadius: 30, backgroundColor: withAlpha(C.teal, 0.12), alignItems: "center", justifyContent: "center" },
-    savedTick: { color: C.tealText, fontSize: 30, fontWeight: "800" },
+    savedTick: { color: C.tealText, fontSize: 30, ...S(700) },
     savedTitle: { ...D(600), fontSize: 24, color: C.ink, textAlign: "center", marginTop: 16 },
     savedBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 8, maxWidth: 340 },
   }),

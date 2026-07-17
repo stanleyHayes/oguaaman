@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useTheme } from "@/lib/theme-context";
 import type { Listing } from "@/lib/types";
-import { S, type Palette } from "@/theme";
+import { S, type Palette, D } from "@/theme";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 
@@ -79,7 +80,7 @@ export default function Youth() {
         lede="Scholarships, internships, apprenticeships, training, jobs, investment windows and mentorship programmes for the young of Cape Coast — plus a spotlight on rising talent. Information and outbound links only: no private adult-to-minor contact ever runs through Oguaa."
       />
       <View style={{ padding: 16 }}>
-      <Pressable onPress={() => router.push("/submit" as never)} style={s.cta}>
+      <Pressable accessibilityRole="button" onPress={() => push(ROUTES.submit)} style={s.cta}>
         <Text style={s.ctaText}>Post an opportunity</Text>
       </Pressable>
 
@@ -125,7 +126,7 @@ function TalentCard({ person: p }: Readonly<{ person: Listing }>) {
   const s = useMemo(() => makeStyles(C), [C]);
   const d = p.details;
   return (
-    <Pressable onPress={() => router.push(`/people/${p.slug}` as never)} style={s.talentCard}>
+    <Pressable accessibilityRole="button" accessibilityLabel={p.title} onPress={() => push(route.person(p.slug))} style={s.talentCard}>
       <Thumb seed={p.slug} label={initials(p.title)} src={p.coverImageUrl} style={s.talentThumb} labelStyle={s.talentThumbLabel} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={s.talentName} numberOfLines={1}>{p.title}</Text>
@@ -140,7 +141,7 @@ function Chip({ label, active, onSelect }: Readonly<{ label: string; active: boo
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   return (
-    <Pressable onPress={onSelect} style={[s.chip, active && s.chipOn]}>
+    <Pressable accessibilityRole="button" onPress={onSelect} style={[s.chip, active && s.chipOn]}>
       <Text style={[s.chipText, active && s.chipTextOn]}>{label}</Text>
     </Pressable>
   );
@@ -171,7 +172,7 @@ function OppCard({ opp: o }: Readonly<{ opp: Listing }>) {
       <View style={s.foot}>
         <Text style={s.provider} numberOfLines={1}>{d.provider}</Text>
         {d.applyUrl ? (
-          <Pressable onPress={() => void Linking.openURL(d.applyUrl ?? "")} style={s.applyBtn}>
+          <Pressable accessibilityRole="button" onPress={() => void Linking.openURL(d.applyUrl ?? "")} style={s.applyBtn}>
             <Text style={s.applyBtnText}>How to apply</Text>
           </Pressable>
         ) : null}
@@ -182,32 +183,32 @@ function OppCard({ opp: o }: Readonly<{ opp: Listing }>) {
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   cta: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
-  ctaText: { color: C.cream, fontWeight: "700", fontSize: 15 },
-  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  ctaText: { color: C.cream, ...S(700), fontSize: 15 },
+  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700) },
   sectionBlurb: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12, minHeight: 40, justifyContent: "center" },
   chipOn: { borderColor: C.teal, backgroundColor: C.teal },
-  chipText: { color: C.inkMuted, fontSize: 12, fontWeight: "700" },
+  chipText: { color: C.inkMuted, fontSize: 12, ...S(700) },
   chipTextOn: { color: C.cream },
   talentCard: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   talentThumb: { width: 56, height: 56, borderRadius: 28 },
   talentThumbLabel: { color: C.cream, ...S(700), fontSize: 18 },
   talentName: { ...S(700), fontSize: 18, color: C.ink },
-  talentEra: { color: C.goldText, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginTop: 2 },
+  talentEra: { color: C.goldText, fontSize: 11, ...S(700), letterSpacing: 1, textTransform: "uppercase", marginTop: 2 },
   talentBio: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   chipRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   kindChip: { borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  kindChipText: { color: C.tealText, fontSize: 11, fontWeight: "700" },
-  deadline: { marginLeft: "auto", color: C.clayText, fontSize: 11, fontWeight: "700" },
+  kindChipText: { color: C.tealText, fontSize: 11, ...S(700) },
+  deadline: { marginLeft: "auto", color: C.clayText, fontSize: 11, ...S(700) },
   title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 10 },
   desc: { color: C.inkFaint, fontSize: 13, lineHeight: 19, marginTop: 6 },
   eligibility: { color: C.inkMuted, fontSize: 12, lineHeight: 18, marginTop: 8 },
-  eligibilityLabel: { fontWeight: "700" },
-  guardian: { color: C.maroonText, fontSize: 11, marginTop: 6, fontWeight: "600" },
+  eligibilityLabel: { ...S(700) },
+  guardian: { color: C.maroonText, fontSize: 11, marginTop: 6, ...S(600) },
   foot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
   provider: { flex: 1, color: C.inkFaint, fontSize: 11 },
   applyBtn: { borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },
-  applyBtnText: { color: C.tealText, fontSize: 13, fontWeight: "700" },
+  applyBtnText: { color: C.tealText, fontSize: 13, ...S(700) },
 });

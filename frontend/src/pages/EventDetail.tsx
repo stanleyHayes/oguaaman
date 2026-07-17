@@ -226,6 +226,7 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
                 type="button"
                 disabled={out}
                 onClick={() => onSelectTier(i)}
+                aria-pressed={selected === i}
                 className={`flex w-full items-center justify-between gap-3 rounded-lg border p-4 text-left transition-colors ${selected === i ? "border-green bg-green/[0.06]" : "border-sand bg-paper hover:border-green/40"} disabled:opacity-50`}
               >
                 <span className="min-w-0">

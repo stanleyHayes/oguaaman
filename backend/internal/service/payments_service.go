@@ -259,7 +259,7 @@ func (s *PaymentsService) notifyProjectOwner(ctx context.Context, p *domain.Pled
 	}
 	cedis := float64(p.AmountPesewas) / 100
 	_ = s.notifs.Insert(ctx, domain.Notification{
-		ID: "ntf-" + fmt.Sprintf("%d", time.Now().UnixNano()), MemberID: project.OwnerID,
+		ID: newID(domain.PrefixNotification), MemberID: project.OwnerID,
 		Kind:  "pledge",
 		Title: "A pledge came in 🎉",
 		Body:  fmt.Sprintf("GH₵ %.2f was pledged to “%s”.%s", cedis, p.ProjectTitle, map[bool]string{true: " (Simulated — dev mode.)", false: ""}[p.Simulated]),

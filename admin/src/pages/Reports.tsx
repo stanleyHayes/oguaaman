@@ -53,7 +53,7 @@ export function Component() {
   return (
     <>
       <PageHeader kicker="Safeguarding" title="Reports">
-        <button onClick={() => setShowResolved((v) => !v)} className="rounded-full border border-sand px-4 py-2 text-sm font-medium text-ink-muted hover:bg-paper">
+        <button type="button" onClick={() => setShowResolved((v) => !v)} className="rounded-full border border-sand px-4 py-2 text-sm font-medium text-ink-muted hover:bg-paper">
           {showResolved ? `Hide resolved (${resolved.length})` : `Show resolved (${resolved.length})`}
         </button>
       </PageHeader>
@@ -90,7 +90,7 @@ export function Component() {
                 {r.status === "open" && (
                   <div className="flex shrink-0 flex-wrap gap-2">
                     {r.keeperClaim && r.reporterId && (
-                      <button
+                      <button type="button"
                         disabled={busy === r.id}
                         onClick={async () => {
                           setBusy(r.id);
@@ -104,10 +104,10 @@ export function Component() {
                         Grant keeper
                       </button>
                     )}
-                    <button disabled={busy === r.id} onClick={() => resolve(r, "actioned")} className="rounded-full bg-maroon-900 px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+                    <button type="button" disabled={busy === r.id} onClick={() => resolve(r, "actioned")} className="rounded-full bg-maroon-900 px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
                       Mark actioned
                     </button>
-                    <button disabled={busy === r.id} onClick={() => resolve(r, "dismissed")} className="rounded-full border border-sand px-4 py-2 text-xs font-semibold text-ink-muted transition-colors hover:border-ink hover:text-ink disabled:opacity-50">
+                    <button type="button" disabled={busy === r.id} onClick={() => resolve(r, "dismissed")} className="rounded-full border border-sand px-4 py-2 text-xs font-semibold text-ink-muted transition-colors hover:border-ink hover:text-ink disabled:opacity-50">
                       Dismiss
                     </button>
                   </div>

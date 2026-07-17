@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
-import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { D, S, SI, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -17,39 +18,39 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
   {
     heading: "DISCOVER",
     items: [
-      { label: "Heritage", blurb: "The Castle and the Door of No Return, the Fante Confederacy, the Asafo.", href: "/explore/heritage" },
-      { label: "Culture", blurb: "Fetu Afahye, the durbar, the 77 gods of Oguaa, and the seven Asafo companies.", href: "/explore/culture" },
-      { label: "People", blurb: "Sons & daughters — icons past and living, from Kofi Annan to the grandfathers of highlife.", href: "/browse/people" },
-      { label: "Visit", blurb: "The Castle, the Kakum canopy walkway, Kotokuraba — and when to come.", href: "/explore/visit" },
+      { label: "Heritage", blurb: "The Castle and the Door of No Return, the Fante Confederacy, the Asafo.", href: ROUTES.exploreHeritage },
+      { label: "Culture", blurb: "Fetu Afahye, the durbar, the 77 gods of Oguaa, and the seven Asafo companies.", href: ROUTES.exploreCulture },
+      { label: "People", blurb: "Sons & daughters — icons past and living, from Kofi Annan to the grandfathers of highlife.", href: ROUTES.browsePeople },
+      { label: "Visit", blurb: "The Castle, the Kakum canopy walkway, Kotokuraba — and when to come.", href: ROUTES.exploreVisit },
     ],
   },
   {
     heading: "CITY",
     items: [
-      { label: "Explore map", blurb: "Every place on the coast — businesses, heritage, safety notices and walking trails, with directions on foot.", href: "/explore" },
-      { label: "Institutions", blurb: "Schools, the traditional council, churches and the Asafo companies — official, verified pages.", href: "/institutions" },
-      { label: "Business", blurb: "The working city — markets, fishing, trade and the people behind them.", href: "/browse/business" },
-      { label: "Youth", blurb: "Opportunities board and a spotlight on the young talents coming up in Cape Coast.", href: "/youth" },
-      { label: "Memories", blurb: "Photos and stories of old Cape Coast, preserved.", href: "/browse/memories" },
+      { label: "Explore map", blurb: "Every place on the coast — businesses, heritage, safety notices and walking trails, with directions on foot.", href: ROUTES.explore },
+      { label: "Institutions", blurb: "Schools, the traditional council, churches and the Asafo companies — official, verified pages.", href: ROUTES.institutions },
+      { label: "Business", blurb: "The working city — markets, fishing, trade and the people behind them.", href: ROUTES.browseBusinesses },
+      { label: "Youth", blurb: "Opportunities board and a spotlight on the young talents coming up in Cape Coast.", href: ROUTES.youth },
+      { label: "Memories", blurb: "Photos and stories of old Cape Coast, preserved.", href: ROUTES.browseMemories },
     ],
   },
   {
     heading: "NOTICES",
     items: [
-      { label: "Alerts", blurb: "Advisories, directives and emergency notices from the fire service, the assembly, health and security.", href: "/alerts" },
-      { label: "News", blurb: "Festivals, scholarships, homecomings and notices from Cape Coast.", href: "/news" },
-      { label: "Events", blurb: "From Fetu Afahye to school speech days and homecomings.", href: "/browse/events" },
-      { label: "Safety", blurb: "Floods, fires, accidents and hazards — reported by neighbours, followed through to recovery.", href: "/safety" },
-      { label: "Lost & Found", blurb: "Lost a phone, found some keys, searching for someone? The town helps.", href: "/lost-found" },
+      { label: "Alerts", blurb: "Advisories, directives and emergency notices from the fire service, the assembly, health and security.", href: ROUTES.alerts },
+      { label: "News", blurb: "Festivals, scholarships, homecomings and notices from Cape Coast.", href: ROUTES.news },
+      { label: "Events", blurb: "From Fetu Afahye to school speech days and homecomings.", href: ROUTES.browseEvents },
+      { label: "Safety", blurb: "Floods, fires, accidents and hazards — reported by neighbours, followed through to recovery.", href: ROUTES.safety },
+      { label: "Lost & Found", blurb: "Lost a phone, found some keys, searching for someone? The town helps.", href: ROUTES.lostFound },
     ],
   },
   {
     heading: "GET INVOLVED",
     items: [
-      { label: "Festivals", blurb: "Fetu Afahye, Edina Bakatue, PANAFEST — every edition, year by year.", href: "/festivals" },
-      { label: "Adopt a project", blurb: "Concrete, costed improvements — proposed by verified institutions, funded by us together.", href: "/projects" },
-      { label: "Diaspora register", blurb: "Sons & daughters everywhere — the bridge home.", href: "/diaspora" },
-      { label: "Opportunities", blurb: "Jobs, scholarships, mentorship and investment calls shared within the community.", href: "/browse/opportunities" },
+      { label: "Festivals", blurb: "Fetu Afahye, Edina Bakatue, PANAFEST — every edition, year by year.", href: ROUTES.festivals },
+      { label: "Adopt a project", blurb: "Concrete, costed improvements — proposed by verified institutions, funded by us together.", href: ROUTES.projects },
+      { label: "Diaspora register", blurb: "Sons & daughters everywhere — the bridge home.", href: ROUTES.diaspora },
+      { label: "Opportunities", blurb: "Jobs, scholarships, mentorship and investment calls shared within the community.", href: ROUTES.browseOpportunities },
     ],
   },
 ];
@@ -93,16 +94,16 @@ function Drawer({ onClose }: Readonly<{ onClose: () => void }>) {
 
   const go = (href: string) => {
     onClose();
-    router.push(href as never);
+    push(href);
   };
 
   return (
     <View style={s.root}>
-      <Pressable style={s.backdrop} onPress={onClose} accessibilityLabel="Close menu" />
+      <Pressable style={s.backdrop} onPress={onClose} accessibilityLabel="Close menu"  accessibilityRole="button" />
       <Animated.View style={[s.panel, panelStyle]}>
         <View style={s.handleRow}>
           <View style={s.handle} />
-          <Pressable onPress={onClose} hitSlop={12} style={s.closeBtn} accessibilityLabel="Close menu">
+          <Pressable onPress={onClose} hitSlop={12} style={s.closeBtn} accessibilityLabel="Close menu" accessibilityRole="button">
             <Text style={s.closeText}>✕</Text>
           </Pressable>
         </View>
@@ -116,7 +117,7 @@ function Drawer({ onClose }: Readonly<{ onClose: () => void }>) {
             Oguaa — Cape Coast — is one of the richest places in Ghana: the old colonial capital, the global symbol of the diaspora homecoming, the Citadel of Education, home of the Fante Confederacy and the Asafo.
           </Text>
 
-          <Pressable onPress={() => go("/search")} style={s.searchBtn}>
+          <Pressable accessibilityRole="button" onPress={() => go(ROUTES.search)} style={s.searchBtn}>
             <View style={s.searchRow}>
               <SearchIcon size={16} color={C.inkMuted} strokeWidth={2} />
               <Text style={s.searchText}>Search people, places & memories</Text>
@@ -127,7 +128,7 @@ function Drawer({ onClose }: Readonly<{ onClose: () => void }>) {
             <View key={g.heading}>
               <Text style={s.kicker}>{g.heading}</Text>
               {g.items.map((x) => (
-                <Pressable key={x.label} onPress={() => go(x.href)} style={s.card}>
+                <Pressable accessibilityRole="button" key={x.label} onPress={() => go(x.href)} style={s.card}>
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <Text style={s.cardTitle}>{x.label}</Text>
                     <Text style={s.chevron}>›</Text>
@@ -168,17 +169,17 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   handleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 },
   handle: { width: 44, height: 5, borderRadius: 999, backgroundColor: C.sand, alignSelf: "center" },
   closeBtn: { width: 36, height: 36, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: C.cream },
-  closeText: { color: C.inkMuted, fontSize: 15, fontWeight: "700" },
+  closeText: { color: C.inkMuted, fontSize: 15, ...S(700) },
   scrollContent: { padding: 20, paddingTop: 8, paddingBottom: 48 },
   title: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   body: { color: C.inkMuted, fontSize: 14, lineHeight: 21, marginTop: 10, textAlign: "center" },
-  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 24, marginBottom: 10 },
+  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginTop: 24, marginBottom: 10 },
   searchBtn: { marginTop: 18, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 18, alignItems: "center" },
   searchRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  searchText: { color: C.inkMuted, fontSize: 14, fontWeight: "600" },
+  searchText: { color: C.inkMuted, fontSize: 14, ...S(600) },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, marginBottom: 10 },
   cardTitle: { ...S(700), fontSize: 18, color: C.ink },
-  chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
+  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
   cardBlurb: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   foot: { ...SI(), color: C.goldText, textAlign: "center", marginTop: 24, fontSize: 16 },
 });

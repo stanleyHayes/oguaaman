@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -34,7 +34,7 @@ export function SecuritySettings() {
     } finally { setBusy(false); }
   };
 
-  const confirmEnroll = async (e: SubmitEvent<HTMLFormElement>) => {
+  const confirmEnroll = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
@@ -46,7 +46,7 @@ export function SecuritySettings() {
     } finally { setBusy(false); }
   };
 
-  const confirmDisable = async (e: SubmitEvent<HTMLFormElement>) => {
+  const confirmDisable = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
@@ -176,7 +176,7 @@ export function ChangePasswordSettings() {
 
   const clearStatus = () => { setErr(null); setDone(false); };
 
-  const submit = async (e: SubmitEvent<HTMLFormElement>) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     clearStatus();
     if (next.length < 8) { setErr("Your new password must be at least 8 characters."); return; }
@@ -249,7 +249,7 @@ export function DataRightsSettings() {
     } finally { setExportBusy(false); }
   };
 
-  const doDelete = async (e: SubmitEvent<HTMLFormElement>) => {
+  const doDelete = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setDeleteBusy(true); setDeleteErr(null);
     try {

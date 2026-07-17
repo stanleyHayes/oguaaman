@@ -1,3 +1,4 @@
+import { ROUTES } from "@/lib/routes";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
@@ -8,7 +9,7 @@ import { DateField } from "@/components/date-field";
 import { ImageField } from "@/components/image-field";
 import { HeroBand } from "@/ui";
 import { makeFormStyles } from "@/components/form-styles";
-import { ON_GREEN, type Palette } from "@/theme";
+import { ON_GREEN, type Palette, S, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 const TYPES = [
@@ -178,7 +179,7 @@ export default function Submit() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Sign in to contribute</Text>
         <Text style={s.gateBody}>Listings are credited to you and reviewed by a curator before they go live.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.btn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.btn}>
           <Text style={s.btnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -190,8 +191,8 @@ export default function Submit() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Thank you 🙏</Text>
         <Text style={s.gateBody}>Your contribution has been submitted. A curator will review it for dignity and accuracy before it appears.</Text>
-        <Pressable onPress={() => router.back()} style={s.btn}><Text style={s.btnText}>Done</Text></Pressable>
-        <Pressable
+        <Pressable accessibilityRole="button" onPress={() => router.back()} style={s.btn}><Text style={s.btnText}>Done</Text></Pressable>
+        <Pressable accessibilityRole="button"
           onPress={() => { setDone(false); reset(); }}
           style={s.btnOutline}
         >
@@ -208,7 +209,7 @@ export default function Submit() {
       <Text style={s.label}>WHAT IS IT?</Text>
       <View style={s.chips}>
         {TYPES.map((x) => (
-          <Pressable key={x.id} onPress={() => setType(x.id)} style={[s.chip, type === x.id && s.chipOn]}>
+          <Pressable accessibilityRole="button" key={x.id} onPress={() => setType(x.id)} style={[s.chip, type === x.id && s.chipOn]}>
             <Text style={[s.chipText, type === x.id && s.chipTextOn]}>{x.label}</Text>
           </Pressable>
         ))}
@@ -260,13 +261,13 @@ export default function Submit() {
           <Text style={s.label}>OPPORTUNITY TYPE</Text>
           <View style={s.chips}>
             {OPPORTUNITY_KINDS.map((k) => (
-              <Pressable key={k.id} onPress={() => setOpportunityKind(k.id)} style={[s.chip, opportunityKind === k.id && s.chipOn]}>
+              <Pressable accessibilityRole="button" key={k.id} onPress={() => setOpportunityKind(k.id)} style={[s.chip, opportunityKind === k.id && s.chipOn]}>
                 <Text style={[s.chipText, opportunityKind === k.id && s.chipTextOn]}>{k.label}</Text>
               </Pressable>
             ))}
           </View>
           {opportunityKind === "mentorship" && (
-            <Pressable onPress={() => setGuardianConsentRequired((v) => !v)} style={s.guardianRow}>
+            <Pressable accessibilityRole="button" onPress={() => setGuardianConsentRequired((v) => !v)} style={s.guardianRow}>
               <View style={[s.guardianBox, guardianConsentRequired && s.guardianBoxOn]}>{guardianConsentRequired && <Text style={s.guardianTick}>✓</Text>}</View>
               <View style={{ flex: 1 }}>
                 <Text style={s.guardianTitle}>Require guardian consent for minors</Text>
@@ -329,7 +330,7 @@ export default function Submit() {
 
       {error !== "" && <Text style={s.error}>{error}</Text>}
 
-      <Pressable onPress={submit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={submit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
         <Text style={s.btnText}>{busy ? "Submitting…" : "Submit for review"}</Text>
       </Pressable>
       <Text style={s.note}>Submitted as {member.displayName}. Your phone number stays private.</Text>
@@ -345,12 +346,12 @@ const makeStyles = (C: Palette) => ({
     chipTextOn: { color: ON_GREEN },
     btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
     btnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 12 },
-    btnOutlineText: { color: C.ink, fontWeight: "600" },
+    btnOutlineText: { color: C.ink, ...S(600) },
     guardianRow: { marginTop: 8, flexDirection: "row", gap: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.paper, padding: 12 },
     guardianBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.sand, alignItems: "center", justifyContent: "center", marginTop: 1 },
     guardianBoxOn: { backgroundColor: C.green, borderColor: C.green },
-    guardianTick: { color: ON_GREEN, fontWeight: "700", fontSize: 12 },
-    guardianTitle: { color: C.ink, fontWeight: "600", fontSize: 13 },
+    guardianTick: { color: ON_GREEN, ...S(700), fontSize: 12 },
+    guardianTitle: { color: C.ink, ...D(600), fontSize: 13 },
     guardianHint: { color: C.inkFaint, fontSize: 11, marginTop: 3 },
   }),
 });

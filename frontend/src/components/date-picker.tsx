@@ -111,6 +111,7 @@ interface DatePickerProps {
   className?: string;
   name?: string;
   id?: string;
+  "aria-label"?: string;
 }
 
 export function DatePicker({
@@ -123,6 +124,7 @@ export function DatePicker({
   className,
   name,
   id,
+  "aria-label": ariaLabel,
 }: Readonly<DatePickerProps>) {
   const [open, setOpen] = useState(false);
   const [internal, setInternal] = useState(value ?? "");
@@ -190,6 +192,7 @@ export function DatePicker({
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup="dialog"
+        aria-label={ariaLabel}
         className={`${triggerCls} ${className ?? ""}`}
       >
         <span className={current ? "text-ink" : "text-ink-faint"}>{current ? formatDisplay(current) : placeholder}</span>

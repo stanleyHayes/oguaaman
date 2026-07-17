@@ -87,7 +87,7 @@ export function Component() {
                   <span>
                     {KIND_LABEL[o.kind] ?? o.kind} · {count((o.offices ?? []).length, "office", "offices")}
                   </span>
-                  <button
+                  <button type="button"
                     disabled={busy === o.id}
                     onClick={() => toggle(o)}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-50 ${o.verified ? "border-sand text-ink-muted hover:bg-cream" : "border-gold-border/60 text-gold-text hover:bg-gold/[0.1]"}`}

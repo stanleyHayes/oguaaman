@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
@@ -29,13 +31,13 @@ const KIND_TOKEN: Record<string, keyof Palette> = {
 function mobileLink(link?: string): string | null {
   if (!link) return null;
   // The directive broadcast links to the alerts screen.
-  if (link === "/alerts" || link.startsWith("/alerts")) return "/alerts";
+  if (link === ROUTES.alerts || link.startsWith(ROUTES.alerts)) return ROUTES.alerts;
   // Same-shaped routes pass straight through.
   if (["/memoriam/", "/members/", "/news/", "/music/", "/people/", "/business/", "/institutions/", "/projects/"].some((r) => link.startsWith(r))) return link;
   // Portal paths with a different mobile home.
-  if (link.startsWith("/education/")) return `/institutions/${link.slice("/education/".length)}`;
-  if (link === "/events" || link.startsWith("/events")) return "/browse/events";
-  if (link === "/community" || link.startsWith("/community")) return "/browse/opportunities";
+  if (link.startsWith("/education/")) return route.institution(link.slice("/education/".length));
+  if (link === "/events" || link.startsWith("/events")) return ROUTES.browseEvents;
+  if (link === "/community" || link.startsWith("/community")) return ROUTES.browseOpportunities;
   return null;
 }
 
@@ -49,7 +51,7 @@ export default function Notifications() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Notifications</Text>
         <Text style={s.gateBody}>Sign in to see updates on your listings and the people and memorials you follow.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in</Text></Pressable>
       </View>
     );
   }
@@ -83,7 +85,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
       try { await api.markNotificationRead(n.id); } catch { /* optimistic */ }
     }
     const dest = mobileLink(n.link);
-    if (dest) router.push(dest as never);
+    if (dest) push(dest);
   }
 
   return (
@@ -94,7 +96,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
           <Text style={s.count}>{unread > 0 ? `${unread} unread` : "All caught up"}</Text>
         </View>
         {unread > 0 && (
-          <Pressable onPress={markAll} disabled={busy} style={s.markBtn}><Text style={s.markText}>Mark all read</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={markAll} disabled={busy} style={s.markBtn}><Text style={s.markText}>Mark all read</Text></Pressable>
         )}
       </RevealView>
 
@@ -104,7 +106,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
         const linkable = mobileLink(n.link) != null;
         return (
           <StaggerIn key={n.id} index={i}>
-            <Pressable onPress={() => openItem(n)} style={[s.card, !n.read && s.cardUnread]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={n.title} onPress={() => openItem(n)} style={[s.card, !n.read && s.cardUnread]}>
               <View style={[s.bar, { backgroundColor: C[KIND_TOKEN[n.kind] ?? "inkFaint"], opacity: n.read ? 0.3 : 1 }]} />
               <View style={{ flex: 1 }}>
                 <View style={s.cardHead}>
@@ -127,13 +129,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
   pageTitle: { ...D(700), fontSize: 26, color: C.ink },
-  count: { color: C.goldText, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginTop: 2 },
+  count: { color: C.goldText, fontSize: 11, letterSpacing: 1.5, ...S(700), textTransform: "uppercase", marginTop: 2 },
   markBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
-  markText: { color: C.greenText, fontWeight: "700", fontSize: 12 },
+  markText: { color: C.greenText, ...S(700), fontSize: 12 },
 
   card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, overflow: "hidden" },
   // Unread lift: was the off-palette #fffdf7 (≈1.5% brighter than paper), which
@@ -145,5 +147,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   cardTitle: { ...S(700), fontSize: 16, color: C.ink, flexShrink: 1 },
   cardDate: { color: C.inkFaint, fontSize: 11 },
   cardBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 3 },
-  cardOpen: { color: C.tealText, fontSize: 12, fontWeight: "700", marginTop: 6 },
+  cardOpen: { color: C.tealText, fontSize: 12, ...S(700), marginTop: 6 },
 });

@@ -41,7 +41,7 @@ export function Component() {
       <Card className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           {m.photoUrl
-            ? <img src={cldAvatar(m.photoUrl, 80)} alt="" className="h-20 w-20 shrink-0 rounded-full border border-sand object-cover" />
+            ? <img src={cldAvatar(m.photoUrl, 80)} alt={`${m.displayName} profile photo`} className="h-20 w-20 shrink-0 rounded-full border border-sand object-cover" />
             : <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-green text-2xl font-semibold text-on-green">{initials(m.displayName)}</span>}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -80,7 +80,7 @@ export function Component() {
                 <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option>
               </select>
             </label>
-            <button disabled={busy} onClick={toggleSuspend} className={`mt-3 w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${m.suspended ? "border-green-text/40 text-green-text hover:bg-green/[0.06]" : "border-maroon-text/40 text-maroon-text hover:bg-maroon-900/[0.06]"}`}>
+            <button type="button" disabled={busy} onClick={toggleSuspend} className={`mt-3 w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${m.suspended ? "border-green-text/40 text-green-text hover:bg-green/[0.06]" : "border-maroon-text/40 text-maroon-text hover:bg-maroon-900/[0.06]"}`}>
               {m.suspended ? "Unsuspend member" : "Suspend member"}
             </button>
             <p className="mt-2 text-xs text-ink-faint">Role &amp; suspension are steward actions.</p>

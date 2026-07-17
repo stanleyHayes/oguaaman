@@ -129,7 +129,7 @@ export function Component() {
           <Card className="p-5">
             <h2 className="mb-3 text-lg font-semibold">Verification</h2>
             <p className="mb-3 text-sm text-ink-muted">Grant the badge only after confirming standing through recognised channels. The platform documents — it does not adjudicate.</p>
-            <button disabled={busy} onClick={toggleVerify} className={`w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${o.verified ? "border-sand text-ink-muted hover:bg-paper" : "border-gold-border/60 bg-gold/[0.08] text-gold-text hover:bg-gold/[0.16]"}`}>
+            <button type="button" disabled={busy} onClick={toggleVerify} className={`w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${o.verified ? "border-sand text-ink-muted hover:bg-paper" : "border-gold-border/60 bg-gold/[0.08] text-gold-text hover:bg-gold/[0.16]"}`}>
               {o.verified ? "Revoke verification" : "Verify institution"}
             </button>
           </Card>
@@ -148,7 +148,7 @@ export function Component() {
                       <p className="truncate font-medium text-ink">{m.memberName}</p>
                       <p className="text-xs text-ink-faint capitalize">{m.scope} · {m.role || "—"}{m.status === "invited" ? " · invited" : ""}</p>
                     </div>
-                    <button
+                    <button type="button"
                       disabled={revoking === m.memberId}
                       onClick={() => revokeTeamMember(m.memberId)}
                       className="shrink-0 rounded-full border border-clay/40 px-3 py-1 text-xs font-semibold text-clay hover:bg-clay/10 disabled:opacity-50"

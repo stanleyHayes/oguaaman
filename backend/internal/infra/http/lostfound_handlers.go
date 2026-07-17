@@ -53,7 +53,7 @@ func (h *Handler) SubmitLostFound(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if m == nil {
-		m = &domain.Member{ID: "m-akua"} // dev convenience only — never reached when AUTH_REQUIRED=true
+		m = &domain.Member{ID: domain.DevDemoMemberID} // dev convenience only — never reached when AUTH_REQUIRED=true
 	}
 	l, err := h.svc.SubmitLostFound(r.Context(), m, in)
 	if err != nil {
@@ -78,7 +78,7 @@ func (h *Handler) ResolveLostFound(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if m == nil {
-		m = &domain.Member{ID: "m-akua"} // dev convenience only — never reached when AUTH_REQUIRED=true
+		m = &domain.Member{ID: domain.DevDemoMemberID} // dev convenience only — never reached when AUTH_REQUIRED=true
 	}
 	l, err := h.svc.LostFoundBySlug(r.Context(), r.PathValue("slug"))
 	if err != nil {

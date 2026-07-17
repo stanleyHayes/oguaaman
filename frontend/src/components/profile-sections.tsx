@@ -3,7 +3,7 @@
 // team / timeline / faq / docs). Accents resolve through the shared TONES map so
 // blocks stay native to the "Castle, Canopy, and Canoe" system. See
 // oguaa/Institution-Pages-Spec.md.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode} from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { MediaAsset, ProfileSection, SectionItem, SubEntity } from "@/lib/types";
 import { TONES, type Tone, type ToneClasses } from "@/lib/sections";
@@ -148,7 +148,7 @@ function renderBody(section: ProfileSection, t: ToneClasses) {
   }
 }
 
-function SectionTitle({ tone: t, children }: Readonly<{ tone: ToneClasses; children: React.ReactNode }>) {
+function SectionTitle({ tone: t, children }: Readonly<{ tone: ToneClasses; children: ReactNode }>) {
   return (
     <h2 className="mb-4 flex items-center gap-3 text-xl font-semibold text-ink">
       <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${t.dot}`} aria-hidden />

@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, View } from "react-nat
 import * as ImagePicker from "expo-image-picker";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { useTheme } from "@/lib/theme-context";
-import { type Palette } from "@/theme";
+import { type Palette, S } from "@/theme";
 import { cldCover } from "@/lib/cloudinary";
 import { API_BASE } from "@/lib/api";
 import { getToken } from "@/lib/storage";
@@ -79,10 +79,10 @@ export function ImageField({ value, onChange }: Readonly<{ value: string; onChan
         <View style={s.row}>
           <Image source={{ uri: cldCover(value, 100) }} style={s.thumb} />
           <View style={{ gap: 8 }}>
-            <Pressable onPress={pick} disabled={busy} style={s.btnGhost}>
+            <Pressable accessibilityRole="button" onPress={pick} disabled={busy} style={s.btnGhost}>
               <Text style={s.btnGhostText}>{busy ? "Uploading…" : "Replace"}</Text>
             </Pressable>
-            <Pressable onPress={() => onChange("")} style={s.btnRemove}>
+            <Pressable accessibilityRole="button" onPress={() => onChange("")} style={s.btnRemove}>
               <Text style={s.btnRemoveText}>Remove</Text>
             </Pressable>
           </View>
@@ -94,7 +94,7 @@ export function ImageField({ value, onChange }: Readonly<{ value: string; onChan
 
   return (
     <View>
-      <Pressable onPress={pick} disabled={busy} style={s.drop}>
+      <Pressable accessibilityRole="button" onPress={pick} disabled={busy} style={s.drop}>
         {busy ? (
           <ActivityIndicator color={C.greenText} />
         ) : (
@@ -122,12 +122,12 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 14 },
   thumb: { width: 84, height: 84, borderRadius: 12, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream },
   drop: { borderWidth: 2, borderStyle: "dashed", borderColor: C.sand, backgroundColor: C.cream, borderRadius: 12, paddingVertical: 28, alignItems: "center", justifyContent: "center", gap: 6 },
-  dropText: { color: C.ink, fontSize: 15, fontWeight: "600" },
+  dropText: { color: C.ink, fontSize: 15, ...S(600) },
   dropHint: { color: C.inkFaint, fontSize: 12 },
   btnGhost: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 9, alignItems: "center" },
-  btnGhostText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
+  btnGhostText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   btnRemove: { borderWidth: 1, borderColor: C.clay, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 9, alignItems: "center" },
-  btnRemoveText: { color: C.clayText, fontSize: 13, fontWeight: "600" },
+  btnRemoveText: { color: C.clayText, fontSize: 13, ...S(600) },
   input: { marginTop: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
   error: { color: C.clayText, marginTop: 8, fontSize: 13 },
 });

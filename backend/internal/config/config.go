@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -59,6 +60,33 @@ type Config struct {
 // Load reads configuration from a local .env (if present) and the environment,
 // applying sensible defaults for local development.
 func Load() Config {
+	cfg := load()
+	if err := cfg.Validate(); err != nil {
+		fmt.Fprintln(os.Stderr, "config error:", err)
+		os.Exit(1)
+	}
+	return cfg
+}
+
+// Validate enforces production safety rules. It returns an error when settings
+// that are unsafe for production are left at dev defaults.
+func (c Config) Validate() error {
+	if os.Getenv("GO_ENV") != "production" {
+		return nil
+	}
+	if c.JWTSecret == "" || c.JWTSecret == "oguaa-dev-secret-change-me" {
+		return fmt.Errorf("JWT_SECRET must be set to a strong secret in production")
+	}
+	if c.AllowedOrigin == "*" {
+		return fmt.Errorf("ALLOWED_ORIGIN cannot be wildcard in production")
+	}
+	if c.PublicBaseURL == "" {
+		return fmt.Errorf("PUBLIC_API_URL must be set in production so upload URLs are not derived from the Host header")
+	}
+	return nil
+}
+
+func load() Config {
 	_ = godotenv.Load() // .env is optional; ignore if missing
 
 	return Config{

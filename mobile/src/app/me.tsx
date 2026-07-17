@@ -1,7 +1,9 @@
+import { openInAppBrowser } from "@/lib/webbrowser";
 import { useEffect, useMemo, useState } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
 import { Link, router } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api, canWriteNews, canUseStudio } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -28,7 +30,7 @@ export default function Me() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Your profile</Text>
         <Text style={s.gateBody}>Sign in to build your profile, connect with classmates and neighbours, and rep your town.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in / create account</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in / create account</Text></Pressable>
       </View>
     );
   }
@@ -59,7 +61,7 @@ function MyTickets() {
   return (
     <View style={{ gap: 8 }}>
       {list.map((t) => (
-        <Pressable key={t.id} onPress={() => router.push(`/events/${t.eventSlug}` as never)} style={s.listingRow}>
+        <Pressable accessibilityRole="button" key={t.id} onPress={() => push(route.event(t.eventSlug))} style={s.listingRow}>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.listingTitle} numberOfLines={1}>{t.eventTitle}</Text>
             <Text style={s.listingType}>{t.qty} × {t.tier} · {fmtDate(t.createdAt)}</Text>
@@ -92,7 +94,7 @@ function MySubscriptions() {
         const subChip = sub.status === "pending" ? s.statusPending : s.statusBad;
         const subColor = sub.status === "pending" ? { color: C.goldText } : { color: C.maroonText };
         return (
-          <Pressable key={sub.id} onPress={() => router.push(`/business/${sub.listingSlug}` as never)} style={s.listingRow}>
+          <Pressable accessibilityRole="button" key={sub.id} onPress={() => push(route.business(sub.listingSlug))} style={s.listingRow}>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.listingTitle} numberOfLines={1}>{sub.listingTitle}</Text>
               <Text style={s.listingType}>
@@ -131,7 +133,7 @@ function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
       } else {
         // Open Paystack in an in-app browser, then auto-verify when the payer
         // returns (browser dismissed) — no manual "verify" tap in the happy path.
-        const opened = await WebBrowser.openBrowserAsync(r.authorizationUrl).then(() => true).catch(() => false);
+        const opened = await openInAppBrowser(r.authorizationUrl);
         if (!opened) {
           setErr("Could not open the payment page.");
         } else {
@@ -168,7 +170,7 @@ function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
   if (pendingRef) {
     return (
       <View style={{ alignItems: "flex-end", gap: 4 }}>
-        <Pressable onPress={verify} disabled={busy} style={[s.promoBtn, busy && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.promoBtn, busy && { opacity: 0.6 }]}>
           <Text style={s.promoBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
         </Pressable>
         {err !== "" && <Text style={s.promoErr}>{err}</Text>}
@@ -180,13 +182,13 @@ function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
       <View style={{ alignItems: "flex-end", gap: 6 }}>
         <View style={{ flexDirection: "row", gap: 6 }}>
           {[7, 14, 30].map((d) => (
-            <Pressable key={d} onPress={() => promote(d)} disabled={busy} style={[s.promoDayBtn, busy && { opacity: 0.6 }]}>
+            <Pressable accessibilityRole="button" key={d} onPress={() => promote(d)} disabled={busy} style={[s.promoDayBtn, busy && { opacity: 0.6 }]}>
               <Text style={s.promoDayText}>{d}d</Text>
               <Text style={s.promoDayPrice}>GH₵{d * 10}</Text>
             </Pressable>
           ))}
         </View>
-        <Pressable onPress={() => { setOpen(false); setErr(""); }} hitSlop={6} style={{ minHeight: 32, justifyContent: "center" }}>
+        <Pressable accessibilityRole="button" onPress={() => { setOpen(false); setErr(""); }} hitSlop={6} style={{ minHeight: 32, justifyContent: "center" }}>
           <Text style={s.promoCancel}>Cancel</Text>
         </Pressable>
         {err !== "" && <Text style={s.promoErr}>{err}</Text>}
@@ -194,7 +196,7 @@ function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
     );
   }
   return (
-    <Pressable onPress={() => setOpen(true)} style={s.promoBtn}>
+    <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={s.promoBtn}>
       <Text style={s.promoBtnText}>Promote</Text>
     </Pressable>
   );
@@ -312,7 +314,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
       <View style={s.body}>
         {!verified && (
           <Section title="Verification needed" help="Submissions stay blocked until your account is verified. Send a code, then enter it here to unlock the submit form.">
-            <Pressable onPress={startVerification} disabled={verifyState === "saving"} style={[s.primaryBtn, { alignSelf: "flex-start" }, verifyState === "saving" && { opacity: 0.6 }]}>
+            <Pressable accessibilityRole="button" onPress={startVerification} disabled={verifyState === "saving"} style={[s.primaryBtn, { alignSelf: "flex-start" }, verifyState === "saving" && { opacity: 0.6 }]}>
               <Text style={s.primaryBtnText}>{verifyState === "saving" ? "Sending…" : "Send code"}</Text>
             </Pressable>
             {verifySentCode ? (
@@ -326,7 +328,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
                   style={s.codeInput}
                 />
                 <View style={{ flexDirection: "row", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <Pressable
+                  <Pressable accessibilityRole="button"
                     onPress={confirmVerification}
                     disabled={verifyState === "saving" || verifyCode.trim() === ""}
                     style={[s.secondaryBtn, (verifyState === "saving" || verifyCode.trim() === "") && { opacity: 0.6 }]}
@@ -394,13 +396,13 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
 
         <Section title="Account">
           {canUseStudio(self) && (
-            <Pressable onPress={() => router.push("/studio" as never)} style={s.linkRow}><Text style={s.linkRowText}>Creator studio</Text><Text style={s.chevron}>›</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studio)} style={s.linkRow}><Text style={s.linkRowText}>Creator studio</Text><Text style={s.chevron}>›</Text></Pressable>
           )}
-          <Pressable onPress={() => router.push("/settings" as never)} style={s.linkRow}><Text style={s.linkRowText}>Settings — security & preferences</Text><Text style={s.chevron}>›</Text></Pressable>
-          <Pressable onPress={() => router.push("/notifications")} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><Text style={s.chevron}>›</Text></Pressable>
-          <Pressable onPress={() => router.push("/submit")} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><Text style={s.chevron}>›</Text></Pressable>
-          <Pressable onPress={() => router.push(`/members/${m.slug}`)} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><Text style={s.chevron}>›</Text></Pressable>
-          <Pressable onPress={onSignOut} style={s.signOut}><Text style={s.signOutText}>Sign out</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => push(ROUTES.settings)} style={s.linkRow}><Text style={s.linkRowText}>Settings — security & preferences</Text><Text style={s.chevron}>›</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.notifications)} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><Text style={s.chevron}>›</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><Text style={s.chevron}>›</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push(route.member(m.slug))} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><Text style={s.chevron}>›</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={onSignOut} style={s.signOut}><Text style={s.signOutText}>Sign out</Text></Pressable>
         </Section>
       </View>
     </ScrollView>
@@ -427,7 +429,7 @@ function RepChips({ places, selectedId, variant, onChoose }: Readonly<{ places: 
   return (
     <View style={s.chipWrap}>
       {places.map((p) => (
-        <Pressable key={p.id} onPress={() => onChoose(p.id)} style={[s.repChip, p.id === selectedId && (variant === "green" ? s.repChipOnGreen : s.repChipOnClay)]}>
+        <Pressable accessibilityRole="button" key={p.id} onPress={() => onChoose(p.id)} style={[s.repChip, p.id === selectedId && (variant === "green" ? s.repChipOnGreen : s.repChipOnClay)]}>
           {p.colors?.[0] ? <View style={[s.asafoDot, { backgroundColor: p.colors[0] }]} /> : null}
           <Text style={[s.repChipText, p.id === selectedId && s.repChipTextOn]}>{p.name}</Text>
         </Pressable>
@@ -463,7 +465,7 @@ function BioCard({ member: m, onSaved }: Readonly<{ member: Member; onSaved: (m:
         maxLength={280}
       />
       <View style={s.saveRow}>
-        <Pressable onPress={persist} disabled={save === "saving"} style={[s.bdaySaveBtn, save === "saving" && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={persist} disabled={save === "saving"} style={[s.bdaySaveBtn, save === "saving" && { opacity: 0.6 }]}>
           <Text style={s.saveBtnText}>{save === "saving" ? "Saving…" : "Save"}</Text>
         </Pressable>
         {save === "saved" && <Text style={s.savedNote}>Saved ✓</Text>}
@@ -482,7 +484,7 @@ function WriterCard({ member: m, onUpdated }: Readonly<{ member: Member; onUpdat
   const [err, setErr] = useState("");
   if (canWriteNews(m)) {
     return (
-      <Pressable onPress={() => router.push("/write" as never)} style={s.linkRow}>
+      <Pressable accessibilityRole="button" onPress={() => push(ROUTES.write)} style={s.linkRow}>
         <Text style={s.linkRowText}>Write a story for the Newsroom</Text><Text style={s.chevron}>›</Text>
       </Pressable>
     );
@@ -500,7 +502,7 @@ function WriterCard({ member: m, onUpdated }: Readonly<{ member: Member; onUpdat
   return (
     <View style={{ gap: 10 }}>
       <Text style={s.help}>Become a writer to publish in the Newsroom. Your drafts go to the newsroom for review before they appear.</Text>
-      <Pressable onPress={becomeWriter} disabled={busy} style={[s.primaryBtn, { alignSelf: "flex-start", marginTop: 0 }, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={becomeWriter} disabled={busy} style={[s.primaryBtn, { alignSelf: "flex-start", marginTop: 0 }, busy && { opacity: 0.6 }]}>
         <Text style={s.primaryBtnText}>{busy ? "Saving…" : "Become a writer"}</Text>
       </Pressable>
       {err ? <Text style={s.errNote}>{err}</Text> : null}
@@ -537,7 +539,7 @@ function BirthdayCard({ member: m }: Readonly<{ member: Member }>) {
         <Switch value={broadcast} onValueChange={(v) => { setBroadcast(v); setBdaySave("idle"); }} trackColor={{ true: C.green, false: C.sand }} thumbColor={C.cream} />
       </View>
       <View style={s.saveRow}>
-        <Pressable onPress={saveBirthday} disabled={bdaySave === "saving"} style={[s.bdaySaveBtn, bdaySave === "saving" && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={saveBirthday} disabled={bdaySave === "saving"} style={[s.bdaySaveBtn, bdaySave === "saving" && { opacity: 0.6 }]}>
           <Text style={s.saveBtnText}>{bdaySave === "saving" ? "Saving…" : "Save"}</Text>
         </Pressable>
         {bdaySave === "saved" && <Text style={s.savedNote}>Saved ✓</Text>}
@@ -577,7 +579,7 @@ function DiasporaCard({ member: m }: Readonly<{ member: Member }>) {
         </View>
       )}
       <View style={s.saveRow}>
-        <Pressable onPress={saveDiaspora} disabled={diaSave === "saving"} style={[s.diaSaveBtn, diaSave === "saving" && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={saveDiaspora} disabled={diaSave === "saving"} style={[s.diaSaveBtn, diaSave === "saving" && { opacity: 0.6 }]}>
           <Text style={s.saveBtnText}>{diaSave === "saving" ? "Saving…" : "Save"}</Text>
         </Pressable>
         {diaSave === "saved" && <Text style={s.savedNote}>Saved ✓</Text>}
@@ -626,7 +628,7 @@ function SchoolingEditor({ member: m, schools, onSaved }: Readonly<{ member: Mem
               <TextInput style={s.yearInput} value={st.toYear ? String(st.toYear) : ""} onChangeText={(v) => setYear(i, "toYear", v)} placeholder="To" placeholderTextColor={C.inkFaint} keyboardType="number-pad" maxLength={4} />
             </View>
           </View>
-          <Pressable onPress={() => remove(i)} hitSlop={8} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={8} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
         </View>
       ))}
 
@@ -639,7 +641,7 @@ function SchoolingEditor({ member: m, schools, onSaved }: Readonly<{ member: Mem
 
       {stints.length > 0 && (
         <View style={s.saveRow}>
-          <Pressable onPress={persist} disabled={save === "saving"} style={[s.saveBtn, save === "saving" && { opacity: 0.6 }]}>
+          <Pressable accessibilityRole="button" onPress={persist} disabled={save === "saving"} style={[s.saveBtn, save === "saving" && { opacity: 0.6 }]}>
             <Text style={s.saveBtnText}>{save === "saving" ? "Saving…" : "Save schooling"}</Text>
           </Pressable>
           {save === "saved" && <Text style={s.savedNote}>Saved ✓</Text>}
@@ -660,7 +662,7 @@ function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
   const s = useMemo(() => makeStyles(C), [C]);
   if (listings.length === 0) {
     return (
-      <Pressable onPress={() => router.push("/submit")} style={s.linkRow}>
+      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}>
         <Text style={s.linkRowText}>Nothing yet — add your first</Text><Text style={s.chevron}>›</Text>
       </Pressable>
     );
@@ -668,7 +670,7 @@ function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
   return (
     <View style={{ gap: 8 }}>
       {listings.map((l) => <ListingRow key={l.id} listing={l} />)}
-      <Pressable onPress={() => router.push("/submit")} style={s.addListingBtn}>
+      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.addListingBtn}>
         <Text style={s.addListingText}>+ Add a listing</Text>
       </Pressable>
     </View>
@@ -692,7 +694,7 @@ function ListingRow({ listing: l }: Readonly<{ listing: Listing }>) {
   return (
     <View style={s.listingWrap}>
       {href ? (
-        <Pressable onPress={() => router.push(href as never)}>{inner}</Pressable>
+        <Pressable accessibilityRole="button" onPress={() => push(href)}>{inner}</Pressable>
       ) : (
         <View>{inner}</View>
       )}
@@ -738,16 +740,16 @@ function PeopleYouMayKnow({ refreshKey }: Readonly<{ refreshKey: number }>) {
     <View style={{ gap: 10 }}>
       {list.map((c) => (
         <View key={c.member.id} style={s.connCard}>
-          <Link href={`/members/${c.member.slug}`} asChild>
-            <Pressable style={s.connAvatar}>
+          <Link href={route.member(c.member.slug)} asChild>
+            <Pressable style={s.connAvatar} accessibilityRole="button" accessibilityLabel={c.member.displayName}>
               {c.member.photoUrl
                 ? <Thumb seed={c.member.slug} src={c.member.photoUrl} label={c.member.initials || initials(c.member.displayName)} style={s.connAvatarBox} labelStyle={s.connAvatarText} />
                 : <View style={s.connAvatarBox}><Text style={s.connAvatarText}>{c.member.initials || initials(c.member.displayName)}</Text></View>}
             </Pressable>
           </Link>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Link href={`/members/${c.member.slug}`} asChild>
-              <Pressable><Text style={s.connName}>{c.member.displayName}</Text></Pressable>
+            <Link href={route.member(c.member.slug)} asChild>
+              <Pressable accessibilityRole="button" accessibilityLabel={c.member.displayName}><Text style={s.connName}>{c.member.displayName}</Text></Pressable>
             </Link>
             <View style={s.reasonWrap}>
               {c.reasons.map((r) => <View key={r} style={s.reason}><Text style={s.reasonText}>{r}</Text></View>)}
@@ -780,7 +782,7 @@ function FollowChip({ slug }: Readonly<{ slug: string }>) {
     finally { setBusy(false); }
   }
   return (
-    <Pressable onPress={toggle} disabled={busy} style={[s.followChip, following && s.followChipOn]}>
+    <Pressable accessibilityRole="button" onPress={toggle} disabled={busy} style={[s.followChip, following && s.followChipOn]}>
       <Text style={[s.followChipText, following && s.followChipTextOn]}>{following ? "Following" : "Follow"}</Text>
     </Pressable>
   );
@@ -791,7 +793,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
   header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
@@ -803,15 +805,15 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   // The warn chip's bright gold (#F7C44A) has no palette base; it sits on the
   // header, which stays dark green in both themes, so the literal is kept.
   warnChip: { marginTop: 12, borderWidth: 1, borderColor: "rgba(247,196,74,0.4)", backgroundColor: "rgba(247,196,74,0.14)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
-  warnChipText: { color: C.gold, fontSize: 12, fontWeight: "700" },
+  warnChipText: { color: C.gold, fontSize: 12, ...S(700) },
   darkChip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   darkChipText: { color: ON_GREEN, fontSize: 12 },
 
   body: { padding: 16, gap: 16 },
   section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   sectionTitle: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 4 },
-  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginBottom: 8 },
-  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 6 },
+  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...S(700), textTransform: "uppercase", marginBottom: 8 },
+  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginBottom: 6 },
   help: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginBottom: 12 },
 
   stint: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
@@ -820,10 +822,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   yearInput: { width: 78, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, color: C.ink, fontSize: 14 },
   dash: { color: C.inkFaint },
   removeBtn: { padding: 6 },
-  removeText: { color: C.clayText, fontSize: 16, fontWeight: "700" },
+  removeText: { color: C.clayText, fontSize: 16, ...S(700) },
 
   addWrap: { marginTop: 2 },
-  addLabel: { color: C.inkFaint, fontSize: 12, fontWeight: "600", marginBottom: 8 },
+  addLabel: { color: C.inkFaint, fontSize: 12, ...S(600), marginBottom: 8 },
   chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
 
   diaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
@@ -833,12 +835,12 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   codeInput: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.ink, fontSize: 14, letterSpacing: 2 },
   diaSaveBtn: { backgroundColor: C.teal, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
   secondaryBtn: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16 },
-  secondaryBtnText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
+  secondaryBtnText: { color: C.greenText, ...S(700), fontSize: 13 },
 
   repChip: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   repChipOnGreen: { backgroundColor: C.green, borderColor: C.green },
   repChipOnClay: { backgroundColor: C.clay, borderColor: C.clay },
-  repChipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
+  repChipText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   repChipTextOn: { color: ON_GREEN },
   asafoDot: { width: 9, height: 9, borderRadius: 5 },
   bdaySaveBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
@@ -847,31 +849,31 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   listingWrap: { gap: 6 },
   promoSlot: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 10, paddingRight: 4 },
   promoBtn: { borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },
-  promoBtnText: { color: C.goldText, fontSize: 12, fontWeight: "700" },
+  promoBtnText: { color: C.goldText, fontSize: 12, ...S(700) },
   promoDayBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, alignItems: "center", minWidth: 52, minHeight: 44, justifyContent: "center" },
-  promoDayText: { color: C.greenText, fontSize: 13, fontWeight: "700" },
+  promoDayText: { color: C.greenText, fontSize: 13, ...S(700) },
   promoDayPrice: { color: C.inkFaint, fontSize: 10, marginTop: 1 },
-  promoCancel: { color: C.inkFaint, fontSize: 12, fontWeight: "600" },
+  promoCancel: { color: C.inkFaint, fontSize: 12, ...S(600) },
   promoErr: { color: C.clayText, fontSize: 11, maxWidth: 220, textAlign: "right" },
-  promoDone: { color: C.goldText, fontSize: 12, fontWeight: "700" },
-  featuredNote: { color: C.goldText, fontSize: 12, fontWeight: "700", flex: 1 },
+  promoDone: { color: C.goldText, fontSize: 12, ...S(700) },
+  featuredNote: { color: C.goldText, fontSize: 12, ...S(700), flex: 1 },
   codeChip: { backgroundColor: withAlpha(C.green, 0.08), borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  codeText: { color: C.greenText, fontSize: 15, fontWeight: "700", letterSpacing: 2 },
-  listingTitle: { color: C.ink, fontSize: 14, fontWeight: "600" },
+  codeText: { color: C.greenText, fontSize: 15, ...S(700), letterSpacing: 2 },
+  listingTitle: { color: C.ink, fontSize: 14, ...D(600) },
   listingType: { color: C.inkFaint, fontSize: 11, textTransform: "capitalize", marginTop: 1 },
   statusChip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   statusOk: { backgroundColor: withAlpha(C.green, 0.08) },
   statusPending: { backgroundColor: withAlpha(C.gold, 0.16) },
   statusBad: { backgroundColor: withAlpha(C.maroon, 0.08) },
   statusMuted: { backgroundColor: C.sand },
-  statusText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
+  statusText: { fontSize: 11, ...S(700), textTransform: "capitalize" },
   addListingBtn: { borderWidth: 1, borderStyle: "dashed", borderColor: C.goldBrand, borderRadius: 999, paddingVertical: 10, alignItems: "center", marginTop: 2 },
-  addListingText: { color: C.goldText, fontSize: 13, fontWeight: "700" },
+  addListingText: { color: C.goldText, fontSize: 13, ...S(700) },
 
   saveRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
   saveBtn: { backgroundColor: C.maroon, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
-  saveBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
-  savedNote: { color: C.tealText, fontSize: 13, fontWeight: "600" },
+  saveBtnText: { color: ON_GREEN, ...S(700), fontSize: 14 },
+  savedNote: { color: C.tealText, fontSize: 13, ...S(600) },
   errNote: { color: C.clayText, fontSize: 13 },
   mono: { fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }), color: C.greenText },
 
@@ -882,15 +884,15 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   connName: { ...S(700), fontSize: 17, color: C.ink },
   reasonWrap: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   reason: { backgroundColor: C.sand, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
-  reasonText: { color: C.inkMuted, fontSize: 11, fontWeight: "500" },
+  reasonText: { color: C.inkMuted, fontSize: 11, ...S(500) },
   followChip: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   followChipOn: { backgroundColor: C.green },
-  followChipText: { color: C.greenText, fontWeight: "700", fontSize: 13 },
+  followChipText: { color: C.greenText, ...S(700), fontSize: 13 },
   followChipTextOn: { color: ON_GREEN },
 
   linkRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 8 },
-  linkRowText: { color: C.ink, fontSize: 15, fontWeight: "600" },
-  chevron: { color: C.inkFaint, fontSize: 20, fontWeight: "700" },
+  linkRowText: { color: C.ink, fontSize: 15, ...S(600) },
+  chevron: { color: C.inkFaint, fontSize: 20, ...S(700) },
   signOut: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 12, alignItems: "center", marginTop: 8 },
-  signOutText: { color: C.clayText, fontWeight: "700" },
+  signOutText: { color: C.clayText, ...S(700) },
 });

@@ -457,7 +457,7 @@ export function AdminLayout() {
       {/* Content column, offset by the fixed sidebar on desktop (240px → 64px when collapsed) */}
       <div className={`flex min-h-screen flex-col transition-[padding] duration-200 ${collapsed ? "lg:pl-16" : "lg:pl-60"}`}>
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-sand bg-cream/90 px-4 backdrop-blur sm:px-6">
-          <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-ink-muted hover:bg-sand lg:hidden" aria-label="Open menu">
+          <button type="button" onClick={() => setOpen(true)} className="rounded-lg p-2 text-ink-muted hover:bg-sand lg:hidden" aria-label="Open menu">
             <Icon name="menu" />
           </button>
 
@@ -507,7 +507,7 @@ export function AdminLayout() {
             <div className="hidden h-6 w-px bg-sand sm:block" />
             {/* User menu lives in the top bar, not the sidebar — as in Aura. */}
             <div className="relative" ref={menuRef}>
-              <button
+              <button type="button"
                 data-tour="user-menu"
                 onClick={() => setUserMenu((v) => !v)}
                 aria-expanded={userMenu}
@@ -549,7 +549,7 @@ export function AdminLayout() {
                         </span>
                       </Link>
                     ))}
-                    <button
+                    <button type="button"
                       role="menuitem"
                       onClick={() => {
                         setUserMenu(false);
@@ -567,7 +567,7 @@ export function AdminLayout() {
                     </button>
                   </div>
                   <div className="border-t border-sand p-2">
-                    <button
+                    <button type="button"
                       role="menuitem"
                       onClick={signOut}
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-maroon-900/[0.05]"

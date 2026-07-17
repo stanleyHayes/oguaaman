@@ -1,15 +1,6 @@
 import type { ReactNode } from "react";
 import { Platform, Pressable, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
-import Animated, {
-  FadeIn,
-  FadeInUp,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withSpring,
-  type SharedValue,
-} from "react-native-reanimated";
+import Animated, { FadeIn, FadeInUp, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, type SharedValue } from "react-native-reanimated";
 
 /**
  * Motion helpers for the Oguaa app. Every helper honors the system
@@ -69,7 +60,7 @@ export function PressScale({ children, style, ...rest }: Readonly<PressScaleProp
   const scale = useSharedValue(1);
   const anim = useAnimatedStyle(() => ({ transform: [{ scale: reduced ? 1 : scale.value }] }));
   return (
-    <Pressable
+    <Pressable accessibilityRole="button"
       {...rest}
       onPressIn={(e) => {
         // eslint-disable-next-line react-hooks/immutability -- shared values are mutated by design in Reanimated handlers

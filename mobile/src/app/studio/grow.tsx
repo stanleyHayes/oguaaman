@@ -1,7 +1,9 @@
+import { openInAppBrowser } from "@/lib/webbrowser";
 import { useMemo, useState } from "react";
+import { ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -73,7 +75,7 @@ export default function StudioGrow() {
       } else {
         // Open Paystack in an in-app browser, then auto-verify when the payer
         // returns (browser dismissed) — no manual "verify" tap in the happy path.
-        const opened = await WebBrowser.openBrowserAsync(r.authorizationUrl).then(() => true).catch(() => false);
+        const opened = await openInAppBrowser(r.authorizationUrl);
         if (!opened) {
           setErr("Could not open the payment page.");
         } else {
@@ -115,7 +117,7 @@ export default function StudioGrow() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Grow</Text>
         <Text style={s.gateBody}>Sign in to promote your listings and pick a plan.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}>
           <Text style={s.primaryBtnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -155,7 +157,7 @@ export default function StudioGrow() {
         <View style={s.grid}>
           <MetricCard label="Your plan" value={currentPlan} glyph="★" tone="ink" sub={overview.activeSubscription ? "Paid plan active" : "Free forever"} />
           <MetricCard label="Active promotions" value={overview.activePromotions} glyph="↗" tone="green" sub={overview.promotionDaysLeft ? `${overview.promotionDaysLeft} days remaining` : "None running"} />
-          <MetricCard label="Live listings" value={overview.live} glyph="▦" tone="gold" sub={overview.pending ? `${overview.pending} in review` : "All reviewed"} href="/studio/work" />
+          <MetricCard label="Live listings" value={overview.live} glyph="▦" tone="gold" sub={overview.pending ? `${overview.pending} in review` : "All reviewed"} href={ROUTES.studioWork} />
         </View>
 
         {paidPlans.length === 0 && (
@@ -213,7 +215,7 @@ export default function StudioGrow() {
 
                 <View style={s.addWrap}>
                   {businesses.length === 0 ? (
-                    <Pressable onPress={() => router.push("/studio/work" as never)} style={s.infoBox}>
+                    <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studioWork)} style={s.infoBox}>
                       <Text style={s.infoText}>You don&apos;t have an approved business listing yet. Add one first.</Text>
                     </Pressable>
                   ) : (
@@ -230,11 +232,11 @@ export default function StudioGrow() {
                             {active ? (
                               <Text style={s.activeTag}>Active ✓</Text>
                             ) : isPending ? (
-                              <Pressable onPress={() => verify(key, pending.reference)} disabled={isBusy} style={[s.subBtn, s.verifyBtn, isBusy && { opacity: 0.6 }]}>
+                              <Pressable accessibilityRole="button" onPress={() => verify(key, pending.reference)} disabled={isBusy} style={[s.subBtn, s.verifyBtn, isBusy && { opacity: 0.6 }]}>
                                 <Text style={s.verifyBtnText}>{isBusy ? "Checking…" : "I've paid — verify"}</Text>
                               </Pressable>
                             ) : (
-                              <Pressable onPress={() => subscribe(b.slug, plan.slug)} disabled={busyKey != null} style={[s.subBtn, busyKey != null && { opacity: 0.6 }]}>
+                              <Pressable accessibilityRole="button" onPress={() => subscribe(b.slug, plan.slug)} disabled={busyKey != null} style={[s.subBtn, busyKey != null && { opacity: 0.6 }]}>
                                 <Text style={s.subBtnText}>{isBusy ? "Starting…" : `Subscribe · ${cedis(price)}`}</Text>
                               </Pressable>
                             )}
@@ -271,7 +273,7 @@ export default function StudioGrow() {
               );
             })}
           </View>
-          <Pressable onPress={() => router.push("/studio/work" as never)} style={s.promoteBtn}>
+          <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studioWork)} style={s.promoteBtn}>
             <Text style={s.promoteBtnText}>↗ Promote a listing</Text>
           </Pressable>
         </View>
@@ -285,15 +287,15 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
   body: { padding: 16, gap: 16 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
 
   okBanner: { backgroundColor: withAlpha(C.teal, 0.12), borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
-  okText: { color: C.tealText, fontSize: 13, fontWeight: "600", lineHeight: 19 },
+  okText: { color: C.tealText, fontSize: 13, ...S(600), lineHeight: 19 },
   errBanner: { backgroundColor: withAlpha(C.maroon, 0.08), borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
-  errText: { color: C.maroonText, fontSize: 13, fontWeight: "600", lineHeight: 19 },
+  errText: { color: C.maroonText, fontSize: 13, ...S(600), lineHeight: 19 },
 
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 18 },
   cardTitle: { ...S(700), fontSize: 17, color: C.ink },
@@ -302,45 +304,45 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   planCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, overflow: "hidden" },
   planCardFeatured: { borderColor: C.goldBorder },
   recommendChip: { position: "absolute", right: 14, top: 14, zIndex: 10, backgroundColor: withAlpha(C.gold, 0.16), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  recommendText: { color: C.goldText, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+  recommendText: { color: C.goldText, fontSize: 10, ...S(700), textTransform: "uppercase", letterSpacing: 0.5 },
   planHead: { padding: 18, borderBottomWidth: 1, borderBottomColor: C.sand },
   planName: { ...S(700), fontSize: 17, color: C.ink },
   priceRow: { flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: 8 },
   price: { ...D(700), fontSize: 28, color: C.ink },
-  priceUnit: { color: C.inkFaint, fontSize: 14, fontWeight: "600", marginBottom: 4 },
+  priceUnit: { color: C.inkFaint, fontSize: 14, ...S(600), marginBottom: 4 },
   priceNote: { color: C.inkFaint, fontSize: 12, marginTop: 4 },
   planBody: { padding: 18 },
   perkRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   perkTick: { width: 18, height: 18, borderRadius: 9, backgroundColor: withAlpha(C.gold, 0.2), alignItems: "center", justifyContent: "center", marginTop: 1 },
-  perkTickText: { color: C.goldText, fontSize: 11, fontWeight: "800" },
+  perkTickText: { color: C.goldText, fontSize: 11, ...S(700) },
   perkText: { flex: 1, color: C.inkMuted, fontSize: 13, lineHeight: 19 },
   renewNote: { color: C.inkFaint, fontSize: 12, lineHeight: 18, marginTop: 14 },
 
   activeSubRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, backgroundColor: withAlpha(C.teal, 0.08), borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
-  activeSubName: { flex: 1, color: C.ink, fontSize: 13, fontWeight: "600" },
-  activeSubUntil: { color: C.tealText, fontSize: 11, fontWeight: "700" },
+  activeSubName: { flex: 1, color: C.ink, fontSize: 13, ...S(600) },
+  activeSubUntil: { color: C.tealText, fontSize: 11, ...S(700) },
 
   addWrap: { marginTop: 16, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 16, gap: 8 },
-  addLabel: { color: C.inkFaint, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 2 },
+  addLabel: { color: C.inkFaint, fontSize: 11, ...S(700), letterSpacing: 1, textTransform: "uppercase", marginBottom: 2 },
   infoBox: { flexDirection: "row", gap: 8, borderWidth: 1, borderColor: C.goldBorder, backgroundColor: withAlpha(C.gold, 0.08), borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12 },
   infoText: { flex: 1, color: C.inkMuted, fontSize: 13, lineHeight: 19 },
   bizRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
-  bizName: { flex: 1, color: C.ink, fontSize: 14, fontWeight: "600" },
-  activeTag: { color: C.tealText, fontSize: 12, fontWeight: "700" },
+  bizName: { flex: 1, color: C.ink, fontSize: 14, ...S(600) },
+  activeTag: { color: C.tealText, fontSize: 12, ...S(700) },
   subBtn: { backgroundColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  subBtnText: { color: C.green900, fontSize: 12, fontWeight: "700" },
+  subBtnText: { color: C.green900, fontSize: 12, ...S(700) },
   verifyBtn: { backgroundColor: C.green },
-  verifyBtnText: { color: ON_GREEN, fontSize: 12, fontWeight: "700" },
+  verifyBtnText: { color: ON_GREEN, fontSize: 12, ...S(700) },
 
   promoHead: { flexDirection: "row", alignItems: "center", gap: 10 },
   promoIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: withAlpha(C.gold, 0.15), alignItems: "center", justifyContent: "center" },
-  promoIconText: { color: C.goldText, fontSize: 16, fontWeight: "700" },
+  promoIconText: { color: C.goldText, fontSize: 16, ...S(700) },
   stepRow: { flexDirection: "row", gap: 12 },
   stepCol: { alignItems: "center", width: 28 },
   stepNum: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: C.goldBorder, backgroundColor: withAlpha(C.gold, 0.15), alignItems: "center", justifyContent: "center" },
-  stepNumText: { color: C.goldText, fontSize: 12, fontWeight: "800" },
+  stepNumText: { color: C.goldText, fontSize: 12, ...S(700) },
   stepLine: { width: 1, flex: 1, backgroundColor: C.sand, marginTop: 4 },
   stepText: { flex: 1, color: C.inkMuted, fontSize: 13, lineHeight: 19, paddingTop: 4 },
   promoteBtn: { marginTop: 16, borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingVertical: 11, alignItems: "center" },
-  promoteBtnText: { color: C.goldText, fontSize: 14, fontWeight: "700" },
+  promoteBtnText: { color: C.goldText, fontSize: 14, ...S(700) },
 });

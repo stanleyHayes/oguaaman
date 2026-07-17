@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
-import { Link, router } from "expo-router";
+import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -23,7 +25,7 @@ function GenreChips({ active, onPick }: Readonly<{ active: string; onPick: (g: s
       {["All", ...genres].map((g) => {
         const on = active === g || (g === "All" && !active);
         return (
-          <Pressable key={g} onPress={() => onPick(g === "All" ? "" : g)} style={[s.genreChip, on && s.genreChipOn]}>
+          <Pressable accessibilityRole="button" key={g} onPress={() => onPick(g === "All" ? "" : g)} style={[s.genreChip, on && s.genreChipOn]}>
             <Text style={[s.genreChipText, on && s.genreChipTextOn]}>{g}</Text>
           </Pressable>
         );
@@ -52,7 +54,7 @@ export default function Music() {
         lede="Local artists are the most starved of a spotlight and the most motivated to share. Give a musician a real profile and they push it to their following — music goes through the door first."
       />
       <View style={{ padding: 16, gap: 14 }}>
-      <PressScale onPress={() => router.push("/music/the-oguaa-sound" as never)} style={s.soundCard}>
+      <PressScale onPress={() => push(ROUTES.oguaaSound)} style={s.soundCard}>
         <Text style={s.soundKicker}>THE OGUAA SOUND</Text>
         <Text style={s.soundTitle}>Where highlife learned to swim ›</Text>
         <Text style={s.soundSub}>The grandfathers of the sound — C.K. Mann, Ebo Taylor, and the osode wave.</Text>
@@ -61,8 +63,8 @@ export default function Music() {
       {shown.length === 0 && <EmptyState glyph="♪" title="No artists in this genre yet" />}
       {shown.map((a, i) => (
         <StaggerIn key={a.id} index={i}>
-          <Link href={`/music/${a.slug}`} asChild>
-            <Pressable style={s.card}>
+          <Link href={route.music(a.slug)} asChild>
+            <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={a.details.actName ?? a.title}>
             <Thumb
               seed={a.slug}
               src={a.coverImageUrl}
@@ -94,12 +96,12 @@ const onDarkText = (C: Palette, alpha: number) => C.onDarkText85.replace(/[^,]+\
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   soundCard: { backgroundColor: C.green900, borderRadius: 14, padding: 16 },
-  soundKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+  soundKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...D(700) },
   soundTitle: { color: ON_GREEN, ...D(700), fontSize: 20, marginTop: 4 },
   soundSub: { color: onDarkText(C, 0.75), fontSize: 13, lineHeight: 19, marginTop: 4 },
   genreChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   genreChipOn: { backgroundColor: C.clay, borderColor: C.clay },
-  genreChipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
+  genreChipText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   genreChipTextOn: { color: C.cream },
   card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
   thumb: { width: 64, height: 64, borderRadius: 10, alignItems: "center", justifyContent: "center" },

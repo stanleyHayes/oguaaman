@@ -13,7 +13,7 @@ export type AdinkraName =
 interface SymbolDef {
   name: string;
   meaning: string;
-  path: React.ReactNode;
+  path: ReactNode;
 }
 
 export const ADINKRA: Record<AdinkraName, SymbolDef> = {

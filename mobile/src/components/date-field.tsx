@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
-import { D, ON_GREEN, type Palette } from "@/theme";
+import { D, ON_GREEN, type Palette, S } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -95,7 +95,7 @@ function Column({ title, items, onPick }: Readonly<{ title: string; items: Colum
         }}
       >
         {items.map((it) => (
-          <Pressable
+          <Pressable accessibilityRole="button"
             key={it.value}
             onPress={() => onPick(it.value)}
             disabled={it.disabled}
@@ -188,7 +188,7 @@ export function DateField({ value, onChange, placeholder = "Pick a date", minDat
 
       <Modal transparent animationType="fade" visible={open} onRequestClose={cancel}>
         <View style={s.backdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={cancel} accessibilityLabel="Cancel" />
+          <Pressable style={StyleSheet.absoluteFill} onPress={cancel} accessibilityLabel="Cancel"  accessibilityRole="button" />
           <View style={s.sheet}>
             <Text style={s.sheetTitle}>{label ?? "Pick a date"}</Text>
             <View style={s.columns}>
@@ -197,8 +197,8 @@ export function DateField({ value, onChange, placeholder = "Pick a date", minDat
               <Column title="Day" items={dayItems} onPick={(d) => setDraft((cur) => normalize(cur.y, cur.m, d, minDate, maxDate))} />
             </View>
             <View style={s.actions}>
-              <Pressable onPress={cancel} style={s.cancelBtn}><Text style={s.cancelText}>Cancel</Text></Pressable>
-              <Pressable onPress={commit} style={s.doneBtn}><Text style={s.doneText}>Done</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={cancel} style={s.cancelBtn}><Text style={s.cancelText}>Cancel</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={commit} style={s.doneBtn}><Text style={s.doneText}>Done</Text></Pressable>
             </View>
           </View>
         </View>
@@ -208,7 +208,7 @@ export function DateField({ value, onChange, placeholder = "Pick a date", minDat
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
-  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 8 },
+  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...S(700), marginBottom: 8 },
   field: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 },
   fieldText: { color: C.ink, fontSize: 15 },
   fieldPlaceholder: { color: C.inkFaint, fontSize: 15 },
@@ -219,17 +219,17 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   sheet: { backgroundColor: C.cream, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderWidth: 1, borderColor: C.sand, padding: 20, paddingBottom: 28 },
   sheetTitle: { ...D(600), fontSize: 20, color: C.ink, marginBottom: 12 },
   columns: { flexDirection: "row", gap: 10 },
-  colTitle: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase", textAlign: "center", marginBottom: 6 },
+  colTitle: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), textTransform: "uppercase", textAlign: "center", marginBottom: 6 },
   col: { height: 5 * ROW_H, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12 },
   colContent: { paddingVertical: 4, paddingHorizontal: 4 },
   row: { height: ROW_H, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   rowOn: { backgroundColor: C.green },
   rowText: { color: C.ink, fontSize: 15 },
-  rowTextOn: { color: ON_GREEN, fontWeight: "700" },
+  rowTextOn: { color: ON_GREEN, ...S(700) },
   rowTextOff: { color: C.inkFaint, opacity: 0.4 },
   actions: { flexDirection: "row", gap: 10, marginTop: 16 },
   cancelBtn: { flex: 1, borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
-  cancelText: { color: C.ink, fontWeight: "600", fontSize: 15 },
+  cancelText: { color: C.ink, ...S(600), fontSize: 15 },
   doneBtn: { flex: 1, backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
-  doneText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  doneText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 });

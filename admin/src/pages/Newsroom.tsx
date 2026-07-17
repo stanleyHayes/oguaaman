@@ -65,7 +65,7 @@ export function Component() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex rounded-full border border-sand bg-paper p-0.5 text-sm">
           {(["all", "published", "draft"] as Filter[]).map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3.5 py-1.5 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>
+            <button type="button" key={f} onClick={() => setFilter(f)} className={`rounded-full px-3.5 py-1.5 font-semibold capitalize transition-colors ${filter === f ? "bg-green text-on-green" : "text-ink-muted hover:text-ink"}`}>
               {f} <span className={filter === f ? "text-on-green/70" : "text-ink-faint"}>{counts[f]}</span>
             </button>
           ))}
@@ -85,7 +85,7 @@ export function Component() {
           {filtered.map((a, idx) => (
             <StaggerItem key={a.id} index={idx}>
               <Card className="overflow-hidden transition-shadow hover:shadow-[var(--shadow-lift,0_8px_24px_rgba(0,0,0,0.08))]">
-              <button onClick={() => navigate(`/newsroom/${a.id}`)} className="flex w-full items-center gap-4 p-3 text-left">
+              <button type="button" onClick={() => navigate(`/newsroom/${a.id}`)} className="flex w-full items-center gap-4 p-3 text-left">
                 <Cover a={a} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

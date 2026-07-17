@@ -15,12 +15,12 @@ import (
 
 // SubmitInput is a validated listing submission (spec §8.2).
 type SubmitInput struct {
-	Type          string         `json:"type"`
-	Title         string         `json:"title"`
-	OwnerID       string         `json:"ownerId"`
-	Tags          []string       `json:"tags"`
-	TownID        string         `json:"townId"`
-	CoverImageURL string         `json:"coverImageUrl"`
+	Type          string   `json:"type"`
+	Title         string   `json:"title"`
+	OwnerID       string   `json:"ownerId"`
+	Tags          []string `json:"tags"`
+	TownID        string   `json:"townId"`
+	CoverImageURL string   `json:"coverImageUrl"`
 	// Optional exact coordinates — "claim your spot on the map". Only business
 	// and event listings surface on the town map (see mapdata.listingPoint); a
 	// pin is stored when both are present and in range, and ignored otherwise.
@@ -89,9 +89,9 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 	}
 	// Use the nanosecond as a uniqueness token so two submissions with the same
 	// title don't collide on slug or ID.
-	nano := fmt.Sprintf("%d", time.Now().UnixNano())
+	nano := strconv.FormatInt(time.Now().UnixNano(), 10)
 	l := domain.Listing{
-		ID:            "lst-" + slugify(title) + "-" + nano,
+		ID:            domain.PrefixListing + slugify(title) + "-" + nano,
 		Slug:          slugify(title) + "-" + nano[len(nano)-7:],
 		Type:          in.Type,
 		OwnerID:       owner,
@@ -265,7 +265,7 @@ func (s *Service) Moderate(ctx context.Context, listingID, action, reason, moder
 		}
 	}
 	if err := s.mod.Insert(ctx, domain.ModerationRecord{
-		ID:          "mod-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:          newID(domain.PrefixModeration),
 		ListingID:   listingID,
 		ModeratorID: moderatorID,
 		Action:      action,
@@ -298,7 +298,7 @@ func (s *Service) notifyModeration(ctx context.Context, l *domain.Listing, actio
 		return
 	}
 	_ = s.notifs.Insert(ctx, domain.Notification{
-		ID: "ntf-" + fmt.Sprintf("%d", time.Now().UnixNano()), MemberID: l.OwnerID,
+		ID: newID(domain.PrefixNotification), MemberID: l.OwnerID,
 		Kind: kind, Title: title, Body: body, CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	})
 	s.notifyOutOfBand(ctx, l.OwnerID, title, body, "/me")
@@ -325,7 +325,7 @@ func (s *Service) AddTribute(ctx context.Context, slug, author, message string) 
 		author = "A member of the community"
 	}
 	t := domain.Tribute{
-		ID:         "trb-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:         newID(domain.PrefixTribute),
 		AuthorName: author,
 		Message:    message,
 		CreatedAt:  time.Now().UTC().Format(time.RFC3339),
@@ -353,7 +353,7 @@ func (s *Service) ClaimKeeperRole(ctx context.Context, memberID, memberName, slu
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	rep := domain.Report{
-		ID:           "rpt-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:           newID(domain.PrefixReport),
 		ListingID:    l.ID,
 		ListingSlug:  l.Slug,
 		ListingType:  domain.TypeMemorial,

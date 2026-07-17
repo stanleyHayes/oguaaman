@@ -1,6 +1,8 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -41,7 +43,7 @@ function ProgrammeList({ e }: Readonly<{ e: Listing }>) {
           ))}
         </View>
       )}
-      <Pressable onPress={() => router.push(`/events/${e.slug}` as never)} style={s.evLink}>
+      <Pressable accessibilityRole="button" onPress={() => push(route.event(e.slug))} style={s.evLink}>
         <Text style={s.evLinkText}>See event details &amp; tickets →</Text>
       </Pressable>
     </View>
@@ -107,12 +109,12 @@ export default function Festival() {
 const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: fillFor("festival", C), height: 210, justifyContent: "flex-end" },
   heroShade: { backgroundColor: C.heroScrim, paddingHorizontal: 20, paddingVertical: 20 },
-  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, ...D(700) },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 30, marginTop: 4 },
   heroTagline: { color: C.gold, fontSize: 14, marginTop: 6, lineHeight: 20 },
   body: { padding: 20 },
   history: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
-  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 26, marginBottom: 12 },
+  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginTop: 26, marginBottom: 12 },
   timeline: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 16 },
   tlRow: { flexDirection: "row", gap: 12 },
   tlRail: { width: 12, alignItems: "center" },
@@ -121,14 +123,14 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   tlBody: { flex: 1, paddingBottom: 20 },
   yearRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 },
   year: { ...S(700), fontSize: 22, color: C.ink },
-  when: { color: C.goldText, fontSize: 13, fontWeight: "600", marginTop: 8 },
+  when: { color: C.goldText, fontSize: 13, ...S(600), marginTop: 8 },
   evDesc: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   progRow: { flexDirection: "row", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 8, padding: 10 },
   progDay: { width: 110, flexShrink: 0 },
-  progDayText: { color: C.ink, fontSize: 12, fontWeight: "700", lineHeight: 17 },
+  progDayText: { color: C.ink, fontSize: 12, ...S(700), lineHeight: 17 },
   progTime: { color: C.inkFaint, fontSize: 11, marginTop: 1 },
   progTitle: { color: C.inkMuted, fontSize: 13, lineHeight: 19, flex: 1 },
   evLink: { marginTop: 10, minHeight: 44, justifyContent: "center" },
-  evLinkText: { color: C.tealText, fontSize: 13, fontWeight: "700" },
+  evLinkText: { color: C.tealText, fontSize: 13, ...S(700) },
   recap: { ...SI(), color: C.inkMuted, fontSize: 14, lineHeight: 21, borderLeftWidth: 2, borderLeftColor: C.goldBrand, paddingLeft: 12, marginTop: 10 },
 });

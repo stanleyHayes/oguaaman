@@ -3,7 +3,7 @@ import { Tabs } from "expo-router";
 import { Pressable, View, type ColorValue } from "react-native";
 import { T as Text } from "@/components/typography";
 import { useTheme } from "@/lib/theme-context";
-import { ON_GREEN } from "@/theme";
+import { ON_GREEN, S, D } from "@/theme";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -43,8 +43,8 @@ function HeaderMenuButton() {
   const { open } = useNavDrawer();
   const { C } = useTheme();
   return (
-    <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
-      <Text style={{ fontSize: 20, color: ON_GREEN, fontWeight: "700" }}>☰</Text>
+    <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingHorizontal: 16, paddingVertical: 6 }} accessibilityRole="button">
+      <Text style={{ fontSize: 20, color: ON_GREEN, ...S(700) }}>☰</Text>
     </Pressable>
   );
 }
@@ -69,7 +69,7 @@ export default function TabsLayout() {
           tabBarBadgeStyle: { backgroundColor: C.clay, color: ON_GREEN, fontSize: 11 },
           headerStyle: { backgroundColor: C.green },
           headerTintColor: ON_GREEN,
-          headerTitleStyle: { fontWeight: "600" },
+          headerTitleStyle: { ...D(600) },
           headerStatusBarHeight: bannerVisible ? 0 : undefined,
           headerLeft: () => <HeaderMenuButton />,
           // Shared action cluster on every tab: theme toggle, alerts bell

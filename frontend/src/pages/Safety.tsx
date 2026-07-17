@@ -31,7 +31,9 @@ export function Component() {
       <Container size="wide" className="py-12">
         <div className="mb-8 flex flex-wrap gap-2">
           <button
+            type="button"
             onClick={() => setCat(null)}
+            aria-pressed={cat === null}
             className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === null ? "border-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
           >
             {cat === null && <LayoutPill layoutId="safety-cat" className="absolute inset-0 rounded-full bg-green" />}
@@ -40,7 +42,9 @@ export function Component() {
           {INCIDENT_CATEGORIES.map((c) => (
             <button
               key={c.value}
+              type="button"
               onClick={() => setCat(cat === c.value ? null : c.value)}
+              aria-pressed={cat === c.value}
               className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cat === c.value ? "border-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
             >
               {cat === c.value && <LayoutPill layoutId="safety-cat" className="absolute inset-0 rounded-full bg-green" />}

@@ -53,7 +53,7 @@ func (h *Handler) SubmitIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if m == nil {
-		m = &domain.Member{ID: "m-akua"} // dev convenience only — never reached when AUTH_REQUIRED=true
+		m = &domain.Member{ID: domain.DevDemoMemberID} // dev convenience only — never reached when AUTH_REQUIRED=true
 	}
 	l, err := h.svc.SubmitIncident(r.Context(), m, in)
 	if err != nil {
@@ -78,7 +78,7 @@ func (h *Handler) AdminIncidentStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if m == nil {
-		m = &domain.Member{ID: "m-nana", Role: domain.RoleSteward} // dev convenience only — never reached when AUTH_REQUIRED=true
+		m = &domain.Member{ID: domain.DevDemoModeratorID, Role: domain.RoleSteward} // dev convenience only — never reached when AUTH_REQUIRED=true
 	}
 	if err := h.svc.TransitionIncident(r.Context(), r.PathValue("id"), m, in.Status, in.Note); err != nil {
 		var fb *domain.ForbiddenError

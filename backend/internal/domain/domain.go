@@ -133,3 +133,14 @@ func (e *ForbiddenError) Error() string {
 	}
 	return e.Reason
 }
+
+// ValidationError is returned when input fails business-rule validation.
+// Delivery layers map it to HTTP 400 / gRPC InvalidArgument.
+type ValidationError struct{ Message string }
+
+func (e *ValidationError) Error() string {
+	if e.Message == "" {
+		return "validation failed"
+	}
+	return e.Message
+}

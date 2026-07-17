@@ -1,3 +1,4 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Link } from "expo-router";
@@ -30,8 +31,8 @@ export default function Memoriam() {
       <View style={{ height: 18 }} />
       {data.map((m, i) => (
         <StaggerIn key={m.id} index={i}>
-          <Link href={`/memoriam/${m.slug}`} asChild>
-            <Pressable style={s.card}>
+          <Link href={route.memoriam(m.slug)} asChild>
+            <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={m.title}>
             {m.coverImageUrl ? (
               <Thumb seed={m.slug} src={m.coverImageUrl} label={initials(m.title)} style={s.portrait} labelStyle={s.portraitInit} />
             ) : (

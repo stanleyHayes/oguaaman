@@ -1,3 +1,4 @@
+import { ROUTES } from "@/lib/routes";
 import { useMemo, useState } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
@@ -82,7 +83,7 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
     setErr("");
     const cedisNum = Number.parseFloat(amount);
     if (!Number.isFinite(cedisNum) || cedisNum < 1) { setErr("Enter an amount of at least GH₵ 1."); return; }
-    if (!member) { router.push("/signin"); return; }
+    if (!member) { router.push(ROUTES.signIn); return; }
     setBusy(true);
     try {
       const r = await api.pledge(slug, { amountPesewas: Math.round(cedisNum * 100) });
@@ -130,7 +131,7 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
         <Text style={s.pledgeLabel}>FINISH IN YOUR BROWSER</Text>
         <Text style={s.trustBody}>Complete the payment on the Paystack page that opened, then come back and verify.</Text>
         {err !== "" && <Text style={s.err}>{err}</Text>}
-        <Pressable onPress={verify} disabled={busy} style={[s.pledgeBtn, busy && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.pledgeBtn, busy && { opacity: 0.6 }]}>
           <Text style={s.pledgeBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
         </Pressable>
       </View>
@@ -144,7 +145,7 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
       <Text style={s.pledgeLabel}>PLEDGE AN AMOUNT (GH₵)</Text>
       <View style={s.chips}>
         {QUICK.map((a) => (
-          <Pressable key={a} onPress={() => setAmount(String(a))} style={[s.chip, amount === String(a) && s.chipOn]}>
+          <Pressable accessibilityRole="button" key={a} onPress={() => setAmount(String(a))} style={[s.chip, amount === String(a) && s.chipOn]}>
             <Text style={[s.chipText, amount === String(a) && s.chipTextOn]}>{a}</Text>
           </Pressable>
         ))}
@@ -158,7 +159,7 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
         placeholderTextColor={C.inkFaint}
       />
       {err !== "" && <Text style={s.err}>{err}</Text>}
-      <Pressable onPress={startPledge} disabled={busy} style={[s.pledgeBtn, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={startPledge} disabled={busy} style={[s.pledgeBtn, busy && { opacity: 0.6 }]}>
         <Text style={s.pledgeBtnText}>{busy ? "Starting…" : pledgeLabel}</Text>
       </Pressable>
       <Text style={s.note}>Mobile money &amp; cards via Paystack. You&apos;ll get a receipt by email.</Text>
@@ -170,25 +171,25 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   cover: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
   coverInit: { color: C.cream, ...S(700), fontSize: 38 },
   body: { padding: 20 },
-  kicker: { color: C.greenText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  kicker: { color: C.greenText, fontSize: 11, letterSpacing: 2, ...D(700) },
   title: { ...D(700), fontSize: 27, color: C.ink, marginTop: 6 },
   organiser: { color: C.goldText, fontSize: 13, marginTop: 4 },
   meta: { color: C.inkFaint, fontSize: 12, marginTop: 6 },
   desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 16 },
   trust: { marginTop: 18, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
-  trustTitle: { color: C.ink, fontSize: 14, fontWeight: "700" },
+  trustTitle: { color: C.ink, fontSize: 14, ...D(700) },
   trustBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   pledgeBox: { marginTop: 18, backgroundColor: C.cream, borderWidth: 1, borderColor: C.green, borderRadius: 14, padding: 16 },
-  pledgeLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  pledgeLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...S(700) },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
   chipOn: { backgroundColor: C.green, borderColor: C.green },
-  chipText: { color: C.inkMuted, fontSize: 14, fontWeight: "700" },
+  chipText: { color: C.inkMuted, fontSize: 14, ...S(700) },
   chipTextOn: { color: ON_GREEN },
   input: { marginTop: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: C.ink },
   err: { color: C.clayText, fontSize: 13, marginTop: 10 },
   pledgeBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
-  pledgeBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  pledgeBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
   thanks: { marginTop: 18, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 14, padding: 16 },
   thanksTitle: { ...D(700), fontSize: 20, color: C.greenText },

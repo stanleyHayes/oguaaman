@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { route, ROUTES } from "@/lib/routes";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -7,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { ImageField } from "@/components/image-field";
 import { HeroBand } from "@/ui";
 import { makeFormStyles } from "@/components/form-styles";
-import { ON_GREEN, type Palette } from "@/theme";
+import { ON_GREEN, type Palette, S } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import type { NewsArticle } from "@/lib/types";
 
@@ -42,7 +43,7 @@ export default function Write() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Sign in to write</Text>
         <Text style={s.gateBody}>Stories in the Oguaa Newsroom are credited to their author.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.btn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.btn}>
           <Text style={s.btnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -54,7 +55,7 @@ export default function Write() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Writers only</Text>
         <Text style={s.gateBody}>Only writers or verified authority managers can post to the Newsroom. Turn on the writer role from your profile first.</Text>
-        <Pressable onPress={() => router.replace("/me")} style={s.btn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.me)} style={s.btn}>
           <Text style={s.btnText}>Go to my profile</Text>
         </Pressable>
       </View>
@@ -72,13 +73,13 @@ export default function Write() {
             : "Your draft is with the newsroom. A reviewer will check it before it appears."}
         </Text>
         {published ? (
-          <Pressable onPress={() => router.replace(`/news/${done.slug}`)} style={s.btn}>
+          <Pressable accessibilityRole="button" onPress={() => router.replace(route.newsArticle(done.slug))} style={s.btn}>
             <Text style={s.btnText}>Read it</Text>
           </Pressable>
         ) : (
-          <Pressable onPress={() => router.back()} style={s.btn}><Text style={s.btnText}>Done</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.back()} style={s.btn}><Text style={s.btnText}>Done</Text></Pressable>
         )}
-        <Pressable
+        <Pressable accessibilityRole="button"
           onPress={() => { setDone(null); setTitle(""); setSummary(""); setBody(""); setCoverColor(""); setCoverImageUrl(""); setTags(""); }}
           style={s.btnOutline}
         >
@@ -148,7 +149,7 @@ export default function Write() {
         <Text style={s.label}>COVER ACCENT (OPTIONAL)</Text>
         <View style={s.chips}>
           {swatches.map((sw) => (
-            <Pressable key={sw.label} onPress={() => setCoverColor(sw.id)} style={[s.swatch, coverColor === sw.id && s.swatchOn]}>
+            <Pressable accessibilityRole="button" key={sw.label} onPress={() => setCoverColor(sw.id)} style={[s.swatch, coverColor === sw.id && s.swatchOn]}>
               <View style={[s.swatchDot, { backgroundColor: sw.color }]} />
               <Text style={[s.chipText, coverColor === sw.id && s.swatchTextOn]}>{sw.label}</Text>
             </Pressable>
@@ -170,7 +171,7 @@ export default function Write() {
 
         {error !== "" && <Text style={s.error}>{error}</Text>}
 
-        <Pressable onPress={submit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={submit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
           <Text style={s.btnText}>{busy ? "Posting…" : "Post story"}</Text>
         </Pressable>
         <Text style={s.note}>
@@ -187,7 +188,7 @@ const makeStyles = (C: Palette) => ({
   ...StyleSheet.create({
     btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 22 },
     btnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 26, alignItems: "center", marginTop: 12 },
-    btnOutlineText: { color: C.ink, fontWeight: "600" },
+    btnOutlineText: { color: C.ink, ...S(600) },
     swatch: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
     swatchOn: { borderColor: C.green, backgroundColor: C.green },
     swatchDot: { width: 14, height: 14, borderRadius: 7 },

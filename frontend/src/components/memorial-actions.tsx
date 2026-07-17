@@ -112,7 +112,7 @@ export function Tributes({ slug, initial }: Readonly<{ slug: string; initial: Tr
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function submit(e: React.SubmitEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     if (!message.trim()) return;
     setBusy(true);

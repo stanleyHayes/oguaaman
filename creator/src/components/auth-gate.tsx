@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode, type FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { PORTAL } from "@/lib/portal";
@@ -10,7 +10,7 @@ import { OtpInput } from "./otp-input";
  * passes — citizens who haven't picked creator types yet see the upgrade
  * call-to-action on the Account page.
  */
-export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
+export function AuthGate({ children }: Readonly<{ children: ReactNode }>) {
   const { member, loading } = useAuth();
   if (loading) return <Backdrop><LoadingSplash tag="Creator" /></Backdrop>;
   if (!member) return <SignIn />;
@@ -44,7 +44,7 @@ const TRUST = [
 ];
 
 /** Full-screen branded green field with a faint gold glow + dotted texture. */
-function Backdrop({ children }: Readonly<{ children: React.ReactNode }>) {
+function Backdrop({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="auth-dark-pin relative flex min-h-screen items-center justify-center overflow-hidden bg-green-900 p-6">
       {/* Blurred gold glows */}
@@ -62,7 +62,7 @@ function Backdrop({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 /** Split shell: green brand rail beside a paper form panel. */
-function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
+function Shell({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="grid overflow-hidden rounded-2xl border border-sand/40 bg-paper shadow-2xl shadow-green-900/40 md:grid-cols-2">
       <aside className="relative overflow-hidden bg-gradient-to-br from-green to-green-900 p-8 text-cream">
@@ -111,7 +111,7 @@ function SignIn() {
   const [err, setErr] = useState<string | null>(null);
   const codeFormRef = useRef<HTMLFormElement | null>(null);
 
-  async function submit(e: React.SubmitEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault(); setBusy(true); setErr(null);
     try {
       const res = await signIn(identifier.trim(), password);
@@ -119,7 +119,7 @@ function SignIn() {
     } catch (e) { setErr(e instanceof Error ? e.message : "Sign in failed."); } finally { setBusy(false); }
   }
 
-  async function submitCode(e: React.SubmitEvent) {
+  async function submitCode(e: FormEvent) {
     e.preventDefault();
     if (!challenge) return;
     setBusy(true); setErr(null);

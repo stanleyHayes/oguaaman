@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -6,13 +6,15 @@ import { Mark } from "./layout";
 import { MfaEnroll } from "./mfa";
 import { OtpInput } from "./otp-input";
 
-/** Returns true when this role may access the back-office at all. */
+/** Returns true when this role may access the back-office at all.
+ *  Editors are staff because the newsroom lives in the back-office (spec §8.12).
+ */
 export function isStaffRole(role: string): boolean {
-  return role === "curator" || role === "steward" || role === "moderator";
+  return role === "curator" || role === "steward" || role === "moderator" || role === "editor";
 }
 
 /** Locks the whole back-office behind a curator/steward/moderator session (spec §9). */
-export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
+export function AuthGate({ children }: Readonly<{ children: ReactNode }>) {
   const { member, loading } = useAuth();
   if (loading) return <Backdrop><LoadingSplash tag="Admin" /></Backdrop>;
   if (!member) return <SignIn />;
@@ -50,7 +52,7 @@ const TRUST = [
 ];
 
 /** Full-screen branded green field with a faint gold glow + dotted texture. */
-function Backdrop({ children }: Readonly<{ children: React.ReactNode }>) {
+function Backdrop({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="auth-dark-pin relative flex min-h-screen items-center justify-center overflow-hidden bg-green-900 p-6">
       {/* Blurred gold glows */}
@@ -68,7 +70,7 @@ function Backdrop({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 /** Split shell: green brand rail beside a paper form panel. */
-function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
+function Shell({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="grid overflow-hidden rounded-2xl border border-sand/40 bg-paper shadow-2xl shadow-green-900/40 md:grid-cols-2">
       <aside className="relative overflow-hidden bg-gradient-to-br from-green to-green-900 p-8 text-cream">
@@ -121,7 +123,7 @@ function SignIn() {
   const [banner, setBanner] = useState<string | null>(null);
   const codeFormRef = useRef<HTMLFormElement | null>(null);
 
-  async function submit(e: React.SubmitEvent) {
+  async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setErr(null);
     try {
       const res = await signIn(identifier.trim(), password);
@@ -129,7 +131,7 @@ function SignIn() {
     } catch (e) { setErr(e instanceof Error ? e.message : "Sign in failed."); } finally { setBusy(false); }
   }
 
-  async function submitCode(e: React.SubmitEvent) {
+  async function submitCode(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!challenge) return;
     setBusy(true); setErr(null);
@@ -232,7 +234,7 @@ function ResetPassword({ initialIdentifier, onBack, onDone }: Readonly<{ initial
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function sendCode(e: React.SubmitEvent) {
+  async function sendCode(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setErr(null);
     try {
       const res = await api.startPasswordReset(identifier.trim());
@@ -242,7 +244,7 @@ function ResetPassword({ initialIdentifier, onBack, onDone }: Readonly<{ initial
     } catch (e) { setErr(e instanceof Error ? e.message : "Couldn't send a reset code."); } finally { setBusy(false); }
   }
 
-  async function resetPassword(e: React.SubmitEvent) {
+  async function resetPassword(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setErr(null);
     try {
       await api.confirmPasswordReset(identifier.trim(), code.trim(), newPassword);
@@ -326,7 +328,7 @@ function NotAuthorized({ name }: Readonly<{ name: string }>) {
         <div className="flex h-full flex-col justify-center text-center">
           <h2 className="text-3xl font-semibold text-ink">Not authorised</h2>
           <p className="mt-3 text-sm text-ink-muted">Hi {name} — this back-office is for curators, stewards, and moderators. Ask a steward to grant you a role.</p>
-          <button onClick={signOut} className="mx-auto mt-6 rounded-full border border-gold-border/60 px-5 py-2 text-sm font-semibold text-gold-text transition-colors hover:bg-gold/10">Sign out</button>
+          <button type="button" onClick={signOut} className="mx-auto mt-6 rounded-full border border-gold-border/60 px-5 py-2 text-sm font-semibold text-gold-text transition-colors hover:bg-gold/10">Sign out</button>
         </div>
       </Shell>
     </Backdrop>
@@ -350,7 +352,7 @@ function ForcedMfa({ name }: Readonly<{ name: string }>) {
           <div className="mt-6">
             <MfaEnroll doneLabel="I've saved my codes" />
           </div>
-          <button onClick={signOut} className="mt-6 self-start text-sm font-medium text-ink-muted underline hover:text-ink">Sign out instead</button>
+          <button type="button" onClick={signOut} className="mt-6 self-start text-sm font-medium text-ink-muted underline hover:text-ink">Sign out instead</button>
         </div>
       </Shell>
     </Backdrop>

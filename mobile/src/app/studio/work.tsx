@@ -1,7 +1,9 @@
+import { openInAppBrowser } from "@/lib/webbrowser";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -77,7 +79,7 @@ export default function StudioWork() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>My work</Text>
         <Text style={s.gateBody}>Sign in to see your listings and their review status.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}>
           <Text style={s.primaryBtnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -107,7 +109,7 @@ export default function StudioWork() {
       <View style={s.body}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
           {FILTERS.map((f) => (
-            <Pressable key={f} onPress={() => setFilter(f)} style={[s.chip, filter === f && s.chipOn]}>
+            <Pressable accessibilityRole="button" key={f} onPress={() => setFilter(f)} style={[s.chip, filter === f && s.chipOn]}>
               <Text style={[s.chipText, filter === f && s.chipTextOn]}>
                 {f} <Text style={[s.chipCount, filter === f && s.chipTextOn]}>({counts[f]})</Text>
               </Text>
@@ -124,7 +126,7 @@ export default function StudioWork() {
                 ? "Your businesses, events, art and projects show up here once you submit them."
                 : `You have no listings with "${filter}" status.`}
               actionLabel={filter === "all" ? "Add your first listing" : undefined}
-              onAction={filter === "all" ? () => router.push("/submit" as never) : undefined}
+              onAction={filter === "all" ? () => push(ROUTES.submit) : undefined}
             />
           </View>
         ) : (
@@ -133,7 +135,7 @@ export default function StudioWork() {
           </View>
         )}
 
-        <Pressable onPress={() => router.push("/submit" as never)} style={s.addListingBtn}>
+        <Pressable accessibilityRole="button" onPress={() => push(ROUTES.submit)} style={s.addListingBtn}>
           <Text style={s.addListingText}>+ Add a listing</Text>
         </Pressable>
 
@@ -178,12 +180,12 @@ function WorkRow({ listing: l, onChanged }: Readonly<{ listing: Listing; onChang
       <View style={s.actions}>
         <View style={s.actionsLeft}>
           {EDITABLE.has(l.type) && (
-            <Pressable onPress={() => router.push(`/listings/${l.id}/edit` as never)} style={s.ghostBtn}>
+            <Pressable accessibilityRole="button" onPress={() => push(route.listingEdit(l.id))} style={s.ghostBtn}>
               <Text style={s.ghostBtnText}>Edit</Text>
             </Pressable>
           )}
           {viewHref && (
-            <Pressable onPress={() => router.push(viewHref as never)} style={s.ghostBtn}>
+            <Pressable accessibilityRole="button" onPress={() => push(viewHref)} style={s.ghostBtn}>
               <Text style={s.ghostBtnText}>View</Text>
             </Pressable>
           )}
@@ -232,7 +234,8 @@ function PromoteControl({ listing, onDone }: Readonly<{ listing: Listing; onDone
         onDone();
       } else {
         setPendingRef(r.reference);
-        WebBrowser.openBrowserAsync(r.authorizationUrl).catch(() => setErr("Could not open the payment page."));
+        const opened = await openInAppBrowser(r.authorizationUrl);
+        if (!opened) setErr("Could not open the payment page.");
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");
@@ -257,7 +260,7 @@ function PromoteControl({ listing, onDone }: Readonly<{ listing: Listing; onDone
   if (pendingRef) {
     return (
       <View style={{ alignItems: "flex-end", gap: 4 }}>
-        <Pressable onPress={verify} disabled={busy} style={[s.promoBtn, busy && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.promoBtn, busy && { opacity: 0.6 }]}>
           <Text style={s.promoBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
         </Pressable>
         {err !== "" && <Text style={s.promoErr}>{err}</Text>}
@@ -269,13 +272,13 @@ function PromoteControl({ listing, onDone }: Readonly<{ listing: Listing; onDone
       <View style={{ alignItems: "flex-end", gap: 6 }}>
         <View style={{ flexDirection: "row", gap: 6 }}>
           {[7, 14, 30].map((d) => (
-            <Pressable key={d} onPress={() => promote(d)} disabled={busy} style={[s.promoDayBtn, busy && { opacity: 0.6 }]}>
+            <Pressable accessibilityRole="button" key={d} onPress={() => promote(d)} disabled={busy} style={[s.promoDayBtn, busy && { opacity: 0.6 }]}>
               <Text style={s.promoDayText}>{d}d</Text>
               <Text style={s.promoDayPrice}>GH₵{d * 10}</Text>
             </Pressable>
           ))}
         </View>
-        <Pressable onPress={() => { setOpen(false); setErr(""); }} hitSlop={6} style={{ minHeight: 32, justifyContent: "center" }}>
+        <Pressable accessibilityRole="button" onPress={() => { setOpen(false); setErr(""); }} hitSlop={6} style={{ minHeight: 32, justifyContent: "center" }}>
           <Text style={s.promoCancel}>Cancel</Text>
         </Pressable>
         {err !== "" && <Text style={s.promoErr}>{err}</Text>}
@@ -283,7 +286,7 @@ function PromoteControl({ listing, onDone }: Readonly<{ listing: Listing; onDone
     );
   }
   return (
-    <Pressable onPress={() => setOpen(true)} style={s.promoBtn}>
+    <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={s.promoBtn}>
       <Text style={s.promoBtnText}>Promote</Text>
     </Pressable>
   );
@@ -294,13 +297,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
   body: { padding: 16 },
   chips: { flexDirection: "row", gap: 8, paddingBottom: 14 },
   chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   chipOn: { borderColor: C.green, backgroundColor: C.green },
-  chipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600", textTransform: "capitalize" },
+  chipText: { color: C.inkMuted, fontSize: 13, ...S(600), textTransform: "capitalize" },
   chipTextOn: { color: ON_GREEN },
   chipCount: { opacity: 0.7 },
 
@@ -310,32 +313,32 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   rowTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   thumb: { width: 44, height: 44, borderRadius: 10, backgroundColor: withAlpha(C.green, 0.08), alignItems: "center", justifyContent: "center" },
   thumbText: { color: C.greenText, ...S(700), fontSize: 13 },
-  title: { color: C.ink, fontSize: 15, fontWeight: "700" },
+  title: { color: C.ink, fontSize: 15, ...D(700) },
   metaLine: { color: C.inkFaint, fontSize: 12, marginTop: 2, lineHeight: 17 },
-  featuredNote: { color: C.goldText, fontSize: 12, fontWeight: "700" },
+  featuredNote: { color: C.goldText, fontSize: 12, ...S(700) },
 
   actions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, minHeight: 36 },
   actionsLeft: { flexDirection: "row", gap: 8 },
   ghostBtn: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
-  ghostBtnText: { color: C.inkMuted, fontSize: 12, fontWeight: "700" },
+  ghostBtnText: { color: C.inkMuted, fontSize: 12, ...S(700) },
 
   statusChip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   statusOk: { backgroundColor: withAlpha(C.green, 0.08) },
   statusPending: { backgroundColor: withAlpha(C.gold, 0.16) },
   statusBad: { backgroundColor: withAlpha(C.maroon, 0.08) },
   statusMuted: { backgroundColor: C.sand },
-  statusText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
+  statusText: { fontSize: 11, ...S(700), textTransform: "capitalize" },
 
   promoBtn: { borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },
-  promoBtnText: { color: C.goldText, fontSize: 12, fontWeight: "700" },
+  promoBtnText: { color: C.goldText, fontSize: 12, ...S(700) },
   promoDayBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, alignItems: "center", minWidth: 52, minHeight: 44, justifyContent: "center" },
-  promoDayText: { color: C.greenText, fontSize: 13, fontWeight: "700" },
+  promoDayText: { color: C.greenText, fontSize: 13, ...S(700) },
   promoDayPrice: { color: C.inkFaint, fontSize: 10, marginTop: 1 },
-  promoCancel: { color: C.inkFaint, fontSize: 12, fontWeight: "600" },
+  promoCancel: { color: C.inkFaint, fontSize: 12, ...S(600) },
   promoErr: { color: C.clayText, fontSize: 11, maxWidth: 220, textAlign: "right" },
-  promoDone: { color: C.goldText, fontSize: 12, fontWeight: "700" },
+  promoDone: { color: C.goldText, fontSize: 12, ...S(700) },
 
   addListingBtn: { borderWidth: 1, borderStyle: "dashed", borderColor: C.goldBrand, borderRadius: 999, paddingVertical: 12, alignItems: "center", marginTop: 16 },
-  addListingText: { color: C.goldText, fontSize: 14, fontWeight: "700" },
+  addListingText: { color: C.goldText, fontSize: 14, ...S(700) },
   footNote: { color: C.inkFaint, fontSize: 12, lineHeight: 18, marginTop: 14 },
 });

@@ -1,6 +1,8 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
+import { push } from "@/lib/router";
 import { StyleSheet, View, Pressable } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
@@ -103,7 +105,7 @@ export default function Explore() {
             </StaggerIn>
           ))}
           {t.link ? (
-            <Pressable onPress={() => router.push(t.link!.href as never)} style={s.linkCard}>
+            <Pressable accessibilityRole="button" onPress={() => push(t.link!.href)} style={s.linkCard}>
               <Text style={s.linkText}>{t.link.label}</Text>
             </Pressable>
           ) : null}
@@ -135,7 +137,7 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
             {data.timeline.map((e, i) => (
               <StaggerIn key={e.id} index={i} style={s.itemRow}>
                 <Text style={[s.itemLabel, { color: C.greenText }]}>{e.year}</Text>
-                <Text style={s.itemText}><Text style={{ fontWeight: "700" }}>{e.title}</Text>{e.summary ? ` — ${e.summary}` : ""}</Text>
+                <Text style={s.itemText}><Text style={{ ...S(700) }}>{e.title}</Text>{e.summary ? ` — ${e.summary}` : ""}</Text>
               </StaggerIn>
             ))}
           </View>
@@ -163,7 +165,7 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
               <View style={{ gap: 8, marginTop: 4 }}>
                 {data.people.map((p, i) => (
                   <StaggerIn key={p.id} index={i}>
-                    <Pressable onPress={() => router.push(`/people/${p.slug}` as never)} style={s.linkRow}>
+                    <Pressable accessibilityRole="button" onPress={() => push(route.person(p.slug))} style={s.linkRow}>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={s.linkTitle}>{p.title}</Text>
                       <Text style={s.linkSub} numberOfLines={1}>{[p.details.era, p.details.whyNotable].filter(Boolean).join(" · ")}</Text>
@@ -205,13 +207,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   itemText: { color: C.ink, fontSize: 14, flex: 1, lineHeight: 20 },
   colorDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: C.sand },
   linkCard: { marginTop: 24, borderWidth: 1, borderColor: C.green, borderRadius: 12, paddingVertical: 13, alignItems: "center" },
-  linkText: { color: C.greenText, fontWeight: "700", fontSize: 14 },
+  linkText: { color: C.greenText, ...S(700), fontSize: 14 },
   placeCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 12 },
   placeName: { ...S(700), fontSize: 16, color: C.ink },
-  placeClass: { color: C.goldText, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, marginTop: 2, textTransform: "uppercase" },
+  placeClass: { color: C.goldText, fontSize: 11, ...S(700), letterSpacing: 0.5, marginTop: 2, textTransform: "uppercase" },
   placeSummary: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   linkRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   linkTitle: { ...S(700), fontSize: 15, color: C.ink },
   linkSub: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
-  chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
+  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
 });

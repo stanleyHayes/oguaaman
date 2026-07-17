@@ -462,6 +462,7 @@ export function Component() {
                   value={birthday.length >= 10 ? birthday.slice(0, 10) : birthday}
                   onChange={(v) => { setBirthday(v); setBdayState("idle"); }}
                   max={todayIso}
+                  aria-label="Your birthday"
                   className="w-full sm:w-auto sm:min-w-[13rem]"
                 />
                 <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
@@ -484,8 +485,8 @@ export function Component() {
                 </label>
                 {abroad && (
                   <div className="flex flex-wrap gap-3">
-                    <input value={city} onChange={(e) => { setCity(e.target.value); setDiaState("idle"); }} placeholder="City (e.g. London)" className="min-w-0 flex-1 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
-                    <input value={country} onChange={(e) => { setCountry(e.target.value); setDiaState("idle"); }} placeholder="Country (e.g. United Kingdom)" className="min-w-0 flex-1 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
+                    <input value={city} onChange={(e) => { setCity(e.target.value); setDiaState("idle"); }} placeholder="City (e.g. London)" aria-label="City" className="min-w-0 flex-1 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
+                    <input value={country} onChange={(e) => { setCountry(e.target.value); setDiaState("idle"); }} placeholder="Country (e.g. United Kingdom)" aria-label="Country" className="min-w-0 flex-1 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-teal focus:outline-none" />
                   </div>
                 )}
                 <div className="flex items-center gap-3">

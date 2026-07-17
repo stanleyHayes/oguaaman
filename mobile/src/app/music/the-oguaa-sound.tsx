@@ -1,6 +1,8 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
+import { push } from "@/lib/router";
 import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -50,7 +52,7 @@ export default function OguaaSound() {
               <Text style={s.kicker}>GRANDFATHERS OF THE SOUND</Text>
               <View style={{ gap: 10 }}>
                 {legacy.map((l) => (
-                  <Pressable key={l.id} onPress={() => router.push(`/people/${l.slug}` as never)} style={s.card}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={l.title} key={l.id} onPress={() => push(route.person(l.slug))} style={s.card}>
                     <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.thumb} labelStyle={s.thumbInit} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={s.cardTitle}>{l.title}</Text>
@@ -73,17 +75,17 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.clay, paddingHorizontal: 20, paddingVertical: 28, overflow: "hidden" },
   // Bespoke 0.62 scrim (no semantic token at this alpha) — green900-derived.
   heroScrim: { backgroundColor: withAlpha(C.green900, 0.62) },
-  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, ...D(700) },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 30, marginTop: 6, lineHeight: 38 },
   body: { padding: 20 },
   h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },
   p: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
-  kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 28, marginBottom: 10 },
+  kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, ...D(700), marginTop: 28, marginBottom: 10 },
   card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
   thumb: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, ...S(700), fontSize: 20 },
   cardTitle: { ...S(700), fontSize: 18, color: C.ink },
   cardEra: { color: C.goldText, fontSize: 12, marginTop: 1 },
   cardWhy: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 4 },
-  chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
+  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
 });

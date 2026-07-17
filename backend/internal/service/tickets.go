@@ -316,7 +316,7 @@ func (s *TicketsService) notifyEventOwner(ctx context.Context, t *domain.Ticket)
 	}
 	cedis := float64(t.AmountPesewas) / 100
 	_ = s.notifs.Insert(ctx, domain.Notification{
-		ID: "ntf-" + fmt.Sprintf("%d", time.Now().UnixNano()), MemberID: event.OwnerID,
+		ID: newID(domain.PrefixNotification), MemberID: event.OwnerID,
 		Kind:  "ticket",
 		Title: "A ticket sold 🎟️",
 		Body:  fmt.Sprintf("%d × %s for “%s” (GH₵ %.2f).%s", t.Qty, t.Tier, t.EventTitle, cedis, map[bool]string{true: " (Simulated — dev mode.)", false: ""}[t.Simulated]),

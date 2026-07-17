@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode} from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { SearchHit } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -56,7 +56,7 @@ export function Component() {
   // Below 2 chars we show no results (the effect doesn't search then).
   const grouped = useMemo(() => (q.trim().length < 2 ? [] : (hits ?? [])), [hits, q]);
 
-  let results: React.ReactNode;
+  let results: ReactNode;
   if (q.trim().length < 2) {
     results = <p className="text-center text-sm text-ink-faint">Type at least two letters to search.</p>;
   } else if (loading && !hits) {

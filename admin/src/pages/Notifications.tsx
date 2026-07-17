@@ -45,7 +45,7 @@ export function Component() {
   return (
     <>
       <PageHeader kicker={unread ? `${unread} unread` : "All caught up"} title="Notifications">
-        {unread > 0 && <button onClick={markAll} className="rounded-full border border-sand px-4 py-2 text-sm font-medium text-ai hover:bg-paper">Mark all read</button>}
+        {unread > 0 && <button type="button" onClick={markAll} className="rounded-full border border-sand px-4 py-2 text-sm font-medium text-ai hover:bg-paper">Mark all read</button>}
       </PageHeader>
 
       {items.length === 0 ? (

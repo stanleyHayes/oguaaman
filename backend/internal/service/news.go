@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -70,8 +71,8 @@ func (s *Service) SubmitNews(ctx context.Context, memberID string, in NewsInput)
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	a := domain.NewsArticle{
-		ID:            "news-" + fmt.Sprintf("%d", time.Now().UnixNano()),
-		Slug:          slugify(title) + "-" + fmt.Sprintf("%d", time.Now().UnixNano()%100000),
+		ID:            newID(domain.PrefixNews),
+		Slug:          slugify(title) + "-" + strconv.FormatInt(time.Now().UnixNano()%100000, 10),
 		Title:         title,
 		Summary:       strings.TrimSpace(in.Summary),
 		Body:          in.Body,
@@ -105,8 +106,8 @@ func (s *Service) CreateNews(ctx context.Context, authorID, authorName string, i
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	a := domain.NewsArticle{
-		ID:            "news-" + fmt.Sprintf("%d", time.Now().UnixNano()),
-		Slug:          slugify(title) + "-" + fmt.Sprintf("%d", time.Now().UnixNano()%100000),
+		ID:            newID(domain.PrefixNews),
+		Slug:          slugify(title) + "-" + strconv.FormatInt(time.Now().UnixNano()%100000, 10),
 		Title:         title,
 		Summary:       strings.TrimSpace(in.Summary),
 		Body:          in.Body,

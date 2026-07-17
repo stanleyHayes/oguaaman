@@ -143,7 +143,7 @@ export function Component() {
                 <p className="text-sm font-medium text-ink">Pledge an amount (GH₵)</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {QUICK_AMOUNTS.map((a) => (
-                    <button key={a} type="button" onClick={() => setAmount(String(a))} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${amount === String(a) ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>
+                    <button key={a} type="button" onClick={() => setAmount(String(a))} aria-pressed={amount === String(a)} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${amount === String(a) ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green/40"}`}>
                       {a}
                     </button>
                   ))}

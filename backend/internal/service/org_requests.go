@@ -68,7 +68,7 @@ func (s *Service) RequestNewInstitution(ctx context.Context, memberID, name, kin
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	c := domain.OrgClaim{
-		ID:            "clm-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:            newID(domain.PrefixClaim),
 		MemberID:      memberID,
 		RequestedRole: role,
 		Note:          strings.TrimSpace(note),

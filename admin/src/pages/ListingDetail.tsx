@@ -85,7 +85,7 @@ export function Component() {
     if (l.status === "pending" || l.status === "rejected") {
       return (
               <div className="space-y-2.5">
-                <button disabled={busy} onClick={() => moderate("approve")} className="w-full rounded-lg bg-green px-4 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">Approve & publish</button>
+                <button type="button" disabled={busy} onClick={() => moderate("approve")} className="w-full rounded-lg bg-green px-4 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">Approve & publish</button>
                 <AnimatePresence initial={false}>
                   {rejecting && (
                     <motion.div
@@ -98,14 +98,14 @@ export function Component() {
                     >
                       <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason for rejection (sent to the contributor)…" className="w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm focus:border-maroon-text focus:outline-none" />
                       <div className="flex gap-2">
-                        <button disabled={busy || !reason.trim()} onClick={() => moderate("reject")} className="flex-1 rounded-lg bg-maroon-900 px-4 py-2 text-sm font-semibold text-on-green disabled:opacity-50">Confirm reject</button>
-                        <button onClick={() => { setRejecting(false); setReason(""); }} className="rounded-lg border border-sand px-4 py-2 text-sm">Cancel</button>
+                        <button type="button" disabled={busy || !reason.trim()} onClick={() => moderate("reject")} className="flex-1 rounded-lg bg-maroon-900 px-4 py-2 text-sm font-semibold text-on-green disabled:opacity-50">Confirm reject</button>
+                        <button type="button" onClick={() => { setRejecting(false); setReason(""); }} className="rounded-lg border border-sand px-4 py-2 text-sm">Cancel</button>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
                 {!rejecting && (
-                  <button disabled={busy} onClick={() => setRejecting(true)} className="w-full rounded-lg border border-maroon-text/40 px-4 py-2.5 text-sm font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Reject…</button>
+                  <button type="button" disabled={busy} onClick={() => setRejecting(true)} className="w-full rounded-lg border border-maroon-text/40 px-4 py-2.5 text-sm font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Reject…</button>
                 )}
               </div>
       );
@@ -117,7 +117,7 @@ export function Component() {
                   <div className="rounded-lg border border-gold-border/60 bg-gold/[0.1] p-3">
                     <p className="text-sm font-semibold text-gold-text">★ Featured placement</p>
                     <p className="mt-0.5 text-xs text-ink-muted">{l.featuredUntil ? `Runs until ${formatDate(l.featuredUntil)}` : "No expiry (editorial)"}</p>
-                    <button disabled={busy} onClick={unfeature} className="mt-2 rounded-full border border-maroon-text/40 px-3 py-1 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unfeature</button>
+                    <button type="button" disabled={busy} onClick={unfeature} className="mt-2 rounded-full border border-maroon-text/40 px-3 py-1 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unfeature</button>
                   </div>
                 ) : (
                   <div className="rounded-lg border border-sand p-3">
@@ -125,12 +125,12 @@ export function Component() {
                     <p className="mt-0.5 text-xs text-ink-muted">Paid placement — pick a duration.</p>
                     <div className="mt-2 flex gap-2">
                       {[7, 14, 30].map((days) => (
-                        <button key={days} disabled={busy} onClick={() => feature(days)} className="flex-1 rounded-lg bg-green px-2 py-1.5 text-xs font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">{days} days</button>
+                        <button type="button" key={days} disabled={busy} onClick={() => feature(days)} className="flex-1 rounded-lg bg-green px-2 py-1.5 text-xs font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">{days} days</button>
                       ))}
                     </div>
                   </div>
                 )}
-                <button disabled={busy} onClick={unpublish} className="w-full rounded-lg border border-maroon-text/40 px-4 py-2.5 text-sm font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unpublish</button>
+                <button type="button" disabled={busy} onClick={unpublish} className="w-full rounded-lg border border-maroon-text/40 px-4 py-2.5 text-sm font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unpublish</button>
               </div>
       );
     }
@@ -220,7 +220,7 @@ export function Component() {
           <Card className="p-5">
             <h2 className="mb-3 text-lg font-semibold">Moderation</h2>
             {renderModeration()}
-            <button onClick={() => nav("/moderation")} className="mt-3 w-full text-center text-xs text-ink-faint hover:text-ink">Go to the queue →</button>
+            <button type="button" onClick={() => nav("/moderation")} className="mt-3 w-full text-center text-xs text-ink-faint hover:text-ink">Go to the queue →</button>
           </Card>
         </div>
       </div>

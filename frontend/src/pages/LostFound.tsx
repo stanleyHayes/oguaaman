@@ -33,7 +33,9 @@ export function Component() {
           {LOST_FOUND_KINDS.map((k) => (
             <button
               key={k.value}
+              type="button"
               onClick={() => setKind(k.value)}
+              aria-pressed={kind === k.value}
               className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${kind === k.value ? "border-green text-on-green" : "border-sand bg-cream text-ink-muted hover:border-green/40"}`}
             >
               {kind === k.value && <LayoutPill layoutId="lf-kind" className="absolute inset-0 rounded-full bg-green" />}

@@ -1,7 +1,7 @@
 import { Container, CTA as Cta, Eyebrow } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
-import { CircularReveal, Parallax, Stagger, StaggerItem } from "@/components/motion";
+import { CircularReveal, Magnetic, Parallax, Stagger, StaggerItem, WordReveal } from "@/components/motion";
 import { PORTAL_APP_URL } from "@/config";
 
 /**
@@ -21,7 +21,7 @@ export function Hero() {
         <div className="bg-contours h-full w-full" />
       </Parallax>
       <div
-        className="absolute inset-0 -z-10 bg-gradient-to-b from-green-900 via-green-900 to-green/60"
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-green-900 via-green-900 to-green/60 aurora-bg"
         aria-hidden
       />
       <Parallax className="absolute -right-24 -top-24 -z-10 h-[36rem] w-[36rem]" distance={70} aria-hidden>
@@ -42,14 +42,16 @@ export function Hero() {
               </Eyebrow>
             </StaggerItem>
 
-            <StaggerItem index={2}>
-              <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-cream sm:text-5xl lg:text-[3.75rem]">
-                The home of{" "}
-                <span className="text-gradient-gold">Cape Coast</span>.
-              </h1>
-            </StaggerItem>
+            <div className="mt-4">
+              <WordReveal
+                text="The home of Cape Coast."
+                accentWords={["Cape", "Coast"]}
+                accentClassName="text-gradient-gold text-shimmer-gold"
+                className="text-4xl font-semibold leading-[1.05] tracking-tight text-cream sm:text-5xl lg:text-[3.75rem]"
+              />
+            </div>
 
-            <StaggerItem index={3}>
+            <StaggerItem index={2}>
               <p className="mt-6 max-w-xl font-serif text-lg leading-relaxed text-cream/80 sm:text-xl">
                 A living gathering-place for its music, people, heritage, schools
                 and the ones we remember. Built by Cape Coasters at home and in the
@@ -57,31 +59,33 @@ export function Hero() {
               </p>
             </StaggerItem>
 
-            <StaggerItem index={4}>
+            <StaggerItem index={3}>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Cta href={PORTAL_APP_URL} variant="gold" external>
-                Open the web app
-                <svg
-                  width={16}
-                  height={16}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.6}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </Cta>
-              <Cta href="#get" variant="outline-dark">
-                Get the mobile app
-              </Cta>
+                <Magnetic>
+                  <Cta href={PORTAL_APP_URL} variant="gold" external>
+                    Open the web app
+                    <svg
+                      width={16}
+                      height={16}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.6}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  </Cta>
+                </Magnetic>
+                <Cta href="#get" variant="outline-dark">
+                  Get the mobile app
+                </Cta>
               </div>
             </StaggerItem>
 
-            <StaggerItem index={5}>
+            <StaggerItem index={4}>
               <p className="mt-6 font-mono text-xs tracking-wide text-cream/55">
                 Free · Community-owned · Your number stays private.
               </p>

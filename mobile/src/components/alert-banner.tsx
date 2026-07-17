@@ -1,19 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { S, withAlpha, type Palette } from "@/theme";
+import { S, withAlpha, type Palette, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { BellIcon } from "@/components/icons";
-import {
-  useDirectives,
-  directiveFill,
-  countdownTo,
-  DIRECTIVE_KIND_LABEL,
-  DIRECTIVE_SEVERITY_LABEL,
-} from "@/lib/directives";
+import { useDirectives, directiveFill, countdownTo, DIRECTIVE_KIND_LABEL, DIRECTIVE_SEVERITY_LABEL } from "@/lib/directives";
 
 /**
  * App-wide safety banner — the top active directive, rendered sticky above the
@@ -51,8 +46,8 @@ export function AlertBanner() {
       {/* Gold (medium) is a light fill, so the status-bar icons flip dark; the
           darker fills keep the app's light icons. Overrides the root while shown. */}
       <StatusBar style={visible.severity === "medium" ? "dark" : "light"} />
-      <Pressable
-        onPress={() => router.push("/alerts" as never)}
+      <Pressable accessibilityRole="button"
+        onPress={() => push(ROUTES.alerts)}
         accessibilityRole="button"
         accessibilityLabel={`Safety ${DIRECTIVE_KIND_LABEL[visible.kind]}: ${visible.title}. Open alerts.`}
         style={s.body}
@@ -65,7 +60,7 @@ export function AlertBanner() {
             </Text>
           </View>
           {dismissable ? (
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={() => dismiss(visible.id)}
               hitSlop={12}
               accessibilityRole="button"
@@ -103,13 +98,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   kickerRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   dot: { width: 7, height: 7, borderRadius: 999 },
-  kicker: { fontSize: 10, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase" },
+  kicker: { fontSize: 10, letterSpacing: 1.5, ...D(700), textTransform: "uppercase" },
   dismiss: { width: 26, height: 26, alignItems: "center", justifyContent: "center" },
-  dismissText: { fontSize: 14, fontWeight: "700" },
+  dismissText: { fontSize: 14, ...S(700) },
   title: { ...S(700), fontSize: 16, lineHeight: 21 },
   actionChip: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, alignSelf: "flex-start", maxWidth: "100%" },
-  actionText: { fontSize: 13, fontWeight: "700", lineHeight: 18 },
+  actionText: { fontSize: 13, ...S(700), lineHeight: 18 },
   metaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
   meta: { fontSize: 12, opacity: 0.85, flexShrink: 1 },
-  viewAll: { fontSize: 12, fontWeight: "700", opacity: 0.9, marginTop: 1 },
+  viewAll: { fontSize: 12, ...S(700), opacity: 0.9, marginTop: 1 },
 });

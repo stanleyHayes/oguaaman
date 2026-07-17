@@ -1,6 +1,8 @@
 // The diaspora register (spec §4/§5/§15, Phase 2): sons & daughters who have
 // opted in as living away from Oguaa — "abroad" includes elsewhere in Ghana.
 import { useMemo } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Link, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
@@ -32,8 +34,8 @@ function MemberCard({ m, index }: Readonly<{ m: Member; index: number }>) {
   const where = [m.diaspora?.city?.trim(), m.diaspora?.country?.trim()].filter(Boolean).join(", ");
   return (
     <StaggerIn index={index}>
-      <Link href={`/members/${m.slug}`} asChild>
-        <Pressable style={s.card}>
+      <Link href={route.member(m.slug)} asChild>
+        <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={m.displayName}>
           <Thumb seed={m.slug} src={m.photoUrl} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
           <View style={s.cardBody}>
             <Text style={s.cardName}>{m.displayName}</Text>
@@ -63,7 +65,7 @@ export default function Diaspora() {
     : member
       ? "Add yourself — the “Oguaa abroad” panel"
       : "Sign in to join the register";
-  const joinHref = member ? "/me" : "/signin";
+  const joinHref = member ? ROUTES.me : ROUTES.signIn;
 
   return (
     <ScrollView style={{ backgroundColor: C.cream }} contentContainerStyle={{ paddingBottom: 48 }}>
@@ -105,11 +107,11 @@ export default function Diaspora() {
       <View style={s.bridge}>
         <Text style={s.bridgeKicker}>THE BRIDGE WORKS BOTH WAYS</Text>
         <Text style={s.bridgeTitle}>What the register feeds</Text>
-        <Pressable style={s.bridgeCard} onPress={() => router.push("/festivals" as never)}>
+        <Pressable accessibilityRole="button" style={s.bridgeCard} onPress={() => push(ROUTES.festivals)}>
           <Text style={s.bridgeCardTitle}>Come home for Afahye</Text>
           <Text style={s.bridgeCardBody}>The annual homecoming beat — the first Saturday of September, wherever you live.</Text>
         </Pressable>
-        <Pressable style={s.bridgeCard} onPress={() => router.push("/projects" as never)}>
+        <Pressable accessibilityRole="button" style={s.bridgeCard} onPress={() => push(ROUTES.projects)}>
           <Text style={s.bridgeCardTitle}>Back a project</Text>
           <Text style={s.bridgeCardBody}>Fund the classrooms, boreholes and sea walls back home — openly, pesewa by pesewa.</Text>
         </Pressable>
@@ -124,7 +126,7 @@ export default function Diaspora() {
         <Text style={s.joinTitle}>Wherever you are, Oguaa keeps your name</Text>
         <Text style={s.joinBody}>Opt-in, a minute to add. Your phone stays private — only what you choose to show is shown.</Text>
         <Link href={joinHref} asChild>
-          <Pressable style={s.joinBtn}><Text style={s.joinBtnText}>{joinLabel}</Text></Pressable>
+          <Pressable style={s.joinBtn} accessibilityRole="button" accessibilityLabel={joinLabel}><Text style={s.joinBtnText}>{joinLabel}</Text></Pressable>
         </Link>
       </View>
       </View>

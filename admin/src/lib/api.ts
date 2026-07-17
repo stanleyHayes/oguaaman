@@ -233,11 +233,13 @@ export const api = {
   aiStream: async (
     body: { action: string; text?: string; language?: string; prompt?: string },
     onChunk: (chunk: string) => void,
+    signal?: AbortSignal,
   ) => {
     const res = await fetch(`${BASE}/api/ai/stream`, {
       method: "POST",
       headers: headers(true),
       body: JSON.stringify(body),
+      signal,
     });
     if (!res.ok) throw Object.assign(new Error(`POST /api/ai/stream failed (${res.status})`), { status: res.status });
     if (!res.body) {

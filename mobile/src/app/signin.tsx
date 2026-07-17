@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { DateField } from "@/components/date-field";
 import { useAuth } from "@/lib/auth";
-import { D, DI, ON_GREEN, withAlpha, type Palette } from "@/theme";
+import { D, DI, ON_GREEN, withAlpha, type Palette, S } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Mark } from "@/ui";
 
@@ -79,10 +79,10 @@ function FormCard(f: Readonly<FormState>) {
   return (
     <View style={s.card}>
       <View style={s.tabs}>
-        <Pressable onPress={() => f.onSwitchMode("signin")} style={[s.tab, !f.isJoin && s.tabOn]}>
+        <Pressable accessibilityRole="button" onPress={() => f.onSwitchMode("signin")} style={[s.tab, !f.isJoin && s.tabOn]}>
           <Text style={[s.tabText, !f.isJoin && s.tabTextOn]}>Sign in</Text>
         </Pressable>
-        <Pressable onPress={() => f.onSwitchMode("join")} style={[s.tab, f.isJoin && s.tabOn]}>
+        <Pressable accessibilityRole="button" onPress={() => f.onSwitchMode("join")} style={[s.tab, f.isJoin && s.tabOn]}>
           <Text style={[s.tabText, f.isJoin && s.tabTextOn]}>Join</Text>
         </Pressable>
       </View>
@@ -120,7 +120,7 @@ function FormCard(f: Readonly<FormState>) {
           textContentType={f.isJoin ? "newPassword" : "password"}
           style={s.pwInput}
         />
-        <Pressable
+        <Pressable accessibilityRole="button"
           onPress={() => setShowPw((v) => !v)}
           accessibilityRole="button"
           accessibilityLabel={showPw ? "Hide password" : "Show password"}
@@ -133,10 +133,10 @@ function FormCard(f: Readonly<FormState>) {
       {f.isJoin && <Text style={s.hint}>At least 8 characters</Text>}
 
       {f.err && <Text style={s.err}>{f.err}</Text>}
-      <Pressable onPress={f.onSubmit} disabled={f.busy} style={s.btn}>
+      <Pressable accessibilityRole="button" onPress={f.onSubmit} disabled={f.busy} style={s.btn}>
         <Text style={s.btnText}>{btnLabel}</Text>
       </Pressable>
-      <Pressable onPress={() => f.onSwitchMode(f.isJoin ? "signin" : "join")}>
+      <Pressable accessibilityRole="button" onPress={() => f.onSwitchMode(f.isJoin ? "signin" : "join")}>
         <Text style={s.back}>{f.isJoin ? "Have an account? Sign in instead" : "New here? Join instead"}</Text>
       </Pressable>
     </View>
@@ -213,10 +213,10 @@ export default function SignIn() {
             autoComplete="one-time-code"
           />
           {err ? <Text style={s.err}>{err}</Text> : null}
-          <Pressable style={[s.btn, busy && { opacity: 0.6 }]} onPress={submitCode} disabled={busy}>
+          <Pressable accessibilityRole="button" style={[s.btn, busy && { opacity: 0.6 }]} onPress={submitCode} disabled={busy}>
             <Text style={s.btnText}>{busy ? "Verifying…" : "Verify & sign in"}</Text>
           </Pressable>
-          <Pressable onPress={() => { setChallenge(null); setErr(null); setPassword(""); }}>
+          <Pressable accessibilityRole="button" onPress={() => { setChallenge(null); setErr(null); setPassword(""); }}>
             <Text style={s.back}>← Back to sign in</Text>
           </Pressable>
         </View>
@@ -249,32 +249,32 @@ export default function SignIn() {
 const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 44, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   heroMark: { alignItems: "center", marginBottom: 14 },
-  heroKicker: { color: C.gold, fontSize: 11, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase", textAlign: "center" },
+  heroKicker: { color: C.gold, fontSize: 11, ...D(700), letterSpacing: 2, textTransform: "uppercase", textAlign: "center" },
   heroTitle: { ...D(600), color: ON_GREEN, fontSize: 30, textAlign: "center", marginTop: 8 },
   // #D9D2C2 / #E7E1D3: bespoke light inks on the green hero, which stays dark
   // in both themes — no palette token matches, so they are kept as literals.
-  heroSub: { color: "#D9D2C2", fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 8 },
+  heroSub: { color: withAlpha(ON_GREEN, 0.78), fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 8 },
   trustRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   trustTick: { width: 20, height: 20, borderRadius: 10, backgroundColor: withAlpha(C.gold, 0.2), alignItems: "center", justifyContent: "center", marginTop: 1 },
-  trustTickText: { color: C.gold, fontSize: 11, fontWeight: "700" },
-  trustText: { color: "#E7E1D3", fontSize: 13, lineHeight: 19, flex: 1 },
+  trustTickText: { color: C.gold, fontSize: 11, ...S(700) },
+  trustText: { color: withAlpha(ON_GREEN, 0.85), fontSize: 13, lineHeight: 19, flex: 1 },
   motto: { ...DI(), color: C.gold, fontSize: 14, textAlign: "center", marginTop: 18 },
   card: { marginHorizontal: 16, marginTop: -24, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 20, gap: 14, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   tabs: { flexDirection: "row", gap: 8, marginBottom: 4 },
   tab: { flex: 1, alignItems: "center", borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingVertical: 9 },
   tabOn: { borderColor: C.green, backgroundColor: C.green },
-  tabText: { color: C.inkMuted, fontSize: 14, fontWeight: "600" },
+  tabText: { color: C.inkMuted, fontSize: 14, ...S(600) },
   tabTextOn: { color: ON_GREEN },
   cardTitle: { ...D(600), fontSize: 24, color: C.ink },
   cardSub: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: -8 },
-  label: { color: C.ink, fontSize: 13, fontWeight: "600", marginBottom: -8 },
+  label: { color: C.ink, fontSize: 13, ...S(600), marginBottom: -8 },
   input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, color: C.ink },
   pwRow: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 12 },
   pwInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, color: C.ink },
   pwToggle: { paddingHorizontal: 14, paddingVertical: 13 },
-  pwToggleText: { color: C.inkMuted, fontSize: 13, fontWeight: "700" },
+  pwToggleText: { color: C.inkMuted, fontSize: 13, ...S(700) },
   btn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 15, alignItems: "center" },
-  btnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  btnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
   err: { color: C.clayText, fontSize: 14, backgroundColor: C.clayTint, borderWidth: 1, borderColor: withAlpha(C.clay, 0.3), borderRadius: 10, padding: 10 },
   hint: { color: C.inkFaint, fontSize: 12, textAlign: "center" },
   back: { color: C.inkMuted, textAlign: "center", paddingVertical: 8 },

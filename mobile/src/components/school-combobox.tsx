@@ -64,7 +64,7 @@ export function SchoolCombobox({
             keyboardShouldPersistTaps="handled"
           >
             {matches.map((sc) => (
-              <Pressable key={sc.id} onPress={() => choose(sc)} style={s.option}>
+              <Pressable accessibilityRole="button" key={sc.id} onPress={() => choose(sc)} style={s.option}>
                 <Text style={s.optionName}>{sc.name}</Text>
                 {sc.classification ? <Text style={s.optionSub}>{sc.classification}</Text> : null}
               </Pressable>

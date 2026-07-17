@@ -199,7 +199,7 @@ func (s *Service) notifyIncidentOwner(ctx context.Context, l *domain.Listing, st
 		return
 	}
 	_ = s.notifs.Insert(ctx, domain.Notification{
-		ID: "ntf-" + fmt.Sprintf("%d", time.Now().UnixNano()), MemberID: l.OwnerID,
+		ID: newID(domain.PrefixNotification), MemberID: l.OwnerID,
 		Kind: "incident", Title: "Your incident was marked " + status,
 		Body:      fmt.Sprintf("“%s” is now %s. Thank you for keeping Oguaa safe.", l.Title, status),
 		Link:      "/safety/" + l.Slug,

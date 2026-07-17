@@ -1,12 +1,5 @@
 import { forwardRef } from "react";
-import {
-  Text as RNText,
-  TextInput as RNTextInput,
-  type Text as RNTextType,
-  type TextInput as RNTextInputType,
-  type TextInputProps,
-  type TextProps,
-} from "react-native";
+import { Text as RNText, TextInput as RNTextInput, type Text as RNTextType, type TextInput as RNTextInputType, type TextInputProps, type TextProps } from "react-native";
 import { SANS } from "@/theme";
 
 /**

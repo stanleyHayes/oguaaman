@@ -49,7 +49,7 @@ func (s *Service) RequestOrgClaim(ctx context.Context, memberID, orgSlug, reques
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	c := domain.OrgClaim{
-		ID:            "clm-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:            newID(domain.PrefixClaim),
 		OrgID:         org.ID,
 		MemberID:      memberID,
 		RequestedRole: strings.TrimSpace(requestedRole),
@@ -140,7 +140,7 @@ func (s *Service) ensureOffice(ctx context.Context, orgID, memberID, role string
 		holderName = m.DisplayName
 	}
 	offices := append(org.Offices, domain.Office{
-		ID:   "ofc-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:   newID("ofc-"),
 		Role: role, HolderID: memberID, HolderName: holderName, Verified: true,
 	})
 	_ = s.orgs.SetOffices(ctx, orgID, offices)
@@ -170,7 +170,7 @@ func (s *Service) notifyClaim(ctx context.Context, c *domain.OrgClaim, approve b
 		body = fmt.Sprintf("Your request to manage %s was not approved. Reach out if you think this was a mistake.", name)
 	}
 	_ = s.notifs.Insert(ctx, domain.Notification{
-		ID: "ntf-" + fmt.Sprintf("%d", time.Now().UnixNano()), MemberID: c.MemberID,
+		ID: newID(domain.PrefixNotification), MemberID: c.MemberID,
 		Kind: "org-claim", Title: title, Body: body, Link: link,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	})

@@ -2,7 +2,7 @@
 // (Creator plan §4.1.3). Ported from the portal's ManageInstitution page and
 // restyled to creator conventions; all five panels talk to the same
 // full-replace manage endpoints (spec §8.13).
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { MediaAsset, Office, Organization, ProfileSection, ProfileSectionType, SectionItem, SubEntity } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui";
@@ -27,7 +27,7 @@ export function Saver({ state }: Readonly<{ state: SaveState }>) {
   return null;
 }
 
-export function Panel({ title, children }: Readonly<{ title: string; children: React.ReactNode }>) {
+export function Panel({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
   return (
     <Card className="p-6">
       <h2 className="mb-4 text-xl font-semibold text-ink">{title}</h2>

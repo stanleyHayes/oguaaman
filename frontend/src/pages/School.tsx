@@ -220,9 +220,9 @@ export function Component() {
   );
 }
 
-function SecHead({ children }: Readonly<{ children: React.ReactNode }>) {
+function SecHead({ children }: Readonly<{ children: ReactNode }>) {
   return <h2 className="mb-4 flex items-center gap-3 text-xl font-semibold text-ink">{children}<span className="h-px flex-1 bg-sand" /></h2>;
 }
-function Chip({ children }: Readonly<{ children: React.ReactNode }>) {
+function Chip({ children }: Readonly<{ children: ReactNode }>) {
   return <span className="inline-flex items-center gap-2 rounded-full border border-sand bg-cream px-3.5 py-1.5 text-sm text-green-text"><span className="h-1.5 w-1.5 rounded-full bg-gold-brand" aria-hidden />{children}</span>;
 }

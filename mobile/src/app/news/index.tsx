@@ -1,3 +1,4 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
 import { FlatList, Image, RefreshControl, StyleSheet, View, Pressable } from "react-native";
 import { Link } from "expo-router";
@@ -59,8 +60,8 @@ export default function News() {
       {featured ? (
         <View style={[s.pad, { paddingTop: 14 }]}>
           <StaggerIn index={0}>
-            <Link href={`/news/${featured.slug}`} asChild>
-              <Pressable style={s.featured}>
+            <Link href={route.newsArticle(featured.slug)} asChild>
+              <Pressable style={s.featured} accessibilityRole="button" accessibilityLabel={featured.title}>
                 <Cover article={featured} height={190} />
                 <View style={s.featuredBody}>
                   <Text style={s.featuredKicker}>Featured story</Text>
@@ -93,8 +94,8 @@ export default function News() {
       renderItem={({ item: a, index }) => (
         <View style={[s.pad, { paddingTop: 14 }]}>
           <StaggerIn index={index + 1}>
-            <Link href={`/news/${a.slug}`} asChild>
-              <Pressable style={s.card}>
+            <Link href={route.newsArticle(a.slug)} asChild>
+              <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={a.title}>
                 <Cover article={a} height={130} />
                 <View style={s.cardBody}>
                   <Text style={s.title}>{a.title}</Text>
@@ -130,13 +131,13 @@ const onDarkText = (C: Palette, alpha: number) => C.onDarkText85.replace(/[^,]+\
 const makeStyles = (C: Palette) => StyleSheet.create({
   pad: { paddingHorizontal: 16 },
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
-  heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...D(700), textTransform: "uppercase" },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 30, marginTop: 6 },
   heroLede: { color: onDarkText(C, 0.8), fontSize: 14, lineHeight: 20, marginTop: 6 },
   // shadowColor stays pure black — shadows are theme-independent.
   featured: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   featuredBody: { padding: 16 },
-  featuredKicker: { color: C.goldText, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  featuredKicker: { color: C.goldText, fontSize: 10, letterSpacing: 2, ...D(700), textTransform: "uppercase" },
   featuredTitle: { ...S(700), fontSize: 24, color: C.ink, lineHeight: 30, marginTop: 6 },
   card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cardBody: { padding: 14 },
@@ -144,5 +145,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   summary: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
   bylineRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" },
   byline: { color: C.inkFaint, fontSize: 12 },
-  readMore: { color: C.greenText, fontSize: 13, fontWeight: "700", marginTop: 10 },
+  readMore: { color: C.greenText, fontSize: 13, ...S(700), marginTop: 10 },
 });

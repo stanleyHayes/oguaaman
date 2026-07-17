@@ -2,7 +2,7 @@
 // summary/history, custom showcase sections, and photo gallery. Stewards may edit
 // any org (heritage/visitor sites included) — the backend authorizes it. Ported
 // from the portal's manager editor. See oguaa/Institution-Pages-Spec.md.
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { MediaAsset, Organization, ProfileSection, ProfileSectionType, SectionItem, SubEntity } from "@/lib/types";
 import { api } from "@/lib/api";
 import { ImageUpload } from "@/components/image-upload";
@@ -24,7 +24,7 @@ export function InstitutionEditor({ slug, org }: Readonly<{ slug: string; org: O
   );
 }
 
-function Panel({ title, hint, children }: Readonly<{ title: string; hint?: string; children: React.ReactNode }>) {
+function Panel({ title, hint, children }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
   return (
     <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
       <h3 className="text-lg font-semibold text-ink">{title}</h3>

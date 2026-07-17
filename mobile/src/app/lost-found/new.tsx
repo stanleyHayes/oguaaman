@@ -1,4 +1,6 @@
+import { route, ROUTES } from "@/lib/routes";
 import { useMemo, useState } from "react";
+import { replace } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -30,7 +32,7 @@ export default function NewLostFound() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Sign in to post</Text>
         <Text style={s.gateBody}>Notices are credited to you so the town can reach you — and so you can mark them reunited when it works out.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.btn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.btn}>
           <Text style={s.btnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -56,7 +58,7 @@ export default function NewLostFound() {
         lastSeenDate: lastSeenDate.trim() || undefined,
         contact: c,
       });
-      router.replace(`/lost-found/${notice.slug}` as never);
+      replace(route.lostFound(notice.slug));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn’t post the notice. Check your connection and try again.");
     } finally {
@@ -74,7 +76,7 @@ export default function NewLostFound() {
           const col = kindCol[k.value];
           const on = kind === k.value;
           return (
-            <Pressable key={k.value} onPress={() => setKind(k.value)} style={[s.chip, on && { borderColor: col, backgroundColor: col }]}>
+            <Pressable accessibilityRole="button" key={k.value} onPress={() => setKind(k.value)} style={[s.chip, on && { borderColor: col, backgroundColor: col }]}>
               <Text style={[s.chipText, on ? { color: C.cream } : { color: col }]}>{k.label}</Text>
             </Pressable>
           );
@@ -109,7 +111,7 @@ export default function NewLostFound() {
 
       {error !== "" && <Text style={s.error}>{error}</Text>}
 
-      <Pressable onPress={submit} disabled={busy} style={[s.btn, missing && { backgroundColor: C.maroon }, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={submit} disabled={busy} style={[s.btn, missing && { backgroundColor: C.maroon }, busy && { opacity: 0.6 }]}>
         <Text style={s.btnText}>{busy ? "Posting…" : "Post the notice"}</Text>
       </Pressable>
       <Text style={s.note}>Posted as {member.displayName}. You can mark it reunited once it works out.</Text>

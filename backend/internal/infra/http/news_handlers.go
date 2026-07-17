@@ -122,7 +122,7 @@ func (h *Handler) AdminNewsCreate(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	authorID, authorName := "m-nana", "Editorial"
+	authorID, authorName := domain.DevDemoModeratorID, "Editorial"
 	if m != nil {
 		authorID, authorName = m.ID, m.DisplayName
 	}

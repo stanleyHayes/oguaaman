@@ -273,7 +273,7 @@ export function Component() {
                       </p>
                     </div>
                     {d.status === "active" && (
-                      <button
+                      <button type="button"
                         disabled={rowBusy === d.id}
                         onClick={() => cancel(d)}
                         className="shrink-0 rounded-full border border-maroon-text/40 px-4 py-2 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.05] disabled:opacity-50"

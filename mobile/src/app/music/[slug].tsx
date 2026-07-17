@@ -1,6 +1,8 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
+import { push } from "@/lib/router";
 import { Linking, StyleSheet, View, Pressable } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
@@ -21,8 +23,8 @@ function SchoolLink({ orgId }: Readonly<{ orgId: string }>) {
   const { data } = useApi(() => api.institution(orgId), `artist-school:${orgId}`);
   if (!data) return null;
   return (
-    <Pressable onPress={() => router.push(`/institutions/${data.institution.slug}` as never)} style={s.school}>
-      <Text style={s.schoolText}>Reps <Text style={{ fontWeight: "700", color: C.maroonText }}>{data.institution.name}</Text> ›</Text>
+    <Pressable accessibilityRole="button" onPress={() => push(route.institution(data.institution.slug))} style={s.school}>
+      <Text style={s.schoolText}>Reps <Text style={{ ...S(700), color: C.maroonText }}>{data.institution.name}</Text> ›</Text>
     </Pressable>
   );
 }
@@ -68,7 +70,7 @@ export default function Artist() {
         <Text style={s.linkNote}>We link out — no audio is hosted here.</Text>
         <View style={{ gap: 8, marginTop: 8 }}>
           {(d.streamingLinks ?? []).map((l) => (
-            <Pressable key={l.label} style={s.stream} onPress={() => Linking.openURL(l.url)}>
+            <Pressable accessibilityRole="button" key={l.label} style={s.stream} onPress={() => Linking.openURL(l.url)}>
               <Text style={s.streamLabel}>{l.label}</Text>
               <Text style={s.streamArrow}>↗</Text>
             </Pressable>
@@ -101,13 +103,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   genrePill: { borderWidth: 1, borderColor: C.onDarkText50, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   genrePillText: { color: ON_GREEN, fontSize: 12 },
   body: { padding: 20 },
-  kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, ...D(700) },
   bio: { color: C.ink, ...S(400), fontSize: 17, lineHeight: 25, marginTop: 8 },
   release: { marginTop: 20, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
   releaseTitle: { ...S(400), fontSize: 20, color: C.ink, marginTop: 6 },
   linkNote: { color: C.inkFaint, fontSize: 12, marginTop: 4 },
   stream: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.green, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12 },
-  streamLabel: { color: C.greenText, fontWeight: "700" },
+  streamLabel: { color: C.greenText, ...S(700) },
   streamArrow: { color: C.greenText },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 20 },
   school: { marginTop: 20, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },

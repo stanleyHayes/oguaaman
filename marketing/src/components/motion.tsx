@@ -1,8 +1,11 @@
 import { useRef, type ReactNode } from "react";
 import {
   motion,
+  useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
+  useMotionValue,
   type Variants,
 } from "motion/react";
 
@@ -180,6 +183,117 @@ export function Reveal3D({
       >
         {children}
       </motion.div>
+    </div>
+  );
+}
+
+const WORD_CONTAINER: Variants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
+  },
+};
+
+const WORD_ITEM: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+};
+
+/**
+ * Splits a headline into words and reveals them with a staggered fade-up.
+ * Use for the main hero H1 — the split is visual only; `aria-label` preserves
+ * the full sentence for screen readers.
+ */
+export function WordReveal({
+  text,
+  className,
+  accentWords,
+  accentClassName,
+  as: Tag = "h1",
+}: Readonly<{
+  text: string;
+  className?: string;
+  accentWords?: string[];
+  accentClassName?: string;
+  as?: "h1" | "h2" | "h3" | "p";
+}>) {
+  const words = text.split(" ");
+  const isAccent = (word: string) =>
+    accentWords?.some(
+      (aw) => word.replace(/[.,!?;:]+$/, "").toLowerCase() === aw.toLowerCase()
+    );
+
+  return (
+    <Tag className={className} aria-label={text}>
+      <motion.span
+        className="inline-block"
+        variants={WORD_CONTAINER}
+        initial="hidden"
+        whileInView="show"
+        viewport={VIEWPORT}
+      >
+        {words.map((word, i) => (
+          <motion.span
+            key={`${word}-${i}`}
+            variants={WORD_ITEM}
+            className="mr-[0.25em] inline-block"
+          >
+            {isAccent(word) ? (
+              <span className={accentClassName}>{word}</span>
+            ) : (
+              word
+            )}
+          </motion.span>
+        ))}
+      </motion.span>
+    </Tag>
+  );
+}
+
+/**
+ * Magnetically pulls its child toward the cursor while the pointer is inside.
+ * Strength is kept subtle (default 12 px) so the effect feels premium, not
+ * gimmicky. Respects prefers-reduced-motion.
+ */
+export function Magnetic({
+  children,
+  className,
+  strength = 12,
+}: Readonly<{
+  children: ReactNode;
+  className?: string;
+  strength?: number;
+}>) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springX = useSpring(x, { stiffness: 350, damping: 25 });
+  const springY = useSpring(y, { stiffness: 350, damping: 25 });
+
+  const handleMove = (e: React.MouseEvent) => {
+    if (!ref.current || reduce) return;
+    const rect = ref.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    x.set(((e.clientX - cx) / rect.width) * strength);
+    y.set(((e.clientY - cy) / rect.height) * strength);
+  };
+
+  const handleLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      onBlur={handleLeave}
+    >
+      <motion.div style={{ x: springX, y: springY }}>{children}</motion.div>
     </div>
   );
 }

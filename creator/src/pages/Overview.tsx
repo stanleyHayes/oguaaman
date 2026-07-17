@@ -8,11 +8,7 @@ import { MetricCard } from "@/components/metric-card";
 import { Card } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { cedis } from "@/lib/format";
-import {
-  ListChecks, Hourglass, Megaphone, BadgeCheck, Ticket, HandCoins, Eye,
-  PlusCircle, TrendingUp, Landmark, PenLine, Briefcase, Music, CalendarDays,
-  ArrowRight, ExternalLink, type LucideIcon,
-} from "lucide-react";
+import { ListChecks, Hourglass, Megaphone, BadgeCheck, Ticket, HandCoins, Eye, PlusCircle, TrendingUp, Landmark, PenLine, Briefcase, Music, CalendarDays, ArrowRight, ExternalLink, type LucideIcon } from "lucide-react";
 
 export async function loader(): Promise<CreatorOverview> {
   return api.creatorOverview();

@@ -11,6 +11,30 @@ const (
 	StatusUnpublished = "unpublished"
 )
 
+// Operational status values for time-critical listing types.
+const (
+	IncidentStatusReported  = "reported"
+	IncidentStatusVerified  = "verified"
+	IncidentStatusResponding = "responding"
+	IncidentStatusResolved    = "resolved"
+	IncidentStatusRecovered   = "recovered"
+
+	LostFoundStatusOpen     = "open"
+	LostFoundStatusReunited = "reunited"
+	LostFoundStatusClosed   = "closed"
+)
+
+// ID prefixes for generated records. Centralised to satisfy SonarQube S1192.
+const (
+	PrefixListing      = "lst-"
+	PrefixModeration   = "mod-"
+	PrefixNotification = "ntf-"
+	PrefixTribute      = "trb-"
+	PrefixReport       = "rpt-"
+	PrefixClaim        = "clm-"
+	PrefixNews         = "news-"
+)
+
 // Listing types (spec §8.3; project = adopt-a-project, spec §4/§6/§15 Phase 2;
 // incident = community-safety report, auto-published on submit with an
 // operational lifecycle tracked in details.incidentStatus / details.statusHistory;

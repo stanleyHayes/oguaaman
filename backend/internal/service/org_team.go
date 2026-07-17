@@ -163,7 +163,7 @@ func (s *Service) InviteToTeam(ctx context.Context, actorID, orgSlug, identifier
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	c := domain.OrgClaim{
-		ID:            "clm-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:            newID(domain.PrefixClaim),
 		OrgID:         org.ID,
 		MemberID:      invitee.ID,
 		RequestedRole: role,
@@ -328,7 +328,7 @@ func (s *Service) notify(ctx context.Context, memberID, kind, title, body, link 
 		return
 	}
 	_ = s.notifs.Insert(ctx, domain.Notification{
-		ID: "ntf-" + fmt.Sprintf("%d", time.Now().UnixNano()), MemberID: memberID,
+		ID: newID(domain.PrefixNotification), MemberID: memberID,
 		Kind: kind, Title: title, Body: body, Link: link,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	})

@@ -40,7 +40,6 @@ function MoreMenuItem({ item, onClick }: Readonly<{ item: NavItem; onClick: () =
   return (
     <Link
       to={item.to}
-      role="menuitem"
       onClick={onClick}
       className="group relative flex items-start gap-3 overflow-hidden rounded-lg px-3 py-2.5 transition-colors hover:bg-paper"
     >
@@ -79,7 +78,6 @@ function MoreMenu({ onLight }: Readonly<{ onLight: boolean }>) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-haspopup="menu"
         className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm font-medium tracking-tight transition-colors ${triggerCls}`}
       >
         More
@@ -88,7 +86,7 @@ function MoreMenu({ onLight }: Readonly<{ onLight: boolean }>) {
         </svg>
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]">
+        <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]">
           {MORE_LINKS.map((l) => (
             <MoreMenuItem key={l.to} item={l} onClick={() => setOpen(false)} />
           ))}
@@ -164,6 +162,7 @@ export function Nav() {
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
+          aria-controls="mobile-nav-panel"
           aria-label={open ? "Close menu" : "Open menu"}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors lg:hidden ${
             onLight ? "border-gold-border/25 text-ink hover:bg-cream" : "border-cream/25 text-cream hover:bg-cream/10"
@@ -178,7 +177,7 @@ export function Nav() {
       {/* Scrollable on short viewports: the header is sticky, so without a
           max-height the CTA at the bottom would be unreachable on small phones. */}
       {open && (
-        <div className="max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-gold-border/15 bg-paper/95 backdrop-blur lg:hidden">
+        <div id="mobile-nav-panel" className="max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-gold-border/15 bg-paper/95 backdrop-blur lg:hidden">
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}

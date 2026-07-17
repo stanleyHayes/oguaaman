@@ -1,4 +1,6 @@
+import { route, ROUTES } from "@/lib/routes";
 import { useMemo, useState } from "react";
+import { replace } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -30,7 +32,7 @@ export default function ReportIncident() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Sign in to report</Text>
         <Text style={s.gateBody}>Incident reports are credited to you so curators can verify them. In a life-threatening emergency, call the emergency services first.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.btn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.btn}>
           <Text style={s.btnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -53,7 +55,7 @@ export default function ReportIncident() {
         contact: contact.trim() || undefined,
         description: description.trim() || undefined,
       });
-      router.replace(`/safety/${inc.slug}` as never);
+      replace(route.safety(inc.slug));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn’t post the report. Check your connection and try again.");
     } finally {
@@ -68,7 +70,7 @@ export default function ReportIncident() {
       <Text style={s.label}>CATEGORY</Text>
       <View style={s.chips}>
         {INCIDENT_CATEGORIES.map((c) => (
-          <Pressable key={c.value} onPress={() => setCategory(c.value)} style={[s.chip, category === c.value && s.chipOn]}>
+          <Pressable accessibilityRole="button" key={c.value} onPress={() => setCategory(c.value)} style={[s.chip, category === c.value && s.chipOn]}>
             <Text style={[s.chipText, category === c.value && s.chipTextOn]}>{c.label}</Text>
           </Pressable>
         ))}
@@ -81,7 +83,7 @@ export default function ReportIncident() {
           const col = sevColors[sv.value];
           const on = severity === sv.value;
           return (
-            <Pressable key={sv.value} onPress={() => setSeverity(sv.value)} style={[s.chip, on && { borderColor: col, backgroundColor: col }]}>
+            <Pressable accessibilityRole="button" key={sv.value} onPress={() => setSeverity(sv.value)} style={[s.chip, on && { borderColor: col, backgroundColor: col }]}>
               <Text style={[s.chipText, on ? { color: C.cream } : { color: col }]}>{sv.label}</Text>
             </Pressable>
           );
@@ -113,7 +115,7 @@ export default function ReportIncident() {
 
       {error !== "" && <Text style={s.error}>{error}</Text>}
 
-      <Pressable onPress={submit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={submit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
         <Text style={s.btnText}>{busy ? "Posting…" : "Post the report"}</Text>
       </Pressable>
       <Text style={s.note}>Posted as {member.displayName}. In a life-threatening emergency, call the emergency services first.</Text>

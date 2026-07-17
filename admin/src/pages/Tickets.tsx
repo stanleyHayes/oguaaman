@@ -135,11 +135,12 @@ export function Component() {
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             onKeyDown={(e) => { if (e.key === "Enter") checkIn(); }}
+            aria-label="Ticket check-in code"
             maxLength={8}
             placeholder="AB12CD34"
             className="w-40 rounded-lg border border-sand bg-paper px-3 py-2 font-mono text-lg tracking-widest text-ink focus:border-green-text focus:outline-none"
           />
-          <button onClick={checkIn} disabled={checking || code.trim().length === 0} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
+          <button type="button" onClick={checkIn} disabled={checking || code.trim().length === 0} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
             {checking ? "Checking…" : "Admit"}
           </button>
         </div>
@@ -157,7 +158,7 @@ export function Component() {
         <>
           <div className="mb-4 flex flex-wrap gap-2">
             {events.map((e) => (
-              <button key={e.id} onClick={() => setSlug(e.slug)} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${slug === e.slug ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green-text/40"}`}>
+              <button type="button" key={e.id} onClick={() => setSlug(e.slug)} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${slug === e.slug ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green-text/40"}`}>
                 {e.title}
               </button>
             ))}

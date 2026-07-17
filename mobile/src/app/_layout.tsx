@@ -5,17 +5,8 @@ import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
-import {
-  Outfit_400Regular,
-  Outfit_500Medium,
-  Outfit_600SemiBold,
-  Outfit_700Bold,
-} from "@expo-google-fonts/outfit";
-import {
-  Fraunces_600SemiBold,
-  Fraunces_600SemiBold_Italic,
-  Fraunces_700Bold,
-} from "@expo-google-fonts/fraunces";
+import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from "@expo-google-fonts/outfit";
+import { Fraunces_600SemiBold, Fraunces_600SemiBold_Italic, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
 import { AuthProvider } from "@/lib/auth";
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
@@ -66,7 +57,7 @@ function RootNavigator() {
         screenOptions={{
           headerStyle: { backgroundColor: C.green },
           headerTintColor: C.cream,
-          headerTitleStyle: { fontFamily: "Fraunces_600SemiBold" },
+          headerTitleStyle: { },
           contentStyle: { backgroundColor: C.paper },
         }}
       >

@@ -26,6 +26,14 @@ func grpcErr(err error) error {
 	if errors.As(err, &nf) {
 		return status.Error(codes.NotFound, nf.Error())
 	}
+	var fb *domain.ForbiddenError
+	if errors.As(err, &fb) {
+		return status.Error(codes.PermissionDenied, fb.Error())
+	}
+	var ve *domain.ValidationError
+	if errors.As(err, &ve) {
+		return status.Error(codes.InvalidArgument, ve.Error())
+	}
 	return status.Error(codes.Internal, err.Error())
 }
 

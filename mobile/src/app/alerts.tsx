@@ -4,16 +4,10 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Directive } from "@/lib/types";
-import { S, type Palette } from "@/theme";
+import { S, type Palette, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { severityColors } from "@/lib/incidents";
-import {
-  directiveFill,
-  isActiveAt,
-  countdownTo,
-  DIRECTIVE_KIND_LABEL,
-  DIRECTIVE_SEVERITY_LABEL,
-} from "@/lib/directives";
+import { directiveFill, isActiveAt, countdownTo, DIRECTIVE_KIND_LABEL, DIRECTIVE_SEVERITY_LABEL } from "@/lib/directives";
 import { Loading, ErrorView } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 
@@ -126,21 +120,21 @@ export default function Alerts() {
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
-  section: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 2 },
+  section: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginBottom: 2 },
   card: { flexDirection: "row", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
   cardPast: { opacity: 0.7 },
   rail: { width: 5, alignSelf: "stretch" },
   cardBody: { flex: 1, padding: 14 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" },
   chip: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  chipText: { color: C.inkMuted, fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
-  area: { marginLeft: "auto", color: C.inkFaint, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, flexShrink: 1 },
+  chipText: { color: C.inkMuted, fontSize: 11, ...S(700), textTransform: "capitalize" },
+  area: { marginLeft: "auto", color: C.inkFaint, fontSize: 11, ...S(700), letterSpacing: 0.5, flexShrink: 1 },
   title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 10 },
-  issuer: { color: C.goldText, fontSize: 13, fontWeight: "600", marginTop: 2 },
+  issuer: { color: C.goldText, fontSize: 13, ...S(600), marginTop: 2 },
   actionChip: { backgroundColor: C.clayTint, borderWidth: 1, borderColor: C.goldBorder35, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, marginTop: 10, alignSelf: "flex-start", maxWidth: "100%" },
-  actionText: { color: C.clayText, fontSize: 13, fontWeight: "700", lineHeight: 18 },
+  actionText: { color: C.clayText, fontSize: 13, ...S(700), lineHeight: 18 },
   body: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 10 },
   footRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12, gap: 8 },
   foot: { color: C.inkFaint, fontSize: 11 },
-  footLive: { color: C.tealText, fontWeight: "700" },
+  footLive: { color: C.tealText, ...S(700) },
 });

@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Link, router } from "expo-router";
+import { Link } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
@@ -18,13 +20,13 @@ import { TopBarActions } from "@/components/top-bar-actions";
 // Route a featured listing to its canonical screen (any type can be featured).
 function featuredRoute(l: Listing): string {
   switch (l.type) {
-    case "artist": return `/music/${l.slug}`;
-    case "memorial": return `/memoriam/${l.slug}`;
-    case "business": return `/business/${l.slug}`;
-    case "person": return `/people/${l.slug}`;
-    case "project": return `/projects/${l.slug}`;
-    case "event": return "/browse/events";
-    default: return "/browse/memories";
+    case "artist": return route.music(l.slug);
+    case "memorial": return route.memoriam(l.slug);
+    case "business": return route.business(l.slug);
+    case "person": return route.person(l.slug);
+    case "project": return route.project(l.slug);
+    case "event": return ROUTES.browseEvents;
+    default: return ROUTES.browseMemories;
   }
 }
 
@@ -41,7 +43,7 @@ function FeaturedRow() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 4 }}>
         {items.map((l, i) => (
           <StaggerIn key={l.id} index={i}>
-            <Pressable onPress={() => router.push(featuredRoute(l) as never)} style={s.artistCard}>
+            <Pressable accessibilityRole="button" onPress={() => push(featuredRoute(l))} style={s.artistCard}>
               <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.artistThumb} labelStyle={s.thumbInit} />
               <Text style={s.artistName} numberOfLines={1}>{l.title}</Text>
               <Text style={s.artistGenre} numberOfLines={1}>{l.type}</Text>
@@ -64,12 +66,12 @@ function NewsStrip() {
     <View style={s.section}>
       <View style={s.rowBetween}>
         <Text style={s.kicker}>FROM THE NEWSROOM</Text>
-        <Link href="/news"><Text style={s.link}>All →</Text></Link>
+        <Link href={ROUTES.news}><Text style={s.link}>All →</Text></Link>
       </View>
       <View style={{ gap: 8 }}>
         {items.map((a, i) => (
           <StaggerIn key={a.id} index={i}>
-            <PressScale onPress={() => router.push(`/news/${a.slug}` as never)} style={s.newsRow}>
+            <PressScale onPress={() => push(route.newsArticle(a.slug))} style={s.newsRow}>
               <View style={[s.newsBar, { backgroundColor: a.coverColor ?? C.green }]} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={s.newsTitle} numberOfLines={2}>{a.title}</Text>
@@ -109,7 +111,7 @@ export default function Home() {
         <View style={[StyleSheet.absoluteFill, s.heroScrim]} />
         <HeroParallax scrollY={scrollY}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingVertical: 4, paddingRight: 4 }}>
+            <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingVertical: 4, paddingRight: 4 }} accessibilityRole="button">
               <Text style={s.menuGlyph}>☰</Text>
             </Pressable>
             <Mark size={26} />
@@ -139,8 +141,8 @@ export default function Home() {
       <View style={s.section}>
         <Text style={s.kicker}>ROTATING SPOTLIGHT</Text>
         <StaggerIn index={0}>
-          <Link href={`/music/${spotlight.slug}`} asChild>
-            <Pressable style={s.spotlight}>
+          <Link href={route.music(spotlight.slug)} asChild>
+            <Pressable style={s.spotlight} accessibilityRole="button" accessibilityLabel={spotlight.details.actName ?? spotlight.title}>
             <Thumb
               seed={spotlight.slug}
               src={spotlight.coverImageUrl}
@@ -162,13 +164,13 @@ export default function Home() {
       <View style={s.section}>
         <View style={s.rowBetween}>
           <Text style={s.kicker}>THE OGUAA SOUND</Text>
-          <Link href="/music"><Text style={s.link}>All →</Text></Link>
+          <Link href={ROUTES.music}><Text style={s.link}>All →</Text></Link>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 4 }}>
           {more.map((a, i) => (
             <StaggerIn key={a.id} index={i + 1}>
-              <Link href={`/music/${a.slug}`} asChild>
-                <Pressable style={s.artistCard}>
+              <Link href={route.music(a.slug)} asChild>
+                <Pressable style={s.artistCard} accessibilityRole="button" accessibilityLabel={a.details.actName ?? a.title}>
                   <Thumb
                     seed={a.slug}
                     src={a.coverImageUrl}
@@ -192,12 +194,12 @@ export default function Home() {
         <View style={s.section}>
           <View style={s.rowBetween}>
             <Text style={s.kicker}>HAPPENING IN OGUAA</Text>
-            <Link href="/browse/events"><Text style={s.link}>All →</Text></Link>
+            <Link href={ROUTES.browseEvents}><Text style={s.link}>All →</Text></Link>
           </View>
           <View style={{ gap: 8 }}>
             {events.map((e, i) => (
               <StaggerIn key={e.id} index={i}>
-                <PressScale onPress={() => router.push("/browse/events" as never)} style={s.newsRow}>
+                <PressScale onPress={() => push(ROUTES.browseEvents)} style={s.newsRow}>
                   <View style={[s.newsBar, { backgroundColor: C.teal }]} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={s.newsTitle} numberOfLines={1}>{e.title}</Text>
@@ -218,8 +220,8 @@ export default function Home() {
         <View style={s.section}>
           <Text style={s.kicker}>YƐNKAE · IN MEMORIAM</Text>
           <RevealView>
-            <Link href={`/memoriam/${memorial.slug}`} asChild>
-              <Pressable style={s.memorial}>
+            <Link href={route.memoriam(memorial.slug)} asChild>
+              <Pressable style={s.memorial} accessibilityRole="button" accessibilityLabel={memorial.title}>
               {memorial.coverImageUrl ? (
                 <Thumb seed={memorial.slug} src={memorial.coverImageUrl} label={initials(memorial.title)} style={s.memPortrait} labelStyle={s.memPortraitInit} />
               ) : null}
@@ -240,8 +242,8 @@ export default function Home() {
 const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingBottom: 24, overflow: "hidden" },
   heroScrim: { backgroundColor: C.heroScrim },
-  menuGlyph: { color: ON_GREEN, fontSize: 20, fontWeight: "700" },
-  eyebrow: { color: C.gold, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  menuGlyph: { color: ON_GREEN, fontSize: 20, ...S(700) },
+  eyebrow: { color: C.gold, fontSize: 11, letterSpacing: 2, ...D(700) },
   heroTitle: { color: ON_GREEN, ...D(600), fontSize: 44, marginTop: 10 },
   heroSub: { color: C.onDarkText85, fontSize: 15, lineHeight: 22, marginTop: 8 },
   // On-dark hairline at 0.12 — no palette token carries this alpha, and the
@@ -251,9 +253,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   statNum: { color: C.gold, ...S(700), fontSize: 24 },
   statLbl: { color: C.onDarkText60, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 },
   section: { paddingHorizontal: 20, paddingTop: 22 },
-  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginBottom: 10 },
+  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginBottom: 10 },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  link: { color: C.clayText, fontWeight: "700", fontSize: 13 },
+  link: { color: C.clayText, ...S(700), fontSize: 13 },
   spotlight: { flexDirection: "row", gap: 14, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
   thumb: { width: 76, height: 76, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, ...S(700), fontSize: 26 },
@@ -266,9 +268,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   artistGenre: { color: C.inkFaint, fontSize: 12 },
   newsRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12 },
   newsBar: { width: 4, alignSelf: "stretch", borderRadius: 2 },
-  newsTitle: { color: C.ink, fontSize: 14, fontWeight: "600", lineHeight: 19 },
+  newsTitle: { color: C.ink, fontSize: 14, ...D(600), lineHeight: 19 },
   newsMeta: { color: C.inkFaint, fontSize: 12, marginTop: 2 },
-  newsChevron: { color: C.inkFaint, fontSize: 20, fontWeight: "700" },
+  newsChevron: { color: C.inkFaint, fontSize: 20, ...S(700) },
   memorial: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 16, alignItems: "center" },
   memPortrait: { width: 76, height: 76, borderRadius: 38, borderWidth: 1, borderColor: C.goldBrand, alignItems: "center", justifyContent: "center", marginBottom: 12 },
   memPortraitInit: { ...S(600), fontSize: 26, color: C.cream },

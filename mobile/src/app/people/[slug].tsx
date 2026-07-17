@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { ROUTES } from "@/lib/routes";
 import { StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -51,7 +52,7 @@ export default function Person() {
             </View>
           )}
 
-          <Pressable onPress={() => router.push("/submit")} style={s.contribute}>
+          <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.contribute}>
             <Text style={s.contributeText}>Know more about them? Contribute →</Text>
           </Pressable>
 
@@ -70,14 +71,14 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   thumb: { width: 100, height: 100, borderRadius: 50, backgroundColor: "rgba(0,0,0,0.18)", alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, ...S(700), fontSize: 36 },
   badge: { backgroundColor: withAlpha(C.cream, 0.18), borderWidth: 1, borderColor: withAlpha(C.cream, 0.4), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, marginTop: 14 },
-  badgeText: { color: ON_GREEN, fontSize: 10, letterSpacing: 1.5, fontWeight: "700" },
+  badgeText: { color: ON_GREEN, fontSize: 10, letterSpacing: 1.5, ...S(700) },
   name: { color: ON_GREEN, ...D(700), fontSize: 30, marginTop: 8, textAlign: "center" },
   era: { color: withAlpha(C.cream, 0.75), fontSize: 12, letterSpacing: 2, marginTop: 6, textTransform: "uppercase" },
   body: { padding: 20 },
-  kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, ...D(700) },
   pull: { ...SI(), fontSize: 19, lineHeight: 27, color: C.ink, marginTop: 8 },
   story: { ...S(400), fontSize: 16, lineHeight: 24, color: C.ink },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 20 },
   contribute: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingVertical: 12, alignItems: "center", marginTop: 22 },
-  contributeText: { color: C.greenText, fontWeight: "700", fontSize: 14 },
+  contributeText: { color: C.greenText, ...S(700), fontSize: 14 },
 });

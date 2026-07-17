@@ -1,3 +1,4 @@
+import { ROUTES } from "@/lib/routes";
 import { useMemo, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
@@ -47,7 +48,7 @@ export default function StudioMoney() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Money</Text>
         <Text style={s.gateBody}>Sign in to see what your events and projects have earned.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}>
           <Text style={s.primaryBtnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -194,7 +195,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
   body: { padding: 16, gap: 16 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
@@ -206,9 +207,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   cardBody: { paddingHorizontal: 16 },
 
   row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.sand },
-  rowTitle: { color: C.ink, fontSize: 14, fontWeight: "600" },
+  rowTitle: { color: C.ink, fontSize: 14, ...D(600) },
   rowMeta: { color: C.inkFaint, fontSize: 12, marginTop: 2 },
-  rowAmount: { color: C.ink, fontSize: 14, fontWeight: "700" },
+  rowAmount: { color: C.ink, fontSize: 14, ...S(700) },
 
   emptyWrap: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16 },
 });

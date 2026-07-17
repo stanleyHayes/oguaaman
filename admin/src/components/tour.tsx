@@ -103,21 +103,21 @@ export function Tour({ steps, onDone }: Readonly<{ steps: TourStep[]; onDone: ()
           <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-gold-text">
             Tour · {i + 1} of {steps.length}
           </p>
-          <button onClick={done} className="rounded-md p-1 text-ink-faint transition-colors hover:bg-cream hover:text-ink" aria-label="End tour">
+          <button type="button" onClick={done} className="rounded-md p-1 text-ink-faint transition-colors hover:bg-cream hover:text-ink" aria-label="End tour">
             <X size={14} />
           </button>
         </div>
         <h3 className="mt-1.5 text-lg font-semibold text-ink">{step.title}</h3>
         <p className="mt-1 text-sm leading-relaxed text-ink-muted">{step.body}</p>
         <div className="mt-4 flex items-center justify-between">
-          <button onClick={done} className="text-xs font-medium text-ink-faint transition-colors hover:text-ink">Skip tour</button>
+          <button type="button" onClick={done} className="text-xs font-medium text-ink-faint transition-colors hover:text-ink">Skip tour</button>
           <div className="flex items-center gap-2">
             {i > 0 && (
-              <button onClick={() => setI(i - 1)} className="inline-flex items-center gap-1 rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-ink-faint hover:text-ink">
+              <button type="button" onClick={() => setI(i - 1)} className="inline-flex items-center gap-1 rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-ink-faint hover:text-ink">
                 <ArrowLeft size={12} /> Back
               </button>
             )}
-            <button
+            <button type="button"
               onClick={() => (last ? done() : setI(i + 1))}
               className="inline-flex items-center gap-1 rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-on-green transition-colors hover:bg-green-900"
             >

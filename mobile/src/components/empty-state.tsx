@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
-import { ON_GREEN, S, withAlpha, type Palette } from "@/theme";
+import { ON_GREEN, S, withAlpha, type Palette, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 /**
@@ -37,7 +37,7 @@ export function EmptyState({
           <Text style={s.compactTitle}>{title}</Text>
           {body ? <Text style={s.compactBody}>{body}</Text> : null}
           {actionLabel ? (
-            <Pressable onPress={onAction} hitSlop={8}>
+            <Pressable accessibilityRole="button" onPress={onAction} hitSlop={8}>
               <Text style={s.compactAction}>{actionLabel}</Text>
             </Pressable>
           ) : null}
@@ -55,7 +55,7 @@ export function EmptyState({
       <Text style={s.title}>{title}</Text>
       {body ? <Text style={s.body}>{body}</Text> : null}
       {actionLabel ? (
-        <Pressable onPress={onAction} style={s.btn}>
+        <Pressable accessibilityRole="button" onPress={onAction} style={s.btn}>
           <Text style={s.btnText}>{actionLabel}</Text>
         </Pressable>
       ) : null}
@@ -77,7 +77,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 16, textAlign: "center" },
   body: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6, textAlign: "center", maxWidth: 300 },
   btn: { marginTop: 16, backgroundColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
-  btnText: { color: ON_GREEN, fontSize: 13, fontWeight: "700" },
+  btnText: { color: ON_GREEN, fontSize: 13, ...S(700) },
 
   compactWrap: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 4 },
   compactCircle: {
@@ -85,7 +85,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
     backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35,
   },
   compactGlyph: { fontSize: 16, color: C.goldText },
-  compactTitle: { color: C.ink, fontSize: 13, fontWeight: "700" },
+  compactTitle: { color: C.ink, fontSize: 13, ...D(700) },
   compactBody: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 2 },
-  compactAction: { color: C.greenText, fontSize: 12, fontWeight: "700", marginTop: 4 },
+  compactAction: { color: C.greenText, fontSize: 12, ...S(700), marginTop: 4 },
 });

@@ -1,7 +1,9 @@
+import { openInAppBrowser } from "@/lib/webbrowser";
 import { useMemo, useState } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
@@ -80,7 +82,7 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
           )}
 
           {d.festival ? (
-            <Pressable onPress={() => router.push(`/festivals/${d.festival}` as never)} style={s.festivalLink}>
+            <Pressable accessibilityRole="button" onPress={() => push(route.festival(d.festival))} style={s.festivalLink}>
               <Text style={s.festivalLinkText}>See every edition in the festival archive →</Text>
             </Pressable>
           ) : null}
@@ -111,7 +113,7 @@ function useTicketFlow(slug: string, tiers: TicketTierView[], reload: () => void
     setErr("");
     const tier = tiers[selected];
     if (!tier) return;
-    if (!member) { router.push("/signin"); return; }
+    if (!member) { router.push(ROUTES.signIn); return; }
     setBusy(true);
     try {
       const r = await api.buyTicket(slug, { tier: tier.name, qty });
@@ -121,7 +123,8 @@ function useTicketFlow(slug: string, tiers: TicketTierView[], reload: () => void
         reload();
       } else {
         setPendingRef(r.reference);
-        WebBrowser.openBrowserAsync(r.authorizationUrl).catch(() => setErr("Could not open the payment page."));
+        const opened = await openInAppBrowser(r.authorizationUrl);
+        if (!opened) setErr("Could not open the payment page.");
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");
@@ -171,7 +174,7 @@ function TicketBody({ tiers, flow, maxQty, soldOut }: Readonly<{ tiers: TicketTi
   if (tiers.length === 0) {
     return (
       <View style={s.freeBox}>
-        <Text style={s.freeText}><Text style={{ color: C.greenText, fontWeight: "700" }}>Free entry</Text> — no ticket needed. Just come.</Text>
+        <Text style={s.freeText}><Text style={{ color: C.greenText, ...S(700) }}>Free entry</Text> — no ticket needed. Just come.</Text>
       </View>
     );
   }
@@ -211,21 +214,21 @@ function TicketPurchase({ tiers, selected, qty, busy, err, signedIn, maxQty, sol
       <View style={s.qtyRow}>
         <Text style={s.qtyLabel}>Quantity</Text>
         <View style={s.qtyControls}>
-          <Pressable onPress={() => onQty((q) => Math.max(1, q - 1))} style={s.qtyBtn} accessibilityLabel="Fewer">
+          <Pressable accessibilityRole="button" onPress={() => onQty((q) => Math.max(1, q - 1))} style={s.qtyBtn} accessibilityLabel="Fewer">
             <Text style={s.qtyBtnText}>−</Text>
           </Pressable>
           <Text style={s.qtyValue}>{qty}</Text>
-          <Pressable onPress={() => onQty((q) => Math.min(maxQty, q + 1))} style={s.qtyBtn} accessibilityLabel="More">
+          <Pressable accessibilityRole="button" onPress={() => onQty((q) => Math.min(maxQty, q + 1))} style={s.qtyBtn} accessibilityLabel="More">
             <Text style={s.qtyBtnText}>+</Text>
           </Pressable>
         </View>
       </View>
 
       {tier ? (
-        <Text style={s.total}>Total: <Text style={{ color: C.ink, fontWeight: "700" }}>{cedis(tier.pricePesewas * qty)}</Text></Text>
+        <Text style={s.total}>Total: <Text style={{ color: C.ink, ...S(700) }}>{cedis(tier.pricePesewas * qty)}</Text></Text>
       ) : null}
       {err !== "" && <Text style={s.err}>{err}</Text>}
-      <Pressable onPress={onBuy} disabled={busy || !tier || soldOut} style={[s.buyBtn, (busy || !tier || soldOut) && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={onBuy} disabled={busy || !tier || soldOut} style={[s.buyBtn, (busy || !tier || soldOut) && { opacity: 0.6 }]}>
         <Text style={s.buyBtnText}>{buyLabel}</Text>
       </Pressable>
       <Text style={s.note}>Mobile money &amp; cards via Paystack. Your code arrives here and by email.</Text>
@@ -244,7 +247,7 @@ function TicketThanks({ confirmed }: Readonly<{ confirmed: Ticket }>) {
       {confirmed.code ? <Text style={s.code}>{confirmed.code}</Text> : null}
       <Text style={s.codeHint}>Your check-in code — show this at the gate.</Text>
       {confirmed.simulated ? <Text style={s.simNote}>Simulated — dev mode, no real money moved.</Text> : null}
-      <Pressable onPress={() => router.push("/me")} style={s.meLink}>
+      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.me)} style={s.meLink}>
         <Text style={s.meLinkText}>See all my tickets →</Text>
       </Pressable>
     </View>
@@ -258,7 +261,7 @@ function TicketVerify({ err, busy, verify }: Readonly<{ err: string; busy: boole
       <Text style={s.boxLabel}>FINISH IN YOUR BROWSER</Text>
       <Text style={s.boxBody}>Complete the payment on the Paystack page that opened, then come back and verify.</Text>
       {err !== "" && <Text style={s.err}>{err}</Text>}
-      <Pressable onPress={verify} disabled={busy} style={[s.buyBtn, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.buyBtn, busy && { opacity: 0.6 }]}>
         <Text style={s.buyBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
       </Pressable>
     </View>
@@ -270,7 +273,7 @@ function TierRow({ tier: t, on, onPress }: Readonly<{ tier: TicketTierView; on: 
   const out = t.remaining !== null && t.remaining <= 0;
   const remainingText = out ? "Sold out" : `${t.remaining} left`;
   return (
-    <Pressable
+    <Pressable accessibilityRole="button"
       disabled={out}
       onPress={onPress}
       style={[s.tier, on && s.tierOn, out && { opacity: 0.5 }]}
@@ -298,41 +301,41 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   meta: { color: C.goldText, fontSize: 13, marginTop: 4, lineHeight: 19 },
   desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 16 },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 16 },
-  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700", marginTop: 26 },
+  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginTop: 26 },
   progRow: { flexDirection: "row", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 12 },
   progDay: { width: 130, flexShrink: 0 },
-  progDayText: { color: C.goldText, fontSize: 12, fontWeight: "700", lineHeight: 17, textTransform: "uppercase", letterSpacing: 0.5 },
+  progDayText: { color: C.goldText, fontSize: 12, ...S(700), lineHeight: 17, textTransform: "uppercase", letterSpacing: 0.5 },
   progTime: { color: C.inkFaint, fontSize: 11, marginTop: 1 },
   progTitle: { color: C.ink, fontSize: 14, lineHeight: 20, flex: 1 },
   festivalLink: { marginTop: 18, borderWidth: 1, borderColor: C.gold, borderRadius: 999, paddingVertical: 12, alignItems: "center" },
-  festivalLinkText: { color: C.goldText, fontWeight: "700", fontSize: 13 },
+  festivalLinkText: { color: C.goldText, ...S(700), fontSize: 13 },
   ticketBox: { marginTop: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.green, borderRadius: 14, padding: 16, gap: 10 },
   freeBox: { marginTop: 10, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 14 },
   freeText: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
-  boxLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  boxLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...S(700) },
   boxBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19 },
   tier: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, padding: 14 },
   tierOn: { borderColor: C.green, backgroundColor: withAlpha(C.green, 0.06) },
-  tierName: { color: C.ink, fontSize: 14, fontWeight: "600" },
+  tierName: { color: C.ink, fontSize: 14, ...S(600) },
   tierAvail: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
   tierPrice: { ...S(700), fontSize: 18, color: C.greenText },
   qtyRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  qtyLabel: { color: C.ink, fontSize: 14, fontWeight: "600" },
+  qtyLabel: { color: C.ink, fontSize: 14, ...S(600) },
   qtyControls: { flexDirection: "row", alignItems: "center", gap: 14 },
   qtyBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, alignItems: "center", justifyContent: "center" },
-  qtyBtnText: { color: C.inkMuted, fontSize: 20, fontWeight: "700" },
-  qtyValue: { color: C.ink, fontSize: 16, fontWeight: "700", width: 20, textAlign: "center" },
+  qtyBtnText: { color: C.inkMuted, fontSize: 20, ...S(700) },
+  qtyValue: { color: C.ink, fontSize: 16, ...S(700), width: 20, textAlign: "center" },
   total: { color: C.inkMuted, fontSize: 14, textAlign: "right" },
   err: { color: C.clayText, fontSize: 13 },
   buyBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 4 },
-  buyBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  buyBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center" },
   thanks: { marginTop: 10, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 14, padding: 16, alignItems: "center" },
   thanksTitle: { ...D(700), fontSize: 20, color: C.greenText },
   thanksBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6, textAlign: "center" },
-  code: { fontSize: 30, fontWeight: "700", letterSpacing: 6, color: C.ink, marginTop: 14 },
+  code: { fontSize: 30, ...S(700), letterSpacing: 6, color: C.ink, marginTop: 14 },
   codeHint: { color: C.inkFaint, fontSize: 12, marginTop: 4 },
   simNote: { color: C.goldText, fontSize: 12, marginTop: 8 },
   meLink: { marginTop: 12, minHeight: 44, justifyContent: "center" },
-  meLinkText: { color: C.tealText, fontSize: 14, fontWeight: "700" },
+  meLinkText: { color: C.tealText, fontSize: 14, ...S(700) },
 });

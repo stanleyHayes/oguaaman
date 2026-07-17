@@ -41,7 +41,7 @@ func (s *Service) SubmitReport(ctx context.Context, in ReportInput) (*domain.Rep
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	rep := domain.Report{
-		ID:           "rpt-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:           newID(domain.PrefixReport),
 		ListingID:    listing.ID,
 		ListingSlug:  listing.Slug,
 		ListingType:  listing.Type,

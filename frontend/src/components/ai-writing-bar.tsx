@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 
 /**
@@ -74,7 +74,14 @@ export function AiWritingBar({
   const [language, setLanguage] = useState("Twi");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const titleId = useId();
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
   const bodyId = useId();
 
   function flashToast(m: string) {
@@ -102,6 +109,9 @@ export function AiWritingBar({
   async function doFetch(action: Action) {
     setLastAction(action);
     setResult(null); setError(null); setLimit(false); setLoading(true);
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     const text = sel.active ? body.slice(sel.start, sel.end) : body;
     try {
       const data = await api.aiStream(
@@ -111,14 +121,17 @@ export function AiWritingBar({
           prompt: action === "prompt" ? promptText : undefined,
         },
         (chunk) => setResult((prev) => `${prev ?? ""}${chunk}`),
+        ctrl.signal,
       );
       setSimulated(Boolean(data.simulated));
       if (typeof data.remaining === "number") setRemaining(data.remaining);
     } catch (err) {
+      if (ctrl.signal.aborted) return;
       if ((err as { status?: number }).status === 429) setLimit(true);
       else setError("Something went wrong generating that. Your text is unchanged.");
     } finally {
       setLoading(false);
+      abortRef.current = null;
     }
   }
 
@@ -190,7 +203,7 @@ export function AiWritingBar({
           {mode === "prompt" && (
             <div className="flex flex-wrap gap-2 px-4 pb-4 pt-4">
               <input autoFocus value={promptText} onChange={(e) => setPromptText(e.target.value)} placeholder="Describe what you want, e.g. 'a short invite to the prize-giving day'…" className="min-w-[12rem] flex-1 rounded-lg border border-ai-line bg-white px-3 py-2.5 text-sm focus:border-ai focus:outline-none" />
-              <button onClick={() => doFetch("prompt")} className="rounded-lg bg-ai px-4 py-2.5 text-sm font-semibold text-white">Generate</button>
+              <button type="button" onClick={() => doFetch("prompt")} className="rounded-lg bg-ai px-4 py-2.5 text-sm font-semibold text-white">Generate</button>
             </div>
           )}
 
@@ -199,7 +212,7 @@ export function AiWritingBar({
               <select value={language} onChange={(e) => setLanguage(e.target.value)} className="min-w-[10rem] flex-1 rounded-lg border border-ai-line bg-white px-3 py-2.5 text-sm focus:border-ai focus:outline-none">
                 {LANGS.map((l) => <option key={l}>{l}</option>)}
               </select>
-              <button onClick={() => doFetch("translate")} className="rounded-lg bg-ai px-4 py-2.5 text-sm font-semibold text-white">Translate</button>
+              <button type="button" onClick={() => doFetch("translate")} className="rounded-lg bg-ai px-4 py-2.5 text-sm font-semibold text-white">Translate</button>
             </div>
           )}
 
@@ -212,7 +225,7 @@ export function AiWritingBar({
           {error && (
             <div className="mx-4 mb-4 flex items-center justify-between gap-3 rounded-lg border border-[#F0D2C9] bg-[#FCEEEA] px-4 py-3 text-sm text-clay-text">
               <span>{error}</span>
-              {lastAction && <button onClick={() => doFetch(lastAction)} className="rounded-md border border-clay px-3 py-1 font-semibold">Try again</button>}
+              {lastAction && <button type="button" onClick={() => doFetch(lastAction)} className="rounded-md border border-clay px-3 py-1 font-semibold">Try again</button>}
             </div>
           )}
 
@@ -228,10 +241,10 @@ export function AiWritingBar({
               </div>
               <div className="mx-4 my-2.5 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-white p-4 text-sm leading-relaxed text-ink">{result}</div>
               <div className="flex flex-wrap gap-2 px-4 pb-4">
-                <button onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">Replace</button>
-                <button onClick={applyInsert} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold text-ink hover:border-ink">Insert below</button>
-                <button onClick={copyResult} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold text-ink hover:border-ink">Copy</button>
-                <button onClick={resetViews} className="rounded-lg border border-[#EAD7D1] px-4 py-2 text-sm font-semibold text-clay-text hover:bg-[#FCEEEA]">Discard</button>
+                <button type="button" onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">Replace</button>
+                <button type="button" onClick={applyInsert} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold text-ink hover:border-ink">Insert below</button>
+                <button type="button" onClick={copyResult} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold text-ink hover:border-ink">Copy</button>
+                <button type="button" onClick={resetViews} className="rounded-lg border border-[#EAD7D1] px-4 py-2 text-sm font-semibold text-clay-text hover:bg-[#FCEEEA]">Discard</button>
               </div>
             </div>
           )}
@@ -241,13 +254,19 @@ export function AiWritingBar({
       <p className="mt-3 text-center text-xs text-ink-faint">The bar calls the model server-side — keys never reach the browser. Every output is a draft; you always decide what is kept.</p>
 
       {confirmOpen && (
-        <dialog open className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-ink/40 p-5" aria-modal>
+        <dialog
+          open
+          className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-ink/40 p-5"
+          aria-modal
+          aria-labelledby="aiw-confirm-title"
+          onKeyDown={(e) => { if (e.key === "Escape") setConfirmOpen(false); }}
+        >
           <div className="w-full max-w-sm rounded-[var(--radius-card)] bg-white p-6 text-center shadow-[var(--shadow-lift)]">
-            <h3 className="text-xl font-semibold text-ink">Replace current text?</h3>
+            <h3 id="aiw-confirm-title" className="text-xl font-semibold text-ink">Replace current text?</h3>
             <p className="mt-2 text-sm text-ink-muted">This will overwrite {sel.active ? "your selected text" : "what's in the field"}. This can't be undone.</p>
             <div className="mt-5 flex justify-center gap-3">
-              <button onClick={() => setConfirmOpen(false)} className="rounded-lg border border-sand px-5 py-2 text-sm font-semibold text-ink">Cancel</button>
-              <button onClick={applyReplace} className="rounded-lg bg-maroon-900 px-5 py-2 text-sm font-semibold text-white">Replace</button>
+              <button type="button" onClick={() => setConfirmOpen(false)} className="rounded-lg border border-sand px-5 py-2 text-sm font-semibold text-ink">Cancel</button>
+              <button type="button" onClick={applyReplace} className="rounded-lg bg-maroon-900 px-5 py-2 text-sm font-semibold text-white">Replace</button>
             </div>
           </div>
         </dialog>
@@ -266,7 +285,7 @@ function Sparkle() {
     </svg>
   );
 }
-function Group({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
+function Group({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className="mb-4 last:mb-0">
       <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-ink-faint">{label}</p>

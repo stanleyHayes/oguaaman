@@ -59,7 +59,7 @@ func (s *Service) InviteMember(ctx context.Context, identifier, displayName, rol
 		return nil, fmt.Errorf("%s is already a member — change their role from the list instead", identifier)
 	}
 	m := domain.Member{
-		ID:          "m-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:          newID("m-"),
 		Slug:        slugify(displayName),
 		DisplayName: displayName,
 		Initials:    initialsOf(displayName),
@@ -173,7 +173,7 @@ func (s *Service) createOrg(ctx context.Context, name, kind, classification, sum
 		verifiedOn = time.Now().UTC().Format(time.DateOnly)
 	}
 	org := domain.Organization{
-		ID:             "org-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:             newID("org-"),
 		Slug:           slug,
 		Kind:           kind,
 		Name:           name,

@@ -197,7 +197,7 @@ func (h *Handler) ogCover(url string) image.Image {
 		return nil
 	}
 	rest := strings.TrimPrefix(url, "/uploads/")
-	if strings.Contains(rest, "..") {
+	if strings.Contains(rest, "..") || !filepath.IsLocal(filepath.FromSlash(rest)) {
 		return nil
 	}
 	var rc io.ReadCloser
@@ -205,8 +205,14 @@ func (h *Handler) ogCover(url string) image.Image {
 		if sf, err := seedimg.FS.Open(seed); err == nil {
 			rc = sf
 		}
-	} else if df, err := os.Open(filepath.Join(h.uploadDir, filepath.FromSlash(rest))); err == nil {
-		rc = df
+	} else {
+		absBase, _ := filepath.Abs(h.uploadDir)
+		target, _ := filepath.Abs(filepath.Join(h.uploadDir, filepath.FromSlash(rest)))
+		if absBase != "" && target != "" && strings.HasPrefix(target, absBase+string(filepath.Separator)) {
+			if df, err := os.Open(target); err == nil {
+				rc = df
+			}
+		}
 	}
 	if rc == nil {
 		return nil

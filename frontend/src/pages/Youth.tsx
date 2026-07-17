@@ -127,7 +127,9 @@ function Chip({ label, active, onSelect }: Readonly<{ label: string; active: boo
     : "border-sand bg-cream text-ink-muted hover:border-teal/40";
   return (
     <button
+      type="button"
       onClick={onSelect}
+      aria-pressed={active}
       className={`relative rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${cls}`}
     >
       {active && <LayoutPill layoutId="youth-kind" className="absolute inset-0 rounded-full bg-teal" />}

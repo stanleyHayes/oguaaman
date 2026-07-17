@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "./layout";
@@ -51,7 +51,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
     } finally { setBusy(false); }
   };
 
-  const confirm = async (e: React.FormEvent<HTMLFormElement>) => {
+  const confirm = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
@@ -148,7 +148,7 @@ export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const confirm = async (e: React.FormEvent<HTMLFormElement>) => {
+  const confirm = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {

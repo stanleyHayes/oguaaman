@@ -1,3 +1,4 @@
+import { ROUTES } from "@/lib/routes";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -39,7 +40,7 @@ function RememberButton({ slug, initialCount }: Readonly<{ slug: string; initial
 
   async function toggle() {
     if (busy) return;
-    if (!member) { router.push("/signin"); return; }
+    if (!member) { router.push(ROUTES.signIn); return; }
     setBusy(true);
     const next = !following;
     setFollowing(next);
@@ -55,7 +56,7 @@ function RememberButton({ slug, initialCount }: Readonly<{ slug: string; initial
   }
 
   return (
-    <Pressable onPress={toggle} disabled={busy} style={[s.remember, following && s.rememberOn]}>
+    <Pressable accessibilityRole="button" onPress={toggle} disabled={busy} style={[s.remember, following && s.rememberOn]}>
       <Text style={[s.rememberText, following && s.rememberTextOn]}>
         {following ? "♥ Remembering" : "♡ Remember"} · {count}
       </Text>
@@ -129,7 +130,7 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
         <Text style={s.dates}>{lifeDates(d.bornYear, d.diedDate)}</Text>
         {d.epitaph && <Text style={s.epitaph}>“{d.epitaph}”</Text>}
 
-        <Pressable onPress={light} style={[s.candle, lit && { backgroundColor: C.green900 }]}>
+        <Pressable accessibilityRole="button" onPress={light} style={[s.candle, lit && { backgroundColor: C.green900 }]}>
           <Text style={s.candleText}>{lit ? "🕯  Candle lit" : "🕯  Light a candle"} · {candles}</Text>
         </Pressable>
         <RememberButton slug={slug} initialCount={d.rememberedByCount ?? 0} />
@@ -194,7 +195,7 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
           placeholder="Your name (optional)"
           placeholderTextColor={C.inkFaint}
         />
-        <Pressable onPress={submitTribute} disabled={busy} style={[s.submit, busy && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={submitTribute} disabled={busy} style={[s.submit, busy && { opacity: 0.6 }]}>
           <Text style={s.submitText}>{busy ? "Leaving…" : "Leave a tribute"}</Text>
         </Pressable>
         <Text style={s.formNote}>Tributes are lightly reviewed for dignity before they appear.</Text>
@@ -213,36 +214,36 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
 const makeStyles = (C: Palette) => StyleSheet.create({
   // #EADFC4 is a bespoke parchment tone behind the portrait with no palette
   // token; kept as-is in both themes (decorative, photo-placeholder-like).
-  portrait: { width: 110, height: 110, borderRadius: 55, backgroundColor: "#EADFC4", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
+  portrait: { width: 110, height: 110, borderRadius: 55, backgroundColor: C.goldTint14, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
   portraitInit: { ...S(600), fontSize: 40, color: C.green },
   name: { ...D(600), fontSize: 34, color: C.ink, marginTop: 16, textAlign: "center" },
   dates: { color: C.goldText, fontSize: 13, letterSpacing: 3, marginTop: 6 },
   epitaph: { ...SI(), fontSize: 20, color: C.ink, textAlign: "center", marginTop: 14, maxWidth: 320, lineHeight: 28 },
   candle: { backgroundColor: C.ink, borderRadius: 999, paddingHorizontal: 22, paddingVertical: 13, marginTop: 22 },
-  candleText: { color: C.cream, fontSize: 15, fontWeight: "600" },
+  candleText: { color: C.cream, fontSize: 15, ...S(600) },
   remember: { borderWidth: 1.5, borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 22, paddingVertical: 11, marginTop: 12 },
   rememberOn: { backgroundColor: C.goldBrand },
-  rememberText: { color: C.goldText, fontSize: 14, fontWeight: "700" },
+  rememberText: { color: C.goldText, fontSize: 14, ...S(700) },
   rememberTextOn: { color: C.cream },
   rememberHint: { color: C.inkFaint, fontSize: 11, marginTop: 8, textAlign: "center", maxWidth: 280 },
   moment: { width: 150 },
   momentImg: { width: 150, height: 110, borderRadius: 10, borderWidth: 1, borderColor: C.sand },
   momentCaption: { color: C.inkMuted, fontSize: 11, lineHeight: 15, marginTop: 5 },
   datesNote: { marginTop: 22, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
-  datesTitle: { color: C.goldText, fontSize: 11, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  datesTitle: { color: C.goldText, fontSize: 11, letterSpacing: 2, ...D(700), textTransform: "uppercase" },
   datesLine: { color: C.ink, ...S(400), fontSize: 14, marginTop: 6 },
   divider: { height: 1, backgroundColor: C.sand, marginVertical: 28 },
-  sectionLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 3, fontWeight: "700", textAlign: "center", marginBottom: 14 },
+  sectionLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 3, ...D(700), textAlign: "center", marginBottom: 14 },
   story: { ...S(400), fontSize: 17, lineHeight: 26, color: C.ink },
   tribute: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 16, marginBottom: 12 },
   tributeMsg: { ...S(400), fontSize: 15, color: C.ink, lineHeight: 22 },
-  tributeWho: { color: C.greenText, fontWeight: "600", fontSize: 13, marginTop: 8 },
+  tributeWho: { color: C.greenText, ...S(600), fontSize: 13, marginTop: 8 },
   tributeEmpty: { color: C.inkFaint, fontStyle: "italic", textAlign: "center", marginBottom: 12 },
   form: { marginTop: 8, borderWidth: 1, borderColor: C.sand, borderStyle: "dashed", borderRadius: 12, padding: 16 },
   input: { minHeight: 70, borderWidth: 1, borderColor: C.sand, borderRadius: 8, backgroundColor: C.paper, padding: 12, ...S(400), fontSize: 15, color: C.ink, textAlignVertical: "top" },
   inputSm: { marginTop: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 8, backgroundColor: C.paper, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: C.ink },
   submit: { marginTop: 14, alignSelf: "center", backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 26, paddingVertical: 12 },
-  submitText: { color: ON_GREEN, fontWeight: "600", fontSize: 14 },
+  submitText: { color: ON_GREEN, ...S(600), fontSize: 14 },
   formNote: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 10 },
   mark: { ...S(400), fontSize: 26, color: C.goldText, textAlign: "center", marginTop: 30 },
   markSub: { color: C.inkFaint, fontSize: 11, letterSpacing: 3, textAlign: "center", marginTop: 4 },

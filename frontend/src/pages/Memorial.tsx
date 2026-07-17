@@ -133,7 +133,7 @@ export function Component() {
                 <>
                   <p className="text-sm text-ink-muted">Are you a family member or next-of-kin for this memorial?</p>
                   {!claimOpen ? (
-                    <button
+                    <button type="button"
                       onClick={() => setClaimOpen(true)}
                       className="mt-3 rounded border border-gold-border px-4 py-2 text-sm text-gold-text hover:bg-gold-brand/10"
                     >
@@ -154,7 +154,7 @@ export function Component() {
                       />
                       {claimError && <p className="mt-1 text-xs text-clay">{claimError}</p>}
                       <div className="mt-3 flex gap-3">
-                        <button
+                        <button type="button"
                           onClick={async () => {
                             if (!claimDetail.trim()) { setClaimError("Please describe your relationship."); return; }
                             setClaimLoading(true); setClaimError("");
@@ -172,7 +172,7 @@ export function Component() {
                         >
                           {claimLoading ? "Submitting…" : "Submit claim"}
                         </button>
-                        <button onClick={() => setClaimOpen(false)} className="rounded border border-sand px-4 py-2 text-sm text-ink-muted hover:bg-sand/30">Cancel</button>
+                        <button type="button" onClick={() => setClaimOpen(false)} className="rounded border border-sand px-4 py-2 text-sm text-ink-muted hover:bg-sand/30">Cancel</button>
                       </div>
                     </div>
                   )}

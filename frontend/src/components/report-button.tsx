@@ -47,7 +47,7 @@ export function ReportButton({
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
 
-  async function submit(e: React.SubmitEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     setState("sending");
     try {

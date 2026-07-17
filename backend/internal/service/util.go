@@ -4,12 +4,20 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/oguaa/backend/internal/domain"
 )
 
 var slugRe = regexp.MustCompile(`[^a-z0-9]+`)
+
+// newID mints a time-based unique identifier with the given prefix. It centralises
+// the "nanosecond timestamp" ID pattern so every record type uses one helper.
+func newID(prefix string) string {
+	return prefix + strconv.FormatInt(time.Now().UnixNano(), 10)
+}
 
 func slugify(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
@@ -29,8 +37,15 @@ func asString(m map[string]any, key string) string {
 func monthDayOf(date string) string {
 	switch {
 	case len(date) >= 10:
+		// Validate the date looks like YYYY-MM-DD before slicing.
+		if _, err := time.Parse(time.DateOnly, date[:10]); err != nil {
+			return ""
+		}
 		return date[5:10]
 	case len(date) == 5:
+		if _, err := time.Parse("01-02", date); err != nil {
+			return ""
+		}
 		return date
 	default:
 		return ""
@@ -73,11 +88,11 @@ func sortByStart(events []domain.Listing) {
 }
 
 func dedupeByID(items []domain.Listing) []domain.Listing {
-	seen := map[string]bool{}
+	seen := map[string]struct{}{}
 	out := []domain.Listing{}
 	for _, it := range items {
-		if !seen[it.ID] {
-			seen[it.ID] = true
+		if _, ok := seen[it.ID]; !ok {
+			seen[it.ID] = struct{}{}
 			out = append(out, it)
 		}
 	}

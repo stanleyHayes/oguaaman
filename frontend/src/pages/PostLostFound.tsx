@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode, type FormEvent} from "react";
 import { useNavigate } from "react-router-dom";
 import type { LostFoundKind } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -11,7 +11,7 @@ import { ImageUpload } from "@/components/image-upload";
 
 const inputCls = "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
 
-function Field({ label, children, hint }: Readonly<{ label: string; children: React.ReactNode; hint?: string }>) {
+function Field({ label, children, hint }: Readonly<{ label: string; children: ReactNode; hint?: string }>) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
@@ -31,7 +31,7 @@ export function Component() {
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setBusy(true);

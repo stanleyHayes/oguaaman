@@ -97,13 +97,19 @@ func (r *ListingRepo) Insert(ctx context.Context, l domain.Listing) error {
 
 func (r *ListingRepo) UpdateStatus(ctx context.Context, id, status, reviewedBy, reason, at string) error {
 	set := bson.M{"status": status, "reviewedById": reviewedBy, "reviewedAt": at}
+	unset := bson.M{}
 	if status == domain.StatusApproved {
 		set["publishedAt"] = at
+		unset["rejectionReason"] = ""
 	}
 	if reason != "" {
 		set["rejectionReason"] = reason
 	}
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": set})
+	update := bson.M{"$set": set}
+	if len(unset) > 0 {
+		update["$unset"] = unset
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, update)
 	return err
 }
 
@@ -165,11 +171,12 @@ func (r *ListingRepo) IncrementRaised(ctx context.Context, listingID string, del
 }
 
 func (r *ListingRepo) IncrementCandles(ctx context.Context, listingID string) (int, error) {
-	if _, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{"details.candles": 1}}); err != nil {
-		return 0, err
-	}
 	var l domain.Listing
-	if err := r.c.FindOne(ctx, bson.M{"_id": listingID}).Decode(&l); err != nil {
+	if err := r.c.FindOneAndUpdate(ctx,
+		bson.M{"_id": listingID},
+		bson.M{"$inc": bson.M{"details.candles": 1}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	).Decode(&l); err != nil {
 		return 0, notFound("listing", err)
 	}
 	return toInt(l.Details["candles"]), nil
@@ -195,32 +202,34 @@ func (r *ListingRepo) RecordView(ctx context.Context, listingID, visitorKey stri
 	return isNew, err
 }
 
-// ViewsThisMonth counts unique daily view records whose day starts with the
-// current YYYY-MM prefix and whose listingId is among listingIDs.
+// monthDayRange returns the inclusive start/end "YYYY-MM-DD" strings for the
+// current UTC calendar month. Used for index-friendly view aggregation.
+func monthDayRange() (string, string) {
+	now := time.Now().UTC()
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0).Add(-time.Nanosecond)
+	return start.Format(time.DateOnly), end.Format(time.DateOnly)
+}
+
+// ViewsThisMonth counts unique daily view records in the current calendar month
+// whose listingId is among listingIDs.
 func (r *ListingRepo) ViewsThisMonth(ctx context.Context, listingIDs []string) (int, error) {
 	if len(listingIDs) == 0 {
 		return 0, nil
 	}
-	prefix := time.Now().UTC().Format("2006-01")
-	cur, err := r.views.Find(ctx, bson.M{
+	start, end := monthDayRange()
+	n, err := r.views.CountDocuments(ctx, bson.M{
 		"listingId": bson.M{"$in": listingIDs},
-		"day":       bson.M{"$regex": "^" + prefix},
+		"day":       bson.M{"$gte": start, "$lte": end},
 	})
-	if err != nil {
-		return 0, err
-	}
-	var docs []bson.M
-	if err := cur.All(ctx, &docs); err != nil {
-		return 0, err
-	}
-	return len(docs), nil
+	return int(n), err
 }
 
 // PlatformViewsThisMonth counts all unique daily view records in the current
 // calendar month across every listing.
 func (r *ListingRepo) PlatformViewsThisMonth(ctx context.Context) (int, error) {
-	prefix := time.Now().UTC().Format("2006-01")
-	n, err := r.views.CountDocuments(ctx, bson.M{"day": bson.M{"$regex": "^" + prefix}})
+	start, end := monthDayRange()
+	n, err := r.views.CountDocuments(ctx, bson.M{"day": bson.M{"$gte": start, "$lte": end}})
 	return int(n), err
 }
 

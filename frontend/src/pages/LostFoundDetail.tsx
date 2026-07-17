@@ -86,10 +86,10 @@ export function Component() {
               {missing ? "Found them safe? Mark it reunited so the search can stand down." : "Back with its owner? Mark it reunited — or close the notice if it's run its course."}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <button disabled={busy} onClick={() => resolve("reunited")} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
+              <button type="button" disabled={busy} onClick={() => resolve("reunited")} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
                 Mark as reunited
               </button>
-              <button disabled={busy} onClick={() => resolve("closed")} className="rounded-full border border-sand px-5 py-2 text-sm font-semibold text-ink-muted transition-colors hover:border-green/40 disabled:opacity-60">
+              <button type="button" disabled={busy} onClick={() => resolve("closed")} className="rounded-full border border-sand px-5 py-2 text-sm font-semibold text-ink-muted transition-colors hover:border-green/40 disabled:opacity-60">
                 Close
               </button>
             </div>

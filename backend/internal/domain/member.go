@@ -11,6 +11,15 @@ const (
 	RoleModerator = "moderator" // queue/listings/reports/incidents only (Creator Platform plan §9.3)
 )
 
+// DevDemoMemberIDs are the seeded demo identities used only when AUTH_REQUIRED is
+// false. They must never be reached in production. The constants keep the literal
+// IDs in one place for security scanning and auditing.
+const (
+	DevDemoMemberID       = "m-akua"
+	DevDemoModeratorID    = "m-nana"
+	DevDemoStewardMember  = "m-nana"
+)
+
 // Creator types — the self-serve creator account kinds (Creator Platform plan §3).
 // Orthogonal to Role: any member may create; roles stay staff-only.
 const (

@@ -66,10 +66,10 @@ export function VerifiedBadge({ label, onDark = false, size = 16 }: Readonly<{ l
       style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
     >
       <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: sealBg, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: checkColor, fontSize: size * 0.6, lineHeight: size, fontWeight: "900", marginTop: -1 }}>✓</Text>
+        <Text style={{ color: checkColor, fontSize: size * 0.6, lineHeight: size, ...S(700), marginTop: -1 }}>✓</Text>
       </View>
       {label ? (
-        <Text style={{ color: labelColor, fontSize: 11, fontWeight: "700", letterSpacing: 0.4 }} numberOfLines={1}>{label}</Text>
+        <Text style={{ color: labelColor, fontSize: 11, ...S(700), letterSpacing: 0.4 }} numberOfLines={1}>{label}</Text>
       ) : null}
     </View>
   );
@@ -186,7 +186,7 @@ function Inline({ text, style }: Readonly<{ text: string; style?: StyleProp<Text
     <Text style={style}>
       {parts.map((p, i) =>
         p.startsWith("**") && p.endsWith("**")
-          ? <Text key={`${p}-${i}`} style={{ fontWeight: "700" }}>{p.slice(2, -2)}</Text>
+          ? <Text key={`${p}-${i}`} style={{ ...S(700) }}>{p.slice(2, -2)}</Text>
           : <Text key={`${p}-${i}`}>{p}</Text>,
       )}
     </Text>
@@ -269,13 +269,13 @@ const makeMdStyles = (C: Palette) => StyleSheet.create({
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, backgroundColor: C.paper, gap: 6 },
-  errTitle: { fontSize: 20, fontWeight: "700", color: C.ink },
+  errTitle: { fontSize: 20, ...D(700), color: C.ink },
   errMsg: { color: C.clayText, textAlign: "center" },
   errHint: { color: C.inkFaint, fontSize: 12, marginTop: 4 },
   pill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  pillText: { fontSize: 12, fontWeight: "600" },
+  pillText: { fontSize: 12, ...S(600) },
   heroBand: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22, overflow: "hidden" },
-  heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...D(700), textTransform: "uppercase" },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 28, marginTop: 6 },
   heroFante: { color: C.gold, ...SI(), fontSize: 24 },
   heroLede: { color: C.onDarkText85, fontSize: 14, lineHeight: 20, marginTop: 6 },

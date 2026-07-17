@@ -47,7 +47,7 @@ function FollowButton({ slug }: Readonly<{ slug: string }>) {
   }
 
   return (
-    <Pressable onPress={toggle} disabled={busy} style={[s.follow, following && s.followOn]}>
+    <Pressable accessibilityRole="button" onPress={toggle} disabled={busy} style={[s.follow, following && s.followOn]}>
       <Text style={[s.followText, following && s.followTextOn]}>
         {following ? "Following" : "Follow"}{followers != null ? ` · ${followers}` : ""}
       </Text>
@@ -148,10 +148,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   bio: { color: "rgba(246,241,231,0.8)", fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: 8, maxWidth: 320 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, justifyContent: "center" },
   chip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  chipText: { color: ON_GREEN, fontSize: 12, fontWeight: "600" },
+  chipText: { color: ON_GREEN, fontSize: 12, ...S(600) },
   follow: { marginTop: 16, borderWidth: 1, borderColor: C.onDarkText50, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 26 },
   followOn: { backgroundColor: C.gold, borderColor: C.gold },
-  followText: { color: ON_GREEN, fontWeight: "700" },
+  followText: { color: ON_GREEN, ...S(700) },
   followTextOn: { color: C.green900 },
   body: { padding: 16 },
   sectionCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
@@ -160,6 +160,6 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
   cardThumb: { width: 48, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   cardThumbInit: { color: C.cream, ...S(700), fontSize: 18 },
-  cardType: { color: C.goldText, fontSize: 10, letterSpacing: 1, fontWeight: "700", textTransform: "uppercase" },
+  cardType: { color: C.goldText, fontSize: 10, letterSpacing: 1, ...S(700), textTransform: "uppercase" },
   cardTitle: { ...S(400), fontSize: 18, color: C.ink, marginTop: 2 },
 });

@@ -135,10 +135,10 @@ function ResolveBox({ slug, missing, onResolved }: Readonly<{ slug: string; miss
         {missing ? "Found them safe? Mark it reunited so the search can stand down." : "Back with its owner? Mark it reunited — or close the notice if it has run its course."}
       </Text>
       <View style={s.resolveRow}>
-        <Pressable onPress={() => resolve("reunited")} disabled={busy} style={[s.resolveBtn, busy && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={() => resolve("reunited")} disabled={busy} style={[s.resolveBtn, busy && { opacity: 0.6 }]}>
           <Text style={s.resolveBtnText}>Mark as reunited</Text>
         </Pressable>
-        <Pressable onPress={() => resolve("closed")} disabled={busy} style={[s.resolveBtnOutline, busy && { opacity: 0.6 }]}>
+        <Pressable accessibilityRole="button" onPress={() => resolve("closed")} disabled={busy} style={[s.resolveBtnOutline, busy && { opacity: 0.6 }]}>
           <Text style={s.resolveBtnOutlineText}>Close</Text>
         </Pressable>
       </View>
@@ -149,21 +149,21 @@ function ResolveBox({ slug, missing, onResolved }: Readonly<{ slug: string; miss
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingVertical: 26 },
-  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+  heroKicker: { color: C.onDarkText85, fontSize: 10, letterSpacing: 2, ...D(700) },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 24, lineHeight: 30, marginTop: 8 },
   heroChipRow: { flexDirection: "row", marginTop: 12 },
   // Chip border: the hero stays a dark tone in both themes, so this light cream
   // border is theme-independent — no palette token exists at alpha 0.4.
   heroChip: { borderWidth: 1, borderColor: "rgba(246,241,231,0.4)", backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
-  heroChipText: { color: ON_GREEN, fontSize: 12, fontWeight: "700" },
+  heroChipText: { color: ON_GREEN, fontSize: 12, ...D(700) },
   body: { padding: 20 },
   desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
   facts: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, marginTop: 16 },
   factRow: { flexDirection: "row", gap: 12, paddingVertical: 7 },
-  factLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, fontWeight: "700", width: 100 },
+  factLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, ...S(700), width: 100 },
   factValue: { color: C.ink, fontSize: 14, flex: 1, lineHeight: 20 },
   contactBox: { marginTop: 16, borderWidth: 1, borderColor: C.teal, backgroundColor: C.cream, borderRadius: 12, padding: 16 },
-  contactLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, fontWeight: "700" },
+  contactLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...S(700) },
   contactValue: { color: C.ink, ...S(700), fontSize: 18, marginTop: 6 },
   contactHint: { color: C.inkMuted, fontSize: 12, marginTop: 6 },
   resolveBox: { marginTop: 22, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 16 },
@@ -171,9 +171,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   resolveHelp: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   resolveRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 },
   resolveBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20, minHeight: 44, justifyContent: "center" },
-  resolveBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
+  resolveBtnText: { color: ON_GREEN, ...S(700), fontSize: 14 },
   resolveBtnOutline: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 20, minHeight: 44, justifyContent: "center" },
-  resolveBtnOutlineText: { color: C.inkMuted, fontWeight: "600", fontSize: 14 },
+  resolveBtnOutlineText: { color: C.inkMuted, ...S(600), fontSize: 14 },
   error: { color: C.clayText, fontSize: 13, marginTop: 10 },
   happyBox: { marginTop: 22, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 16 },
   happyText: { color: C.greenText, fontSize: 14, lineHeight: 20 },

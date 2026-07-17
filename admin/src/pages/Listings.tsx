@@ -110,21 +110,21 @@ export function Component() {
                               ★ Featured{" "}
                               <span className="font-normal text-ink-faint">{l.featuredUntil ? `until ${formatDate(l.featuredUntil)}` : "no expiry"}</span>
                             </span>
-                            <button disabled={busy === l.id} onClick={() => unfeature(l)} className="rounded-full border border-maroon-text/40 px-3 py-1 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unfeature</button>
+                            <button type="button" disabled={busy === l.id} onClick={() => unfeature(l)} className="rounded-full border border-maroon-text/40 px-3 py-1 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unfeature</button>
                           </span>
                         ) : (
                           <span className="relative inline-flex">
-                            <button disabled={busy === l.id} onClick={() => setMenuId((cur) => (cur === l.id ? null : l.id))} className="rounded-full border border-sand px-3 py-1 text-xs font-semibold text-ink-muted hover:border-gold-border/50 disabled:opacity-50">☆ Feature ▾</button>
+                            <button type="button" disabled={busy === l.id} onClick={() => setMenuId((cur) => (cur === l.id ? null : l.id))} className="rounded-full border border-sand px-3 py-1 text-xs font-semibold text-ink-muted hover:border-gold-border/50 disabled:opacity-50">☆ Feature ▾</button>
                             {menuId === l.id && (
                               <span className="absolute right-0 top-full z-10 mt-1 inline-flex gap-1 rounded-lg border border-sand bg-cream p-1 shadow-soft">
                                 {[7, 14, 30].map((days) => (
-                                  <button key={days} disabled={busy === l.id} onClick={() => feature(l, days)} className="rounded-full bg-green px-2.5 py-1 text-xs font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">{days}d</button>
+                                  <button type="button" key={days} disabled={busy === l.id} onClick={() => feature(l, days)} className="rounded-full bg-green px-2.5 py-1 text-xs font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">{days}d</button>
                                 ))}
                               </span>
                             )}
                           </span>
                         )}
-                        <button disabled={busy === l.id} onClick={() => unpublish(l)} className="rounded-full border border-maroon-text/40 px-3 py-1 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unpublish</button>
+                        <button type="button" disabled={busy === l.id} onClick={() => unpublish(l)} className="rounded-full border border-maroon-text/40 px-3 py-1 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unpublish</button>
                       </span>
                     )}
                   </td>

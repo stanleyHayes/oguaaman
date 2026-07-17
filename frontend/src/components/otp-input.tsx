@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ChangeEvent, type KeyboardEvent, type ClipboardEvent} from "react";
 
 const LEN = 6;
 
@@ -53,7 +53,7 @@ export function OtpInput({
     }
   };
 
-  const handleChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (index: number, e: ChangeEvent<HTMLInputElement>) => {
     const typed = e.target.value.replace(/\D/g, "");
     const chars = slots(value);
     if (!typed) {
@@ -71,7 +71,7 @@ export function OtpInput({
     focusBox(Math.min(i, LEN - 1));
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
     const chars = slots(value);
     if (e.key === "Backspace") {
       e.preventDefault();
@@ -92,7 +92,7 @@ export function OtpInput({
     }
   };
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, LEN);
     if (!pasted) return;

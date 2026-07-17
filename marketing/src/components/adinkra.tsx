@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import type { ReactNode, SVGProps } from "react";
 
 /**
  * Respectful symbol vocabulary (agent_plan.md §2.4) — clean uniform-stroke line
@@ -14,7 +14,7 @@ export type AdinkraName =
 interface SymbolDef {
   name: string;
   meaning: string;
-  path: React.ReactNode;
+  path: ReactNode;
 }
 
 export const ADINKRA: Record<AdinkraName, SymbolDef> = {

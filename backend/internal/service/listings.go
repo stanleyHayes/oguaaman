@@ -159,7 +159,7 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 		return nil, err
 	}
 	if err := s.mod.Insert(ctx, domain.ModerationRecord{
-		ID:          "mod-" + fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:          newID(domain.PrefixModeration),
 		ListingID:   l.ID,
 		ModeratorID: actor.ID,
 		Action:      editKind,

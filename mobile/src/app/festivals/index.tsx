@@ -1,6 +1,7 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
+import { push } from "@/lib/router";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -39,7 +40,7 @@ export default function Festivals() {
       <View style={{ padding: 16, gap: 14 }}>
       {data.map((f, i) => (
         <StaggerIn key={f.slug} index={i}>
-          <Pressable onPress={() => router.push(`/festivals/${f.slug}` as never)} style={s.card}>
+          <Pressable accessibilityRole="button" accessibilityLabel={f.name} onPress={() => push(route.festival(f.slug))} style={s.card}>
           <Thumb seed={f.slug} src={f.nextEdition?.coverImageUrl} label={f.name} style={s.cover} labelStyle={s.coverLabel} />
           <View style={{ padding: 14 }}>
             <Text style={s.name}>{f.name}</Text>
@@ -64,5 +65,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   name: { ...S(700), fontSize: 22, color: C.ink },
   tagline: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   meta: { color: C.inkFaint, fontSize: 12, marginTop: 10 },
-  metaNext: { color: C.goldText, fontWeight: "700" },
+  metaNext: { color: C.goldText, ...S(700) },
 });

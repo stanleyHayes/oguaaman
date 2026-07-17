@@ -254,8 +254,8 @@ function StatsBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone: T
     <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-sand bg-sand sm:grid-cols-4">
       {list.map((i, idx) => (
         <div key={i.id || idx} className="bg-cream px-4 py-5 text-center">
-          <dd className={`text-3xl font-semibold ${t.text}`}>{i.value || "—"}</dd>
-          {i.label && <dt className="mt-1 text-[0.66rem] font-semibold uppercase tracking-wider text-ink-faint">{i.label}</dt>}
+          {i.label && <dt className="text-[0.66rem] font-semibold uppercase tracking-wider text-ink-faint">{i.label}</dt>}
+          <dd className={`mt-1 text-3xl font-semibold ${t.text}`}>{i.value || "—"}</dd>
         </div>
       ))}
     </dl>
@@ -321,6 +321,7 @@ function FaqBlock({ items }: Readonly<{ items: SectionItem[] }>) {
             <button
               type="button"
               onClick={() => setOpen(isOpen ? null : id)}
+              aria-expanded={isOpen}
               className="flex w-full cursor-pointer items-center justify-between gap-3 bg-cream px-4 py-3 text-left font-medium text-ink"
             >
               <span>{i.label || "—"}</span>

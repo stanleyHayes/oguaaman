@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { Container, CTA as Cta, Eyebrow, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { Thumb, EventCard, SectionCard, MemorialCard, NewsCard, FeaturedCard } from "@/components/cards";
-import { CircularReveal, Parallax, Reveal, Reveal3D, Stagger, StaggerItem } from "@/components/motion";
+import { CircularReveal, Magnetic, Parallax, Reveal, Reveal3D, Stagger, StaggerItem, WordReveal } from "@/components/motion";
 import { SHOWCASE_SECTIONS } from "@/lib/sections";
 import { ABOUT_OGUAA, SAMPLE_NOTICE } from "@/lib/content";
 import { cldCover } from "@/lib/cloudinary";
@@ -52,11 +52,19 @@ export function Component() {
           <img src="/uploads/seed/castle-exterior.jpg" alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" aria-hidden />
           <div className="bg-dotgrid absolute inset-0 opacity-60" aria-hidden />
           <div className="absolute inset-0" style={{ background: "radial-gradient(120% 120% at 80% -10%, rgba(27,90,63,0.88) 0%, rgba(18,63,45,0.92) 45%, rgba(12,44,31,0.97) 100%)" }} aria-hidden />
+          <div className="aurora-bg absolute inset-0" aria-hidden />
         </Parallax>
         <Container className="relative py-20 sm:py-28" size="wide">
           <Stagger className="max-w-3xl">
             <StaggerItem><Eyebrow className="text-gold/90">Cape Coast · Central Region · Ghana</Eyebrow></StaggerItem>
-            <StaggerItem><h1 className="mt-4 text-5xl font-semibold leading-[1.02] sm:text-7xl">This is <span className="text-gold">Oguaa.</span></h1></StaggerItem>
+            <div className="mt-4">
+              <WordReveal
+                text="This is Oguaa."
+                accentWords={["Oguaa"]}
+                accentClassName="text-gold text-shimmer-gold"
+                className="text-5xl font-semibold leading-[1.02] sm:text-7xl"
+              />
+            </div>
             <StaggerItem>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-cream/85">
                 The town that began as a market — the old Gold Coast capital, the Citadel of Education, home of the Asafo and Fetu Afahye. Its music, its people, its memory, gathered in one place. <span className="text-gold">Made by us, for us.</span>
@@ -64,7 +72,9 @@ export function Component() {
             </StaggerItem>
             <StaggerItem>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Cta to="/music" variant="gold">Hear the Oguaa Sound</Cta>
+                <Magnetic>
+                  <Cta to="/music" variant="gold">Hear the Oguaa Sound</Cta>
+                </Magnetic>
                 <Cta to="/community" variant="outline-dark">Join the community</Cta>
               </div>
             </StaggerItem>

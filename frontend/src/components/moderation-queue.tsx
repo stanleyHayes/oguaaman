@@ -90,20 +90,20 @@ export function ModerationQueue({ initial }: Readonly<{ initial: QueueItem[] }>)
                       className="w-full rounded-lg border border-sand bg-paper p-3 text-sm focus:border-green focus:outline-none"
                     />
                     <div className="mt-2 flex gap-2">
-                      <button
+                      <button type="button"
                         disabled={busy === item.id}
                         onClick={() => act(item, rejecting.mode === "reject" ? "reject" : "request-changes",
                           { action: rejecting.mode === "reject" ? "Rejected" : "Requested changes to", title: item.title, reason: reason.trim() || "(no reason)", tone: rejecting.mode === "reject" ? "bad" : "warn" }, reason.trim())}
                         className="rounded-full bg-maroon-900 px-4 py-2 text-sm font-semibold text-on-green disabled:opacity-60"
                       >Confirm</button>
-                      <button onClick={() => setRejecting(null)} className="rounded-full border border-sand px-4 py-2 text-sm font-semibold text-ink">Cancel</button>
+                      <button type="button" onClick={() => setRejecting(null)} className="rounded-full border border-sand px-4 py-2 text-sm font-semibold text-ink">Cancel</button>
                     </div>
                   </div>
                 ) : (
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button disabled={busy === item.id} onClick={() => act(item, "approve", { action: "Approved", title: item.title, tone: "ok" })} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">Approve</button>
-                    <button onClick={() => setRejecting({ id: item.id, mode: "changes" })} className="rounded-full border border-gold-border/50 px-4 py-2 text-sm font-semibold text-gold-text hover:bg-gold/[0.1]">Request changes</button>
-                    <button onClick={() => setRejecting({ id: item.id, mode: "reject" })} className="rounded-full border border-maroon-900/40 px-4 py-2 text-sm font-semibold text-maroon-900 hover:bg-maroon-900/[0.06]">Reject</button>
+                    <button type="button" disabled={busy === item.id} onClick={() => act(item, "approve", { action: "Approved", title: item.title, tone: "ok" })} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">Approve</button>
+                    <button type="button" onClick={() => setRejecting({ id: item.id, mode: "changes" })} className="rounded-full border border-gold-border/50 px-4 py-2 text-sm font-semibold text-gold-text hover:bg-gold/[0.1]">Request changes</button>
+                    <button type="button" onClick={() => setRejecting({ id: item.id, mode: "reject" })} className="rounded-full border border-maroon-900/40 px-4 py-2 text-sm font-semibold text-maroon-900 hover:bg-maroon-900/[0.06]">Reject</button>
                   </div>
                 )}
               </li>

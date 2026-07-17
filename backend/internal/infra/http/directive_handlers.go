@@ -92,7 +92,7 @@ func (h *Handler) AdminCreateDirective(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if m == nil {
-		m = &domain.Member{ID: "m-nana", Role: domain.RoleSteward} // dev convenience only — never reached when AUTH_REQUIRED=true
+		m = &domain.Member{ID: domain.DevDemoModeratorID, Role: domain.RoleSteward} // dev convenience only — never reached when AUTH_REQUIRED=true
 	}
 	d, err := h.svc.AdminCreateDirective(r.Context(), m.ID, in)
 	if err != nil {

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 
 type Action = "formalize" | "casual" | "clarity" | "grammar" | "expand" | "summarize" | "title" | "email" | "prompt" | "translate";
@@ -28,6 +28,13 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
   const [promptText, setPromptText] = useState("");
   const [language, setLanguage] = useState("Twi");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   function refreshScope() {
     const el = bodyRef.current;
@@ -46,18 +53,23 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
   async function go(action: Action) {
     setLastAction(action);
     setResult(null); setError(null); setLimit(false); setLoading(true);
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     const text = sel.active ? body.slice(sel.start, sel.end) : body;
     try {
       const data = await api.aiStream(
         { action, text, language: action === "translate" ? language : undefined, prompt: action === "prompt" ? promptText : undefined },
         (chunk) => setResult((prev) => `${prev ?? ""}${chunk}`),
+        ctrl.signal,
       );
       setSimulated(Boolean(data.simulated));
       if (typeof data.remaining === "number") setRemaining(data.remaining);
     } catch (err) {
+      if (ctrl.signal.aborted) return;
       if ((err as { status?: number }).status === 429) setLimit(true);
       else setError("Something went wrong. Your text is unchanged.");
-    } finally { setLoading(false); }
+    } finally { setLoading(false); abortRef.current = null; }
   }
 
   const scopeWord = sel.words === 1 ? "word" : "words";
@@ -92,18 +104,18 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
         {mode === "prompt" && (
           <div className="mt-3 flex flex-wrap gap-2">
             <input autoFocus value={promptText} onChange={(e) => setPromptText(e.target.value)} placeholder="Describe what you want…" className="min-w-[12rem] flex-1 rounded-lg border border-ai-line bg-paper px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none" />
-            <button onClick={() => go("prompt")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Generate</button>
+            <button type="button" onClick={() => go("prompt")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Generate</button>
           </div>
         )}
         {mode === "lang" && (
           <div className="mt-3 flex flex-wrap gap-2">
             <select value={language} onChange={(e) => setLanguage(e.target.value)} className="min-w-[10rem] flex-1 rounded-lg border border-ai-line bg-paper px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none">{LANGS.map((l) => <option key={l}>{l}</option>)}</select>
-            <button onClick={() => go("translate")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Translate</button>
+            <button type="button" onClick={() => go("translate")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Translate</button>
           </div>
         )}
 
         {loading && <p className="mt-4 text-sm font-medium text-ai">Writing…</p>}
-        {error && <p className="mt-4 rounded-lg border border-clay/30 bg-clay/10 px-3 py-2 text-sm text-clay-text">{error}{lastAction && <button onClick={() => go(lastAction)} className="ml-3 font-semibold underline">Try again</button>}</p>}
+        {error && <p className="mt-4 rounded-lg border border-clay/30 bg-clay/10 px-3 py-2 text-sm text-clay-text">{error}{lastAction && <button type="button" onClick={() => go(lastAction)} className="ml-3 font-semibold underline">Try again</button>}</p>}
         {limit && <p className="mt-4 rounded-lg border border-gold-border/40 bg-gold/[0.1] px-3 py-2 text-center text-sm text-gold-text">Daily AI limit reached. Resets at midnight.</p>}
 
         {result != null && (
@@ -111,23 +123,29 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
             <div className="flex items-center justify-between"><span className="text-sm font-semibold">Preview</span><span className="text-xs text-ink-faint">{lastAction}{simulated ? " · simulated" : ""}</span></div>
             <div className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-paper p-4 text-sm leading-relaxed text-ink">{result}</div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green">Replace</button>
-              <button onClick={() => { setBody(body.trimEnd() + "\n\n" + result); setResult(null); }} className="rounded-lg border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink">Insert below</button>
-              <button onClick={() => { navigator.clipboard?.writeText(result).catch(() => {}); }} className="rounded-lg border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink">Copy</button>
-              <button onClick={() => setResult(null)} className="rounded-lg border border-clay/30 px-4 py-2 text-sm font-semibold text-clay-text">Discard</button>
+              <button type="button" onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green">Replace</button>
+              <button type="button" onClick={() => { setBody(body.trimEnd() + "\n\n" + result); setResult(null); }} className="rounded-lg border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink">Insert below</button>
+              <button type="button" onClick={() => { navigator.clipboard?.writeText(result).catch(() => {}); }} className="rounded-lg border border-sand bg-paper px-4 py-2 text-sm font-semibold text-ink">Copy</button>
+              <button type="button" onClick={() => setResult(null)} className="rounded-lg border border-clay/30 px-4 py-2 text-sm font-semibold text-clay-text">Discard</button>
             </div>
           </div>
         )}
       </div>
       <p className="mt-3 text-xs text-ink-faint">Calls the model server-side in the Go API — the key never reaches the browser. Every output is a draft.</p>
       {confirmOpen && (
-        <dialog open className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-black/45 p-5" aria-modal>
+        <dialog
+          open
+          className="fixed inset-0 z-50 flex h-full w-full items-center justify-center border-0 bg-black/45 p-5"
+          aria-modal
+          aria-labelledby="aiw-confirm-title"
+          onKeyDown={(e) => { if (e.key === "Escape") setConfirmOpen(false); }}
+        >
           <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-sand bg-paper p-6 text-center shadow-[var(--shadow-lift)]">
-            <h3 className="text-xl font-semibold text-ink">Replace current text?</h3>
+            <h3 id="aiw-confirm-title" className="text-xl font-semibold text-ink">Replace current text?</h3>
             <p className="mt-2 text-sm text-ink-muted">This will overwrite {sel.active ? "your selected text" : "what is in the field"}.</p>
             <div className="mt-5 flex justify-center gap-3">
-              <button onClick={() => setConfirmOpen(false)} className="rounded-lg border border-sand px-5 py-2 text-sm font-semibold text-ink">Cancel</button>
-              <button onClick={applyReplace} className="rounded-lg bg-maroon-900 px-5 py-2 text-sm font-semibold text-white">Replace</button>
+              <button type="button" onClick={() => setConfirmOpen(false)} className="rounded-lg border border-sand px-5 py-2 text-sm font-semibold text-ink">Cancel</button>
+              <button type="button" onClick={applyReplace} className="rounded-lg bg-maroon-900 px-5 py-2 text-sm font-semibold text-white">Replace</button>
             </div>
           </div>
         </dialog>
@@ -136,6 +154,6 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
   );
 }
 
-function Btn({ onClick, children }: Readonly<{ onClick: () => void; children: React.ReactNode }>) {
+function Btn({ onClick, children }: Readonly<{ onClick: () => void; children: ReactNode }>) {
   return <button type="button" onClick={onClick} className="rounded-lg border border-ai-line bg-cream px-3 py-2 text-sm font-medium text-ink hover:border-ai hover:text-ai">{children}</button>;
 }

@@ -5,6 +5,8 @@
 // Content editing (profile, sections, gallery, offices, events) lives on each
 // institution's /institutions/[slug]/manage screen.
 import { useMemo, useState } from "react";
+import { ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -28,7 +30,7 @@ export default function StudioTeam() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Team</Text>
         <Text style={s.gateBody}>Sign in to manage your institution&apos;s team and answer invitations.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in / create account</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in / create account</Text></Pressable>
       </View>
     );
   }
@@ -73,7 +75,7 @@ function TeamLoaded({ meId }: Readonly<{ meId: string }>) {
               title="No institutions yet"
               body="Claim your school, council or association from its page — once a steward approves, its team workspace opens here."
               actionLabel="Browse institutions"
-              onAction={() => router.push("/institutions" as never)}
+              onAction={() => push(ROUTES.institutions)}
             />
           </View>
         ) : (
@@ -81,7 +83,7 @@ function TeamLoaded({ meId }: Readonly<{ meId: string }>) {
             {orgList.length > 1 ? (
               <View style={s.switcher}>
                 {orgList.map((o) => (
-                  <Pressable key={o.id} onPress={() => setSelected(o.slug)} style={[s.orgChip, o.slug === activeSlug && s.orgChipOn]}>
+                  <Pressable accessibilityRole="button" key={o.id} onPress={() => setSelected(o.slug)} style={[s.orgChip, o.slug === activeSlug && s.orgChipOn]}>
                     <Text style={[s.orgChipText, o.slug === activeSlug && s.orgChipTextOn]} numberOfLines={1}>{o.name}</Text>
                   </Pressable>
                 ))}
@@ -128,8 +130,8 @@ function InvitationsPanel({ items, onChanged }: Readonly<{ items: Invitation[]; 
             </View>
             <ScopePill scope={inv.scope} />
             <View style={s.inviteActions}>
-              <Pressable onPress={() => respond(inv.id, true)} disabled={busy} style={[s.acceptBtn, busy && s.dim]}><Text style={s.acceptBtnText}>Accept</Text></Pressable>
-              <Pressable onPress={() => respond(inv.id, false)} disabled={busy} style={[s.declineBtn, busy && s.dim]}><Text style={s.declineBtnText}>Decline</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => respond(inv.id, true)} disabled={busy} style={[s.acceptBtn, busy && s.dim]}><Text style={s.acceptBtnText}>Accept</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => respond(inv.id, false)} disabled={busy} style={[s.declineBtn, busy && s.dim]}><Text style={s.declineBtnText}>Decline</Text></Pressable>
             </View>
           </View>
         ))}
@@ -203,14 +205,14 @@ function TeamRow({ slug, member: t, meId, isManager, onChanged }: Readonly<{ slu
 
       {canAct ? (
         <View style={s.memberActions}>
-          <Pressable
+          <Pressable accessibilityRole="button"
             onPress={() => run(() => api.setTeamScope(slug, t.memberId, t.scope === "manager" ? "officer" : "manager"))}
             disabled={busy || t.status !== "approved"}
             style={[s.actionBtn, (busy || t.status !== "approved") && s.dim]}
           >
             <Text style={s.actionBtnText}>{t.scope === "manager" ? "Make officer" : "Make manager"}</Text>
           </Pressable>
-          <Pressable onPress={() => run(() => api.revokeTeamMember(slug, t.memberId))} disabled={busy} style={[s.actionBtn, busy && s.dim]}>
+          <Pressable accessibilityRole="button" onPress={() => run(() => api.revokeTeamMember(slug, t.memberId))} disabled={busy} style={[s.actionBtn, busy && s.dim]}>
             <Text style={[s.actionBtnText, { color: C.clayText }]}>Remove</Text>
           </Pressable>
         </View>
@@ -253,15 +255,15 @@ function InviteForm({ slug, onChanged }: Readonly<{ slug: string; onChanged: () 
         <TextInput style={s.input} value={identifier} onChangeText={setIdentifier} placeholder="Their email or phone" placeholderTextColor={C.inkFaint} autoCapitalize="none" keyboardType="email-address" />
         <TextInput style={s.input} value={role} onChangeText={setRole} placeholder="Office (e.g. PTA Chair)" placeholderTextColor={C.inkFaint} />
         <View style={s.scopeRow}>
-          <Pressable onPress={() => setScope("officer")} style={[s.scopeChip, scope === "officer" && s.scopeChipOn]}>
+          <Pressable accessibilityRole="button" onPress={() => setScope("officer")} style={[s.scopeChip, scope === "officer" && s.scopeChipOn]}>
             <Text style={[s.scopeChipText, scope === "officer" && s.scopeChipTextOn]}>Officer — content only</Text>
           </Pressable>
-          <Pressable onPress={() => setScope("manager")} style={[s.scopeChip, scope === "manager" && s.scopeChipOn]}>
+          <Pressable accessibilityRole="button" onPress={() => setScope("manager")} style={[s.scopeChip, scope === "manager" && s.scopeChipOn]}>
             <Text style={[s.scopeChipText, scope === "manager" && s.scopeChipTextOn]}>Manager — full control</Text>
           </Pressable>
         </View>
         <View style={s.saveRow}>
-          <Pressable onPress={invite} disabled={disabled} style={[s.primaryBtn, { marginTop: 0 }, disabled && s.dim]}><Text style={s.primaryBtnText}>Send invitation</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={invite} disabled={disabled} style={[s.primaryBtn, { marginTop: 0 }, disabled && s.dim]}><Text style={s.primaryBtnText}>Send invitation</Text></Pressable>
           {flash ? <Text style={[s.flash, { color: flash.ok ? C.tealText : C.clayText }]}>{flash.text}</Text> : null}
         </View>
       </View>
@@ -285,10 +287,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 22, marginTop: 18 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
   header: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 24, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
-  headerKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  headerKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...D(700), textTransform: "uppercase" },
   headerTitle: { color: ON_GREEN, ...D(700), fontSize: 28, marginTop: 6 },
   headerLede: { color: C.onDarkText85, fontSize: 14, lineHeight: 20, marginTop: 6 },
 
@@ -297,7 +299,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   panelTitle: { ...D(700), fontSize: 20, color: C.ink },
   panelIntro: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 14 },
   help: { color: C.inkFaint, fontSize: 13, lineHeight: 19 },
-  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, fontWeight: "700", textTransform: "uppercase" },
+  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, ...S(700), textTransform: "uppercase" },
   dim: { opacity: 0.5 },
   errNote: { color: C.clayText, fontSize: 13, marginTop: 8 },
   flash: { fontSize: 13, flex: 1, minWidth: 150 },
@@ -305,37 +307,37 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   switcher: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   orgChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, maxWidth: "100%" },
   orgChipOn: { borderColor: C.green, backgroundColor: withAlpha(C.green, 0.08) },
-  orgChipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
+  orgChipText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   orgChipTextOn: { color: C.greenText },
 
   inviteRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   inviteActions: { flexDirection: "row", gap: 8 },
   acceptBtn: { backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
-  acceptBtnText: { color: ON_GREEN, fontSize: 13, fontWeight: "700" },
+  acceptBtnText: { color: ON_GREEN, fontSize: 13, ...S(700) },
   declineBtn: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
-  declineBtnText: { color: C.inkMuted, fontSize: 13, fontWeight: "700" },
+  declineBtnText: { color: C.inkMuted, fontSize: 13, ...S(700) },
 
   memberCard: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12 },
   memberTop: { flexDirection: "row", alignItems: "center", gap: 10 },
   avatar: { width: 40, height: 40, borderRadius: 20 },
   avatarText: { color: C.cream, ...S(700), fontSize: 15 },
-  memberName: { color: C.ink, fontSize: 14, fontWeight: "700" },
+  memberName: { color: C.ink, fontSize: 14, ...S(700) },
   memberMeta: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
   memberActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   actionBtn: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
-  actionBtnText: { color: C.inkMuted, fontSize: 12, fontWeight: "700" },
+  actionBtnText: { color: C.inkMuted, fontSize: 12, ...S(700) },
 
   invitedPill: { backgroundColor: withAlpha(C.clay, 0.14), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  invitedPillText: { color: C.clayText, fontSize: 11, fontWeight: "700" },
+  invitedPillText: { color: C.clayText, fontSize: 11, ...S(700) },
   scopePill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  scopePillText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
+  scopePillText: { fontSize: 11, ...S(700), textTransform: "capitalize" },
 
   inviteForm: { marginTop: 16, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 14 },
   input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
   scopeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   scopeChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   scopeChipOn: { borderColor: C.green, backgroundColor: C.green },
-  scopeChipText: { color: C.inkMuted, fontSize: 12, fontWeight: "600" },
+  scopeChipText: { color: C.inkMuted, fontSize: 12, ...S(600) },
   scopeChipTextOn: { color: ON_GREEN },
   saveRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 2 },
 });

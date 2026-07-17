@@ -69,14 +69,14 @@ export function SchoolingEditor({
             className="min-w-[12rem] flex-1"
           />
           <input
-            type="number" inputMode="numeric" placeholder="From" min={1900} max={2100}
+            type="number" inputMode="numeric" placeholder="From" aria-label="From year" min={1900} max={2100}
             value={row.fromYear ?? ""}
             onChange={(e) => update(i, { fromYear: e.target.value ? Number(e.target.value) : undefined })}
             className="w-24 rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-maroon-900 focus:outline-none"
           />
           <span className="text-ink-faint">–</span>
           <input
-            type="number" inputMode="numeric" placeholder="To" min={1900} max={2100}
+            type="number" inputMode="numeric" placeholder="To" aria-label="To year" min={1900} max={2100}
             value={row.toYear ?? ""}
             onChange={(e) => update(i, { toYear: e.target.value ? Number(e.target.value) : undefined })}
             className="w-24 rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-maroon-900 focus:outline-none"

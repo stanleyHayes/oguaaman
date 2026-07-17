@@ -225,7 +225,7 @@ func (h *Handler) Submit(w http.ResponseWriter, r *http.Request) {
 	if m != nil {
 		in.OwnerID = m.ID // listings are owned by the signed-in member
 	} else if !h.authRequired {
-		in.OwnerID = "m-akua" // dev convenience only — never reached when AUTH_REQUIRED=true
+		in.OwnerID = domain.DevDemoMemberID // dev convenience only — never reached when AUTH_REQUIRED=true
 	}
 	l, err := h.svc.Submit(r.Context(), in)
 	if err != nil {

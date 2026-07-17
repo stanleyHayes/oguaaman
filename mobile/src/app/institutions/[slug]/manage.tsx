@@ -5,6 +5,8 @@
 // app calls. Team roster/invites live in the separate /studio/team screen.
 // Also folds in "request a new institution" (creator/src/pages/Institutions.tsx).
 import { useMemo, useState } from "react";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -29,7 +31,7 @@ export default function ManageInstitution() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Manage your institution</Text>
         <Text style={s.gateBody}>Sign in to edit the official page of a school, council or association you manage.</Text>
-        <Pressable onPress={() => router.replace("/signin")} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in / create account</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in / create account</Text></Pressable>
       </View>
     );
   }
@@ -50,8 +52,8 @@ function ManageGate({ slug, memberId }: Readonly<{ slug: string; memberId: strin
       <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={s.notYours}>
         <Text style={s.notYouTitle}>Not your institution to manage</Text>
         <Text style={s.notYouBody}>You don&apos;t manage this institution yet. Open its page and request management — a steward reviews every claim.</Text>
-        <Pressable onPress={() => router.push(`/institutions/${slug}` as never)} style={s.secondaryBtn}><Text style={s.secondaryBtnText}>View institution page</Text></Pressable>
-        <Pressable onPress={() => router.push("/studio" as never)} style={[s.linkBtn]}><Text style={s.linkBtnText}>Back to studio</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => push(route.institution(slug))} style={s.secondaryBtn}><Text style={s.secondaryBtnText}>View institution page</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studio)} style={[s.linkBtn]}><Text style={s.linkBtnText}>Back to studio</Text></Pressable>
       </ScrollView>
     );
   }
@@ -79,8 +81,8 @@ function ManageWorkspace({ slug }: Readonly<{ slug: string }>) {
         </View>
         <Text style={s.headerLede}>Keep the official profile current, manage your offices, and post events.</Text>
         <View style={s.headerActions}>
-          <Pressable onPress={() => router.push(`/institutions/${slug}` as never)} hitSlop={6}><Text style={s.headerLink}>View public page ›</Text></Pressable>
-          <Pressable onPress={() => router.push("/studio/team" as never)} hitSlop={6}><Text style={s.headerLink}>Team & invites ›</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => push(route.institution(slug))} hitSlop={6}><Text style={s.headerLink}>View public page ›</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studioTeam)} hitSlop={6}><Text style={s.headerLink}>Team & invites ›</Text></Pressable>
         </View>
       </View>
 
@@ -151,7 +153,7 @@ function RequestInstitutionPanel() {
             <Text style={s.label}>Kind</Text>
             <View style={s.chips}>
               {kindList.map((k) => (
-                <Pressable key={k.slug} onPress={() => setKind(k.slug)} style={[s.chip, activeKind === k.slug && s.chipOn]}>
+                <Pressable accessibilityRole="button" key={k.slug} onPress={() => setKind(k.slug)} style={[s.chip, activeKind === k.slug && s.chipOn]}>
                   <Text style={[s.chipText, activeKind === k.slug && s.chipTextOn]}>{k.label}</Text>
                 </Pressable>
               ))}
@@ -171,7 +173,7 @@ function RequestInstitutionPanel() {
           <TextInput style={[s.input, s.inputArea]} value={note} onChangeText={setNote} placeholder="Anything that helps verify the institution — a GES number, a chief's palace, a website…" placeholderTextColor={C.inkFaint} multiline />
         </View>
         <View style={s.saveRow}>
-          <Pressable onPress={submit} disabled={disabled} style={[s.primaryBtn, disabled && s.dim]}><Text style={s.primaryBtnText}>Send request</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={submit} disabled={disabled} style={[s.primaryBtn, disabled && s.dim]}><Text style={s.primaryBtnText}>Send request</Text></Pressable>
           {flash ? <Text style={[s.flash, { color: flash.ok ? C.tealText : C.clayText }]}>{flash.text}</Text> : null}
         </View>
       </View>
@@ -213,38 +215,38 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   gateTitle: { ...D(600), fontSize: 26, color: C.ink, textAlign: "center" },
   gateBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 10, maxWidth: 320 },
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 22, marginTop: 18 },
-  primaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
   notYours: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
   notYouTitle: { ...D(700), fontSize: 24, color: C.ink, textAlign: "center" },
   notYouBody: { color: C.inkMuted, fontSize: 14, lineHeight: 21, textAlign: "center", maxWidth: 340 },
   secondaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 22, marginTop: 8 },
-  secondaryBtnText: { color: ON_GREEN, fontWeight: "700", fontSize: 14 },
+  secondaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 14 },
   linkBtn: { paddingVertical: 8 },
-  linkBtnText: { color: C.greenText, fontWeight: "700", fontSize: 14 },
+  linkBtnText: { color: C.greenText, ...S(700), fontSize: 14 },
 
   header: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 24, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
-  headerKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
+  headerKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...D(700), textTransform: "uppercase" },
   headerTitleRow: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 6 },
   headerTitle: { color: ON_GREEN, ...D(700), fontSize: 26 },
   headerLede: { color: C.onDarkText85, fontSize: 14, lineHeight: 20, marginTop: 8 },
   headerActions: { flexDirection: "row", flexWrap: "wrap", gap: 18, marginTop: 12 },
-  headerLink: { color: C.gold, fontSize: 13, fontWeight: "700" },
+  headerLink: { color: C.gold, fontSize: 13, ...S(700) },
 
   body: { padding: 16, gap: 16 },
 
   panel: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   panelTitle: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 4 },
   panelIntro: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginBottom: 14 },
-  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, fontWeight: "700", textTransform: "uppercase", marginBottom: 8 },
-  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, fontWeight: "700", textTransform: "uppercase" },
+  label: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...S(700), textTransform: "uppercase", marginBottom: 8 },
+  subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, ...S(700), textTransform: "uppercase" },
   input: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
   inputArea: { minHeight: 84, textAlignVertical: "top", ...S(400) },
 
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipOn: { borderColor: C.green, backgroundColor: C.green },
-  chipText: { color: C.inkMuted, fontSize: 13, fontWeight: "600" },
+  chipText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   chipTextOn: { color: ON_GREEN },
 
   saveRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 2 },
@@ -253,8 +255,8 @@ const makeStyles = (C: Palette) => StyleSheet.create({
 
   requestsWrap: { marginTop: 18, borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 14 },
   requestRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11 },
-  requestName: { color: C.ink, fontSize: 14, fontWeight: "600" },
+  requestName: { color: C.ink, fontSize: 14, ...S(600) },
   requestMeta: { color: C.inkFaint, fontSize: 11, marginTop: 1 },
   statusPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  statusPillText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
+  statusPillText: { fontSize: 11, ...S(700), textTransform: "capitalize" },
 });

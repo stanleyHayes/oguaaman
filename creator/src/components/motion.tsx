@@ -1,10 +1,5 @@
 import { useRef, type ReactNode } from "react";
-import {
-  motion,
-  useScroll,
-  useTransform,
-  type Variants,
-} from "motion/react";
+import { motion, useScroll, useTransform, type Variants } from "motion/react";
 
 /**
  * Motion primitives for the admin console — small, composable wrappers around

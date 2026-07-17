@@ -1,3 +1,4 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
@@ -43,8 +44,8 @@ export default function Institutions() {
       <View style={{ padding: 16, gap: 12 }}>
       {data.map((o, i) => (
           <StaggerIn key={o.id} index={i}>
-            <Link href={`/institutions/${o.slug}`} asChild>
-              <Pressable style={s.card}>
+            <Link href={route.institution(o.slug)} asChild>
+              <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={o.name}>
               {o.crestUrl ? (
                 <Image source={{ uri: cldCover(mediaUrl(o.crestUrl), 120) }} resizeMode="cover" style={s.crest} />
               ) : (
@@ -77,8 +78,8 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   crest: { width: 52, height: 52, borderRadius: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper },
   crestInit: { color: C.cream, ...S(700), fontSize: 18 },
   name: { ...S(700), fontSize: 17, color: C.ink, flexShrink: 1 },
-  verified: { color: C.goldText, fontSize: 13, fontWeight: "700" },
+  verified: { color: C.goldText, fontSize: 13, ...S(700) },
   kind: { color: C.goldText, fontSize: 12, marginTop: 2 },
   motto: { color: C.inkMuted, fontSize: 12, fontStyle: "italic", marginTop: 2 },
-  chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
+  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
 });

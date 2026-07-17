@@ -1,6 +1,8 @@
+import { route } from "@/lib/routes";
 import { useMemo } from "react";
+import { push } from "@/lib/router";
 import { Linking, RefreshControl, StyleSheet, View, Pressable } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
@@ -49,7 +51,7 @@ const VIEWS: Record<string, BrowseView> = {
     countNoun: "people",
     load: wholeListAsPage(() => api.people()),
     sub: (l) => [l.details.era, l.details.whyNotable].filter(Boolean).join(" · ") || "Cape Coast",
-    href: (l) => `/people/${l.slug}`,
+    href: (l) => route.person(l.slug),
   },
   business: {
     title: "Business",
@@ -60,7 +62,7 @@ const VIEWS: Record<string, BrowseView> = {
     countNoun: "businesses",
     load: (page, pageSize) => api.businesses({ page, pageSize }),
     sub: (l) => l.details.category || l.details.address || "Cape Coast",
-    href: (l) => `/business/${l.slug}`,
+    href: (l) => route.business(l.slug),
   },
   events: {
     title: "Events",
@@ -71,7 +73,7 @@ const VIEWS: Record<string, BrowseView> = {
     countNoun: "events",
     load: (page, pageSize) => api.events({ page, pageSize }),
     sub: (l) => [l.details.startsAt, l.details.venue].filter(Boolean).join(" · ") || "Cape Coast",
-    href: (l) => `/events/${l.slug}`,
+    href: (l) => route.event(l.slug),
   },
   opportunities: {
     title: "Opportunities",
@@ -178,7 +180,7 @@ export default function Browse() {
             <Text style={s.oppDesc} numberOfLines={3}>{l.details.description}</Text>
           ) : null}
           {isOpportunities && l.details.applyUrl ? (
-            <Pressable onPress={() => openURL(l.details.applyUrl)} style={s.applyBtn}>
+            <Pressable accessibilityRole="button" onPress={() => openURL(l.details.applyUrl)} style={s.applyBtn}>
               <Text style={s.applyText}>How to apply ↗</Text>
             </Pressable>
           ) : null}
@@ -189,7 +191,7 @@ export default function Browse() {
     return (
       <StaggerIn key={l.id} index={i}>
         {href ? (
-          <Pressable onPress={() => router.push(href as never)}>{card}</Pressable>
+          <Pressable accessibilityRole="button" onPress={() => push(href)}>{card}</Pressable>
         ) : (
           <View>{card}</View>
         )}
@@ -203,7 +205,7 @@ export default function Browse() {
       {anchor ? (
         <View style={s.pad}>
           <RevealView>
-            <Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => push(route.event(anchor.slug))}><EventHero e={anchor} /></Pressable>
           </RevealView>
         </View>
       ) : null}
@@ -278,16 +280,16 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   thumbInit: { color: C.cream, ...S(700), fontSize: 20 },
   title: { ...S(700), fontSize: 18, color: C.ink },
   sub: { color: C.goldText, fontSize: 12, marginTop: 3 },
-  chevron: { color: C.inkFaint, fontSize: 22, fontWeight: "700" },
+  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
   oppDesc: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   applyBtn: { alignSelf: "flex-start", borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, marginTop: 10 },
-  applyText: { color: C.tealText, fontSize: 13, fontWeight: "700" },
+  applyText: { color: C.tealText, fontSize: 13, ...S(700) },
   hero: { borderRadius: 16, overflow: "hidden" },
   heroImg: { width: "100%", height: 130 },
   heroBody: { padding: 16 },
   // On-dark kicker at 0.8 — no palette token carries this alpha, and the hero
   // fill stays dark in both themes, so the literal is effectively theme-proof.
-  heroKicker: { color: "rgba(246,241,231,0.8)", fontSize: 10, letterSpacing: 2, fontWeight: "700" },
+  heroKicker: { color: "rgba(246,241,231,0.8)", fontSize: 10, letterSpacing: 2, ...D(700) },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 24, marginTop: 4 },
   heroMeta: { color: C.onDarkText85, fontSize: 13, marginTop: 4 },
   heroDesc: { color: C.onDarkText85, fontSize: 13, lineHeight: 19, marginTop: 8 },

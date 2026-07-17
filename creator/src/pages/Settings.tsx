@@ -1,17 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
-import {
-  Bell, CalendarDays, Check, Eye, EyeOff, Lock, Mail, Monitor, Moon, Phone,
-  ShieldCheck, SlidersHorizontal, Sun, UserRound,
-} from "lucide-react";
+import { useEffect, useState, type ReactNode, type FormEvent } from "react";
+import { Bell, CalendarDays, Check, Eye, EyeOff, Lock, Mail, Monitor, Moon, Phone, ShieldCheck, SlidersHorizontal, Sun, UserRound } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Card, RoleBadge, VerifiedBadge } from "@/components/ui";
 import { MfaManage } from "@/components/mfa";
 import { formatDate } from "@/lib/format";
-import {
-  type Theme, type ThemeMode,
-  getThemeMode, onThemeChange, resolveThemeMode, setThemeMode,
-} from "@/lib/theme";
+import { type Theme, type ThemeMode, getThemeMode, onThemeChange, resolveThemeMode, setThemeMode } from "@/lib/theme";
 
 // The studio's cream input + green primary button idioms (matches auth-gate).
 const inputCls =
@@ -100,7 +94,7 @@ function ChangePassword() {
 
   const canSubmit = current.length > 0 && next.length > 0 && confirm.length > 0 && state !== "saving";
 
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErr(null);
     if (next.length < 8) { setState("error"); setErr("Your new password must be at least 8 characters."); return; }
