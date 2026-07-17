@@ -63,6 +63,9 @@ export default function TabsLayout() {
       <AlertBanner />
       <Tabs
         screenOptions={{
+          // Crossfade between tab screens so switching tabs feels as smooth as
+          // the web's page transition, instead of an instant hard cut.
+          animation: "fade",
           tabBarActiveTintColor: C.greenText,
           tabBarInactiveTintColor: C.inkFaint,
           tabBarStyle: { backgroundColor: C.cream, borderTopColor: C.sand },
