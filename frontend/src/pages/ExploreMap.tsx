@@ -598,8 +598,8 @@ function DetailPanel({
   const color = point.kind === "incident" && point.severity ? SEVERITY_COLOR[point.severity] : layer?.color ?? "#64748B";
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1100] flex justify-center p-3 sm:inset-x-auto sm:bottom-6 sm:left-6 sm:justify-start sm:p-0">
-      <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-sand bg-cream p-4 shadow-[var(--shadow-lift)] sm:w-[22rem]">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[1100] flex justify-center px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-6 sm:left-6 sm:justify-start sm:p-0">
+      <div className="pointer-events-auto max-h-[75dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-sand bg-cream p-4 shadow-[var(--shadow-lift)] sm:w-[22rem]">
         <div className="flex items-start gap-2">
           <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm" style={{ backgroundColor: `color-mix(in srgb, ${color} 20%, transparent)` }} aria-hidden>
             {pointGlyph(point)}
