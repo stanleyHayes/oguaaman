@@ -139,7 +139,6 @@ function FormCard(f: Readonly<FormState>) {
       <Pressable onPress={() => f.onSwitchMode(f.isJoin ? "signin" : "join")}>
         <Text style={s.back}>{f.isJoin ? "Have an account? Sign in instead" : "New here? Join instead"}</Text>
       </Pressable>
-      <Text style={s.hint}>Seeded account: akua-pratt@oguaa.test</Text>
     </View>
   );
 }

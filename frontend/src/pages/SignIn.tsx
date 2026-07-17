@@ -468,7 +468,6 @@ function JoinForm({
           </button>
         )}
       </div>
-      <p className="text-center text-xs text-ink-faint">Try a seeded account: <code className="font-mono">akua-pratt@oguaa.test</code> (curator)</p>
     </form>
   );
 }

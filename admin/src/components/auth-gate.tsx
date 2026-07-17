@@ -213,7 +213,6 @@ function SignIn() {
           </label>
           {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
           <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Signing in…" : "Sign in"}</button>
-          <p className="text-center text-xs text-ink-faint">Seeded steward: <code className="font-mono">nana-essien@oguaa.test</code></p>
         </form>
       </Shell>
     </Backdrop>
