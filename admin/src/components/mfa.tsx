@@ -5,10 +5,21 @@ import { Mark } from "@/components/layout";
 import { OtpInput } from "@/components/otp-input";
 
 const inputCls =
-  "w-full rounded-xl border border-sand bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
+  "w-full rounded-xl border border-sand auth-theme-cream bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
 
 const primaryBtn =
   "rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
+
+/** Trigger a client-side download of plain text (e.g. MFA recovery codes). */
+function downloadText(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 type Stage =
   | { step: "qr"; secret: string; qr: string }
@@ -63,12 +74,15 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
         </p>
         <div className="grid grid-cols-2 gap-2">
           {stage.codes.map((c) => (
-            <code key={c} className="rounded-lg border border-sand bg-cream px-2 py-1.5 text-center font-mono text-xs text-ink">{c}</code>
+            <code key={c} className="rounded-lg border border-sand auth-theme-cream bg-cream px-2 py-1.5 text-center font-mono text-xs text-ink">{c}</code>
           ))}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => navigator.clipboard?.writeText(stage.codes.join("\n"))} className="rounded-full border border-green-text/30 px-4 py-2 text-sm font-semibold text-green-text hover:border-green-text">
             Copy codes
+          </button>
+          <button type="button" onClick={() => downloadText("oguaa-recovery-codes.txt", stage.codes.join("\n"))} className="rounded-full border border-green-text/30 px-4 py-2 text-sm font-semibold text-green-text hover:border-green-text">
+            Download .txt
           </button>
           <button type="button" onClick={finish} className={primaryBtn}>{doneLabel} ✓</button>
         </div>
@@ -96,7 +110,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
           </div>
           <div className="min-w-[11rem] flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Can't scan? Enter this key</p>
-            <p className="mt-1 break-all rounded-lg border border-sand bg-cream px-3 py-2 font-mono text-xs text-ink">{stage.secret}</p>
+            <p className="mt-1 break-all rounded-lg border border-sand auth-theme-cream bg-cream px-3 py-2 font-mono text-xs text-ink">{stage.secret}</p>
           </div>
         </div>
         <div>
