@@ -73,7 +73,7 @@ const STATUS_COLOR: Record<string, string> = {
 // ── small presentational pieces ──────────────────────────────────────────────
 function ChartCard({ title, hint, children }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
   return (
-    <Card className="h-full min-w-0 p-5">
+    <Card className="min-w-0 p-5">
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <h2 className="text-lg font-semibold text-ink">{title}</h2>
         {hint && <span className="text-xs text-ink-faint">{hint}</span>}
@@ -182,7 +182,7 @@ export function Component() {
         <StaggerItem index={9}><MetricCard label="Avg approval" value={stats.avgApprovalHrs > 0 ? `${stats.avgApprovalHrs.toFixed(1)}h` : "—"} tone="gold" icon={<Clock size={18} />} sub="Submission → decision (90d)" /></StaggerItem>
       </Stagger>
 
-      <Stagger className="mt-5 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+      <Stagger className="mt-5 grid items-start gap-5 lg:grid-cols-[1.5fr_1fr]">
         <StaggerItem index={0} className="min-w-0">
           <ChartCard title="Community growth" hint="Cumulative members">
             <AreaLine points={growth} />
@@ -195,7 +195,7 @@ export function Component() {
         </StaggerItem>
       </Stagger>
 
-      <Stagger className="mt-5 grid gap-5 lg:grid-cols-3">
+      <Stagger className="mt-5 grid items-start gap-5 lg:grid-cols-3">
         <StaggerItem index={0} className="min-w-0">
           <ChartCard title="Submissions" hint="Per month">
             <Histogram data={submissions} />
@@ -218,7 +218,7 @@ export function Component() {
         </StaggerItem>
       </Stagger>
 
-      <Stagger className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+      <Stagger className="mt-5 grid items-start gap-5 lg:grid-cols-[1.6fr_1fr]">
         <StaggerItem index={0} className="min-w-0">
           <Card className="h-full min-w-0 overflow-hidden">
             <div className="flex items-center justify-between border-b border-sand px-5 py-3">
@@ -246,7 +246,7 @@ export function Component() {
         </StaggerItem>
 
         <StaggerItem index={1} className="min-w-0">
-          <Card className="h-full min-w-0 p-5">
+          <Card className="min-w-0 p-5">
             <h2 className="mb-3 text-lg font-semibold">Quick actions</h2>
             <div className="space-y-2">
               {QUICK.map((q) => (
