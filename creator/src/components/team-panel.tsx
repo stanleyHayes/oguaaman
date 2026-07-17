@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Invitation, TeamView } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Pill } from "@/components/ui";
+import { Pagination, usePagedList } from "@/components/pagination";
 import { Panel } from "@/components/institution-panels";
 
 const field =
@@ -25,6 +26,7 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
   const [scope, setScope] = useState<"officer" | "manager">("officer");
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<Flash>(null);
+  const paged = usePagedList(view.team, 12);
 
   async function run(action: () => Promise<unknown>, ok: string) {
     setBusy(true);
@@ -56,7 +58,7 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
       </p>
 
       <ul className="divide-y divide-sand">
-        {view.team.map((t) => (
+        {paged.pageItems.map((t) => (
           <li key={t.claimId} className="flex flex-wrap items-center gap-3 py-3">
             {t.photoUrl ? (
               <img src={t.photoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" loading="lazy" />
@@ -98,6 +100,16 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
         ))}
         {view.team.length === 0 && <li className="py-3 text-sm text-ink-faint">No team members yet.</li>}
       </ul>
+
+      <Pagination
+        page={paged.page}
+        totalPages={paged.totalPages}
+        onPage={paged.setPage}
+        total={paged.total}
+        rangeStart={paged.rangeStart}
+        rangeEnd={paged.rangeEnd}
+        unit="members"
+      />
 
       {isManager && (
         <div className="mt-4 border-t border-dashed border-sand pt-4">

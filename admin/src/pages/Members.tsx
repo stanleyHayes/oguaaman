@@ -1,20 +1,31 @@
 import { useState } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
-import type { Member } from "@/lib/types";
+import type { Member, Paged } from "@/lib/types";
 import { PageHeader, Card, RoleBadge } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { Pagination, usePagedRows } from "@/components/pagination";
 import { formatDate, initials } from "@/lib/format";
 import { cldAvatar } from "@/lib/cloudinary";
 
-export async function loader() {
-  return api.members();
+export async function loader({ request }: LoaderFunctionArgs) {
+  const page = Number(new URL(request.url).searchParams.get("page")) || 1;
+  return api.membersPaged({ page });
 }
 
 export function Component() {
-  const initial = useLoaderData() as Member[];
-  const [rows, setRows] = useState(initial);
+  const data = useLoaderData() as Paged<Member>;
+  const [rows, setRows] = usePagedRows(data);
+  const [, setParams] = useSearchParams();
   const [busy, setBusy] = useState<string | null>(null);
+
+  function goToPage(p: number) {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("page", String(p));
+      return next;
+    });
+  }
   const [inv, setInv] = useState({ identifier: "", displayName: "", role: "curator" });
   const [inviteBusy, setInviteBusy] = useState(false);
   const [inviteMsg, setInviteMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -44,7 +55,7 @@ export function Component() {
 
   return (
     <>
-      <PageHeader kicker={`${rows.length} members`} title="Members & roles" />
+      <PageHeader kicker={`${data.total} members`} title="Members & roles" />
 
       <Card className="mb-5 p-5">
         <h2 className="text-lg font-semibold">Invite a team member</h2>
@@ -102,6 +113,7 @@ export function Component() {
           </Stagger>
         </table>
       </Card>
+      <Pagination page={data.page} totalPages={data.totalPages} onChange={goToPage} total={data.total} pageSize={data.pageSize} />
       <p className="mt-3 text-xs text-ink-faint">Role assignment and suspension are steward actions. Changes persist to MongoDB.</p>
     </>
   );

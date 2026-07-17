@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { api } from "@/lib/api";
-import type { Listing, Member } from "@/lib/types";
+import type { Listing, Member, Paged } from "@/lib/types";
 import { Card, Empty, Pill } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { LoadMore } from "@/components/pagination";
 import { titleCase } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
 
-interface Data { queue: Listing[]; members: Member[] }
+interface Data { queue: Paged<Listing>; members: Member[] }
 interface Log { action: string; title: string; reason?: string; tone: "ok" | "bad" | "warn" }
 
 const LISTING_TYPES = [
@@ -32,7 +33,7 @@ function toneClass(tone: Log["tone"]): string {
 }
 
 export async function loader(): Promise<Data> {
-  const [queue, members] = await Promise.all([api.queue(), api.members()]);
+  const [queue, members] = await Promise.all([api.queuePaged({ page: 1 }), api.members()]);
   return { queue, members };
 }
 
@@ -43,27 +44,47 @@ function snippet(l: Listing): string {
 
 export function Component() {
   const { queue, members } = useLoaderData() as Data;
-  const [allItems] = useState(queue);
-  const [items, setItems] = useState(queue);
+  const [items, setItems] = useState(queue.items);
+  const [page, setPage] = useState(queue.page);
+  const [total, setTotal] = useState(queue.total);
+  const [totalPages, setTotalPages] = useState(queue.totalPages);
   const [typeFilter, setTypeFilter] = useState("");
   const [log, setLog] = useState<Log[]>([]);
   const [rejecting, setRejecting] = useState<{ id: string; mode: "reject" | "changes" } | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [loadingFilter, setLoadingFilter] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const nameOf = (id: string) => members.find((m) => m.id === id)?.displayName ?? "A member";
 
   async function applyTypeFilter(type: string) {
     setTypeFilter(type);
     setLoadingFilter(true);
     try {
-      const filtered = await api.queue(type || undefined);
-      setItems(filtered);
+      const res = await api.queuePaged({ page: 1, type: type || undefined });
+      setItems(res.items);
+      setPage(res.page);
+      setTotal(res.total);
+      setTotalPages(res.totalPages);
     } catch {
-      // fall back to client-side filter if request fails
-      setItems(type ? allItems.filter((i) => i.type === type) : allItems);
+      // fall back to client-side filter over the loaded page if the request fails
+      setItems((cur) => (type ? cur.filter((i) => i.type === type) : cur));
     } finally {
       setLoadingFilter(false);
+    }
+  }
+
+  async function loadMore() {
+    if (page >= totalPages || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await api.queuePaged({ page: page + 1, type: typeFilter || undefined });
+      setItems((cur) => [...cur, ...res.items]);
+      setPage(res.page);
+      setTotal(res.total);
+      setTotalPages(res.totalPages);
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -72,6 +93,7 @@ export function Component() {
     try {
       await api.moderate({ listingId: l.id, action, reason: why });
       setItems((cur) => cur.filter((i) => i.id !== l.id));
+      setTotal((t) => Math.max(0, t - 1));
       setLog((cur) => [entry, ...cur]);
     } catch {
       setLog((cur) => [{ action: "Failed", title: l.title, tone: "bad" }, ...cur]);
@@ -94,7 +116,7 @@ export function Component() {
           >
             {LISTING_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-          <span className="rounded-full bg-gold/[0.16] px-3 py-1 text-sm font-semibold text-gold-text">{items.length} pending</span>
+          <span className="rounded-full bg-gold/[0.16] px-3 py-1 text-sm font-semibold text-gold-text">{total} pending</span>
         </div>
       </div>
 
@@ -167,6 +189,9 @@ export function Component() {
                 </StaggerItem>
               ))}
             </Stagger>
+          )}
+          {items.length > 0 && (
+            <LoadMore onClick={loadMore} loading={loadingMore} hasMore={page < totalPages} loaded={items.length} total={total} />
           )}
         </div>
 

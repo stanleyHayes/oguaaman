@@ -14,7 +14,7 @@ func (h *Handler) Schools(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 func (h *Handler) Places(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +43,7 @@ func (h *Handler) Institutions(w http.ResponseWriter, r *http.Request) {
 		}
 		items = filtered
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 func (h *Handler) Institution(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +91,7 @@ func (h *Handler) MembersList(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 func (h *Handler) Member(w http.ResponseWriter, r *http.Request) {

@@ -28,7 +28,7 @@ func (h *Handler) DiasporaMembers(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, members)
+	writeList(w, r, members)
 }
 
 // SetMyDiaspora records the signed-in member's location abroad (opt-in).

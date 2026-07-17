@@ -10,11 +10,13 @@ import { EventCard } from "@/components/cards";
 import { EventCalendar } from "@/components/event-calendar";
 import { LocationMap } from "@/components/location-map";
 import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
+import { LoadMore } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { cldCover } from "@/lib/cloudinary";
 
 const TODAY = new Date().toISOString().slice(0, 10);
+const EVENTS_PAGE = 8;
 
 export async function loader() {
   return api.events();
@@ -50,6 +52,7 @@ export function Component() {
   const all = useLoaderData() as Listing[];
   usePageTitle("Events");
   const [view, setView] = useState<EventsView>("list");
+  const [shownCount, setShownCount] = useState(EVENTS_PAGE);
   const upcoming = all.filter((e) => (e.details.startsAt ?? "") >= TODAY);
   const anchor = all.find((e) => e.details.anchorFestival) ?? null;
   const rest = upcoming.filter((e) => e.id !== anchor?.id);
@@ -89,7 +92,10 @@ export function Component() {
           <ViewToggle view={view} onChange={setView} />
         </div>
         {view === "list" ? (
-          <div className="grid gap-4 sm:grid-cols-2">{rest.map((e, i) => <StaggerItem key={e.id} index={i} lift><EventCard event={e} /></StaggerItem>)}</div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">{rest.slice(0, shownCount).map((e, i) => <StaggerItem key={e.id} index={i} lift><EventCard event={e} /></StaggerItem>)}</div>
+            <LoadMore hasMore={shownCount < rest.length} remaining={rest.length - shownCount} onClick={() => setShownCount((n) => n + EVENTS_PAGE)} />
+          </>
         ) : view === "calendar" ? (
           <EventCalendar events={all} />
         ) : (

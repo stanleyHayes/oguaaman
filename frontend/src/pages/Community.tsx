@@ -8,7 +8,10 @@ import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/
 import { Adinkra } from "@/components/adinkra";
 import { OpportunityCard, MemoryCard, EventCard } from "@/components/cards";
 import { Reveal, StaggerItem } from "@/components/motion";
+import { LoadMore } from "@/components/pagination";
 import { SAMPLE_NOTICE } from "@/lib/content";
+
+const MEMORY_PAGE = 9;
 
 interface Data {
   opps: Listing[];
@@ -38,12 +41,14 @@ function MemoryWall({ initial, schools, places }: Readonly<{ initial: Listing[];
   const [town, setTown] = useState("");
   const [era, setEra] = useState("");
   const [loading, setLoading] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(MEMORY_PAGE);
 
   async function applyFilter(next: { school: string; town: string; era: string }) {
     setLoading(true);
     try {
       const result = await api.memories({ school: next.school || undefined, town: next.town || undefined, era: next.era || undefined });
       setMemories(result);
+      setVisibleCount(MEMORY_PAGE); // a fresh filter starts the wall from the top
     } catch { /* keep existing */ } finally { setLoading(false); }
   }
 
@@ -98,8 +103,9 @@ function MemoryWall({ initial, schools, places }: Readonly<{ initial: Listing[];
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {memories.length === 0
             ? <p className="col-span-full py-8 text-center text-ink-muted">No memories match this filter.</p>
-            : memories.map((m, i) => <StaggerItem key={m.id} index={i} lift><MemoryCard memory={m} /></StaggerItem>)}
+            : memories.slice(0, visibleCount).map((m, i) => <StaggerItem key={m.id} index={i} lift><MemoryCard memory={m} /></StaggerItem>)}
         </div>
+        <LoadMore hasMore={visibleCount < memories.length} remaining={memories.length - visibleCount} onClick={() => setVisibleCount((n) => n + MEMORY_PAGE)} label="More memories" />
       </Container>
     </section>
   );

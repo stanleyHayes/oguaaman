@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { Member } from "@/lib/types";
@@ -7,7 +8,10 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Reveal, StaggerItem } from "@/components/motion";
+import { LoadMore } from "@/components/pagination";
 import { SAMPLE_NOTICE } from "@/lib/content";
+
+const DIASPORA_PAGE = 12;
 
 // The diaspora register (spec §4/§5/§15, Phase 2): sons & daughters who have
 // opted in as living away from Oguaa — "abroad" includes elsewhere in Ghana.
@@ -77,6 +81,20 @@ export function Component() {
   const groups = groupByCountry(members);
   const cityCount = groups.reduce((n, g) => n + g.cities, 0);
 
+  // "Load more" reveals the register a chunk at a time while keeping the
+  // country grouping intact: the visible budget fills each country in order
+  // (countries are already sorted largest-first), and the per-country headers
+  // keep showing that country's full total.
+  const [visibleCount, setVisibleCount] = useState(DIASPORA_PAGE);
+  const shownGroups = groups
+    .map((g, idx) => {
+      const before = groups.slice(0, idx).reduce((n, x) => n + x.members.length, 0);
+      const remaining = Math.max(0, visibleCount - before);
+      return { ...g, shown: g.members.slice(0, remaining) };
+    })
+    .filter((g) => g.shown.length > 0);
+  const shownTotal = shownGroups.reduce((n, g) => n + g.shown.length, 0);
+
   return (
     <>
       <PageHero
@@ -111,22 +129,25 @@ export function Component() {
             <div className="mt-6"><JoinCta /></div>
           </Reveal>
         ) : (
-          groups.map((g) => (
-            <section key={g.country} className="mb-12 last:mb-0">
-              <Reveal>
-                <SectionHeading
-                  kicker={g.country === "Ghana" ? "Elsewhere in Ghana — away, never far" : `${g.members.length} ${g.members.length === 1 ? "son or daughter" : "sons & daughters"}`}
-                  title={g.country}
-                  accentClass="bg-gold-brand"
-                />
-              </Reveal>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {g.members.map((m, i) => (
-                  <StaggerItem key={m.id} index={i} lift><DiasporaCard member={m} /></StaggerItem>
-                ))}
-              </div>
-            </section>
-          ))
+          <>
+            {shownGroups.map((g) => (
+              <section key={g.country} className="mb-12 last:mb-0">
+                <Reveal>
+                  <SectionHeading
+                    kicker={g.country === "Ghana" ? "Elsewhere in Ghana — away, never far" : `${g.members.length} ${g.members.length === 1 ? "son or daughter" : "sons & daughters"}`}
+                    title={g.country}
+                    accentClass="bg-gold-brand"
+                  />
+                </Reveal>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {g.shown.map((m, i) => (
+                    <StaggerItem key={m.id} index={i} lift><DiasporaCard member={m} /></StaggerItem>
+                  ))}
+                </div>
+              </section>
+            ))}
+            <LoadMore hasMore={shownTotal < members.length} remaining={members.length - shownTotal} onClick={() => setVisibleCount((n) => n + DIASPORA_PAGE)} label="More of the register" />
+          </>
         )}
       </Container>
 

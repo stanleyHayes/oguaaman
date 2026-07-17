@@ -1,4 +1,20 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Paged } from "./types";
+
+/** Optional server-side pagination for the heavy list endpoints. Passing this
+ *  switches the response to the { items, total, page, pageSize, totalPages }
+ *  envelope; omitting it keeps the plain-array response (backward compatible). */
+export interface PageArgs { page?: number; pageSize?: number }
+
+/** Builds the ?page/?pageSize query (plus any endpoint filters), always
+ *  including page so the server returns the paginated envelope. */
+function pageQuery(args?: PageArgs, extra?: Record<string, string | undefined>): string {
+  const p = new URLSearchParams();
+  if (extra) for (const [k, v] of Object.entries(extra)) if (v) p.set(k, v);
+  const page = args?.page && args.page > 0 ? Math.floor(args.page) : 1;
+  p.set("page", String(page));
+  if (args?.pageSize && args.pageSize > 0) p.set("pageSize", String(Math.floor(args.pageSize)));
+  return p.toString();
+}
 
 /** Compose body for an authority directive (staff/admin path adds an issuer). */
 export interface DirectivePayload {
@@ -86,6 +102,22 @@ export const api = {
     const q = kind ? `?kind=${encodeURIComponent(kind)}` : "";
     return get<Organization[]>(`/api/admin/institutions${q}`);
   },
+
+  // Paginated variants — same endpoints/filters as above, but return the
+  // { items, total, page, pageSize, totalPages } envelope. Used by the heavy
+  // admin lists; the plain-array methods stay for lookups and full-set views.
+  queuePaged: (args?: PageArgs & { type?: string }) =>
+    get<Paged<Listing>>(`/api/admin/queue?${pageQuery(args, { type: args?.type })}`),
+  listingsPaged: (args?: PageArgs) =>
+    get<Paged<Listing>>(`/api/admin/listings?${pageQuery(args)}`),
+  auditPaged: (args?: PageArgs) =>
+    get<Paged<ModerationRecord>>(`/api/admin/audit?${pageQuery(args)}`),
+  membersPaged: (args?: PageArgs) =>
+    get<Paged<Member>>(`/api/members?${pageQuery(args)}`),
+  reportsPaged: (args?: PageArgs) =>
+    get<Paged<Report>>(`/api/admin/reports?${pageQuery(args)}`),
+  institutionsPaged: (args?: PageArgs & { kind?: string }) =>
+    get<Paged<Organization>>(`/api/admin/institutions?${pageQuery(args, { kind: args?.kind })}`),
   // Public institution directory (verified only) — a curator-safe fallback for
   // the steward-only admin directory (e.g. choosing a directive's issuer).
   publicInstitutions: (kind?: string) => {

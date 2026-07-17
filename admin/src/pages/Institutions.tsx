@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
-import type { Organization } from "@/lib/types";
+import type { Organization, Paged } from "@/lib/types";
 import { PageHeader, Card } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { Pagination, usePagedRows } from "@/components/pagination";
 import { InstitutionLogo } from "@/components/crest";
 import { formatDate } from "@/lib/format";
 
@@ -12,14 +13,24 @@ const KIND_LABEL: Record<string, string> = {
   faith: "Faith body", civic: "Civic body", business: "Business", asafo: "Asafo company",
 };
 
-export async function loader() {
-  return api.institutions();
+export async function loader({ request }: LoaderFunctionArgs) {
+  const page = Number(new URL(request.url).searchParams.get("page")) || 1;
+  return api.institutionsPaged({ page });
 }
 
 export function Component() {
-  const initial = useLoaderData() as Organization[];
-  const [rows, setRows] = useState(initial);
+  const data = useLoaderData() as Paged<Organization>;
+  const [rows, setRows] = usePagedRows(data);
+  const [, setParams] = useSearchParams();
   const [busy, setBusy] = useState<string | null>(null);
+
+  function goToPage(p: number) {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("page", String(p));
+      return next;
+    });
+  }
 
   async function toggle(o: Organization) {
     setBusy(o.id);
@@ -72,6 +83,7 @@ export function Component() {
           </Stagger>
         </table>
       </Card>
+      <Pagination page={data.page} totalPages={data.totalPages} onChange={goToPage} total={data.total} pageSize={data.pageSize} />
     </>
   );
 }

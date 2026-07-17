@@ -4,7 +4,10 @@ import { api } from "@/lib/api";
 import type { Report } from "@/lib/types";
 import { PageHeader, Card, Empty, Pill } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { Pagination } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
+
+const PAGE_SIZE = 24;
 
 export async function loader() {
   return api.reports();
@@ -23,10 +26,19 @@ export function Component() {
   const [rows, setRows] = useState(initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [showResolved, setShowResolved] = useState(false);
+  const [page, setPage] = useState(1);
 
   const open = rows.filter((r) => r.status === "open");
   const resolved = rows.filter((r) => r.status !== "open");
   const shown = showResolved ? rows : open;
+
+  // Toggling the resolved view resets to page 1 (adjust-during-render); the
+  // clamp keeps the slice valid as rows resolve out of the open set.
+  const [prevToggle, setPrevToggle] = useState(showResolved);
+  if (prevToggle !== showResolved) { setPrevToggle(showResolved); setPage(1); }
+  const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = shown.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   async function resolve(r: Report, status: "actioned" | "dismissed") {
     setBusy(r.id);
@@ -55,7 +67,7 @@ export function Component() {
         <Empty icon="shield" title={open.length === 0 ? "No open reports" : "Nothing to show"}>The community queue is clear. New reports notify every steward.</Empty>
       ) : (
         <Stagger className="space-y-3">
-          {shown.map((r, idx) => (
+          {pageItems.map((r, idx) => (
             <StaggerItem key={r.id} index={idx}>
               <Card className={`p-5 ${r.status !== "open" ? "opacity-70" : ""}`}>
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -106,6 +118,7 @@ export function Component() {
           ))}
         </Stagger>
       )}
+      <Pagination page={safePage} totalPages={totalPages} onChange={setPage} total={shown.length} pageSize={PAGE_SIZE} />
     </>
   );
 }

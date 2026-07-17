@@ -43,6 +43,41 @@ async function del<T>(path: string): Promise<T> {
   return data as T;
 }
 
+// ── pagination (optional, non-breaking) ──
+// The heavy list endpoints accept optional ?page/?pageSize. With ?page present
+// they return this envelope; with it ABSENT they return the plain array
+// (unchanged) — so untouched callers keep working. The creator app's own lists
+// (member listings, notifications, team roster) arrive embedded in a single
+// response, so they paginate client-side via <Pagination>; `fetchPage` is the
+// primitive for any endpoint that exposes the server envelope.
+export interface Page<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface PageParams {
+  page?: number;
+  pageSize?: number;
+  /** Filters to preserve alongside the page slice (e.g. { kind: "school" }). */
+  params?: Record<string, string | number | undefined>;
+}
+
+/** Paginated GET. Clamps like the server (page floor 1; pageSize 1..100). */
+export async function fetchPage<T>(path: string, opts: PageParams = {}): Promise<Page<T>> {
+  const page = Math.max(1, Math.floor(opts.page ?? 1));
+  const pageSize = Math.min(100, Math.max(1, Math.floor(opts.pageSize ?? 24)));
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(opts.params ?? {})) {
+    if (v !== undefined && v !== "") qs.set(k, String(v));
+  }
+  qs.set("page", String(page));
+  qs.set("pageSize", String(pageSize));
+  return get<Page<T>>(`${path}?${qs.toString()}`);
+}
+
 // LoginResult — password sign-in either completes (token+member) or, for
 // MFA-enrolled accounts, returns a 5-minute challenge for the code step.
 export interface LoginResult {

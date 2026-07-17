@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { PORTAL } from "@/lib/portal";
 import type { NotificationItem } from "@/lib/types";
 import { PageHeader, Card, Empty } from "@/components/ui";
+import { Pagination, usePagedList } from "@/components/pagination";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 
@@ -20,6 +21,7 @@ export function Component() {
   const initial = useLoaderData() as NotificationItem[];
   const [items, setItems] = useState(initial);
   const unread = items.filter((n) => !n.read).length;
+  const paged = usePagedList(items, 12);
 
   async function markAll() {
     setItems((cur) => cur.map((n) => ({ ...n, read: true })));
@@ -44,9 +46,10 @@ export function Component() {
       {items.length === 0 ? (
         <Empty icon="bell" title="No notifications">Moderation outcomes, claims and remembrance notices will show up here.</Empty>
       ) : (
+        <>
         <Card className="overflow-hidden">
           <Stagger className="divide-y divide-sand">
-            {items.map((n, idx) => (
+            {paged.pageItems.map((n, idx) => (
               <StaggerItem key={n.id} index={idx}>
                 <button
                   onClick={() => open(n)}
@@ -64,6 +67,16 @@ export function Component() {
             ))}
           </Stagger>
         </Card>
+        <Pagination
+          page={paged.page}
+          totalPages={paged.totalPages}
+          onPage={paged.setPage}
+          total={paged.total}
+          rangeStart={paged.rangeStart}
+          rangeEnd={paged.rangeEnd}
+          unit="notifications"
+        />
+        </>
       )}
     </>
   );

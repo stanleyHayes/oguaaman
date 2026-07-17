@@ -24,7 +24,7 @@ func (h *Handler) LostFound(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 // LostFoundBySlug fetches one published lost & found notice by slug.

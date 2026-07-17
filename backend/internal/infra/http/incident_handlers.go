@@ -24,7 +24,7 @@ func (h *Handler) Incidents(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 // Incident fetches one published incident by slug.

@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import { Linking, StyleSheet, View, Pressable } from "react-native";
+import { Linking, RefreshControl, StyleSheet, View, Pressable } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
-import { useApi } from "@/lib/use-api";
+import { usePaginatedList, wholeListAsPage, type PageFetcher } from "@/lib/use-paginated";
 import type { Listing } from "@/lib/types";
 import { D, S, fillFor, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -12,6 +12,7 @@ import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { ListFooter } from "@/components/list-footer";
 
 function openURL(url?: string) {
   const u = (url ?? "").trim();
@@ -27,7 +28,12 @@ interface BrowseView {
   /** Seed photo for the hero band (mirrors the portal section heroes). */
   image: string;
   countNoun: string;
-  fetch: () => Promise<Listing[]>;
+  /**
+   * Page fetcher. Backend-paginated pillars (business/events/memories) hit the
+   * `?page` envelope; the rest come back whole as a single page via
+   * `wholeListAsPage` (so the list renders through one uniform path).
+   */
+  load: PageFetcher<Listing>;
   sub: (l: Listing) => string;
   /** Route for a card tap; undefined = not navigable. */
   href?: (l: Listing) => string;
@@ -41,7 +47,7 @@ const VIEWS: Record<string, BrowseView> = {
     tone: "green",
     image: "/uploads/seed/fetu-queenmother.jpg",
     countNoun: "people",
-    fetch: () => api.people(),
+    load: wholeListAsPage(() => api.people()),
     sub: (l) => [l.details.era, l.details.whyNotable].filter(Boolean).join(" · ") || "Cape Coast",
     href: (l) => `/people/${l.slug}`,
   },
@@ -52,7 +58,7 @@ const VIEWS: Record<string, BrowseView> = {
     tone: "teal",
     image: "/uploads/seed/market-women.jpg",
     countNoun: "businesses",
-    fetch: () => api.businesses(),
+    load: (page, pageSize) => api.businesses({ page, pageSize }),
     sub: (l) => l.details.category || l.details.address || "Cape Coast",
     href: (l) => `/business/${l.slug}`,
   },
@@ -63,7 +69,7 @@ const VIEWS: Record<string, BrowseView> = {
     tone: "green900",
     image: "/uploads/seed/bakatue-2016.jpg",
     countNoun: "events",
-    fetch: () => api.events(),
+    load: (page, pageSize) => api.events({ page, pageSize }),
     sub: (l) => [l.details.startsAt, l.details.venue].filter(Boolean).join(" · ") || "Cape Coast",
     href: (l) => `/events/${l.slug}`,
   },
@@ -74,7 +80,7 @@ const VIEWS: Record<string, BrowseView> = {
     tone: "teal",
     image: "/uploads/seed/school-girl-ghana.jpg",
     countNoun: "opportunities",
-    fetch: () => api.opportunities(),
+    load: wholeListAsPage(() => api.opportunities()),
     sub: (l) => [l.details.kind, l.details.deadline ? `closes ${l.details.deadline}` : ""].filter(Boolean).join(" · ") || "Open",
   },
   memories: {
@@ -84,7 +90,7 @@ const VIEWS: Record<string, BrowseView> = {
     tone: "clay",
     image: "/uploads/seed/fishermen.jpg",
     countNoun: "memories",
-    fetch: () => api.memories(),
+    load: (page, pageSize) => api.memories({ page, pageSize }),
     sub: (l) => l.details.text?.slice(0, 80) ?? "",
   },
 };
@@ -142,20 +148,23 @@ export default function Browse() {
   const { scrollY, onScroll } = useHeroParallax();
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const { data, error, loading } = useApi<Listing[]>(
-    () => (view ? view.fetch() : Promise.resolve([])),
-    `browse:${type}`,
-  );
+
+  const { items, total, loading, loadingMore, refreshing, error, hasMore, loadMore, refresh } =
+    usePaginatedList<Listing>(
+      (page, pageSize) => (view ? view.load(page, pageSize) : Promise.resolve({ items: [], total: 0, page, pageSize, totalPages: 0 })),
+      `browse:${type}`,
+    );
+
+  const isEvents = type === "events";
+  const isOpportunities = type === "opportunities";
+  // Fetu Afahye leads the events screen in a dedicated hero, out of the month grid.
+  const anchor = isEvents ? items.find((l) => l.details.anchorFestival) : undefined;
+  const rest = anchor ? items.filter((l) => l.id !== anchor.id) : items;
+  const sections = useMemo(() => (isEvents ? groupByMonth(rest) : []), [isEvents, rest]);
 
   if (!view) return <ErrorView message="Unknown category" />;
   if (loading) return <Loading />;
-  if (error || !data) return <ErrorView message={error ?? "No data"} />;
-
-  const isEvents = type === "events";
-  const anchor = isEvents ? data.find((l) => l.details.anchorFestival) : undefined;
-  const rest = anchor ? data.filter((l) => l.id !== anchor.id) : data;
-  const isOpportunities = type === "opportunities";
-  const sections = isEvents ? groupByMonth(rest) : [];
+  if (error && items.length === 0) return <ErrorView message={error} />;
 
   const renderCard = (l: Listing, i: number) => {
     const href = view.href?.(l);
@@ -188,29 +197,80 @@ export default function Browse() {
     );
   };
 
+  const header = (
+    <View>
+      <PhotoHero image={view.image} tone={C[view.tone]} kicker={view.kicker} title={view.title} lede={view.lede} count={`${total} ${view.countNoun}`} scrollY={scrollY} />
+      {anchor ? (
+        <View style={s.pad}>
+          <RevealView>
+            <Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable>
+          </RevealView>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  const footer = (
+    <ListFooter
+      loadingMore={loadingMore}
+      hasMore={hasMore}
+      onLoadMore={loadMore}
+      endLabel={!hasMore && total > 0 ? `${total} ${view.countNoun}` : undefined}
+    />
+  );
+
+  const empty = items.length === 0
+    ? <View style={s.pad}><EmptyState glyph="◎" title="Nothing here yet" body="Be the first to contribute." /></View>
+    : null;
+
+  const refreshControl = (
+    <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.green} colors={[C.green]} />
+  );
+
+  const shared = {
+    style: { backgroundColor: C.paper },
+    contentContainerStyle: { paddingBottom: 40 },
+    onScroll,
+    scrollEventThrottle: 16,
+    onEndReached: () => loadMore(),
+    onEndReachedThreshold: 0.5,
+    ListHeaderComponent: header,
+    ListFooterComponent: footer,
+    ListEmptyComponent: empty,
+    refreshControl,
+  };
+
   return (
     <>
       <Stack.Screen options={{ title: view.title }} />
-      <Animated.ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <PhotoHero image={view.image} tone={C[view.tone]} kicker={view.kicker} title={view.title} lede={view.lede} count={`${data.length} ${view.countNoun}`} scrollY={scrollY} />
-        <View style={{ padding: 16, gap: 12 }}>
-          {anchor && <RevealView><Pressable onPress={() => router.push(`/events/${anchor.slug}` as never)}><EventHero e={anchor} /></Pressable></RevealView>}
-          {data.length === 0 && <EmptyState glyph="◎" title="Nothing here yet" body="Be the first to contribute." />}
-          {isEvents
-            ? sections.map((sec) => (
-              <View key={sec.key} style={s.section}>
-                <Text style={s.sectionHeader}>{sec.label}</Text>
-                {sec.items.map((l, i) => renderCard(l, i))}
-              </View>
-            ))
-            : rest.map((l, i) => renderCard(l, i))}
-        </View>
-      </Animated.ScrollView>
+      {isEvents ? (
+        <Animated.FlatList<MonthSection>
+          {...shared}
+          data={sections}
+          keyExtractor={(sec) => sec.key}
+          renderItem={({ item: sec }) => (
+            <View style={[s.section, s.pad]}>
+              <Text style={s.sectionHeader}>{sec.label}</Text>
+              {sec.items.map((l, i) => renderCard(l, i))}
+            </View>
+          )}
+        />
+      ) : (
+        <Animated.FlatList<Listing>
+          {...shared}
+          data={items}
+          keyExtractor={(l) => l.id}
+          renderItem={({ item, index }) => (
+            <View style={[s.pad, { paddingTop: index === 0 ? 16 : 12 }]}>{renderCard(item, index)}</View>
+          )}
+        />
+      )}
     </>
   );
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
+  pad: { paddingHorizontal: 16, paddingTop: 16 },
   section: { gap: 12 },
   sectionHeader: { color: C.goldText, ...S(700), fontSize: 15, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
   card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },

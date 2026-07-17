@@ -1,23 +1,50 @@
+import { useRef, useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
-import type { Organization } from "@/lib/types";
+import type { Organization, Page } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SectionHeading, VerifiedBadge, SampleNote } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Crest } from "@/components/crest";
 import { Reveal, StaggerItem } from "@/components/motion";
+import { Pagination } from "@/components/pagination";
 import { initials } from "@/lib/format";
 import { EDUCATION_BLURB, SAMPLE_NOTICE } from "@/lib/content";
 import { SCHOOL_PHOTOS } from "@/lib/cape-coast-photos";
 
+const SCHOOLS_PER_PAGE = 12;
+
+// The roster is the classic "directory" case, so it uses server-side numbered
+// pagination via the ?page envelope: the loader fetches page 1, and jumping
+// pages fetches the next slice (47 schools no longer render all at once).
 export async function loader() {
-  return api.schools();
+  return api.schools({ page: 1, pageSize: SCHOOLS_PER_PAGE });
 }
 
 export function Component() {
-  const schools = useLoaderData() as Organization[];
+  const first = useLoaderData() as Page<Organization>;
   usePageTitle("Education");
+  const [data, setData] = useState(first);
+  const [page, setPage] = useState(first.page || 1);
+  const [loading, setLoading] = useState(false);
+  const rosterRef = useRef<HTMLDivElement>(null);
+  const schools = data.items;
+
+  async function goToPage(next: number) {
+    if (next === page || loading) return;
+    setLoading(true);
+    try {
+      const res = await api.schools({ page: next, pageSize: SCHOOLS_PER_PAGE });
+      setData(res);
+      setPage(next);
+      rosterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch {
+      /* leave the current page in place on a failed fetch */
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <>
       <PageHero tone="maroon" kicker="Rep your school · the powerhouse" title="The Citadel of Education" symbol="dwennimmen" image="/uploads/seed/mfantsipim-campus.jpg" lede="Within a few square miles sit the oldest and most decorated schools in Ghana. We don't build communities from scratch — we give existing, loyal Old Students networks a home.">
@@ -29,8 +56,9 @@ export function Component() {
       </Container>
 
       <Container size="wide" className="pb-8">
+        <div ref={rosterRef} className="scroll-mt-24">
         <Reveal><SectionHeading kicker="Official, verified profiles" title="The schools on the hills" accentClass="bg-maroon-900" /></Reveal>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={`mt-8 grid gap-6 transition-opacity sm:grid-cols-2 lg:grid-cols-3 ${loading ? "opacity-50" : ""}`}>
           {schools.map((s, i) => (
             <StaggerItem key={s.id} index={i} lift className="h-full">
             <Link to={`/education/${s.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]">
@@ -58,6 +86,8 @@ export function Component() {
             </Link>
             </StaggerItem>
           ))}
+        </div>
+        <Pagination page={page} totalPages={data.totalPages} onPageChange={goToPage} />
         </div>
       </Container>
 

@@ -94,10 +94,15 @@ func (h *Handler) Businesses(w http.ResponseWriter, r *http.Request) {
 	for i, l := range items {
 		out[i] = businessView{Listing: l, Supporter: service.SupporterActive(l, now)}
 	}
-	writeJSON(w, http.StatusOK, out)
+	writeList(w, r, out)
 }
 func (h *Handler) Events(w http.ResponseWriter, r *http.Request) {
-	h.list(w, r, func() ([]domain.Listing, error) { return h.svc.Events(r.Context()) })
+	items, err := h.svc.Events(r.Context())
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeList(w, r, items)
 }
 
 // ── the festival archive (assembled reads over event listings) ─────────────────
@@ -145,7 +150,7 @@ func (h *Handler) Memories(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, memories)
+	writeList(w, r, memories)
 }
 
 // Featured — editorially surfaced listings for the marketing "right now" band.

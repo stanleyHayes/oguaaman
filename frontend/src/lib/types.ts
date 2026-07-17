@@ -648,3 +648,23 @@ export interface MapData {
   trails: MapTrail[];
   areas: MapArea[];
 }
+
+/**
+ * Optional pagination envelope returned by the heavy list endpoints when a
+ * `?page` query param is present. When `?page` is ABSENT the same endpoints
+ * return a plain `T[]` (backward-compatible), so the api-client methods below
+ * are overloaded: no page arg → `T[]`, `{ page }` arg → `Page<T>`.
+ */
+export interface Page<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** Query params for the optional pagination envelope. */
+export interface PageParams {
+  page: number;
+  pageSize?: number;
+}

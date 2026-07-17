@@ -69,6 +69,67 @@ export interface PhoneVerificationResult {
   verified: boolean;
 }
 
+/**
+ * A page of a list endpoint. Returned ONLY when a `page` is requested; without
+ * one the same endpoints keep returning a plain `T[]` (the backend's mandatory
+ * backward-compat rule), so the paged methods below are overloaded — call with
+ * no args for the full array, or `{ page }` for this envelope.
+ */
+export interface Page<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** Optional pagination controls for the list endpoints that support them. */
+export interface PageOpts {
+  /** 1-based page index. Omit for the full (unpaginated) array. */
+  page?: number;
+  /** Items per page (server default 24, floor 1, cap 100). */
+  pageSize?: number;
+}
+
+/**
+ * Append ?page/?pageSize to a list path when a page is requested — a no-op when
+ * `page` is absent, so the caller still hits the plain-array form. Query is
+ * hand-built (no URLSearchParams) to match the rest of this module and stay
+ * safe on Hermes. `base` may already carry filters (a leading `?…`).
+ */
+function pagePath(base: string, opts?: PageOpts): string {
+  if (!opts?.page) return base;
+  const parts = [`page=${Math.max(1, Math.floor(opts.page))}`];
+  if (opts.pageSize != null) parts.push(`pageSize=${Math.max(1, Math.floor(opts.pageSize))}`);
+  return `${base}${base.includes("?") ? "&" : "?"}${parts.join("&")}`;
+}
+
+// Overloaded list fetchers: bare call -> plain array (existing consumers keep
+// working, untouched); `{ page }` -> the Page<T> envelope for infinite scroll.
+function listBusinesses(): Promise<Listing[]>;
+function listBusinesses(opts: PageOpts): Promise<Page<Listing>>;
+function listBusinesses(opts?: PageOpts): Promise<Listing[] | Page<Listing>> {
+  return get<Listing[] | Page<Listing>>(pagePath("/api/businesses", opts));
+}
+
+function listEvents(): Promise<Listing[]>;
+function listEvents(opts: PageOpts): Promise<Page<Listing>>;
+function listEvents(opts?: PageOpts): Promise<Listing[] | Page<Listing>> {
+  return get<Listing[] | Page<Listing>>(pagePath("/api/events", opts));
+}
+
+function listMemories(): Promise<Listing[]>;
+function listMemories(opts: PageOpts): Promise<Page<Listing>>;
+function listMemories(opts?: PageOpts): Promise<Listing[] | Page<Listing>> {
+  return get<Listing[] | Page<Listing>>(pagePath("/api/memories", opts));
+}
+
+function listNews(): Promise<NewsArticle[]>;
+function listNews(opts: PageOpts): Promise<Page<NewsArticle>>;
+function listNews(opts?: PageOpts): Promise<NewsArticle[] | Page<NewsArticle>> {
+  return get<NewsArticle[] | Page<NewsArticle>>(pagePath("/api/news", opts));
+}
+
 export const api = {
   home: () => get<HomeData>("/api/home"),
   artists: () => get<Listing[]>("/api/artists"),
@@ -120,11 +181,13 @@ export const api = {
   // Browse categories + detail reads.
   people: () => get<Listing[]>("/api/people"),
   person: (slug: string) => get<Listing>(`/api/people/${slug}`),
-  businesses: () => get<Listing[]>("/api/businesses"),
+  // Paged list endpoints (see the overloaded fetchers above): `api.businesses()`
+  // still returns the plain array; `api.businesses({ page, pageSize })` the Page.
+  businesses: listBusinesses,
   business: (slug: string) => get<Listing>(`/api/businesses/${slug}`),
-  events: () => get<Listing[]>("/api/events"),
+  events: listEvents,
   opportunities: () => get<Listing[]>("/api/opportunities"),
-  memories: () => get<Listing[]>("/api/memories"),
+  memories: listMemories,
   featured: () => get<Listing[]>("/api/featured"),
   genres: () => get<string[]>("/api/genres"),
   musicLegacy: () => get<Listing[]>("/api/music/legacy"),
@@ -149,8 +212,8 @@ export const api = {
   setBirthday: (body: { birthday: string; broadcast: boolean }) =>
     post<{ birthday: string; broadcastBirthday: boolean }>("/api/me/birthday", body),
 
-  // News / editorial (spec §8.12) — markdown bodies.
-  news: () => get<NewsArticle[]>("/api/news"),
+  // News / editorial (spec §8.12) — markdown bodies. Paged: `api.news({ page })`.
+  news: listNews,
   newsArticle: (slug: string) => get<NewsArticle>(`/api/news/${slug}`),
   // Author a story (writers → draft in the review queue; verified-authority
   // managers → auto-published). Body is Markdown; title 3–160 chars.

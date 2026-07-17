@@ -6,8 +6,11 @@ import { api } from "@/lib/api";
 import { Container, CTA as Cta, VerifiedBadge } from "@/components/ui";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { LayoutPill, Reveal, Reveal3D, StaggerItem } from "@/components/motion";
+import { LoadMore } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
+
+const NEWS_PAGE = 9;
 
 export async function loader() {
   return api.news();
@@ -104,6 +107,7 @@ export function Component() {
   const articles = useLoaderData() as NewsArticle[];
   usePageTitle("News");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [shownCount, setShownCount] = useState(NEWS_PAGE);
   const [lead, ...rest] = articles;
   const tags = useMemo(
     () => [...new Set(articles.flatMap((a) => a.tags ?? []))].sort((x, y) => x.localeCompare(y)),
@@ -111,6 +115,11 @@ export function Component() {
   );
   const visible = activeTag ? rest.filter((a) => a.tags?.includes(activeTag)) : rest;
   const leadMatches = lead && (!activeTag || lead.tags?.includes(activeTag));
+  // "Load more" grows the coverage feed in place; a new tag filter resets it
+  // (adjust-state-during-render, the sanctioned alternative to a reset effect).
+  const [prevTag, setPrevTag] = useState(activeTag);
+  if (prevTag !== activeTag) { setPrevTag(activeTag); setShownCount(NEWS_PAGE); }
+  const shownArticles = visible.slice(0, shownCount);
 
   return (
     <>
@@ -145,8 +154,9 @@ export function Component() {
                   </div>
                 </div>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {visible.map((a, i) => <StaggerItem key={a.id} index={i}><CoverageCard a={a} /></StaggerItem>)}
+                  {shownArticles.map((a, i) => <StaggerItem key={a.id} index={i}><CoverageCard a={a} /></StaggerItem>)}
                 </div>
+                <LoadMore hasMore={shownCount < visible.length} remaining={visible.length - shownCount} onClick={() => setShownCount((n) => n + NEWS_PAGE)} label="More coverage" />
               </>
             )}
             {!leadMatches && visible.length === 0 && (

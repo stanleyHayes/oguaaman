@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { publicPathFor, portalUrl, PORTAL } from "@/lib/portal";
 import type { Listing, MemberView, Promotion } from "@/lib/types";
 import { Card, Empty, StatusBadge } from "@/components/ui";
+import { Pagination, usePagedList } from "@/components/pagination";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { cedis, formatDate, initials } from "@/lib/format";
 import { ExternalLink, Megaphone, Pencil } from "lucide-react";
@@ -33,6 +34,8 @@ export function Component() {
   const [promoConfirmed, setPromoConfirmed] = useState<Promotion | null>(null);
 
   const filtered = statusFilter === "all" ? listings : listings.filter((l) => l.status === statusFilter);
+  // Reset to page 1 whenever the status filter changes.
+  const paged = usePagedList(filtered, 10, statusFilter);
   const counts = {
     all: listings.length,
     draft: listings.filter((l) => l.status === "draft").length,
@@ -102,9 +105,10 @@ export function Component() {
           {statusFilter === "all" ? "Your businesses, events, art and projects show up here once you submit them on the portal." : `You have no listings with "${statusFilter}" status.`}
         </Empty>
       ) : (
+        <>
         <Card className="overflow-hidden px-4">
           <Stagger as="ul" className="divide-y divide-sand">
-            {filtered.map((l, idx) => {
+            {paged.pageItems.map((l, idx) => {
               const path = publicPathFor(l);
               const featuredUntil = l.featuredUntil && l.featuredUntil > new Date().toISOString() ? l.featuredUntil : null;
               return (
@@ -164,6 +168,16 @@ export function Component() {
             })}
           </Stagger>
         </Card>
+        <Pagination
+          page={paged.page}
+          totalPages={paged.totalPages}
+          onPage={paged.setPage}
+          total={paged.total}
+          rangeStart={paged.rangeStart}
+          rangeEnd={paged.rangeEnd}
+          unit="listings"
+        />
+        </>
       )}
 
       <p className="mt-4 text-xs text-ink-faint">

@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
+import { FlatList, Image, RefreshControl, StyleSheet, View, Pressable } from "react-native";
 import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
-import { useApi } from "@/lib/use-api";
+import { usePaginatedList } from "@/lib/use-paginated";
 import type { NewsArticle } from "@/lib/types";
 import { D, S, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -11,6 +11,7 @@ import { Loading, ErrorView, VerifiedBadge } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { ListFooter } from "@/components/list-footer";
 
 function newsDate(a: NewsArticle): string {
   const raw = a.publishedAt ?? a.createdAt;
@@ -31,26 +32,32 @@ function Cover({ article: a, height }: Readonly<{ article: NewsArticle; height: 
 export default function News() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const { data, error, loading } = useApi<NewsArticle[]>(() => api.news(), "news");
+  const { items, total, loading, loadingMore, refreshing, error, hasMore, loadMore, refresh } =
+    usePaginatedList<NewsArticle>((page, pageSize) => api.news({ page, pageSize }), "news");
+
   if (loading) return <Loading />;
-  if (error || !data) return <ErrorView message={error ?? "No data"} />;
+  if (error && items.length === 0) return <ErrorView message={error} />;
 
-  const [featured, ...rest] = data;
+  // The newest story leads in a large featured card; the rest scroll below and
+  // paginate in via onEndReached.
+  const [featured, ...rest] = items;
 
-  return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 40 }}>
+  const header = (
+    <>
       <RevealView style={s.hero}>
         <Text style={s.heroKicker}>The Oguaa Newsroom</Text>
         <Text style={s.heroTitle}>Stories from the town</Text>
         <Text style={s.heroLede}>Festivals, scholarships, homecomings and notices from Cape Coast.</Text>
       </RevealView>
 
-      <View style={{ padding: 16, gap: 14 }}>
-        {data.length === 0 && (
+      {items.length === 0 ? (
+        <View style={s.pad}>
           <EmptyState glyph="✉" title="No stories yet" body="The newsroom is just getting started." />
-        )}
+        </View>
+      ) : null}
 
-        {featured && (
+      {featured ? (
+        <View style={[s.pad, { paddingTop: 14 }]}>
           <StaggerIn index={0}>
             <Link href={`/news/${featured.slug}`} asChild>
               <Pressable style={s.featured}>
@@ -68,10 +75,24 @@ export default function News() {
               </Pressable>
             </Link>
           </StaggerIn>
-        )}
+        </View>
+      ) : null}
+    </>
+  );
 
-        {rest.map((a, i) => (
-          <StaggerIn key={a.id} index={i + 1}>
+  return (
+    <FlatList<NewsArticle>
+      style={{ backgroundColor: C.paper }}
+      contentContainerStyle={{ paddingBottom: 40 }}
+      data={rest}
+      keyExtractor={(a) => a.id}
+      ListHeaderComponent={header}
+      onEndReached={() => loadMore()}
+      onEndReachedThreshold={0.5}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.green} colors={[C.green]} />}
+      renderItem={({ item: a, index }) => (
+        <View style={[s.pad, { paddingTop: 14 }]}>
+          <StaggerIn index={index + 1}>
             <Link href={`/news/${a.slug}`} asChild>
               <Pressable style={s.card}>
                 <Cover article={a} height={130} />
@@ -87,9 +108,17 @@ export default function News() {
               </Pressable>
             </Link>
           </StaggerIn>
-        ))}
-      </View>
-    </ScrollView>
+        </View>
+      )}
+      ListFooterComponent={
+        <ListFooter
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMore={loadMore}
+          endLabel={!hasMore && total > 0 ? `${total} ${total === 1 ? "story" : "stories"}` : undefined}
+        />
+      }
+    />
   );
 }
 
@@ -99,6 +128,7 @@ export default function News() {
 const onDarkText = (C: Palette, alpha: number) => C.onDarkText85.replace(/[^,]+\)$/, `${alpha})`);
 
 const makeStyles = (C: Palette) => StyleSheet.create({
+  pad: { paddingHorizontal: 16 },
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, fontWeight: "700", textTransform: "uppercase" },
   heroTitle: { color: C.cream, ...D(700), fontSize: 30, marginTop: 6 },

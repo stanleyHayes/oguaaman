@@ -4,12 +4,14 @@ import { api } from "@/lib/api";
 import type { Listing, Member, ListingStatus } from "@/lib/types";
 import { PageHeader, Card, StatusBadge, Empty } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { Pagination } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
 
 interface Data { listings: Listing[]; members: Member[] }
 const TYPES = ["all", "artist", "business", "person", "memory", "event", "opportunity", "memorial", "project", "incident", "lostfound"];
 const STATUSES = ["all", "approved", "pending", "rejected", "unpublished", "draft"];
+const PAGE_SIZE = 24;
 
 export async function loader(): Promise<Data> {
   const [listings, members] = await Promise.all([api.listings(), api.members()]);
@@ -25,6 +27,7 @@ export function Component() {
   const [status, setStatus] = useState("all");
   const [busy, setBusy] = useState<string | null>(null);
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const nameOf = (id: string) => members.find((m) => m.id === id)?.displayName ?? "—";
 
   const filtered = useMemo(() => rows.filter((l) =>
@@ -32,6 +35,16 @@ export function Component() {
     (status === "all" || l.status === status) &&
     (q === "" || l.title.toLowerCase().includes(q.toLowerCase()))
   ), [rows, q, type, status]);
+
+  // The active filters own the page: whenever they change, snap back to page 1
+  // (adjust-during-render — no effect needed). Clamp keeps the slice valid after
+  // in-place mutations trim the filtered set.
+  const filterSig = `${q}|${type}|${status}`;
+  const [prevSig, setPrevSig] = useState(filterSig);
+  if (prevSig !== filterSig) { setPrevSig(filterSig); setPage(1); }
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   async function unpublish(l: Listing) {
     setBusy(l.id);
@@ -74,7 +87,7 @@ export function Component() {
               <tr><th className="px-4 py-3">Title</th><th className="px-4 py-3">Type</th><th className="px-4 py-3 hidden sm:table-cell">Owner</th><th className="px-4 py-3 hidden md:table-cell">Created</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"></th></tr>
             </thead>
             <Stagger as="tbody">
-              {filtered.map((l, idx) => (
+              {pageItems.map((l, idx) => (
                 <StaggerItem as="tr" key={l.id} index={idx} className="border-b border-sand last:border-0">
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-3">
@@ -121,6 +134,7 @@ export function Component() {
           </table>
         </Card>
       )}
+      <Pagination page={safePage} totalPages={totalPages} onChange={setPage} total={filtered.length} pageSize={PAGE_SIZE} />
     </>
   );
 }

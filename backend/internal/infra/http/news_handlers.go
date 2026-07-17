@@ -18,7 +18,7 @@ func (h *Handler) News(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 // NewsArticle (public) — one published article by slug.

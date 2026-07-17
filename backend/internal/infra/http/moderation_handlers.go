@@ -14,7 +14,7 @@ func (h *Handler) Queue(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 func (h *Handler) Moderate(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +55,7 @@ func (h *Handler) AdminListings(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeList(w, r, items)
 }
 
 func (h *Handler) AdminAudit(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +67,7 @@ func (h *Handler) AdminAudit(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, recs)
+	writeList(w, r, recs)
 }
 
 func (h *Handler) AdminSetRole(w http.ResponseWriter, r *http.Request) {

@@ -1,8 +1,10 @@
 // Thin client for the Go API. In dev, calls go to relative /api (Vite proxies to
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
-  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData,
+  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, Page, PageParams,
 } from "./types";
+
+export type { Page, PageParams } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.token";
@@ -67,6 +69,71 @@ async function del<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 
+// ── Optional pagination (spec: non-breaking envelope) ───────────────────────
+// The heavy list endpoints accept optional ?page/?pageSize. When a page arg is
+// passed we thread it into the query and the server replies with a Page<T>
+// envelope; with no page arg the query is omitted and the server returns the
+// plain T[] exactly as before. Each list method below is overloaded to reflect
+// that: no arg → T[], { page } → Page<T>. Existing filters are preserved and
+// applied server-side BEFORE the page slice, so `total` reflects the filtered set.
+function pagePath(base: string, params: URLSearchParams, p?: PageParams): string {
+  if (p && Number.isFinite(p.page)) {
+    params.set("page", String(p.page));
+    if (p.pageSize != null) params.set("pageSize", String(p.pageSize));
+  }
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+function businesses(): Promise<Listing[]>;
+function businesses(p: PageParams): Promise<Page<Listing>>;
+function businesses(p?: PageParams): Promise<Listing[] | Page<Listing>> {
+  return get<Listing[] | Page<Listing>>(pagePath("/api/businesses", new URLSearchParams(), p));
+}
+
+function news(): Promise<NewsArticle[]>;
+function news(p: PageParams): Promise<Page<NewsArticle>>;
+function news(p?: PageParams): Promise<NewsArticle[] | Page<NewsArticle>> {
+  return get<NewsArticle[] | Page<NewsArticle>>(pagePath("/api/news", new URLSearchParams(), p));
+}
+
+function events(): Promise<Listing[]>;
+function events(p: PageParams): Promise<Page<Listing>>;
+function events(p?: PageParams): Promise<Listing[] | Page<Listing>> {
+  return get<Listing[] | Page<Listing>>(pagePath("/api/events", new URLSearchParams(), p));
+}
+
+function schools(): Promise<Organization[]>;
+function schools(p: PageParams): Promise<Page<Organization>>;
+function schools(p?: PageParams): Promise<Organization[] | Page<Organization>> {
+  return get<Organization[] | Page<Organization>>(pagePath("/api/schools", new URLSearchParams(), p));
+}
+
+function diaspora(): Promise<Member[]>;
+function diaspora(p: PageParams): Promise<Page<Member>>;
+function diaspora(p?: PageParams): Promise<Member[] | Page<Member>> {
+  return get<Member[] | Page<Member>>(pagePath("/api/diaspora", new URLSearchParams(), p));
+}
+
+function members(): Promise<Member[]>;
+function members(p: PageParams): Promise<Page<Member>>;
+function members(p?: PageParams): Promise<Member[] | Page<Member>> {
+  return get<Member[] | Page<Member>>(pagePath("/api/members", new URLSearchParams(), p));
+}
+
+type MemoryFilter = { school?: string; town?: string; tag?: string; era?: string };
+function memories(filter?: MemoryFilter): Promise<Listing[]>;
+function memories(filter: MemoryFilter & PageParams): Promise<Page<Listing>>;
+function memories(filter: MemoryFilter & Partial<PageParams> = {}): Promise<Listing[] | Page<Listing>> {
+  const params = new URLSearchParams();
+  if (filter.school) params.set("school", filter.school);
+  if (filter.town) params.set("town", filter.town);
+  if (filter.tag) params.set("tag", filter.tag);
+  if (filter.era) params.set("era", filter.era);
+  const p = filter.page != null ? { page: filter.page, pageSize: filter.pageSize } : undefined;
+  return get<Listing[] | Page<Listing>>(pagePath("/api/memories", params, p));
+}
+
 // LoginResult — password sign-in either completes (token+member) or, for
 // MFA-enrolled accounts, returns a 5-minute challenge for the code step.
 export interface LoginResult {
@@ -105,7 +172,7 @@ export const api = {
 
   // Cross-pillar search (spec §12) and the diaspora register (Phase 2 foundation).
   search: (q: string) => get<SearchHit[]>(`/api/search?q=${encodeURIComponent(q)}`),
-  diaspora: () => get<Member[]>("/api/diaspora"),
+  diaspora,
   setDiaspora: (body: { abroad: boolean; city?: string; country?: string }) =>
     post<{ diaspora: Diaspora | null }>("/api/me/diaspora", body),
 
@@ -145,7 +212,7 @@ export const api = {
   // Paid, time-bound featured placements across all types (spec §8.14).
   featured: () => get<Listing[]>("/api/featured"),
 
-  businesses: () => get<Listing[]>("/api/businesses"),
+  businesses,
   business: (slug: string) => get<Listing>(`/api/businesses/${slug}`),
 
   // Business subscriptions (Phase 7): plans come from the staff-managed catalog.
@@ -208,7 +275,7 @@ export const api = {
   resolveLostFound: (slug: string, status: LostFoundStatus) =>
     post<{ status: string }>(`/api/lost-found/${slug}/resolve`, { status }),
 
-  events: () => get<Listing[]>("/api/events"),
+  events,
   // Event detail + ticketing (Phase 6; amounts in pesewas).
   eventView: (slug: string) => get<EventView>(`/api/events/${slug}`),
   buyTicket: (slug: string, body: { tier: string; qty: number }) =>
@@ -221,18 +288,10 @@ export const api = {
   // The history hub — the town's timeline plus the living record (heritage sites, people, memories).
   history: () => get<HistoryView>("/api/history"),
   opportunities: () => get<Listing[]>("/api/opportunities"),
-  memories: (filter?: { school?: string; town?: string; tag?: string; era?: string }) => {
-    const params = new URLSearchParams();
-    if (filter?.school) params.set("school", filter.school);
-    if (filter?.town) params.set("town", filter.town);
-    if (filter?.tag) params.set("tag", filter.tag);
-    if (filter?.era) params.set("era", filter.era);
-    const qs = params.toString();
-    return get<Listing[]>(`/api/memories${qs ? `?${qs}` : ""}`);
-  },
+  memories,
 
   // News / editorial (spec §8.12) — markdown bodies, rendered client-side.
-  news: () => get<NewsArticle[]>("/api/news"),
+  news,
   newsArticle: (slug: string) => get<NewsArticle>(`/api/news/${slug}`),
 
   // Explore map — one public payload of every geo-tagged entity (points,
@@ -240,11 +299,11 @@ export const api = {
   mapData: () => get<MapData>("/api/map"),
 
   places: () => get<Place[]>("/api/places"),
-  schools: () => get<Organization[]>("/api/schools"),
+  schools,
   institutions: () => get<Organization[]>("/api/institutions"),
   institution: (slug: string) => get<InstitutionView>(`/api/institutions/${slug}`),
 
-  members: () => get<Member[]>("/api/members"),
+  members,
   member: (slug: string) => get<MemberView>(`/api/members/${slug}`),
 
   // Member↔member follows + birthday opt-in (spec §8.11).

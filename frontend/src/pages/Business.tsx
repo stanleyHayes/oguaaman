@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { Link, useLoaderData, useSearchParams } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
@@ -6,8 +7,11 @@ import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, SampleNote } from "@/components/ui";
 import { BusinessCard } from "@/components/cards";
 import { LayoutPill, StaggerItem } from "@/components/motion";
+import { Pagination } from "@/components/pagination";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { SAMPLE_NOTICE } from "@/lib/content";
+
+const PER_PAGE = 12;
 
 export async function loader() {
   return api.businesses();
@@ -23,6 +27,21 @@ export function Component() {
   const shown = (cat ? businesses.filter((b) => b.details.category === cat) : businesses)
     .slice()
     .sort((a, b) => Number(!!b.supporter) - Number(!!a.supporter));
+
+  // Numbered pagination over the (client-side) filtered directory. The trade
+  // filter is derived from the full set, so we keep loading it whole and page
+  // the display; changing trade resets to page 1 (adjust-state-during-render).
+  const [page, setPage] = useState(1);
+  const [prevCat, setPrevCat] = useState(cat);
+  const listRef = useRef<HTMLDivElement>(null);
+  if (prevCat !== cat) { setPrevCat(cat); setPage(1); }
+  const totalPages = Math.max(1, Math.ceil(shown.length / PER_PAGE));
+  const current = Math.min(page, totalPages);
+  const pageItems = shown.slice((current - 1) * PER_PAGE, current * PER_PAGE);
+  function goToPage(next: number) {
+    setPage(next);
+    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <>
@@ -47,16 +66,19 @@ export function Component() {
           </div>
         )}
 
-        <p className="mt-6 text-sm text-ink-faint">{shown.length} {shown.length === 1 ? "business" : "businesses"}{cat ? ` in ${cat}` : ""} · ★ Supporters first</p>
+        <div ref={listRef} className="scroll-mt-24">
+          <p className="mt-6 text-sm text-ink-faint">{shown.length} {shown.length === 1 ? "business" : "businesses"}{cat ? ` in ${cat}` : ""} · ★ Supporters first</p>
 
-        <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{shown.map((b, i) => <StaggerItem key={b.id} index={i} lift><BusinessCard business={b} /></StaggerItem>)}</div>
-        {shown.length === 0 && (
-          <EmptyState
-            icon={<EmptyGlyph name="building" />}
-            title="No businesses here yet"
-            actions={<Link to="/submit?type=business" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">List yours →</Link>}
-          />
-        )}
+          <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{pageItems.map((b, i) => <StaggerItem key={b.id} index={i} lift><BusinessCard business={b} /></StaggerItem>)}</div>
+          {shown.length === 0 && (
+            <EmptyState
+              icon={<EmptyGlyph name="building" />}
+              title="No businesses here yet"
+              actions={<Link to="/submit?type=business" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">List yours →</Link>}
+            />
+          )}
+          <Pagination page={current} totalPages={totalPages} onPageChange={goToPage} />
+        </div>
       </Container>
 
       <section className="on-dark on-dark-pin bg-green py-14 text-cream">

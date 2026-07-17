@@ -50,7 +50,7 @@ func (h *Handler) AdminReports(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, reps)
+	writeList(w, r, reps)
 }
 
 // AdminResolveReport closes a report as actioned or dismissed.
