@@ -176,17 +176,17 @@ func (s *TicketsService) EventView(ctx context.Context, slug string) (*EventView
 
 // StartTicketPurchase records a pending ticket against an approved event tier
 // and returns the Paystack authorization URL to redirect the buyer to.
-func (s *TicketsService) StartTicketPurchase(ctx context.Context, slug, memberID, email, tierName string, qty int) (authorizationURL, reference string, err error) {
+func (s *TicketsService) StartTicketPurchase(ctx context.Context, slug, memberID, email, tierName string, qty int) (authorizationURL, accessCode, reference string, err error) {
 	if qty < 1 {
-		return "", "", ErrTicketQty
+		return "", "", "", ErrTicketQty
 	}
 	email = strings.TrimSpace(email)
 	if email == "" {
-		return "", "", fmt.Errorf("an email is required for the ticket receipt")
+		return "", "", "", fmt.Errorf("an email is required for the ticket receipt")
 	}
 	event, err := s.approvedEvent(ctx, slug)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	tiers := eventTiers(event)
 	var tier *TicketTier
@@ -197,15 +197,15 @@ func (s *TicketsService) StartTicketPurchase(ctx context.Context, slug, memberID
 		}
 	}
 	if tier == nil {
-		return "", "", ErrTierNotFound
+		return "", "", "", ErrTierNotFound
 	}
 	if tier.Capacity > 0 {
 		sold, err := s.tierSold(ctx, event.ID)
 		if err != nil {
-			return "", "", err
+			return "", "", "", err
 		}
 		if sold[tier.Name]+qty > tier.Capacity {
-			return "", "", ErrSoldOut
+			return "", "", "", ErrSoldOut
 		}
 	}
 	now := time.Now().UTC()
@@ -226,14 +226,14 @@ func (s *TicketsService) StartTicketPurchase(ctx context.Context, slug, memberID
 		CreatedAt:     now.Format(time.RFC3339),
 	}
 	if err := s.tickets.Insert(ctx, ticket); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	callback := fmt.Sprintf("%s/events/%s?ticket_ref=%s", s.portal, event.Slug, url.QueryEscape(reference))
-	authURL, err := s.paystack.Initialize(ctx, email, ticket.AmountPesewas, "GHS", reference, callback)
+	authURL, accessCode, err := s.paystack.Initialize(ctx, email, ticket.AmountPesewas, "GHS", reference, callback)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return authURL, reference, nil
+	return authURL, accessCode, reference, nil
 }
 
 // ConfirmTicket verifies a transaction with Paystack and, on first success,

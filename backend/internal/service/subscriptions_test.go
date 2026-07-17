@@ -81,24 +81,24 @@ func TestStartSubscription_ownerOnly(t *testing.T) {
 	ctx := context.Background()
 
 	// A stranger may not subscribe someone else's business.
-	_, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-stranger", "a@b.c", "")
+	_, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-stranger", "a@b.c", "")
 	var fb *domain.ForbiddenError
 	if !errors.As(err, &fb) {
 		t.Errorf("non-owner: expected ForbiddenError, got %v", err)
 	}
 	// An unapproved business can't be subscribed either.
-	if _, _, err := svc.StartSubscription(ctx, "oguaa-prints", "m-yaw", "a@b.c", ""); !errors.As(err, &fb) {
+	if _, _, _, err := svc.StartSubscription(ctx, "oguaa-prints", "m-yaw", "a@b.c", ""); !errors.As(err, &fb) {
 		t.Errorf("unapproved: expected ForbiddenError, got %v", err)
 	}
 	// The owner can.
-	_, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "")
+	_, _, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "")
 	if err != nil {
 		t.Fatalf("owner subscribe failed: %v", err)
 	}
 	if !strings.HasPrefix(ref, "sub-castle-view-guesthouse-") {
 		t.Errorf("reference = %q, want sub-<slug>-<ts>", ref)
 	}
-	if _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "", ""); err == nil {
+	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "", ""); err == nil {
 		t.Error("expected a missing email to be rejected")
 	}
 }
@@ -107,7 +107,7 @@ func TestConfirmSubscription_setsPeriodEndAndListing(t *testing.T) {
 	svc, listings, subs := subsFixture(true, 5_000)
 	ctx := context.Background()
 
-	_, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "")
+	_, _, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "")
 	if err != nil {
 		t.Fatalf("StartSubscription failed: %v", err)
 	}
@@ -152,7 +152,7 @@ func TestConfirmSubscription_stacksOntoCurrentPeriod(t *testing.T) {
 	existing := time.Now().UTC().Add(10 * 24 * time.Hour).Format(time.RFC3339)
 	listings.listings[0].Details["subscribedUntil"] = existing
 
-	_, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "")
+	_, _, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "")
 	if err != nil {
 		t.Fatalf("StartSubscription failed: %v", err)
 	}
@@ -171,7 +171,7 @@ func TestConfirmSubscription_stacksOntoCurrentPeriod(t *testing.T) {
 func TestConfirmSubscription_failedVerification(t *testing.T) {
 	svc, _, subs := subsFixture(false, 0)
 	ctx := context.Background()
-	_, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "")
+	_, _, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "")
 	if err != nil {
 		t.Fatalf("StartSubscription failed: %v", err)
 	}
@@ -198,7 +198,7 @@ func TestStartSubscription_usesCatalogPrice(t *testing.T) {
 	subs := &fakeSubs{}
 	svc := NewSubscriptionsService(listings, subs, plans, &fakePaystack{verifyOK: true}, "http://localhost:5173")
 
-	if _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", ""); err != nil {
+	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", ""); err != nil {
 		t.Fatalf("StartSubscription failed: %v", err)
 	}
 	if subs.rows[0].AmountPesewas != 5_500 {
@@ -220,10 +220,10 @@ func TestStartSubscription_explicitPlanIsStrict(t *testing.T) {
 	}}
 	svc := NewSubscriptionsService(listings, &fakeSubs{}, plans, &fakePaystack{verifyOK: true}, "http://localhost:5173")
 
-	if _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "no-such-plan"); err == nil {
+	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "no-such-plan"); err == nil {
 		t.Error("expected not-found for an unknown plan slug")
 	}
-	if _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "old-bundle"); err == nil {
+	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "old-bundle"); err == nil {
 		t.Error("expected an error subscribing to an inactive plan")
 	}
 }
@@ -240,7 +240,7 @@ func TestConfirmSubscription_appliesBundledPromoDays(t *testing.T) {
 	subs := &fakeSubs{}
 	svc := NewSubscriptionsService(listings, subs, plans, &fakePaystack{verifyOK: true, verifyAmount: 12_000}, "http://localhost:5173")
 
-	_, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "featured")
+	_, _, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "featured")
 	if err != nil {
 		t.Fatalf("StartSubscription failed: %v", err)
 	}

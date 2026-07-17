@@ -36,7 +36,7 @@ func (h *Handler) Promote(w http.ResponseWriter, r *http.Request) {
 	if email == "" {
 		email = "promote@oguaa.test" // dev mode without auth — Paystack requires an email
 	}
-	authURL, reference, err := h.promotions.StartPromotion(r.Context(), r.PathValue("id"), memberID, email, in.Days)
+	authURL, accessCode, reference, err := h.promotions.StartPromotion(r.Context(), r.PathValue("id"), memberID, email, in.Days)
 	if errors.Is(err, service.ErrPromotionDays) {
 		fail(w, http.StatusBadRequest, "Choose a 7, 14 or 30 day promotion.")
 		return
@@ -53,6 +53,7 @@ func (h *Handler) Promote(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authorizationUrl": authURL,
+		"accessCode":       accessCode,
 		"reference":        reference,
 		"simulated":        h.promotions.Simulated(),
 	})

@@ -126,19 +126,19 @@ func TestStartTicketPurchase_validation(t *testing.T) {
 	svc, _ := ticketsFixture(true, 0)
 	ctx := context.Background()
 
-	if _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Grand Durbar stand", 0); !errors.Is(err, ErrTicketQty) {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Grand Durbar stand", 0); !errors.Is(err, ErrTicketQty) {
 		t.Errorf("qty 0: expected ErrTicketQty, got %v", err)
 	}
-	if _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "", "Grand Durbar stand", 1); err == nil {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "", "Grand Durbar stand", 1); err == nil {
 		t.Error("expected missing email to be rejected")
 	}
-	if _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "VIP", 1); !errors.Is(err, ErrTierNotFound) {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "VIP", 1); !errors.Is(err, ErrTierNotFound) {
 		t.Errorf("bad tier: expected ErrTierNotFound, got %v", err)
 	}
-	if _, _, err := svc.StartTicketPurchase(ctx, "free-prize-giving", "m-1", "a@b.c", "Standard", 1); !errors.Is(err, ErrTierNotFound) {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "free-prize-giving", "m-1", "a@b.c", "Standard", 1); !errors.Is(err, ErrTierNotFound) {
 		t.Errorf("free event: expected ErrTierNotFound, got %v", err)
 	}
-	if _, _, err := svc.StartTicketPurchase(ctx, "pending-gig", "m-1", "a@b.c", "Standard", 1); err == nil {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "pending-gig", "m-1", "a@b.c", "Standard", 1); err == nil {
 		t.Error("expected buying into an unapproved event to be rejected")
 	}
 }
@@ -151,15 +151,15 @@ func TestStartTicketPurchase_capacity(t *testing.T) {
 	tickets.confirmed("e-1", "Grand Durbar stand", 1)
 
 	// qty 2 would exceed capacity → rejected.
-	if _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Grand Durbar stand", 2); !errors.Is(err, ErrSoldOut) {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Grand Durbar stand", 2); !errors.Is(err, ErrSoldOut) {
 		t.Errorf("expected ErrSoldOut, got %v", err)
 	}
 	// The last seat is still buyable…
-	if _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Grand Durbar stand", 1); err != nil {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Grand Durbar stand", 1); err != nil {
 		t.Errorf("last seat should be buyable: %v", err)
 	}
 	// …and unlimited tiers never sell out.
-	if _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Orange Friday carnival", 50); err != nil {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Orange Friday carnival", 50); err != nil {
 		t.Errorf("unlimited tier should never sell out: %v", err)
 	}
 }
@@ -188,7 +188,7 @@ func TestTicketFlow_confirmIdempotent(t *testing.T) {
 	svc, tickets := ticketsFixture(true, 5_000)
 	ctx := context.Background()
 
-	_, ref, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "ama@oguaa.test", "Grand Durbar stand", 1)
+	_, _, ref, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "ama@oguaa.test", "Grand Durbar stand", 1)
 	if err != nil {
 		t.Fatalf("StartTicketPurchase failed: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestTicketFlow_confirmIdempotent(t *testing.T) {
 func TestConfirmTicket_failedVerification(t *testing.T) {
 	svc, tickets := ticketsFixture(false, 0)
 	ctx := context.Background()
-	_, ref, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "ama@oguaa.test", "Grand Durbar stand", 1)
+	_, _, ref, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "ama@oguaa.test", "Grand Durbar stand", 1)
 	if err != nil {
 		t.Fatalf("StartTicketPurchase failed: %v", err)
 	}
@@ -237,7 +237,7 @@ func TestConfirmTicket_failedVerification(t *testing.T) {
 func TestCheckIn_onceOnly(t *testing.T) {
 	svc, tickets := ticketsFixture(true, 5_000)
 	ctx := context.Background()
-	_, ref, _ := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "ama@oguaa.test", "Grand Durbar stand", 1)
+	_, _, ref, _ := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "ama@oguaa.test", "Grand Durbar stand", 1)
 	tk, err := svc.ConfirmTicket(ctx, ref)
 	if err != nil {
 		t.Fatalf("ConfirmTicket failed: %v", err)
@@ -269,7 +269,7 @@ func TestCheckIn_onceOnly(t *testing.T) {
 func TestCheckIn_nonCuratorRejected(t *testing.T) {
 	svc, tickets := ticketsFixture(true, 5_000)
 	ctx := context.Background()
-	_, ref, _ := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "ama@oguaa.test", "Grand Durbar stand", 1)
+	_, _, ref, _ := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "ama@oguaa.test", "Grand Durbar stand", 1)
 	tk, err := svc.ConfirmTicket(ctx, ref)
 	if err != nil {
 		t.Fatalf("ConfirmTicket failed: %v", err)

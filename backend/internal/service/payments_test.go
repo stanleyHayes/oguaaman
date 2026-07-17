@@ -16,9 +16,9 @@ type fakePaystack struct {
 }
 
 func (f *fakePaystack) Simulated() bool { return false }
-func (f *fakePaystack) Initialize(_ context.Context, _ string, _ int64, _, reference, callbackURL string) (string, error) {
+func (f *fakePaystack) Initialize(_ context.Context, _ string, _ int64, _, reference, callbackURL string) (string, string, error) {
 	f.initCalls++
-	return "https://pay.example/" + reference + "?cb=" + callbackURL, nil
+	return "https://pay.example/" + reference + "?cb=" + callbackURL, "ACCESS_" + reference, nil
 }
 func (f *fakePaystack) Verify(context.Context, string) (bool, int64, error) {
 	return f.verifyOK, f.verifyAmount, nil
@@ -100,16 +100,16 @@ func TestStartPledge_validation(t *testing.T) {
 	svc, _, _, _ := paymentsFixture(true, 0)
 	ctx := context.Background()
 
-	if _, _, err := svc.StartPledge(ctx, "library-corner", "m-1", "a@b.c", 50); err == nil {
+	if _, _, _, err := svc.StartPledge(ctx, "library-corner", "m-1", "a@b.c", 50); err == nil {
 		t.Error("expected amount-too-small to be rejected")
 	}
-	if _, _, err := svc.StartPledge(ctx, "library-corner", "m-1", "a@b.c", 100_000_01); err == nil {
+	if _, _, _, err := svc.StartPledge(ctx, "library-corner", "m-1", "a@b.c", 100_000_01); err == nil {
 		t.Error("expected amount-too-large to be rejected")
 	}
-	if _, _, err := svc.StartPledge(ctx, "library-corner", "m-1", "", 5_00); err == nil {
+	if _, _, _, err := svc.StartPledge(ctx, "library-corner", "m-1", "", 5_00); err == nil {
 		t.Error("expected missing email to be rejected")
 	}
-	if _, _, err := svc.StartPledge(ctx, "pending-project", "m-1", "a@b.c", 5_00); err == nil {
+	if _, _, _, err := svc.StartPledge(ctx, "pending-project", "m-1", "a@b.c", 5_00); err == nil {
 		t.Error("expected pledging to an unapproved project to be rejected")
 	}
 }
@@ -118,7 +118,7 @@ func TestPledgeFlow_successIncrementsRaisedOnce(t *testing.T) {
 	svc, listings, pledges, ps := paymentsFixture(true, 5_00)
 	ctx := context.Background()
 
-	authURL, ref, err := svc.StartPledge(ctx, "library-corner", "m-1", "ama@oguaa.test", 5_00)
+	authURL, _, ref, err := svc.StartPledge(ctx, "library-corner", "m-1", "ama@oguaa.test", 5_00)
 	if err != nil {
 		t.Fatalf("StartPledge failed: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestPledgeFlow_successIncrementsRaisedOnce(t *testing.T) {
 func TestConfirmPledge_platformFeeSplit(t *testing.T) {
 	svc, listings, pledges, _ := paymentsFixtureFee(true, 100_00, 5)
 	ctx := context.Background()
-	_, ref, err := svc.StartPledge(ctx, "library-corner", "m-1", "ama@oguaa.test", 100_00)
+	_, _, ref, err := svc.StartPledge(ctx, "library-corner", "m-1", "ama@oguaa.test", 100_00)
 	if err != nil {
 		t.Fatalf("StartPledge failed: %v", err)
 	}
@@ -186,7 +186,7 @@ func TestConfirmPledge_platformFeeSplit(t *testing.T) {
 func TestConfirmPledge_failedVerification(t *testing.T) {
 	svc, listings, pledges, _ := paymentsFixture(false, 0)
 	ctx := context.Background()
-	_, ref, err := svc.StartPledge(ctx, "library-corner", "m-1", "ama@oguaa.test", 5_00)
+	_, _, ref, err := svc.StartPledge(ctx, "library-corner", "m-1", "ama@oguaa.test", 5_00)
 	if err != nil {
 		t.Fatalf("StartPledge failed: %v", err)
 	}
@@ -204,7 +204,7 @@ func TestConfirmPledge_failedVerification(t *testing.T) {
 func TestConfirmPledge_amountMismatchFails(t *testing.T) {
 	svc, _, pledges, _ := paymentsFixture(true, 1_00) // verified amount < pledged 5_00
 	ctx := context.Background()
-	_, ref, _ := svc.StartPledge(ctx, "library-corner", "m-1", "ama@oguaa.test", 5_00)
+	_, _, ref, _ := svc.StartPledge(ctx, "library-corner", "m-1", "ama@oguaa.test", 5_00)
 	if _, err := svc.ConfirmPledge(ctx, ref); err == nil {
 		t.Error("expected confirm to fail when the charged amount is short")
 	}

@@ -62,7 +62,7 @@ func (h *Handler) Pledge(w http.ResponseWriter, r *http.Request) {
 	if email == "" {
 		email = "pledge@oguaa.test" // dev mode without auth — Paystack requires an email
 	}
-	authURL, reference, err := h.payments.StartPledge(r.Context(), r.PathValue("slug"), memberID, email, in.AmountPesewas)
+	authURL, accessCode, reference, err := h.payments.StartPledge(r.Context(), r.PathValue("slug"), memberID, email, in.AmountPesewas)
 	if errors.Is(err, service.ErrPledgeAmount) {
 		fail(w, http.StatusBadRequest, "Pledge between GH₵ 1 and GH₵ 100,000.")
 		return
@@ -78,6 +78,7 @@ func (h *Handler) Pledge(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authorizationUrl": authURL,
+		"accessCode":       accessCode,
 		"reference":        reference,
 		"simulated":        h.payments.Simulated(),
 	})

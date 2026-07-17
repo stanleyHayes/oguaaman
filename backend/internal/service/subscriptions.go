@@ -83,24 +83,24 @@ func (s *SubscriptionsService) resolvePlan(ctx context.Context, slug string) (pl
 // owned by the member and returns the Paystack authorization URL to redirect
 // the owner to. Only the business's owner may subscribe it. planSlug selects
 // the catalog plan ("" = the default Supporter plan).
-func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlug, memberID, email, planSlug string) (authorizationURL, reference string, err error) {
+func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlug, memberID, email, planSlug string) (authorizationURL, accessCode, reference string, err error) {
 	email = strings.TrimSpace(email)
 	if email == "" {
-		return "", "", fmt.Errorf("an email is required for the payment receipt")
+		return "", "", "", fmt.Errorf("an email is required for the payment receipt")
 	}
 	listing, err := s.listings.GetBySlug(ctx, domain.TypeBusiness, listingSlug)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if listing.Status != domain.StatusApproved || listing.OwnerID == "" || listing.OwnerID != memberID {
-		return "", "", &domain.ForbiddenError{Reason: "only the owner of an approved business can subscribe it"}
+		return "", "", "", &domain.ForbiddenError{Reason: "only the owner of an approved business can subscribe it"}
 	}
 	plan, amount, err := s.resolvePlan(ctx, planSlug)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if amount <= 0 {
-		return "", "", fmt.Errorf("that plan has no paid monthly price for businesses")
+		return "", "", "", fmt.Errorf("that plan has no paid monthly price for businesses")
 	}
 	now := time.Now().UTC()
 	reference = fmt.Sprintf("sub-%s-%d", listing.Slug, now.UnixNano())
@@ -118,14 +118,14 @@ func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlu
 		CreatedAt:     now.Format(time.RFC3339),
 	}
 	if err := s.subs.Insert(ctx, sub); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	callback := fmt.Sprintf("%s/business/%s?sub_ref=%s", s.portal, listing.Slug, url.QueryEscape(reference))
-	authURL, err := s.paystack.Initialize(ctx, email, sub.AmountPesewas, "GHS", reference, callback)
+	authURL, accessCode, err := s.paystack.Initialize(ctx, email, sub.AmountPesewas, "GHS", reference, callback)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return authURL, reference, nil
+	return authURL, accessCode, reference, nil
 }
 
 // ConfirmSubscription verifies a transaction with Paystack and, on first

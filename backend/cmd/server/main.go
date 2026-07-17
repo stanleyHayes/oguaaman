@@ -59,7 +59,8 @@ func main() {
 		WhatsApp:   wa,
 		Log:        log,
 	})
-	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db))
+	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db)).
+		WithFallback(cfg.KimiAPIKey, cfg.KimiModel, cfg.KimiBaseURL)
 	auth := newAuthService(memberRepo, cfg, email, wa)
 	ensureUploadDir(log, cfg)
 	payments, tickets, subs, promotions, revenue := moneyServices(db, cfg, log)

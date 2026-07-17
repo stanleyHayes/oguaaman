@@ -48,7 +48,7 @@ func (h *Handler) BuyTicket(w http.ResponseWriter, r *http.Request) {
 	if email == "" {
 		email = "tickets@oguaa.test" // dev mode without auth — Paystack requires an email
 	}
-	authURL, reference, err := h.tickets.StartTicketPurchase(r.Context(), r.PathValue("slug"), memberID, email, in.Tier, in.Qty)
+	authURL, accessCode, reference, err := h.tickets.StartTicketPurchase(r.Context(), r.PathValue("slug"), memberID, email, in.Tier, in.Qty)
 	if errors.Is(err, service.ErrTicketQty) || errors.Is(err, service.ErrTierNotFound) || errors.Is(err, service.ErrSoldOut) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
@@ -64,6 +64,7 @@ func (h *Handler) BuyTicket(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authorizationUrl": authURL,
+		"accessCode":       accessCode,
 		"reference":        reference,
 		"simulated":        h.tickets.Simulated(),
 	})

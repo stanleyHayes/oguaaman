@@ -48,20 +48,20 @@ func (s *PromotionsService) Simulated() bool { return s.paystack.Simulated() }
 // StartPromotion records a pending promotion against an approved listing owned
 // by the member and returns the Paystack authorization URL to redirect the
 // owner to. Only the listing's owner may promote it.
-func (s *PromotionsService) StartPromotion(ctx context.Context, listingID, memberID, email string, days int) (authorizationURL, reference string, err error) {
+func (s *PromotionsService) StartPromotion(ctx context.Context, listingID, memberID, email string, days int) (authorizationURL, accessCode, reference string, err error) {
 	if days != 7 && days != 14 && days != 30 {
-		return "", "", ErrPromotionDays
+		return "", "", "", ErrPromotionDays
 	}
 	email = strings.TrimSpace(email)
 	if email == "" {
-		return "", "", fmt.Errorf("an email is required for the payment receipt")
+		return "", "", "", fmt.Errorf("an email is required for the payment receipt")
 	}
 	listing, err := s.listings.GetByID(ctx, listingID)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if listing.Status != domain.StatusApproved || listing.OwnerID == "" || listing.OwnerID != memberID {
-		return "", "", &domain.ForbiddenError{Reason: "only the owner of an approved listing can promote it"}
+		return "", "", "", &domain.ForbiddenError{Reason: "only the owner of an approved listing can promote it"}
 	}
 	now := time.Now().UTC()
 	reference = fmt.Sprintf("pro-%d", now.UnixNano())
@@ -80,14 +80,14 @@ func (s *PromotionsService) StartPromotion(ctx context.Context, listingID, membe
 		CreatedAt:     now.Format(time.RFC3339),
 	}
 	if err := s.promotions.Insert(ctx, promo); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	callback := fmt.Sprintf("%s/me?promo_ref=%s", s.portal, url.QueryEscape(reference))
-	authURL, err := s.paystack.Initialize(ctx, email, promo.AmountPesewas, "GHS", reference, callback)
+	authURL, accessCode, err := s.paystack.Initialize(ctx, email, promo.AmountPesewas, "GHS", reference, callback)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return authURL, reference, nil
+	return authURL, accessCode, reference, nil
 }
 
 // ConfirmPromotion verifies a transaction with Paystack and, on first success,

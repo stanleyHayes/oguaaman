@@ -27,6 +27,11 @@ type AIService struct {
 	budget    int // global daily cap
 	perMember int // per-member daily cap
 
+	// Kimi (Moonshot) fallback — used when Anthropic is absent or errors.
+	kimiKey   string
+	kimiModel string
+	kimiBase  string // OpenAI-compatible base, e.g. https://api.moonshot.ai/v1
+
 	usage domain.AIUsageRepository // durable counters; nil → in-memory fallback
 
 	mu       sync.Mutex
@@ -46,6 +51,16 @@ func NewAIService(apiKey, model string, budget, perMember int, usage domain.AIUs
 		byMember:  map[string]int{},
 		client:    &http.Client{Timeout: 30 * time.Second},
 	}
+}
+
+// WithFallback configures a Kimi (Moonshot AI) backup provider, tried when the
+// primary Anthropic call is unavailable or errors. Returns the service so it can
+// be chained off NewAIService. An empty key disables the fallback.
+func (s *AIService) WithFallback(kimiKey, kimiModel, kimiBase string) *AIService {
+	s.kimiKey = kimiKey
+	s.kimiModel = kimiModel
+	s.kimiBase = strings.TrimRight(kimiBase, "/")
+	return s
 }
 
 var systemByAction = map[string]string{
@@ -161,10 +176,32 @@ func (s *AIService) Generate(ctx context.Context, memberID, action, text, langua
 		user = fmt.Sprintf("Translate into %s:\n\n%s", lang, text)
 	}
 
-	if s.apiKey == "" {
+	// No provider configured at all → labelled simulation.
+	if s.apiKey == "" && s.kimiKey == "" {
 		return AIResult{Result: simulate(action, text, language, prompt), Remaining: remaining, Simulated: true}, nil
 	}
 
+	// Anthropic is primary; Kimi is the backup. If Anthropic is absent, Kimi
+	// becomes primary. If Anthropic errors and Kimi is configured, retry on Kimi.
+	var out string
+	var err error
+	switch {
+	case s.apiKey != "":
+		out, err = s.callAnthropic(ctx, sys, user)
+		if err != nil && s.kimiKey != "" {
+			out, err = s.callKimi(ctx, sys, user)
+		}
+	default:
+		out, err = s.callKimi(ctx, sys, user)
+	}
+	if err != nil {
+		return AIResult{}, err
+	}
+	return AIResult{Result: out, Remaining: remaining}, nil
+}
+
+// callAnthropic calls Claude's Messages API and returns the joined text.
+func (s *AIService) callAnthropic(ctx context.Context, sys, user string) (string, error) {
 	payload := map[string]any{
 		"model":      s.model,
 		"max_tokens": 1024,
@@ -174,7 +211,7 @@ func (s *AIService) Generate(ctx context.Context, memberID, action, text, langua
 	buf, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.anthropic.com/v1/messages", bytes.NewReader(buf))
 	if err != nil {
-		return AIResult{}, err
+		return "", err
 	}
 	req.Header.Set("x-api-key", s.apiKey)
 	req.Header.Set("anthropic-version", "2023-06-01")
@@ -182,11 +219,11 @@ func (s *AIService) Generate(ctx context.Context, memberID, action, text, langua
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return AIResult{}, err
+		return "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return AIResult{}, fmt.Errorf("anthropic upstream status %d", resp.StatusCode)
+		return "", fmt.Errorf("anthropic upstream status %d", resp.StatusCode)
 	}
 	var parsed struct {
 		Content []struct {
@@ -195,7 +232,7 @@ func (s *AIService) Generate(ctx context.Context, memberID, action, text, langua
 		} `json:"content"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return AIResult{}, err
+		return "", err
 	}
 	var b strings.Builder
 	for _, c := range parsed.Content {
@@ -203,7 +240,50 @@ func (s *AIService) Generate(ctx context.Context, memberID, action, text, langua
 			b.WriteString(c.Text)
 		}
 	}
-	return AIResult{Result: strings.TrimSpace(b.String()), Remaining: remaining}, nil
+	return strings.TrimSpace(b.String()), nil
+}
+
+// callKimi calls Kimi (Moonshot AI) via its OpenAI-compatible chat/completions
+// endpoint and returns the first choice's text — the Anthropic backup.
+func (s *AIService) callKimi(ctx context.Context, sys, user string) (string, error) {
+	payload := map[string]any{
+		"model":      s.kimiModel,
+		"max_tokens": 1024,
+		"messages": []map[string]any{
+			{"role": "system", "content": sys},
+			{"role": "user", "content": user},
+		},
+	}
+	buf, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.kimiBase+"/chat/completions", bytes.NewReader(buf))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.kimiKey)
+	req.Header.Set("content-type", "application/json")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("kimi upstream status %d", resp.StatusCode)
+	}
+	var parsed struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return "", err
+	}
+	if len(parsed.Choices) == 0 {
+		return "", fmt.Errorf("kimi returned no choices")
+	}
+	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
 }
 
 // simulate is the no-key fallback — clearly labelled so it's never mistaken for live output.

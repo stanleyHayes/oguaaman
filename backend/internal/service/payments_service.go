@@ -35,8 +35,10 @@ const (
 
 // PaystackClient is the seam to the payment provider.
 type PaystackClient interface {
-	// Initialize starts a transaction; returns the URL to send the payer to.
-	Initialize(ctx context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (authorizationURL string, err error)
+	// Initialize starts a transaction; returns the hosted-checkout URL (redirect
+	// fallback) and the access code (used by the in-app Paystack Inline popup so
+	// the client resumes THIS transaction rather than starting a new one).
+	Initialize(ctx context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (authorizationURL, accessCode string, err error)
 	// Verify reports whether the transaction succeeded and the amount charged.
 	// A returned amount of 0 means "amount unknown" (simulation only).
 	Verify(ctx context.Context, reference string) (success bool, amountPesewas int64, err error)
@@ -59,7 +61,7 @@ func NewPaystackClient(secretKey string) PaystackClient {
 
 func (p *paystackHTTP) Simulated() bool { return false }
 
-func (p *paystackHTTP) Initialize(ctx context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (string, error) {
+func (p *paystackHTTP) Initialize(ctx context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (string, string, error) {
 	body, _ := json.Marshal(map[string]any{
 		"email":        email,
 		"amount":       amountPesewas, // subunits (pesewas for GHS)
@@ -69,13 +71,13 @@ func (p *paystackHTTP) Initialize(ctx context.Context, email string, amountPesew
 	})
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.base+"/transaction/initialize", bytes.NewReader(body))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+p.secret)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := p.http.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("paystack initialize failed: %w", err)
+		return "", "", fmt.Errorf("paystack initialize failed: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	var parsed struct {
@@ -83,15 +85,16 @@ func (p *paystackHTTP) Initialize(ctx context.Context, email string, amountPesew
 		Message string `json:"message"`
 		Data    struct {
 			AuthorizationURL string `json:"authorization_url"`
+			AccessCode       string `json:"access_code"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&parsed); err != nil {
-		return "", err
+		return "", "", err
 	}
 	if !parsed.Status || parsed.Data.AuthorizationURL == "" {
-		return "", fmt.Errorf("paystack initialize rejected: %s", parsed.Message)
+		return "", "", fmt.Errorf("paystack initialize rejected: %s", parsed.Message)
 	}
-	return parsed.Data.AuthorizationURL, nil
+	return parsed.Data.AuthorizationURL, parsed.Data.AccessCode, nil
 }
 
 func (p *paystackHTTP) Verify(ctx context.Context, reference string) (bool, int64, error) {
@@ -127,11 +130,13 @@ type SimulatedPaystack struct{ Log *slog.Logger }
 
 func (s SimulatedPaystack) Simulated() bool { return true }
 
-func (s SimulatedPaystack) Initialize(_ context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (string, error) {
+func (s SimulatedPaystack) Initialize(_ context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (string, string, error) {
 	if s.Log != nil {
 		s.Log.Info("SIMULATED Paystack charge — no real money moves", "email", email, "amount", amountPesewas, "currency", currency, "ref", reference)
 	}
-	return callbackURL, nil
+	// No access code in simulation — the client falls back to the callback URL,
+	// which lands straight back on the confirm step.
+	return callbackURL, "", nil
 }
 
 func (s SimulatedPaystack) Verify(context.Context, string) (bool, int64, error) {
@@ -160,20 +165,20 @@ func (s *PaymentsService) Simulated() bool { return s.paystack.Simulated() }
 
 // StartPledge records a pending pledge against an approved project and returns
 // the Paystack authorization URL to redirect the payer to.
-func (s *PaymentsService) StartPledge(ctx context.Context, projectSlug, memberID, email string, amountPesewas int64) (authorizationURL, reference string, err error) {
+func (s *PaymentsService) StartPledge(ctx context.Context, projectSlug, memberID, email string, amountPesewas int64) (authorizationURL, accessCode, reference string, err error) {
 	if amountPesewas < minPledgePesewas || amountPesewas > maxPledgePesewas {
-		return "", "", ErrPledgeAmount
+		return "", "", "", ErrPledgeAmount
 	}
 	email = strings.TrimSpace(email)
 	if email == "" {
-		return "", "", fmt.Errorf("an email is required for the payment receipt")
+		return "", "", "", fmt.Errorf("an email is required for the payment receipt")
 	}
 	project, err := s.listings.GetBySlug(ctx, domain.TypeProject, projectSlug)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if project.Status != domain.StatusApproved {
-		return "", "", &domain.NotFoundError{Entity: "project"}
+		return "", "", "", &domain.NotFoundError{Entity: "project"}
 	}
 	now := time.Now().UTC()
 	reference = fmt.Sprintf("plg-%s-%d", project.Slug, now.UnixNano())
@@ -192,14 +197,14 @@ func (s *PaymentsService) StartPledge(ctx context.Context, projectSlug, memberID
 		CreatedAt:     now.Format(time.RFC3339),
 	}
 	if err := s.pledges.Insert(ctx, pledge); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	callback := fmt.Sprintf("%s/projects/%s?pledge_ref=%s", s.portal, project.Slug, url.QueryEscape(reference))
-	authURL, err := s.paystack.Initialize(ctx, email, amountPesewas, "GHS", reference, callback)
+	authURL, accessCode, err := s.paystack.Initialize(ctx, email, amountPesewas, "GHS", reference, callback)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return authURL, reference, nil
+	return authURL, accessCode, reference, nil
 }
 
 // ConfirmPledge verifies a transaction with Paystack and, on first success,

@@ -64,24 +64,24 @@ func TestStartPromotion_ownerOnly(t *testing.T) {
 	ctx := context.Background()
 
 	// A stranger may not promote someone else's listing.
-	_, _, err := svc.StartPromotion(ctx, "b-1", "m-stranger", "a@b.c", 7)
+	_, _, _, err := svc.StartPromotion(ctx, "b-1", "m-stranger", "a@b.c", 7)
 	var fb *domain.ForbiddenError
 	if !errors.As(err, &fb) {
 		t.Errorf("non-owner: expected ForbiddenError, got %v", err)
 	}
 	// An unapproved listing can't be promoted either.
-	if _, _, err := svc.StartPromotion(ctx, "b-2", "m-yaw", "a@b.c", 7); !errors.As(err, &fb) {
+	if _, _, _, err := svc.StartPromotion(ctx, "b-2", "m-yaw", "a@b.c", 7); !errors.As(err, &fb) {
 		t.Errorf("unapproved: expected ForbiddenError, got %v", err)
 	}
 	// The owner can.
-	_, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 7)
+	_, _, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 7)
 	if err != nil {
 		t.Fatalf("owner promote failed: %v", err)
 	}
 	if !strings.HasPrefix(ref, "pro-") {
 		t.Errorf("reference = %q, want pro-<ts>", ref)
 	}
-	if _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "", 7); err == nil {
+	if _, _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "", 7); err == nil {
 		t.Error("expected a missing email to be rejected")
 	}
 }
@@ -90,7 +90,7 @@ func TestStartPromotion_rejectsInvalidDays(t *testing.T) {
 	svc, _, promos := promosFixture(true, 0)
 	ctx := context.Background()
 	for _, days := range []int{0, 1, 10, 60, -7} {
-		if _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", days); !errors.Is(err, ErrPromotionDays) {
+		if _, _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", days); !errors.Is(err, ErrPromotionDays) {
 			t.Errorf("days=%d: expected ErrPromotionDays, got %v", days, err)
 		}
 	}
@@ -98,7 +98,7 @@ func TestStartPromotion_rejectsInvalidDays(t *testing.T) {
 		t.Errorf("invalid days should not record a promotion, got %d rows", len(promos.rows))
 	}
 	for _, days := range []int{7, 14, 30} {
-		if _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", days); err != nil {
+		if _, _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", days); err != nil {
 			t.Errorf("days=%d: unexpected error %v", days, err)
 		}
 	}
@@ -107,7 +107,7 @@ func TestStartPromotion_rejectsInvalidDays(t *testing.T) {
 func TestStartPromotion_pricesAtTenCedisPerDay(t *testing.T) {
 	svc, _, promos := promosFixture(true, 0)
 	ctx := context.Background()
-	if _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 30); err != nil {
+	if _, _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 30); err != nil {
 		t.Fatalf("StartPromotion failed: %v", err)
 	}
 	if promos.rows[0].AmountPesewas != 30_000 {
@@ -119,7 +119,7 @@ func TestConfirmPromotion_setsFeaturedUntil(t *testing.T) {
 	svc, listings, promos := promosFixture(true, 7_000)
 	ctx := context.Background()
 
-	_, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 7)
+	_, _, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 7)
 	if err != nil {
 		t.Fatalf("StartPromotion failed: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestConfirmPromotion_stacksOntoCurrentPeriod(t *testing.T) {
 	listings.listings[0].Featured = true
 	listings.listings[0].FeaturedUntil = existing
 
-	_, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 14)
+	_, _, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 14)
 	if err != nil {
 		t.Fatalf("StartPromotion failed: %v", err)
 	}
@@ -182,7 +182,7 @@ func TestConfirmPromotion_stacksOntoCurrentPeriod(t *testing.T) {
 func TestConfirmPromotion_failedVerification(t *testing.T) {
 	svc, listings, promos := promosFixture(false, 0)
 	ctx := context.Background()
-	_, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 7)
+	_, _, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@oguaa.test", 7)
 	if err != nil {
 		t.Fatalf("StartPromotion failed: %v", err)
 	}

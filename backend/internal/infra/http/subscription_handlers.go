@@ -37,7 +37,7 @@ func (h *Handler) Subscribe(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	authURL, reference, err := h.subs.StartSubscription(r.Context(), r.PathValue("slug"), memberID, email, in.Plan)
+	authURL, accessCode, reference, err := h.subs.StartSubscription(r.Context(), r.PathValue("slug"), memberID, email, in.Plan)
 	if err != nil {
 		var nf *domain.NotFoundError
 		var fb *domain.ForbiddenError
@@ -50,6 +50,7 @@ func (h *Handler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authorizationUrl": authURL,
+		"accessCode":       accessCode,
 		"reference":        reference,
 		"simulated":        h.subs.Simulated(),
 	})

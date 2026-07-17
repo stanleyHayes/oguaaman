@@ -20,6 +20,12 @@ type Config struct {
 	AIDailyBudget int // global daily cap across the whole instance
 	AIPerMember   int // per-member (per-admin) daily cap
 
+	// Kimi (Moonshot AI) — optional OpenAI-compatible backup used when the
+	// Anthropic call is absent or errors. Absent => no fallback (simulation).
+	KimiAPIKey  string
+	KimiModel   string
+	KimiBaseURL string
+
 	// Auth (spec §8.1, §9). Password-based sign-in → JWT sessions.
 	JWTSecret    string
 	AuthRequired bool // when false (dev default), unauthenticated writes fall back to a demo identity
@@ -65,6 +71,9 @@ func Load() Config {
 		AIModel:       env("OGUAA_AI_MODEL", "claude-haiku-4-5-20251001"),
 		AIDailyBudget: envInt("OGUAA_AI_DAILY_BUDGET", 60),
 		AIPerMember:   envInt("OGUAA_AI_PER_MEMBER", 20),
+		KimiAPIKey:    os.Getenv("KIMI_API_KEY"),
+		KimiModel:     env("KIMI_MODEL", "kimi-k2-0711-preview"),
+		KimiBaseURL:   env("KIMI_BASE_URL", "https://api.moonshot.ai/v1"),
 		JWTSecret:     env("JWT_SECRET", "oguaa-dev-secret-change-me"),
 		AuthRequired:  os.Getenv("AUTH_REQUIRED") == "true",
 
