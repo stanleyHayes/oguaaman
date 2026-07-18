@@ -5,6 +5,7 @@ import { Adinkra, type AdinkraName } from "./adinkra";
 import { Parallax, Reveal } from "./motion";
 import { Breadcrumbs, HeroIcon, HeroWatermark } from "./hero-chrome";
 import { deriveCrumbs, sectionIdFromPath, type Crumb } from "@/lib/breadcrumbs";
+import { cldCover } from "@/lib/cloudinary";
 import { TONES, type Tone } from "@/lib/sections";
 
 /** Standard top-of-section hero — a slim accent border on the cream field.
@@ -49,7 +50,7 @@ export function PageHero({
   if (image) {
     return (
       <section className={`on-dark-pin relative overflow-hidden border-t-4 ${t.border} bg-green-900`}>
-        <img src={image} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={cldCover(image, 1400)} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-green-900/95 via-green-900/70 to-green-900/25" />
         <div className="absolute inset-0 bg-gradient-to-t from-green-900/70 via-transparent to-green-900/20" />
         <HeroWatermark sectionId={iconId} onDark />

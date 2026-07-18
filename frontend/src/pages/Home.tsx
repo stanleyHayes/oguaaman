@@ -1,36 +1,180 @@
 import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
-import type { HomeData, NewsArticle, Listing } from "@/lib/types";
+import type { HomeData, NewsArticle, Listing, CivicData, CivicBehaviour, Goal } from "@/lib/types";
 import { api } from "@/lib/api";
+import { GoalBanner } from "@/components/goals";
 import { Container, CTA as Cta, Eyebrow, SectionHeading, SampleNote } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { Thumb, EventCard, SectionCard, MemorialCard, NewsCard, FeaturedCard } from "@/components/cards";
 import { CircularReveal, Magnetic, Parallax, Reveal, Reveal3D, Stagger, StaggerItem, WordReveal } from "@/components/motion";
 import { SHOWCASE_SECTIONS } from "@/lib/sections";
 import { ABOUT_OGUAA, SAMPLE_NOTICE } from "@/lib/content";
-import { cldCover } from "@/lib/cloudinary";
+import { cldCover, mediaUrl } from "@/lib/cloudinary";
 import { initials } from "@/lib/format";
 
-type HomeLoaderData = HomeData & { news: NewsArticle[]; businesses: Listing[]; featured: Listing[] };
+type HomeLoaderData = HomeData & { news: NewsArticle[]; businesses: Listing[]; featured: Listing[]; civic: CivicData; goals: Goal[] };
 
 // The /api/home payload is intentionally lean; the homepage also surfaces the
-// latest headlines, paid featured placements, and featured trade, so we fan
-// those in alongside it. All are non-critical — a failure still renders the page.
+// latest headlines, paid featured placements, featured trade, and the civic
+// code ("Build a better Oguaa"), so we fan those in alongside it. All are
+// non-critical — a failure still renders the page.
 export async function loader(): Promise<HomeLoaderData> {
-  const [home, news, businesses, featured] = await Promise.all([
+  const [home, news, businesses, featured, civic, goals] = await Promise.all([
     api.home(),
     api.news().catch(() => [] as NewsArticle[]),
     api.businesses().catch(() => [] as Listing[]),
     api.featured().catch(() => [] as Listing[]),
+    api.civic().catch(() => ({ behaviors: [], civilizations: [] } as CivicData)),
+    api.goals().catch(() => [] as Goal[]),
   ]);
-  return { ...home, news, businesses, featured };
+  return { ...home, news, businesses, featured, civic, goals };
 }
 
 const TRADE_CATEGORIES = ["Food & Drink", "Fashion", "Tech", "Health", "Services", "Crafts", "Education"] as const;
 
+// ── "Build a better Oguaa" — the flagship civic band ────────────────────────
+// A prominent homepage tease of the town's civic code (GET /api/civic): a few
+// live DO/STOP behaviours, the pledge idea, and a strong CTA to /better. The
+// green stage matches the /better hero; the behaviour cards reuse that page's
+// DO = green/check, STOP = clay/slash language on light theme-surface cards so
+// the colour coding stays legible in both light and dark themes.
+const CIVIC_GRADIENT = "linear-gradient(140deg, #1B5A3F 0%, #123F2D 55%, #0C2C1F 100%)";
+const CIVIC_PREVIEW_SLUGS = ["read-off-screen", "save-monthly", "stop-scrolling", "do-not-litter"] as const;
+
+function civicPreview(behaviors: CivicBehaviour[]): CivicBehaviour[] {
+  const selected = CIVIC_PREVIEW_SLUGS
+    .map((slug) => behaviors.find((behavior) => behavior.slug === slug))
+    .filter((behavior): behavior is CivicBehaviour => Boolean(behavior));
+  const selectedSlugs = new Set(selected.map((behavior) => behavior.slug));
+
+  for (const type of ["do", "stop"] as const) {
+    const needed = 2 - selected.filter((behavior) => behavior.type === type).length;
+    const fallbacks = behaviors
+      .filter((behavior) => behavior.type === type && !selectedSlugs.has(behavior.slug))
+      .slice(0, Math.max(0, needed));
+    selected.push(...fallbacks);
+    fallbacks.forEach((behavior) => selectedSlugs.add(behavior.slug));
+  }
+
+  return selected.slice(0, 4);
+}
+
+function CivicGlyph({ type }: Readonly<{ type: "do" | "stop" }>) {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {type === "do" ? <path d="M20 6 9 17l-5-5" /> : <><circle cx="12" cy="12" r="9" /><path d="m6 6 12 12" /></>}
+    </svg>
+  );
+}
+
+function CivicLedgerRow({ b }: Readonly<{ b: CivicBehaviour }>) {
+  const isDo = b.type === "do";
+  const badge = isDo ? "bg-green/[0.09] text-green-text" : "bg-clay/[0.10] text-clay-text";
+  const label = isDo ? "text-green-text" : "text-clay-text";
+  return (
+    <StaggerItem
+      as="li"
+      className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 gap-y-2 border-b border-sand px-5 py-5 text-left last:border-b-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:px-7 sm:py-6 xl:min-h-[9.5rem] xl:grid-cols-[3rem_7.5rem_minmax(0,0.9fr)_minmax(0,1.2fr)] xl:items-start xl:gap-x-5 xl:gap-y-0 xl:px-7 xl:py-7"
+    >
+      <span className={`row-span-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12 xl:row-span-1 ${badge}`}>
+        <CivicGlyph type={b.type} />
+      </span>
+      <span className={`self-center text-[0.62rem] font-bold uppercase tracking-[0.16em] xl:self-start xl:pt-4 ${label}`}>
+        {isDo ? "Do this" : "Stop this"}
+      </span>
+      <h3 className="col-start-2 text-base font-semibold leading-snug text-ink xl:col-start-auto xl:pt-3">{b.title}</h3>
+      <p className="col-start-2 text-sm leading-relaxed text-ink-muted xl:col-start-auto xl:pt-2">{b.description}</p>
+    </StaggerItem>
+  );
+}
+
+function TownCode({ civic }: Readonly<{ civic: CivicData }>) {
+  const { behaviors } = civic;
+  const doCount = behaviors.filter((b) => b.type === "do").length;
+  const stopCount = behaviors.filter((b) => b.type === "stop").length;
+  // Tease a stable editorial slice while still reading every row from the API.
+  // The fallback preserves the two-to-keep / two-to-drop balance if authored
+  // slugs change in a future seed.
+  const preview = civicPreview(behaviors);
+
+  return (
+    <section aria-labelledby="town-code-heading" className="on-dark on-dark-pin relative overflow-hidden text-cream" style={{ background: CIVIC_GRADIENT }}>
+      <div className="bg-dotgrid absolute inset-0 opacity-35" aria-hidden />
+      <Parallax strength={18} className="pointer-events-none absolute -bottom-24 -left-20 hidden text-gold sm:block">
+        <Adinkra name="adinkrahene" size={360} labelled={false} className="opacity-[0.08]" />
+      </Parallax>
+      <div className="relative mx-auto w-full max-w-[104rem] px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center xl:gap-16">
+          <div className="lg:pr-2">
+            <Reveal><Eyebrow className="text-cream/90">The civic revolution · Oguaa</Eyebrow></Reveal>
+            <Reveal className="mt-4">
+              <h2 id="town-code-heading" className="text-4xl font-semibold leading-[1.02] text-cream sm:text-6xl xl:text-7xl">
+                Build a <span className="text-gold">better</span> Oguaa.
+              </h2>
+            </Reveal>
+            <Reveal as="p" delay={0.08} className="mt-6 max-w-[43rem] text-lg leading-[1.65] text-cream/85 xl:text-xl">
+              Great towns are built by small daily habits — the litter picked up, the queue kept,
+              the elder greeted, the work done well. This is <span className="text-gold">the town&apos;s code</span>:
+              the behaviours to keep, and the ones to drop, in the name of a better Cape Coast.
+            </Reveal>
+            <Reveal delay={0.14} className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
+              <Cta to="/better#pledge" variant="gold" className="min-h-12 !rounded-xl px-8">Take the pledge</Cta>
+              <Link
+                to="/better"
+                className="inline-flex items-center gap-2 border-b border-gold/60 pb-1 text-sm font-semibold text-cream transition-colors hover:border-gold hover:text-gold"
+              >
+                See the town&apos;s code <span aria-hidden>→</span>
+              </Link>
+            </Reveal>
+            {behaviors.length > 0 && (
+              <Reveal as="div"
+                delay={0.2}
+                className="mt-9"
+              >
+                <dl className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-cream/75">
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className="order-2">behaviours</dt>
+                    <dd className="order-1 text-xl font-semibold text-gold">{behaviors.length}</dd>
+                    <span aria-hidden className="order-3 ml-2 text-cream/35">·</span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className="order-2">to keep</dt>
+                    <dd className="order-1 text-xl font-semibold text-[#6ee7d2]">{doCount}</dd>
+                    <span aria-hidden className="order-3 ml-2 text-cream/35">·</span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className="order-2">to drop</dt>
+                    <dd className="order-1 text-xl font-semibold text-[#e9a08d]">{stopCount}</dd>
+                  </div>
+                </dl>
+              </Reveal>
+            )}
+          </div>
+
+          {preview.length > 0 ? (
+            <Stagger
+              as="ul"
+              className="theme-surface m-0 list-none overflow-hidden rounded-[20px] border border-sand bg-paper p-0 text-ink shadow-[var(--shadow-lift)]"
+            >
+              {preview.map((b) => <CivicLedgerRow key={b.slug} b={b} />)}
+            </Stagger>
+          ) : (
+            <Reveal className="theme-surface rounded-[20px] border border-sand bg-paper p-10 text-center text-ink shadow-[var(--shadow-card)]">
+              <Adinkra name="funtunfunefu" size={40} className="mx-auto text-gold-text" />
+              <p className="mx-auto mt-4 max-w-sm text-sm text-ink-muted">
+                The civic charter is being written. The behaviours that build a better Oguaa are on their way.
+              </p>
+            </Reveal>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function Component() {
-  const { spotlight, artists, events, memorial, stats, news, businesses, featured } = useLoaderData() as HomeLoaderData;
+  const { spotlight, artists, events, memorial, stats, news, businesses, featured, civic, goals } = useLoaderData() as HomeLoaderData;
   usePageTitle(null); // Home uses the site name alone
   const [tradeCategory, setTradeCategory] = useState<string | null>(null);
   const featuredSpots = featured.slice(0, 6);
@@ -49,7 +193,7 @@ export function Component() {
     <>
       <section className="on-dark on-dark-pin relative overflow-hidden bg-green text-cream">
         <Parallax strength={28} className="absolute -inset-y-8 inset-x-0">
-          <img src="/uploads/seed/castle-exterior.jpg" alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" aria-hidden />
+          <img src={mediaUrl("/uploads/seed/castle-exterior.jpg")} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" aria-hidden />
           <div className="bg-dotgrid absolute inset-0 opacity-60" aria-hidden />
           <div className="absolute inset-0" style={{ background: "radial-gradient(120% 120% at 80% -10%, rgba(27,90,63,0.88) 0%, rgba(18,63,45,0.92) 45%, rgba(12,44,31,0.97) 100%)" }} aria-hidden />
           <div className="aurora-bg absolute inset-0" aria-hidden />
@@ -178,6 +322,10 @@ export function Component() {
         </Container>
       </section>
 
+      <GoalBanner goals={goals} />
+
+      <TownCode civic={civic} />
+
       {headlines.length > 0 && (
         <section className="bg-cream py-16 sm:py-20">
           <Container size="wide">
@@ -269,9 +417,9 @@ export function Component() {
               <Reveal as="p" delay={0.08} className="mt-5 text-left font-serif text-lg leading-relaxed text-ink">{ABOUT_OGUAA}</Reveal>
             </div>
             <Reveal delay={0.1} className="grid grid-cols-2 gap-4">
-              <img src="/uploads/seed/market-women.jpg" alt="Traders at the Kotokuraba market" loading="lazy" className="col-span-2 aspect-[16/9] w-full rounded-2xl object-cover shadow-md" />
-              <img src="/uploads/seed/downtown.jpg" alt="A Cape Coast street" loading="lazy" className="aspect-square w-full rounded-2xl object-cover shadow-md" />
-              <img src="/uploads/seed/kenkey-fish.jpg" alt="Fante kenkey with fresh fish" loading="lazy" className="aspect-square w-full rounded-2xl object-cover shadow-md" />
+              <img src={mediaUrl("/uploads/seed/market-women.jpg")} alt="Traders at the Kotokuraba market" loading="lazy" className="col-span-2 aspect-[16/9] w-full rounded-2xl object-cover shadow-md" />
+              <img src={mediaUrl("/uploads/seed/downtown.jpg")} alt="A Cape Coast street" loading="lazy" className="aspect-square w-full rounded-2xl object-cover shadow-md" />
+              <img src={mediaUrl("/uploads/seed/kenkey-fish.jpg")} alt="Fante kenkey with fresh fish" loading="lazy" className="aspect-square w-full rounded-2xl object-cover shadow-md" />
             </Reveal>
           </div>
         </Container>

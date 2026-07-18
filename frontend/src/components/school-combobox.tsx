@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent} from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { Organization } from "@/lib/types";
 
 // Matches the SchoolingEditor's native-select idiom so the swap is invisible.
@@ -46,13 +46,11 @@ export function SchoolCombobox({
   const listId = useId();
   const optionId = (i: number) => `${listId}-opt-${i}`;
 
-  // Reflect an external selection change (or reset) back into the field while
-  // the member isn't actively editing it.
-  useEffect(() => {
-    if (!open) setQuery(selectedName);
-  }, [selectedName, open]);
-
-  const q = query.trim().toLowerCase();
+  // While closed, derive the field from the controlled selection so an
+  // external change/reset is reflected without synchronising local state in an
+  // effect. Opening the field snapshots that current name into the edit query.
+  const inputValue = open ? query : selectedName;
+  const q = inputValue.trim().toLowerCase();
   const filtered = useMemo(() => {
     // Nothing typed yet (the box still shows the chosen name): offer the whole
     // list so it browses like the old <select>.
@@ -77,18 +75,15 @@ export function SchoolCombobox({
     return () => document.removeEventListener("mousedown", onDown);
   }, [open, selectedName]);
 
-  // Keep the highlighted row in range as the filtered list shrinks/grows.
-  useEffect(() => {
-    setActive((a) => (a >= filtered.length ? 0 : a));
-  }, [filtered.length]);
+  // Derive a safe highlighted row while the result list changes. Query edits
+  // already reset `active`, and this also covers an externally-updated list.
+  const activeIndex = active >= 0 && active < filtered.length ? active : 0;
 
   // Scroll the highlighted option into view during keyboard navigation.
   useEffect(() => {
     if (!open) return;
-    document.getElementById(optionId(active))?.scrollIntoView({ block: "nearest" });
-    // optionId is derived from the stable listId; active/open drive this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, open]);
+    document.getElementById(`${listId}-opt-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, listId, open]);
 
   function choose(school: Organization) {
     onSelect(school.id);
@@ -102,17 +97,17 @@ export function SchoolCombobox({
       case "ArrowDown":
         e.preventDefault();
         if (!open) setOpen(true);
-        else setActive((a) => Math.min(a + 1, filtered.length - 1));
+        else setActive(filtered.length > 0 ? Math.min(activeIndex + 1, filtered.length - 1) : 0);
         break;
       case "ArrowUp":
         e.preventDefault();
         if (!open) setOpen(true);
-        else setActive((a) => Math.max(a - 1, 0));
+        else setActive(Math.max(activeIndex - 1, 0));
         break;
       case "Enter":
-        if (open && filtered[active]) {
+        if (open && filtered[activeIndex]) {
           e.preventDefault();
-          choose(filtered[active]);
+          choose(filtered[activeIndex]);
         }
         break;
       case "Escape":
@@ -135,13 +130,13 @@ export function SchoolCombobox({
         aria-expanded={open}
         aria-controls={listId}
         aria-autocomplete="list"
-        aria-activedescendant={open && filtered[active] ? optionId(active) : undefined}
+        aria-activedescendant={open && filtered[activeIndex] ? optionId(activeIndex) : undefined}
         autoComplete="off"
-        value={query}
+        value={inputValue}
         placeholder={placeholder}
         className={inputCls}
         onChange={(e) => { setQuery(e.target.value); setOpen(true); setActive(0); }}
-        onFocus={(e) => { setOpen(true); e.target.select(); }}
+        onFocus={(e) => { setQuery(selectedName); setOpen(true); e.target.select(); }}
         onKeyDown={onKeyDown}
       />
       {open && (
@@ -152,10 +147,10 @@ export function SchoolCombobox({
           className="absolute z-30 mt-1.5 max-h-64 w-full min-w-[14rem] overflow-y-auto overflow-x-hidden rounded-lg border border-sand bg-paper py-1 shadow-[var(--shadow-lift)]"
         >
           {filtered.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-ink-faint">No schools match “{query.trim()}”.</li>
+            <li className="px-3 py-2 text-sm text-ink-faint">No schools match “{inputValue.trim()}”.</li>
           ) : (
             filtered.map((s, i) => {
-              const highlighted = i === active;
+              const highlighted = i === activeIndex;
               return (
                 <li
                   key={s.id}

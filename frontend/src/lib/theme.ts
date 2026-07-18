@@ -1,4 +1,5 @@
 const STORAGE_KEY = "oguaa.theme";
+export const THEME_CHANGE_EVENT = "oguaa:theme-change";
 
 export type Theme = "light" | "dark";
 
@@ -29,6 +30,7 @@ export function persistTheme(theme: Theme): void {
 export function setTheme(theme: Theme): void {
   applyTheme(theme);
   persistTheme(theme);
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent<Theme>(THEME_CHANGE_EVENT, { detail: theme }));
 }
 
 export function toggleTheme(): Theme {

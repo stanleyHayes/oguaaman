@@ -139,6 +139,8 @@ export interface Member {
   role: "member" | "curator" | "steward" | "editor" | "moderator";
   /** Creator kinds ("business" | "artist" | "organiser" | "institution" | "writer"); empty = plain citizen. */
   creatorTypes?: string[];
+  /** Signup plan preference; paid plans remain inactive until checkout succeeds. */
+  creatorPlanIntent?: string;
   joinedAt: string;
   birthday?: string;
   broadcastBirthday?: boolean;
@@ -467,6 +469,8 @@ export interface Listing {
   tags: string[];
   townId?: string;
   schoolIds?: string[];
+  latitude?: number;
+  longitude?: number;
   postedByOrgId?: string;
   coverImageUrl?: string;
   featured?: boolean;
@@ -667,4 +671,71 @@ export interface Page<T> {
 export interface PageParams {
   page: number;
   pageSize?: number;
+}
+
+// ── Building a Better Cape Coast (the civic page, /better) ──────────────────
+// A small catalogue of civic behaviours grouped by the ring of life they touch,
+// plus the historical civilizations whose civic habits made them great. Static,
+// authored content served from GET /api/civic — no user writes.
+
+/** The ring of civic life a behaviour touches. "town" is Cape-Coast civic life
+ *  itself — public cleanliness, the markets, the shore, elders, queueing. */
+export type CivicRing = "self" | "home" | "school" | "work" | "town" | "nation";
+
+/** One civic behaviour — a thing to keep doing ("do") or to stop ("stop"). */
+export interface CivicBehaviour {
+  slug: string;
+  ring: CivicRing;
+  type: "do" | "stop";
+  title: string;
+  description: string;
+  /** The reason it matters — surfaced on tap/hover. */
+  why: string;
+}
+
+/** A civilization whose civic habits carry a lesson for a better town. */
+export interface CivicLesson {
+  slug: string;
+  name: string;
+  era: string;
+  principle: string;
+  lesson: string;
+}
+
+/** Payload of GET /api/civic. Note the JSON key is "behaviors" (US spelling). */
+export interface CivicData {
+  behaviors: CivicBehaviour[];
+  civilizations: CivicLesson[];
+}
+
+export type GoalCadence = "daily" | "weekly" | "monthly" | "quarterly" | "semiannual" | "annual";
+export type GoalStatus = "active" | "pending_review" | "achieved" | "missed";
+
+/** A collective town goal (GET /api/goals) — set for a period, shown to remind
+ *  everyone, and judged achieved/missed by an accountability officer. Exactly one
+ *  goal is `featured` (the annual goal set at the grand durbar). `status` is
+ *  computed on read: pending_review means the window closed and the officer has
+ *  not yet ruled. */
+export interface Goal {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  target?: string;
+  cadence: GoalCadence;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  status: GoalStatus;
+  reviewNote?: string;
+  reviewedById?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  setAtDurbar: boolean;
+  ring?: CivicRing;
+  featured: boolean;
+  createdById: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt?: string;
 }

@@ -12,7 +12,7 @@ export interface Crumb {
 const KNOWN_SECTIONS = new Set([
   "home", "music", "people", "heritage", "culture", "festivals", "visit",
   "education", "business", "memoriam", "community", "news", "safety",
-  "lostfound", "events", "youth", "diaspora",
+  "lostfound", "events", "youth", "diaspora", "better",
 ]);
 
 // A few route segments don't match a section id 1:1, or are utility routes

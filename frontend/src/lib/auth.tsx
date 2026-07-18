@@ -8,6 +8,7 @@ export interface JoinInput {
   dateOfBirth: string;
   password: string;
   creatorTypes?: string[];
+  creatorPlanIntent?: string;
 }
 
 interface AuthState {

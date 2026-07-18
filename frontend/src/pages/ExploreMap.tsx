@@ -5,7 +5,7 @@
 // fallback). Modes reframe the same data: Heritage/Festival trails, a Safety
 // view, and "Rep your quarter" colouring. The last payload is cached in
 // localStorage so the map still renders offline.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, ZoomControl, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -25,7 +25,8 @@ delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIcon
 L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, shadowUrl: markerShadow });
 
 const CAPE_COAST: [number, number] = [5.1053, -1.2466];
-const MAP_CACHE_KEY = "oguaa.map.cache.v1";
+const MAP_CACHE_KEY = "oguaa.map.cache.v2";
+const LEGACY_MAP_CACHE_KEYS = ["oguaa.map.cache.v1"];
 
 // OSRM-compatible routing base; override with VITE_ROUTING_URL to drop in a
 // paid provider/token later. Public demo server: router.project-osrm.org.
@@ -46,17 +47,19 @@ const LAYERS: { id: MapLayer; label: string; color: string; glyph: string }[] = 
   { id: "business", label: "Businesses", color: "#C9822E", glyph: "🏪" },
   { id: "events", label: "Events", color: "#0E7C6B", glyph: "🎉" },
   { id: "landmarks", label: "Heritage", color: "#8A5AA8", glyph: "🏛️" },
-  { id: "institutions", label: "Schools", color: "#2F855A", glyph: "🎓" },
+  { id: "institutions", label: "Schools & institutions", color: "#2F855A", glyph: "🎓" },
   { id: "safety", label: "Safety", color: "#B0503C", glyph: "⚠️" },
   { id: "lostfound", label: "Lost & Found", color: "#3E7CB1", glyph: "🔑" },
   { id: "services", label: "Services", color: "#4C40A8", glyph: "🚑" },
   { id: "transport", label: "Transport", color: "#64748B", glyph: "🚌" },
 ];
 const LAYER_BY_ID = Object.fromEntries(LAYERS.map((l) => [l.id, l])) as Record<MapLayer, (typeof LAYERS)[number]>;
+const LAYER_IDS = new Set<MapLayer>(LAYERS.map((layer) => layer.id));
 
-// Default subset (explore) and per-mode presets. Switching mode presets the
-// visible layers; the user can still toggle chips afterwards.
-const DEFAULT_LAYERS: MapLayer[] = ["business", "events", "landmarks", "institutions", "safety"];
+// Explore opens with every available kind visible. This keeps the map useful
+// even while a new/older dataset only has service or transport coordinates;
+// the chips still let people narrow the view immediately.
+const DEFAULT_LAYERS: MapLayer[] = LAYERS.map((layer) => layer.id);
 const MODE_LAYERS: Record<Mode, MapLayer[]> = {
   explore: DEFAULT_LAYERS,
   heritage: ["landmarks"],
@@ -93,18 +96,85 @@ function pointGlyph(p: MapPoint): string {
   return LAYER_BY_ID[p.layer]?.glyph ?? "📍";
 }
 
-function pinIcon(color: string, glyph: string, selected: boolean): L.DivIcon {
-  const size = selected ? 38 : 30;
-  const anchor = selected ? 36 : 28;
-  const shadow = selected
-    ? "box-shadow:0 0 0 4px rgba(255,255,255,.6),0 4px 10px rgba(0,0,0,.4);"
-    : "box-shadow:0 2px 6px rgba(0,0,0,.4);";
+// Inline vector symbols keep the map pins recognisable even when the device's
+// emoji font is unavailable (or renders a monochrome/missing-glyph box). They
+// deliberately use only strokes/fills inherited from the pin's cream centre,
+// so every category stays legible on both the street map and satellite-like
+// tiles without loading another icon asset.
+const PIN_SYMBOLS: Record<MapLayer, string> = {
+  business: '<path d="M16.5 20h15l-1.8-5h-11.4l-1.8 5Z"/><path d="M18 21v10h12V21M22 31v-6h4v6"/>',
+  events: '<rect x="16.5" y="16.5" width="15" height="14.5" rx="2"/><path d="M20 14.5v4M28 14.5v4M16.5 21.5h15"/><circle cx="21" cy="25.5" r="1" fill="currentColor" stroke="none"/><circle cx="27" cy="25.5" r="1" fill="currentColor" stroke="none"/>',
+  landmarks: '<path d="m15.5 20 8.5-5 8.5 5M17 21h14M18.5 21v9M23 21v9M27.5 21v9M16.5 31h15"/>',
+  institutions: '<path d="m15 20 9-4.5 9 4.5-9 4.5-9-4.5Z"/><path d="M19 22.5v4c2.8 2.2 7.2 2.2 10 0v-4M33 20v6"/>',
+  safety: '<path d="M24 14.5 31 18v5c0 4.8-2.8 8-7 10-4.2-2-7-5.2-7-10v-5l7-3.5Z"/><path d="M24 19v6M24 28.5v.25"/>',
+  lostfound: '<circle cx="22" cy="22" r="5.5"/><path d="m26 26 5.5 5.5M22 19.5v5M19.5 22h5"/>',
+  services: '<path d="M21 15.5h6v5h5v6h-5v5h-6v-5h-5v-6h5v-5Z"/>',
+  transport: '<rect x="16" y="15.5" width="16" height="15" rx="3"/><path d="M18 22h12M19 18h10M19 31v2M29 31v2"/><circle cx="20" cy="27" r="1" fill="currentColor" stroke="none"/><circle cx="28" cy="27" r="1" fill="currentColor" stroke="none"/>',
+};
+
+function inferredLayer(kind: unknown): MapLayer | null {
+  switch (kind) {
+    case "business": return "business";
+    case "event": return "events";
+    case "institution":
+    case "school": return "institutions";
+    case "incident": return "safety";
+    case "lostfound": return "lostfound";
+    case "landmark": return "landmarks";
+    case "service": return "services";
+    case "transport": return "transport";
+    default: return null;
+  }
+}
+
+function normalizePoint(value: unknown): MapPoint | null {
+  if (!value || typeof value !== "object") return null;
+  const point = value as Record<string, unknown>;
+  const inferred = inferredLayer(point.kind);
+  if (!inferred || typeof point.id !== "string" || typeof point.title !== "string") return null;
+
+  const lat = Number(point.lat);
+  const lng = Number(point.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+  const layer = typeof point.layer === "string" && LAYER_IDS.has(point.layer as MapLayer)
+    ? point.layer as MapLayer
+    : inferred;
+  return { ...point, lat, lng, layer } as unknown as MapPoint;
+}
+
+function normalizeMapData(value: unknown): MapData | null {
+  if (!value || typeof value !== "object") return null;
+  const payload = value as Partial<MapData>;
+  if (!Array.isArray(payload.points)) return null;
+  return {
+    points: payload.points.map(normalizePoint).filter((point): point is MapPoint => point !== null),
+    trails: Array.isArray(payload.trails) ? payload.trails : [],
+    areas: Array.isArray(payload.areas) ? payload.areas : [],
+  };
+}
+
+function pinIcon(color: string, layer: MapLayer, selected: boolean): L.DivIcon {
+  const width = selected ? 46 : 38;
+  const height = selected ? 58 : 48;
+  const anchor = height - 2;
+  const symbol = PIN_SYMBOLS[layer];
+  const selectionRing = selected
+    ? '<circle cx="24" cy="23" r="20.5" fill="none" stroke="#fff" stroke-width="2" opacity=".9"/>'
+    : "";
   return L.divIcon({
     className: "oguaa-map-pin",
-    html: `<div style="width:${size}px;height:${size}px;border-radius:50% 50% 50% 0;transform:rotate(45deg);background:${color};border:2px solid #fff;${shadow}display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(-45deg);font-size:${selected ? 18 : 14}px;line-height:1;">${glyph}</span></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, anchor],
-    popupAnchor: [0, -anchor + 4],
+    html: `<div style="width:${width}px;height:${height}px;filter:drop-shadow(0 ${selected ? 5 : 3}px ${selected ? 5 : 3}px rgba(5,21,14,.42));pointer-events:none;">
+      <svg width="${width}" height="${height}" viewBox="0 0 48 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block;overflow:visible;">
+        <path d="M24 1.5C11.6 1.5 2.5 10.7 2.5 23c0 16.4 21.5 35.5 21.5 35.5S45.5 39.4 45.5 23C45.5 10.7 36.4 1.5 24 1.5Z" fill="${color}" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+        ${selectionRing}
+        <circle cx="24" cy="23" r="14.5" fill="#F6F1E7" stroke="rgba(12,44,31,.18)"/>
+        <g color="#0C2C1F" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${symbol}</g>
+      </svg>
+    </div>`,
+    iconSize: [width, height],
+    iconAnchor: [width / 2, anchor],
+    popupAnchor: [0, -anchor + 8],
   });
 }
 
@@ -201,15 +271,25 @@ function gmapsWalkLink(p: MapPoint, from: [number, number] | null): string {
 }
 
 function readCache(): MapData | null {
-  try {
-    const raw = localStorage.getItem(MAP_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<MapData>;
-    if (!parsed || !Array.isArray(parsed.points)) return null;
-    return { points: parsed.points, trails: parsed.trails ?? [], areas: parsed.areas ?? [] };
-  } catch {
-    return null;
+  for (const key of [MAP_CACHE_KEY, ...LEGACY_MAP_CACHE_KEYS]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const normalized = normalizeMapData(JSON.parse(raw) as unknown);
+      if (!normalized) continue;
+      if (key !== MAP_CACHE_KEY) {
+        try {
+          localStorage.setItem(MAP_CACHE_KEY, JSON.stringify(normalized));
+        } catch {
+          /* quota / disabled storage — the normalized in-memory value still works */
+        }
+      }
+      return normalized;
+    } catch {
+      /* try the next cache generation */
+    }
   }
+  return null;
 }
 
 // ── loader (offline-friendly) ───────────────────────────────────────────────
@@ -221,7 +301,8 @@ interface LoaderData {
 
 export async function loader(): Promise<LoaderData> {
   try {
-    const data = await api.mapData();
+    const data = normalizeMapData(await api.mapData());
+    if (!data) throw new Error("The town map returned an invalid payload.");
     try {
       localStorage.setItem(MAP_CACHE_KEY, JSON.stringify(data));
     } catch {
@@ -261,8 +342,7 @@ function MapEffects({ focus, routeCoords }: Readonly<{ focus: { latlng: [number,
   }, [routeCoords, map]);
   useEffect(() => {
     if (focus) map.flyTo(focus.latlng, Math.max(map.getZoom(), 15), { duration: 0.5 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focus?.nonce, map]);
+  }, [focus, map]);
   return null;
 }
 
@@ -307,6 +387,25 @@ export function Component() {
     [data.points, activeLayers, mode, quarterFilter],
   );
 
+  const layerCounts = useMemo(() => {
+    const counts = Object.fromEntries(LAYERS.map((layer) => [layer.id, 0])) as Record<MapLayer, number>;
+    for (const point of data.points) counts[point.layer] += 1;
+    return counts;
+  }, [data.points]);
+
+  // Selecting a different point clears directions that belong to the previous
+  // point. Keeping this in the interaction handler avoids a state-sync effect
+  // while preserving routes when the already-selected marker is tapped again.
+  const selectPoint = useCallback((p: MapPoint) => {
+    if (p.id !== selected?.id) {
+      setRoute(null);
+      setRouteStatus("idle");
+      setRouteError(null);
+    }
+    setSelected(p);
+    setView({ latlng: [p.lat, p.lng], nonce: Date.now() });
+  }, [selected?.id]);
+
   // Rebuild markers only when the inputs that shape them change — the 1s
   // countdown tick below then re-renders the page cheaply (memo unchanged).
   const pointMarkers = useMemo(
@@ -315,13 +414,12 @@ export function Component() {
         <Marker
           key={p.id}
           position={[p.lat, p.lng]}
-          icon={pinIcon(pointColor(p, mode), pointGlyph(p), selected?.id === p.id)}
+          icon={pinIcon(pointColor(p, mode), p.layer, selected?.id === p.id)}
+          title={p.title}
           eventHandlers={{ click: () => selectPoint(p) }}
         />
       )),
-    // selectPoint is stable enough for our purposes; selected drives the highlight.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visiblePoints, mode, selected?.id],
+    [visiblePoints, mode, selected?.id, selectPoint],
   );
 
   // Tick the "clears in …" countdown once a second, only while areas are shown.
@@ -346,23 +444,6 @@ export function Component() {
     });
   }
 
-  // Only stable setState calls here, so the memoised marker click handlers stay
-  // correct even when captured in an older render. Directions state is reset by
-  // the effect below when the selected point changes.
-  function selectPoint(p: MapPoint) {
-    setSelected(p);
-    setView({ latlng: [p.lat, p.lng], nonce: Date.now() });
-  }
-
-  // Selection changed → drop any directions result/status that wasn't for this
-  // exact point, so the panel never shows a stale route or error for a neighbour.
-  useEffect(() => {
-    setRoute((r) => (r && selected && r.to === selected.id ? r : null));
-    setRouteStatus("idle");
-    setRouteError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.id]);
-
   function closePanel() {
     setSelected(null);
     setRoute(null);
@@ -373,7 +454,7 @@ export function Component() {
   async function startDirections(p: MapPoint) {
     setRouteStatus("locating");
     setRouteError(null);
-    let from = origin;
+    let from: [number, number];
     try {
       from = await getPosition();
       setOrigin(from);
@@ -398,7 +479,7 @@ export function Component() {
   const activeRoute = route && selected && route.to === selected.id ? route : null;
 
   return (
-    <div className="relative h-[calc(100dvh-3.5rem)] min-h-[560px] w-full overflow-hidden bg-cream">
+    <div className="relative isolate z-0 h-[calc(100dvh-3.5rem)] min-h-[560px] w-full overflow-hidden bg-cream">
       <MapContainer
         center={CAPE_COAST}
         zoom={14}
@@ -496,20 +577,32 @@ export function Component() {
         <div className={`${showLayers ? "flex" : "hidden"} pointer-events-auto max-w-full items-center gap-1.5 overflow-x-auto rounded-2xl border border-sand bg-cream/95 p-2 shadow-md backdrop-blur [scrollbar-width:none] sm:flex`}>
           {LAYERS.map((l) => {
             const on = activeLayers.has(l.id);
+            const count = layerCounts[l.id];
             return (
               <button
                 key={l.id}
                 type="button"
                 onClick={() => toggleLayer(l.id)}
                 aria-pressed={on}
+                aria-label={`${l.label}, ${count} ${count === 1 ? "pin" : "pins"}`}
                 className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${on ? "border-transparent text-ink" : "border-sand text-ink-faint opacity-60 hover:opacity-100"}`}
                 style={on ? { backgroundColor: `color-mix(in srgb, ${l.color} 16%, transparent)` } : undefined}
               >
-                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: l.color }} aria-hidden />
+                <span
+                  className="inline-flex h-4 w-4 rotate-45 items-center justify-center rounded-[50%_50%_50%_0] border border-white/80 shadow-sm"
+                  style={{ backgroundColor: l.color }}
+                  aria-hidden
+                >
+                  <span className="-rotate-45 text-[0.5rem] leading-none">{l.glyph}</span>
+                </span>
                 {l.label}
+                <span className="min-w-4 rounded-full bg-ink/[0.08] px-1 text-center text-[0.6rem] font-bold tabular-nums" aria-hidden>{count}</span>
               </button>
             );
           })}
+          <span className="ml-auto shrink-0 px-1 text-[0.65rem] font-semibold text-ink-faint" aria-live="polite">
+            {visiblePoints.length} {visiblePoints.length === 1 ? "place" : "places"}
+          </span>
         </div>
 
         {mode === "quarter" && quarters.length > 0 && (

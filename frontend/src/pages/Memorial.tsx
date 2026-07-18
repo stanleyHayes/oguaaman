@@ -9,6 +9,7 @@ import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { CandleRemember, Tributes } from "@/components/memorial-actions";
 import { ReportButton } from "@/components/report-button";
 import { lifeDates, formatDayMonth, initials } from "@/lib/format";
+import { cldCover } from "@/lib/cloudinary";
 
 interface Data {
   memorial: Listing;
@@ -67,7 +68,7 @@ export function Component() {
         <header className="pt-12 text-center">
           <span className="relative mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-gold-border/40 text-5xl text-green" style={{ background: "radial-gradient(circle at 50% 38%, #F0E4CC, #E2D2AE)" }} aria-hidden>
             {initials(m.title)}
-            {m.coverImageUrl && <img src={m.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
+            {m.coverImageUrl && <img src={cldCover(m.coverImageUrl, 300)} alt="" className="absolute inset-0 h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
           </span>
           <h1 className="mt-7 text-5xl font-medium leading-none text-ink sm:text-6xl">{d.honorific ? `${d.honorific} ` : ""}{m.title}</h1>
           {place && <p className="mt-3 font-serif text-lg italic text-ink-muted">{place.name}</p>}
@@ -105,6 +106,7 @@ export function Component() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {d.gallery.map((g, i) => (
                   <div key={`${g.url ?? ""}-${g.caption}`} className="relative aspect-square overflow-hidden rounded border border-sand" style={{ background: GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length] }}>
+                    {g.url && <img src={cldCover(g.url, 400)} alt={g.caption ?? ""} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
                     <span className="on-dark-pin absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-2.5 pb-1.5 pt-4 text-xs text-cream">{g.caption}</span>
                   </div>
                 ))}

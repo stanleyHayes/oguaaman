@@ -194,6 +194,14 @@
   html[data-theme="dark"] .on-dark-pin .theme-surface {
     --color-cream: var(--color-cream-dark, #16241e);
   }
+  /* Account controls use lighter teal/clay fills in dark mode. Keep their
+     foreground dark for WCAG contrast without changing the global palette. */
+  html[data-theme="dark"] .me-account :is(.bg-teal, .bg-clay) {
+    color: var(--color-green-900);
+  }
+  html[data-theme="dark"] .me-account .me-teal-switch-thumb {
+    background-color: var(--color-green-900);
+  }
   .bg-dotgrid {
     background-image: radial-gradient(rgba(199, 162, 74, 0.14) 1px, transparent 1px);
     background-size: 18px 18px;

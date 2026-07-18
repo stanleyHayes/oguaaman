@@ -1,22 +1,22 @@
 // Real, authentic photographs of Cape Coast and its people, used to give the
-// heritage/visit/education surfaces a sense of place. These are Wikimedia
-// Commons files (CC-licensed) served from upload.wikimedia.org at the cached
-// 330px width that serves universally. They are demo/seed imagery — for
-// production, re-host curated, properly-attributed photos on Cloudinary.
+// heritage/visit/education surfaces a sense of place. Originally CC-licensed
+// Wikimedia Commons files, now re-hosted on the project's Cloudinary
+// (cloud "dvoqbonr2", folder oguaa/cape-coast) and delivered through
+// `f_auto,q_auto` for automatic format + quality optimisation.
 //
-// Attribution lives with each file's Commons page; keep credits when these go
-// to production (e.g. a Castle/Kakum/UCC photo credit line).
+// Attribution still lives with each source's Commons page; keep credits when
+// these are swapped for final curated photography (e.g. a Castle/Kakum/UCC line).
 
-const W = "https://upload.wikimedia.org/wikipedia/commons/thumb";
+const C = "https://res.cloudinary.com/dvoqbonr2/image/upload/f_auto,q_auto/oguaa/cape-coast";
 
 export const PHOTOS = {
-  capeCoastCastle: `${W}/a/a0/Cape_Coast_Castle%2C_Cape_Coast%2C_Ghana.JPG/330px-Cape_Coast_Castle%2C_Cape_Coast%2C_Ghana.JPG`,
-  kakum: `${W}/1/16/Kakum.jpg/330px-Kakum.jpg`,
-  elminaCastle: `${W}/a/a7/Elmina_Castle_-_Ghana.jpg/330px-Elmina_Castle_-_Ghana.jpg`,
-  ucc: `${W}/f/fc/University_Library_complex.JPG/330px-University_Library_complex.JPG`,
-  mfantsipim: `${W}/c/cc/Mfantsipim-school-main-entrance-front-view.jpg/330px-Mfantsipim-school-main-entrance-front-view.jpg`,
-  kofiAnnan: `${W}/7/72/Kofi_Annan_2012_%28cropped%29.jpg/330px-Kofi_Annan_2012_%28cropped%29.jpg`,
-  eboTaylor: `${W}/a/ac/Ebo_Taylor.jpg/330px-Ebo_Taylor.jpg`,
+  capeCoastCastle: `${C}/capeCoastCastle.jpg`,
+  kakum: `${C}/kakum.jpg`,
+  elminaCastle: `${C}/elminaCastle.jpg`,
+  ucc: `${C}/ucc.jpg`,
+  mfantsipim: `${C}/mfantsipim.jpg`,
+  kofiAnnan: `${C}/kofiAnnan.jpg`,
+  eboTaylor: `${C}/eboTaylor.jpg`,
 } as const;
 
 /** Landmark gallery — heritage & visitor surfaces. */

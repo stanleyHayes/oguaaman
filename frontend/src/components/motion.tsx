@@ -1,5 +1,5 @@
-import { useRef, type CSSProperties, type ReactNode } from "react";
-import { motion, useReducedMotion, useScroll, useSpring, useTransform, useMotionValue, type Variants } from "motion/react";
+import { useRef, type CSSProperties, type ReactNode, type Ref } from "react";
+import { motion, useInView, useReducedMotion, useScroll, useSpring, useTransform, useMotionValue, type Variants } from "motion/react";
 
 // One eased curve for every entrance on the site — a single motion language.
 const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -221,20 +221,28 @@ export function WordReveal({
   accentClassName?: string;
   as?: "h1" | "h2" | "h3" | "p";
 }>) {
+  const ref = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const inView = useInView(ref, { once: true, margin: "0px 0px -10% 0px" });
   const words = text.split(" ");
   const isAccent = (word: string) =>
     accentWords?.some(
       (aw) => word.replace(/[.,!?;:]+$/, "").toLowerCase() === aw.toLowerCase()
     );
+  // Always reveal when reduced motion is preferred; otherwise reveal on scroll.
+  const animate = reduce || inView ? "show" : "hidden";
 
   return (
-    <Tag className={className} aria-label={text}>
+    <Tag
+      ref={ref as Ref<HTMLHeadingElement>}
+      className={className}
+      aria-label={text}
+    >
       <motion.span
         className="inline-block"
         variants={WORD_CONTAINER}
         initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+        animate={animate}
       >
         {words.map((word, i) => (
           <motion.span

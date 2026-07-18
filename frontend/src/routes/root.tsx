@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, isRouteErrorResponse, useLocation, useNavigation, useRouteError } from "react-router-dom";
 import { motion } from "motion/react";
 import { SiteHeader } from "@/components/site-header";
@@ -8,6 +8,8 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { PageTransition } from "@/components/page-transition";
 import { Wordmark } from "@/components/wordmark";
 import { Container, CTA as Cta } from "@/components/ui";
+import { SPLASH_LINES, randomSplashIndex } from "@/lib/splash-lines";
+import { SplashQuote } from "@/components/splash-quote";
 
 /** Reset scroll to the top on every route change (instant, loader-safe). */
 function ScrollToTop() {
@@ -22,7 +24,7 @@ function NavigationProgress() {
   const nav = useNavigation();
   if (nav.state === "idle") return null;
   return (
-    <div className="fixed inset-x-0 top-0 z-[60] h-0.5 overflow-hidden bg-gold/15" aria-hidden>
+    <div className="fixed inset-x-0 top-0 z-[1300] h-0.5 overflow-hidden bg-gold/15" aria-hidden>
       <motion.div
         className="h-full bg-gold-brand"
         initial={{ x: "-100%" }}
@@ -39,8 +41,16 @@ function NavigationProgress() {
  * window — a blank white page on cold caches / slow networks.
  */
 export function HydrateFallback() {
+  // A different proverb/fact each load, gently rotating while you wait.
+  const [i, setI] = useState(randomSplashIndex);
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % SPLASH_LINES.length), 4600);
+    return () => clearInterval(t);
+  }, []);
+  const line = SPLASH_LINES[i];
+
   return (
-    <div className="on-dark-pin flex min-h-screen flex-col items-center justify-center gap-4 bg-green-900 text-cream">
+    <div className="on-dark-pin flex min-h-screen flex-col items-center justify-center gap-4 bg-green-900 px-6 text-cream">
       <motion.div
         initial={{ opacity: 0, scale: 0.94 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -56,7 +66,7 @@ export function HydrateFallback() {
           transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity }}
         />
       </div>
-      <p className="text-xs uppercase tracking-[0.2em] text-gold/80">Yɛn ara asaase ni</p>
+      <SplashQuote key={i} line={line} />
     </div>
   );
 }

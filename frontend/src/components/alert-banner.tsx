@@ -380,9 +380,9 @@ export function AlertBanner() {
   return (
     <section
       aria-label="Community alerts"
-      className="sticky top-14 z-30 border-b border-sand bg-paper/95 shadow-[var(--shadow-card)] backdrop-blur-sm"
+      className="sticky top-14 z-30 border-b border-sand bg-paper/95 shadow-[var(--shadow-card)] backdrop-blur-sm sm:top-16 xl:top-[6.5rem]"
     >
-      <div className="mx-auto w-full max-w-6xl px-3 py-2.5 sm:px-4">
+      <div className="mx-auto w-full max-w-7xl px-3 py-2.5 sm:px-4">
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <p className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-ink-faint">
             {visible.length} active {visible.length === 1 ? "alert" : "alerts"}

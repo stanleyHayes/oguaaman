@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { type Theme, getInitialTheme, setTheme } from "@/lib/theme";
+import { THEME_CHANGE_EVENT, type Theme, getInitialTheme, setTheme } from "@/lib/theme";
 
 function Moon({ size = 18 }: Readonly<{ size?: number }>) {
   return (
@@ -25,8 +25,13 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
     const onStorage = (e: StorageEvent) => {
       if (e.key === "oguaa.theme") set((e.newValue as Theme) ?? getInitialTheme());
     };
+    const onThemeChange = (e: Event) => set((e as CustomEvent<Theme>).detail);
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener(THEME_CHANGE_EVENT, onThemeChange);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
+    };
   }, []);
 
   const isDark = theme === "dark";

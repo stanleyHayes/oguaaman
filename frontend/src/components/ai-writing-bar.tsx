@@ -208,11 +208,27 @@ export function AiWritingBar({
           )}
 
           {mode === "lang" && (
-            <div className="flex flex-wrap gap-2 px-4 pb-4 pt-4">
-              <select value={language} onChange={(e) => setLanguage(e.target.value)} className="min-w-[10rem] flex-1 rounded-lg border border-ai-line bg-white px-3 py-2.5 text-sm focus:border-ai focus:outline-none">
-                {LANGS.map((l) => <option key={l}>{l}</option>)}
-              </select>
-              <button type="button" onClick={() => doFetch("translate")} className="rounded-lg bg-ai px-4 py-2.5 text-sm font-semibold text-white">Translate</button>
+            <div className="flex flex-col gap-3 px-4 pb-4 pt-4 sm:flex-row sm:items-end">
+              <fieldset className="min-w-0 flex-1">
+                <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">Translate into</legend>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Translation language">
+                  {LANGS.map((item) => {
+                    const selected = language === item;
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => setLanguage(item)}
+                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${selected ? "border-ai bg-ai text-white" : "border-ai-line bg-white text-ink hover:border-ai hover:text-ai"}`}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+              <button type="button" onClick={() => doFetch("translate")} className="w-full rounded-lg bg-ai px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">Translate</button>
             </div>
           )}
 

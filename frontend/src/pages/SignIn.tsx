@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject, type FormE
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
+import { api } from "@/lib/api";
+import type { Plan } from "@/lib/types";
 import { Adinkra } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
 import { DatePicker } from "@/components/date-picker";
@@ -152,6 +154,56 @@ const CREATOR_KINDS = [
   { id: "institution", label: "Institution" },
 ] as const;
 
+const STARTER_FALLBACK: Plan = {
+  id: "plan-starter-fallback",
+  slug: "starter",
+  name: "Starter",
+  audience: "any",
+  prices: { default: 0 },
+  interval: "free",
+  perks: ["1 live listing", "Standard directory placement"],
+  maxListings: 1,
+  active: true,
+  sortOrder: 1,
+};
+
+type PlanCatalogStatus = "loading" | "ready" | "fallback" | "unavailable";
+
+function creatorPlansFor(plans: Plan[], creatorTypes: string[]): Plan[] {
+  const hasBusiness = creatorTypes.includes("business");
+  const hasNonBusinessCreator = creatorTypes.some((type) => type !== "business");
+  return plans
+    .filter((plan) => {
+      if (!plan.active) return false;
+      if (plan.audience === "business") return hasBusiness;
+      if (plan.audience === "creator") return hasNonBusinessCreator;
+      return plan.audience === "any";
+    })
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function starterPlanFor(plans: Plan[]): Plan {
+  return plans.find((plan) => plan.active && plan.slug === "starter" && plan.interval === "free")
+    ?? plans.find((plan) => plan.active && plan.interval === "free")
+    ?? STARTER_FALLBACK;
+}
+
+function planPrice(plan: Plan, creatorTypes: string[]): number {
+  const audiencePrice = plan.audience === "creator"
+    ? plan.prices.creator
+    : creatorTypes.includes("business")
+      ? plan.prices.business
+      : plan.prices.creator;
+  return audiencePrice ?? plan.prices.default ?? 0;
+}
+
+function planPriceLabel(plan: Plan, creatorTypes: string[]): string {
+  const price = planPrice(plan, creatorTypes);
+  if (price === 0 || plan.interval === "free") return "Free";
+  const cedis = price / 100;
+  return `GH₵${Number.isInteger(cedis) ? cedis.toFixed(0) : cedis.toFixed(2)}/month`;
+}
+
 function SignInForm({
   identifier,
   setIdentifier,
@@ -274,9 +326,10 @@ function MfaForm({ code, setCode, busy, err, onSubmit, onCancel }: Readonly<{
   );
 }
 
-type JoinStep = 1 | 2 | 3;
+type JoinStep = 1 | 2 | 3 | 4;
 
-const JOIN_STEP_TITLES = ["Who you are", "How we reach you", "Secure your account"] as const;
+const CITIZEN_STEP_TITLES = ["Who you are", "How we reach you", "Secure your account"] as const;
+const CREATOR_STEP_TITLES = ["Who you are", "Choose your plan", "How we reach you", "Secure your account"] as const;
 
 // Wraps one wizard step's fields; when the step is reached through Next/Back it
 // moves focus to the step's first control so keyboard & screen-reader users
@@ -294,6 +347,127 @@ function JoinStepPanel({ focusOnMount, children }: Readonly<{ focusOnMount: RefO
   );
 }
 
+function PlanSelection({
+  plans,
+  creatorTypes,
+  selectedSlug,
+  status,
+  onSelect,
+}: Readonly<{
+  plans: Plan[];
+  creatorTypes: string[];
+  selectedSlug: string;
+  status: PlanCatalogStatus;
+  onSelect: (slug: string) => void;
+}>) {
+  const showPlans = status === "ready" || status === "fallback";
+  return (
+    <fieldset className="space-y-3">
+      <legend className="text-sm font-medium text-ink">Start with the plan that fits</legend>
+      <p className="text-xs leading-relaxed text-ink-muted">
+        Starter is free by default. You can change your choice later from Creator Studio.
+      </p>
+      {showPlans && (
+        <div role="radiogroup" aria-label="Creator subscription plan" className="space-y-2.5">
+          {plans.map((plan, index) => {
+          const selected = selectedSlug === plan.slug;
+          return (
+            <button
+              key={plan.slug}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => onSelect(plan.slug)}
+              onKeyDown={(event) => {
+                let nextIndex: number;
+                if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (index + 1) % plans.length;
+                else if (event.key === "ArrowLeft" || event.key === "ArrowUp") nextIndex = (index - 1 + plans.length) % plans.length;
+                else if (event.key === "Home") nextIndex = 0;
+                else if (event.key === "End") nextIndex = plans.length - 1;
+                else return;
+                event.preventDefault();
+                onSelect(plans[nextIndex].slug);
+                const radios = event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+                radios?.[nextIndex]?.focus();
+              }}
+              className={`group w-full rounded-2xl border p-4 text-left transition-all focus:outline-none focus:ring-2 focus:ring-gold/30 ${
+                selected
+                  ? "border-green bg-green/[0.06] shadow-sm"
+                  : "border-sand bg-cream hover:border-green/40 hover:bg-paper"
+              }`}
+            >
+              <span className="flex items-start justify-between gap-4">
+                <span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-ink">{plan.name}</span>
+                    {plan.slug === "starter" && (
+                      <span className="rounded-full bg-green/10 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-green-text">
+                        Default
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-1 block text-lg font-semibold text-green-text">{planPriceLabel(plan, creatorTypes)}</span>
+                </span>
+                <span
+                  aria-hidden
+                  className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border ${selected ? "border-green bg-green" : "border-ink-faint/40 bg-paper"}`}
+                >
+                  {selected && <span className="size-1.5 rounded-full bg-paper" />}
+                </span>
+              </span>
+              {plan.perks.length > 0 && (
+                <span className="mt-3 grid gap-1 text-xs leading-relaxed text-ink-muted sm:grid-cols-2">
+                  {plan.perks.slice(0, 4).map((perk) => (
+                    <span key={perk} className="flex gap-1.5">
+                      <span aria-hidden className="font-bold text-gold-text">✓</span>
+                      <span>{perk}</span>
+                    </span>
+                  ))}
+                </span>
+              )}
+            </button>
+          );
+          })}
+        </div>
+      )}
+      {status === "loading" && (
+        <div role="status" className="space-y-2" aria-label="Loading plan options">
+          <span className="sr-only">Loading plan options</span>
+          {[0, 1].map((slot) => (
+            <div key={slot} aria-hidden className="animate-pulse rounded-2xl border border-sand bg-cream p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="h-3 w-24 rounded-full bg-sand" />
+                  <div className="h-5 w-32 rounded-full bg-sand/80" />
+                </div>
+                <div className="size-5 rounded-full bg-sand" />
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="h-2.5 rounded-full bg-sand/80" />
+                <div className="h-2.5 rounded-full bg-sand/70" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {status === "fallback" && (
+        <p role="status" className="rounded-xl border border-gold/25 bg-gold/5 px-3 py-2 text-xs text-ink-muted">
+          The live plan catalog could not be loaded. Starter is shown as the safe default; signup will verify it before creating your account.
+        </p>
+      )}
+      {status === "unavailable" && (
+        <p role="alert" className="rounded-xl border border-clay/25 bg-clay/5 px-3 py-2 text-xs text-clay-text">
+          No free creator plan is available right now. Please try again shortly.
+        </p>
+      )}
+      <p className="rounded-xl border border-sand bg-cream px-3 py-2.5 text-xs leading-relaxed text-ink-muted">
+        A paid choice saves your preference only — there is no charge during signup. Payment and plan benefits activate later through an eligible, approved business listing.
+      </p>
+    </fieldset>
+  );
+}
+
 function JoinForm({
   step,
   identifier,
@@ -306,6 +480,10 @@ function JoinForm({
   setAsCreator,
   creatorTypes,
   onToggleCreatorType,
+  plans,
+  selectedPlanSlug,
+  planCatalogStatus,
+  onSelectPlan,
   password,
   setPassword,
   consent,
@@ -328,6 +506,10 @@ function JoinForm({
   setAsCreator: (v: boolean) => void;
   creatorTypes: string[];
   onToggleCreatorType: (id: string) => void;
+  plans: Plan[];
+  selectedPlanSlug: string;
+  planCatalogStatus: PlanCatalogStatus;
+  onSelectPlan: (slug: string) => void;
   password: string;
   setPassword: (v: string) => void;
   consent: boolean;
@@ -339,6 +521,10 @@ function JoinForm({
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   onSwitchMode: (m: Mode) => void;
 }>) {
+  const stepTitles = asCreator ? CREATOR_STEP_TITLES : CITIZEN_STEP_TITLES;
+  const totalSteps = stepTitles.length;
+  const planStep = asCreator && step === 2;
+  const contactStep = step === (asCreator ? 3 : 2);
   const choiceCls = (on: boolean) =>
     `rounded-xl border px-3 py-2.5 text-left transition-colors ${on ? "border-green bg-green/[0.06]" : "border-sand bg-cream hover:border-green/40"}`;
   // False on the form's first commit so we never steal focus on page load;
@@ -354,10 +540,10 @@ function JoinForm({
         <p className="mt-1 text-sm text-ink-muted">Create your account — one password for web & mobile.</p>
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs font-medium text-ink-muted">
-            Step {step} of 3 · {JOIN_STEP_TITLES[step - 1]}
+            Step {step} of {totalSteps} · {stepTitles[step - 1]}
           </p>
           <div className="flex gap-1.5" aria-hidden>
-            {JOIN_STEP_TITLES.map((t, i) => (
+            {stepTitles.map((t, i) => (
               <span key={t} className={`h-1.5 w-6 rounded-full transition-colors ${i < step ? "bg-green" : "bg-sand"}`} />
             ))}
           </div>
@@ -411,7 +597,15 @@ function JoinForm({
                   <input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" placeholder="Display name" className={inputCls} />
                 </label>
               </>
-            ) : step === 2 ? (
+            ) : planStep ? (
+              <PlanSelection
+                plans={plans}
+                creatorTypes={creatorTypes}
+                selectedSlug={selectedPlanSlug}
+                status={planCatalogStatus}
+                onSelect={onSelectPlan}
+              />
+            ) : contactStep ? (
               <>
                 <label className="block">
                   <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
@@ -458,7 +652,7 @@ function JoinForm({
             ← Back
           </button>
         )}
-        {step < 3 ? (
+        {step < totalSteps ? (
           <button type="button" onClick={onNext} className={`${submitBtnCls} flex-1`}>
             Next →
           </button>
@@ -492,6 +686,9 @@ export function Component() {
   const [dob, setDob] = useState("");
   const [asCreator, setAsCreator] = useState(params.get("as") === "creator");
   const [creatorTypes, setCreatorTypes] = useState<string[]>([]);
+  const [planCatalog, setPlanCatalog] = useState<Plan[]>([STARTER_FALLBACK]);
+  const [planCatalogStatus, setPlanCatalogStatus] = useState<PlanCatalogStatus>("loading");
+  const [creatorPlanIntent, setCreatorPlanIntent] = useState(STARTER_FALLBACK.slug);
   const [password, setPassword] = useState("");
   const [consent, setConsent] = useState(false);
   const [joinStep, setJoinStep] = useState<JoinStep>(1);
@@ -500,7 +697,54 @@ export function Component() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  useEffect(() => {
+    let current = true;
+    api.plans()
+      .then((rows) => {
+        if (!current) return;
+        const active = rows.filter((plan) => plan.active);
+        const hasFreePlan = active.some((plan) => plan.interval === "free" && (plan.prices.default ?? 0) === 0);
+        const nextCatalog = hasFreePlan ? active : [];
+        setPlanCatalog(nextCatalog);
+        setCreatorPlanIntent((selected) => (
+          nextCatalog.some((plan) => plan.slug === selected)
+            ? selected
+            : starterPlanFor(nextCatalog).slug
+        ));
+        setPlanCatalogStatus(hasFreePlan ? "ready" : "unavailable");
+      })
+      .catch(() => {
+        if (!current) return;
+        setPlanCatalog([STARTER_FALLBACK]);
+        setCreatorPlanIntent(STARTER_FALLBACK.slug);
+        setPlanCatalogStatus("fallback");
+      });
+    return () => { current = false; };
+  }, []);
+
   if (member) return <Navigate to={from} replace />;
+
+  const availableCreatorPlans = creatorPlansFor(planCatalog, creatorTypes);
+  const defaultCreatorPlan = starterPlanFor(availableCreatorPlans);
+  const selectedCreatorPlan = availableCreatorPlans.find((plan) => plan.slug === creatorPlanIntent) ?? defaultCreatorPlan;
+  const hasEligibleFreePlan = availableCreatorPlans.some((plan) => (
+    plan.interval === "free" && planPrice(plan, creatorTypes) === 0
+  ));
+  const creatorPlanStatus: PlanCatalogStatus = planCatalogStatus === "ready" && !hasEligibleFreePlan
+    ? "unavailable"
+    : planCatalogStatus;
+  const totalJoinSteps = asCreator ? 4 : 3;
+
+  const toggleCreatorType = (id: string) => {
+    const nextTypes = creatorTypes.includes(id)
+      ? creatorTypes.filter((type) => type !== id)
+      : [...creatorTypes, id];
+    const nextPlans = creatorPlansFor(planCatalog, nextTypes);
+    setCreatorTypes(nextTypes);
+    if (!nextPlans.some((plan) => plan.slug === creatorPlanIntent)) {
+      setCreatorPlanIntent(starterPlanFor(nextPlans).slug);
+    }
+  };
 
   const switchMode = (m: Mode) => {
     setMode(m);
@@ -549,7 +793,16 @@ export function Component() {
         setErr("Please enter your name.");
         return;
       }
-    } else if (joinStep === 2) {
+    } else if (asCreator && joinStep === 2) {
+      if (creatorPlanStatus === "unavailable") {
+        setErr("No free creator plan is available right now. Please try again shortly.");
+        return;
+      }
+      if (!availableCreatorPlans.some((plan) => plan.slug === selectedCreatorPlan.slug)) {
+        setErr("Choose an available creator plan to continue.");
+        return;
+      }
+    } else if (joinStep === (asCreator ? 3 : 2)) {
       if (!identifier.trim()) {
         setErr("Please enter your phone or email.");
         return;
@@ -560,18 +813,18 @@ export function Component() {
       }
     }
     setErr(null);
-    setJoinStep((s) => (s === 1 ? 2 : 3));
+    setJoinStep((step) => Math.min(step + 1, totalJoinSteps) as JoinStep);
   };
 
   const joinBack = () => {
     setErr(null);
-    setJoinStep((s) => (s === 3 ? 2 : 1));
+    setJoinStep((step) => Math.max(step - 1, 1) as JoinStep);
   };
 
   const submitJoin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Enter inside a step-1/2 field submits the form — treat it as Next.
-    if (joinStep < 3) {
+    if (joinStep < totalJoinSteps) {
       joinNext();
       return;
     }
@@ -587,7 +840,16 @@ export function Component() {
       return;
     }
     try {
-      await join({ identifier: identifier.trim(), displayName: name.trim(), dateOfBirth: dob, password, creatorTypes: asCreator ? creatorTypes : [] });
+      await join({
+        identifier: identifier.trim(),
+        displayName: name.trim(),
+        dateOfBirth: dob,
+        password,
+        ...(asCreator ? {
+          creatorTypes,
+          creatorPlanIntent: selectedCreatorPlan.slug,
+        } : {}),
+      });
       nav(from, { replace: true });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not create your account.");
@@ -632,7 +894,11 @@ export function Component() {
               asCreator={asCreator}
               setAsCreator={setAsCreator}
               creatorTypes={creatorTypes}
-              onToggleCreatorType={(id) => setCreatorTypes((cur) => (cur.includes(id) ? cur.filter((t) => t !== id) : [...cur, id]))}
+              onToggleCreatorType={toggleCreatorType}
+              plans={availableCreatorPlans}
+              selectedPlanSlug={selectedCreatorPlan.slug}
+              planCatalogStatus={creatorPlanStatus}
+              onSelectPlan={setCreatorPlanIntent}
               password={password}
               setPassword={setPassword}
               consent={consent}

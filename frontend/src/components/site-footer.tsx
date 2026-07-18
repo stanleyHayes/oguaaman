@@ -21,6 +21,7 @@ const EXPLORE: FooterLink[] = [
 ];
 
 const TAKE_PART: FooterLink[] = [
+  { to: "/better", label: "Build a better Oguaa", icon: "hand-heart" },
   { to: "/submit", label: "Submit a listing", icon: "square-plus" },
   { to: "/events", label: "Events calendar", icon: "calendar" },
   { to: "/community", label: "Join the community", icon: "user-plus" },

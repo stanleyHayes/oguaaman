@@ -1,4 +1,5 @@
-import { useState, type ReactNode, type FormEvent} from "react";
+import { useState, type ReactNode, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import type { ListingType } from "@/lib/types";
 import { api } from "@/lib/api";
 import { AiWritingBar } from "@/components/ai-writing-bar";
@@ -89,7 +90,7 @@ const AI_FIELD: Record<ListingType, { name: string; label: string; rows: number;
   lostfound: { name: "description", label: "Description", rows: 4 },
 };
 
-const inputCls = "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
+const inputCls = "w-full rounded-xl border border-sand bg-paper px-4 py-3 text-ink transition-colors placeholder:text-ink-faint focus:border-green focus:bg-cream focus:outline-none focus:ring-2 focus:ring-green/15";
 const OPPORTUNITY_KINDS = [
   { value: "scholarship", label: "Scholarship" },
   { value: "internship", label: "Internship" },
@@ -126,9 +127,9 @@ function collectDetails(fd: FormData, type: ListingType, aiText: string): Record
 function Field({ label, children, hint }: Readonly<{ label: string; children: ReactNode; hint?: string }>) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
+      <span className="mb-2 block text-sm font-semibold text-ink">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-ink-faint">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-xs leading-relaxed text-ink-faint">{hint}</span>}
     </label>
   );
 }
@@ -197,35 +198,61 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
   const cover = COVER_COPY[type];
 
   return (
-    <form onSubmit={onSubmit} className="space-y-7">
+    <form onSubmit={onSubmit} className="space-y-8">
       <TypePicker type={type} onChange={changeType} />
 
-      <Field label={type === "memorial" ? "Name of the departed" : "Title / name"}>
-        <input name="title" required className={inputCls} placeholder={titlePlaceholder(type)} />
-      </Field>
+      <section className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]" aria-labelledby="listing-details-title">
+        <div className="flex items-center justify-between gap-4 border-b border-sand bg-paper px-5 py-4 sm:px-6">
+          <div>
+            <p className="eyebrow text-green-text">Listing details</p>
+            <h2 id="listing-details-title" className="mt-1 text-2xl font-semibold text-ink">Tell us the essentials</h2>
+          </div>
+          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${ACCENT[type].chip} ${ACCENT[type].icon}`}>
+            <TypeIcon type={type} className="h-6 w-6" />
+          </span>
+        </div>
 
-      <ImageUpload value={coverImageUrl} onChange={setCoverImageUrl} label={cover.label} hint={cover.hint} />
+        <div className="space-y-7 p-5 sm:p-6">
+          <Field label={type === "memorial" ? "Name of the departed" : "Title / name"}>
+            <input name="title" required className={inputCls} placeholder={titlePlaceholder(type)} />
+          </Field>
 
-      <TypeFields
-        type={type}
-        opportunityKind={oppKind}
-        onOpportunityKind={setOppKind}
-        memorialToggles={{ reminders, observeBday, onReminders: setReminders, onObserveBday: setObserveBday }}
-      />
+          <div className="border-t border-sand pt-6">
+            <ImageUpload value={coverImageUrl} onChange={setCoverImageUrl} label={cover.label} hint={cover.hint} />
+          </div>
 
-      {MAPPABLE_TYPES.has(type) && (
-        <LocationPicker
-          value={location}
-          onChange={setLocation}
-          hint={type === "event"
-            ? "Optional — tap the map or drag the pin to the venue. This is what places the event on the town map."
-            : "Optional — tap the map or drag the pin to your storefront. This is what claims your spot on the town map."}
-        />
-      )}
+          <div className="grid gap-5 border-t border-sand pt-6">
+            <TypeFields
+              type={type}
+              opportunityKind={oppKind}
+              onOpportunityKind={setOppKind}
+              memorialToggles={{ reminders, observeBday, onReminders: setReminders, onObserveBday: setObserveBday }}
+            />
+          </div>
+
+          {MAPPABLE_TYPES.has(type) && (
+            <div className="border-t border-sand pt-6">
+              <LocationPicker
+                value={location}
+                onChange={setLocation}
+                hint={type === "event"
+                  ? "Optional — tap the map or drag the pin to the venue. This is what places the event on the town map."
+                  : "Optional — tap the map or drag the pin to your storefront. This is what claims your spot on the town map."}
+              />
+            </div>
+          )}
+        </div>
+      </section>
 
       {aiField && (
-        <div>
-          <span className="mb-1.5 block text-sm font-medium text-ink">{aiField.label}</span>
+        <section aria-labelledby="listing-story-title">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="eyebrow text-gold-text">The story</p>
+              <h2 id="listing-story-title" className="mt-1 text-2xl font-semibold text-ink">Write the part people will read</h2>
+            </div>
+            <span className="hidden text-xs text-ink-faint sm:block">Your words stay editable</span>
+          </div>
           <AiWritingBar
             label={aiField.label}
             showTitle={false}
@@ -233,18 +260,25 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
             value={aiText}
             onChange={setAiText}
           />
-        </div>
+        </section>
       )}
 
-      {error && <p className="rounded-lg border border-[#F0D2C9] bg-[#FCEEEA] px-4 py-3 text-sm text-clay-text">{error}</p>}
+      {error && <p role="alert" className="rounded-xl border border-clay/30 bg-clay/[0.08] px-4 py-3 text-sm text-clay-text">{error}</p>}
 
-      <div className="rounded-lg border border-sand bg-cream p-4 text-sm text-ink-muted">
-        <span className="font-medium text-ink">One step before you submit:</span> your account must be verified first. If you haven't done that yet, head to My Account and request a code.
-      </div>
-
-      <button type="submit" disabled={busy} className="w-full rounded-full bg-green py-3 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60 sm:w-auto sm:px-8">
-        {busy ? "Submitting…" : "Submit for review"}
-      </button>
+      <section className="on-dark on-dark-pin overflow-hidden rounded-[var(--radius-card)] bg-green-900 p-5 text-cream shadow-[var(--shadow-card)] sm:p-6" aria-labelledby="send-review-title">
+        <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div>
+            <p className="eyebrow text-gold">Ready when you are</p>
+            <h2 id="send-review-title" className="mt-2 text-2xl font-semibold text-cream">Send it to a curator</h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
+              Your account must be verified before submission. If it is not yet verified, visit <Link to="/me" className="font-semibold text-gold underline decoration-gold/40 underline-offset-2 hover:decoration-gold">My Account</Link> and request a code.
+            </p>
+          </div>
+          <button type="submit" disabled={busy} className="w-full rounded-full bg-gold-brand px-7 py-3 text-sm font-semibold text-green-900 transition-colors hover:bg-gold disabled:cursor-wait disabled:opacity-60 sm:w-auto">
+            {busy ? "Submitting…" : "Submit for review"}
+          </button>
+        </div>
+      </section>
     </form>
   );
 }
@@ -295,6 +329,60 @@ type MemorialToggles = {
   onObserveBday: (v: boolean) => void;
 };
 
+function OpportunityKindPicker({ value, onChange }: Readonly<{
+  value: (typeof OPPORTUNITY_KINDS)[number]["value"];
+  onChange: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void;
+}>) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-semibold text-ink">Opportunity type</legend>
+      <input type="hidden" name="kind" value={value} />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-label="Opportunity type">
+        {OPPORTUNITY_KINDS.map((kind) => {
+          const selected = value === kind.value;
+          return (
+            <button
+              key={kind.value}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onChange(kind.value)}
+              className={`relative min-h-12 rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors ${selected ? "border-teal bg-teal/[0.09] text-teal-text" : "border-sand bg-paper text-ink-muted hover:border-teal/40 hover:text-ink"}`}
+            >
+              {kind.label}
+              {selected && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-teal" aria-hidden />}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function ToggleSetting({ checked, onChange, title, description }: Readonly<{
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  title: string;
+  description: string;
+}>) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-start justify-between gap-4 rounded-xl border border-sand bg-paper p-4 text-left transition-colors hover:border-green/40"
+    >
+      <span>
+        <span className="block text-sm font-semibold text-ink">{title}</span>
+        <span className="mt-1 block text-xs leading-relaxed text-ink-faint">{description}</span>
+      </span>
+      <span className={`mt-0.5 flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${checked ? "bg-green" : "bg-sand"}`} aria-hidden>
+        <span className={`h-5 w-5 rounded-full bg-cream shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0"}`} />
+      </span>
+    </button>
+  );
+}
+
 // The type-specific extra fields — uncontrolled inputs inside the shared form.
 function TypeFields({
   type,
@@ -307,29 +395,33 @@ function TypeFields({
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   return (
     <>
-      {type === "artist" && (<>
-        <Field label="Genre(s)" hint="Comma-separated, e.g. Highlife, Gospel"><input name="genres" className={inputCls} placeholder="Highlife, Gospel" /></Field>
-        <Field label="Streaming link" hint="We link out, we don't host audio."><input name="link" className={inputCls} placeholder="https://audiomack.com/…" /></Field>
-      </>)}
-      {type === "business" && (<>
-        <Field label="Category / sector"><input name="category" className={inputCls} placeholder="Food & drink, hospitality…" /></Field>
-        <Field label="Location / address"><input name="address" className={inputCls} placeholder="Kotokuraba, Cape Coast" /></Field>
-      </>)}
-      {type === "event" && (<>
-        <Field label="Date"><DatePicker name="startsAt" className="w-full" /></Field>
-        <Field label="Venue / location"><input name="venue" className={inputCls} placeholder="Victoria Park, Cape Coast" /></Field>
-      </>)}
+      {type === "artist" && (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Genre(s)" hint="Comma-separated, e.g. Highlife, Gospel"><input name="genres" className={inputCls} placeholder="Highlife, Gospel" /></Field>
+          <Field label="Streaming link" hint="We link out, we don't host audio."><input name="link" className={inputCls} placeholder="https://audiomack.com/…" /></Field>
+        </div>
+      )}
+      {type === "business" && (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Category / sector"><input name="category" className={inputCls} placeholder="Food & drink, hospitality…" /></Field>
+          <Field label="Location / address"><input name="address" className={inputCls} placeholder="Kotokuraba, Cape Coast" /></Field>
+        </div>
+      )}
+      {type === "event" && (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Date"><DatePicker name="startsAt" className="w-full" /></Field>
+          <Field label="Venue / location"><input name="venue" className={inputCls} placeholder="Victoria Park, Cape Coast" /></Field>
+        </div>
+      )}
       {type === "memory" && (
         <Field label="Era" hint="e.g. 1980s"><input name="era" className={inputCls} placeholder="1980s" /></Field>
       )}
       {type === "opportunity" && (<>
-        <Field label="Type">
-          <select name="kind" value={opportunityKind} onChange={(e) => onOpportunityKind(e.target.value as (typeof OPPORTUNITY_KINDS)[number]["value"])} className={inputCls}>
-            {OPPORTUNITY_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
-          </select>
-        </Field>
-        <Field label="Description"><textarea name="description" rows={2} className={inputCls} /></Field>
-        <Field label="Provider / programme owner"><input name="provider" className={inputCls} placeholder="Institution, company or verified organisation" /></Field>
+        <OpportunityKindPicker value={opportunityKind} onChange={onOpportunityKind} />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Description"><textarea name="description" rows={3} className={inputCls} /></Field>
+          <Field label="Provider / programme owner"><input name="provider" className={inputCls} placeholder="Institution, company or verified organisation" /></Field>
+        </div>
         {(opportunityKind === "investment" || opportunityKind === "mentorship") && (
           <Field label="Safeguarding / policy link" hint="Required for mentorship programmes and recommended for investment calls.">
             <input name="safeguardingPolicyUrl" className={inputCls} placeholder="https://…" />
@@ -342,11 +434,12 @@ function TypeFields({
           </div>
         )}
         {opportunityKind === "mentorship" && (
-          <label className="flex items-start gap-2.5 rounded-lg border border-sand bg-paper p-3.5 text-sm text-ink">
-            <input type="checkbox" name="guardianConsentRequired" defaultChecked className="mt-0.5 accent-green" />
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-sand bg-paper p-4 text-sm text-ink transition-colors hover:border-green/40">
+            <input type="checkbox" name="guardianConsentRequired" defaultChecked className="peer sr-only" />
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-sand text-transparent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-green/25 peer-checked:border-green peer-checked:bg-green peer-checked:text-on-green" aria-hidden>✓</span>
             <span>
-              Require guardian consent for minors
-              <span className="block text-xs text-ink-faint">If min age is under 18, this must stay enabled.</span>
+              <span className="font-semibold">Require guardian consent for minors</span>
+              <span className="mt-0.5 block text-xs text-ink-faint">If minimum age is under 18, this must stay enabled.</span>
             </span>
           </label>
         )}
@@ -356,9 +449,11 @@ function TypeFields({
         <Field label="Era" hint="e.g. Colonial era, 1950s, contemporary"><input name="era" className={inputCls} placeholder="Contemporary" /></Field>
       )}
       {type === "memorial" && (
-        <div className="rounded-lg border border-gold-border/40 bg-gold/[0.08] p-4">
-          <p className="text-sm text-ink-muted">Memorials are handled with heightened care. Please create one only with the family's awareness. It will be reviewed sensitively and kept permanently.</p>
-          <div className="mt-4 space-y-4">
+        <div className="overflow-hidden rounded-[var(--radius-card)] border border-gold-border/40 bg-gold/[0.06]">
+          <div className="border-b border-gold-border/25 px-5 py-4">
+            <p className="text-sm leading-relaxed text-ink-muted"><b className="text-ink">A lasting remembrance.</b> Please create a memorial only with the family's awareness. It is reviewed sensitively and kept permanently.</p>
+          </div>
+          <div className="space-y-5 p-5">
             <Field label="Honorific (optional)" hint="e.g. Nana, Maame, Dr."><input name="honorific" className={inputCls} placeholder="Nana" /></Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Year of birth (optional)"><input name="bornYear" inputMode="numeric" className={inputCls} placeholder="1942" /></Field>
@@ -367,15 +462,19 @@ function TypeFields({
             <Field label="Birthday (optional)" hint="MM-DD, for yearly remembrance"><input name="birthday" className={inputCls} placeholder="03-21" /></Field>
             <Field label="Epitaph (optional)" hint="A short line of remembrance"><input name="epitaph" className={inputCls} /></Field>
             <Field label="Associations (optional)" hint="Comma-separated — schools, asafo companies, churches…"><input name="associations" className={inputCls} placeholder="Mfantsipim, Bentsir No.1" /></Field>
-            <div className="space-y-3 rounded-lg border border-sand bg-paper p-3.5">
-              <label className="flex items-start gap-2.5 text-sm text-ink">
-                <input type="checkbox" checked={memorialToggles.reminders} onChange={(e) => memorialToggles.onReminders(e.target.checked)} className="mt-0.5 accent-green" />
-                <span>Yearly remembrance<span className="block text-xs text-ink-faint">A gentle reminder reaches those who remember them, each year on the passing anniversary.</span></span>
-              </label>
-              <label className="flex items-start gap-2.5 text-sm text-ink">
-                <input type="checkbox" checked={memorialToggles.observeBday} onChange={(e) => memorialToggles.onObserveBday(e.target.checked)} className="mt-0.5 accent-green" />
-                <span>Also observe the birthday<span className="block text-xs text-ink-faint">Remember them on their birthday too, not only the anniversary of their passing.</span></span>
-              </label>
+            <div className="grid gap-3">
+              <ToggleSetting
+                checked={memorialToggles.reminders}
+                onChange={memorialToggles.onReminders}
+                title="Yearly remembrance"
+                description="A gentle reminder reaches those who remember them each year on the passing anniversary."
+              />
+              <ToggleSetting
+                checked={memorialToggles.observeBday}
+                onChange={memorialToggles.onObserveBday}
+                title="Also observe the birthday"
+                description="Remember them on their birthday too, not only the anniversary of their passing."
+              />
             </div>
           </div>
         </div>
@@ -389,26 +488,40 @@ function titlePlaceholder(t: ListingType): string {
 }
 
 function SubmittedState({ title, onReset }: Readonly<{ title: string; onReset: () => void }>) {
-  const steps = ["Draft", "Pending", "Approved"];
+  const steps = [
+    { label: "Draft", state: "Complete" },
+    { label: "Pending", state: "Now" },
+    { label: "Approved", state: "Next" },
+  ];
   return (
-    <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-8 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green/[0.08]">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#123F2D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
+    <div className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]">
+      <div className="on-dark on-dark-pin bg-green-900 px-6 py-9 text-center text-cream sm:px-8">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gold-brand text-green-900 shadow-lg">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
+        </div>
+        <p className="eyebrow mt-5 text-gold">Contribution received</p>
+        <h2 className="mt-2 text-3xl font-semibold text-cream">“{title}” is in the queue</h2>
+        <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-cream/70">
+          A curator will check that it is <b className="text-cream">real, local, correctly categorised and appropriate</b>. You will be notified as soon as the review is complete.
+        </p>
       </div>
-      <h2 className="mt-4 text-2xl font-semibold text-ink">“{title}” is in the queue</h2>
-      <p className="mx-auto mt-3 max-w-md text-sm text-ink-muted">
-        A curator will review it for the four things that matter: <b>real · local · correctly categorised · appropriate</b>. You'll be notified the moment it's approved.
-      </p>
-      <ol className="mx-auto mt-7 flex max-w-sm items-center justify-between">
-        {steps.map((s, i) => (
-          <li key={s} className="flex flex-1 items-center">
-            <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i <= 1 ? "bg-green text-on-green" : "border border-sand text-ink-faint"}`}>{i + 1}</span>
-            <span className={`ml-2 text-sm ${i === 1 ? "font-semibold text-green" : "text-ink-faint"}`}>{s}</span>
-            {i < steps.length - 1 && <span className="mx-2 h-px flex-1 bg-sand" />}
-          </li>
-        ))}
-      </ol>
-      <button type="button" onClick={onReset} className="mt-7 rounded-full border border-green/30 px-6 py-2.5 text-sm font-semibold text-green hover:border-green">Submit another</button>
+      <div className="p-6 sm:p-8">
+        <ol className="grid gap-3 sm:grid-cols-3">
+          {steps.map((step, index) => (
+            <li key={step.label} className={`rounded-xl border p-4 ${index === 1 ? "border-gold-border/50 bg-gold/[0.08]" : "border-sand bg-paper"}`}>
+              <div className="flex items-center justify-between gap-3">
+                <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${index <= 1 ? "bg-green text-on-green" : "border border-sand text-ink-faint"}`}>{index + 1}</span>
+                <span className={`text-[0.65rem] font-bold uppercase tracking-wide ${index === 1 ? "text-gold-text" : "text-ink-faint"}`}>{step.state}</span>
+              </div>
+              <p className={`mt-3 text-sm font-semibold ${index === 1 ? "text-green-text" : "text-ink"}`}>{step.label}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+          <Link to="/me" className="inline-flex items-center justify-center rounded-full bg-green px-6 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900">Track in My Account</Link>
+          <button type="button" onClick={onReset} className="rounded-full border border-green/30 px-6 py-2.5 text-sm font-semibold text-green-text transition-colors hover:border-green">Submit another</button>
+        </div>
+      </div>
     </div>
   );
 }

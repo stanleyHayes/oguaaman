@@ -1,7 +1,7 @@
 // Thin client for the Go API. In dev, calls go to relative /api (Vite proxies to
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
-  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, Page, PageParams,
+  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams,
 } from "./types";
 
 export type { Page, PageParams } from "./types";
@@ -153,6 +153,15 @@ export interface PhoneVerificationResult {
 export const api = {
   home: () => get<HomeData>("/api/home"),
   stats: () => get<Stats>("/api/stats"),
+
+  // Building a Better Cape Coast (spec: the civic page, /better) — authored
+  // civic behaviours grouped by ring + the civilizations whose habits made them
+  // great. Static content; no user writes.
+  civic: () => get<CivicData>("/api/civic"),
+
+  // Town goals — collective civic commitments across cadences (annual/durbar →
+  // daily), judged achieved/missed by an accountability officer.
+  goals: () => get<Goal[]>("/api/goals"),
 
   artists: () => get<Listing[]>("/api/artists"),
   artist: (slug: string) => get<Listing>(`/api/artists/${slug}`),
@@ -344,7 +353,7 @@ export const api = {
     post<LoginResult>("/api/auth/login", { identifier, password }),
   mfaLogin: (challenge: string, code: string) =>
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
-  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[] }) =>
+  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[]; creatorPlanIntent?: string }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
   startPhoneVerification: () => post<PhoneVerificationResult>("/api/me/phone/verify/start", {}),
   confirmPhoneVerification: (code: string) =>

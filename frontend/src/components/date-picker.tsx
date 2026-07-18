@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -6,6 +6,15 @@ const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+const ENABLED_OPTION_SELECTOR = '[role="option"]:not(:disabled)';
+const DAY_BUTTON_SELECTOR = "[data-calendar-day]";
+const TYPEAHEAD_RESET_MS = 800;
+const DAY_KEY_OFFSETS: Readonly<Record<string, number>> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -7,
+  ArrowDown: 7,
+};
 
 const triggerCls =
   "flex items-center justify-between gap-2 rounded-xl border border-sand bg-cream px-4 py-3 text-left text-ink transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20 disabled:opacity-60";
@@ -33,6 +42,15 @@ function formatDisplay(value: string) {
   if (!parsed) return value;
   const date = new Date(parsed.y, parsed.m, parsed.d);
   return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatDayLabel(date: Date) {
+  return date.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function buildGrid(year: number, month: number) {
@@ -101,6 +119,247 @@ function dayClass(isSelected: boolean, isToday: boolean, inMonth: boolean, disab
   return disabled ? "text-ink-faint opacity-30" : "text-ink-faint hover:bg-cream";
 }
 
+interface CalendarMenuOption {
+  value: number;
+  label: string;
+  disabled?: boolean;
+}
+
+interface CalendarMenuProps {
+  label: string;
+  listboxId: string;
+  value: number;
+  valueLabel: string;
+  options: readonly CalendarMenuOption[];
+  open: boolean;
+  align?: "left" | "right";
+  className?: string;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (value: number) => void;
+}
+
+function CalendarMenu({
+  label,
+  listboxId,
+  value,
+  valueLabel,
+  options,
+  open,
+  align = "left",
+  className,
+  onOpenChange,
+  onSelect,
+}: Readonly<CalendarMenuProps>) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const typeaheadRef = useRef({ query: "", at: 0 });
+  const selectedIsEnabled = options.some((option) => option.value === value && !option.disabled);
+  const initialFocusValue = selectedIsEnabled ? value : options.find((option) => !option.disabled)?.value;
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const selected = listRef.current?.querySelector<HTMLButtonElement>(
+        '[role="option"][aria-selected="true"]:not(:disabled)',
+      );
+      const first = listRef.current?.querySelector<HTMLButtonElement>(ENABLED_OPTION_SELECTOR);
+      const target = selected ?? first;
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: "nearest" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (!wrapperRef.current?.contains(event.target as Node)) {
+        typeaheadRef.current = { query: "", at: 0 };
+        onOpenChange(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [onOpenChange, open]);
+
+  const enabledOptions = () => Array.from(
+    listRef.current?.querySelectorAll<HTMLButtonElement>(ENABLED_OPTION_SELECTOR) ?? [],
+  );
+
+  const focusOption = (index: number) => {
+    const enabled = enabledOptions();
+    if (enabled.length === 0) return;
+    const next = ((index % enabled.length) + enabled.length) % enabled.length;
+    enabled.forEach((option, optionIndex) => {
+      option.tabIndex = optionIndex === next ? 0 : -1;
+    });
+    enabled[next].focus();
+    enabled[next].scrollIntoView({ block: "nearest" });
+  };
+
+  const focusTypeaheadMatch = (key: string) => {
+    const now = Date.now();
+    const previous = typeaheadRef.current;
+    const normalizedKey = key.toLocaleLowerCase();
+    const query = now - previous.at > TYPEAHEAD_RESET_MS
+      ? normalizedKey
+      : `${previous.query}${normalizedKey}`;
+    typeaheadRef.current = { query, at: now };
+
+    const enabled = enabledOptions();
+    const currentIndex = enabled.indexOf(document.activeElement as HTMLButtonElement);
+    const repeatedCharacter = query.length > 1 && [...query].every((character) => character === query[0]);
+    const search = repeatedCharacter ? query[0] : query;
+    const start = search.length === 1 && currentIndex >= 0 ? currentIndex + 1 : 0;
+    const ordered = [...enabled.slice(start), ...enabled.slice(0, start)];
+    const match = ordered.find((option) => option.dataset.optionLabel?.startsWith(search));
+    if (match) focusOption(enabled.indexOf(match));
+  };
+
+  const onMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      typeaheadRef.current = { query: "", at: 0 };
+      onOpenChange(false);
+      triggerRef.current?.focus();
+      return;
+    }
+
+    if (!open) {
+      if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        event.preventDefault();
+        typeaheadRef.current = { query: "", at: 0 };
+        onOpenChange(true);
+      }
+      return;
+    }
+
+    const enabled = enabledOptions();
+    const currentIndex = enabled.indexOf(document.activeElement as HTMLButtonElement);
+    const isTypeaheadKey = event.key.length === 1
+      && event.key.trim().length === 1
+      && !event.altKey
+      && !event.ctrlKey
+      && !event.metaKey;
+    if (isTypeaheadKey) {
+      event.preventDefault();
+      focusTypeaheadMatch(event.key);
+    } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      event.preventDefault();
+      focusOption(currentIndex + 1);
+    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      focusOption(currentIndex - 1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      focusOption(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      focusOption(enabled.length - 1);
+    } else if (event.key === "Tab") {
+      typeaheadRef.current = { query: "", at: 0 };
+      onOpenChange(false);
+    }
+  };
+
+  return (
+    <div ref={wrapperRef} className={`relative ${className ?? ""}`} onKeyDown={onMenuKeyDown}>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label={`${label}: ${valueLabel}`}
+        aria-haspopup="listbox"
+        aria-controls={listboxId}
+        aria-expanded={open}
+        onClick={() => {
+          typeaheadRef.current = { query: "", at: 0 };
+          onOpenChange(!open);
+        }}
+        className={`group flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/25 ${
+          open
+            ? "border-gold-border bg-gold/[0.1] text-green-text shadow-sm"
+            : "border-sand bg-cream text-ink hover:border-gold-border/60 hover:bg-paper"
+        }`}
+      >
+        <span className="truncate">{valueLabel}</span>
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`shrink-0 text-ink-faint transition-transform duration-200 group-hover:text-green-text ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        >
+          <path d="m7 10 5 5 5-5" />
+        </svg>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            ref={listRef}
+            id={listboxId}
+            role="listbox"
+            aria-label={`${label} options`}
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
+            className={`absolute top-full z-40 mt-2 max-h-56 min-w-full overflow-y-auto rounded-xl border border-sand bg-paper p-1.5 shadow-[var(--shadow-lift)] ${
+              align === "right" ? "right-0" : "left-0"
+            }`}
+          >
+            {options.map((option) => {
+              const selected = option.value === value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  aria-disabled={option.disabled || undefined}
+                  disabled={option.disabled}
+                  data-option-label={option.label.toLocaleLowerCase()}
+                  tabIndex={option.value === initialFocusValue ? 0 : -1}
+                  onFocus={(event) => {
+                    enabledOptions().forEach((enabled) => {
+                      enabled.tabIndex = enabled === event.currentTarget ? 0 : -1;
+                    });
+                  }}
+                  onClick={() => {
+                    onSelect(option.value);
+                    typeaheadRef.current = { query: "", at: 0 };
+                    onOpenChange(false);
+                    triggerRef.current?.focus();
+                  }}
+                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold/35 disabled:cursor-not-allowed disabled:opacity-35 ${
+                    selected
+                      ? "bg-green font-semibold text-on-green"
+                      : "text-ink hover:bg-cream"
+                  }`}
+                >
+                  <span>{option.label}</span>
+                  {selected && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="m5 12 4 4L19 6" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 interface DatePickerProps {
   value?: string;
   onChange?: (value: string) => void;
@@ -133,15 +392,28 @@ export function DatePicker({
   const today = new Date();
   const todayIso = isoFromDate(today);
   const [view, setView] = useState(() => initialView(parsed, min, max, today));
+  const [jumpMenu, setJumpMenu] = useState<"month" | "year" | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dayGridRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
 
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      if (!ref.current?.contains(e.target as Node)) {
+        setJumpMenu(null);
+        setOpen(false);
+      }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key !== "Escape") return;
+      if (jumpMenu) {
+        setJumpMenu(null);
+      } else {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -149,16 +421,52 @@ export function DatePicker({
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [jumpMenu, open]);
 
-  const grid = buildGrid(view.y, view.m);
+  const grid = buildGrid(view.y, view.m).map(({ date, inMonth }) => {
+    const dateIso = isoFromDate(date);
+    return { date, dateIso, inMonth, disabled: outOfRange(dateIso, min, max) };
+  });
   const selected = current || undefined;
+  const focusableDay = grid.find((day) => day.dateIso === selected && !day.disabled)
+    ?? grid.find((day) => day.dateIso === todayIso && !day.disabled)
+    ?? grid.find((day) => day.inMonth && !day.disabled)
+    ?? grid.find((day) => !day.disabled);
   const { minY, maxY } = yearBounds(min, max, today.getFullYear());
   // Extend to cover the viewed year so the select never shows a blank value
   // (an old selected date, or arrow navigation past the fallback range).
   const yearLo = Math.min(minY, view.y);
   const yearHi = Math.max(maxY, view.y);
   const years = Array.from({ length: yearHi - yearLo + 1 }, (_, i) => yearLo + i);
+
+  const dayButtons = () => Array.from(
+    dayGridRef.current?.querySelectorAll<HTMLButtonElement>(DAY_BUTTON_SELECTOR) ?? [],
+  );
+
+  const focusDayButton = (index: number) => {
+    const buttons = dayButtons();
+    const target = buttons[index];
+    if (!target || target.disabled) return;
+    buttons.forEach((button) => {
+      button.tabIndex = button === target ? 0 : -1;
+    });
+    target.focus();
+  };
+
+  const onDayKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let targetIndex: number;
+    if (event.key === "Home") {
+      targetIndex = index - (index % 7);
+    } else if (event.key === "End") {
+      targetIndex = index - (index % 7) + 6;
+    } else {
+      const offset = DAY_KEY_OFFSETS[event.key];
+      if (offset === undefined) return;
+      targetIndex = index + offset;
+    }
+    event.preventDefault();
+    focusDayButton(targetIndex);
+  };
 
   const setVal = (v: string) => {
     if (value === undefined) setInternal(v);
@@ -168,7 +476,9 @@ export function DatePicker({
   const pick = (dateIso: string) => {
     if (outOfRange(dateIso, min, max)) return;
     setVal(dateIso);
+    setJumpMenu(null);
     setOpen(false);
+    triggerRef.current?.focus();
   };
 
   const prev = () => setView((v) => addMonths(v.y, v.m, -1));
@@ -183,11 +493,17 @@ export function DatePicker({
     <div ref={ref} className="relative">
       {name && <input type="hidden" name={name} value={current} />}
       <button
+        ref={triggerRef}
         type="button"
         id={id}
         onClick={() => {
-          if (!open) setView(initialView(parsed, min, max, today));
-          setOpen((o) => !o);
+          if (open) {
+            setJumpMenu(null);
+            setOpen(false);
+          } else {
+            setView(initialView(parsed, min, max, today));
+            setOpen(true);
+          }
         }}
         disabled={disabled}
         aria-expanded={open}
@@ -211,59 +527,78 @@ export function DatePicker({
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
             role="dialog"
             aria-label="Choose a date"
-            className="absolute z-30 mt-2 w-full min-w-[20rem] overflow-hidden rounded-2xl border border-sand bg-paper p-4 shadow-xl"
+            className="absolute z-30 mt-2 w-[min(100%,20rem)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-sand bg-paper p-3 shadow-xl sm:p-4"
           >
             <div className="mb-3 flex items-center justify-between gap-2">
-              <button type="button" onClick={prev} className="shrink-0 rounded-lg p-2 text-ink-muted hover:bg-cream" aria-label="Previous month">
+              <button type="button" onClick={prev} className="shrink-0 rounded-lg p-1.5 text-ink-muted hover:bg-cream sm:p-2" aria-label="Previous month">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
               </button>
               <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
-                <select
-                  aria-label="Month"
+                <CalendarMenu
+                  label="Choose month"
+                  listboxId={`${menuId}-month`}
                   value={view.m}
-                  onChange={(e) => setView((v) => ({ y: v.y, m: Number(e.target.value) }))}
-                  className="min-w-0 flex-1 rounded-lg border border-sand bg-cream px-2 py-1 text-sm text-ink focus:border-green focus:outline-none"
-                >
-                  {MONTHS.map((month, idx) => (
-                    <option key={month} value={idx} disabled={monthHasNoSelectableDays(view.y, idx, min, max)}>
-                      {month}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  aria-label="Year"
+                  valueLabel={MONTHS[view.m]}
+                  options={MONTHS.map((month, idx) => ({
+                    value: idx,
+                    label: month,
+                    disabled: monthHasNoSelectableDays(view.y, idx, min, max),
+                  }))}
+                  open={jumpMenu === "month"}
+                  className="min-w-0 flex-1"
+                  onOpenChange={(isOpen) => setJumpMenu(isOpen ? "month" : null)}
+                  onSelect={(month) => setView((currentView) => ({ ...currentView, m: month }))}
+                />
+                <CalendarMenu
+                  label="Choose year"
+                  listboxId={`${menuId}-year`}
                   value={view.y}
-                  onChange={(e) => setView((v) => ({ y: Number(e.target.value), m: v.m }))}
-                  className="shrink-0 rounded-lg border border-sand bg-cream px-2 py-1 text-sm text-ink focus:border-green focus:outline-none"
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
+                  valueLabel={String(view.y)}
+                  options={years.map((year) => ({ value: year, label: String(year) }))}
+                  open={jumpMenu === "year"}
+                  align="right"
+                  className="w-[5.75rem] shrink-0 sm:w-[6.75rem]"
+                  onOpenChange={(isOpen) => setJumpMenu(isOpen ? "year" : null)}
+                  onSelect={(year) => setView((currentView) => ({ ...currentView, y: year }))}
+                />
               </div>
-              <button type="button" onClick={next} className="shrink-0 rounded-lg p-2 text-ink-muted hover:bg-cream" aria-label="Next month">
+              <button type="button" onClick={next} className="shrink-0 rounded-lg p-1.5 text-ink-muted hover:bg-cream sm:p-2" aria-label="Next month">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
               </button>
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
+            <div
+              ref={dayGridRef}
+              role="group"
+              aria-label={`${MONTHS[view.m]} ${view.y} calendar. Use arrow keys to move between dates.`}
+              className="grid grid-cols-7 gap-1"
+            >
               {WEEKDAYS.map((w, i) => (
                 <span key={`${w}-${i}`} className="py-1 text-center text-[0.68rem] font-bold uppercase tracking-wider text-ink-faint">
                   {w}
                 </span>
               ))}
-              {grid.map(({ date, inMonth }) => {
-                const dIso = isoFromDate(date);
+              {grid.map(({ date, dateIso, inMonth, disabled }, index) => {
+                const dIso = dateIso;
                 const isSelected = selected === dIso;
                 const isToday = todayIso === dIso;
-                const disabled = outOfRange(dIso, min, max);
                 return (
                   <button
                     key={dIso}
                     type="button"
+                    data-calendar-day
                     onClick={() => pick(dIso)}
+                    onKeyDown={(event) => onDayKeyDown(event, index)}
+                    onFocus={(event) => {
+                      dayButtons().forEach((button) => {
+                        button.tabIndex = button === event.currentTarget ? 0 : -1;
+                      });
+                    }}
                     disabled={disabled}
+                    tabIndex={focusableDay?.dateIso === dIso ? 0 : -1}
+                    aria-label={formatDayLabel(date)}
                     aria-pressed={isSelected}
+                    aria-current={isToday ? "date" : undefined}
                     className={`aspect-square rounded-lg text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${dayClass(isSelected, isToday, inMonth, disabled)}`}
                   >
                     {date.getDate()}
@@ -275,7 +610,12 @@ export function DatePicker({
             <div className="mt-3 flex items-center justify-between border-t border-sand pt-3">
               <button
                 type="button"
-                onClick={() => { setVal(""); setOpen(false); }}
+                onClick={() => {
+                  setVal("");
+                  setJumpMenu(null);
+                  setOpen(false);
+                  triggerRef.current?.focus();
+                }}
                 className="text-sm font-medium text-ink-muted hover:text-ink"
               >
                 Clear

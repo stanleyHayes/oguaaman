@@ -243,7 +243,7 @@ export function NewsCard({ article, lead = false }: Readonly<{ article: NewsArti
     >
       {article.coverImageUrl ? (
         <div className="relative w-full overflow-hidden" style={{ aspectRatio: lead ? "16 / 9" : "16 / 10" }}>
-          <img src={article.coverImageUrl} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+          <img src={cldCover(article.coverImageUrl, lead ? 1000 : 600)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
           <span className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: article.coverColor ?? "#123F2D" }} aria-hidden />
         </div>
       ) : (

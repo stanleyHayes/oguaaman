@@ -114,13 +114,13 @@ export function ImageUpload({
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
 
       {value ? (
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <img src={value} alt="" className="h-20 w-20 shrink-0 rounded-lg border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="rounded-full border border-sand px-3.5 py-1.5 text-sm font-medium text-ink-muted hover:border-green/40 disabled:opacity-60">
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="w-full min-w-0 rounded-full border border-sand px-3 py-1.5 text-sm font-medium text-ink-muted hover:border-green/40 disabled:opacity-60 sm:w-auto">
               {busy ? `Uploading… ${progress}%` : "Replace"}
             </button>
-            <button type="button" onClick={() => onChange("")} className="rounded-full border border-maroon-900/30 px-3.5 py-1.5 text-sm font-medium text-maroon-900 hover:bg-maroon-900/[0.06]">
+            <button type="button" onClick={() => onChange("")} className="w-full min-w-0 rounded-full border border-maroon-900/30 px-3 py-1.5 text-sm font-medium text-maroon-900 hover:bg-maroon-900/[0.06] sm:w-auto">
               Remove
             </button>
           </div>
