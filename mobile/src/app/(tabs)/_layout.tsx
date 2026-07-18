@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Tabs, TransitionPresets } from "expo-router";
-import { Pressable, View, Animated, Easing, type ColorValue, type ViewStyle } from "react-native";
-import { T as Text } from "@/components/typography";
+import { Tabs } from "expo-router";
+import { Pressable, View, Animated, Easing, type ViewStyle } from "react-native";
 import { useTheme } from "@/lib/theme-context";
-import { ON_GREEN, S, D } from "@/theme";
+import { ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -11,8 +10,10 @@ import { useDirectives } from "@/lib/directives";
 import { AlertBanner } from "@/components/alert-banner";
 import { useNavDrawer } from "@/components/nav-drawer";
 import { TopBarActions } from "@/components/top-bar-actions";
+import { CalendarIcon, GridIcon, HeartIcon, HomeIcon, MenuIcon, MusicIcon } from "@/components/icons";
 
 const WEB_EASE = Easing.bezier(0.22, 1, 0.36, 1);
+const TAB_ICON_SIZE = 26;
 
 // Match the portal's page-transition feel: the entering tab rises, scales in,
 // and fades in while the leaving tab fades out. The larger translate/scale
@@ -29,14 +30,6 @@ function tabSceneInterpolator({ current }: Readonly<{ current: { progress: Anima
     } as Animated.AnimatedStyleProp<ViewStyle>,
   };
 }
-
-const icon = (glyph: string) => {
-  // Named so it has a display name (react/display-name) for the tab bar.
-  function TabBarIcon({ color }: Readonly<{ color: ColorValue }>) {
-    return <Text style={{ fontSize: 17, color }}>{glyph}</Text>;
-  }
-  return TabBarIcon;
-};
 
 // Polls the unread-notification count so the More tab carries a re-engagement
 // badge (remembrances, moderation outcomes). Only runs while signed in.
@@ -59,10 +52,9 @@ function useUnreadCount(): number {
 // be the More tab's content).
 function HeaderMenuButton() {
   const { open } = useNavDrawer();
-  const { C } = useTheme();
   return (
     <Pressable onPress={open} hitSlop={12} accessibilityLabel="Open menu" style={{ paddingHorizontal: 16, paddingVertical: 6 }} accessibilityRole="button">
-      <Text style={{ fontSize: 20, color: ON_GREEN, ...S(700) }}>☰</Text>
+      <MenuIcon size={24} color={ON_GREEN} strokeWidth={2} />
     </Pressable>
   );
 }
@@ -81,19 +73,21 @@ export default function TabsLayout() {
       <AlertBanner />
       <Tabs
         screenOptions={{
-          // Use React Navigation's built-in fade preset so the interpolator is
-          // actually wired, then override it with the portal's page-transition
-          // feel (fade + rise + scale) and a longer, smoother duration.
-          ...TransitionPresets.FadeTransition,
+          // Enable the fade animation machinery with the built-in preset NAME
+          // (importing TransitionPresets from "expo-router" is undefined here and
+          // crashes), then override its spec + interpolator with the portal's
+          // page-transition feel (fade + rise + scale) and a smoother duration.
+          animation: "fade",
           transitionSpec: { animation: "timing", config: { duration: 320, easing: WEB_EASE } },
           sceneStyleInterpolator: tabSceneInterpolator,
-          tabBarActiveTintColor: C.greenText,
-          tabBarInactiveTintColor: C.inkFaint,
-          tabBarStyle: { backgroundColor: C.cream, borderTopColor: C.sand },
+          // Dark-green tab bar with cream/gold icons so text never sits dark-on-dark.
+          tabBarActiveTintColor: ON_GREEN,
+          tabBarInactiveTintColor: C.gold,
+          tabBarStyle: { backgroundColor: C.green, borderTopColor: withAlpha(ON_GREEN, 0.15) },
           tabBarBadgeStyle: { backgroundColor: C.clay, color: ON_GREEN, fontSize: 11 },
           headerStyle: { backgroundColor: C.green },
           headerTintColor: ON_GREEN,
-          headerTitleStyle: { ...D(600) },
+          headerTitleStyle: { color: ON_GREEN },
           headerStatusBarHeight: bannerVisible ? 0 : undefined,
           headerLeft: () => <HeaderMenuButton />,
           // Shared action cluster on every tab: theme toggle, alerts bell
@@ -101,14 +95,40 @@ export default function TabsLayout() {
           headerRight: () => <TopBarActions />,
         }}
       >
-        <Tabs.Screen name="index" options={{ title: t("nav.home"), headerShown: false, tabBarIcon: icon("◎") }} />
-        <Tabs.Screen name="music" options={{ title: t("nav.music"), tabBarIcon: icon("♪") }} />
-        <Tabs.Screen name="memoriam" options={{ title: t("nav.memoriam"), tabBarIcon: icon("♡") }} />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: t("nav.home"),
+            headerShown: false,
+            tabBarIcon: ({ color }) => <HomeIcon size={TAB_ICON_SIZE} color={color as string} strokeWidth={2} />,
+          }}
+        />
+        <Tabs.Screen
+          name="music"
+          options={{
+            title: t("nav.music"),
+            tabBarIcon: ({ color }) => <MusicIcon size={TAB_ICON_SIZE} color={color as string} strokeWidth={2} />,
+          }}
+        />
+        <Tabs.Screen
+          name="memoriam"
+          options={{
+            title: t("nav.memoriam"),
+            tabBarIcon: ({ color }) => <HeartIcon size={TAB_ICON_SIZE} color={color as string} strokeWidth={2} />,
+          }}
+        />
+        <Tabs.Screen
+          name="events"
+          options={{
+            title: t("nav.events") ?? "Events",
+            tabBarIcon: ({ color }) => <CalendarIcon size={TAB_ICON_SIZE} color={color as string} strokeWidth={2} />,
+          }}
+        />
         <Tabs.Screen
           name="more"
           options={{
             title: t("nav.more"),
-            tabBarIcon: icon("≡"),
+            tabBarIcon: ({ color }) => <GridIcon size={TAB_ICON_SIZE} color={color as string} strokeWidth={2} />,
             tabBarBadge: unread > 0 ? badgeText : undefined,
           }}
         />
