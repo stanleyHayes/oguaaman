@@ -11,6 +11,6 @@ export default defineConfig({
   },
   server: {
     // The live community stats strip reads the same Go backend the portal uses.
-    proxy: { "/api": "http://localhost:8080" },
+    proxy: { "/api": "http://localhost:8080", "/uploads": "http://localhost:8080" },
   },
 });

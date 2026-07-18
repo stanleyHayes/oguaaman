@@ -62,7 +62,7 @@ export function RootError() {
   const err = useRouteError();
   const status = isRouteErrorResponse(err) ? err.status : null;
   return (
-    <div className="on-dark flex min-h-screen flex-col items-center justify-center bg-green-900 px-6 text-center text-cream">
+    <div className="on-dark on-dark-pin flex min-h-screen flex-col items-center justify-center bg-green-900 px-6 text-center text-cream">
       <p className="font-mono text-sm uppercase tracking-[0.2em] text-gold/80">{status ?? "Oops"}</p>
       <h1 className="mt-3 text-4xl font-semibold">This page wandered off.</h1>
       <p className="mt-3 max-w-md text-cream/75">

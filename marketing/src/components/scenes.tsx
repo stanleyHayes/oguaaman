@@ -244,6 +244,13 @@ export function sceneForSlug(slug: string): ComponentType<SceneProps> {
     "kotokuraba-market": MarketScene,
     "assin-manso-slave-river": CoastScene,
     "bakaano-fishing-shore": CoastScene,
+    "fort-william-anomabu": CastleScene,
+    "fort-victoria-cape-coast": LighthouseScene,
+    "victoria-park-cape-coast": DurbarScene,
+    "hans-cottage-botel": LagoonScene,
+    "brenu-akyinim-beach": BeachScene,
+    "biriwa-beach": BeachScene,
+    "chapel-square-cape-coast": MarketScene,
   };
   return map[slug] ?? CoastScene;
 }

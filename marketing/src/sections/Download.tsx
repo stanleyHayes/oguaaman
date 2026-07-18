@@ -170,7 +170,7 @@ function ScanPanel() {
   return (
     <div className="flex justify-center lg:justify-end">
       <CircularReveal className="relative w-full max-w-xs">
-      <div className="relative rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.05] p-6 text-center shadow-[var(--shadow-lift)] backdrop-blur-sm">
+      <div className="og-card og-card-dark on-dark-pin og-card-accent-gold relative border-cream/15 bg-cream/[0.05] p-6 text-center shadow-[var(--shadow-lift)] backdrop-blur-sm">
         <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-gold/80">
           Scan to open
         </p>

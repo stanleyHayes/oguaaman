@@ -142,9 +142,19 @@ export function Component() {
             <Stagger as="ul" className="grid gap-4 sm:grid-cols-2">
               {events.map((e, idx) => (
                 <StaggerItem as="li" key={e.id} index={idx}>
-                  <a href={portalHref(e)} target="_blank" rel="noopener noreferrer" className="block h-full rounded-[var(--radius-card)] border border-sand bg-cream p-5 transition-shadow hover:shadow-[var(--shadow-card)]">
+                  <a
+                    href={portalHref(e)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${e.title} — open in the Oguaa app (opens in a new tab)`}
+                    className="og-card og-card-interactive og-card-accent-teal group flex h-full flex-col p-5"
+                  >
                     <h3 className="text-lg font-semibold text-ink">{e.title}</h3>
                     <p className="mt-1 text-sm text-ink-muted">{listingSubtitle(e)}</p>
+                    <span className="og-card-action mt-auto border-t border-green/10 pt-4">
+                      <span>Open in the app</span>
+                      <span className="og-card-action-mark" aria-hidden>↗</span>
+                    </span>
                   </a>
                 </StaggerItem>
               ))}

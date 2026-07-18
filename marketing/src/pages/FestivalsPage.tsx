@@ -286,7 +286,7 @@ export function Component() {
           </div>
 
           <Reveal className="lg:col-span-5" delay={0.14}>
-            <div className="relative h-full min-h-80 overflow-hidden rounded-[1.75rem] bg-green-900 p-7 text-cream shadow-[var(--shadow-lift)] sm:p-9">
+            <div className="on-dark-pin relative h-full min-h-80 overflow-hidden rounded-[1.75rem] bg-green-900 p-7 text-cream shadow-[var(--shadow-lift)] sm:p-9">
               <span className="absolute -right-8 -top-14 font-sans text-[12rem] font-semibold leading-none text-cream/[0.04]" aria-hidden>77</span>
               <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-gold">Festival field note · No. 01</p>
               <p className="mt-10 text-sm uppercase tracking-[0.16em] text-cream/55">Cape Coast, Ghana</p>

@@ -14,7 +14,7 @@ export function Hero() {
   return (
     <section
       id="top"
-      className="relative isolate overflow-hidden bg-green-900 text-cream on-dark"
+      className="relative isolate overflow-hidden bg-green-900 text-cream on-dark on-dark-pin"
     >
       {/* Texture + warm glow */}
       <Parallax className="absolute -inset-16 -z-10" distance={40} aria-hidden>
@@ -129,7 +129,7 @@ export function Hero() {
             </svg>
 
             <CircularReveal className="relative ml-auto w-full max-w-md">
-            <div className="relative rounded-[var(--radius-card)] border border-cream/15 bg-green/40 p-6 shadow-[var(--shadow-lift)] backdrop-blur-sm">
+            <div className="og-card og-card-dark on-dark-pin og-card-accent-gold relative border-cream/15 bg-green/40 p-6 shadow-[var(--shadow-lift)] backdrop-blur-sm">
               {/* Card chrome */}
               <div className="flex items-center justify-between border-b border-cream/10 pb-4">
                 <Wordmark size="text-lg" markTone="text-gold" />

@@ -2,6 +2,8 @@ import { Hero } from "@/sections/Hero";
 import { Marquee } from "@/sections/Marquee";
 import { Discover } from "@/components/discover";
 import { HappeningNow } from "@/sections/HappeningNow";
+import { TownGoal } from "@/sections/TownGoal";
+import { TownCode } from "@/sections/TownCode";
 import { FromTheCommunity } from "@/sections/FromTheCommunity";
 import { Stats } from "@/sections/Stats";
 import { Download } from "@/sections/Download";
@@ -14,6 +16,8 @@ export function Component() {
       <Marquee />
       <Discover />
       <HappeningNow />
+      <TownGoal />
+      <TownCode />
       <FromTheCommunity />
       <Stats />
       <Download />

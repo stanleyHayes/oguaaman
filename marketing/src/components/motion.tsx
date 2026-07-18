@@ -1,6 +1,7 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, type ReactNode, type Ref } from "react";
 import {
   motion,
+  useInView,
   useReducedMotion,
   useScroll,
   useSpring,
@@ -217,20 +218,28 @@ export function WordReveal({
   accentClassName?: string;
   as?: "h1" | "h2" | "h3" | "p";
 }>) {
+  const ref = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const inView = useInView(ref, VIEWPORT);
   const words = text.split(" ");
   const isAccent = (word: string) =>
     accentWords?.some(
       (aw) => word.replace(/[.,!?;:]+$/, "").toLowerCase() === aw.toLowerCase()
     );
+  // Always reveal when reduced motion is preferred; otherwise reveal on scroll.
+  const animate = reduce || inView ? "show" : "hidden";
 
   return (
-    <Tag className={className} aria-label={text}>
+    <Tag
+      ref={ref as Ref<HTMLHeadingElement>}
+      className={className}
+      aria-label={text}
+    >
       <motion.span
         className="inline-block"
         variants={WORD_CONTAINER}
         initial="hidden"
-        whileInView="show"
-        viewport={VIEWPORT}
+        animate={animate}
       >
         {words.map((word, i) => (
           <motion.span

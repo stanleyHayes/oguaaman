@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { Container, Eyebrow } from "./ui";
+import { mediaUrl } from "@/lib/media";
 import { Parallax, Stagger, StaggerItem, WordReveal } from "./motion";
 import { Breadcrumbs, HeroIcon, HeroWatermark } from "./hero-chrome";
 import { deriveCrumbs, sectionIdFromPath, type Crumb } from "@/lib/breadcrumbs";
@@ -40,18 +41,17 @@ export function PageHero({
   const crumbList = crumbs ?? deriveCrumbs(pathname, typeof title === "string" ? title : undefined);
 
   return (
-    <header className="on-dark relative isolate overflow-hidden bg-green-900 text-cream">
+    <header className="on-dark on-dark-pin relative isolate overflow-hidden bg-green-900 text-cream">
       <Parallax className="absolute inset-x-0 -inset-y-16" distance={48}>
         <div className="h-full w-full" aria-hidden>
-          {coverUrl ? (
+          <div className="absolute inset-0 h-full w-full opacity-45"><Scene /></div>
+          {coverUrl && (
             <img
-              src={coverUrl}
+              src={mediaUrl(coverUrl)}
               alt=""
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
-          ) : (
-            <div className="h-full w-full opacity-45"><Scene /></div>
           )}
         </div>
       </Parallax>

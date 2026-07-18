@@ -20,6 +20,10 @@
   --color-green-900: #0c2c1f;
   --color-green: #123f2d;
   --color-green-slate: #3b473d;
+  /* Green used as READABLE TEXT (labels, links, card actions). In light mode it
+     equals --color-green; dark mode remaps it bright so green text stays legible
+     on the now-dark surfaces (the green FILL colour stays --color-green). */
+  --color-green-text: #123f2d;
 
   /* Golds (Akan regalia) */
   --color-gold: #c7a24a;
@@ -42,14 +46,73 @@
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --radius-card: 14px;
-  --shadow-card: 0 12px 30px rgba(30, 28, 25, 0.06);
-  --shadow-lift: 0 18px 50px rgba(18, 40, 28, 0.12);
+  --radius-card: 1.25rem;
+  --card-surface: linear-gradient(145deg, #fffdf8 0%, var(--color-cream) 100%);
+  --card-surface-dark: linear-gradient(145deg, rgba(246, 241, 231, 0.09), rgba(246, 241, 231, 0.035));
+  --card-border: color-mix(in srgb, var(--color-green) 14%, transparent);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.78) inset, 0 12px 32px rgba(12, 44, 31, 0.075), 0 2px 6px rgba(12, 44, 31, 0.04);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.82) inset, 0 24px 58px rgba(12, 44, 31, 0.15), 0 8px 18px rgba(12, 44, 31, 0.08);
 }
 
 @layer base {
   :root {
     color-scheme: light;
+  }
+  /* Dark theme: flip the neutral + accent tokens the whole system reads from.
+     Set `data-theme="dark"` on <html>. Ported from the client portal so both
+     surfaces feel like one family. Values are WCAG-aware. */
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    /* Surfaces */
+    --color-paper: #0f1a15;
+    --color-cream: #16241e;
+    --color-sand: #24352d;
+    /* Ink */
+    --color-ink: #f4f0e8;
+    --color-ink-muted: #b8c4b9;
+    --color-ink-faint: #8d9a8e;
+    /* Greens */
+    --color-green-900: #05150e;
+    --color-green: #1a5a42;
+    --color-green-slate: #2a3b33;
+    --color-green-text: #4ecf9d;
+    /* Golds */
+    --color-gold: #e0c270;
+    --color-gold-brand: #d4a85c;
+    --color-gold-border: #c99c4a;
+    --color-gold-text: #e8d19a;
+    /* Clay / maroon */
+    --color-clay: #d77a66;
+    --color-clay-text: #e9a08d;
+    --color-maroon-900: #5c1f1f;
+    /* Teal */
+    --color-teal: #2dbfa5;
+    --color-teal-text: #6ee7d2;
+    /* The theme's cream surface value, for the .theme-surface counter-pin
+       inside .on-dark-pin stages (keep in sync with --color-cream above). */
+    --color-cream-dark: #16241e;
+    /* Card + depth: dark translucent surface, light-alpha hairline, deeper
+       shadows (drop the bright inset highlight the light theme uses). */
+    --card-surface: var(--card-surface-dark);
+    --card-border: rgba(246, 241, 231, 0.12);
+    --shadow-card: 0 1px 0 rgba(246, 241, 231, 0.05) inset, 0 12px 32px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.18);
+    --shadow-lift: 0 1px 0 rgba(246, 241, 231, 0.06) inset, 0 24px 58px rgba(0, 0, 0, 0.4), 0 8px 18px rgba(0, 0, 0, 0.28);
+  }
+  /* On dark panels, the base ink is now light — so the same rule that reads
+     cream in light mode reads light ink here (the .on-dark-pin stages re-pin
+     --color-cream so their text-cream/NN utilities still resolve light). */
+  html[data-theme="dark"] .on-dark {
+    color: var(--color-ink);
+  }
+  html[data-theme="dark"] ::selection {
+    background: var(--color-gold);
+    color: var(--color-paper);
+  }
+  html[data-theme="dark"] .bg-dotgrid {
+    background-image: radial-gradient(rgba(199, 162, 74, 0.08) 1px, transparent 1px);
+  }
+  html[data-theme="dark"] .bg-contours {
+    background-image: radial-gradient(rgba(199, 162, 74, 0.05) 1px, transparent 1px);
   }
   html {
     -webkit-text-size-adjust: 100%;
@@ -115,9 +178,148 @@
     font-weight: 600;
     color: var(--color-ink-faint);
   }
+  /* Eyebrows on dark panels. `.eyebrow` (same layer, later source) beats a
+     `text-*` utility on ties, so kickers on dark artwork rendered in the muted
+     ink; pin the same per-theme light ink the `.on-dark` base rules use. */
+  .on-dark .eyebrow {
+    color: var(--color-cream);
+  }
+  html[data-theme="dark"] .on-dark .eyebrow {
+    color: var(--color-ink);
+  }
+
+  /*
+    Oguaa Field Cards — warm, archival surfaces with a narrow colour "keel".
+    The shared anatomy keeps cards related without flattening page-specific
+    compositions such as Festivals and Leadership into one generic template.
+  */
+  .og-card {
+    --og-card-accent: var(--color-gold-brand);
+    --og-card-accent-soft: color-mix(in srgb, var(--og-card-accent) 12%, transparent);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    background: var(--card-surface);
+    box-shadow: var(--shadow-card);
+  }
+  .og-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 4;
+    width: 3px;
+    background: linear-gradient(180deg, var(--og-card-accent), color-mix(in srgb, var(--og-card-accent) 56%, var(--color-green-900)));
+    pointer-events: none;
+  }
+  .og-card::after {
+    content: "";
+    position: absolute;
+    right: -2.25rem;
+    top: -2.25rem;
+    z-index: 3;
+    width: 7rem;
+    height: 7rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, var(--og-card-accent-soft), transparent 68%);
+    opacity: 0.72;
+    pointer-events: none;
+    transition: opacity 300ms ease, transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .og-card-accent-neutral { --og-card-accent: var(--color-green-slate); }
+  .og-card-accent-green { --og-card-accent: var(--color-green); }
+  .og-card-accent-gold,
+  .og-card-accent-on-dark { --og-card-accent: var(--color-gold-brand); }
+  .og-card-accent-clay { --og-card-accent: var(--color-clay); }
+  .og-card-accent-teal { --og-card-accent: var(--color-teal); }
+  .og-card-accent-maroon { --og-card-accent: var(--color-maroon-900); }
+
+  .og-card-dark {
+    --og-card-accent-soft: color-mix(in srgb, var(--og-card-accent) 18%, transparent);
+    border-color: rgba(246, 241, 231, 0.14);
+    background: var(--card-surface-dark);
+    box-shadow: 0 1px 0 rgba(246, 241, 231, 0.08) inset, 0 20px 50px rgba(3, 18, 12, 0.18);
+  }
+
+  .og-card-interactive {
+    transform: translateZ(0);
+    transition: border-color 280ms ease, box-shadow 280ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .og-card-interactive:is(:hover, :focus-within) {
+    border-color: color-mix(in srgb, var(--og-card-accent) 58%, transparent);
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-0.3rem);
+  }
+  .og-card-interactive:is(:hover, :focus-within)::after {
+    opacity: 1;
+    transform: scale(1.16);
+  }
+  :is(a, button):focus-visible > .og-card-interactive {
+    border-color: var(--og-card-accent);
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-0.3rem);
+  }
+
+  .og-card-media {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-sand);
+  }
+  .og-card-media::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 2;
+    width: auto;
+    height: 38%;
+    border-radius: 0;
+    background: linear-gradient(to top, rgba(12, 44, 31, 0.28), transparent);
+    opacity: 1;
+    transform: none;
+    pointer-events: none;
+  }
+  .og-card-action {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: var(--color-green);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .og-card-action-mark {
+    display: inline-grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--og-card-accent) 30%, transparent);
+    border-radius: 999px;
+    background: var(--og-card-accent-soft);
+    color: color-mix(in srgb, var(--og-card-accent) 72%, var(--color-green-900));
+    transition: transform 220ms ease, background-color 220ms ease;
+  }
+  .group:is(:hover, :focus-visible) .og-card-action-mark,
+  .og-card-interactive:is(:hover, :focus-within) .og-card-action-mark {
+    transform: translate(0.14rem, -0.14rem);
+  }
 }
 
 @layer utilities {
+  /* Stage pin for ALWAYS-DARK stages (green/green-900 heroes and footers, dark
+     bars, dark cards on light pages): re-pins --color-cream so every
+     text-cream/NN, border-cream/NN and bg-cream/NN inside resolves light again
+     in dark mode — with zero light-mode change. Any nested THEME surface
+     (a dropdown menu with bg-cream text-ink) must carry .theme-surface so its
+     cream reverts to the dark value. */
+  html[data-theme="dark"] .on-dark-pin {
+    --color-cream: #f6f1e7;
+  }
+  html[data-theme="dark"] .on-dark-pin .theme-surface {
+    --color-cream: var(--color-cream-dark, #16241e);
+  }
   .bg-dotgrid {
     background-image: radial-gradient(rgba(199, 162, 74, 0.14) 1px, transparent 1px);
     background-size: 18px 18px;
@@ -196,5 +398,30 @@
     html {
       scroll-behavior: auto;
     }
+    .og-card-interactive,
+    .og-card-interactive:is(:hover, :focus-within),
+    :is(a, button):focus-visible > .og-card-interactive,
+    .og-card-interactive::after,
+    .og-card-action-mark {
+      transform: none;
+      transition-duration: 0.01ms;
+    }
   }
+}
+
+/* Circular-reveal theme toggle (View Transitions API). The theme-toggle button
+   drives document.startViewTransition and clip-paths the new root snapshot open
+   from the button's centre; suppress the default cross-fade so it doesn't fight
+   the clip animation. The JS already no-ops under reduced-motion. Kept outside
+   @layer so the ::view-transition pseudo-elements aren't scoped away. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}
+::view-transition-old(root) {
+  z-index: 0;
 }

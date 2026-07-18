@@ -41,8 +41,8 @@ export function Section({
     paper: "bg-paper text-ink",
     cream: "bg-cream text-ink",
     sand: "bg-sand text-ink",
-    green: "bg-green text-cream on-dark",
-    deep: "bg-green-900 text-cream on-dark",
+    green: "bg-green text-cream on-dark on-dark-pin",
+    deep: "bg-green-900 text-cream on-dark on-dark-pin",
   };
   return (
     <section id={id} className={`scroll-mt-20 py-20 sm:py-28 ${tones[tone]} ${className}`}>
@@ -116,13 +116,23 @@ export function Card({
   children,
   className = "",
   as: Tag = "div",
+  accent = "gold",
+  surface = "paper",
+  interactive = false,
 }: Readonly<{
   children: ReactNode;
   className?: string;
   as?: "div" | "article" | "li";
+  accent?: "neutral" | "green" | "gold" | "clay" | "teal" | "maroon" | "on-dark";
+  surface?: "paper" | "dark";
+  interactive?: boolean;
 }>) {
   return (
-    <Tag className={`rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] ${className}`}>
+    <Tag
+      className={`og-card og-card-accent-${accent} ${surface === "dark" ? "og-card-dark on-dark-pin" : ""} ${
+        interactive ? "og-card-interactive" : ""
+      } ${className}`}
+    >
       {children}
     </Tag>
   );
@@ -142,9 +152,11 @@ export function CTA({
   external?: boolean;
 }>) {
   const styles: Record<string, string> = {
-    primary: "bg-green text-cream hover:bg-green-900",
+    // primary is a green FILL with light text; on-dark-pin keeps that text light
+    // in dark theme (else cream remaps to the dark surface colour on the fill).
+    primary: "bg-green text-cream on-dark-pin hover:bg-green-900",
     gold: "bg-gold-brand text-green-900 hover:bg-gold",
-    outline: "border border-green/30 text-green hover:border-green",
+    outline: "border border-green/40 text-green-text hover:border-green",
     "outline-dark": "border border-cream/30 text-cream hover:border-gold",
   };
   const cls = `inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${styles[variant]} ${className}`;

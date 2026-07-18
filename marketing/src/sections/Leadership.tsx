@@ -246,94 +246,222 @@ const FOOTNOTES = [
   "Offices marked “(current holder — to confirm)” stay deliberately unnamed until a sitting officeholder is verified — a name is published here only when a current source confirms it.",
 ];
 
-const ACCENT_BORDER: Record<Hierarchy["accent"], string> = {
-  gold: "border-gold/45",
-  clay: "border-clay/55",
+interface ContextImage {
+  src: string;
+  alt: string;
+  label: string;
+}
+
+const TRADITIONAL_MEDIA: ContextImage[] = [
+  {
+    src: "/uploads/seed/fetu-procession.jpg",
+    alt: "A Fetu Afahye procession moving through Cape Coast",
+    label: "Public ceremony",
+  },
+  {
+    src: "/uploads/seed/fetu-queenmother.jpg",
+    alt: "Queen-mother regalia during Fetu Afahye",
+    label: "Ceremonial life",
+  },
+  {
+    src: "/uploads/seed/fetu-flagbearer.jpg",
+    alt: "An Asafo flag-bearer during Fetu Afahye",
+    label: "Asafo tradition",
+  },
+  {
+    src: "/uploads/seed/posuban.jpg",
+    alt: "An Asafo posuban shrine in Cape Coast",
+    label: "Ward heritage",
+  },
+];
+
+const CIVIC_MEDIA: ContextImage[] = [
+  {
+    src: "/uploads/seed/downtown.jpg",
+    alt: "A street view of central Cape Coast",
+    label: "The town centre",
+  },
+  {
+    src: "/uploads/seed/town-view.jpg",
+    alt: "A view across the Cape Coast townscape",
+    label: "The metropolis",
+  },
+  {
+    src: "/uploads/seed/fort-william.jpg",
+    alt: "Fort William standing above Cape Coast",
+    label: "The civic landscape",
+  },
+];
+
+const ACCENT_STYLE: Record<
+  Hierarchy["accent"],
+  { border: string; panel: string; marker: string; wash: string }
+> = {
+  gold: {
+    border: "border-gold/45",
+    panel: "bg-gold/[0.09]",
+    marker: "bg-gold text-green-900",
+    wash: "from-gold/20 via-gold/[0.04] to-transparent",
+  },
+  clay: {
+    border: "border-clay/55",
+    panel: "bg-clay/[0.09]",
+    marker: "bg-clay text-cream",
+    wash: "from-clay/20 via-clay/[0.04] to-transparent",
+  },
 };
 
-function HolderLine({ node }: Readonly<{ node: Node }>) {
-  if (node.holder) {
-    return (
-      <p className="mt-2 flex items-center gap-2">
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
-        <span className="text-lg font-semibold leading-tight text-cream">{node.holder}</span>
-      </p>
-    );
-  }
+function ContextFigure({ image, className = "" }: Readonly<{ image: ContextImage; className?: string }>) {
   return (
-    <p className="mt-2 text-sm italic text-cream/55">(current holder — to confirm)</p>
+    <figure className={`group relative min-h-0 overflow-hidden bg-green-900 ${className}`}>
+      <img
+        src={image.src}
+        alt={image.alt}
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full object-cover transition-transform duration-700 motion-safe:group-hover:scale-[1.035]"
+      />
+      <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-green-900/80 via-transparent to-transparent" />
+      <figcaption className="absolute inset-x-0 bottom-0 p-3 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-cream/85">
+        {image.label}
+      </figcaption>
+    </figure>
   );
 }
 
-function NodeCard({ node, accent }: Readonly<{ node: Node; accent: Hierarchy["accent"] }>) {
-  if (node.feature) {
-    return (
-      <div className={`flex flex-col gap-5 rounded-[var(--radius-card)] border-l-2 ${ACCENT_BORDER[accent]} border-y border-r border-cream/12 bg-green-900/45 p-7 sm:flex-row sm:items-start`}>
-        {node.seal && <Seal variant={node.seal} className="h-20 w-20 shrink-0" />}
-        <div>
-          <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-gold/80">
-            {node.role} · {node.body}
-          </p>
-          {node.holder && (
-            <h3 className="mt-2 text-3xl font-semibold text-cream">{node.holder}</h3>
-          )}
-          <p className="mt-3 max-w-2xl leading-relaxed text-cream/80">{node.note}</p>
-        </div>
-      </div>
-    );
-  }
+function ContextMosaic({ media }: Readonly<{ media: ContextImage[] }>) {
+  const secondary = media.slice(1);
+  const hasFourImages = media.length === 4;
+
   return (
-    <div className={`flex h-full flex-col rounded-[var(--radius-card)] border-l-2 ${ACCENT_BORDER[accent]} border-y border-r border-cream/12 bg-green-900/30 p-5`}>
-      <div className="flex items-start gap-3">
-        {node.seal && <Seal variant={node.seal} className="h-11 w-11 shrink-0" />}
-        <div className="min-w-0">
-          <h4 className="text-xl font-semibold leading-tight text-cream">
-            {node.role}
-            {node.ref && <sup className="ml-0.5 font-sans text-[0.6rem] text-gold/70">{node.ref}</sup>}
-          </h4>
-          <p className="mt-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-gold/70">{node.body}</p>
-        </div>
+    <div className="grid min-h-[28rem] gap-2 bg-green-900/50 p-2 sm:grid-cols-[minmax(0,1.3fr)_minmax(15rem,0.7fr)]">
+      <ContextFigure image={media[0]} className="min-h-72 sm:min-h-full" />
+      <div className={`grid min-h-56 gap-2 ${hasFourImages ? "grid-cols-2 grid-rows-2" : "grid-rows-2"}`}>
+        {secondary.map((image, index) => (
+          <ContextFigure
+            key={image.src}
+            image={image}
+            className={hasFourImages && index === 0 ? "col-span-2" : ""}
+          />
+        ))}
       </div>
-      <HolderLine node={node} />
-      <p className="mt-2 text-sm leading-relaxed text-cream/75">{node.note}</p>
     </div>
   );
 }
 
-function Ladder({ hierarchy }: Readonly<{ hierarchy: Hierarchy }>) {
+function HolderLine({ node }: Readonly<{ node: Node }>) {
+  if (node.holder) {
+    return <p className="mt-1 text-lg font-semibold leading-tight text-cream">{node.holder}</p>;
+  }
+  return <p className="mt-1 text-sm italic text-cream/55">(current holder — to confirm)</p>;
+}
+
+function OfficeEntry({
+  node,
+  accent,
+  index,
+}: Readonly<{ node: Node; accent: Hierarchy["accent"]; index: number }>) {
+  const style = ACCENT_STYLE[accent];
+
   return (
-    <div>
+    <article
+      className={`relative overflow-hidden border-b border-cream/10 px-5 py-6 last:border-b-0 sm:px-7 ${
+        node.feature ? style.panel : "bg-green-900/20"
+      }`}
+    >
+      {node.feature && (
+        <span aria-hidden className={`absolute inset-0 bg-gradient-to-r ${style.wash}`} />
+      )}
+      <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,0.58fr)_minmax(0,1.25fr)] lg:items-start lg:gap-7">
+        <div className="flex min-w-0 items-start gap-4">
+          <span
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-[0.62rem] font-bold ${style.marker}`}
+            aria-hidden
+          >
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          {node.seal && <Seal variant={node.seal} className={node.feature ? "h-16 w-16 shrink-0" : "h-11 w-11 shrink-0"} />}
+          <div className="min-w-0">
+            <h4 className={`${node.feature ? "text-2xl" : "text-lg"} font-semibold leading-tight text-cream`}>
+              {node.role}
+              {node.ref && <sup className="ml-0.5 font-sans text-[0.6rem] text-gold/70">{node.ref}</sup>}
+            </h4>
+            <p className="mt-1 font-mono text-[0.6rem] uppercase leading-relaxed tracking-[0.13em] text-gold/70">
+              {node.body}
+            </p>
+          </div>
+        </div>
+
+        <div className="border-l border-cream/12 pl-4 lg:min-h-14">
+          <p className="font-mono text-[0.56rem] uppercase tracking-[0.16em] text-cream/45">Current officeholder</p>
+          <HolderLine node={node} />
+        </div>
+
+        <p className="text-sm leading-relaxed text-cream/72">{node.note}</p>
+      </div>
+    </article>
+  );
+}
+
+function Ladder({
+  hierarchy,
+  id,
+  media,
+}: Readonly<{ hierarchy: Hierarchy; id: "traditional" | "civic"; media: ContextImage[] }>) {
+  const style = ACCENT_STYLE[hierarchy.accent];
+  const titleId = `${id}-hierarchy-title`;
+
+  return (
+    <article id={id} aria-labelledby={titleId} className="scroll-mt-24">
       <Reveal>
-        <p className="eyebrow text-gold/80">{hierarchy.eyebrow}</p>
-        <h3 className="mt-2 text-3xl font-semibold text-cream sm:text-4xl">{hierarchy.title}</h3>
-        <p className="mt-4 max-w-2xl leading-relaxed text-cream/80">{hierarchy.intro}</p>
+        <header className={`overflow-hidden rounded-[var(--radius-card)] border ${style.border} bg-green-900/45 shadow-[var(--shadow-card)]`}>
+          <div className="grid lg:grid-cols-[minmax(20rem,0.72fr)_minmax(0,1.28fr)]">
+            <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-9 lg:p-10">
+              <span aria-hidden className={`absolute inset-0 bg-gradient-to-br ${style.wash}`} />
+              <div className="relative">
+                <p className="eyebrow text-gold/80">{hierarchy.eyebrow}</p>
+                <h3 id={titleId} className="mt-3 text-4xl font-semibold leading-none text-cream sm:text-5xl">
+                  {hierarchy.title}
+                </h3>
+                <p className="mt-6 leading-relaxed text-cream/80">{hierarchy.intro}</p>
+              </div>
+              <p className="relative mt-9 border-t border-cream/12 pt-4 font-mono text-[0.58rem] uppercase leading-relaxed tracking-[0.15em] text-cream/48">
+                Place and ceremony imagery · shown as context, never as portraits of officeholders
+              </p>
+            </div>
+            <ContextMosaic media={media} />
+          </div>
+        </header>
       </Reveal>
 
-      <ol className="mt-10">
-        {hierarchy.tiers.map((tier, ti) => (
-          <li key={tier.label}>
-            {ti > 0 && (
-              <div className="flex justify-center" aria-hidden>
-                <span className="block h-7 w-px bg-gold/30" />
-              </div>
-            )}
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-gold/70">
-                Tier {ti + 1} · {tier.label}
+      <ol className="relative mt-8 space-y-6 before:absolute before:bottom-8 before:left-[1.12rem] before:top-8 before:w-px before:bg-cream/12 lg:space-y-8 lg:before:left-[5.45rem]">
+        {hierarchy.tiers.map((tier, tierIndex) => (
+          <li key={tier.label} className="relative grid gap-4 pl-12 lg:grid-cols-[9rem_minmax(0,1fr)] lg:gap-6 lg:pl-0">
+            <div className="relative lg:pt-6">
+              <span
+                className={`absolute -left-[2.95rem] top-0 flex h-9 w-9 items-center justify-center rounded-full ring-4 ring-green lg:left-[4.35rem] lg:top-5 ${style.marker}`}
+                aria-hidden
+              >
+                <span className="font-mono text-[0.62rem] font-bold">{String(tierIndex + 1).padStart(2, "0")}</span>
               </span>
-              <span className="h-px flex-1 bg-cream/10" />
+              <p className="font-mono text-[0.56rem] uppercase tracking-[0.17em] text-cream/45">Tier {tierIndex + 1}</p>
+              <p className="mt-1 max-w-[8rem] text-sm font-semibold leading-snug text-gold/85">{tier.label}</p>
             </div>
-            <Stagger className={`mt-4 grid gap-4 ${tier.nodes.some((n) => n.feature) ? "" : "sm:grid-cols-2"}`}>
-              {tier.nodes.map((node, ni) => (
-                <StaggerItem key={node.role} index={ni}>
-                  <NodeCard node={node} accent={hierarchy.accent} />
+
+            <Stagger
+              as="ul"
+              className={`overflow-hidden rounded-[var(--radius-card)] border ${style.border} bg-green-900/25`}
+            >
+              {tier.nodes.map((node, nodeIndex) => (
+                <StaggerItem key={node.role} as="li" index={nodeIndex}>
+                  <OfficeEntry node={node} accent={hierarchy.accent} index={nodeIndex} />
                 </StaggerItem>
               ))}
             </Stagger>
           </li>
         ))}
       </ol>
-    </div>
+    </article>
   );
 }
 
@@ -349,26 +477,47 @@ export function Leadership() {
           lede="Cape Coast is held by two leaderships at once — a chieftaincy chosen by lineage, and a civic government chosen by ballot. Here is each, from its summit to its smallest tier."
         />
 
-        {/* Stacked, not side by side: the stool on top, the ballot below. */}
-        <div className="mt-14 grid gap-16">
-          <Ladder hierarchy={TRADITIONAL} />
-          <Ladder hierarchy={POLITICAL} />
+        <Reveal delay={0.08}>
+          <nav aria-label="Leadership archives" className="mt-9 flex flex-wrap gap-3">
+            <a
+              href="#traditional"
+              className="inline-flex items-center gap-3 rounded-full border border-gold/35 bg-gold/[0.08] px-4 py-2 text-sm font-semibold text-cream transition-colors hover:border-gold hover:bg-gold/[0.14]"
+            >
+              <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
+              Enter the traditional order
+            </a>
+            <a
+              href="#civic"
+              className="inline-flex items-center gap-3 rounded-full border border-clay/45 bg-clay/[0.08] px-4 py-2 text-sm font-semibold text-cream transition-colors hover:border-clay hover:bg-clay/[0.14]"
+            >
+              <span className="h-2 w-2 rounded-full bg-clay" aria-hidden />
+              Enter the civic order
+            </a>
+          </nav>
+        </Reveal>
+
+        <div className="mt-14 grid gap-24 sm:mt-16 sm:gap-28">
+          <Ladder id="traditional" hierarchy={TRADITIONAL} media={TRADITIONAL_MEDIA} />
+          <Ladder id="civic" hierarchy={POLITICAL} media={CIVIC_MEDIA} />
         </div>
 
-        <div className="mt-16 border-t border-cream/12 pt-8">
-          <p className="flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.18em] text-gold/70">
-            <Adinkra name="dwennimmen" size={16} labelled={false} className="text-gold/70" />
-            On the record
-          </p>
-          <ol className="mt-3 max-w-3xl space-y-1.5">
+        <aside className="mt-20 grid gap-6 border-t border-cream/12 pt-8 lg:grid-cols-[12rem_minmax(0,1fr)]" aria-labelledby="leadership-record-title">
+          <div>
+            <p id="leadership-record-title" className="flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.18em] text-gold/70">
+              <Adinkra name="dwennimmen" size={16} labelled={false} className="text-gold/70" />
+              On the record
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-cream/45">Names, offices and traditions are published with deliberate care.</p>
+          </div>
+          <ol className="grid gap-3 md:grid-cols-3">
             {FOOTNOTES.map((f, i) => (
-              <li key={f} className="flex gap-2 text-xs leading-relaxed text-cream/50">
-                <span className="text-gold/60">{i + 1}.</span>
+              <li key={f} className="flex gap-3 border-l border-cream/12 pl-4 text-xs leading-relaxed text-cream/55">
+                <span className="font-mono text-gold/70">{String(i + 1).padStart(2, "0")}</span>
                 <span>{f}</span>
               </li>
             ))}
           </ol>
-        </div>
+        </aside>
       </div>
     </Section>
   );

@@ -4,6 +4,7 @@ import { Container } from "@/components/ui";
 import { Markdown } from "@/components/markdown";
 import { Reveal } from "@/components/motion";
 import { api, type NewsArticle } from "@/lib/api";
+import { mediaUrl } from "@/lib/media";
 
 function fmt(iso?: string): string {
   if (!iso) return "";
@@ -31,7 +32,7 @@ function ArticleCover({ a }: Readonly<{ a: NewsArticle }>) {
     return (
       <div className="relative h-64 w-full overflow-hidden pt-16 sm:h-96">
         <img
-          src={a.coverImageUrl}
+          src={mediaUrl(a.coverImageUrl)}
           alt=""
           className="h-full w-full object-cover"
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}

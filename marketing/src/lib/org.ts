@@ -87,23 +87,34 @@ function isOrgArray(v: unknown): v is Organization[] {
  * empty and fills once the backend answers; on error/empty it stays empty.
  * Mirrors the useListings discipline.
  */
-export function useHeritage(): Organization[] {
-  const [items, setItems] = useState<Organization[]>([]);
+export interface HeritageDirectoryState {
+  status: "loading" | "ready" | "error";
+  items: Organization[];
+}
+
+export function useHeritageDirectory(): HeritageDirectoryState {
+  const [state, setState] = useState<HeritageDirectoryState>({ status: "loading", items: [] });
   useEffect(() => {
     let cancelled = false;
     fetch("/api/institutions?kind=heritage", { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: unknown) => {
-        if (!cancelled && isOrgArray(data)) setItems(data);
+        if (cancelled) return;
+        setState(isOrgArray(data) ? { status: "ready", items: data } : { status: "error", items: [] });
       })
       .catch(() => {
-        /* stay empty silently — a marketing page shows no errors */
+        if (!cancelled) setState({ status: "error", items: [] });
       });
     return () => {
       cancelled = true;
     };
   }, []);
-  return items;
+  return state;
+}
+
+/** Backwards-compatible array-only view for small consumers. */
+export function useHeritage(): Organization[] {
+  return useHeritageDirectory().items;
 }
 
 export interface PlaceView {

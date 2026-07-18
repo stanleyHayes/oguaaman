@@ -27,7 +27,7 @@ function SchoolCrest({ school }: Readonly<{ school: SchoolOrg }>) {
   const bg = school.houseColors?.[0] ?? "#123F2D";
   return (
     <span
-      className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-sm font-semibold text-cream ring-1 ring-black/10"
+      className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/35 text-sm font-semibold text-cream shadow-sm ring-1 ring-black/10"
       style={{ backgroundColor: bg }}
       aria-hidden
     >
@@ -40,16 +40,28 @@ function SchoolCrest({ school }: Readonly<{ school: SchoolOrg }>) {
 function SchoolCard({ school }: Readonly<{ school: SchoolOrg }>) {
   const meta = [school.founded ? `Est. ${school.founded}` : null, school.classification].filter(Boolean).join(" · ");
   return (
-    <a href={`${PORTAL_APP_URL}/education/${school.slug}`} target="_blank" rel="noopener noreferrer" className="group block h-full">
-      <Card className="flex h-full gap-5 p-6 transition-shadow duration-300 hover:shadow-[var(--shadow-lift)] sm:p-7">
-        <SchoolCrest school={school} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <h3 className="text-xl font-semibold text-ink">{school.name}</h3>
-          {meta && <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{meta}</p>}
-          {school.motto && <p className="mt-2 text-base italic text-gold-text">{school.motto}</p>}
-          {school.summary && <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-ink-muted">{school.summary}</p>}
-          {school.osaName && <p className="mt-auto pt-3 text-xs font-medium text-ink-faint">Old students: {school.osaName}</p>}
+    <a
+      href={`${PORTAL_APP_URL}/education/${school.slug}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${school.name} — open its profile in the Oguaa app (opens in a new tab)`}
+      className="group block h-full rounded-[var(--radius-card)]"
+    >
+      <Card accent="green" interactive className="flex h-full flex-col p-6 sm:p-7">
+        <div className="flex gap-5">
+          <SchoolCrest school={school} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <h3 className="text-xl font-semibold text-ink transition-colors group-hover:text-green group-focus-visible:text-green">{school.name}</h3>
+            {meta && <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-gold-text">{meta}</p>}
+            {school.motto && <p className="mt-2 text-base italic text-gold-text">{school.motto}</p>}
+            {school.summary && <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-ink-muted">{school.summary}</p>}
+            {school.osaName && <p className="mt-3 text-xs font-medium text-ink-faint">Old students: {school.osaName}</p>}
+          </div>
         </div>
+        <span className="og-card-action mt-auto border-t border-green/10 pt-4">
+          <span>Visit the school profile</span>
+          <span className="og-card-action-mark" aria-hidden>↗</span>
+        </span>
       </Card>
     </a>
   );
@@ -132,7 +144,7 @@ export function Component() {
           <Stagger className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {SCHOOLED.map((a, idx) => (
               <StaggerItem key={a.name} index={idx}>
-                <div className="flex h-full flex-col rounded-[var(--radius-card)] border border-cream/12 bg-green-900/30 p-6">
+                <div className={`og-card og-card-dark on-dark-pin og-card-accent-${idx % 2 === 0 ? "gold" : "teal"} flex h-full flex-col border-cream/12 bg-green-900/30 p-6`}>
                   <h3 className="text-xl font-semibold text-cream">{a.name}</h3>
                   <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-gold/80">{a.meta}</p>
                   <p className="mt-3 text-sm leading-relaxed text-cream/75">{a.body}</p>

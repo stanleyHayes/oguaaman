@@ -15,6 +15,8 @@ const CARDS: Card[] = [
   { to: "/leadership", scene: LighthouseScene, title: "Leadership", text: "The two orders of Oguaa — the traditional stool and the civic assembly." },
 ];
 
+const CARD_ACCENTS = ["gold", "clay", "teal", "green", "teal", "gold"] as const;
+
 export function Discover() {
   return (
     <Section id="discover" tone="paper" size="wide">
@@ -28,16 +30,25 @@ export function Discover() {
           <Reveal3D key={to} className="group" delay={Math.min(i, 8) * 0.07}>
             <Link
               to={to}
-              className="relative block aspect-[16/9] overflow-hidden rounded-[var(--radius-card)] border border-sand shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)]"
+              className={`og-card og-card-dark on-dark-pin og-card-media og-card-interactive og-card-accent-${CARD_ACCENTS[i]} relative block min-h-[21rem] sm:aspect-[16/10] sm:min-h-0`}
             >
-              <div className="absolute inset-0 bg-sand transition-transform duration-500 group-hover:scale-105">
+              <div className="absolute inset-0 bg-sand transition-transform duration-700 motion-safe:group-hover:scale-[1.035] motion-safe:group-focus-visible:scale-[1.035]">
                 <Scene />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-green-900/85 via-green-900/30 to-transparent" />
-              <div className="on-dark absolute bottom-0 left-0 p-6 text-cream">
-                <h3 className="text-2xl font-semibold sm:text-3xl">{title}</h3>
-                <p className="mt-1 max-w-md text-sm text-cream/85">{text}</p>
-                <span className="mt-2 inline-block text-sm font-semibold text-gold">Explore →</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-green-900 via-green-900/45 to-transparent" />
+              <span className="absolute left-5 top-5 z-[5] grid h-10 w-10 place-items-center rounded-full border border-cream/20 bg-green-900/55 font-mono text-[0.62rem] font-semibold tracking-[0.1em] text-gold backdrop-blur-sm" aria-hidden>
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div className="on-dark absolute inset-x-0 bottom-0 z-[4] p-6 text-cream sm:p-7">
+                <p className="inline-flex w-fit rounded-full border border-gold/35 bg-green-900/85 px-2.5 py-1 font-mono text-[0.66rem] font-bold uppercase tracking-[0.16em] text-gold shadow-sm backdrop-blur-sm">
+                  Oguaa field guide
+                </p>
+                <h3 className="mt-2 text-2xl font-semibold sm:text-3xl">{title}</h3>
+                <p className="mt-2 max-w-md text-sm leading-relaxed text-cream/82">{text}</p>
+                <span className="mt-4 flex min-h-11 items-center justify-between border-t border-cream/15 pt-3 text-sm font-semibold text-gold">
+                  <span>Explore chapter</span>
+                  <span className="og-card-action-mark border-gold/30 bg-gold/10 text-gold" aria-hidden>→</span>
+                </span>
               </div>
             </Link>
           </Reveal3D>

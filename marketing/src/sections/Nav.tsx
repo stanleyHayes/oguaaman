@@ -2,9 +2,31 @@ import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { motion } from "motion/react";
 import { Wordmark } from "@/components/wordmark";
-import { CTA as Cta } from "@/components/ui";
 import { PORTAL_APP_URL } from "@/config";
 import { SectionIcon } from "@/components/section-icon";
+import { ThemeToggle } from "@/components/theme-toggle";
+
+/**
+ * The headline call-to-action: a solid regalia-gold pill that stays prominent
+ * over both the transparent-hero nav and the solid scrolled bar, in either
+ * theme (gold on green-900 ink reads in light and dark). The arrow nudges on
+ * hover; the glow lifts it off the bar. "Enter Oguaa" — step into the town.
+ */
+function EnterApp({ className = "" }: Readonly<{ className?: string }>) {
+  return (
+    <a
+      href={PORTAL_APP_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`group relative inline-flex items-center justify-center gap-2 rounded-full bg-gold-brand px-5 py-2.5 text-sm font-bold tracking-tight text-green-900 shadow-[0_8px_22px_-8px_rgba(176,125,50,0.8)] ring-1 ring-inset ring-gold/45 transition-all duration-200 hover:-translate-y-0.5 hover:bg-gold hover:shadow-[0_12px_30px_-8px_rgba(176,125,50,0.95)] ${className}`}
+    >
+      <span>Enter Oguaa</span>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">
+        <path d="M5 12h14M13 6l6 6-6 6" />
+      </svg>
+    </a>
+  );
+}
 
 // Per-item accent tone for the "More" dropdown rows — mirrors the portal's
 // tone system (see frontend/src/lib/sections.ts) closely enough that the icon
@@ -86,7 +108,7 @@ function MoreMenu({ onLight }: Readonly<{ onLight: boolean }>) {
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]">
+        <div className="theme-surface absolute right-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]">
           {MORE_LINKS.map((l) => (
             <MoreMenuItem key={l.to} item={l} onClick={() => setOpen(false)} />
           ))}
@@ -115,7 +137,9 @@ export function Nav() {
   const onLight = scrolled || open;
   const linkCls = (active: boolean) => {
     const base = "relative isolate inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium tracking-tight transition-colors";
-    if (onLight) return `${base} ${active ? "text-cream" : "text-ink-muted hover:text-green"}`;
+    // On the solid bar the active pill is bg-green with cream text; on-dark-pin
+    // keeps that cream light in dark theme (the bar itself follows the theme).
+    if (onLight) return `${base} ${active ? "text-cream on-dark-pin" : "text-ink-muted hover:text-green"}`;
     return `${base} ${active ? "font-semibold text-green-900" : "text-cream/85 hover:bg-cream/10 hover:text-cream"}`;
   };
   const trackCls = onLight
@@ -125,7 +149,7 @@ export function Nav() {
   return (
     <header
       className={`sticky top-0 z-50 transition-colors duration-300 ${
-        onLight ? "border-b border-gold-border/15 bg-paper/90 backdrop-blur shadow-[var(--shadow-card)]" : "border-b border-transparent bg-transparent"
+        onLight ? "border-b border-gold-border/15 bg-paper/90 backdrop-blur shadow-[var(--shadow-card)]" : "on-dark-pin border-b border-transparent bg-transparent"
       }`}
     >
       <nav aria-label="Primary" className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-6">
@@ -154,24 +178,43 @@ export function Nav() {
           <MoreMenu onLight={onLight} />
         </div>
 
-        <div className="hidden lg:block">
-          <Cta href={PORTAL_APP_URL} external variant={onLight ? "primary" : "outline-dark"}>Open the app</Cta>
+        <div className="hidden items-center gap-2 lg:flex">
+          <NavLink
+            to="/better"
+            className={({ isActive }) =>
+              `inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold tracking-tight transition-colors ${
+                isActive
+                  ? "border-gold-brand bg-gold-brand text-green-900"
+                  : onLight
+                    ? "border-gold-border/40 text-gold-text hover:bg-gold/10"
+                    : "border-gold/45 text-gold hover:bg-gold/10 on-dark-pin"
+              }`
+            }
+          >
+            <SectionIcon id="better" className="h-4 w-4" />
+            Better Oguaa
+          </NavLink>
+          <ThemeToggle className={onLight ? "border-gold-border/25 text-ink hover:bg-cream" : "border-cream/25 text-cream hover:bg-cream/10"} />
+          <EnterApp />
         </div>
 
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="mobile-nav-panel"
-          aria-label={open ? "Close menu" : "Open menu"}
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors lg:hidden ${
-            onLight ? "border-gold-border/25 text-ink hover:bg-cream" : "border-cream/25 text-cream hover:bg-cream/10"
-          }`}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" className="h-5 w-5" aria-hidden>
-            {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
-          </svg>
-        </button>
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeToggle className={onLight ? "border-gold-border/25 text-ink hover:bg-cream" : "border-cream/25 text-cream hover:bg-cream/10"} />
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="mobile-nav-panel"
+            aria-label={open ? "Close menu" : "Open menu"}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+              onLight ? "border-gold-border/25 text-ink hover:bg-cream" : "border-cream/25 text-cream hover:bg-cream/10"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" className="h-5 w-5" aria-hidden>
+              {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+            </svg>
+          </button>
+        </div>
       </nav>
 
       {/* Scrollable on short viewports: the header is sticky, so without a
@@ -184,6 +227,20 @@ export function Nav() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="mx-auto w-full max-w-6xl px-5 pb-8 pt-6 sm:px-6"
           >
+            <Link
+              to="/better"
+              onClick={() => setOpen(false)}
+              className="mb-5 flex items-center gap-4 rounded-2xl border border-gold-border/40 bg-gold/[0.08] px-4 py-3.5"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-brand text-green-900">
+                <SectionIcon id="better" className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[0.95rem] font-semibold text-ink">Build a better Oguaa</span>
+                <span className="block truncate text-xs text-ink-muted">The town’s code — and a pledge.</span>
+              </span>
+              <span className="shrink-0 text-gold-text" aria-hidden>→</span>
+            </Link>
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-gold-text">Explore Cape Coast</p>
             <motion.ul
               className="mt-4 flex flex-col gap-2"
@@ -201,7 +258,7 @@ export function Nav() {
                           : "border-sand/70 bg-cream hover:border-gold-border"
                       }`}>
                         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                          isActive ? "bg-green text-cream" : "bg-green/[0.08] text-green"
+                          isActive ? "bg-green text-cream on-dark-pin" : "bg-green/[0.08] text-green"
                         }`}>
                           <SectionIcon id={link.icon} className="h-5 w-5" />
                         </span>
@@ -216,7 +273,7 @@ export function Nav() {
                 </motion.li>
               ))}
             </motion.ul>
-            <Cta href={PORTAL_APP_URL} external variant="primary" className="mt-6 w-full">Open the app</Cta>
+            <EnterApp className="mt-6 w-full" />
             <p className="mt-4 text-center text-xs italic text-ink-faint">Yɛn ara asaase ni — this is our own land.</p>
           </motion.div>
         </div>

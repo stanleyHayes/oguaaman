@@ -8,6 +8,7 @@ import type { MediaAsset, ProfileSection, SectionItem, SubEntity } from "@/lib/o
 import { Markdown } from "@/components/markdown";
 import { SymbolDivider } from "@/components/adinkra";
 import { Reveal, Stagger, StaggerItem } from "./motion";
+import { mediaUrl } from "@/lib/media";
 
 interface ToneClasses {
   text: string;
@@ -164,13 +165,14 @@ export function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
             <button
               type="button"
               onClick={() => m.url && setOpen(m)}
-              className={`group relative block aspect-square w-full overflow-hidden rounded-[var(--radius-card)] border border-sand bg-sand text-left ${m.url ? "cursor-zoom-in" : "cursor-default"}`}
+              disabled={!m.url}
+              className={`og-card og-card-media og-card-accent-gold group relative block aspect-square w-full bg-sand text-left ${m.url ? "og-card-interactive cursor-zoom-in" : "cursor-default"}`}
               aria-label={m.alt || m.caption || "Photo"}
             >
               <span className="bg-dotgrid absolute inset-0 opacity-30" aria-hidden />
               {m.url && (
                 <img
-                  src={m.url}
+                  src={mediaUrl(m.url)}
                   alt={m.alt ?? m.caption ?? ""}
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -178,7 +180,7 @@ export function Gallery({ media }: Readonly<{ media: MediaAsset[] }>) {
                 />
               )}
               {m.caption && (
-                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-3 pt-8">
+                <span className="absolute inset-x-0 bottom-0 z-[3] bg-gradient-to-t from-black/65 to-transparent p-3 pt-8">
                   <span className="block text-sm text-cream">{m.caption}</span>
                 </span>
               )}
@@ -213,7 +215,7 @@ function Lightbox({ asset, onClose }: Readonly<{ asset: MediaAsset; onClose: () 
       open
       aria-modal="true"
       aria-label={asset.alt ?? asset.caption ?? "Image"}
-      className="on-dark fixed inset-0 z-50 m-0 flex h-full w-full max-w-none items-center justify-center border-0 bg-black/80 p-4"
+      className="on-dark on-dark-pin fixed inset-0 z-50 m-0 flex h-full w-full max-w-none items-center justify-center border-0 bg-black/80 p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -228,7 +230,7 @@ function Lightbox({ asset, onClose }: Readonly<{ asset: MediaAsset; onClose: () 
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
         <img
-          src={asset.url}
+          src={mediaUrl(asset.url)}
           alt={asset.alt ?? asset.caption ?? ""}
           className="mx-auto max-h-[80vh] w-auto rounded-lg object-contain"
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
@@ -251,7 +253,7 @@ function StatsBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone: T
   const list = items.filter((i) => i.value || i.label);
   if (list.length === 0) return null;
   return (
-    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-sand bg-sand sm:grid-cols-4">
+    <dl className="og-card og-card-accent-gold grid grid-cols-2 gap-px bg-sand sm:grid-cols-4">
       {list.map((i, idx) => (
         <div key={i.id || idx} className="bg-cream px-4 py-5 text-center">
           {i.label && <dt className="text-[0.66rem] font-semibold uppercase tracking-wider text-ink-faint">{i.label}</dt>}
@@ -268,10 +270,10 @@ function TeamBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((i, idx) => (
-        <div key={i.id || idx} className="flex items-start gap-3 rounded-[var(--radius-card)] border border-sand bg-cream p-4">
+        <div key={i.id || idx} className="og-card og-card-accent-green flex items-start gap-3 p-4">
           <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-green/10 text-sm font-semibold text-green">
             {i.image ? (
-              <img src={i.image} alt={i.value ?? ""} loading="lazy" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              <img src={mediaUrl(i.image)} alt={i.value ?? ""} loading="lazy" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             ) : (
               initials(i.value || i.label || "?")
             )}
@@ -312,7 +314,7 @@ function FaqBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const [open, setOpen] = useState<string | null>(() => (list.length ? keyOf(list[0], 0) : null));
   if (list.length === 0) return null;
   return (
-    <div className="overflow-hidden rounded-[var(--radius-card)] border border-sand">
+    <div className="og-card og-card-accent-gold">
       {list.map((i, idx) => {
         const id = keyOf(i, idx);
         const isOpen = open === id;
@@ -350,7 +352,7 @@ function DocsBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.url);
   if (list.length === 0) return null;
   return (
-    <ul className="divide-y divide-sand overflow-hidden rounded-[var(--radius-card)] border border-sand">
+    <ul className="og-card og-card-accent-teal divide-y divide-sand">
       {list.map((i, idx) => {
         const href = safeHref(i.url);
         const inner = (
@@ -390,7 +392,7 @@ function CtaBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone
   const buttons = (section.items ?? []).filter((i) => i.label);
   if (!section.title && !section.body && buttons.length === 0) return null;
   return (
-    <div className={`rounded-[var(--radius-card)] border p-6 text-center sm:p-8 ${t.border} ${t.soft}`}>
+    <div className={`og-card og-card-accent-gold p-6 text-center sm:p-8 ${t.border} ${t.soft}`}>
       {section.title && <h3 className="text-2xl font-semibold text-ink sm:text-3xl">{section.title}</h3>}
       {section.body && <p className="mx-auto mt-2 max-w-xl text-ink-muted">{section.body}</p>}
       {buttons.length > 0 && (
@@ -418,8 +420,8 @@ function LogosBlock({ items }: Readonly<{ items: SectionItem[] }>) {
       {list.map((i, idx) => {
         const href = safeHref(i.url);
         const inner = (
-          <span className="flex h-full flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-sand bg-cream p-4 text-center">
-            {i.image && <img src={i.image} alt={i.label ?? ""} loading="lazy" className="h-12 w-auto max-w-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
+          <span className={`og-card og-card-accent-green flex h-full flex-col items-center justify-center gap-2 p-4 text-center ${href ? "og-card-interactive" : ""}`}>
+            {i.image && <img src={mediaUrl(i.image)} alt={i.label ?? ""} loading="lazy" className="h-12 w-auto max-w-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
             {i.label && <span className="text-sm font-medium text-ink">{i.label}</span>}
           </span>
         );
@@ -437,10 +439,10 @@ function GroupsBlock({ groups, tone: t }: Readonly<{ groups: SubEntity[]; tone: 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {list.map((g, idx) => (
-        <div key={g.id || idx} className="rounded-[var(--radius-card)] border border-sand bg-cream p-4">
+        <div key={g.id || idx} className={`og-card og-card-accent-${idx % 2 === 0 ? "gold" : "teal"} p-4`}>
           <div className="flex items-start gap-3">
             {g.crestUrl ? (
-              <img src={g.crestUrl} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-full border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              <img src={mediaUrl(g.crestUrl)} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-full border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             ) : (
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green text-sm font-semibold text-cream" style={g.colors?.[0] ? { backgroundColor: g.colors[0] } : undefined}>{initials(g.name)}</span>
             )}
@@ -478,14 +480,14 @@ function HeroBlock({ section, tone: t }: Readonly<{ section: ProfileSection; ton
   const onImage = !!bg;
   const buttons = (section.items ?? []).filter((i) => i.label);
   return (
-    <div className={`relative overflow-hidden rounded-[var(--radius-card)] border border-sand ${onImage ? "on-dark" : t.soft}`}>
+    <div className={`og-card og-card-accent-gold ${onImage ? "og-card-media on-dark on-dark-pin" : t.soft}`}>
       {onImage && (
         <>
-          <img src={bg} alt={section.media?.[0]?.alt ?? ""} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+          <img src={mediaUrl(bg)} alt={section.media?.[0]?.alt ?? ""} className="absolute inset-0 h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
           <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/25" aria-hidden />
         </>
       )}
-      <div className="relative px-6 py-12 text-center sm:px-10 sm:py-16">
+      <div className="relative z-[3] px-6 py-12 text-center sm:px-10 sm:py-16">
         {section.title && <h2 className={`text-3xl font-semibold sm:text-4xl ${onImage ? "text-cream" : "text-ink"}`}>{section.title}</h2>}
         {section.body && <p className={`mx-auto mt-3 max-w-xl ${onImage ? "text-cream/85" : "text-ink-muted"}`}>{section.body}</p>}
         {buttons.length > 0 && (
@@ -515,13 +517,13 @@ function TestimonialsBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {list.map((i, idx) => (
-        <figure key={i.id || idx} className="flex h-full flex-col rounded-[var(--radius-card)] border border-sand bg-cream p-5">
+        <figure key={i.id || idx} className={`og-card og-card-accent-${idx % 2 === 0 ? "gold" : "clay"} flex h-full flex-col p-5`}>
           {i.value && <blockquote className="font-serif text-lg italic leading-relaxed text-ink">{`“${i.value}”`}</blockquote>}
           {(i.label || i.detail || i.image) && (
             <figcaption className="mt-auto flex items-center gap-3 pt-4">
               <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-green/10 text-xs font-semibold text-green">
                 {i.image ? (
-                  <img src={i.image} alt={i.label ?? ""} loading="lazy" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                  <img src={mediaUrl(i.image)} alt={i.label ?? ""} loading="lazy" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 ) : (
                   initials(i.label || "?")
                 )}
@@ -542,7 +544,7 @@ function ContactBlock({ section, tone: t }: Readonly<{ section: ProfileSection; 
   const rows = (section.items ?? []).filter((i) => i.label || i.value);
   if (!section.body?.trim() && rows.length === 0) return null;
   return (
-    <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
+    <div className="og-card og-card-accent-teal p-5">
       {section.body && <p className="font-serif text-base leading-relaxed text-ink">{section.body}</p>}
       {rows.length > 0 && (
         <dl className={`space-y-2 ${section.body ? "mt-4 border-t border-dashed border-sand pt-4" : ""}`}>
@@ -550,7 +552,7 @@ function ContactBlock({ section, tone: t }: Readonly<{ section: ProfileSection; 
             const href = safeHref(i.url);
             return (
               <div key={i.id || idx} className="flex flex-wrap gap-x-3 text-sm">
-                {i.label && <dt className={`w-28 shrink-0 text-[0.66rem] font-semibold uppercase tracking-wide ${t.text}`}>{i.label}</dt>}
+                {i.label && <dt className={`w-full shrink-0 text-[0.66rem] font-semibold uppercase tracking-wide sm:w-28 ${t.text}`}>{i.label}</dt>}
                 <dd className="min-w-0 flex-1 text-ink">
                   {href ? <a href={href} target="_blank" rel="noreferrer" className="text-teal-text hover:underline">{i.value || i.url}</a> : i.value}
                 </dd>
@@ -567,7 +569,7 @@ function MenuBlock({ items }: Readonly<{ items: SectionItem[] }>) {
   const list = items.filter((i) => i.label || i.value);
   if (list.length === 0) return null;
   return (
-    <ul className="divide-y divide-sand overflow-hidden rounded-[var(--radius-card)] border border-sand">
+    <ul className="og-card og-card-accent-clay divide-y divide-sand">
       {list.map((i, idx) => (
         <li key={i.id || idx} className="flex items-baseline justify-between gap-4 bg-cream px-4 py-3">
           <span className="min-w-0">
@@ -585,10 +587,10 @@ function ScheduleBlock({ items, tone: t }: Readonly<{ items: SectionItem[]; tone
   const list = items.filter((i) => i.label || i.value);
   if (list.length === 0) return null;
   return (
-    <ul className="divide-y divide-sand overflow-hidden rounded-[var(--radius-card)] border border-sand">
+    <ul className="og-card og-card-accent-teal divide-y divide-sand">
       {list.map((i, idx) => (
         <li key={i.id || idx} className="flex flex-wrap items-baseline gap-x-4 bg-cream px-4 py-3">
-          {i.label && <span className={`w-32 shrink-0 text-base ${t.text}`}>{i.label}</span>}
+          {i.label && <span className={`w-full shrink-0 text-base sm:w-32 ${t.text}`}>{i.label}</span>}
           <span className="min-w-0 flex-1">
             {i.value && <span className="font-medium text-ink">{i.value}</span>}
             {i.detail && <span className="block text-sm text-ink-muted">{i.detail}</span>}
@@ -604,7 +606,7 @@ function MapBlock({ section, tone: t }: Readonly<{ section: ProfileSection; tone
   if (!addr) return null;
   const href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
   return (
-    <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
+    <div className="og-card og-card-accent-green p-5">
       <div className="flex items-start gap-3">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={`mt-0.5 shrink-0 ${t.text}`} aria-hidden>
           <path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z" /><circle cx="12" cy="10" r="2.5" />

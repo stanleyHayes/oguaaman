@@ -1,6 +1,7 @@
 import { Section, SectionHeading } from "@/components/ui";
 import { Adinkra, SymbolDivider, type AdinkraName } from "@/components/adinkra";
-import { Stagger, StaggerItem } from "@/components/motion";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
+import { mediaUrl } from "@/lib/media";
 
 /**
  * Legends, heroes & folktales of Oguaa — an immersive "told by the fire" band
@@ -90,40 +91,84 @@ const STORIES: Story[] = [
 
 export function Stories() {
   return (
-    <Section id="stories" tone="deep" size="wide">
-      <SectionHeading
-        onDark
-        kicker="LEGENDS, HEROES & FOLKTALES"
-        title="Told by the fire."
-        lede="Every old town keeps its heroes and its tales. These are Oguaa's — founding legends, the valour of the Asafo, the men who crossed oceans and saved the land, and the spider-tales told here on the coast since before the castle. Some are legend, some are documented history; we have marked which is which."
-      />
+    <Section id="stories" tone="deep" size="wide" className="relative scroll-mt-24 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-contours opacity-40" aria-hidden="true" />
 
-      <Stagger className="mt-14 grid gap-5 sm:grid-cols-2">
-        {STORIES.map((s, i) => (
-          <StaggerItem key={s.title} index={i} as="article" className="group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-cream/12 bg-cream/[0.035] p-6 transition-colors hover:border-gold/45 sm:p-7">
-            <Adinkra
-              name={s.symbol}
-              size={108}
-              labelled={false}
-              className="pointer-events-none absolute -right-4 -top-4 text-gold opacity-[0.07] transition-opacity group-hover:opacity-[0.12]"
-            />
-            <div className="relative flex flex-1 flex-col">
-              <div className="flex items-center gap-3">
-                <Adinkra name={s.symbol} size={26} labelled={false} className="text-gold" />
-                <span className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold/90">{s.kind}</span>
+      <div className="relative">
+        <SectionHeading
+          onDark
+          kicker="LEGENDS, HEROES & FOLKTALES"
+          title="Told by the fire."
+          lede="Every old town keeps its heroes and its tales. These are Oguaa's — founding legends, the valour of the Asafo, the men who crossed oceans and saved the land, and the spider-tales told here on the coast since before the castle. Some are legend, some are documented history; we have marked which is which."
+        />
+
+        <div className="mt-14 grid min-w-0 gap-12 lg:grid-cols-[minmax(17rem,0.72fr)_minmax(0,1.28fr)] lg:items-start lg:gap-16">
+          <Reveal className="min-w-0 lg:sticky lg:top-28">
+            <figure>
+              <div className="aspect-[4/5] overflow-hidden rounded-[var(--radius-card)] bg-green">
+                <img
+                  src={mediaUrl("/uploads/seed/market-women.jpg")}
+                  alt="Women selling goods at a market in Ghana"
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover object-center"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
               </div>
-              <h3 className="mt-4 text-2xl font-semibold text-cream">{s.title}</h3>
-              <p className="mt-3 leading-relaxed text-cream/80">{s.text}</p>
-              <p className="mt-auto pt-4 text-xs italic text-cream/45">{s.note}</p>
+              <figcaption className="mt-3 flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs leading-relaxed text-cream/65">
+                <span>Market life in Ghana · contextual photography</span>
+                <span>
+                  <a href="https://commons.wikimedia.org/wiki/File%3AMarket_women_in_Ghana.jpg" target="_blank" rel="noreferrer" className="underline decoration-current/40 underline-offset-2 hover:decoration-current">Fquasie</a>
+                  {" · "}
+                  <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className="underline decoration-current/40 underline-offset-2 hover:decoration-current">CC BY-SA 4.0</a>
+                </span>
+              </figcaption>
+            </figure>
+            <div className="mt-8 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-5 border-y border-cream/15 py-6">
+              <p className="text-4xl font-semibold text-gold">08</p>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">Oral archive</p>
+                <p className="mt-2 text-sm leading-relaxed text-cream/70">Legend, living tradition, documented history, fable and folktale.</p>
+              </div>
             </div>
-          </StaggerItem>
-        ))}
-      </Stagger>
+          </Reveal>
 
-      <SymbolDivider name="nyame-nwu-na-mawu" className="mt-16" tone="text-gold/70" />
-      <p className="mx-auto mt-5 max-w-xl text-center font-serif text-base italic text-cream/70">
-        Nyame nwu na mawu — &ldquo;God will not die, so I will not die.&rdquo; A told story never truly ends.
-      </p>
+          <Stagger as="ol" className="min-w-0 border-b border-cream/15">
+            {STORIES.map((story, index) => {
+              const titleId = `story-${index + 1}-title`;
+              return (
+                <StaggerItem key={story.title} index={index} as="li" className="group border-t border-cream/15 py-8 sm:py-10">
+                  <article aria-labelledby={titleId} className="grid min-w-0 grid-cols-[3.25rem_minmax(0,1fr)] gap-4 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-6">
+                    <div className="pt-1" aria-hidden="true">
+                      <span className="grid size-10 place-items-center rounded-full border border-gold/30 text-gold sm:size-12">
+                        <Adinkra name={story.symbol} size={24} labelled={false} strokeWidth={1.4} />
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="text-[0.66rem] font-semibold tracking-[0.2em] text-cream/45" aria-hidden="true">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-gold/90">{story.kind}</p>
+                      </div>
+                      <h3 id={titleId} className="mt-3 text-2xl font-semibold leading-tight text-cream sm:text-3xl">{story.title}</h3>
+                      <p className="mt-4 max-w-2xl leading-relaxed text-cream/80">{story.text}</p>
+                      <p className="mt-5 border-l border-gold/35 pl-3 text-xs italic leading-relaxed text-cream/65">{story.note}</p>
+                    </div>
+                  </article>
+                </StaggerItem>
+              );
+            })}
+          </Stagger>
+        </div>
+
+        <SymbolDivider name="nyame-nwu-na-mawu" className="mt-16" tone="text-gold/70" />
+        <p className="mx-auto mt-5 max-w-xl text-center text-base italic text-cream/70">
+          Nyame nwu na mawu — &ldquo;God will not die, so I will not die.&rdquo; A told story never truly ends.
+        </p>
+      </div>
     </Section>
   );
 }
