@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -45,6 +45,7 @@ export function MarkdownEditor({
   placeholder,
   minRows = 10,
 }: Readonly<MarkdownEditorProps>) {
+  const bodyId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [tab, setTab] = useState<Tab>("write");
 
@@ -125,54 +126,57 @@ export function MarkdownEditor({
   }
 
   return (
-    <div className="rounded-lg border border-sand bg-paper">
+    <div>
       {label && (
-        <span className="mb-1.5 block text-sm font-medium text-ink">
+        <label htmlFor={bodyId} className="mb-1.5 block text-sm font-medium text-ink">
           {label} <span className="font-normal text-ink-faint">(Markdown)</span>
-        </span>
+        </label>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sand px-2 py-2">
-        <div className="flex flex-wrap items-center gap-1">
-          {TOOLBAR.map(({ icon: Icon, label: name, command }) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => runCommand(command)}
-              aria-label={name}
-              title={name}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-sand hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ai"
-            >
-              <Icon size={16} aria-hidden />
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center rounded-md border border-sand bg-cream p-0.5">
-          <TabButton active={tab === "write"} onClick={() => setTab("write")} icon={PenLine} label="Write" />
-          <TabButton active={tab === "preview"} onClick={() => setTab("preview")} icon={Eye} label="Preview" />
-        </div>
-      </div>
-
-      <div className="relative">
-        {tab === "write" ? (
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            rows={minRows}
-            placeholder={placeholder}
-            className="w-full resize-y bg-paper p-3.5 text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none"
-          />
-        ) : (
-          <div className="min-h-[12rem] overflow-auto p-3.5 text-sm leading-relaxed text-ink">
-            {value.trim() ? (
-              <MarkdownPreview>{value}</MarkdownPreview>
-            ) : (
-              <p className="italic text-ink-faint">Nothing to preview yet.</p>
-            )}
+      <div className="rounded-lg border border-sand bg-paper">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sand px-2 py-2">
+          <div className="flex flex-wrap items-center gap-1">
+            {TOOLBAR.map(({ icon: Icon, label: name, command }) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => runCommand(command)}
+                aria-label={name}
+                title={name}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-sand hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ai"
+              >
+                <Icon size={16} aria-hidden />
+              </button>
+            ))}
           </div>
-        )}
+
+          <div className="flex items-center rounded-md border border-sand bg-cream p-0.5">
+            <TabButton active={tab === "write"} onClick={() => setTab("write")} icon={PenLine} label="Write" />
+            <TabButton active={tab === "preview"} onClick={() => setTab("preview")} icon={Eye} label="Preview" />
+          </div>
+        </div>
+
+        <div className="relative">
+          {tab === "write" ? (
+            <textarea
+              id={bodyId}
+              ref={textareaRef}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              rows={minRows}
+              placeholder={placeholder}
+              className="w-full resize-y bg-paper p-3.5 text-sm leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none"
+            />
+          ) : (
+            <div className="min-h-[12rem] overflow-auto p-3.5 text-sm leading-relaxed text-ink">
+              {value.trim() ? (
+                <MarkdownPreview>{value}</MarkdownPreview>
+              ) : (
+                <p className="italic text-ink-faint">Nothing to preview yet.</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,11 +1,13 @@
 import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate, useNavigation } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ContextualHelp } from "@/components/contextual-help";
 import { PageTransition } from "@/components/page-transition";
 import { PageSkeleton, type PageSkeletonVariant } from "@/components/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
 import { canWriteNews } from "@/lib/creator";
-import { Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone, Banknote, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing, Map, PanelLeftClose, PanelLeft, PenLine, Settings, type LucideIcon } from "lucide-react";
+import { creatorHelpTopic } from "@/lib/help";
+import { Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone, Banknote, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing, Map, PanelLeftClose, PanelLeft, PenLine, Settings, BookOpen, CircleHelp, type LucideIcon } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
@@ -41,6 +43,7 @@ function buildNavGroups(canWrite: boolean): NavGroup[] {
         { to: "/notifications", label: "Notifications", icon: Bell },
         { to: "/account", label: "Profile", icon: User },
         { to: "/settings", label: "Settings", icon: Settings },
+        { to: "/help", label: "Help guide", icon: BookOpen },
       ],
     },
   ];
@@ -122,6 +125,7 @@ function pageSkeletonVariant(pathname: string): PageSkeletonVariant {
   if (/^\/work\/[^/]+\/edit\/?$/.test(pathname) || pathname.startsWith("/write")) return "editor";
   if (pathname.startsWith("/money")) return "money";
   if (pathname.startsWith("/account") || pathname.startsWith("/settings")) return "settings";
+  if (pathname.startsWith("/help")) return "workspace";
   if (pathname.startsWith("/work") || pathname.startsWith("/notifications")) return "list";
   if (pathname.startsWith("/team") || pathname.startsWith("/institutions") || pathname.startsWith("/grow")) return "workspace";
   return "overview";
@@ -308,6 +312,7 @@ export function CreatorLayout() {
   const [userMenu, setUserMenu] = useState(false);
   const [term, setTerm] = useState("");
   const [tour, setTour] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(COLLAPSE_KEY) === "1";
@@ -317,6 +322,8 @@ export function CreatorLayout() {
   });
   const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const helpTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeHelp = useCallback(() => setHelpOpen(false), []);
 
   const toggleCollapsed = () => {
     setCollapsed((v) => {
@@ -376,6 +383,7 @@ export function CreatorLayout() {
   const groups = useMemo(() => buildNavGroups(member ? canWriteNews(member) : false), [member]);
   const allItems = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   const current = allItems.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? allItems[0];
+  const helpTopic = creatorHelpTopic(loc.pathname);
   const firstName = member?.displayName.split(" ")[0] ?? "";
   const navigating = navigation.state !== "idle";
   const destinationPath = navigation.location?.pathname ?? loc.pathname;
@@ -413,19 +421,37 @@ export function CreatorLayout() {
             <Icon name="menu" />
           </button>
 
-          {/* Greeting — time-of-day hello + live section context */}
+          {/* Route title — contextual help sits beside the title it explains. */}
           <div className="flex min-w-0 items-center gap-3">
             <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sand bg-paper text-ink-muted sm:flex">
               <current.icon size={18} />
             </span>
             <div className="min-w-0">
-              <h2 className="truncate text-lg font-semibold leading-tight text-ink">
+              <p className="flex items-center gap-1.5 truncate text-[11px] text-ink-faint">
+                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-green" aria-hidden />
                 Good {daypart()}{firstName ? `, ${firstName}` : ""}
-              </h2>
-              <p className="flex items-center gap-1.5 text-[11px] text-ink-faint">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green" aria-hidden />
-                {loc.pathname === "/" ? "Live workspace overview" : current.label}
               </p>
+              <div className="flex min-w-0 items-center gap-1">
+                <h2 className="truncate text-lg font-semibold leading-tight text-ink">{helpTopic.title}</h2>
+                {loc.pathname !== "/help" && (
+                  <button
+                    ref={helpTriggerRef}
+                    type="button"
+                    onClick={() => {
+                      setTour(false);
+                      setHelpOpen(true);
+                    }}
+                    aria-label={`Open help for ${helpTopic.title}`}
+                    aria-haspopup="dialog"
+                    aria-expanded={helpOpen}
+                    aria-controls="creator-context-help"
+                    title={`Help for ${helpTopic.title}`}
+                    className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-full text-gold-text transition-colors hover:bg-gold/[0.12]"
+                  >
+                    <CircleHelp size={17} aria-hidden />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -552,6 +578,7 @@ export function CreatorLayout() {
       </div>
 
       {tour && <Tour steps={CREATOR_TOUR} onDone={closeTour} />}
+      {helpOpen && <ContextualHelp key={loc.pathname} topic={helpTopic} onClose={closeHelp} returnFocusRef={helpTriggerRef} />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 export type ListingStatus = "draft" | "pending" | "approved" | "rejected" | "unpublished";
-export type ListingType = "business" | "artist" | "person" | "memory" | "event" | "opportunity" | "memorial" | "project" | "incident" | "lostfound";
+export type ListingType = "business" | "artist" | "person" | "memory" | "event" | "opportunity" | "memorial" | "project" | "property" | "incident" | "lostfound";
 
 export interface SocialLink { label: string; url: string }
 
@@ -11,6 +11,21 @@ export interface ListingDetails {
   safeguardingPolicyUrl?: string; minAge?: number; maxAge?: number; guardianConsentRequired?: boolean;
   category?: string; address?: string; openingHours?: string;
   services?: { name: string; price?: string; note?: string }[];
+  offerType?: "long-term" | "short-stay";
+  propertyType?: "room" | "apartment" | "house" | "guesthouse" | "hostel";
+  area?: string;
+  pricePesewas?: number;
+  pricePeriod?: "night" | "month";
+  depositPesewas?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  furnished?: boolean;
+  amenities?: string[];
+  availability?: "available" | "reserved" | "let";
+  availableFrom?: string;
+  contact?: SocialLink[];
+  bookingUrl?: string;
+  gallery?: { url: string; label?: string; caption?: string }[];
   [k: string]: unknown;
 }
 
@@ -42,7 +57,7 @@ export interface Member {
   townId?: string;
   asafoId?: string;
   role: "member" | "curator" | "steward" | "editor" | "moderator";
-  /** What they create ("business" | "artist" | "organiser" | "institution" | "writer"…); empty = plain citizen. */
+  /** What they create ("business" | "artist" | "organiser" | "institution" | "writer" | "property"…); empty = plain citizen. */
   creatorTypes?: string[];
   suspended: boolean;
   phoneVerified: boolean;

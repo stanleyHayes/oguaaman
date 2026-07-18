@@ -22,6 +22,7 @@ function buildRouter() {
         { path: "notifications", lazy: () => import("./pages/Notifications") },
         { path: "account", lazy: () => import("./pages/Account") },
         { path: "settings", lazy: () => import("./pages/Settings") },
+        { path: "help", lazy: () => import("./pages/Help") },
       ],
     },
   ]);

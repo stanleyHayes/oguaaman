@@ -19,12 +19,12 @@ export async function loader(): Promise<MemberView> {
 const TYPE_LABELS: Record<string, string> = {
   business: "Business", artist: "Artist", person: "Person", memory: "Memory",
   event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
-  incident: "Incident", lostfound: "Lost & found",
+  property: "Property", incident: "Incident", lostfound: "Lost & found",
 };
 
 // The owner editor covers the member-submittable types; incident/lostfound
 // have their own flows and projects belong to institutions.
-const EDITABLE = new Set(["artist", "business", "event", "memory", "opportunity", "person", "memorial"]);
+const EDITABLE = new Set(["artist", "business", "event", "memory", "opportunity", "person", "memorial", "property"]);
 
 export function Component() {
   const { listings } = useLoaderData() as MemberView;

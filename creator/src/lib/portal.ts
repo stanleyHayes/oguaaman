@@ -13,6 +13,7 @@ export function publicPathFor(l: Listing): string | null {
   switch (l.type) {
     case "artist": return `/music/${l.slug}`;
     case "business": return `/business/${l.slug}`;
+    case "property": return `/rent-stay/${l.slug}`;
     case "memorial": return `/memoriam/${l.slug}`;
     case "project": return `/projects/${l.slug}`;
     case "event": return `/events/${l.slug}`;

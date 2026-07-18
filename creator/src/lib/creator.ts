@@ -1,4 +1,4 @@
-import { Briefcase, Palette, CalendarDays, Landmark, PenLine, type LucideIcon } from "lucide-react";
+import { Briefcase, Building2, Palette, CalendarDays, Landmark, PenLine, type LucideIcon } from "lucide-react";
 import type { Member } from "./types";
 
 /** One selectable creator hat. `id` is the value the API stores in creatorTypes. */
@@ -10,6 +10,7 @@ export interface CreatorTypeMeta { id: string; label: string; desc: string; icon
  */
 export const CREATOR_TYPES: CreatorTypeMeta[] = [
   { id: "business", label: "Business owner", desc: "Shops, services, food & drink", icon: Briefcase },
+  { id: "property", label: "Realtor / property manager", desc: "Rentals, rooms and short stays", icon: Building2 },
   { id: "artist", label: "Artist", desc: "Music, craft, performance", icon: Palette },
   { id: "organiser", label: "Event organiser", desc: "Ticketed shows and gatherings", icon: CalendarDays },
   { id: "writer", label: "Writer", desc: "Stories, news, blog", icon: PenLine },

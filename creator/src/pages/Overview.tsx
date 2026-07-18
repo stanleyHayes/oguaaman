@@ -10,7 +10,7 @@ import { Card } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { BarsH, Donut, Histogram, type Datum } from "@/components/charts";
 import { cedis } from "@/lib/format";
-import { ListChecks, Hourglass, Megaphone, BadgeCheck, Ticket, HandCoins, Eye, PlusCircle, TrendingUp, Landmark, PenLine, Briefcase, Music, CalendarDays, ArrowRight, ExternalLink, type LucideIcon } from "lucide-react";
+import { ListChecks, Hourglass, Megaphone, BadgeCheck, Ticket, HandCoins, Eye, PlusCircle, TrendingUp, Landmark, PenLine, Briefcase, Building2, Music, CalendarDays, ArrowRight, ExternalLink, type LucideIcon } from "lucide-react";
 
 interface Data {
   overview: CreatorOverview;
@@ -42,6 +42,7 @@ interface ToolPanel { id: string; title: string; desc: string; cta: string; icon
 const TOOL_PANELS: ToolPanel[] = [
   { id: "writer", title: "Write & publish", desc: "Draft stories and news for the town.", cta: "Open the newsroom", icon: PenLine, to: "/write", show: (m) => canWriteNews(m) },
   { id: "business", title: "Your listings", desc: "Shops, services, food & drink.", cta: "Manage listings", icon: Briefcase, to: "/work", show: (m) => m.creatorTypes?.includes("business") ?? false },
+  { id: "property", title: "Rent & Stay", desc: "Homes, rooms and short-stay listings.", cta: "Manage properties", icon: Building2, to: "/work", show: (m) => m.creatorTypes?.includes("property") ?? false },
   { id: "artist", title: "Your music", desc: "Tracks, albums and your artist page.", cta: "Add a music listing", icon: Music, to: `${PORTAL}/submit`, external: true, show: (m) => m.creatorTypes?.includes("artist") ?? false },
   { id: "organiser", title: "Your events", desc: "Ticketed shows and gatherings.", cta: "Add an event", icon: CalendarDays, to: `${PORTAL}/submit`, external: true, show: (m) => m.creatorTypes?.includes("organiser") ?? false },
   { id: "institution", title: "Your institutions", desc: "Schools, civic and community pages.", cta: "Manage institutions", icon: Landmark, to: "/institutions", show: (m) => m.creatorTypes?.includes("institution") ?? false },
@@ -81,7 +82,7 @@ function countBy<T>(items: T[], pick: (t: T) => string): Record<string, number> 
 const TYPE_LABEL: Record<ListingType, string> = {
   business: "Businesses", artist: "Artists", person: "People", memory: "Memories",
   event: "Events", opportunity: "Opportunities", memorial: "Memorials", project: "Projects",
-  incident: "Incidents", lostfound: "Lost & found",
+  property: "Properties", incident: "Incidents", lostfound: "Lost & found",
 };
 const STATUS_COLOR: Record<ListingStatus, string> = {
   approved: "var(--color-teal)", pending: "var(--color-gold-brand)", rejected: "var(--color-clay-text)",

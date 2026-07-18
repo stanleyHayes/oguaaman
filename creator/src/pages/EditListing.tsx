@@ -22,6 +22,7 @@ export async function loader({ params }: { params: { id?: string } }): Promise<D
 const TYPE_LABELS: Record<string, string> = {
   business: "Business", artist: "Artist", person: "Person", memory: "Memory",
   event: "Event", opportunity: "Opportunity", memorial: "Memorial",
+  property: "Property",
 };
 
 const COVER_COPY: Record<string, { label: string; hint: string }> = {
@@ -32,6 +33,7 @@ const COVER_COPY: Record<string, { label: string; hint: string }> = {
   opportunity: { label: "Flyer or poster", hint: "The opportunity's flyer or poster, if there is one." },
   person: { label: "Photo", hint: "A portrait or a representative photo of them." },
   memorial: { label: "Portrait", hint: "A dignified portrait of the departed." },
+  property: { label: "Property photo", hint: "Use a clear, recent photo that honestly represents the space." },
 };
 
 // The primary free-text field of each type (plain textarea here — the AI
@@ -44,6 +46,7 @@ const TEXT_FIELD: Record<string, { name: string; label: string; rows: number }> 
   opportunity: { name: "eligibility", label: "Eligibility", rows: 2 },
   person: { name: "whyNotable", label: "Why notable", rows: 4 },
   memorial: { name: "lifeStory", label: "Life story", rows: 4 },
+  property: { name: "description", label: "About this property", rows: 4 },
 };
 
 // Detail keys the form manages per type. Whitelisted keys NOT listed here are
@@ -57,6 +60,7 @@ const MANAGED_KEYS: Record<string, string[]> = {
   opportunity: ["kind", "description", "applyUrl", "eligibility", "provider", "safeguardingPolicyUrl", "minAge", "maxAge", "guardianConsentRequired"],
   person: ["era", "whyNotable"],
   memorial: ["honorific", "bornYear", "diedDate", "birthday", "epitaph", "associations", "lifeStory", "observeBirthday", "remindersEnabled"],
+  property: ["offerType", "propertyType", "area", "address", "description", "pricePesewas", "pricePeriod", "depositPesewas", "bedrooms", "bathrooms", "furnished", "amenities", "availability", "availableFrom", "bookingUrl"],
 };
 
 // The server's per-type whitelist (mirror of editableDetailsKeys in Go) — used
@@ -69,7 +73,29 @@ const WHITELIST: Record<string, string[]> = {
   opportunity: ["kind", "description", "eligibility", "deadline", "applyUrl", "provider", "safeguardingPolicyUrl", "minAge", "maxAge", "guardianConsentRequired"],
   person: ["whyNotable", "era"],
   memorial: ["honorific", "bornYear", "diedDate", "birthday", "epitaph", "lifeStory", "associations", "gallery", "observeBirthday", "remindersEnabled"],
+  property: ["offerType", "propertyType", "area", "address", "description", "pricePesewas", "pricePeriod", "depositPesewas", "bedrooms", "bathrooms", "furnished", "amenities", "availability", "availableFrom", "contact", "bookingUrl", "gallery"],
 };
+
+const OFFER_OPTIONS = [
+  { value: "long-term", label: "Long-term rent", hint: "Monthly homes and rooms" },
+  { value: "short-stay", label: "Short stay", hint: "Nightly guest accommodation" },
+] as const;
+const PROPERTY_OPTIONS = [
+  { value: "room", label: "Room" },
+  { value: "apartment", label: "Apartment" },
+  { value: "house", label: "House" },
+  { value: "guesthouse", label: "Guesthouse" },
+  { value: "hostel", label: "Hostel" },
+] as const;
+const CADENCE_OPTIONS = [
+  { value: "month", label: "Per month" },
+  { value: "night", label: "Per night" },
+] as const;
+const AVAILABILITY_OPTIONS = [
+  { value: "available", label: "Available" },
+  { value: "reserved", label: "Reserved" },
+  { value: "let", label: "Let" },
+] as const;
 
 const inputCls =
   "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
@@ -84,12 +110,54 @@ function Field({ label, children, hint }: Readonly<{ label: string; children: Re
   );
 }
 
+function ChoiceField({ label, value, options, onChange, hint }: Readonly<{
+  label: string;
+  value: string;
+  options: ReadonlyArray<Readonly<{ value: string; label: string; hint?: string }>>;
+  onChange: (value: string) => void;
+  hint?: string;
+}>) {
+  return (
+    <fieldset>
+      <legend className="mb-1.5 text-sm font-medium text-ink">{label}</legend>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(option.value)}
+              className={`rounded-xl border px-3.5 py-2 text-left text-sm transition-colors ${active ? "border-green bg-green text-on-green" : "border-sand bg-paper text-ink-muted hover:border-green/40 hover:text-ink"}`}
+            >
+              <span className="block font-semibold">{option.label}</span>
+              {option.hint && <span className={`mt-0.5 block text-xs ${active ? "text-on-green/70" : "text-ink-faint"}`}>{option.hint}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {hint && <span className="mt-1.5 block text-xs text-ink-faint">{hint}</span>}
+    </fieldset>
+  );
+}
+
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
 function strList(v: unknown): string {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").join(", ") : "";
+}
+
+function cedisInput(v: unknown): string {
+  return typeof v === "number" && Number.isFinite(v) ? String(v / 100) : "";
+}
+
+function pesewasFromForm(v: FormDataEntryValue | null): number | undefined {
+  if (typeof v !== "string" || !v.trim()) return undefined;
+  const amount = Number(v);
+  return Number.isFinite(amount) ? Math.round(amount * 100) : undefined;
 }
 
 export function Component() {
@@ -124,6 +192,12 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
   // DatePicker is controlled; only the type-relevant one is rendered.
   const [startsAt, setStartsAt] = useState(str(listing.details.startsAt));
   const [diedDate, setDiedDate] = useState(str(listing.details.diedDate));
+  const [availableFrom, setAvailableFrom] = useState(str(listing.details.availableFrom));
+  const [offerType, setOfferType] = useState(str(listing.details.offerType) || "long-term");
+  const [propertyType, setPropertyType] = useState(str(listing.details.propertyType) || "apartment");
+  const [pricePeriod, setPricePeriod] = useState(str(listing.details.pricePeriod) || "month");
+  const [availability, setAvailability] = useState(str(listing.details.availability) || "available");
+  const [furnished, setFurnished] = useState(listing.details.furnished === true);
   // Memorial keeper controls (spec §8.11): reminders default on; the birthday
   // is observed only by the keeper's choice. Absent keys read as those defaults.
   const [reminders, setReminders] = useState(listing.details.remindersEnabled !== false);
@@ -144,11 +218,11 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
     const title = str(fd.get("title")).trim();
     const details: Record<string, unknown> = {};
     for (const [k, v] of fd.entries()) {
-      if (k === "title") continue;
+      if (k === "title" || k === "priceGhs" || k === "depositGhs") continue;
       if (typeof v === "string" && v.trim()) details[k] = v.trim();
     }
     if (textField && text.trim()) details[textField.name] = text.trim();
-    for (const listKey of ["genres", "associations"]) {
+    for (const listKey of ["genres", "associations", "amenities"]) {
       if (typeof details[listKey] === "string") {
         details[listKey] = (details[listKey] as string).split(",").map((s) => s.trim()).filter(Boolean);
       }
@@ -157,10 +231,27 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
       const n = Number.parseInt(details.bornYear as string, 10);
       if (Number.isFinite(n)) details.bornYear = n; else delete details.bornYear;
     }
+    for (const numberKey of ["bedrooms", "bathrooms"]) {
+      if (typeof details[numberKey] === "string") {
+        const n = Number.parseInt(details[numberKey] as string, 10);
+        if (Number.isFinite(n)) details[numberKey] = n; else delete details[numberKey];
+      }
+    }
     if (type === "artist") details.actName = title;
     if (type === "memorial") {
       details.remindersEnabled = reminders;
       details.observeBirthday = observeBday;
+    }
+    if (type === "property") {
+      details.offerType = offerType;
+      details.propertyType = propertyType;
+      details.pricePeriod = pricePeriod;
+      details.availability = availability;
+      details.furnished = furnished;
+      const pricePesewas = pesewasFromForm(fd.get("priceGhs"));
+      const depositPesewas = pesewasFromForm(fd.get("depositGhs"));
+      if (pricePesewas !== undefined) details.pricePesewas = pricePesewas;
+      if (depositPesewas !== undefined) details.depositPesewas = depositPesewas;
     }
 
     // Passthrough: whitelisted keys the form doesn't manage survive untouched.
@@ -223,13 +314,15 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
       )}
       {listing.status === "approved" && (
         <p className="mb-4 rounded-lg bg-teal/[0.1] px-4 py-3 text-sm text-teal-text">
-          This listing is live. Your changes publish immediately; curators can spot-check them in the audit trail.
+          {type === "property"
+            ? "This property is live. Availability and booking-link updates stay live; changes to its price, description or location return to curator review."
+            : "This listing is live. Minor changes publish immediately; significant content changes return to curator review."}
         </p>
       )}
 
       <Card className="p-5 sm:p-6">
         <form onSubmit={onSubmit} className="space-y-6">
-          <Field label={type === "memorial" ? "Name of the departed" : "Title / name"}>
+          <Field label={type === "memorial" ? "Name of the departed" : type === "property" ? "Property name" : "Title / name"}>
             <input name="title" required defaultValue={listing.title} className={inputCls} />
           </Field>
 
@@ -243,6 +336,35 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
             <Field label="Category / sector"><input name="category" defaultValue={str(listing.details.category)} className={inputCls} /></Field>
             <Field label="Location / address"><input name="address" defaultValue={str(listing.details.address)} className={inputCls} /></Field>
           </>)}
+          {type === "property" && (
+            <div className="space-y-5 rounded-xl border border-gold-border/40 bg-gold/[0.06] p-4 sm:p-5">
+              <ChoiceField label="What are you offering?" value={offerType} options={OFFER_OPTIONS} onChange={setOfferType} />
+              <ChoiceField label="Property type" value={propertyType} options={PROPERTY_OPTIONS} onChange={setPropertyType} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Area / neighbourhood (optional)"><input name="area" defaultValue={str(listing.details.area)} className={inputCls} placeholder="e.g. Abura, Pedu, Cape Coast Central" /></Field>
+                <Field label="Address or landmark"><input name="address" required defaultValue={str(listing.details.address)} className={inputCls} /></Field>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Price (GH₵)"><input name="priceGhs" type="number" min="0.01" step="0.01" required defaultValue={cedisInput(listing.details.pricePesewas)} className={inputCls} /></Field>
+                <Field label="Deposit (GH₵, optional)"><input name="depositGhs" type="number" min="0" step="0.01" defaultValue={cedisInput(listing.details.depositPesewas)} className={inputCls} /></Field>
+              </div>
+              <ChoiceField label="Price period" value={pricePeriod} options={CADENCE_OPTIONS} onChange={setPricePeriod} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Bedrooms (optional)"><input name="bedrooms" type="number" min="0" step="1" defaultValue={typeof listing.details.bedrooms === "number" ? String(listing.details.bedrooms) : ""} className={inputCls} /></Field>
+                <Field label="Bathrooms (optional)"><input name="bathrooms" type="number" min="0" step="1" defaultValue={typeof listing.details.bathrooms === "number" ? String(listing.details.bathrooms) : ""} className={inputCls} /></Field>
+              </div>
+              <ChoiceField
+                label="Furnishing"
+                value={furnished ? "furnished" : "unfurnished"}
+                options={[{ value: "furnished", label: "Furnished" }, { value: "unfurnished", label: "Unfurnished" }]}
+                onChange={(value) => setFurnished(value === "furnished")}
+              />
+              <Field label="Amenities" hint="Comma-separated, e.g. Wi-Fi, parking, air conditioning"><input name="amenities" defaultValue={strList(listing.details.amenities)} className={inputCls} /></Field>
+              <ChoiceField label="Availability" value={availability} options={AVAILABILITY_OPTIONS} onChange={setAvailability} />
+              <Field label="Available from (optional)"><DatePicker name="availableFrom" value={availableFrom} onChange={setAvailableFrom} className="w-full" /></Field>
+              <Field label="Booking link (optional)" hint="A secure page where guests can enquire or book."><input name="bookingUrl" type="url" defaultValue={str(listing.details.bookingUrl)} className={inputCls} placeholder="https://" /></Field>
+            </div>
+          )}
           {type === "event" && (<>
             <Field label="Date"><DatePicker name="startsAt" value={startsAt} onChange={setStartsAt} className="w-full" /></Field>
             <Field label="Venue / location"><input name="venue" defaultValue={str(listing.details.venue)} className={inputCls} /></Field>
@@ -295,7 +417,7 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
 
           {textField && (
             <Field label={textField.label}>
-              <textarea rows={textField.rows} value={text} onChange={(e) => setText(e.target.value)} className={inputCls} />
+              <textarea rows={textField.rows} value={text} onChange={(e) => setText(e.target.value)} required={type === "property"} className={inputCls} />
             </Field>
           )}
 
