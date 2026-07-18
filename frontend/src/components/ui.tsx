@@ -193,6 +193,10 @@ export function Card({
   );
 }
 
-export function SampleNote({ children }: Readonly<{ children: ReactNode }>) {
-  return <p className="mt-10 text-center text-xs italic text-ink-faint">{children}</p>;
+// Illustrative-preview notices are retired — the app shows only real,
+// community-brought content now. Kept as a no-op so existing call sites (Home,
+// listings, detail pages…) stay valid without touching each one.
+export function SampleNote(props: Readonly<{ children?: ReactNode }>) {
+  void props;
+  return null;
 }

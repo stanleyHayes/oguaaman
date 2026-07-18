@@ -7,7 +7,33 @@ export type ListingStatus =
   | "draft" | "pending" | "approved" | "rejected" | "unpublished";
 
 export type ListingType =
-  | "business" | "artist" | "person" | "memory" | "event" | "opportunity" | "memorial" | "project" | "incident" | "lostfound";
+  | "business" | "artist" | "person" | "memory" | "event" | "opportunity" | "memorial" | "project" | "incident" | "lostfound" | "property";
+
+export type PropertyOfferType = "long-term" | "short-stay";
+export type PropertyType = "room" | "apartment" | "house" | "guesthouse" | "hostel";
+export type PropertyPricePeriod = "night" | "month";
+export type PropertyAvailability = "available" | "reserved" | "let";
+
+/** The compact property contract shared by Rent & Stay cards and detail pages. */
+export interface PropertyDetails {
+  offerType: PropertyOfferType;
+  propertyType: PropertyType;
+  area?: string;
+  address: string;
+  description: string;
+  pricePesewas: number;
+  pricePeriod: PropertyPricePeriod;
+  depositPesewas?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  furnished?: boolean;
+  amenities?: string[];
+  availability: PropertyAvailability;
+  availableFrom?: string;
+  contact?: SocialLink[];
+  bookingUrl?: string;
+  gallery?: { url?: string; caption?: string; label?: string }[];
+}
 
 /** A contribution toward an adopt-a-project campaign (amounts in pesewas). */
 export interface Pledge {
@@ -439,6 +465,20 @@ export interface ListingDetails {
   openingHours?: string;
   contact?: SocialLink[];
   subscribedUntil?: string; // RFC3339 — Supporter paid-until date (Phase 7)
+  // property — long-term rentals and short stays
+  offerType?: PropertyOfferType;
+  propertyType?: PropertyType;
+  area?: string;
+  pricePesewas?: number;
+  pricePeriod?: PropertyPricePeriod;
+  depositPesewas?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  furnished?: boolean;
+  amenities?: string[];
+  availability?: PropertyAvailability;
+  availableFrom?: string;
+  bookingUrl?: string;
   // project (adopt-a-project; money in pesewas; organiser is shared with events)
   goalPesewas?: number;
   raisedPesewas?: number;
@@ -452,7 +492,7 @@ export interface ListingDetails {
   remindersEnabled?: boolean;
   epitaph?: string;
   lifeStory?: string;
-  gallery?: { url?: string; caption: string }[];
+  gallery?: { url?: string; caption?: string; label?: string }[];
   associations?: string[];
   candles?: number;
   rememberedByCount?: number;
@@ -596,11 +636,11 @@ export interface Directive {
  * non-null ([] not null). Mirrors backend service/mapdata.go.
  */
 export type MapPointKind =
-  | "business" | "event" | "institution" | "school" | "incident"
+  | "business" | "property" | "event" | "institution" | "school" | "incident"
   | "lostfound" | "landmark" | "service" | "transport";
 
 export type MapLayer =
-  | "business" | "events" | "institutions" | "safety"
+  | "business" | "property" | "events" | "institutions" | "safety"
   | "lostfound" | "landmarks" | "services" | "transport";
 
 export interface MapPoint {
@@ -738,4 +778,147 @@ export interface Goal {
   createdByName?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+// ── Oguaa Outside — vetted agents & managed-escrow errands ──────────────────
+// A directory of vetted individuals/offices who run business & errands for Cape
+// Coast people located elsewhere (procurement from China/Accra, shipping,
+// inspection-before-you-buy, travel companion, official/document errands …) for
+// a fee, with MANAGED ESCROW and an "engage at your own risk" disclaimer. Money
+// is always in PESEWAS (÷100 = GHS). Mirrors the Go API's agent/job/review JSON.
+
+/** Whether an agent is a lone individual or a registered office/business. */
+export type AgentType = "individual" | "office";
+
+/** Vetting lifecycle of an agent profile. */
+export type AgentStatus = "pending" | "verified" | "suspended" | "rejected";
+
+/** A guarantor who vouches for an agent during vetting. */
+export interface AgentGuarantor {
+  name: string;
+  phone: string;
+  relation?: string;
+  note?: string;
+}
+
+/** The refundable good-faith bond an agent posts (amount in pesewas). */
+export interface AgentBond {
+  amountPesewas: number;
+  status: string;
+}
+
+/** A vetted Oguaa Outside agent (individual or office). */
+export interface Agent {
+  id: string;
+  slug: string;
+  memberId: string;
+  type: AgentType;
+  displayName: string;
+  headline?: string;
+  bio?: string;
+  services: string[];        // AgentService slugs the agent offers
+  coverageAreas: string[];   // free-text areas the agent covers (Accra, China …)
+  rates?: string;            // free-text fee guidance
+  status: AgentStatus;
+  idDocUrl?: string;
+  guarantor?: AgentGuarantor;
+  bond: AgentBond;
+  verifiedByName?: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+  ratingAvg: number;
+  ratingCount: number;
+  jobsCompleted: number;
+  payoutMethod?: string;
+  payoutDetail?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/** The application / edit payload (POST /api/agents/apply, POST /api/me/agent). */
+export interface AgentInput {
+  type: AgentType;
+  displayName: string;
+  headline: string;
+  bio: string;
+  services: string[];
+  coverageAreas: string[];
+  rates: string;
+  idDocUrl: string;
+  guarantor: AgentGuarantor;
+  payoutMethod: string;
+  payoutDetail: string;
+}
+
+/** Lifecycle of an escrowed errand job. */
+export type AgentJobStatus =
+  | "requested" | "quoted" | "funded" | "delivered"
+  | "completed" | "disputed" | "cancelled" | "refunded";
+
+/** The managed-escrow ledger attached to a job (amounts in pesewas). */
+export interface AgentEscrow {
+  heldPesewas: number;
+  platformFeePesewas: number;
+  payoutPesewas: number;
+  status: string;
+  simulated: boolean;
+}
+
+/** One errand job between a client and an agent, funded through escrow. */
+export interface AgentJob {
+  id: string;
+  reference: string;
+  agentId: string;
+  agentSlug: string;
+  agentName: string;
+  agentMemberId: string;
+  clientMemberId: string;
+  clientName: string;
+  service: string;
+  title: string;
+  description: string;
+  deadline?: string;
+  budgetPesewas: number;
+  quotePesewas: number;
+  quoteNote?: string;
+  status: AgentJobStatus;
+  escrow: AgentEscrow;
+  disputeReason?: string;
+  reviewed: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/** A client's review of an agent, left after a job completes. */
+export interface AgentReview {
+  id: string;
+  jobId: string;
+  agentId: string;
+  agentSlug: string;
+  clientMemberId: string;
+  clientName?: string;
+  rating: number;
+  body?: string;
+  createdAt: string;
+}
+
+/** A service an agent can offer (GET /api/agent-services). */
+export interface AgentService {
+  slug: string;
+  label: string;
+}
+
+/** A client's errand request (POST /api/agents/{slug}/jobs). Money in pesewas. */
+export interface JobInput {
+  service: string;
+  title: string;
+  description: string;
+  budgetPesewas: number;
+  deadline?: string;
+}
+
+/** The split view returned by GET /api/me/jobs. */
+export interface MyJobs {
+  asClient: AgentJob[];
+  asAgent: AgentJob[];
 }

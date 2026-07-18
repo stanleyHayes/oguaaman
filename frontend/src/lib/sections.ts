@@ -3,7 +3,7 @@
 export type SectionId =
   | "home" | "music" | "people" | "heritage" | "culture" | "festivals"
   | "visit" | "education" | "business" | "memoriam" | "community" | "diaspora" | "youth"
-  | "news" | "events" | "safety" | "lostfound" | "map" | "better";
+  | "news" | "events" | "safety" | "lostfound" | "map" | "better" | "outside" | "property";
 
 export type LaunchDepth = "deep" | "live" | "stub";
 export type Tone = "green" | "clay" | "gold" | "maroon" | "teal";
@@ -45,6 +45,7 @@ export const SECTIONS: NavSection[] = [
   { id: "visit", href: "/visit", label: "Visit", tagline: "The Castle, Kakum, the coast, the food.", tone: "teal", depth: "stub" },
   { id: "education", href: "/education", label: "Education", tagline: "The Citadel of Education — rep your school.", tone: "maroon", depth: "live", primary: true },
   { id: "business", href: "/business", label: "Business", tagline: "The working city — markets, fishing, trade.", tone: "teal", depth: "live" },
+  { id: "property", href: "/rent-stay", label: "Rent & Stay", tagline: "Rooms, homes and guest stays around Cape Coast.", tone: "gold", depth: "live", primary: true },
   { id: "memoriam", href: "/memoriam", label: "In Memoriam", fanteName: "Yɛnkae", tagline: "Let us remember — a home for those who have passed.", tone: "gold", depth: "deep", primary: true },
   { id: "community", href: "/community", label: "Community", tagline: "Get involved — events, youth opportunities, join us.", tone: "teal", depth: "live", primary: true },
   { id: "diaspora", href: "/diaspora", label: "Diaspora", fanteName: "Abɔkyirfoɔ", tagline: "Sons & daughters everywhere — the bridge home.", tone: "gold", depth: "live", primary: true },

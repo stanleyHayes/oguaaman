@@ -28,6 +28,13 @@ export const router = createBrowserRouter([
       { path: "projects/:slug", lazy: () => import("./pages/Project") },
       { path: "business", lazy: () => import("./pages/Business") },
       { path: "business/:slug", lazy: () => import("./pages/BusinessDetail") },
+      { path: "rent-stay", lazy: () => import("./pages/RentStay") },
+      { path: "rent-stay/:slug", lazy: () => import("./pages/PropertyDetail") },
+      // Oguaa Outside — vetted-agent errand marketplace with managed escrow.
+      { path: "outside", lazy: () => import("./pages/Outside") },
+      { path: "outside/become-an-agent", lazy: () => import("./pages/BecomeAgent") },
+      { path: "outside/jobs", lazy: () => import("./pages/OutsideJobs") },
+      { path: "outside/agents/:slug", lazy: () => import("./pages/AgentDetail") },
       { path: "events", lazy: () => import("./pages/Events") },
       { path: "events/:slug", lazy: () => import("./pages/EventDetail") },
       { path: "festivals", lazy: () => import("./pages/Festivals") },

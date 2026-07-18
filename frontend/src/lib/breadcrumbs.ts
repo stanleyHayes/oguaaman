@@ -12,13 +12,14 @@ export interface Crumb {
 const KNOWN_SECTIONS = new Set([
   "home", "music", "people", "heritage", "culture", "festivals", "visit",
   "education", "business", "memoriam", "community", "news", "safety",
-  "lostfound", "events", "youth", "diaspora", "better",
+  "lostfound", "events", "youth", "diaspora", "better", "outside", "property",
 ]);
 
 // A few route segments don't match a section id 1:1, or are utility routes
 // that borrow the closest section glyph.
 const SEGMENT_TO_SECTION: Record<string, string> = {
   "lost-found": "lostfound",
+  "rent-stay": "property",
   projects: "community",
   investment: "business",
   mentorship: "youth",

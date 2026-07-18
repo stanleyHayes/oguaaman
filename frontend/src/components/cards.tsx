@@ -278,13 +278,14 @@ export function MemoryCard({ memory }: Readonly<{ memory: Listing }>) {
 
 // ── Featured: a cross-type paid placement card for the front page ─────────────
 const FEATURED_LABEL: Record<string, string> = {
-  artist: "Artist", business: "Business", event: "Event", memorial: "In memoriam",
+  artist: "Artist", business: "Business", property: "Rent & Stay", event: "Event", memorial: "In memoriam",
   person: "Person", memory: "Memory", opportunity: "Opportunity",
 };
 function featuredHref(l: Listing): string {
   switch (l.type) {
     case "artist": return `/music/${l.slug}`;
     case "business": return `/business/${l.slug}`;
+    case "property": return `/rent-stay/${l.slug}`;
     case "memorial": return `/memoriam/${l.slug}`;
     case "event": return `/events/${l.slug}`;
     case "person": return `/people/${l.slug}`;
@@ -292,11 +293,15 @@ function featuredHref(l: Listing): string {
     default: return "/community";
   }
 }
+function moneyForCard(pesewas: number): string {
+  return `GH₵${(pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
+}
 function featuredSubtitle(l: Listing): string {
   const d = l.details;
   switch (l.type) {
     case "artist": return (d.genres ?? []).join(" · ") || "Oguaa artist";
     case "business": return d.category || d.address || "Cape Coast";
+    case "property": return [d.area, d.pricePesewas ? `${moneyForCard(d.pricePesewas)} / ${d.pricePeriod ?? "month"}` : ""].filter(Boolean).join(" · ") || "Cape Coast";
     case "memorial": return d.epitaph || lifeDates(d.bornYear, d.diedDate) || "Remembered";
     case "event": return [d.startsAt ? formatDate(d.startsAt) : "", d.venue].filter(Boolean).join(" · ") || "Cape Coast";
     case "person": return d.whyNotable || d.era || "A son or daughter of Oguaa";
@@ -307,6 +312,7 @@ function featuredSubtitle(l: Listing): string {
 // Bold per-type colours so the showcase reads vibrant, not uniform.
 const FEATURED_GRADIENTS: Record<string, string> = {
   business: "linear-gradient(135deg, #0E7C6B 0%, #0B6557 60%, #083f37 100%)",
+  property: "linear-gradient(135deg, #B07D32 0%, #0E7C6B 58%, #123F2D 100%)",
   artist: "linear-gradient(135deg, #B0503C 0%, #7C2D2D 100%)",
   event: "linear-gradient(135deg, #C7A24A 0%, #B07D32 55%, #8A5E1F 100%)",
   memorial: "linear-gradient(135deg, #3B473D 0%, #123F2D 100%)",
@@ -346,7 +352,7 @@ export function FeaturedCard({ listing, hero = false, index = 0 }: Readonly<{ li
         <h3 className={`mt-3 font-semibold leading-[1.05] text-cream ${hero ? "text-4xl sm:text-5xl" : "text-2xl"}`}>{title}</h3>
         <p className={`mt-2 text-cream/85 ${hero ? "max-w-lg text-base line-clamp-3" : "line-clamp-2 text-sm"}`}>{featuredSubtitle(listing)}</p>
         <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-cream">
-          {listing.type === "business" ? "Visit business" : "View"} <span className="transition-transform group-hover:translate-x-1">→</span>
+          {listing.type === "business" ? "Visit business" : listing.type === "property" ? "View property" : "View"} <span className="transition-transform group-hover:translate-x-1">→</span>
         </span>
       </div>
     </Link>

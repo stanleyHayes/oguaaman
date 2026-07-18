@@ -69,7 +69,6 @@ export function SplashQuote({ line }: Readonly<{ line: SplashLine }>) {
       {/* the line, word by word */}
       <p className="relative mt-3 text-[0.95rem] font-medium leading-relaxed text-cream/90 sm:text-base">
         {words.map((word, idx) => (
-          // eslint-disable-next-line react/no-array-index-key
           <motion.span
             key={idx}
             className="inline-block"

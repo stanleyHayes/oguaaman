@@ -72,8 +72,19 @@ const MAP_ENTRY: NavSection = {
   depth: "live",
 };
 
+// Oguaa Outside — the vetted-agent errand marketplace. Not in SECTIONS, so it
+// carries a minimal NavSection-shaped literal, appended to the City group.
+const OUTSIDE_ENTRY: NavSection = {
+  id: "outside",
+  href: "/outside",
+  label: "Oguaa Outside",
+  tagline: "Vetted agents run your errands abroad — escrow-backed.",
+  tone: "gold",
+  depth: "live",
+};
+
 const DISCOVER = [...["heritage", "culture", "people", "visit"].map((id) => byId[id]).filter(Boolean), MAP_ENTRY];
-const CITY = ["education", "business", "youth", "community", "diaspora"].map((id) => byId[id]).filter(Boolean);
+const CITY = [...["education", "business", "property", "youth", "community", "diaspora"].map((id) => byId[id]).filter(Boolean), OUTSIDE_ENTRY];
 
 // Time-sensitive postings get their own group; the section entries below are
 // not in SECTIONS, so they carry a minimal NavSection-shaped literal.

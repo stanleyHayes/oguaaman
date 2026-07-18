@@ -13,6 +13,7 @@ function hrefFor(h: SearchHit): string {
   switch (h.type) {
     case "artist": return `/music/${h.slug}`;
     case "business": return `/business/${h.slug}`;
+    case "property": return `/rent-stay/${h.slug}`;
     case "memorial": return `/memoriam/${h.slug}`;
     case "person": return `/people/${h.slug}`;
     case "project": return `/projects/${h.slug}`;
@@ -23,7 +24,7 @@ function hrefFor(h: SearchHit): string {
 
 const KIND_LABEL: Record<string, string> = {
   member: "Person", institution: "Institution",
-  artist: "Artist", business: "Business", memorial: "In memoriam",
+  artist: "Artist", business: "Business", property: "Rent & Stay", memorial: "In memoriam",
   person: "Son / daughter", event: "Event", memory: "Memory", opportunity: "Opportunity", project: "Project",
 };
 function kindLabel(h: SearchHit): string {
@@ -92,7 +93,7 @@ export function Component() {
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search a name, a business, a memorial…"
+          placeholder="Search a name, business, property or memorial…"
           className="w-full rounded-full border border-sand bg-paper px-5 py-3 text-ink placeholder:text-ink-faint focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/15"
         />
 

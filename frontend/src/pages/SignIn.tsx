@@ -148,6 +148,7 @@ function adultCutoffIso() {
 // Creator kinds offered on the Join form (Creator Platform plan §3).
 const CREATOR_KINDS = [
   { id: "business", label: "Business owner" },
+  { id: "property", label: "Realtor / property manager" },
   { id: "artist", label: "Artist" },
   { id: "organiser", label: "Event organiser" },
   { id: "writer", label: "Writer" },
@@ -170,8 +171,8 @@ const STARTER_FALLBACK: Plan = {
 type PlanCatalogStatus = "loading" | "ready" | "fallback" | "unavailable";
 
 function creatorPlansFor(plans: Plan[], creatorTypes: string[]): Plan[] {
-  const hasBusiness = creatorTypes.includes("business");
-  const hasNonBusinessCreator = creatorTypes.some((type) => type !== "business");
+  const hasBusiness = creatorTypes.some((type) => type === "business" || type === "property");
+  const hasNonBusinessCreator = creatorTypes.some((type) => type !== "business" && type !== "property");
   return plans
     .filter((plan) => {
       if (!plan.active) return false;
@@ -191,7 +192,7 @@ function starterPlanFor(plans: Plan[]): Plan {
 function planPrice(plan: Plan, creatorTypes: string[]): number {
   const audiencePrice = plan.audience === "creator"
     ? plan.prices.creator
-    : creatorTypes.includes("business")
+    : creatorTypes.some((type) => type === "business" || type === "property")
       ? plan.prices.business
       : plan.prices.creator;
   return audiencePrice ?? plan.prices.default ?? 0;
@@ -462,7 +463,7 @@ function PlanSelection({
         </p>
       )}
       <p className="rounded-xl border border-sand bg-cream px-3 py-2.5 text-xs leading-relaxed text-ink-muted">
-        A paid choice saves your preference only — there is no charge during signup. Payment and plan benefits activate later through an eligible, approved business listing.
+        A paid choice saves your preference only — there is no charge during signup. Payment and plan benefits activate later through an eligible, approved business or property listing.
       </p>
     </fieldset>
   );
@@ -786,7 +787,7 @@ export function Component() {
   const joinNext = () => {
     if (joinStep === 1) {
       if (asCreator && creatorTypes.length === 0) {
-        setErr("Pick at least one creator type — business, artist, organiser, writer or institution.");
+        setErr("Pick at least one creator type — business, property, artist, organiser, writer or institution.");
         return;
       }
       if (!name.trim()) {

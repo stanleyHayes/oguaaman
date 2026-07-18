@@ -1,6 +1,6 @@
 import { useState, type ReactNode, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import type { ListingType } from "@/lib/types";
+import type { ListingType, PropertyAvailability, PropertyOfferType, PropertyType } from "@/lib/types";
 import { api } from "@/lib/api";
 import { AiWritingBar } from "@/components/ai-writing-bar";
 import { DatePicker } from "@/components/date-picker";
@@ -9,11 +9,12 @@ import { LocationPicker, type LatLng } from "@/components/location-picker";
 
 // Listing types that appear on the town map (GET /api/map) and so can carry an
 // optional exact pin. Other types have no coordinates.
-const MAPPABLE_TYPES = new Set<ListingType>(["business", "event"]);
+const MAPPABLE_TYPES = new Set<ListingType>(["business", "event", "property"]);
 
 const TYPES: { value: ListingType; label: string; hint: string }[] = [
   { value: "artist", label: "Artist", hint: "A musician or act" },
   { value: "business", label: "Business", hint: "A shop, service or trade" },
+  { value: "property", label: "Property", hint: "A home, room or guest stay" },
   { value: "event", label: "Event", hint: "Something happening" },
   { value: "memory", label: "Memory", hint: "A story of old Oguaa" },
   { value: "opportunity", label: "Opportunity", hint: "Scholarship, job, investment, mentorship" },
@@ -26,6 +27,7 @@ const TYPES: { value: ListingType; label: string; hint: string }[] = [
 const COVER_COPY: Record<ListingType, { label: string; hint: string }> = {
   artist: { label: "Photo (optional)", hint: "A promo shot, performance photo, or portrait of the act." },
   business: { label: "Photo or logo (optional)", hint: "Your storefront, a product, or the business logo." },
+  property: { label: "Main property photo (optional)", hint: "A bright, honest view of the room, home or guest stay." },
   event: { label: "Poster or photo (optional)", hint: "The event flyer, or a photo that represents it." },
   memory: { label: "Old photo (optional)", hint: "A photograph from the time, if you have one to share." },
   opportunity: { label: "Flyer or poster (optional)", hint: "The opportunity's flyer or poster, if there is one." },
@@ -46,6 +48,7 @@ const COVER_COPY: Record<ListingType, { label: string; hint: string }> = {
 const ICONS: Record<ListingType, ReactNode> = {
   artist: <><path d="M9 18V5l10-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="16" cy="16" r="3" /></>,
   business: <><path d="M3 9l1.5-5h15L21 9" /><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9" /><path d="M3 9h18M9 20v-6h6v6" /></>,
+  property: <><path d="m3 11 9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></>,
   event: <><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 2.5v4M16 2.5v4" /></>,
   memory: <><path d="M4 5a2 2 0 0 1 2-2h12a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2Z" /><path d="M8 7h7M8 11h7M8 15h4" /></>,
   opportunity: <path d="M12 3l2.3 4.7 5.2.8-3.7 3.6.9 5.1L12 14.8 7.3 17.3l.9-5.1L4.5 8.5l5.2-.8Z" />,
@@ -58,6 +61,7 @@ const ICONS: Record<ListingType, ReactNode> = {
 const ACCENT: Record<ListingType, { chip: string; icon: string }> = {
   artist: { chip: "bg-clay/[0.12]", icon: "text-clay-text" },
   business: { chip: "bg-teal/[0.12]", icon: "text-teal-text" },
+  property: { chip: "bg-gold/[0.16]", icon: "text-gold-text" },
   event: { chip: "bg-gold/[0.16]", icon: "text-gold-text" },
   memory: { chip: "bg-green/[0.1]", icon: "text-green" },
   opportunity: { chip: "bg-teal/[0.12]", icon: "text-teal-text" },
@@ -80,6 +84,7 @@ function TypeIcon({ type, className = "" }: Readonly<{ type: ListingType; classN
 const AI_FIELD: Record<ListingType, { name: string; label: string; rows: number; placeholder?: string } | null> = {
   artist: { name: "bio", label: "Bio", rows: 4, placeholder: "Tell us about the act…" },
   business: { name: "description", label: "Short description", rows: 3 },
+  property: { name: "description", label: "Describe the property", rows: 4, placeholder: "Describe the space, its condition and what makes the location useful…" },
   event: { name: "description", label: "Description", rows: 3 },
   memory: { name: "text", label: "Your memory", rows: 5, placeholder: "Share your Mfantsipim memory, your Fetu Afahye memory…" },
   opportunity: { name: "eligibility", label: "Eligibility", rows: 2 },
@@ -101,6 +106,39 @@ const OPPORTUNITY_KINDS = [
   { value: "mentorship", label: "Mentorship programme" },
 ] as const;
 
+const PROPERTY_OFFERS: { value: PropertyOfferType; label: string; hint: string }[] = [
+  { value: "long-term", label: "For rent", hint: "Long-term, priced monthly" },
+  { value: "short-stay", label: "Short stay", hint: "Guest stay, priced nightly" },
+];
+const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
+  { value: "room", label: "Room" },
+  { value: "apartment", label: "Apartment" },
+  { value: "house", label: "House" },
+  { value: "guesthouse", label: "Guesthouse" },
+  { value: "hostel", label: "Hostel" },
+];
+const PROPERTY_AVAILABILITY: { value: PropertyAvailability; label: string }[] = [
+  { value: "available", label: "Available" },
+  { value: "reserved", label: "Reserved" },
+  { value: "let", label: "Let" },
+];
+
+function whatsappUrl(value: string): string | null {
+  const raw = value.trim();
+  if (!raw) return null;
+  if (/^https?:\/\/(?:www\.)?(?:wa\.me|api\.whatsapp\.com)\//i.test(raw)) return raw;
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = `233${digits.slice(1)}`;
+  if (digits.length < 9) return null;
+  return `https://wa.me/${digits}`;
+}
+
+function outboundUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const raw = value.trim();
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
 /** Build the details payload from the form data + the AI-driven text field. */
 function collectDetails(fd: FormData, type: ListingType, aiText: string): Record<string, unknown> {
   const details: Record<string, unknown> = {};
@@ -121,6 +159,30 @@ function collectDetails(fd: FormData, type: ListingType, aiText: string): Record
     const n = Number.parseInt(details.bornYear as string, 10);
     if (Number.isFinite(n)) details.bornYear = n; else delete details.bornYear;
   }
+  for (const listKey of ["amenities"]) {
+    if (typeof details[listKey] === "string") {
+      details[listKey] = (details[listKey] as string).split(",").map((s) => s.trim()).filter(Boolean);
+    }
+  }
+  for (const intKey of ["bedrooms", "bathrooms"]) {
+    if (typeof details[intKey] !== "string") continue;
+    const n = Number.parseInt(details[intKey] as string, 10);
+    if (Number.isFinite(n) && n >= 0) details[intKey] = n; else delete details[intKey];
+  }
+  for (const [cedisKey, pesewasKey] of [["priceGhs", "pricePesewas"], ["depositGhs", "depositPesewas"]] as const) {
+    if (typeof details[cedisKey] !== "string") continue;
+    const cedis = Number.parseFloat(details[cedisKey] as string);
+    delete details[cedisKey];
+    if (Number.isFinite(cedis) && cedis > 0) details[pesewasKey] = Math.round(cedis * 100);
+  }
+  if (typeof details.whatsapp === "string") {
+    const url = whatsappUrl(details.whatsapp as string);
+    delete details.whatsapp;
+    if (url) details.contact = [{ label: "WhatsApp", url }];
+  }
+  const bookingUrl = outboundUrl(details.bookingUrl);
+  if (bookingUrl) details.bookingUrl = bookingUrl;
+  else delete details.bookingUrl;
   return details;
 }
 
@@ -150,6 +212,10 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
   const [reminders, setReminders] = useState(true);
   const [observeBday, setObserveBday] = useState(false);
   const [oppKind, setOppKind] = useState<(typeof OPPORTUNITY_KINDS)[number]["value"]>("scholarship");
+  const [propertyOffer, setPropertyOffer] = useState<PropertyOfferType>("long-term");
+  const [propertyType, setPropertyType] = useState<PropertyType>("apartment");
+  const [propertyAvailability, setPropertyAvailability] = useState<PropertyAvailability>("available");
+  const [propertyFurnished, setPropertyFurnished] = useState(false);
 
   function changeType(next: ListingType) {
     setType(next);
@@ -171,6 +237,13 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
     if (type === "memorial") {
       details.remindersEnabled = reminders;
       details.observeBirthday = observeBday;
+    }
+    if (type === "property") {
+      details.offerType = propertyOffer;
+      details.propertyType = propertyType;
+      details.pricePeriod = propertyOffer === "short-stay" ? "night" : "month";
+      details.availability = propertyAvailability;
+      details.furnished = propertyFurnished;
     }
     const cover = coverImageUrl.trim();
     // The optional pin only applies to mappable types; ignored otherwise.
@@ -227,6 +300,16 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
               opportunityKind={oppKind}
               onOpportunityKind={setOppKind}
               memorialToggles={{ reminders, observeBday, onReminders: setReminders, onObserveBday: setObserveBday }}
+              propertyOptions={{
+                offer: propertyOffer,
+                propertyType,
+                availability: propertyAvailability,
+                furnished: propertyFurnished,
+                onOffer: setPropertyOffer,
+                onPropertyType: setPropertyType,
+                onAvailability: setPropertyAvailability,
+                onFurnished: setPropertyFurnished,
+              }}
             />
           </div>
 
@@ -237,7 +320,9 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
                 onChange={setLocation}
                 hint={type === "event"
                   ? "Optional — tap the map or drag the pin to the venue. This is what places the event on the town map."
-                  : "Optional — tap the map or drag the pin to your storefront. This is what claims your spot on the town map."}
+                  : type === "property"
+                    ? "Optional — place the pin near the property. For a private home, use the neighbourhood rather than an exact door location."
+                    : "Optional — tap the map or drag the pin to your storefront. This is what claims your spot on the town map."}
               />
             </div>
           )}
@@ -329,6 +414,17 @@ type MemorialToggles = {
   onObserveBday: (v: boolean) => void;
 };
 
+type PropertyOptions = {
+  offer: PropertyOfferType;
+  propertyType: PropertyType;
+  availability: PropertyAvailability;
+  furnished: boolean;
+  onOffer: (value: PropertyOfferType) => void;
+  onPropertyType: (value: PropertyType) => void;
+  onAvailability: (value: PropertyAvailability) => void;
+  onFurnished: (value: boolean) => void;
+};
+
 function OpportunityKindPicker({ value, onChange }: Readonly<{
   value: (typeof OPPORTUNITY_KINDS)[number]["value"];
   onChange: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void;
@@ -350,6 +446,32 @@ function OpportunityKindPicker({ value, onChange }: Readonly<{
             >
               {kind.label}
               {selected && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-teal" aria-hidden />}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function ChoicePicker<T extends string>({ legend, value, options, onChange, columns = "grid-cols-2 sm:grid-cols-3" }: Readonly<{
+  legend: string;
+  value: T;
+  options: { value: T; label: string; hint?: string }[];
+  onChange: (value: T) => void;
+  columns?: string;
+}>) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-semibold text-ink">{legend}</legend>
+      <div className={`grid gap-2 ${columns}`}>
+        {options.map((option) => {
+          const selected = value === option.value;
+          return (
+            <button key={option.value} type="button" aria-pressed={selected} onClick={() => onChange(option.value)} className={`relative rounded-xl border px-3.5 py-3 text-left transition-colors ${selected ? "border-green bg-green/[0.07] text-green-text" : "border-sand bg-paper text-ink-muted hover:border-green/40 hover:text-ink"}`}>
+              <span className="block text-sm font-semibold">{option.label}</span>
+              {option.hint && <span className="mt-0.5 block text-xs leading-snug opacity-75">{option.hint}</span>}
+              {selected && <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-green text-[0.65rem] font-bold text-on-green" aria-hidden>✓</span>}
             </button>
           );
         })}
@@ -389,7 +511,8 @@ function TypeFields({
   opportunityKind,
   onOpportunityKind,
   memorialToggles,
-}: Readonly<{ type: ListingType; opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["value"]; onOpportunityKind: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void; memorialToggles: MemorialToggles }>) {
+  propertyOptions,
+}: Readonly<{ type: ListingType; opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["value"]; onOpportunityKind: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void; memorialToggles: MemorialToggles; propertyOptions: PropertyOptions }>) {
   // Local YYYY-MM-DD upper bound for the memorial picker — a date of passing can't be in the future.
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -405,6 +528,36 @@ function TypeFields({
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Category / sector"><input name="category" className={inputCls} placeholder="Food & drink, hospitality…" /></Field>
           <Field label="Location / address"><input name="address" className={inputCls} placeholder="Kotokuraba, Cape Coast" /></Field>
+        </div>
+      )}
+      {type === "property" && (
+        <div className="space-y-6">
+          <ChoicePicker legend="How is this place offered?" value={propertyOptions.offer} options={PROPERTY_OFFERS} onChange={propertyOptions.onOffer} columns="grid-cols-1 sm:grid-cols-2" />
+          <ChoicePicker legend="Property type" value={propertyOptions.propertyType} options={PROPERTY_TYPES} onChange={propertyOptions.onPropertyType} />
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Area / neighbourhood"><input name="area" required className={inputCls} placeholder="Pedu, Abura, Cape Coast town…" /></Field>
+            <Field label="Address" hint="For a private home, use a nearby landmark until a viewing is confirmed."><input name="address" required className={inputCls} placeholder="Near Pedu Junction, Cape Coast" /></Field>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label={`Price in GHS / ${propertyOptions.offer === "short-stay" ? "night" : "month"}`}><input name="priceGhs" required type="number" min="1" step="0.01" inputMode="decimal" className={inputCls} placeholder={propertyOptions.offer === "short-stay" ? "350" : "1200"} /></Field>
+            {propertyOptions.offer === "long-term" && <Field label="Deposit in GHS (optional)"><input name="depositGhs" type="number" min="1" step="0.01" inputMode="decimal" className={inputCls} placeholder="1200" /></Field>}
+            <Field label="Bedrooms"><input name="bedrooms" type="number" min="0" step="1" inputMode="numeric" className={inputCls} placeholder="2" /></Field>
+            <Field label="Bathrooms"><input name="bathrooms" type="number" min="0" step="1" inputMode="numeric" className={inputCls} placeholder="1" /></Field>
+          </div>
+
+          <ToggleSetting checked={propertyOptions.furnished} onChange={propertyOptions.onFurnished} title="Furnished" description="The advertised price includes the principal furniture shown in the listing." />
+
+          <Field label="Amenities" hint="Comma-separated — water, Wi-Fi, parking, air conditioning…"><input name="amenities" className={inputCls} placeholder="Water, Wi-Fi, parking" /></Field>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="WhatsApp number" hint="Use a number prospective tenants or guests may contact."><input name="whatsapp" inputMode="tel" className={inputCls} placeholder="024 000 0000" /></Field>
+            <Field label="Booking or enquiry link (optional)"><input name="bookingUrl" inputMode="url" className={inputCls} placeholder="https://…" /></Field>
+          </div>
+
+          <ChoicePicker legend="Current availability" value={propertyOptions.availability} options={PROPERTY_AVAILABILITY} onChange={propertyOptions.onAvailability} />
+          <Field label="Available from (optional)"><DatePicker name="availableFrom" className="w-full" /></Field>
         </div>
       )}
       {type === "event" && (
@@ -484,7 +637,7 @@ function TypeFields({
 }
 
 function titlePlaceholder(t: ListingType): string {
-  return { artist: "Act / artist name", business: "Business name", event: "Event title", memory: "A title for your memory", opportunity: "Opportunity title", person: "Their name", memorial: "Full name", project: "Project title", incident: "Incident title", lostfound: "Notice title" }[t];
+  return { artist: "Act / artist name", business: "Business name", property: "A clear property title", event: "Event title", memory: "A title for your memory", opportunity: "Opportunity title", person: "Their name", memorial: "Full name", project: "Project title", incident: "Incident title", lostfound: "Notice title" }[t];
 }
 
 function SubmittedState({ title, onReset }: Readonly<{ title: string; onReset: () => void }>) {

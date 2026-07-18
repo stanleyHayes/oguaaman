@@ -20,6 +20,7 @@ function linkFor(l: Listing): string | null {
   if (l.status !== "approved") return null;
   if (l.type === "artist") return `/music/${l.slug}`;
   if (l.type === "business") return `/business/${l.slug}`;
+  if (l.type === "property") return `/rent-stay/${l.slug}`;
   if (l.type === "memorial") return `/memoriam/${l.slug}`;
   return null;
 }

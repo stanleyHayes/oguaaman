@@ -2,6 +2,7 @@
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
   Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams,
+  Agent, AgentInput, AgentJob, AgentReview, AgentService, JobInput, MyJobs,
 } from "./types";
 
 export type { Page, PageParams } from "./types";
@@ -89,6 +90,12 @@ function businesses(): Promise<Listing[]>;
 function businesses(p: PageParams): Promise<Page<Listing>>;
 function businesses(p?: PageParams): Promise<Listing[] | Page<Listing>> {
   return get<Listing[] | Page<Listing>>(pagePath("/api/businesses", new URLSearchParams(), p));
+}
+
+function properties(): Promise<Listing[]>;
+function properties(p: PageParams): Promise<Page<Listing>>;
+function properties(p?: PageParams): Promise<Listing[] | Page<Listing>> {
+  return get<Listing[] | Page<Listing>>(pagePath("/api/properties", new URLSearchParams(), p));
 }
 
 function news(): Promise<NewsArticle[]>;
@@ -223,6 +230,9 @@ export const api = {
 
   businesses,
   business: (slug: string) => get<Listing>(`/api/businesses/${slug}`),
+
+  properties,
+  property: (slug: string) => get<Listing>(`/api/properties/${slug}`),
 
   // Business subscriptions (Phase 7): plans come from the staff-managed catalog.
   plans: () => get<Plan[]>("/api/plans"),
@@ -372,6 +382,43 @@ export const api = {
   },
   deleteAccount: (password: string) => del<{ ok: boolean }>("/api/me", { password }),
   me: () => get<Member>("/api/auth/me"),
+
+  // ── Oguaa Outside — vetted agents, escrowed errand jobs, reviews ──────────
+  // Public directory reads plus the member flows behind the "engage at your own
+  // risk" marketplace. Money is in pesewas throughout. Funding an escrow reuses
+  // the Paystack access-code flow: POST /accept returns a PaymentStart, and the
+  // jobs page confirms via GET /jobs/confirm (see completePayment + ?job_ref).
+  agents: (filter?: { service?: string; area?: string }) => {
+    const q = new URLSearchParams();
+    if (filter?.service) q.set("service", filter.service);
+    if (filter?.area) q.set("area", filter.area);
+    const qs = q.toString();
+    return get<Agent[]>(`/api/agents${qs ? `?${qs}` : ""}`);
+  },
+  agent: (slug: string) => get<Agent>(`/api/agents/${slug}`),
+  agentReviews: (slug: string) => get<AgentReview[]>(`/api/agents/${slug}/reviews`),
+  agentServices: () => get<AgentService[]>("/api/agent-services"),
+  // Member: apply to become an agent, read/update your own agent profile.
+  applyAgent: (input: AgentInput) => post<Agent>("/api/agents/apply", input),
+  myAgent: () => get<Agent>("/api/me/agent"), // 404 when the member has no profile
+  updateAgent: (input: AgentInput) => post<Agent>("/api/me/agent", input),
+  // Jobs: client requests → agent quotes → client funds escrow → agent delivers
+  // → client completes (release) or disputes; client reviews on completion.
+  createJob: (slug: string, input: JobInput) => post<AgentJob>(`/api/agents/${slug}/jobs`, input),
+  myJobs: () => get<MyJobs>("/api/me/jobs"),
+  job: (id: string) => get<AgentJob>(`/api/jobs/${id}`),
+  quoteJob: (id: string, body: { amountPesewas: number; note: string }) =>
+    post<AgentJob>(`/api/jobs/${id}/quote`, body),
+  // Client funds the escrow — mirrors the pledge/ticket Start* payment shape.
+  acceptJob: (id: string, body: { email: string }) =>
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/jobs/${id}/accept`, body),
+  confirmJob: (reference: string) => get<AgentJob>(`/api/jobs/confirm?reference=${encodeURIComponent(reference)}`),
+  deliverJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/deliver`, {}),
+  completeJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/complete`, {}),
+  disputeJob: (id: string, body: { reason: string }) => post<AgentJob>(`/api/jobs/${id}/dispute`, body),
+  cancelJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/cancel`, {}),
+  reviewJob: (id: string, body: { rating: number; body: string }) =>
+    post<AgentReview>(`/api/jobs/${id}/review`, body),
 
   queue: () => get<Listing[]>("/api/admin/queue"),
   moderate: (body: { listingId: string; action: string; reason?: string }) =>

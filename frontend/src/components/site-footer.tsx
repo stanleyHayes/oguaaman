@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import type { ReactNode } from "react";
 import { Wordmark } from "./wordmark";
 import { Adinkra } from "./adinkra";
 
@@ -15,9 +16,12 @@ const EXPLORE: FooterLink[] = [
   { to: "/music", label: "Music", fante: "The Oguaa Sound", icon: "music" },
   { to: "/festivals", label: "Festivals", icon: "sparkles" },
   { to: "/heritage", label: "Heritage", icon: "landmark" },
+  { to: "/culture", label: "Culture", icon: "sparkles" },
   { to: "/people", label: "People", icon: "users" },
   { to: "/education", label: "Education", icon: "graduation" },
+  { to: "/memoriam", label: "In memoriam", fante: "Yɛnkae", icon: "heart" },
   { to: "/youth", label: "Youth", icon: "sprout" },
+  { to: "/map", label: "Explore the map", icon: "map-pin" },
 ];
 
 const TAKE_PART: FooterLink[] = [
@@ -25,6 +29,8 @@ const TAKE_PART: FooterLink[] = [
   { to: "/submit", label: "Submit a listing", icon: "square-plus" },
   { to: "/events", label: "Events calendar", icon: "calendar" },
   { to: "/community", label: "Join the community", icon: "user-plus" },
+  { to: "/investment", label: "Invest in Oguaa", icon: "store" },
+  { to: "/mentorship", label: "Become a mentor", icon: "users" },
   { to: "/diaspora", label: "The diaspora register", icon: "globe" },
   { to: "/projects", label: "Adopt a project", icon: "heart" },
   { to: "/me", label: "Your profile", icon: "user" },
@@ -33,9 +39,11 @@ const TAKE_PART: FooterLink[] = [
 
 const TOWN_BOARD: FooterLink[] = [
   { to: "/news", label: "Newsroom", icon: "newspaper" },
+  { to: "/alerts", label: "Alerts & directives", icon: "shield-alert" },
   { to: "/safety", label: "Safety & incidents", icon: "shield-alert" },
   { to: "/lost-found", label: "Lost & found", icon: "search" },
   { to: "/business", label: "Business directory", icon: "store" },
+  { to: "/rent-stay", label: "Rent & stay", icon: "map-pin" },
   { to: "/visit", label: "Visit Cape Coast", icon: "map-pin" },
 ];
 
@@ -82,30 +90,69 @@ function FooterIcon({ name, className = "" }: Readonly<{ name: IconName; classNa
 type FooterLink = { to: string; label: string; fante?: string; icon: IconName };
 
 function FooterColumn({ title, icon, links }: Readonly<{ title: string; icon: IconName; links: FooterLink[] }>) {
+  const { pathname } = useLocation();
+  const columnActive = links.some((link) => pathname === link.to || pathname.startsWith(`${link.to}/`));
   return (
     <nav aria-label={title}>
-      <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-cream/55">
+      <h3 className={`text-[0.72rem] font-semibold uppercase tracking-[0.22em] ${columnActive ? "text-gold" : "text-cream/55"}`}>
         <span className="inline-flex items-center gap-1.5">
-          <FooterIcon name={icon} className="h-3.5 w-3.5 text-gold-brand/80" />
+          <FooterIcon name={icon} className={`h-3.5 w-3.5 ${columnActive ? "text-gold" : "text-gold-brand/80"}`} />
           {title}
         </span>
-        <span aria-hidden className="mt-2 block h-0.5 w-6 rounded-full bg-gold-brand" />
+        <span aria-hidden className={`mt-2 block h-0.5 rounded-full bg-gold-brand transition-[width] ${columnActive ? "w-10" : "w-6"}`} />
       </h3>
       <ul className="mt-4 space-y-2 text-sm">
         {links.map((l) => (
           <li key={l.to}>
-            <Link to={l.to} className="inline-flex items-center gap-2 transition-colors hover:text-gold">
-              <FooterIcon name={l.icon} className="h-4 w-4 shrink-0 opacity-70" />
-              <span>
-                {l.label}
-                {l.fante && <span className="ml-2 text-cream/45">{l.fante}</span>}
-              </span>
-            </Link>
+            <NavLink
+              to={l.to}
+              className={({ isActive }) => `group -mx-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors ${isActive ? "bg-cream/[0.08] font-semibold text-gold" : "hover:bg-cream/[0.05] hover:text-gold"}`}
+            >
+              {({ isActive }) => (
+                <>
+                  <FooterIcon name={l.icon} className={`h-4 w-4 shrink-0 transition-opacity ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`} />
+                  <span>
+                    {l.label}
+                    {l.fante && <span className={`ml-2 ${isActive ? "text-gold/70" : "text-cream/45"}`}>{l.fante}</span>}
+                  </span>
+                  {isActive && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-gold-brand" />}
+                </>
+              )}
+            </NavLink>
           </li>
         ))}
       </ul>
     </nav>
   );
+}
+
+function queryDestinationIsActive(to: string, pathname: string, search: string): boolean {
+  const [targetPath, targetQuery = ""] = to.split("?", 2);
+  const pathMatches = pathname === targetPath || (!targetQuery && pathname.startsWith(`${targetPath}/`));
+  if (!pathMatches) return false;
+  const expected = new URLSearchParams(targetQuery);
+  const current = new URLSearchParams(search);
+  return [...expected.entries()].every(([key, value]) => current.getAll(key).includes(value));
+}
+
+function QueryAwareLink({ to, className, children }: Readonly<{
+  to: string;
+  className: (active: boolean) => string;
+  children: ReactNode;
+}>) {
+  const { pathname, search } = useLocation();
+  const active = queryDestinationIsActive(to, pathname, search);
+  return (
+    <Link to={to} aria-current={active ? "page" : undefined} className={className(active)}>
+      {children}
+    </Link>
+  );
+}
+
+function legalLinkClass({ isActive }: Readonly<{ isActive: boolean }>): string {
+  return isActive
+    ? "font-semibold text-gold underline decoration-gold-brand/60 underline-offset-4"
+    : "hover:text-gold";
 }
 
 type SocialName = "instagram" | "facebook" | "x";
@@ -163,20 +210,31 @@ export function SiteFooter() {
               This is our own land — and it grows by what each of us adds to it.
             </h2>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link to="/submit" className="rounded-full bg-gold-brand px-5 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-gold">
+              <NavLink to="/submit" className={({ isActive }) => `rounded-full bg-gold-brand px-5 py-2 text-sm font-semibold text-green-900 transition-all hover:bg-gold ${isActive ? "ring-2 ring-cream/70 ring-offset-2 ring-offset-green-900" : ""}`}>
                 Contribute
-              </Link>
+              </NavLink>
               {PROOF_PILLS.map((p) => (
-                <Link key={p.to} to={p.to} className="rounded-full border border-cream/20 px-4 py-2 text-sm text-cream/80 transition-colors hover:border-gold hover:text-gold">
+                <QueryAwareLink
+                  key={p.to}
+                  to={p.to}
+                  className={(active) => `rounded-full border px-4 py-2 text-sm transition-colors ${active ? "border-gold bg-gold/[0.12] font-semibold text-gold" : "border-cream/20 text-cream/80 hover:border-gold hover:text-gold"}`}
+                >
                   {p.label}
-                </Link>
+                </QueryAwareLink>
               ))}
             </div>
           </div>
 
           <div className="grid gap-10 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
             <div>
-              <Wordmark size="text-3xl" />
+              <NavLink
+                to="/"
+                end
+                aria-label="Oguaa home"
+                className={({ isActive }) => `inline-flex rounded-lg transition-shadow ${isActive ? "ring-1 ring-gold/60 ring-offset-4 ring-offset-green-900" : ""}`}
+              >
+                <Wordmark size="text-3xl" />
+              </NavLink>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-cream/70">
                 The community home of Cape Coast, Ghana — its music, people, heritage,
                 schools and memories. An independent community initiative. Made by us, for us.
@@ -191,11 +249,11 @@ export function SiteFooter() {
           </div>
 
           <nav aria-label="Legal" className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-gold-brand/25 pt-6 text-xs text-cream/60 sm:justify-start">
-            <Link to="/privacy" className="hover:text-gold">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-gold">Terms of Use</Link>
-            <Link to="/acceptable-use" className="hover:text-gold">Acceptable Use</Link>
-            <Link to="/safeguarding" className="hover:text-gold">Safeguarding Policy</Link>
-            <Link to="/search" className="hover:text-gold">Search</Link>
+            <NavLink to="/privacy" className={legalLinkClass}>Privacy Policy</NavLink>
+            <NavLink to="/terms" className={legalLinkClass}>Terms of Use</NavLink>
+            <NavLink to="/acceptable-use" className={legalLinkClass}>Acceptable Use</NavLink>
+            <NavLink to="/safeguarding" className={legalLinkClass}>Safeguarding Policy</NavLink>
+            <NavLink to="/search" className={legalLinkClass}>Search</NavLink>
           </nav>
 
           <div className="mt-6 flex flex-col items-center gap-3 text-center text-xs text-cream/50 sm:flex-row sm:justify-between sm:text-left">

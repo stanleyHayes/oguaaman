@@ -45,6 +45,7 @@ const MODES: { id: Mode; label: string }[] = [
 
 const LAYERS: { id: MapLayer; label: string; color: string; glyph: string }[] = [
   { id: "business", label: "Businesses", color: "#C9822E", glyph: "🏪" },
+  { id: "property", label: "Rent & Stay", color: "#B07D32", glyph: "⌂" },
   { id: "events", label: "Events", color: "#0E7C6B", glyph: "🎉" },
   { id: "landmarks", label: "Heritage", color: "#8A5AA8", glyph: "🏛️" },
   { id: "institutions", label: "Schools & institutions", color: "#2F855A", glyph: "🎓" },
@@ -103,6 +104,7 @@ function pointGlyph(p: MapPoint): string {
 // tiles without loading another icon asset.
 const PIN_SYMBOLS: Record<MapLayer, string> = {
   business: '<path d="M16.5 20h15l-1.8-5h-11.4l-1.8 5Z"/><path d="M18 21v10h12V21M22 31v-6h4v6"/>',
+  property: '<path d="m15.5 23 8.5-7 8.5 7"/><path d="M18 22v10h12V22M22 32v-6h4v6"/>',
   events: '<rect x="16.5" y="16.5" width="15" height="14.5" rx="2"/><path d="M20 14.5v4M28 14.5v4M16.5 21.5h15"/><circle cx="21" cy="25.5" r="1" fill="currentColor" stroke="none"/><circle cx="27" cy="25.5" r="1" fill="currentColor" stroke="none"/>',
   landmarks: '<path d="m15.5 20 8.5-5 8.5 5M17 21h14M18.5 21v9M23 21v9M27.5 21v9M16.5 31h15"/>',
   institutions: '<path d="m15 20 9-4.5 9 4.5-9 4.5-9-4.5Z"/><path d="M19 22.5v4c2.8 2.2 7.2 2.2 10 0v-4M33 20v6"/>',
@@ -115,6 +117,7 @@ const PIN_SYMBOLS: Record<MapLayer, string> = {
 function inferredLayer(kind: unknown): MapLayer | null {
   switch (kind) {
     case "business": return "business";
+    case "property": return "property";
     case "event": return "events";
     case "institution":
     case "school": return "institutions";

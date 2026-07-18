@@ -7,9 +7,9 @@ import { Adinkra } from "@/components/adinkra";
 import { useAuth } from "@/lib/auth";
 import { usePageTitle } from "@/lib/use-page-title";
 
-const VALID = new Set<ListingType>(["artist", "business", "event", "memory", "opportunity", "person", "memorial"]);
+const VALID = new Set<ListingType>(["artist", "business", "property", "event", "memory", "opportunity", "person", "memorial"]);
 
-const CONTRIBUTE_TYPES = ["Business", "Artist", "Person", "Memory", "Event", "Opportunity", "Memorial"];
+const CONTRIBUTE_TYPES = ["Business", "Property", "Artist", "Person", "Memory", "Event", "Opportunity", "Memorial"];
 
 const REVIEW_STEPS: [string, string][] = [
   ["Draft", "You build your listing — a title, a picture, the details."],

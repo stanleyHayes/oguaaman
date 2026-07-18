@@ -17,14 +17,14 @@ import { SecuritySettings, ChangePasswordSettings, DataRightsSettings } from "@/
 import { ProfileSkeleton } from "@/components/skeleton";
 
 const TYPE_LABELS: Record<string, string> = {
-  business: "Business", artist: "Artist", person: "Person", memory: "Memory", event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
+  business: "Business", property: "Property", artist: "Artist", person: "Person", memory: "Memory", event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
 };
 
 // The creator studio (separate SPA) hosts the owner listing editor.
 const CREATOR = (import.meta.env.VITE_CREATOR_URL as string | undefined) ?? "http://localhost:3004";
 // The editor covers the member-submittable types (incidents/lost-found have
 // their own flows; projects belong to institutions).
-const EDITABLE = new Set(["artist", "business", "event", "memory", "opportunity", "person", "memorial"]);
+const EDITABLE = new Set(["artist", "business", "property", "event", "memory", "opportunity", "person", "memorial"]);
 const STATUS_STYLE: Record<ListingStatus, string> = {
   approved: "bg-green/[0.08] text-green-text",
   pending: "bg-gold/[0.14] text-gold-text",
@@ -54,6 +54,7 @@ function linkFor(l: Listing): string | null {
   if (l.status !== "approved") return null;
   if (l.type === "artist") return `/music/${l.slug}`;
   if (l.type === "business") return `/business/${l.slug}`;
+  if (l.type === "property") return `/rent-stay/${l.slug}`;
   if (l.type === "memorial") return `/memoriam/${l.slug}`;
   if (l.type === "project") return `/projects/${l.slug}`;
   return null;
