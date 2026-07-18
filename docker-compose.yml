@@ -21,9 +21,10 @@ services:
       - "27017:27017"
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
+      interval: 10s
+      timeout: 60s
+      retries: 10
+      start_period: 30s
 
   # One-shot: load the fact-checked Cape Coast seed data, then exit.
   seed:
