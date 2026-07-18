@@ -6,6 +6,7 @@ import { PageHeader, Card, Empty, Pill } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { Pagination } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
+import { BusyLabel } from "@/components/skeleton";
 
 const PAGE_SIZE = 24;
 
@@ -88,7 +89,8 @@ export function Component() {
                   </div>
                 </div>
                 {r.status === "open" && (
-                  <div className="flex shrink-0 flex-wrap gap-2">
+                  <div className="flex min-h-9 shrink-0 flex-wrap items-center gap-2">
+                    {busy === r.id ? <BusyLabel label="Updating report" /> : <>
                     {r.keeperClaim && r.reporterId && (
                       <button type="button"
                         disabled={busy === r.id}
@@ -110,6 +112,7 @@ export function Component() {
                     <button type="button" disabled={busy === r.id} onClick={() => resolve(r, "dismissed")} className="rounded-full border border-sand px-4 py-2 text-xs font-semibold text-ink-muted transition-colors hover:border-ink hover:text-ink disabled:opacity-50">
                       Dismiss
                     </button>
+                    </>}
                   </div>
                 )}
               </div>

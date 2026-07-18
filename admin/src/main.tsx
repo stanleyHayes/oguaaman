@@ -1,18 +1,17 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider } from "react-router-dom";
 import { MotionConfig } from "motion/react";
 import "./index.css";
-import { router } from "./router";
 import { AuthProvider } from "./lib/auth";
 import { AuthGate } from "./components/auth-gate";
+import { AdminRouter } from "./components/admin-router";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <MotionConfig reducedMotion="user">
       <AuthProvider>
         <AuthGate>
-          <RouterProvider router={router} />
+          <AdminRouter />
         </AuthGate>
       </AuthProvider>
     </MotionConfig>

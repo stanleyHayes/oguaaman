@@ -1,5 +1,6 @@
 import { useState, type SetStateAction, type Dispatch } from "react";
 import type { Paged } from "@/lib/types";
+import { BusyLabel } from "@/components/skeleton";
 
 /**
  * Shared pagination UI for the heavy admin lists. Two flavours:
@@ -133,7 +134,7 @@ export function LoadMore({
           disabled={loading}
           className="rounded-full border border-sand bg-cream px-6 py-2.5 text-sm font-semibold text-ink-muted transition-colors hover:border-gold-border/50 hover:text-ink disabled:opacity-50"
         >
-          {loading ? "Loading…" : "Load more"}
+          {loading ? <BusyLabel label="Loading more results" className="justify-center" /> : "Load more"}
         </button>
       )}
     </div>

@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useLoaderData, useRevalidator } from "react-router-dom";
 import { api, type DirectivePayload } from "@/lib/api";
 import type { Directive, DirectiveKind, DirectiveSeverity, Organization } from "@/lib/types";
-import { PageHeader, Card, Empty, Pill } from "@/components/ui";
+import { PageHeader, Card, Empty, Pill, Select } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
+import { BusyLabel } from "@/components/skeleton";
 
 interface LoaderData { directives: Directive[]; orgs: Organization[] }
 
@@ -191,7 +192,7 @@ export function Component() {
             <textarea value={form.body} onChange={(e) => set("body", e.target.value)} rows={3} className={inputCls} placeholder="What residents need to know…" /></label>
 
           <label className="block"><span className={labelCls}>Issuing authority</span>
-            <select value={form.issuedByOrgId} onChange={(e) => set("issuedByOrgId", e.target.value)} className={inputCls}>
+            <Select value={form.issuedByOrgId} onValueChange={(issuedByOrgId) => set("issuedByOrgId", issuedByOrgId)} className="w-full">
               {orgs.length === 0 && <option value="">No institutions available</option>}
               {authorities.length > 0 && (
                 <optgroup label="Authorities">
@@ -203,17 +204,17 @@ export function Component() {
                   {others.map((o) => <option key={o.id} value={o.id}>{o.name} · {KIND_LABEL[o.kind] ?? o.kind}</option>)}
                 </optgroup>
               )}
-            </select></label>
+            </Select></label>
 
           <label className="block"><span className={labelCls}>Kind</span>
-            <select value={form.kind} onChange={(e) => set("kind", e.target.value as DirectiveKind)} className={inputCls}>
+            <Select value={form.kind} onValueChange={(kind) => set("kind", kind as DirectiveKind)} className="w-full">
               {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
-            </select></label>
+            </Select></label>
 
           <label className="block"><span className={labelCls}>Severity</span>
-            <select value={form.severity} onChange={(e) => set("severity", e.target.value as DirectiveSeverity)} className={inputCls}>
+            <Select value={form.severity} onValueChange={(severity) => set("severity", severity as DirectiveSeverity)} className="w-full">
               {SEVERITIES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
+            </Select>
             <span className={`mt-1 block text-[11px] ${broadcasts ? "text-clay-text" : "text-ink-faint"}`}>
               {broadcasts ? "Broadcasts an in-app alert to every member." : "No broadcast — appears on the alerts feed only."}
             </span></label>
@@ -235,7 +236,7 @@ export function Component() {
         {msg && <p className="mt-3 text-sm text-green-text">{msg}</p>}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button type="button" onClick={submit} disabled={busy} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">
-            {busy ? "Issuing…" : "Issue directive"}
+            {busy ? <BusyLabel label="Issuing directive" className="justify-center" /> : "Issue directive"}
           </button>
           <span className="text-xs text-ink-faint">The issuing authority is stamped on the notice; townId is inherited from your account.</span>
         </div>
@@ -278,7 +279,7 @@ export function Component() {
                         onClick={() => cancel(d)}
                         className="shrink-0 rounded-full border border-maroon-text/40 px-4 py-2 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.05] disabled:opacity-50"
                       >
-                        {rowBusy === d.id ? "Cancelling…" : "Cancel"}
+                        {rowBusy === d.id ? <BusyLabel label="Cancelling directive" className="justify-center" /> : "Cancel"}
                       </button>
                     )}
                   </div>

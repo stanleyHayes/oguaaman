@@ -2,11 +2,12 @@ import { useState, useMemo } from "react";
 import { Link, useLoaderData, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Listing, Member, ListingStatus } from "@/lib/types";
-import { PageHeader, Card, StatusBadge, Empty } from "@/components/ui";
+import { PageHeader, Card, StatusBadge, Empty, Select } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { Pagination } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
+import { BusyLabel } from "@/components/skeleton";
 
 interface Data { listings: Listing[]; members: Member[] }
 const TYPES = ["all", "artist", "business", "person", "memory", "event", "opportunity", "memorial", "project", "incident", "lostfound"];
@@ -76,8 +77,8 @@ export function Component() {
       <PageHeader kicker={`${listings.length} total`} title="Listings" />
       <div className="mb-4 flex flex-wrap gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title…" className="min-w-[12rem] flex-1 rounded-lg border border-sand bg-cream px-3 py-2 text-sm focus:border-ai focus:outline-none" />
-        <select value={type} onChange={(e) => setType(e.target.value)} className="rounded-lg border border-sand bg-cream px-3 py-2 text-sm capitalize focus:border-ai focus:outline-none">{TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-sand bg-cream px-3 py-2 text-sm capitalize focus:border-ai focus:outline-none">{STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select>
+        <Select value={type} onValueChange={setType} className="w-40" triggerClassName="capitalize" optionClassName="capitalize">{TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</Select>
+        <Select value={status} onValueChange={setStatus} className="w-40" triggerClassName="capitalize" optionClassName="capitalize">{STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</Select>
       </div>
 
       {filtered.length === 0 ? <Empty icon="search" title="No matches">No listings match the current filter.</Empty> : (
@@ -102,7 +103,7 @@ export function Component() {
                   <td className="px-4 py-3 hidden text-ink-faint md:table-cell">{formatDate(l.createdAt)}</td>
                   <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
                   <td className="px-4 py-3 text-right">
-                    {l.status === "approved" && (
+                    {l.status === "approved" && (busy === l.id ? <BusyLabel label="Updating listing" className="justify-end" /> : (
                       <span className="inline-flex items-center gap-2">
                         {l.featured ? (
                           <span className="inline-flex items-center gap-2">
@@ -126,7 +127,7 @@ export function Component() {
                         )}
                         <button type="button" disabled={busy === l.id} onClick={() => unpublish(l)} className="rounded-full border border-maroon-text/40 px-3 py-1 text-xs font-semibold text-maroon-text hover:bg-maroon-900/[0.06] disabled:opacity-50">Unpublish</button>
                       </span>
-                    )}
+                    ))}
                   </td>
                 </StaggerItem>
               ))}

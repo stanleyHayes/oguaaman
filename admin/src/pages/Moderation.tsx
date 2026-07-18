@@ -3,11 +3,12 @@ import { Link, useLoaderData } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { api } from "@/lib/api";
 import type { Listing, Member, Paged } from "@/lib/types";
-import { Card, Empty, Pill } from "@/components/ui";
+import { Card, Empty, Pill, Select } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { LoadMore } from "@/components/pagination";
 import { titleCase } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
+import { BusyLabel } from "@/components/skeleton";
 
 interface Data { queue: Paged<Listing>; members: Member[] }
 interface Log { action: string; title: string; reason?: string; tone: "ok" | "bad" | "warn" }
@@ -108,14 +109,15 @@ export function Component() {
           <h1 className="mt-1 text-3xl font-semibold text-ink">Review queue</h1>
         </div>
         <div className="flex items-center gap-3">
-          <select
+          <Select
             value={typeFilter}
-            onChange={(e) => applyTypeFilter(e.target.value)}
+            onValueChange={applyTypeFilter}
             disabled={loadingFilter}
-            className="rounded-xl border border-sand bg-paper px-3 py-1.5 text-sm font-medium text-ink focus:border-gold-border focus:outline-none focus:ring-2 focus:ring-gold/20 disabled:opacity-60"
+            className="w-40 font-medium"
           >
             {LISTING_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+          </Select>
+          {loadingFilter && <BusyLabel label="Filtering moderation queue" width="w-12" />}
           <span className="rounded-full bg-gold/[0.16] px-3 py-1 text-sm font-semibold text-gold-text">{total} pending</span>
         </div>
       </div>
@@ -170,17 +172,21 @@ export function Component() {
                       >
                         <textarea autoFocus value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder={rejecting.mode === "reject" ? "Reason (sent to owner)…" : "What changes are needed?"} className="w-full rounded-lg border border-sand bg-paper p-3 text-sm focus:border-gold-border focus:outline-none" />
                         <div className="mt-2 flex gap-2">
-                          <button type="button" disabled={busy === l.id} onClick={() => act(l, rejecting.mode === "reject" ? "reject" : "request-changes", { action: rejecting.mode === "reject" ? "Rejected" : "Requested changes to", title: l.title, reason: reason.trim() || "(none)", tone: rejecting.mode === "reject" ? "bad" : "warn" }, reason.trim())} className="rounded-full bg-maroon-900 px-4 py-2 text-sm font-semibold text-on-green disabled:opacity-60">Confirm</button>
-                          <button type="button" onClick={() => setRejecting(null)} className="rounded-full border border-sand px-4 py-2 text-sm font-semibold">Cancel</button>
+                          {busy === l.id ? <BusyLabel label="Updating moderation item" /> : <>
+                            <button type="button" onClick={() => act(l, rejecting.mode === "reject" ? "reject" : "request-changes", { action: rejecting.mode === "reject" ? "Rejected" : "Requested changes to", title: l.title, reason: reason.trim() || "(none)", tone: rejecting.mode === "reject" ? "bad" : "warn" }, reason.trim())} className="rounded-full bg-maroon-900 px-4 py-2 text-sm font-semibold text-on-green">Confirm</button>
+                            <button type="button" onClick={() => setRejecting(null)} className="rounded-full border border-sand px-4 py-2 text-sm font-semibold">Cancel</button>
+                          </>}
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                   {rejecting?.id !== l.id && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button type="button" disabled={busy === l.id} onClick={() => act(l, "approve", { action: "Approved", title: l.title, tone: "ok" })} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">Approve</button>
-                      <button type="button" onClick={() => setRejecting({ id: l.id, mode: "changes" })} className="rounded-full border border-gold-border/50 px-4 py-2 text-sm font-semibold text-gold-text hover:bg-gold/[0.08]">Request changes</button>
-                      <button type="button" onClick={() => setRejecting({ id: l.id, mode: "reject" })} className="rounded-full border border-maroon-text/40 px-4 py-2 text-sm font-semibold text-maroon-text hover:bg-maroon-900/[0.06]">Reject</button>
+                      {busy === l.id ? <BusyLabel label="Updating moderation item" /> : <>
+                        <button type="button" onClick={() => act(l, "approve", { action: "Approved", title: l.title, tone: "ok" })} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">Approve</button>
+                        <button type="button" onClick={() => setRejecting({ id: l.id, mode: "changes" })} className="rounded-full border border-gold-border/50 px-4 py-2 text-sm font-semibold text-gold-text hover:bg-gold/[0.08]">Request changes</button>
+                        <button type="button" onClick={() => setRejecting({ id: l.id, mode: "reject" })} className="rounded-full border border-maroon-text/40 px-4 py-2 text-sm font-semibold text-maroon-text hover:bg-maroon-900/[0.06]">Reject</button>
+                      </>}
                     </div>
                   )}
                 </div>

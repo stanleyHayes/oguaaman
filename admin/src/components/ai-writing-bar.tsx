@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
+import { Select } from "@/components/ui";
+import { BusyLabel } from "@/components/skeleton";
 
 type Action = "formalize" | "casual" | "clarity" | "grammar" | "expand" | "summarize" | "title" | "email" | "prompt" | "translate";
 
@@ -109,12 +111,12 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
         )}
         {mode === "lang" && (
           <div className="mt-3 flex flex-wrap gap-2">
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="min-w-[10rem] flex-1 rounded-lg border border-ai-line bg-paper px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none">{LANGS.map((l) => <option key={l}>{l}</option>)}</select>
+            <Select value={language} onValueChange={setLanguage} className="min-w-[10rem] flex-1">{LANGS.map((l) => <option key={l}>{l}</option>)}</Select>
             <button type="button" onClick={() => go("translate")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Translate</button>
           </div>
         )}
 
-        {loading && <p className="mt-4 text-sm font-medium text-ai">Writing…</p>}
+        {loading && <BusyLabel label="Writing with AI" className="mt-4" width="w-20" />}
         {error && <p className="mt-4 rounded-lg border border-clay/30 bg-clay/10 px-3 py-2 text-sm text-clay-text">{error}{lastAction && <button type="button" onClick={() => go(lastAction)} className="ml-3 font-semibold underline">Try again</button>}</p>}
         {limit && <p className="mt-4 rounded-lg border border-gold-border/40 bg-gold/[0.1] px-3 py-2 text-center text-sm text-gold-text">Daily AI limit reached. Resets at midnight.</p>}
 

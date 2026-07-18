@@ -7,6 +7,7 @@ import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { Banknote, Ticket as TicketIcon, DoorOpen } from "lucide-react";
 import { formatDate } from "@/lib/format";
+import { BusyLabel, TableRowsSkeleton } from "@/components/skeleton";
 
 export async function loader() {
   const listings = await api.listings();
@@ -80,7 +81,19 @@ export function Component() {
 
   function renderLedger() {
     if (loading) {
-      return <p className="py-8 text-center text-sm text-ink-muted">Loading sales…</p>;
+      return (
+        <Card className="overflow-x-auto">
+          <table className="w-full min-w-[48rem] text-sm">
+            <thead>
+              <tr className="border-b border-sand text-left text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">
+                <th className="px-4 py-3">Buyer</th><th className="px-4 py-3">Tier</th><th className="px-4 py-3">Qty</th><th className="px-4 py-3">Amount</th>
+                <th className="px-4 py-3">Status</th><th className="px-4 py-3">Code</th><th className="px-4 py-3">Checked in</th><th className="px-4 py-3">Date</th>
+              </tr>
+            </thead>
+            <TableRowsSkeleton rows={4} columns={8} label="Loading ticket sales" />
+          </table>
+        </Card>
+      );
     }
     if (tickets.length === 0) {
       return <Empty icon="ticket" title="No sales yet">When members buy tickets for this event, every transaction lands here.</Empty>;
@@ -141,7 +154,7 @@ export function Component() {
             className="w-40 rounded-lg border border-sand bg-paper px-3 py-2 font-mono text-lg tracking-widest text-ink focus:border-green-text focus:outline-none"
           />
           <button type="button" onClick={checkIn} disabled={checking || code.trim().length === 0} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
-            {checking ? "Checking…" : "Admit"}
+            {checking ? <BusyLabel label="Checking ticket" className="justify-center" /> : "Admit"}
           </button>
         </div>
         {result && (

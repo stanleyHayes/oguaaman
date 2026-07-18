@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useLoaderData, useRevalidator } from "react-router-dom";
 import { api, type PlanPayload } from "@/lib/api";
 import type { Plan } from "@/lib/types";
-import { PageHeader, Card, Empty, Pill } from "@/components/ui";
+import { PageHeader, Card, Empty, Pill, Select } from "@/components/ui";
 import { formatDate } from "@/lib/format";
+import { BusyLabel } from "@/components/skeleton";
 
 export async function loader() {
   return api.plans();
@@ -102,9 +103,9 @@ export function Component() {
   return (
     <>
       <PageHeader kicker="Monetization" title="Plans">
-        <button type="button" onClick={openNew} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">
-          New plan
-        </button>
+        {busy && !editing ? <BusyLabel label="Updating plan catalog" /> : (
+          <button type="button" onClick={openNew} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900">New plan</button>
+        )}
       </PageHeader>
 
       {editing && (
@@ -116,13 +117,13 @@ export function Component() {
             <label className="block"><span className={labelCls}>Slug (optional — derived from the name)</span>
               <input value={form.slug} onChange={(e) => set("slug", e.target.value)} className={inputCls} placeholder="supporter" /></label>
             <label className="block"><span className={labelCls}>Audience</span>
-              <select value={form.audience} onChange={(e) => set("audience", e.target.value as FormState["audience"])} className={inputCls}>
+              <Select value={form.audience} onValueChange={(audience) => set("audience", audience as FormState["audience"])} className="w-full">
                 <option value="any">Anyone</option><option value="business">Businesses</option><option value="creator">Artists / organisers</option>
-              </select></label>
+              </Select></label>
             <label className="block"><span className={labelCls}>Billing</span>
-              <select value={form.interval} onChange={(e) => set("interval", e.target.value as FormState["interval"])} className={inputCls}>
+              <Select value={form.interval} onValueChange={(interval) => set("interval", interval as FormState["interval"])} className="w-full">
                 <option value="month">Monthly</option><option value="free">Free</option>
-              </select></label>
+              </Select></label>
             <label className="block"><span className={labelCls}>Default price (GH₵/mo)</span>
               <input value={form.defaultPrice} onChange={(e) => set("defaultPrice", e.target.value)} inputMode="decimal" className={inputCls} placeholder="30" /></label>
             <label className="block"><span className={labelCls}>Business price (GH₵/mo, optional)</span>
@@ -145,7 +146,7 @@ export function Component() {
           {error && <p className="mt-3 text-sm text-clay-text">{error}</p>}
           <div className="mt-4 flex gap-3">
             <button type="button" onClick={save} disabled={busy} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-50">
-              {busy ? "Saving…" : "Save plan"}
+              {busy ? <BusyLabel label="Saving plan" className="justify-center" /> : "Save plan"}
             </button>
             <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-sand px-4 py-2 text-sm text-ink-muted hover:bg-paper">Cancel</button>
           </div>
@@ -186,7 +187,7 @@ export function Component() {
                     {(p.includedPromoDays ?? 0) > 0 && <span className="block text-gold-text">+{p.includedPromoDays} promo days/mo</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <button type="button" onClick={() => toggleActive(p)}>
+                    <button type="button" onClick={() => toggleActive(p)} disabled={busy} className="disabled:opacity-50">
                       <Pill tone={p.active ? "green" : "neutral"}>{p.active ? "On sale" : "Hidden"}</Pill>
                     </button>
                   </td>

@@ -6,6 +6,7 @@ import { PageHeader, Card } from "@/components/ui";
 import { AiWritingBar } from "@/components/ai-writing-bar";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { InstitutionLogo } from "@/components/crest";
+import { BusyLabel } from "@/components/skeleton";
 
 // The heritage/visitor places shown on the marketing Visit page. A shortcut to
 // find and configure them (the editor lives on the detail page) — and to add new
@@ -64,7 +65,7 @@ function NewPlaceForm({ onClose }: Readonly<{ onClose: () => void }>) {
         </div>
         <div className="flex items-center gap-3">
           <button type="button" onClick={create} disabled={busy || !name.trim()} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
-            {busy ? "Creating…" : "Create & configure →"}
+            {busy ? <BusyLabel label="Creating place" className="justify-center" /> : "Create & configure →"}
           </button>
           <button type="button" onClick={onClose} className="text-sm font-medium text-ink-muted hover:text-ink">Cancel</button>
           {error && <span className="text-sm text-clay-text">{error}</span>}

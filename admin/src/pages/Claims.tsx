@@ -5,6 +5,7 @@ import type { OrgClaim } from "@/lib/types";
 import { PageHeader, Card, Empty } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
+import { BusyLabel } from "@/components/skeleton";
 
 export async function loader() {
   return api.claims();
@@ -55,21 +56,11 @@ export function Component() {
                   {c.note && <p className="mt-2 max-w-xl text-sm italic text-ink-faint">“{c.note}”</p>}
                   <div className="mt-2 text-xs text-ink-faint">Requested {formatDate(c.createdAt)}</div>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <button type="button"
-                    disabled={busy === c.id}
-                    onClick={() => review(c, true)}
-                    className="rounded-full bg-ai px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
-                  >
-                    Approve
-                  </button>
-                  <button type="button"
-                    disabled={busy === c.id}
-                    onClick={() => review(c, false)}
-                    className="rounded-full border border-sand px-4 py-2 text-xs font-semibold text-ink-muted transition-colors hover:border-clay hover:text-clay-text disabled:opacity-50"
-                  >
-                    Reject
-                  </button>
+                <div className="flex min-h-9 shrink-0 items-center gap-2">
+                  {busy === c.id ? <BusyLabel label="Updating institution claim" /> : <>
+                    <button type="button" onClick={() => review(c, true)} className="rounded-full bg-ai px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90">Approve</button>
+                    <button type="button" onClick={() => review(c, false)} className="rounded-full border border-sand px-4 py-2 text-xs font-semibold text-ink-muted transition-colors hover:border-clay hover:text-clay-text">Reject</button>
+                  </>}
                 </div>
               </div>
             </Card>

@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Incident, IncidentStatus } from "@/lib/types";
-import { PageHeader, Card, Empty, Pill } from "@/components/ui";
+import { PageHeader, Card, Empty, Pill, Select } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
+import { BusyLabel } from "@/components/skeleton";
 
 export async function loader() {
   return api.incidents();
@@ -109,9 +110,9 @@ export function Component() {
                       ))}
                     </ol>
                     <div className="flex flex-wrap items-center gap-2">
-                      <select value={cur.status} onChange={(e) => setD(i.id, { status: e.target.value }, i.details.incidentStatus)} aria-label="New incident status" className={inputCls}>
+                      <Select value={cur.status} onValueChange={(status) => setD(i.id, { status }, i.details.incidentStatus)} aria-label="New incident status" className="min-w-40">
                         {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                      </select>
+                      </Select>
                       <input
                         value={cur.note}
                         onChange={(e) => setD(i.id, { note: e.target.value }, i.details.incidentStatus)}
@@ -124,7 +125,7 @@ export function Component() {
                         onClick={() => transition(i)}
                         className="rounded-full bg-green px-4 py-2 text-xs font-semibold text-on-green hover:bg-green-900 disabled:opacity-50"
                       >
-                        {busy === i.id ? "Updating…" : "Update status"}
+                        {busy === i.id ? <BusyLabel label="Updating incident status" className="justify-center" /> : "Update status"}
                       </button>
                       <Link to={`/listings/${i.id}`} className="text-xs font-semibold text-gold-text hover:underline">Open listing →</Link>
                     </div>

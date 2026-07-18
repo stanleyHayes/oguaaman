@@ -6,7 +6,8 @@ import type { Listing, ListingStatus } from "@/lib/types";
 import { BackLink, Card, StatusBadge, Pill, KeyVal } from "@/components/ui";
 import { AiWritingBar } from "@/components/ai-writing-bar";
 import { formatDate, titleCase } from "@/lib/format";
-import { cldCover } from "@/lib/cloudinary";
+import { cldCover, mediaUrl } from "@/lib/cloudinary";
+import { BusyLabel } from "@/components/skeleton";
 
 interface Data { listing: Listing; ownerName: string }
 
@@ -158,6 +159,7 @@ export function Component() {
               <h1 className="mt-2 text-3xl font-semibold text-ink">{l.title}</h1>
               <p className="mt-1 text-sm text-ink-faint">by {ownerName} · /{l.type}/{l.slug}</p>
             </div>
+            {busy && <BusyLabel label="Updating listing" className="mt-2" />}
           </div>
 
           {l.status === "rejected" && l.rejectionReason && (
@@ -198,7 +200,7 @@ export function Component() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {gallery.map((g) => (
                   <figure key={g.url} className="overflow-hidden rounded-lg border border-sand">
-                    <img src={g.url} alt={g.caption} className="aspect-square w-full object-cover" />
+                    <img src={mediaUrl(g.url)} alt={g.caption} className="aspect-square w-full object-cover" />
                     {g.caption && <figcaption className="px-2 py-1 text-xs text-ink-faint">{g.caption}</figcaption>}
                   </figure>
                 ))}

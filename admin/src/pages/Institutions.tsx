@@ -7,6 +7,7 @@ import { Stagger, StaggerItem } from "@/components/motion";
 import { Pagination, usePagedRows } from "@/components/pagination";
 import { InstitutionLogo } from "@/components/crest";
 import { formatDate } from "@/lib/format";
+import { BusyLabel } from "@/components/skeleton";
 
 const KIND_LABEL: Record<string, string> = {
   school: "School", "traditional-authority": "Traditional authority", association: "Association",
@@ -92,7 +93,7 @@ export function Component() {
                     onClick={() => toggle(o)}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-50 ${o.verified ? "border-sand text-ink-muted hover:bg-cream" : "border-gold-border/60 text-gold-text hover:bg-gold/[0.1]"}`}
                   >
-                    {busy === o.id ? "…" : o.verified ? "Revoke" : "Verify"}
+                    {busy === o.id ? <BusyLabel label="Updating verification" className="justify-center" width="w-10" /> : o.verified ? "Revoke" : "Verify"}
                   </button>
                 </div>
               </Card>

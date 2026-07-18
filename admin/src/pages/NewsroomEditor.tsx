@@ -8,6 +8,8 @@ import { Markdown } from "@/components/markdown";
 import { ImageUpload } from "@/components/image-upload";
 import { AiWritingBar } from "@/components/ai-writing-bar";
 import { formatDate } from "@/lib/format";
+import { mediaUrl } from "@/lib/cloudinary";
+import { BusyLabel } from "@/components/skeleton";
 
 const BLANK: NewsPayload = { title: "", summary: "", body: "", coverColor: "#123F2D", coverImageUrl: "", tags: [] };
 const COVERS = ["#123F2D", "#B0503C", "#0E7C6B", "#7C2D2D", "#B07D32", "#3B473D"];
@@ -92,7 +94,7 @@ export function Component() {
       <Card className="overflow-hidden">
         {/* cover banner — the photo, or the chosen colour */}
         <div className="relative h-28 w-full" style={{ backgroundColor: form.coverColor }}>
-          {form.coverImageUrl && <img src={form.coverImageUrl} alt="" className="h-full w-full object-cover" />}
+          {form.coverImageUrl && <img src={mediaUrl(form.coverImageUrl)} alt="" className="h-full w-full object-cover" />}
         </div>
 
         <div className="flex items-center justify-between gap-3 border-b border-sand px-5 py-3">
@@ -125,7 +127,8 @@ function eyebrowLabel(isNew: boolean, article: NewsArticle | null): string {
   return article?.status === "published" ? "Published article" : "Draft";
 }
 
-function SaveIndicator({ dirty, savedFlash }: Readonly<{ dirty: boolean; savedFlash: boolean }>) {
+function SaveIndicator({ dirty, savedFlash, busy }: Readonly<{ dirty: boolean; savedFlash: boolean; busy: boolean }>) {
+  if (busy) return <BusyLabel label="Updating article" width="w-14" />;
   if (dirty) return <span className="text-xs font-medium text-clay-text">● Unsaved changes</span>;
   if (savedFlash) return <span className="text-xs font-medium text-green-text">Saved ✓</span>;
   return null;
@@ -150,7 +153,7 @@ function EditorHeader({ article, isNew, dirty, savedFlash, busy, onSave, onToggl
         {article && <p className="mt-1 text-sm text-ink-faint">{article.authorName} · updated {formatDate(article.updatedAt)}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <SaveIndicator dirty={dirty} savedFlash={savedFlash} />
+        <SaveIndicator dirty={dirty} savedFlash={savedFlash} busy={busy} />
         <button type="button" onClick={onSave} disabled={busy || !dirty} className="rounded-full border border-sand bg-paper px-4 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-gold-border hover:text-gold-text disabled:opacity-40">
           {isNew ? "Save draft" : "Save"}
         </button>

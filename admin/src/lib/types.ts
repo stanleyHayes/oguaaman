@@ -110,6 +110,42 @@ export interface Directive {
   createdById: string;
 }
 
+/** Town goals — collective civic commitments set for a period, then judged
+ *  achieved/missed by an accountability officer (separation of duties: curators
+ *  author, the accountability role records the verdict, stewards may do both). */
+export type GoalCadence = "daily" | "weekly" | "monthly" | "quarterly" | "semiannual" | "annual";
+/** Concentric commitment ring; "" = unscoped (townwide, no ring). */
+export type GoalRing = "" | "self" | "home" | "school" | "work" | "town" | "nation";
+/** Computed server-side: active while the window is open, pending_review once it
+ *  closes with no verdict, then achieved/missed once an officer records one. */
+export type GoalStatus = "active" | "pending_review" | "achieved" | "missed";
+/** A recorded verdict — the two terminal outcomes an officer may set. */
+export type GoalVerdict = "achieved" | "missed";
+
+export interface Goal {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  target?: string;
+  cadence: GoalCadence;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  status: GoalStatus;
+  reviewNote?: string;
+  reviewedById?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  setAtDurbar: boolean;
+  ring?: GoalRing;
+  featured: boolean;
+  createdById: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Member {
   id: string;
   slug: string;
@@ -119,7 +155,7 @@ export interface Member {
   photoUrl?: string;
   townId?: string;
   asafoId?: string;
-  role: "member" | "curator" | "steward" | "editor" | "moderator";
+  role: "member" | "curator" | "steward" | "editor" | "moderator" | "accountability";
   suspended: boolean;
   phoneVerified: boolean;
   schoolIds: string[];

@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link, useLoaderData, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Member, Paged } from "@/lib/types";
-import { PageHeader, Card, RoleBadge } from "@/components/ui";
+import { PageHeader, Card, RoleBadge, Select } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { Pagination, usePagedRows } from "@/components/pagination";
 import { formatDate, initials } from "@/lib/format";
 import { cldAvatar } from "@/lib/cloudinary";
+import { BusyLabel } from "@/components/skeleton";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const page = Number(new URL(request.url).searchParams.get("page")) || 1;
@@ -68,11 +69,11 @@ export function Component() {
             <input value={inv.identifier} onChange={(e) => setInv({ ...inv, identifier: e.target.value })} placeholder="name@oguaa.test" className="mt-1 w-52 rounded-lg border border-sand bg-cream px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none" />
           </label>
           <label className="flex flex-col text-xs text-ink-faint">Role{" "}
-            <select value={inv.role} onChange={(e) => setInv({ ...inv, role: e.target.value })} className="mt-1 rounded-lg border border-sand bg-cream px-3 py-2 text-sm capitalize focus:border-ai focus:outline-none">
-              <option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option><option value="member">member</option>
-            </select>
+            <Select value={inv.role} onValueChange={(role) => setInv({ ...inv, role })} className="mt-1 w-40" triggerClassName="capitalize" optionClassName="capitalize">
+              <option value="editor">editor</option><option value="curator">curator</option><option value="accountability">accountability</option><option value="steward">steward</option><option value="member">member</option>
+            </Select>
           </label>
-          <button type="button" onClick={invite} disabled={inviteBusy} className="rounded-full bg-ai px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">{inviteBusy ? "Inviting…" : "Invite"}</button>
+          <button type="button" onClick={invite} disabled={inviteBusy} className="rounded-full bg-ai px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">{inviteBusy ? <BusyLabel label="Inviting team member" className="justify-center" tone="dark" /> : "Invite"}</button>
           {inviteMsg && <span className={`text-sm ${inviteMsg.ok ? "text-green-text" : "text-clay-text"}`}>{inviteMsg.text}</span>}
         </div>
       </Card>
@@ -100,12 +101,14 @@ export function Component() {
                 <td className="px-4 py-3"><RoleBadge role={m.role} /></td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
-                    <select disabled={busy === m.id} value={m.role} onChange={(e) => changeRole(m, e.target.value)} className="rounded-lg border border-sand bg-cream px-2 py-1 text-xs capitalize focus:border-ai focus:outline-none">
-                      <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option>
-                    </select>
-                    <button type="button" disabled={busy === m.id} onClick={() => toggleSuspend(m)} className={`rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-50 ${m.suspended ? "border-green-text/40 text-green-text" : "border-maroon-text/40 text-maroon-text"}`}>
-                      {m.suspended ? "Unsuspend" : "Suspend"}
-                    </button>
+                    {busy === m.id ? <BusyLabel label="Updating member" className="justify-end" width="w-12" /> : <>
+                      <Select value={m.role} onValueChange={(role) => changeRole(m, role)} className="w-32" size="compact" triggerClassName="capitalize" optionClassName="capitalize">
+                        <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="accountability">accountability</option><option value="steward">steward</option>
+                      </Select>
+                      <button type="button" onClick={() => toggleSuspend(m)} className={`rounded-full border px-3 py-1 text-xs font-semibold ${m.suspended ? "border-green-text/40 text-green-text" : "border-maroon-text/40 text-maroon-text"}`}>
+                        {m.suspended ? "Unsuspend" : "Suspend"}
+                      </button>
+                    </>}
                   </div>
                 </td>
               </StaggerItem>

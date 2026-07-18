@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate, useNavigation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
 import { useAuth } from "@/lib/auth";
@@ -6,10 +6,11 @@ import {
   Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
   Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
-  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, type LucideIcon,
+  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, Target, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PageSkeleton } from "@/components/skeleton";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number; roles?: string[] }
 interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
@@ -32,6 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Siren,
     items: [
       { to: "/directives", label: "Directives", icon: Megaphone, roles: ["curator", "steward"] },
+      { to: "/goals", label: "Town goals", icon: Target, roles: ["curator", "steward", "accountability"] },
     ],
   },
   {
@@ -99,6 +101,7 @@ export function RoleBadge({ role }: Readonly<{ role: string }>) {
     curator: "bg-teal/20 text-teal-text",
     moderator: "bg-gold/20 text-gold-text",
     editor: "bg-clay/15 text-clay-text",
+    accountability: "bg-ai/15 text-ai",
   };
   const cls = map[role] ?? "bg-sand text-ink-muted";
   return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cls}`}>{role}</span>;
@@ -234,7 +237,8 @@ function SidebarNav({ pathname, role, onNavigate, collapsed = false, onToggleCol
         </button>
       </div>
 
-      <nav className="relative z-10 pb-4">
+      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden">
+      <nav className="pb-4">
         {groups.map((group) => {
           const hasActive = group.items.some((i) => isActivePath(pathname, i.to, i.end));
           const isOpen = hasActive || (openState[group.title] ?? true);
@@ -293,6 +297,7 @@ function SidebarNav({ pathname, role, onNavigate, collapsed = false, onToggleCol
           );
         })}
       </nav>
+      </div>
     </>
   );
 }
@@ -308,6 +313,7 @@ const ROLE_LABEL: Record<string, string> = {
   curator: "Curator",
   moderator: "Moderator",
   editor: "Editor",
+  accountability: "Accountability officer",
   member: "Member",
 };
 
@@ -367,6 +373,7 @@ export function AdminLayout() {
   const { member, signOut } = useAuth();
   const loc = useLocation();
   const navigate = useNavigate();
+  const navigation = useNavigation();
   const [open, setOpen] = useState(false); // mobile drawer
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
@@ -413,6 +420,14 @@ export function AdminLayout() {
     window.scrollTo(0, 0);
   }, [loc.pathname]);
 
+  // Lock body scroll while the mobile drawer is open so the page behind stays put.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
   // User menu dismisses on click-outside or Escape (Aura user-menu pattern).
   useEffect(() => {
     if (!userMenu) return;
@@ -447,7 +462,7 @@ export function AdminLayout() {
 
       <aside
         aria-label="Primary"
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col overflow-y-auto border-r border-navy-soft bg-navy text-aura-cream transition-[transform,width] duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col overflow-hidden border-r border-navy-soft bg-navy text-aura-cream transition-[transform,width] duration-200 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "lg:w-16" : "lg:w-60"}`}
       >
@@ -589,9 +604,13 @@ export function AdminLayout() {
 
         <main className="flex-1 px-4 py-7 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
-            <PageTransition>
-              <Outlet />
-            </PageTransition>
+            {navigation.state !== "idle" && navigation.location ? (
+              <PageSkeleton pathname={navigation.location.pathname} />
+            ) : (
+              <PageTransition>
+                <Outlet />
+              </PageTransition>
+            )}
           </div>
         </main>
       </div>

@@ -20,11 +20,11 @@ export interface Datum {
 }
 
 /** Horizontal bars — categorical comparisons (content mix, institutions by kind). */
-export function BarsH({ data }: Readonly<{ data: Datum[] }>) {
+export function BarsH({ data, className = "" }: Readonly<{ data: Datum[]; className?: string }>) {
   const max = Math.max(1, ...data.map((d) => d.value));
   if (!data.length) return <EmptyChart />;
   return (
-    <div className="space-y-2.5">
+    <div className={`space-y-2.5 ${className}`}>
       {data.map((d, i) => (
         <div key={d.label} className="flex items-center gap-3">
           <span className="w-24 shrink-0 truncate text-xs text-ink-muted" title={d.label}>{d.label}</span>
@@ -45,12 +45,12 @@ export function BarsH({ data }: Readonly<{ data: Datum[] }>) {
 }
 
 /** Vertical bars over a time axis — submissions/activity per month. */
-export function Histogram({ data, color = PALETTE.gold }: Readonly<{ data: Datum[]; color?: string }>) {
+export function Histogram({ data, color = PALETTE.gold, className = "" }: Readonly<{ data: Datum[]; color?: string; className?: string }>) {
   const max = Math.max(1, ...data.map((d) => d.value));
   if (!data.length) return <EmptyChart />;
   return (
-    <div>
-      <div className="flex h-40 items-end gap-1.5">
+    <div className={`flex h-full flex-col ${className}`}>
+      <div className="flex h-full min-h-[8rem] items-end gap-1.5">
         {data.map((d) => (
           <motion.div
             key={d.label}
@@ -75,7 +75,7 @@ export function Histogram({ data, color = PALETTE.gold }: Readonly<{ data: Datum
 }
 
 /** Smooth area/line — cumulative growth over time. */
-export function AreaLine({ points, color = PALETTE.green }: Readonly<{ points: Datum[]; color?: string }>) {
+export function AreaLine({ points, color = PALETTE.green, className = "h-44" }: Readonly<{ points: Datum[]; color?: string; className?: string }>) {
   const id = useId();
   if (points.length < 2) return <EmptyChart label="Not enough history yet" />;
   const W = 600, H = 200, pad = 6;
@@ -86,8 +86,8 @@ export function AreaLine({ points, color = PALETTE.green }: Readonly<{ points: D
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");
   const area = `${line} L${x(n - 1).toFixed(1)},${H} L${x(0).toFixed(1)},${H} Z`;
   return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-44 w-full" role="img" aria-label="Cumulative growth">
+    <div className={`flex flex-col ${className}`}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full w-full" role="img" aria-label="Cumulative growth">
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.28" />
@@ -106,12 +106,12 @@ export function AreaLine({ points, color = PALETTE.green }: Readonly<{ points: D
 }
 
 /** Donut with centre total + legend — proportional breakdowns (status, kind). */
-export function Donut({ data, label }: Readonly<{ data: Datum[]; label?: string }>) {
+export function Donut({ data, label, className = "" }: Readonly<{ data: Datum[]; label?: string; className?: string }>) {
   const sum = data.reduce((s, d) => s + d.value, 0);
   const R = 42, C = 2 * Math.PI * R;
   let offset = 0;
   return (
-    <div className="flex items-center gap-5">
+    <div className={`flex items-center gap-5 ${className}`}>
       <div className="relative h-28 w-28 shrink-0">
         <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
           <circle cx="50" cy="50" r={R} fill="none" stroke={PALETTE.sand} strokeWidth="13" />

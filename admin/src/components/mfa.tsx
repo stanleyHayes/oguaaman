@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "@/components/layout";
 import { OtpInput } from "@/components/otp-input";
+import { BusyLabel } from "@/components/skeleton";
 
 const inputCls =
   "w-full rounded-xl border border-sand auth-theme-cream bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
@@ -119,7 +120,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
         </div>
         {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
         <div className="flex items-center gap-3">
-          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Verifying…" : "Verify & turn on"}</button>
+          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? <BusyLabel label="Verifying authenticator code" className="justify-center" /> : "Verify & turn on"}</button>
           <button type="button" onClick={() => { setStage(null); setErr(null); }} className="text-sm font-medium text-ink-muted hover:text-ink">Cancel</button>
         </div>
       </form>
@@ -130,7 +131,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
     <div>
       {err && <p className="mb-3 rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
       <button type="button" onClick={begin} disabled={busy} className={primaryBtn}>
-        {busy ? "Starting…" : "Set up two-factor"}
+        {busy ? <BusyLabel label="Starting two-factor setup" className="justify-center" /> : "Set up two-factor"}
       </button>
     </div>
   );
@@ -182,7 +183,7 @@ export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
       {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
       <div className="flex items-center gap-3">
         <button type="submit" disabled={busy} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-on-green hover:bg-clay-text disabled:opacity-60">
-          {busy ? "Turning off…" : "Turn off two-factor"}
+          {busy ? <BusyLabel label="Turning off two-factor" className="justify-center" /> : "Turn off two-factor"}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="text-sm font-medium text-ink-muted hover:text-ink">Keep it on</button>
       </div>

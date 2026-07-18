@@ -7,6 +7,7 @@ import { AiWritingBar } from "@/components/ai-writing-bar";
 import { InstitutionLogo } from "@/components/crest";
 import { InstitutionEditor } from "@/components/institution-editor";
 import { formatDate } from "@/lib/format";
+import { BusyLabel } from "@/components/skeleton";
 
 const KIND_LABEL: Record<string, string> = {
   school: "School", "traditional-authority": "Traditional authority", association: "Association",
@@ -130,7 +131,7 @@ export function Component() {
             <h2 className="mb-3 text-lg font-semibold">Verification</h2>
             <p className="mb-3 text-sm text-ink-muted">Grant the badge only after confirming standing through recognised channels. The platform documents — it does not adjudicate.</p>
             <button type="button" disabled={busy} onClick={toggleVerify} className={`w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${o.verified ? "border-sand text-ink-muted hover:bg-paper" : "border-gold-border/60 bg-gold/[0.08] text-gold-text hover:bg-gold/[0.16]"}`}>
-              {o.verified ? "Revoke verification" : "Verify institution"}
+              {busy ? <BusyLabel label="Updating verification" className="justify-center" /> : o.verified ? "Revoke verification" : "Verify institution"}
             </button>
           </Card>
 
@@ -153,7 +154,7 @@ export function Component() {
                       onClick={() => revokeTeamMember(m.memberId)}
                       className="shrink-0 rounded-full border border-clay/40 px-3 py-1 text-xs font-semibold text-clay hover:bg-clay/10 disabled:opacity-50"
                     >
-                      {revoking === m.memberId ? "Removing…" : "Remove"}
+                      {revoking === m.memberId ? <BusyLabel label="Removing team member" className="justify-center" width="w-12" /> : "Remove"}
                     </button>
                   </li>
                 ))}

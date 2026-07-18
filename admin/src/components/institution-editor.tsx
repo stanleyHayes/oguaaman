@@ -6,7 +6,8 @@ import { useState, type ReactNode } from "react";
 import type { MediaAsset, Organization, ProfileSection, ProfileSectionType, SectionItem, SubEntity } from "@/lib/types";
 import { api } from "@/lib/api";
 import { ImageUpload } from "@/components/image-upload";
-import { Empty } from "@/components/ui";
+import { Empty, Select } from "@/components/ui";
+import { BusyLabel } from "@/components/skeleton";
 
 type Tone = "green" | "clay" | "gold" | "maroon" | "teal";
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -35,7 +36,7 @@ function Panel({ title, hint, children }: Readonly<{ title: string; hint?: strin
 }
 
 function Saver({ state }: Readonly<{ state: SaveState }>) {
-  if (state === "saving") return <span className="text-sm text-ink-faint">Saving…</span>;
+  if (state === "saving") return <BusyLabel label="Saving institution changes" />;
   if (state === "saved") return <span className="text-sm text-teal-text">Saved ✓</span>;
   if (state === "error") return <span className="text-sm text-clay-text">Couldn't save — try again.</span>;
   return null;
@@ -254,9 +255,9 @@ function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; initial?
             <div className="mt-2 flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-1.5 text-xs text-ink-muted">
                 Accent{" "}
-                <select className="rounded-md border border-sand bg-paper px-2 py-1 text-sm text-ink" value={s.tone ?? "green"} onChange={(e) => update(i, { tone: e.target.value })}>
+                <Select value={s.tone ?? "green"} onValueChange={(tone) => update(i, { tone })} className="w-28">
                   {TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                </Select>
               </label>
               <label className="flex items-center gap-1.5 text-xs text-ink-muted">
                 <input type="checkbox" checked={!s.hidden} onChange={(e) => update(i, { hidden: !e.target.checked })} />{" "}

@@ -5,44 +5,26 @@ import { useAuth } from "@/lib/auth";
 import { Mark } from "./layout";
 import { MfaEnroll } from "./mfa";
 import { OtpInput } from "./otp-input";
+import { AuthSkeleton, BusyLabel } from "./skeleton";
 
 /** Returns true when this role may access the back-office at all.
- *  Editors are staff because the newsroom lives in the back-office (spec §8.12).
+ *  Editors are staff because the newsroom lives in the back-office (spec §8.12);
+ *  accountability officers sign in to record town-goal verdicts.
  */
 export function isStaffRole(role: string): boolean {
-  return role === "curator" || role === "steward" || role === "moderator" || role === "editor";
+  return role === "curator" || role === "steward" || role === "moderator" || role === "editor" || role === "accountability";
 }
 
 /** Locks the whole back-office behind a curator/steward/moderator session (spec §9). */
 export function AuthGate({ children }: Readonly<{ children: ReactNode }>) {
   const { member, loading } = useAuth();
-  if (loading) return <Backdrop><LoadingSplash tag="Admin" /></Backdrop>;
+  if (loading) return <AuthSkeleton />;
   if (!member) return <SignIn />;
   if (!isStaffRole(member.role)) return <NotAuthorized name={member.displayName} />;
   // Moderators don't get MFA enforcement (read: triage-only access is lower risk);
   // curators and stewards must enrol before the console unlocks (spec §14).
   if (member.role !== "moderator" && !member.mfaEnabled) return <ForcedMfa name={member.displayName} />;
   return <>{children}</>;
-}
-
-/** Branded loading splash — crab mark, sliding gold bar, motto. Rendered
- * inside Backdrop, which pins the green field's colours in both themes. */
-function LoadingSplash({ tag }: Readonly<{ tag: string }>) {
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <span className="inline-flex items-center gap-2">
-        <span className="grid size-9 place-items-center rounded-lg bg-gradient-to-br from-gold to-gold-brand shadow-sm" aria-hidden>
-          <Mark size={20} color="#0C2C1F" />
-        </span>
-        <span className="text-3xl font-semibold tracking-tight text-cream">Oguaa</span>
-        <span className="rounded bg-gold/15 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-gold">{tag}</span>
-      </span>
-      <div className="mt-1 h-0.5 w-28 overflow-hidden rounded-full bg-gold/15" aria-hidden>
-        <div className="oguaa-loadbar h-full w-1/2 rounded-full bg-gold-brand" />
-      </div>
-      <p className="text-xs uppercase tracking-[0.2em] text-gold/80">Yɛn ara asaase ni</p>
-    </div>
-  );
 }
 
 const TRUST = [
@@ -172,7 +154,7 @@ function SignIn() {
               </div>
             )}
             {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-            <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Verifying…" : "Verify & sign in"}</button>
+            <button type="submit" disabled={busy} className={primaryBtn}>{busy ? <BusyLabel label="Verifying your code" className="justify-center" /> : "Verify & sign in"}</button>
             <p className="text-center text-xs text-ink-faint">
               <button type="button" onClick={() => { setChallenge(null); setErr(null); setPassword(""); setRecovery(false); }} className="font-medium text-ink-muted underline hover:text-ink">← Back to sign in</button>
             </p>
@@ -214,7 +196,7 @@ function SignIn() {
             </div>
           </label>
           {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Signing in…" : "Sign in"}</button>
+          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? <BusyLabel label="Signing in" className="justify-center" /> : "Sign in"}</button>
         </form>
       </Shell>
     </Backdrop>
@@ -272,7 +254,7 @@ function ResetPassword({ initialIdentifier, onBack, onDone }: Readonly<{ initial
               <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoFocus autoComplete="username" placeholder="+233… or you@email" className={inputCls} />
             </label>
             {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-            <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Sending…" : "Send reset code"}</button>
+            <button type="submit" disabled={busy} className={primaryBtn}>{busy ? <BusyLabel label="Sending reset code" className="justify-center" /> : "Send reset code"}</button>
             {backBtn}
           </form>
         </Shell>
@@ -309,7 +291,7 @@ function ResetPassword({ initialIdentifier, onBack, onDone }: Readonly<{ initial
             </div>
           </label>
           {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Resetting…" : "Reset password"}</button>
+          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? <BusyLabel label="Resetting password" className="justify-center" /> : "Reset password"}</button>
           <p className="text-center text-xs text-ink-faint">
             <button type="button" onClick={() => { setStep(1); setErr(null); }} className="font-medium text-ink-muted underline hover:text-ink">Use a different account</button>
           </p>

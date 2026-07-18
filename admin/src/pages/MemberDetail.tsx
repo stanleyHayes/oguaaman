@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { MemberView, Member } from "@/lib/types";
-import { BackLink, Card, Empty, RoleBadge, StatusBadge, KeyVal } from "@/components/ui";
+import { BackLink, Card, Empty, RoleBadge, StatusBadge, KeyVal, Select } from "@/components/ui";
 import { formatDate, initials } from "@/lib/format";
 import { cldAvatar } from "@/lib/cloudinary";
+import { BusyLabel } from "@/components/skeleton";
 
 export async function loader({ params }: LoaderFunctionArgs): Promise<MemberView> {
   return api.member(params.slug!);
@@ -74,11 +75,14 @@ export function Component() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-3 text-lg font-semibold">Manage</h2>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Manage</h2>
+              {busy && <BusyLabel label="Updating member" width="w-12" />}
+            </div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-ink-faint">Role{" "}
-              <select disabled={busy} value={m.role} onChange={(e) => changeRole(e.target.value)} className="mt-1 w-full rounded-lg border border-sand bg-cream px-3 py-2 text-sm capitalize focus:border-gold-border focus:outline-none">
-                <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="steward">steward</option>
-              </select>
+              <Select disabled={busy} value={m.role} onValueChange={changeRole} className="mt-1 w-full" triggerClassName="capitalize" optionClassName="capitalize">
+                <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="accountability">accountability</option><option value="steward">steward</option>
+              </Select>
             </label>
             <button type="button" disabled={busy} onClick={toggleSuspend} className={`mt-3 w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${m.suspended ? "border-green-text/40 text-green-text hover:bg-green/[0.06]" : "border-maroon-text/40 text-maroon-text hover:bg-maroon-900/[0.06]"}`}>
               {m.suspended ? "Unsuspend member" : "Suspend member"}

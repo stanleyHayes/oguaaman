@@ -1,4 +1,16 @@
-import type { ReactNode } from "react";
+import {
+  Children,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import type { ListingStatus } from "@/lib/types";
 
@@ -42,6 +54,7 @@ export function RoleBadge({ role }: Readonly<{ role: string }>) {
     steward: "bg-maroon-900/[0.1] text-maroon-text",
     curator: "bg-ai/[0.1] text-ai",
     editor: "bg-teal/[0.12] text-teal-text",
+    accountability: "bg-gold/[0.15] text-gold-text",
     member: "bg-sand text-ink-muted",
   };
   return <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${m[role] ?? m.member}`}>{role}</span>;
@@ -65,6 +78,359 @@ export function PageHeader({ kicker, title, children }: Readonly<{ kicker: strin
         <h1 className="mt-1 text-3xl font-semibold">{title}</h1>
       </div>
       {children}
+    </div>
+  );
+}
+
+interface SelectOption {
+  value: string;
+  label: ReactNode;
+  text: string;
+  disabled: boolean;
+  group?: string;
+}
+
+interface SelectOptionRun {
+  group?: string;
+  entries: { option: SelectOption; index: number }[];
+}
+
+interface OptionElementProps {
+  children?: ReactNode;
+  value?: string | number;
+  disabled?: boolean;
+  label?: string;
+}
+
+function plainText(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(plainText).join("");
+  if (isValidElement<OptionElementProps>(node)) return plainText(node.props.children);
+  return "";
+}
+
+/** Read familiar option/optgroup children without ever mounting a native select. */
+function readSelectOptions(children: ReactNode, group?: string): SelectOption[] {
+  const options: SelectOption[] = [];
+  Children.forEach(children, (child) => {
+    if (!isValidElement<OptionElementProps>(child)) return;
+    const element = child as ReactElement<OptionElementProps>;
+    if (element.type === "option") {
+      const label = element.props.children ?? element.props.label ?? element.props.value ?? "";
+      options.push({
+        value: String(element.props.value ?? plainText(label)),
+        label,
+        text: plainText(label),
+        disabled: Boolean(element.props.disabled),
+        group,
+      });
+      return;
+    }
+    if (element.type === "optgroup") {
+      options.push(...readSelectOptions(element.props.children, element.props.label));
+    }
+  });
+  return options;
+}
+
+function enabledIndex(options: SelectOption[], from: number, step: 1 | -1): number {
+  if (options.length === 0) return -1;
+  for (let distance = 1; distance <= options.length; distance++) {
+    const index = (from + distance * step + options.length) % options.length;
+    if (!options[index]?.disabled) return index;
+  }
+  return -1;
+}
+
+function groupOptionRuns(options: SelectOption[]): SelectOptionRun[] {
+  return options.reduce<SelectOptionRun[]>((runs, option, index) => {
+    const previous = runs.at(-1);
+    if (previous && previous.group === option.group) {
+      return [...runs.slice(0, -1), { ...previous, entries: [...previous.entries, { option, index }] }];
+    }
+    return [...runs, { group: option.group, entries: [{ option, index }] }];
+  }, []);
+}
+
+const FOCUSABLE_SELECTOR = [
+  "a[href]:not([tabindex='-1'])",
+  "button:not([disabled]):not([tabindex='-1'])",
+  "input:not([disabled]):not([type='hidden']):not([tabindex='-1'])",
+  "textarea:not([disabled]):not([tabindex='-1'])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+/** Continue the trigger's document-order tab sequence after a portalled menu closes. */
+function focusNextTo(trigger: HTMLElement, backwards: boolean): void {
+  const focusable = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+    .filter((element) => element.getClientRects().length > 0 && !element.closest("[inert]"));
+  const current = focusable.indexOf(trigger);
+  if (current < 0 || focusable.length < 2) {
+    trigger.focus();
+    return;
+  }
+  const offset = backwards ? -1 : 1;
+  focusable[(current + offset + focusable.length) % focusable.length]?.focus();
+}
+
+interface SelectProps {
+  children: ReactNode;
+  value: string;
+  onValueChange: (value: string) => void;
+  className?: string;
+  icon?: ReactNode;
+  disabled?: boolean;
+  id?: string;
+  name?: string;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+  "aria-describedby"?: string;
+  size?: "default" | "compact";
+  triggerClassName?: string;
+  menuClassName?: string;
+  optionClassName?: string;
+}
+
+/**
+ * Branded, non-native single-select. The trigger and portalled listbox support
+ * arrows, Home/End, Enter/Space, Escape, typeahead, click-away dismissal, and
+ * active-descendant focus without being clipped by tables or cards.
+ */
+export function Select({
+  children,
+  value,
+  onValueChange,
+  className = "",
+  icon,
+  disabled = false,
+  id,
+  name,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
+  "aria-describedby": ariaDescribedBy,
+  size = "default",
+  triggerClassName = "",
+  menuClassName = "",
+  optionClassName = "",
+}: Readonly<SelectProps>) {
+  const generatedId = useId();
+  const controlId = id ?? `select-${generatedId.replaceAll(":", "")}`;
+  const listboxId = `${controlId}-listbox`;
+  const options = readSelectOptions(children);
+  const optionRuns = groupOptionRuns(options);
+  const selectedIndex = options.findIndex((option) => option.value === String(value));
+  const selected = options[selectedIndex];
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const typeaheadRef = useRef({ text: "", at: 0 });
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(selectedIndex >= 0 ? selectedIndex : 0);
+  const [position, setPosition] = useState<CSSProperties>({});
+
+  const measureMenu = useCallback((): CSSProperties => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return {};
+    const gutter = 8;
+    const width = Math.max(rect.width, size === "compact" ? 144 : 176);
+    const left = Math.max(gutter, Math.min(rect.left, window.innerWidth - width - gutter));
+    const below = window.innerHeight - rect.bottom - gutter;
+    const above = rect.top - gutter;
+    const opensAbove = below < 176 && above > below;
+    const maxHeight = Math.max(128, Math.min(280, opensAbove ? above - 6 : below - 6));
+    return opensAbove
+      ? { position: "fixed", bottom: window.innerHeight - rect.top + 6, left, width, maxHeight }
+      : { position: "fixed", top: rect.bottom + 6, left, width, maxHeight };
+  }, [size]);
+
+  const openMenu = (preferredIndex = selectedIndex) => {
+    if (disabled || options.length === 0) return;
+    const fallback = options.findIndex((option) => !option.disabled);
+    const next = preferredIndex >= 0 && !options[preferredIndex]?.disabled ? preferredIndex : fallback;
+    setActiveIndex(next);
+    setPosition(measureMenu());
+    setOpen(true);
+    requestAnimationFrame(() => listRef.current?.focus());
+  };
+
+  const closeMenu = (restoreFocus = false) => {
+    setOpen(false);
+    if (restoreFocus) requestAnimationFrame(() => triggerRef.current?.focus());
+  };
+
+  const commit = (index: number) => {
+    const option = options[index];
+    if (!option || option.disabled) return;
+    onValueChange(option.value);
+    closeMenu(true);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const reposition = () => setPosition(measureMenu());
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!triggerRef.current?.contains(target) && !listRef.current?.contains(target)) closeMenu();
+    };
+    window.addEventListener("resize", reposition);
+    window.addEventListener("scroll", reposition, true);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      window.removeEventListener("resize", reposition);
+      window.removeEventListener("scroll", reposition, true);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [measureMenu, open]);
+
+  const moveActive = (step: 1 | -1) => {
+    const next = enabledIndex(options, activeIndex, step);
+    if (next >= 0) {
+      setActiveIndex(next);
+      requestAnimationFrame(() => document.getElementById(`${listboxId}-option-${next}`)?.scrollIntoView({ block: "nearest" }));
+    }
+  };
+
+  const runTypeahead = (key: string, eventTime: number) => {
+    const previous = eventTime - typeaheadRef.current.at > 650 ? "" : typeaheadRef.current.text;
+    const text = `${previous}${key}`.toLocaleLowerCase();
+    typeaheadRef.current = { text, at: eventTime };
+    const match = options.findIndex((option) => !option.disabled && option.text.toLocaleLowerCase().startsWith(text));
+    if (match >= 0) setActiveIndex(match);
+  };
+
+  const handleTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const index = event.key === "End"
+        ? options.findLastIndex((option) => !option.disabled)
+        : event.key === "Home"
+          ? options.findIndex((option) => !option.disabled)
+          : enabledIndex(options, selectedIndex < 0 ? (event.key === "ArrowDown" ? -1 : 0) : selectedIndex, event.key === "ArrowDown" ? 1 : -1);
+      openMenu(index);
+    }
+  };
+
+  const handleListKeyDown = (event: React.KeyboardEvent<HTMLUListElement>) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      moveActive(event.key === "ArrowDown" ? 1 : -1);
+    } else if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const index = event.key === "Home"
+        ? options.findIndex((option) => !option.disabled)
+        : options.findLastIndex((option) => !option.disabled);
+      if (index >= 0) setActiveIndex(index);
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      commit(activeIndex);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu(true);
+    } else if (event.key === "Tab") {
+      event.preventDefault();
+      const trigger = triggerRef.current;
+      closeMenu();
+      if (trigger) requestAnimationFrame(() => focusNextTo(trigger, event.shiftKey));
+    } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      runTypeahead(event.key, event.timeStamp);
+    }
+  };
+
+  const renderOption = (option: SelectOption, index: number) => {
+    const active = index === activeIndex;
+    const checked = option.value === String(value);
+    const spacing = size === "compact" ? "px-2.5 py-1.5 text-xs" : "px-3 py-2.5 text-sm";
+    return (
+      <button
+        type="button"
+        id={`${listboxId}-option-${index}`}
+        role="option"
+        tabIndex={-1}
+        aria-selected={checked}
+        aria-disabled={option.disabled || undefined}
+        disabled={option.disabled}
+        onMouseEnter={() => { if (!option.disabled) setActiveIndex(index); }}
+        onClick={() => commit(index)}
+        className={`flex w-full cursor-default items-center gap-3 rounded-xl text-left transition-colors ${spacing} ${
+          option.disabled
+            ? "opacity-45"
+            : active
+              ? "bg-green text-on-green"
+              : "text-ink hover:bg-paper"
+        } ${optionClassName}`}
+      >
+        <span className="min-w-0 flex-1 truncate">{option.label}</span>
+        {checked && (
+          <svg viewBox="0 0 20 20" className={`h-4 w-4 shrink-0 ${active ? "text-gold" : "text-teal-text"}`} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="m4 10 4 4 8-8" />
+          </svg>
+        )}
+      </button>
+    );
+  };
+
+  const listbox = open ? (
+    <ul
+      ref={listRef}
+      id={listboxId}
+      role="listbox"
+      tabIndex={-1}
+      aria-label={ariaLabel ?? (ariaLabelledBy ? undefined : "Choose an option")}
+      aria-labelledby={ariaLabelledBy}
+      aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
+      onKeyDown={handleListKeyDown}
+      className={`z-[80] overflow-y-auto rounded-2xl border border-sand bg-cream p-1.5 shadow-[0_22px_60px_-18px_rgba(12,44,31,0.38)] focus:outline-none ${menuClassName}`}
+      style={position}
+    >
+      {optionRuns.map((run, runIndex) => {
+        if (!run.group) {
+          return run.entries.map(({ option, index }) => (
+            <li key={`option-${option.value}-${index}`} role="presentation">{renderOption(option, index)}</li>
+          ));
+        }
+        const groupId = `${listboxId}-group-${runIndex}`;
+        return (
+          <li key={`${run.group}-${runIndex}`} role="group" aria-labelledby={groupId}>
+            <div id={groupId} className="px-3 pb-1 pt-2 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-ink-faint">{run.group}</div>
+            <ul role="presentation">
+              {run.entries.map(({ option, index }) => (
+                <li key={`${run.group}-${option.value}-${index}`} role="presentation">{renderOption(option, index)}</li>
+              ))}
+            </ul>
+          </li>
+        );
+      })}
+    </ul>
+  ) : null;
+
+  return (
+    <div className={`relative inline-flex min-w-0 ${className}`}>
+      {name && <input type="hidden" name={name} value={value} />}
+      <button
+        ref={triggerRef}
+        id={controlId}
+        type="button"
+        disabled={disabled}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+        aria-describedby={ariaDescribedBy}
+        aria-haspopup="listbox"
+        aria-controls={listboxId}
+        aria-expanded={open}
+        onClick={() => open ? closeMenu() : openMenu()}
+        onKeyDown={handleTriggerKeyDown}
+        className={`flex w-full min-w-0 items-center gap-2.5 border border-sand bg-cream text-left text-ink shadow-sm transition-[border-color,box-shadow,background-color] hover:border-gold-border/60 focus:border-ai focus:outline-none focus:ring-2 focus:ring-ai/20 disabled:cursor-not-allowed disabled:opacity-50 ${
+          size === "compact" ? "min-h-8 rounded-lg py-1 pl-2.5 pr-1.5 text-xs" : "min-h-10 rounded-xl py-2 pl-3 pr-2 text-sm"
+        } ${triggerClassName}`}
+      >
+        {icon ? <span className="shrink-0 text-ink-faint">{icon}</span> : null}
+        <span className="min-w-0 flex-1 truncate">{selected?.label ?? "Select…"}</span>
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-paper text-ink-faint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`transition-transform ${open ? "rotate-180" : ""}`}>
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
+      </button>
+      {listbox ? createPortal(listbox, document.body) : null}
     </div>
   );
 }

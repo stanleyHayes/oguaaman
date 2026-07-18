@@ -4,6 +4,8 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { PageHeader, Card, RoleBadge, KeyVal } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
+import { mediaUrl } from "@/lib/cloudinary";
+import { BusyLabel } from "@/components/skeleton";
 
 const ROLE_POWERS: Record<string, { summary: string; can: string[] }> = {
   member: { summary: "Contributes to the community.", can: ["Submit listings, memories and memorials", "Follow people and institutions", "Manage your own profile and notifications"] },
@@ -65,7 +67,7 @@ export function Component() {
         <div className="h-16 w-full bg-green-900" aria-hidden />
         <div className="flex flex-wrap items-end gap-4 px-6 pb-5">
           <span className="-mt-9 inline-flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-cream bg-green text-2xl font-semibold text-on-green shadow-[var(--shadow-card)]">
-            {member.photoUrl ? <img src={member.photoUrl} alt={`${member.displayName} profile photo`} className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : avatarInitials}
+            {member.photoUrl ? <img src={mediaUrl(member.photoUrl)} alt={`${member.displayName} profile photo`} className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : avatarInitials}
           </span>
           <div className="min-w-0 pb-1">
             <h2 className="text-2xl font-semibold text-ink">{member.displayName}</h2>
@@ -94,7 +96,7 @@ export function Component() {
             {err && <p className="text-sm text-clay-text">{err}</p>}
             <div className="flex items-center gap-3">
               <button type="button" onClick={saveProfile} disabled={!dirty || state === "saving"} className="rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-50">
-                {state === "saving" ? "Saving…" : "Save changes"}
+                {state === "saving" ? <BusyLabel label="Saving profile" className="justify-center" /> : "Save changes"}
               </button>
               {state === "saved" && <span className="text-sm text-green-text">Saved ✓</span>}
             </div>

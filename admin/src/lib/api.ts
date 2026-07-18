@@ -1,4 +1,4 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Paged } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, Paged } from "./types";
 
 /** Optional server-side pagination for the heavy list endpoints. Passing this
  *  switches the response to the { items, total, page, pageSize, totalPages }
@@ -28,6 +28,21 @@ export interface DirectivePayload {
   effectiveUntil?: string; // RFC3339; omitted = open-ended
   issuedByOrgId?: string; // admin path: choose the issuing authority
   issuedByOrgSlug?: string; // admin path: alternative to issuedByOrgId
+}
+
+/** Compose/edit body for a town goal (curator path). `target` is a free-text
+ *  metric, `ring` "" means unscoped, and the period bounds are RFC3339. */
+export interface GoalInput {
+  title: string;
+  description: string;
+  target: string;
+  cadence: GoalCadence;
+  periodLabel: string;
+  periodStart: string; // RFC3339
+  periodEnd: string; // RFC3339
+  setAtDurbar: boolean;
+  ring: GoalRing;
+  featured: boolean;
 }
 
 export interface NewsPayload { title: string; summary: string; body: string; coverColor: string; coverImageUrl: string; tags: string[] }
@@ -182,6 +197,19 @@ export const api = {
   adminDirectives: () => get<Directive[]>("/api/admin/directives"),
   createDirective: (body: DirectivePayload) => post<Directive>("/api/admin/directives", body),
   cancelDirective: (id: string) => post<Directive>(`/api/admin/directives/${id}/cancel`),
+
+  // Town goals — civic accountability. Curators author (create/edit/delete); the
+  // separate "accountability" role records the verdict; stewards may do both.
+  // The public feed powers the town-facing scoreboard.
+  goals: () => get<Goal[]>("/api/goals"),
+  adminGoals: () => get<Goal[]>("/api/admin/goals"),
+  createGoal: (body: GoalInput) => post<Goal>("/api/admin/goals", body),
+  // POST (not PATCH) — the deployed CORS policy allows GET/POST/DELETE only.
+  updateGoal: (id: string, body: GoalInput) => post<Goal>(`/api/admin/goals/${id}`, body),
+  deleteGoal: (id: string) => del<{ status: string }>(`/api/admin/goals/${id}`),
+  // Accountability role only — a 403 surfaces when the caller lacks it.
+  reviewGoal: (id: string, body: { status: GoalVerdict; note: string }) =>
+    post<Goal>(`/api/admin/goals/${id}/review`, body),
 
   // Community safety triage (auto-published; curators transition the lifecycle).
   incidents: () => get<Incident[]>("/api/incidents"),

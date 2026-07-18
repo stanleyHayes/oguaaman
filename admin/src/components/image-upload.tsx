@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { getToken } from "@/lib/api";
+import { BusyLabel } from "@/components/skeleton";
 
 // Image upload. Prefers Cloudinary (unsigned preset) when configured; otherwise
 // uploads to the first-party Go endpoint (POST /api/uploads) so uploads work out
@@ -84,7 +85,7 @@ export function ImageUpload({
           <img src={value} alt="" className="h-20 w-28 shrink-0 rounded-lg border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="rounded-full border border-sand px-3.5 py-1.5 text-sm font-medium text-ink-muted hover:border-green-text/40 disabled:opacity-60">
-              {busy ? `Uploading… ${progress}%` : "Replace"}
+              {busy ? <BusyLabel label={`Uploading image, ${progress}% complete`} className="justify-center" /> : "Replace"}
             </button>
             <button type="button" onClick={() => onChange("")} className="rounded-full border border-maroon-text/30 px-3.5 py-1.5 text-sm font-medium text-maroon-text hover:bg-maroon-900/[0.06]">
               Remove
@@ -106,8 +107,16 @@ export function ImageUpload({
         >
           {busy ? (
             <>
-              <span className="text-sm font-medium text-ink">Uploading… {progress}%</span>
-              <span className="h-1.5 w-40 overflow-hidden rounded-full bg-sand">
+              <BusyLabel label={`Uploading image, ${progress}% complete`} width="w-20" />
+              <span
+                className="h-1.5 w-40 overflow-hidden rounded-full bg-sand"
+                role="progressbar"
+                aria-label="Image upload progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                aria-valuetext={`${progress}% complete`}
+              >
                 <span className="block h-full rounded-full bg-green transition-all" style={{ width: `${progress}%` }} />
               </span>
             </>
