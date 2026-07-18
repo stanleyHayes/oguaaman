@@ -16,6 +16,9 @@ const PATHS: Record<string, ReactNode> = {
   privacy: <><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6Z" /><path d="M12 8v4" /><path d="M12 15.5v.5" /></>,
   terms: <><path d="M6 3h9l3 3v15H6Z" /><path d="M15 3v3h3" /><path d="M9 8h3M9 12h6M9 16h6" /></>,
   better: <><path d="M12 21s-7-4.35-7-9.5A3.5 3.5 0 0 1 12 8a3.5 3.5 0 0 1 7 3.5c0 5.15-7 9.5-7 9.5Z" /><path d="m9.5 12 1.8 1.8 3.2-3.4" /></>,
+  // "Oguaa Outside" — a globe (your business, out in the world) with a checked
+  // marker for the vetted agent who handles it on your behalf.
+  outside: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.7-3.8-9s1.3-6.4 3.8-9Z" /></>,
 };
 
 export function SectionIcon({ id, className = "" }: Readonly<{ id: string; className?: string }>) {

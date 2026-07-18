@@ -47,6 +47,7 @@ const NAV_LINKS: NavItem[] = [
   { to: "/culture", label: "Culture", note: "The companies, the shrines, the flags.", icon: "culture", tone: "gold" },
   { to: "/festivals", label: "Festivals", note: "Fetu Afahye and the great durbar.", icon: "festivals", tone: "gold" },
   { to: "/education", label: "Education", note: "The citadel that taught a country.", icon: "education", tone: "maroon" },
+  { to: "/outside", label: "Oguaa Outside", note: "Trusted agents who act for you, elsewhere.", icon: "outside", tone: "teal" },
   { to: "/visit", label: "Visit", note: "Castle, Kakum, the lagoon, the shore.", icon: "visit", tone: "teal" },
   { to: "/leadership", label: "Leadership", note: "The stool and the civic assembly.", icon: "leadership", tone: "green" },
   { to: "/news", label: "News", note: "Notices and stories from the town.", icon: "news", tone: "gold" },

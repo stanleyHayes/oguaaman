@@ -19,6 +19,7 @@ const SECTIONS: Record<string, { icon: string; label: string }> = {
   visit: { icon: "visit", label: "Visit" },
   leadership: { icon: "leadership", label: "Leadership" },
   better: { icon: "better", label: "Build a better Oguaa" },
+  outside: { icon: "outside", label: "Oguaa Outside" },
   news: { icon: "news", label: "News" },
   privacy: { icon: "privacy", label: "Privacy" },
   terms: { icon: "terms", label: "Terms" },
