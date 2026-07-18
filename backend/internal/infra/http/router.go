@@ -88,6 +88,19 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("DELETE /api/admin/goals/{id}", h.AdminDeleteGoal)
 	mux.HandleFunc("POST /api/admin/goals/{id}/review", h.AdminReviewGoal)
 
+	// Oguaa Outside — verified agents who act for Cape Coast people elsewhere.
+	// Vetting (background check) is gated to the Vetting officer role.
+	mux.HandleFunc("GET /api/agent-services", h.AgentServicesList)
+	mux.HandleFunc("GET /api/agents", h.Agents)
+	mux.HandleFunc("GET /api/agents/{slug}", h.Agent)
+	mux.HandleFunc("POST /api/agents/apply", h.ApplyAsAgent)
+	mux.HandleFunc("GET /api/me/agent", h.MyAgent)
+	mux.HandleFunc("POST /api/me/agent", h.UpdateMyAgent)
+	mux.HandleFunc("GET /api/admin/agents", h.AdminAgents)
+	mux.HandleFunc("POST /api/admin/agents/{id}/verify", h.AdminVerifyAgent)
+	mux.HandleFunc("POST /api/admin/agents/{id}/reject", h.AdminRejectAgent)
+	mux.HandleFunc("POST /api/admin/agents/{id}/suspend", h.AdminSuspendAgent)
+
 	// Lost & found — lost items, found items, missing people (auto-published;
 	// the owner or a curator resolves the notice).
 	mux.HandleFunc("GET /api/lost-found", h.LostFound)

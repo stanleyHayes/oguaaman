@@ -39,6 +39,7 @@ type Service struct {
 	civicBehaviours domain.CivicBehaviourRepository
 	civicLessons    domain.CivicLessonRepository
 	goals           domain.GoalRepository
+	agents          domain.AgentRepository
 	email           EmailSender
 	wa              MessageSender
 	log             *slog.Logger
@@ -62,6 +63,7 @@ type Deps struct {
 	CivicBehaviours domain.CivicBehaviourRepository
 	CivicLessons    domain.CivicLessonRepository
 	Goals           domain.GoalRepository
+	Agents          domain.AgentRepository
 	Email           EmailSender
 	WhatsApp        MessageSender
 	Log             *slog.Logger
@@ -78,7 +80,7 @@ func New(d Deps) *Service {
 		news: d.News, reports: d.Reports, timeline: d.Timeline, plans: d.Plans,
 		directives:      d.Directives,
 		civicBehaviours: d.CivicBehaviours, civicLessons: d.CivicLessons,
-		goals: d.Goals,
+		goals: d.Goals, agents: d.Agents,
 		email: d.Email, wa: d.WhatsApp, log: l,
 	}
 }

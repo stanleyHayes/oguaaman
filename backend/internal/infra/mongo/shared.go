@@ -35,6 +35,7 @@ const (
 	collCivicBehaviours = "civic_behaviours"
 	collCivicLessons    = "civic_lessons"
 	collGoals           = "goals"
+	collAgents          = "agents"
 )
 
 // notFound maps the driver's no-documents sentinel to a domain NotFoundError.

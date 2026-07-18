@@ -39,5 +39,8 @@ func main() {
 	if err := mongox.SeedGoalsOnly(ctx, db); err != nil {
 		log.Fatalf("seed goals: %v", err)
 	}
-	log.Printf("civic + goals seeded into db %q", dbName)
+	if err := mongox.SeedAgentsOnly(ctx, db); err != nil {
+		log.Fatalf("seed agents: %v", err)
+	}
+	log.Printf("civic + goals + agents seeded into db %q", dbName)
 }

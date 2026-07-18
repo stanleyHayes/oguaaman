@@ -13,6 +13,9 @@ const (
 	// from the curators who SET goals — a deliberate separation of duties so the
 	// people who make the promise are not the ones who mark it kept.
 	RoleAccountabilityOfficer = "accountability"
+	// RoleVettingOfficer vets & approves "Oguaa Outside" agents (background check:
+	// ID, guarantor, bond) and can suspend them. Separate from curators.
+	RoleVettingOfficer = "vetting"
 )
 
 // DevDemoMemberIDs are the seeded demo identities used only when AUTH_REQUIRED is
