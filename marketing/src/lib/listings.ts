@@ -1,9 +1,9 @@
-// A tiny live-content layer for the marketing site. The brochure is never empty:
-// every section seeds with real fallback items, then quietly upgrades from the
-// live app API (the same Go backend the portal uses, proxied at /api). Mirrors
-// the discipline in HappeningNow/Stats — state inits once to the fallback, the
-// only update happens inside the fetch's .then guarded by a `cancelled` flag,
-// and any failure keeps the fallback silently (a marketing page shows no errors).
+// A tiny live-content layer for the marketing site. Every community section
+// reads its data live from the app API (the same Go backend the portal uses,
+// proxied at /api) — there is no client-side fallback. State inits to an empty
+// list, the only update happens inside the fetch's .then guarded by a
+// `cancelled` flag, and any failure leaves the list empty silently (a marketing
+// page shows no errors). Sections render gracefully when their list is empty.
 import { useEffect, useState } from "react";
 import { Pill } from "@/components/ui";
 import { PORTAL_APP_URL } from "@/config";
@@ -35,22 +35,23 @@ function isListingArray(v: unknown): v is Listing[] {
 }
 
 /**
- * Read a public listings endpoint (e.g. "/api/artists") with a seeded fallback.
- * Pass `limit` to cap how many are shown. The endpoint is the only dependency,
- * so the same hook serves every community section.
+ * Read a public listings endpoint (e.g. "/api/artists") live from the API.
+ * Starts empty and fills once the backend answers; on error/empty it stays
+ * empty. Pass `limit` to cap how many are shown. The endpoint is the only
+ * dependency, so the same hook serves every community section.
  */
-export function useListings(endpoint: string, fallback: Listing[], limit?: number): Listing[] {
-  const [items, setItems] = useState<Listing[]>(fallback);
+export function useListings(endpoint: string, limit?: number): Listing[] {
+  const [items, setItems] = useState<Listing[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     fetch(endpoint, { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: unknown) => {
-        if (!cancelled && isListingArray(data) && data.length > 0) setItems(data);
+        if (!cancelled && isListingArray(data)) setItems(data);
       })
       .catch(() => {
-        /* keep the seeded fallback silently */
+        /* stay empty silently — a marketing page shows no errors */
       });
     return () => {
       cancelled = true;

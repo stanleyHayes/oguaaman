@@ -2,18 +2,19 @@ import { Section, SectionHeading, CTA as Cta } from "@/components/ui";
 import { ListingCard } from "@/components/listing-card";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { useListings } from "@/lib/listings";
-import { FEATURED_FALLBACK } from "@/lib/fallbacks";
 import { PORTAL_APP_URL } from "@/config";
 
 /**
  * "Right now in Oguaa" — a living window into the town. It surfaces the
  * community's FEATURED entries (events, businesses, artists, the remembered)
  * straight from the live app, so the marketing site is never a static brochure.
- * Seeded with real featured items so it always renders, then upgraded live via
- * the shared useListings hook.
+ * Reads live via the shared useListings hook; the section is skipped entirely
+ * until the API returns something, so it never renders empty.
  */
 export function HappeningNow() {
-  const items = useListings("/api/featured", FEATURED_FALLBACK);
+  const items = useListings("/api/featured");
+
+  if (items.length === 0) return null;
 
   return (
     <Section id="happening" tone="cream" size="wide">

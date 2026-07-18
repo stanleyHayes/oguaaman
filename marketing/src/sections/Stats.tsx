@@ -7,14 +7,13 @@ import { Stagger, StaggerItem } from "@/components/motion";
 /**
  * Stats — a dark "community numbers" band (tone="green").
  *
- * The figures are seeded with the current real seed values so the band always
- * renders something true, then quietly upgraded from the live backend.
+ * Figures come entirely from the live backend (/api/stats). Until the real
+ * numbers arrive (or if the API is unavailable) the band is hidden — never
+ * placeholder/stale counts.
  *
  * React rule we follow deliberately: the effect NEVER calls setState in its
- * body. State is initialised once via useState; the only updates happen inside
- * the fetch's .then callback, and a `cancelled` flag in the cleanup prevents a
- * state update after unmount or a stale re-run. On any failure we keep the
- * fallback silently — a marketing page should never show an error here.
+ * body. The only update happens inside the fetch's .then callback, and a
+ * `cancelled` flag in the cleanup prevents a state update after unmount.
  */
 
 interface CommunityStats {
@@ -28,16 +27,6 @@ interface CommunityStats {
   memories?: number;
   pending?: number;
 }
-
-/** Current seed values — what the community actually holds today. */
-const FALLBACK: CommunityStats = {
-  members: 8,
-  listings: 26,
-  schools: 7,
-  institutions: 9,
-  artists: 6,
-  memorials: 2,
-};
 
 interface Figure {
   key: keyof CommunityStats;
@@ -68,7 +57,7 @@ function isCommunityStats(value: unknown): value is CommunityStats {
 }
 
 export function Stats() {
-  const [stats, setStats] = useState<CommunityStats>(FALLBACK);
+  const [stats, setStats] = useState<CommunityStats | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +79,9 @@ export function Stats() {
       cancelled = true;
     };
   }, []);
+
+  // API-only: don't render the band until the real numbers load (no placeholders).
+  if (!stats) return null;
 
   return (
     <Section id="community" tone="green">

@@ -3,7 +3,6 @@ import { Section, SectionHeading, Pill, Card } from "@/components/ui";
 import { CircularReveal, Stagger, StaggerItem } from "@/components/motion";
 import { sceneForSlug } from "@/components/scenes";
 import { useHeritage } from "@/lib/org";
-import { HERITAGE_FALLBACK } from "@/lib/fallbacks";
 
 // The pill accent cycles for visual variety across the grid.
 const TONES = ["gold", "green", "teal", "clay"] as const;
@@ -11,11 +10,13 @@ const TONES = ["gold", "green", "teal", "clay"] as const;
 /**
  * The places to see in and around Cape Coast — read LIVE from the platform
  * (kind:"heritage" institutions), so a place added in the admin appears here
- * automatically. Each card opens its detail page (/visit/:slug). Seeded with the
- * known sites as a fallback so the grid is never empty.
+ * automatically. Each card opens its detail page (/visit/:slug). The section is
+ * skipped entirely until the API returns places, so the grid is never empty.
  */
 export function Sites() {
-  const places = useHeritage(HERITAGE_FALLBACK);
+  const places = useHeritage();
+
+  if (places.length === 0) return null;
 
   return (
     <Section id="visit" tone="paper" size="wide" className="pb-10 sm:pb-14">

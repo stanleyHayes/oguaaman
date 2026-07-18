@@ -4,8 +4,7 @@ import { Section, SectionHeading, Card } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { LiveCollection } from "@/components/live-collection";
 import { Stagger, StaggerItem } from "@/components/motion";
-import { OPPORTUNITIES_FALLBACK } from "@/lib/fallbacks";
-import { useSchools, SCHOOLS_FALLBACK, schoolInitials, type SchoolOrg } from "@/lib/schools";
+import { useSchools, schoolInitials, type SchoolOrg } from "@/lib/schools";
 import { PORTAL_APP_URL } from "@/config";
 
 interface Alum {
@@ -57,7 +56,7 @@ function SchoolCard({ school }: Readonly<{ school: SchoolOrg }>) {
 }
 
 export function Component() {
-  const schools = useSchools(SCHOOLS_FALLBACK);
+  const schools = useSchools();
 
   return (
     <>
@@ -90,16 +89,20 @@ export function Component() {
           title="The foundations of a town."
           lede="Each with its colours, its motto, and its old students who answer to a name only their school understands — from the oldest school in Ghana to the basic school by the sea."
         />
-        <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
-          {schools.map((s, idx) => (
-            <StaggerItem key={s.id} index={idx}>
-              <SchoolCard school={s} />
-            </StaggerItem>
-          ))}
-        </Stagger>
-        <p className="mt-8 text-center text-sm text-ink-faint">
-          {schools.length} schools listed — and growing, as each claims its profile in the app.
-        </p>
+        {schools.length > 0 && (
+          <>
+            <Stagger className="mt-12 grid gap-5 sm:grid-cols-2">
+              {schools.map((s, idx) => (
+                <StaggerItem key={s.id} index={idx}>
+                  <SchoolCard school={s} />
+                </StaggerItem>
+              ))}
+            </Stagger>
+            <p className="mt-8 text-center text-sm text-ink-faint">
+              {schools.length} schools listed — and growing, as each claims its profile in the app.
+            </p>
+          </>
+        )}
       </Section>
 
       {/* The rivalry */}
@@ -162,7 +165,6 @@ export function Component() {
         title="Scholarships & apprenticeships."
         lede="The Old Students networks and institutions of Oguaa are the natural source of mentors and funders for the next generation. Here is what is open, straight from the app."
         endpoint="/api/opportunities"
-        fallback={OPPORTUNITIES_FALLBACK}
         cta={{ href: `${PORTAL_APP_URL}/events`, label: "See every opportunity", external: true }}
       />
     </>

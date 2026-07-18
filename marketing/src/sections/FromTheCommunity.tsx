@@ -1,39 +1,33 @@
 import { Section, SectionHeading } from "@/components/ui";
 import { ListingCard } from "@/components/listing-card";
 import { Stagger, StaggerItem } from "@/components/motion";
-import { useListings, type Listing } from "@/lib/listings";
-import {
-  ARTISTS_FALLBACK,
-  BUSINESSES_FALLBACK,
-  PEOPLE_FALLBACK,
-  MEMORIALS_FALLBACK,
-} from "@/lib/fallbacks";
+import { useListings } from "@/lib/listings";
 import { PORTAL_APP_URL } from "@/config";
 
 /**
  * "From the community" — a living window into the app, beyond the featured rail.
  * Four compact rows (artists, shops, the celebrated, the remembered) each read
- * live from the backend with a seeded fallback, so the marketing site shows the
- * town as it actually is right now, not a static brochure.
+ * live from the backend, so the marketing site shows the town as it actually is
+ * right now, not a static brochure. A row with no live items skips itself.
  */
 
 interface Row {
   eyebrow: string;
   title: string;
   endpoint: string;
-  fallback: Listing[];
   href: string;
 }
 
 const ROWS: Row[] = [
-  { eyebrow: "Carrying the sound", title: "Artists of Oguaa", endpoint: "/api/artists", fallback: ARTISTS_FALLBACK, href: `${PORTAL_APP_URL}/music` },
-  { eyebrow: "Where the town trades", title: "Shops, stays & kitchens", endpoint: "/api/businesses", fallback: BUSINESSES_FALLBACK, href: `${PORTAL_APP_URL}/business` },
-  { eyebrow: "We celebrate", title: "The ones Oguaa is proud of", endpoint: "/api/people", fallback: PEOPLE_FALLBACK, href: `${PORTAL_APP_URL}/people` },
-  { eyebrow: "Yɛnkae — we remember", title: "Held in memory", endpoint: "/api/memorials", fallback: MEMORIALS_FALLBACK, href: `${PORTAL_APP_URL}/memoriam` },
+  { eyebrow: "Carrying the sound", title: "Artists of Oguaa", endpoint: "/api/artists", href: `${PORTAL_APP_URL}/music` },
+  { eyebrow: "Where the town trades", title: "Shops, stays & kitchens", endpoint: "/api/businesses", href: `${PORTAL_APP_URL}/business` },
+  { eyebrow: "We celebrate", title: "The ones Oguaa is proud of", endpoint: "/api/people", href: `${PORTAL_APP_URL}/people` },
+  { eyebrow: "Yɛnkae — we remember", title: "Held in memory", endpoint: "/api/memorials", href: `${PORTAL_APP_URL}/memoriam` },
 ];
 
 function CommunityRow({ row }: Readonly<{ row: Row }>) {
-  const items = useListings(row.endpoint, row.fallback, 3);
+  const items = useListings(row.endpoint, 3);
+  if (items.length === 0) return null;
   return (
     <div>
       <div className="flex items-end justify-between gap-4">

@@ -82,21 +82,22 @@ function isOrgArray(v: unknown): v is Organization[] {
 }
 
 /**
- * Read the town's heritage/visit places live (GET /api/institutions?kind=heritage)
- * with a seeded fallback, so a place added in the admin appears on the Visit page
- * automatically. Mirrors the useListings discipline.
+ * Read the town's heritage/visit places live (GET /api/institutions?kind=heritage),
+ * so a place added in the admin appears on the Visit page automatically. Starts
+ * empty and fills once the backend answers; on error/empty it stays empty.
+ * Mirrors the useListings discipline.
  */
-export function useHeritage(fallback: Organization[]): Organization[] {
-  const [items, setItems] = useState<Organization[]>(fallback);
+export function useHeritage(): Organization[] {
+  const [items, setItems] = useState<Organization[]>([]);
   useEffect(() => {
     let cancelled = false;
     fetch("/api/institutions?kind=heritage", { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: unknown) => {
-        if (!cancelled && isOrgArray(data) && data.length > 0) setItems(data);
+        if (!cancelled && isOrgArray(data)) setItems(data);
       })
       .catch(() => {
-        /* keep the seeded fallback silently */
+        /* stay empty silently — a marketing page shows no errors */
       });
     return () => {
       cancelled = true;
