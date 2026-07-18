@@ -34,6 +34,33 @@ func (r *CivicBehaviourRepo) InsertMany(ctx context.Context, items []domain.Civi
 	return insertAll(ctx, r.c, items)
 }
 
+func (r *CivicBehaviourRepo) BySlug(ctx context.Context, slug string) (domain.CivicBehaviour, error) {
+	var b domain.CivicBehaviour
+	if err := r.c.FindOne(ctx, bson.M{"_id": slug}).Decode(&b); err != nil {
+		return domain.CivicBehaviour{}, notFound("behaviour", err)
+	}
+	return b, nil
+}
+
+func (r *CivicBehaviourRepo) Create(ctx context.Context, b domain.CivicBehaviour) (domain.CivicBehaviour, error) {
+	if _, err := r.c.InsertOne(ctx, b); err != nil {
+		return domain.CivicBehaviour{}, err
+	}
+	return b, nil
+}
+
+func (r *CivicBehaviourRepo) Update(ctx context.Context, b domain.CivicBehaviour) (domain.CivicBehaviour, error) {
+	if _, err := r.c.ReplaceOne(ctx, bson.M{"_id": b.Slug}, b); err != nil {
+		return domain.CivicBehaviour{}, err
+	}
+	return b, nil
+}
+
+func (r *CivicBehaviourRepo) Delete(ctx context.Context, slug string) error {
+	_, err := r.c.DeleteOne(ctx, bson.M{"_id": slug})
+	return err
+}
+
 // CivicLessonRepo reads the civilization lessons (GET /api/civic).
 type CivicLessonRepo struct{ c *mongo.Collection }
 

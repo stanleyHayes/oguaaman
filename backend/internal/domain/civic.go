@@ -27,10 +27,15 @@ type CivicLesson struct {
 	Lesson    string `json:"lesson" bson:"lesson"`
 }
 
-// CivicBehaviourRepository persists the code of behaviours — read publicly,
-// loaded by the seed (InsertMany exists for the seed only).
+// CivicBehaviourRepository persists the code of behaviours — read publicly and
+// now editable from the admin dashboard (curators add/edit/remove pledges).
+// InsertMany exists for the seed.
 type CivicBehaviourRepository interface {
 	All(ctx context.Context) ([]CivicBehaviour, error)
+	BySlug(ctx context.Context, slug string) (CivicBehaviour, error)
+	Create(ctx context.Context, b CivicBehaviour) (CivicBehaviour, error)
+	Update(ctx context.Context, b CivicBehaviour) (CivicBehaviour, error)
+	Delete(ctx context.Context, slug string) error
 	InsertMany(ctx context.Context, items []CivicBehaviour) error
 }
 

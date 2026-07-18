@@ -165,6 +165,11 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/festivals/{slug}", h.Festival)
 	mux.HandleFunc("GET /api/history", h.History)
 	mux.HandleFunc("GET /api/civic", h.Civic)
+	// Admin — manage the civic pledges (behaviours).
+	mux.HandleFunc("GET /api/admin/civic/behaviours", h.AdminCivicBehaviours)
+	mux.HandleFunc("POST /api/admin/civic/behaviours", h.AdminCreateCivicBehaviour)
+	mux.HandleFunc("POST /api/admin/civic/behaviours/{slug}", h.AdminUpdateCivicBehaviour)
+	mux.HandleFunc("DELETE /api/admin/civic/behaviours/{slug}", h.AdminDeleteCivicBehaviour)
 	mux.HandleFunc("GET /api/opportunities", h.Opportunities)
 	mux.HandleFunc("GET /api/memories", h.Memories)
 	mux.HandleFunc("GET /api/featured", h.Featured)
