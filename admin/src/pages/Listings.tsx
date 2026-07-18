@@ -10,7 +10,7 @@ import { cldCover } from "@/lib/cloudinary";
 import { BusyLabel } from "@/components/skeleton";
 
 interface Data { listings: Listing[]; members: Member[] }
-const TYPES = ["all", "artist", "business", "person", "memory", "event", "opportunity", "memorial", "project", "incident", "lostfound"];
+const TYPES = ["all", "artist", "business", "property", "person", "memory", "event", "opportunity", "memorial", "project", "incident", "lostfound"];
 const STATUSES = ["all", "approved", "pending", "rejected", "unpublished", "draft"];
 const PAGE_SIZE = 24;
 

@@ -1,12 +1,15 @@
 import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate, useNavigation } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
+import { ContextHelp } from "@/components/context-help";
 import { useAuth } from "@/lib/auth";
+import { getAdminHelpTopic } from "@/lib/help-content";
 import {
   Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
   Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
-  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, Target, HeartHandshake, type LucideIcon,
+  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, Target, HeartHandshake,
+  Handshake, UserCheck, Scale, CircleHelp, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -35,6 +38,14 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/directives", label: "Directives", icon: Megaphone, roles: ["curator", "steward"] },
       { to: "/goals", label: "Town goals", icon: Target, roles: ["curator", "steward", "accountability"] },
       { to: "/civic", label: "Civic pledges", icon: HeartHandshake, roles: ["curator", "steward"] },
+    ],
+  },
+  {
+    title: "Oguaa Outside",
+    icon: Handshake,
+    items: [
+      { to: "/outside-agents", label: "Vetting queue", icon: UserCheck, roles: ["vetting", "steward"] },
+      { to: "/outside-disputes", label: "Disputes", icon: Scale, roles: ["vetting", "steward"] },
     ],
   },
   {
@@ -73,6 +84,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/notifications", label: "Notifications", icon: Bell },
       { to: "/profile", label: "Profile", icon: User },
       { to: "/settings", label: "Settings", icon: Settings },
+      { to: "/help", label: "Help & guide", icon: CircleHelp },
     ],
   },
 ];
@@ -80,7 +92,7 @@ const NAV_GROUPS: NavGroup[] = [
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 // Moderators can only access triage-focused routes.
-const MODERATOR_PATHS = new Set(["/moderation", "/listings", "/reports", "/incidents"]);
+const MODERATOR_PATHS = new Set(["/moderation", "/listings", "/reports", "/incidents", "/help"]);
 
 function visibleGroups(role: string | undefined): NavGroup[] {
   // Items may declare a `roles` allowlist (e.g. directives authoring is
@@ -103,6 +115,7 @@ export function RoleBadge({ role }: Readonly<{ role: string }>) {
     moderator: "bg-gold/20 text-gold-text",
     editor: "bg-clay/15 text-clay-text",
     accountability: "bg-ai/15 text-ai",
+    vetting: "bg-teal/20 text-teal-text",
   };
   const cls = map[role] ?? "bg-sand text-ink-muted";
   return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cls}`}>{role}</span>;
@@ -315,6 +328,7 @@ const ROLE_LABEL: Record<string, string> = {
   moderator: "Moderator",
   editor: "Editor",
   accountability: "Accountability officer",
+  vetting: "Vetting officer",
   member: "Member",
 };
 
@@ -386,8 +400,10 @@ export function AdminLayout() {
   const [userMenu, setUserMenu] = useState(false);
   const [term, setTerm] = useState("");
   const [tour, setTour] = useState(false);
+  const [helpPath, setHelpPath] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const helpButtonRef = useRef<HTMLButtonElement>(null);
 
   // First login on a desktop viewport → auto-start the walkthrough.
   useEffect(() => {
@@ -454,7 +470,14 @@ export function AdminLayout() {
   };
 
   const current = ALL_ITEMS.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? ALL_ITEMS[0];
+  const helpTopic = getAdminHelpTopic(loc.pathname);
+  const helpOpen = helpPath === loc.pathname;
   const firstName = member?.displayName.split(" ")[0] ?? "";
+
+  const closeHelp = useCallback(() => {
+    setHelpPath(null);
+    requestAnimationFrame(() => helpButtonRef.current?.focus());
+  }, []);
 
   return (
     <div className="min-h-screen bg-paper">
@@ -477,18 +500,36 @@ export function AdminLayout() {
             <Icon name="menu" />
           </button>
 
-          {/* Greeting — time-of-day hello + live section context */}
+          {/* Current page title and its contextual guide. */}
           <div className="flex min-w-0 items-center gap-3">
             <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sand bg-paper text-ink-muted sm:flex">
               <current.icon size={18} />
             </span>
             <div className="min-w-0">
-              <h2 className="truncate text-lg font-semibold leading-tight text-ink">
-                Good {daypart()}{firstName ? `, ${firstName}` : ""}
-              </h2>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <h2 className="truncate text-lg font-semibold leading-tight text-ink">{helpTopic.title}</h2>
+                {loc.pathname !== "/help" && (
+                  <button
+                    ref={helpButtonRef}
+                    type="button"
+                    onClick={() => {
+                      setTour(false);
+                      setHelpPath(loc.pathname);
+                    }}
+                    aria-label={`Open help for ${helpTopic.title}`}
+                    aria-haspopup="dialog"
+                    aria-expanded={helpOpen}
+                    aria-controls="admin-context-help"
+                    title={`Help for ${helpTopic.title}`}
+                    className="grid size-11 shrink-0 place-items-center rounded-full text-ink-faint transition-colors hover:bg-gold/[0.14] hover:text-gold-text"
+                  >
+                    <CircleHelp size={17} aria-hidden />
+                  </button>
+                )}
+              </div>
               <p className="flex items-center gap-1.5 text-[11px] text-ink-faint">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green" aria-hidden />
-                {loc.pathname === "/" ? "Live workspace overview" : current.label}
+                Good {daypart()}{firstName ? `, ${firstName}` : ""}{loc.pathname === "/" ? " · Live workspace" : ""}
               </p>
             </div>
           </div>
@@ -617,6 +658,7 @@ export function AdminLayout() {
       </div>
 
       {tour && <Tour steps={ADMIN_TOUR} onDone={closeTour} />}
+      {helpOpen && <ContextHelp topic={helpTopic} onClose={closeHelp} />}
     </div>
   );
 }

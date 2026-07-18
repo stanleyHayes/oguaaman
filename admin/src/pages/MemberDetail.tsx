@@ -81,7 +81,7 @@ export function Component() {
             </div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-ink-faint">Role{" "}
               <Select disabled={busy} value={m.role} onValueChange={changeRole} className="mt-1 w-full" triggerClassName="capitalize" optionClassName="capitalize">
-                <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="accountability">accountability</option><option value="steward">steward</option>
+                <option value="member">member</option><option value="editor">editor</option><option value="curator">curator</option><option value="accountability">accountability</option><option value="vetting">vetting</option><option value="steward">steward</option>
               </Select>
             </label>
             <button type="button" disabled={busy} onClick={toggleSuspend} className={`mt-3 w-full rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${m.suspended ? "border-green-text/40 text-green-text hover:bg-green/[0.06]" : "border-maroon-text/40 text-maroon-text hover:bg-maroon-900/[0.06]"}`}>

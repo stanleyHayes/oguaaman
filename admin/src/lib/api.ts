@@ -1,4 +1,4 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged, Agent, AgentStatus, AgentJob, DisputeResolution } from "./types";
 
 /** Optional server-side pagination for the heavy list endpoints. Passing this
  *  switches the response to the { items, total, page, pageSize, totalPages }
@@ -74,7 +74,9 @@ function headers(json = false): HeadersInit {
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { headers: headers() });
-  if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
+  // Attach the HTTP status (like post/del) so loaders can tell a 403 apart from
+  // a genuine outage and degrade gracefully instead of hitting the error boundary.
+  if (!res.ok) throw Object.assign(new Error(`GET ${path} failed (${res.status})`), { status: res.status });
   return res.json() as Promise<T>;
 }
 
@@ -219,6 +221,19 @@ export const api = {
   createCivicBehaviour: (body: CivicBehaviourInput) => post<CivicBehaviour>("/api/admin/civic/behaviours", body),
   updateCivicBehaviour: (slug: string, body: CivicBehaviourInput) => post<CivicBehaviour>(`/api/admin/civic/behaviours/${slug}`, body),
   deleteCivicBehaviour: (slug: string) => del<{ status: string }>(`/api/admin/civic/behaviours/${slug}`),
+
+  // Oguaa Outside — vetted local agents + their escrow-backed jobs. Gated to the
+  // vetting officer / steward; a 403 (carrying { status }) surfaces when the
+  // caller lacks the role, matching reviewGoal's pattern. Omit `status` for all
+  // records; pass "pending" for the review queue.
+  adminAgents: (status?: AgentStatus) =>
+    get<Agent[]>(`/api/admin/agents${status ? `?status=${encodeURIComponent(status)}` : ""}`),
+  verifyAgent: (id: string) => post<Agent>(`/api/admin/agents/${id}/verify`),
+  rejectAgent: (id: string, reason: string) => post<Agent>(`/api/admin/agents/${id}/reject`, { reason }),
+  suspendAgent: (id: string) => post<Agent>(`/api/admin/agents/${id}/suspend`),
+  // Disputed jobs awaiting a release/refund ruling.
+  adminDisputes: () => get<AgentJob[]>("/api/admin/disputes"),
+  resolveDispute: (id: string, body: DisputeResolution) => post<AgentJob>(`/api/admin/jobs/${id}/resolve`, body),
 
   // Community safety triage (auto-published; curators transition the lifecycle).
   incidents: () => get<Incident[]>("/api/incidents"),

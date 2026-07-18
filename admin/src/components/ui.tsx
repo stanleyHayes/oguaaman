@@ -55,6 +55,7 @@ export function RoleBadge({ role }: Readonly<{ role: string }>) {
     curator: "bg-ai/[0.1] text-ai",
     editor: "bg-teal/[0.12] text-teal-text",
     accountability: "bg-gold/[0.15] text-gold-text",
+    vetting: "bg-ai/[0.1] text-ai",
     member: "bg-sand text-ink-muted",
   };
   return <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${m[role] ?? m.member}`}>{role}</span>;

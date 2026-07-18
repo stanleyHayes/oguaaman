@@ -9,10 +9,11 @@ import { AuthSkeleton, BusyLabel } from "./skeleton";
 
 /** Returns true when this role may access the back-office at all.
  *  Editors are staff because the newsroom lives in the back-office (spec §8.12);
- *  accountability officers sign in to record town-goal verdicts.
+ *  accountability officers sign in to record town-goal verdicts; vetting officers
+ *  sign in to approve Oguaa Outside agents and resolve escrow disputes.
  */
 export function isStaffRole(role: string): boolean {
-  return role === "curator" || role === "steward" || role === "moderator" || role === "editor" || role === "accountability";
+  return role === "curator" || role === "steward" || role === "moderator" || role === "editor" || role === "accountability" || role === "vetting";
 }
 
 /** Locks the whole back-office behind a curator/steward/moderator session (spec §9). */

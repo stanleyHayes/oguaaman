@@ -26,6 +26,8 @@ export const router = createBrowserRouter([
       { path: "directives", lazy: () => import("./pages/Directives") },
       { path: "goals", lazy: () => import("./pages/Goals") },
       { path: "civic", lazy: () => import("./pages/CivicPledges") },
+      { path: "outside-agents", lazy: () => import("./pages/OutsideAgents") },
+      { path: "outside-disputes", lazy: () => import("./pages/OutsideDisputes") },
       { path: "newsroom", lazy: () => import("./pages/Newsroom") },
       { path: "newsroom/new", lazy: () => import("./pages/NewsroomEditor") },
       { path: "newsroom/:id", lazy: () => import("./pages/NewsroomEditor") },
@@ -34,6 +36,7 @@ export const router = createBrowserRouter([
       { path: "settings", lazy: () => import("./pages/Settings") },
       { path: "audit", lazy: () => import("./pages/Audit") },
       { path: "compose", lazy: () => import("./pages/Compose") },
+      { path: "help", lazy: () => import("./pages/Help") },
     ],
   },
 ]);

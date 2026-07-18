@@ -65,7 +65,7 @@ function countBy<T>(items: T[], pick: (t: T) => string): Record<string, number> 
 const TYPE_LABEL: Record<ListingType, string> = {
   business: "Businesses", artist: "Artists", person: "People", memory: "Memories",
   event: "Events", opportunity: "Opportunities", memorial: "Memorials",
-  project: "Projects", incident: "Incidents", lostfound: "Lost & found",
+  project: "Projects", property: "Properties", incident: "Incidents", lostfound: "Lost & found",
 };
 const KIND_LABEL: Record<string, string> = {
   school: "Schools", "traditional-authority": "Traditional", association: "Associations",

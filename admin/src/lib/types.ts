@@ -1,5 +1,5 @@
 export type ListingStatus = "draft" | "pending" | "approved" | "rejected" | "unpublished";
-export type ListingType = "business" | "artist" | "person" | "memory" | "event" | "opportunity" | "memorial" | "project" | "incident" | "lostfound";
+export type ListingType = "business" | "artist" | "person" | "memory" | "event" | "opportunity" | "memorial" | "project" | "property" | "incident" | "lostfound";
 
 /** Envelope returned by the list endpoints when ?page is supplied. */
 export interface Paged<T> {
@@ -21,10 +21,24 @@ export interface ListingDetails {
   safeguardingPolicyUrl?: string; minAge?: number; maxAge?: number; guardianConsentRequired?: boolean;
   category?: string; address?: string; openingHours?: string;
   services?: { name: string; price?: string; note?: string }[];
+  offerType?: "long-term" | "short-stay";
+  propertyType?: "room" | "apartment" | "house" | "guesthouse" | "hostel";
+  area?: string;
+  pricePesewas?: number;
+  pricePeriod?: "night" | "month";
+  depositPesewas?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  furnished?: boolean;
+  amenities?: string[];
+  availability?: "available" | "reserved" | "let";
+  availableFrom?: string;
+  contact?: SocialLink[];
+  bookingUrl?: string;
   honorific?: string; epitaph?: string; lifeStory?: string; candles?: number;
   bornYear?: number; diedDate?: string; birthday?: string; observeBirthday?: boolean;
   associations?: string[]; rememberedByCount?: number;
-  gallery?: { url?: string; caption: string }[];
+  gallery?: { url?: string; caption?: string; label?: string }[];
   [k: string]: unknown;
 }
 
@@ -181,7 +195,7 @@ export interface Member {
   photoUrl?: string;
   townId?: string;
   asafoId?: string;
-  role: "member" | "curator" | "steward" | "editor" | "moderator" | "accountability";
+  role: "member" | "curator" | "steward" | "editor" | "moderator" | "accountability" | "vetting";
   suspended: boolean;
   phoneVerified: boolean;
   schoolIds: string[];
@@ -490,4 +504,89 @@ export interface OrgClaim {
   memberName: string;
   /** Set = a request to CREATE this institution (approve creates + verifies it). */
   newOrg?: { name: string; kind: string; seat: string };
+}
+
+/** Oguaa Outside — vetted local agents (fixers/runners) who take on paid,
+ *  escrow-backed errands for diaspora clients. A vetting officer approves an
+ *  agent only after a background check (ID doc + guarantor + posted bond); the
+ *  same desk resolves escrow disputes on completed jobs. Money in pesewas. */
+export type AgentType = "individual" | "office";
+export type AgentStatus = "pending" | "verified" | "suspended" | "rejected";
+/** Refundable good-conduct bond an agent posts before going live. */
+export type AgentBondStatus = "pending" | "held" | "refunded" | "forfeited";
+
+/** A vouching third party captured for the background check. */
+export interface AgentGuarantor {
+  name: string;
+  phone: string;
+  relation?: string;
+  note?: string;
+}
+
+export interface AgentBond {
+  amountPesewas: number;
+  status: AgentBondStatus;
+}
+
+export interface Agent {
+  id: string;
+  slug: string;
+  memberId: string;
+  type: AgentType;
+  displayName: string;
+  headline?: string;
+  bio?: string;
+  services: string[];
+  coverageAreas: string[];
+  /** Free-text rate card (e.g. "GH₵50/errand"). */
+  rates?: string;
+  status: AgentStatus;
+  /** Uploaded ID document (background check) — may be private/expiring. */
+  idDocUrl?: string;
+  guarantor?: AgentGuarantor;
+  bond: AgentBond;
+  verifiedByName?: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+  ratingAvg: number;
+  ratingCount: number;
+  jobsCompleted: number;
+  payoutMethod?: string;
+  payoutDetail?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/** Escrow ledger on a job — funds are held, then released to the agent (minus
+ *  the platform fee) or refunded to the client on a dispute resolution. */
+export interface AgentJobEscrow {
+  heldPesewas: number;
+  platformFeePesewas: number;
+  payoutPesewas: number;
+  status: string;
+}
+
+/** A job the client has escalated — surfaced in the admin disputes queue. */
+export interface AgentJob {
+  id: string;
+  agentName: string;
+  agentSlug: string;
+  clientName: string;
+  service: string;
+  title: string;
+  description: string;
+  budgetPesewas: number;
+  quotePesewas: number;
+  status: string;
+  escrow: AgentJobEscrow;
+  disputeReason?: string;
+  createdAt: string;
+}
+
+/** Body for POST /api/admin/jobs/{id}/resolve. `forfeitBond` is only meaningful
+ *  on a "refund" (the agent is held at fault). */
+export interface DisputeResolution {
+  resolution: "release" | "refund";
+  note: string;
+  forfeitBond: boolean;
 }

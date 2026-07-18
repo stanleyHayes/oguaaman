@@ -28,6 +28,10 @@ const DETAIL_LABELS: Record<string, string> = {
   text: "Story", description: "Description", startsAt: "Starts", venue: "Venue", organiser: "Organiser",
   kind: "Kind", eligibility: "Eligibility", provider: "Provider", deadline: "Deadline", applyUrl: "Apply URL",
   category: "Category", address: "Address", openingHours: "Opening hours",
+  offerType: "Offer type", propertyType: "Property type", area: "Area / neighbourhood",
+  pricePesewas: "Price", pricePeriod: "Price period", depositPesewas: "Deposit",
+  bedrooms: "Bedrooms", bathrooms: "Bathrooms", furnished: "Furnished", amenities: "Amenities",
+  availability: "Availability", availableFrom: "Available from", contact: "Contact", bookingUrl: "Booking URL",
   honorific: "Honorific", epitaph: "Epitaph", lifeStory: "Life story",
   bornYear: "Born", diedDate: "Died", birthday: "Birthday", observeBirthday: "Observe birthday",
   associations: "Associations", candles: "Candles", rememberedByCount: "Remembered by",
@@ -44,6 +48,13 @@ function renderValue(v: unknown): string {
   return JSON.stringify(v) ?? "";
 }
 
+function renderDetailValue(key: string, value: unknown): string {
+  if ((key === "pricePesewas" || key === "depositPesewas") && typeof value === "number" && Number.isFinite(value)) {
+    return `GH₵${(value / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
+  }
+  return renderValue(value);
+}
+
 export function Component() {
   const { listing, ownerName } = useLoaderData() as Data;
   const nav = useNavigate();
@@ -53,7 +64,9 @@ export function Component() {
   const [rejecting, setRejecting] = useState(false);
 
   const d = l.details ?? {};
-  const gallery = (d.gallery ?? []).filter((g) => g.url);
+  const gallery = Array.isArray(d.gallery)
+    ? d.gallery.filter((g) => g && typeof g.url === "string" && g.url)
+    : [];
 
   async function moderate(action: "approve" | "reject") {
     if (action === "reject" && !reason.trim()) { setRejecting(true); return; }
@@ -182,7 +195,7 @@ export function Component() {
             <h2 className="mb-3 text-lg font-semibold">Details</h2>
             <dl>
               {knownDetails.map(([k, v]) => (
-                <KeyVal key={k} label={DETAIL_LABELS[k] ?? titleCase(k)}>{renderValue(v)}</KeyVal>
+                <KeyVal key={k} label={DETAIL_LABELS[k] ?? titleCase(k)}>{renderDetailValue(k, v)}</KeyVal>
               ))}
               {knownDetails.length === 0 && <p className="text-sm text-ink-muted">No extra details provided.</p>}
             </dl>
@@ -200,8 +213,8 @@ export function Component() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {gallery.map((g) => (
                   <figure key={g.url} className="overflow-hidden rounded-lg border border-sand">
-                    <img src={mediaUrl(g.url)} alt={g.caption} className="aspect-square w-full object-cover" />
-                    {g.caption && <figcaption className="px-2 py-1 text-xs text-ink-faint">{g.caption}</figcaption>}
+                    <img src={mediaUrl(g.url)} alt={g.caption ?? g.label ?? ""} className="aspect-square w-full object-cover" />
+                    {(g.caption || g.label) && <figcaption className="px-2 py-1 text-xs text-ink-faint">{g.caption ?? g.label}</figcaption>}
                   </figure>
                 ))}
               </div>
