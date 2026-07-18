@@ -34,6 +34,7 @@ type Handler struct {
 	stripe         *service.StripeService
 	revenue        *service.RevenueService
 	creator        *service.CreatorService
+	agentJobs      *service.AgentJobsService
 	paystackSecret string // webhook signature verification; "" in dev simulation
 	authRequired   bool
 	log            *slog.Logger
@@ -54,6 +55,7 @@ type HandlerDeps struct {
 	Stripe         *service.StripeService
 	Revenue        *service.RevenueService
 	Creator        *service.CreatorService
+	AgentJobs      *service.AgentJobsService
 	PaystackSecret string // webhook signature verification; "" in dev simulation
 	AuthRequired   bool
 	UploadDir      string // where uploaded images are written
@@ -63,7 +65,7 @@ type HandlerDeps struct {
 
 func NewHandler(d HandlerDeps) *Handler {
 	return &Handler{
-		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, stripe: d.Stripe, revenue: d.Revenue, creator: d.Creator, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
+		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, stripe: d.Stripe, revenue: d.Revenue, creator: d.Creator, agentJobs: d.AgentJobs, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
 		uploadDir: d.UploadDir, uploadBase: d.UploadBase, log: d.Log, limiter: newRateLimiter(),
 	}
 }

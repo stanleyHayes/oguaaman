@@ -68,11 +68,11 @@ func main() {
 		WithFallback(cfg.KimiAPIKey, cfg.KimiModel, cfg.KimiBaseURL)
 	auth := newAuthService(memberRepo, planRepo, cfg, email, wa)
 	ensureUploadDir(log, cfg)
-	payments, tickets, subs, promotions, revenue, stripeSvc := moneyServices(db, cfg, log)
+	payments, tickets, subs, promotions, revenue, stripeSvc, agentJobs := moneyServices(db, cfg, log)
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
 
 	handler := httpx.NewHandler(httpx.HandlerDeps{
-		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Stripe: stripeSvc, Revenue: revenue, Creator: creator,
+		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Stripe: stripeSvc, Revenue: revenue, Creator: creator, AgentJobs: agentJobs,
 		PaystackSecret: cfg.PaystackSecretKey, AuthRequired: cfg.AuthRequired, UploadDir: cfg.UploadDir, UploadBase: cfg.PublicBaseURL, Log: log,
 	})
 	router := newRouter(log, cfg, svc, handler)
@@ -129,7 +129,7 @@ func ensureUploadDir(log *slog.Logger, cfg config.Config) {
 // moneyServices wires the payment-backed services: live Paystack when a secret
 // key is set, else a labelled simulation. Stripe is optional and only enabled
 // when STRIPE_SECRET_KEY is set.
-func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*service.PaymentsService, *service.TicketsService, *service.SubscriptionsService, *service.PromotionsService, *service.RevenueService, *service.StripeService) {
+func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*service.PaymentsService, *service.TicketsService, *service.SubscriptionsService, *service.PromotionsService, *service.RevenueService, *service.StripeService, *service.AgentJobsService) {
 	var paystack service.PaystackClient = service.SimulatedPaystack{Log: log}
 	if cfg.PaystackSecretKey != "" {
 		paystack = service.NewPaystackClient(cfg.PaystackSecretKey)
@@ -142,6 +142,7 @@ func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*se
 	subs := service.NewSubscriptionsService(mongox.NewListingRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPlanRepo(db), paystack, cfg.PortalURL)
 	promotions := service.NewPromotionsService(mongox.NewListingRepo(db), mongox.NewPromotionRepo(db), paystack, cfg.PortalURL)
 	revenue := service.NewRevenueService(mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
+	agentJobs := service.NewAgentJobsService(mongox.NewAgentJobRepo(db), mongox.NewAgentRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)
 
 	var stripeSvc *service.StripeService
 	if cfg.StripeSecretKey != "" {
@@ -149,7 +150,7 @@ func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*se
 		stripeSvc = service.NewStripeService(stripeClient, mongox.NewStripeIntentRepo(db), payments, tickets, subs, promotions)
 		log.Info("Stripe mobile checkouts enabled")
 	}
-	return payments, tickets, subs, promotions, revenue, stripeSvc
+	return payments, tickets, subs, promotions, revenue, stripeSvc, agentJobs
 }
 
 func newRouter(log *slog.Logger, cfg config.Config, svc *service.Service, handler *httpx.Handler) http.Handler {

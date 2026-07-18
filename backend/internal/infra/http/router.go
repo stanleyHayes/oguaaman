@@ -101,6 +101,18 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/admin/agents/{id}/reject", h.AdminRejectAgent)
 	mux.HandleFunc("POST /api/admin/agents/{id}/suspend", h.AdminSuspendAgent)
 
+	// Oguaa Outside — jobs + managed escrow.
+	mux.HandleFunc("POST /api/agents/{slug}/jobs", h.RequestJob)
+	mux.HandleFunc("GET /api/me/jobs", h.MyJobs)
+	mux.HandleFunc("GET /api/jobs/confirm", h.ConfirmJob)
+	mux.HandleFunc("GET /api/jobs/{id}", h.JobByID)
+	mux.HandleFunc("POST /api/jobs/{id}/quote", h.QuoteJob)
+	mux.HandleFunc("POST /api/jobs/{id}/accept", h.AcceptJob)
+	mux.HandleFunc("POST /api/jobs/{id}/deliver", h.DeliverJob)
+	mux.HandleFunc("POST /api/jobs/{id}/complete", h.CompleteJob)
+	mux.HandleFunc("POST /api/jobs/{id}/dispute", h.DisputeJob)
+	mux.HandleFunc("POST /api/jobs/{id}/cancel", h.CancelJob)
+
 	// Lost & found — lost items, found items, missing people (auto-published;
 	// the owner or a curator resolves the notice).
 	mux.HandleFunc("GET /api/lost-found", h.LostFound)
