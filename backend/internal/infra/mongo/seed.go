@@ -112,6 +112,11 @@ func Seed(ctx context.Context, db *mongo.Database) error {
 	if err := insertAll(ctx, db.Collection(collOrgs), allOrgs); err != nil {
 		return err
 	}
+	// Claimable schools + places — upsert by slug (skips any already inserted
+	// above), so a fresh reset includes them without risking a duplicate _id.
+	if _, err := seedClaimableOrgsData(ctx, db); err != nil {
+		return err
+	}
 	if err := insertAll(ctx, db.Collection(collPlaces), seedPlaces); err != nil {
 		return err
 	}
