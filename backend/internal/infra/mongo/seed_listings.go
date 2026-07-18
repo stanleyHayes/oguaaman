@@ -186,6 +186,38 @@ func seedListings() []domain.Listing {
 				{ID: "t-7", AuthorName: "Nana Kweku Essien", Relation: "Bakaano", Message: "The shore will not forget him. Every canoe that lands safely carries a little of his teaching.", CreatedAt: "2026-06-22"},
 			}},
 
+		// ── Rent & Stay ────────────────────────────────────────────────────────
+		{ID: "prop-castle-studio", Slug: "castle-view-courtyard-studio", CoverImageURL: seedImg("castle-courtyard.jpg"), Type: domain.TypeProperty, OwnerID: "m-yaw", Title: "Castle View Courtyard Studio", Status: domain.StatusApproved, Featured: true, Tags: []string{"short-stay", "apartment", "castle", "furnished"}, TownID: "oguaa", CreatedAt: d20260310, SubmittedAt: d20260310, PublishedAt: d20260310, Details: map[string]any{
+			"offerType": "short-stay", "propertyType": "apartment", "area": "Victoria Road", "address": "Victoria Road, near Cape Coast Castle",
+			"description": "A quiet furnished studio around a shaded courtyard, a short walk from the Castle and the old town.", "pricePesewas": int64(32000), "pricePeriod": "night",
+			"bedrooms": int64(1), "bathrooms": int64(1), "furnished": true, "amenities": []string{"Wi-Fi", "Air conditioning", "Kitchenette", "Courtyard"}, "availability": "available",
+			"contact": []domain.SocialLink{sl("Phone", placeholderPhone), sl("WhatsApp", placeholderWhatsApp)}, "bookingUrl": "https://example.org/book/castle-view-studio",
+			"gallery": []domain.SocialLink{sl("Courtyard", seedImg("castle-courtyard.jpg")), sl("Neighbourhood", seedImg("castle-exterior.jpg"))},
+		}},
+		{ID: "prop-pedu-apartment", Slug: "pedu-garden-two-bedroom", CoverImageURL: seedImg("town-view.jpg"), Type: domain.TypeProperty, OwnerID: "m-yaw", Title: "Pedu Garden Two-Bedroom", Status: domain.StatusApproved, Tags: []string{"long-term", "apartment", "pedu", "family"}, TownID: "pedu", CreatedAt: d20260401, SubmittedAt: d20260401, PublishedAt: d20260401, Details: map[string]any{
+			"offerType": "long-term", "propertyType": "apartment", "area": "Pedu Estate", "address": "Pedu Estate, off the stadium road",
+			"description": "A bright two-bedroom apartment in a gated compound with water storage and an easy route into central Cape Coast.", "pricePesewas": int64(180000), "pricePeriod": "month", "depositPesewas": int64(360000),
+			"bedrooms": int64(2), "bathrooms": int64(2), "furnished": false, "amenities": []string{"Gated compound", "Water tank", "Parking"}, "availability": "available", "availableFrom": "2026-08-01",
+			"contact": []domain.SocialLink{sl("Phone", placeholderPhone), sl("WhatsApp", placeholderWhatsApp)},
+		}},
+		{ID: "prop-amamoma-room", Slug: "amamoma-campus-room", CoverImageURL: seedImg("ucc-library.jpg"), Type: domain.TypeProperty, OwnerID: "m-yaw", Title: "Amamoma Campus Room", Status: domain.StatusApproved, Tags: []string{"long-term", "room", "amamoma", "student"}, TownID: "amamoma", CreatedAt: d20260420, SubmittedAt: d20260420, PublishedAt: d20260420, Details: map[string]any{
+			"offerType": "long-term", "propertyType": "room", "area": "Amamoma", "address": "Amamoma, ten minutes on foot from the UCC gate",
+			"description": "A self-contained room suited to one student, with a private washroom and prepaid electricity meter.", "pricePesewas": int64(65000), "pricePeriod": "month", "depositPesewas": int64(65000),
+			"bedrooms": int64(1), "bathrooms": int64(1), "furnished": false, "amenities": []string{"Private washroom", "Prepaid meter", "Water tank"}, "availability": "available",
+			"contact": []domain.SocialLink{sl("Phone", placeholderPhone)},
+		}},
+		{ID: "prop-bakaano-house", Slug: "bakaano-lagoon-family-house", CoverImageURL: seedImg("beach-boats.jpg"), Type: domain.TypeProperty, OwnerID: "m-yaw", Title: "Bakaano Lagoon Family House", Status: domain.StatusApproved, Tags: []string{"long-term", "house", "bakaano", "family"}, TownID: "bakaano", CreatedAt: d20260505, SubmittedAt: d20260505, PublishedAt: d20260505, Details: map[string]any{
+			"offerType": "long-term", "propertyType": "house", "area": "Bakaano", "address": "Bakaano, on the Fosu Lagoon side",
+			"description": "A three-bedroom family house near the lagoon, with a walled yard, veranda and reliable water storage.", "pricePesewas": int64(250000), "pricePeriod": "month", "depositPesewas": int64(500000),
+			"bedrooms": int64(3), "bathrooms": int64(2), "furnished": false, "amenities": []string{"Walled yard", "Veranda", "Water tank", "Parking"}, "availability": "available",
+			"contact": []domain.SocialLink{sl("WhatsApp", placeholderWhatsApp)},
+		}},
+		{ID: "prop-pending-abura", Slug: "abura-junction-one-bedroom", CoverImageURL: seedImg("downtown.jpg"), Type: domain.TypeProperty, OwnerID: "m-yaw", Title: "Abura Junction One-Bedroom", Status: domain.StatusPending, Tags: []string{"long-term", "apartment", "abura"}, TownID: "abura", CreatedAt: d20260628, SubmittedAt: d20260628, Details: map[string]any{
+			"offerType": "long-term", "propertyType": "apartment", "area": "Abura Junction", "address": "Abura Junction, Cape Coast",
+			"description": "A compact one-bedroom apartment submitted by the property manager and awaiting curator review.", "pricePesewas": int64(120000), "pricePeriod": "month",
+			"bedrooms": int64(1), "bathrooms": int64(1), "furnished": false, "amenities": []string{"Water tank"}, "availability": "available", "contact": []domain.SocialLink{sl("Phone", placeholderPhone)},
+		}},
+
 		// ── Businesses ─────────────────────────────────────────────────────────
 		{ID: "b-castleview", Slug: "castle-view-guesthouse", CoverImageURL: seedImg("castle-exterior.jpg"), Type: domain.TypeBusiness, OwnerID: "m-yaw", Title: "Castle View Guesthouse", Status: domain.StatusApproved, Featured: true, Tags: []string{"hospitality", "oguaa"}, TownID: "oguaa", CreatedAt: d20260302, SubmittedAt: d20260302, PublishedAt: d20260302, Details: map[string]any{
 			"category": "Hospitality & Lodging", "description": "A small, family-run guesthouse a short walk from Cape Coast Castle, with a rooftop that catches the Atlantic breeze.",

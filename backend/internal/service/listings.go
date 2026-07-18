@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -36,6 +37,7 @@ var ownerEditableTypes = validTypes
 var editableDetailsKeys = map[string]map[string]bool{
 	domain.TypeArtist:      {"actName": true, "genres": true, "bio": true, "link": true, "streamingLinks": true, "socials": true, "booking": true},
 	domain.TypeBusiness:    {"category": true, "description": true, "address": true, "openingHours": true, "services": true, "contact": true},
+	domain.TypeProperty:    propertyEditableDetailsKeys,
 	domain.TypeEvent:       {"description": true, "startsAt": true, "venue": true, "organiser": true},
 	domain.TypeMemory:      {"text": true, "era": true},
 	domain.TypeOpportunity: {"kind": true, "description": true, "eligibility": true, "deadline": true, "applyUrl": true, "provider": true, "safeguardingPolicyUrl": true, "minAge": true, "maxAge": true, "guardianConsentRequired": true},
@@ -44,7 +46,7 @@ var editableDetailsKeys = map[string]map[string]bool{
 }
 
 // urlDetailKeys are scalar details values that must pass the URL guard.
-var urlDetailKeys = map[string]bool{"applyUrl": true, "link": true, "booking": true}
+var urlDetailKeys = map[string]bool{"applyUrl": true, "link": true, "booking": true, "bookingUrl": true}
 
 // linkListKeys are details arrays of {label,url}-ish objects whose url fields
 // need the same guard (streamingLinks/socials/contact/gallery).
@@ -56,6 +58,9 @@ var linkListKeys = map[string]bool{"streamingLinks": true, "socials": true, "con
 var majorEditKeys = map[string]bool{
 	"bio": true, "description": true, "lifeStory": true, "epitaph": true,
 	"text": true, "whyNotable": true, "eligibility": true, "services": true,
+	"address": true, "area": true, "offerType": true, "propertyType": true,
+	"pricePesewas": true, "pricePeriod": true, "depositPesewas": true,
+	"bedrooms": true, "bathrooms": true, "furnished": true, "amenities": true,
 }
 
 func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, listingID string, in OwnerEditInput) (*domain.Listing, error) {
@@ -94,6 +99,20 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 		}
 		details[k] = v
 	}
+	if l.Type == domain.TypeProperty {
+		details, err = cleanPropertyDetails(details)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if l.Type == domain.TypeBusiness || l.Type == domain.TypeProperty {
+		// Plan entitlement is system-managed and must survive a creator's full
+		// content replacement. Property subscriptions are not sold yet, but
+		// retaining the key keeps the generic editor safe for future plans.
+		if cur, ok := l.Details["subscribedUntil"]; ok {
+			details["subscribedUntil"] = cur
+		}
+	}
 	if l.Type == domain.TypeMemorial {
 		// System counters and the keeper link must survive the full-replace edit.
 		for _, sys := range []string{"candles", "rememberedByCount", "keeperId"} {
@@ -130,14 +149,19 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 		// Check whether the edit is major (title change or major content key).
 		isMajor := strings.TrimSpace(in.Title) != l.Title
 		if !isMajor {
-			for k := range details {
-				if majorEditKeys[k] {
-					prev, _ := l.Details[k].(string)
-					next, _ := details[k].(string)
-					if next != prev {
-						isMajor = true
-						break
-					}
+			baseline := l.Details
+			if l.Type == domain.TypeProperty {
+				// Mongo may decode stored arrays/numbers with different concrete
+				// Go types than an HTTP payload. Compare canonical property shapes
+				// so an unchanged amenities list is not treated as a major edit.
+				if cleaned, cleanErr := cleanPropertyDetails(l.Details); cleanErr == nil {
+					baseline = cleaned
+				}
+			}
+			for k := range majorEditKeys {
+				if !reflect.DeepEqual(baseline[k], details[k]) {
+					isMajor = true
+					break
 				}
 			}
 		}

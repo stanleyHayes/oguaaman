@@ -102,6 +102,70 @@ func TestOwnerEditApprovedTitleChangeRequeues(t *testing.T) {
 	}
 }
 
+func TestOwnerEditPropertyPriceRequeuesAndKeepsEntitlement(t *testing.T) {
+	current := validPropertyDetails()
+	current["offerType"] = "long-term"
+	current["propertyType"] = "apartment"
+	current["area"] = "Pedu"
+	current["pricePesewas"] = int64(180000)
+	current["depositPesewas"] = int64(360000)
+	current["bedrooms"] = int64(2)
+	current["bathrooms"] = int64(2)
+	delete(current, "unknown")
+	current["availability"] = "available"
+	current["subscribedUntil"] = "2027-01-01T00:00:00Z"
+	f := &fakeRepo{listings: []domain.Listing{{
+		ID: "p1", Type: domain.TypeProperty, OwnerID: "m-owner", Title: "Pedu Garden Apartment",
+		Status: domain.StatusApproved, Details: current,
+	}}}
+	next := validPropertyDetails()
+	next["pricePesewas"] = float64(190000)
+	l, err := newTestService(f).UpdateOwnerListing(context.Background(), ownerActor(), "p1", OwnerEditInput{
+		Title: "Pedu Garden Apartment", Details: next,
+	})
+	if err != nil {
+		t.Fatalf("edit property: %v", err)
+	}
+	if l.Status != domain.StatusPending {
+		t.Fatalf("numeric property price change must re-queue, got %q", l.Status)
+	}
+	if l.Details["pricePesewas"] != int64(190000) {
+		t.Fatalf("price was not normalised and updated: %+v", l.Details)
+	}
+	if l.Details["subscribedUntil"] != "2027-01-01T00:00:00Z" {
+		t.Fatalf("system entitlement was lost: %+v", l.Details)
+	}
+}
+
+func TestOwnerEditPropertyAvailabilityOnlyStaysLive(t *testing.T) {
+	current := validPropertyDetails()
+	current["offerType"] = "long-term"
+	current["propertyType"] = "apartment"
+	current["area"] = "Pedu"
+	current["pricePesewas"] = int64(180000)
+	current["depositPesewas"] = int64(360000)
+	current["bedrooms"] = int64(2)
+	current["bathrooms"] = int64(2)
+	current["amenities"] = []string{"Water tank", "Parking"}
+	delete(current, "unknown")
+	current["availability"] = "available"
+	f := &fakeRepo{listings: []domain.Listing{{
+		ID: "p1", Type: domain.TypeProperty, OwnerID: "m-owner", Title: "Pedu Garden Apartment",
+		Status: domain.StatusApproved, Details: current,
+	}}}
+	next := validPropertyDetails()
+	next["availability"] = "let"
+	l, err := newTestService(f).UpdateOwnerListing(context.Background(), ownerActor(), "p1", OwnerEditInput{
+		Title: "Pedu Garden Apartment", Details: next,
+	})
+	if err != nil {
+		t.Fatalf("edit property: %v", err)
+	}
+	if l.Status != domain.StatusApproved || l.Details["availability"] != "let" {
+		t.Fatalf("availability-only edit should stay live: %+v", l)
+	}
+}
+
 func TestOwnerEditRequeuesNonLive(t *testing.T) {
 	for _, from := range []string{domain.StatusDraft, domain.StatusRejected, domain.StatusUnpublished} {
 		f := &fakeRepo{listings: []domain.Listing{{

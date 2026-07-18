@@ -237,10 +237,11 @@ func creatorPlanEligible(audience string, creatorTypes []string) bool {
 		return true
 	}
 	for _, creatorType := range creatorTypes {
-		if audience == "business" && creatorType == domain.CreatorBusiness {
+		isBusinessCreator := creatorType == domain.CreatorBusiness || creatorType == domain.CreatorProperty
+		if audience == "business" && isBusinessCreator {
 			return true
 		}
-		if audience == "creator" && creatorType != domain.CreatorBusiness {
+		if audience == "creator" && !isBusinessCreator {
 			return true
 		}
 	}

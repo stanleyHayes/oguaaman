@@ -140,6 +140,8 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	mux.HandleFunc("GET /api/businesses", h.Businesses)
 	mux.HandleFunc("GET /api/businesses/{slug}", h.Business)
+	mux.HandleFunc("GET /api/properties", h.Properties)
+	mux.HandleFunc("GET /api/properties/{slug}", h.Property)
 	// Business subscriptions (Phase 7): the Supporter plan via Paystack.
 	mux.HandleFunc("POST /api/businesses/{slug}/subscribe", h.Subscribe)
 	mux.HandleFunc("GET /api/subscriptions/confirm", h.ConfirmSubscription)

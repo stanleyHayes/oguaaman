@@ -102,6 +102,9 @@ func (s *Service) Businesses(ctx context.Context) ([]domain.Listing, error) {
 	})
 	return items, nil
 }
+func (s *Service) Properties(ctx context.Context) ([]domain.Listing, error) {
+	return s.approved(ctx, domain.TypeProperty)
+}
 func (s *Service) Opportunities(ctx context.Context) ([]domain.Listing, error) {
 	return s.approved(ctx, domain.TypeOpportunity)
 }

@@ -121,6 +121,7 @@ func (h *Handler) ogResolve(ctx context.Context, path, base string) (ogcard.Card
 	listingType := map[string]string{
 		"music": domain.TypeArtist, "business": domain.TypeBusiness, "events": domain.TypeEvent,
 		"memoriam": domain.TypeMemorial, "people": domain.TypePerson, "projects": domain.TypeProject,
+		"rent-stay": domain.TypeProperty,
 	}
 	if typ, ok := listingType[kind]; ok && slug != "" {
 		l, err := h.svc.ListingBySlug(ctx, typ, slug)
@@ -131,6 +132,7 @@ func (h *Handler) ogResolve(ctx context.Context, path, base string) (ogcard.Card
 			domain.TypeArtist: "Artist · The Oguaa Sound", domain.TypeBusiness: "Business in Oguaa",
 			domain.TypeEvent: "Event in Cape Coast", domain.TypeMemorial: "In Memoriam",
 			domain.TypePerson: "People of Oguaa", domain.TypeProject: "Adopt-a-Project",
+			domain.TypeProperty: "Rent & Stay in Oguaa",
 		}[typ]
 		subtitle := ""
 		switch typ {
@@ -138,6 +140,8 @@ func (h *Handler) ogResolve(ctx context.Context, path, base string) (ogcard.Card
 			subtitle = str(l.Details, "genres")
 		case domain.TypeBusiness:
 			subtitle = strings.Trim(strings.Join([]string{str(l.Details, "category"), str(l.Details, "address")}, " · "), " ·")
+		case domain.TypeProperty:
+			subtitle = strings.Trim(strings.Join([]string{str(l.Details, "propertyType"), str(l.Details, "area")}, " · "), " ·")
 		case domain.TypeEvent:
 			subtitle = strings.Trim(strings.Join([]string{str(l.Details, "startsAt"), str(l.Details, "venue")}, " · "), " ·")
 		case domain.TypeMemorial:

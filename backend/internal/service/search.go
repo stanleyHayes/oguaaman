@@ -64,7 +64,16 @@ func (s *Service) searchListings(ctx context.Context, terms []string) ([]SearchH
 	}
 	hits := []SearchHit{}
 	for _, l := range listings {
-		score := scoreTerms(terms, l.Title, strings.Join(l.Tags, " "), asString(l.Details, "summary"), asString(l.Details, "tagline"))
+		score := scoreTerms(terms,
+			l.Title,
+			strings.Join(l.Tags, " "),
+			asString(l.Details, "summary"),
+			asString(l.Details, "tagline"),
+			asString(l.Details, "description"),
+			asString(l.Details, "area"),
+			asString(l.Details, "address"),
+			strings.Join(asStringSlice(l.Details["amenities"]), " "),
+		)
 		if score > 0 {
 			hits = append(hits, SearchHit{Kind: "listing", Type: l.Type, Slug: l.Slug, Title: l.Title, Subtitle: listingSubtitle(l), ImageURL: l.CoverImageURL, score: score})
 		}
@@ -183,6 +192,11 @@ func listingSubtitle(l domain.Listing) string {
 		return "Artist"
 	case domain.TypeBusiness:
 		return "Business"
+	case domain.TypeProperty:
+		if asString(l.Details, "offerType") == "short-stay" {
+			return "Short stay"
+		}
+		return "Property to rent"
 	case domain.TypeEvent:
 		return "Event"
 	case domain.TypePerson:

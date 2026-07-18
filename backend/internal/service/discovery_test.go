@@ -58,6 +58,20 @@ func TestSearch_matchesRanksAndAnds(t *testing.T) {
 	}
 }
 
+func TestSearchFindsPropertyByAreaAndAmenity(t *testing.T) {
+	f := &fakeRepo{listings: []domain.Listing{{
+		Slug: "pedu-garden", Type: domain.TypeProperty, Status: domain.StatusApproved, Title: "Garden Apartment",
+		Details: map[string]any{"offerType": "long-term", "area": "Pedu Estate", "address": "Stadium Road", "amenities": []string{"Water tank", "Parking"}},
+	}}}
+	hits, err := newTestService(f).Search(context.Background(), "pedu parking", 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hits) != 1 || hits[0].Slug != "pedu-garden" || hits[0].Subtitle != "Property to rent" {
+		t.Fatalf("unexpected property search hits: %+v", hits)
+	}
+}
+
 func (s *Service) mustSearch(t *testing.T, ctx context.Context, q string) []SearchHit {
 	t.Helper()
 	hits, err := s.Search(ctx, q, 20)

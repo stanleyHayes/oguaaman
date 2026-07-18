@@ -84,6 +84,15 @@ func TestRegisterCreatorPersistsActivePaidPlanAsIntentOnly(t *testing.T) {
 	// grant paid access. Payment confirmation remains the entitlement boundary.
 }
 
+func TestPropertyCreatorUsesBusinessPlanAudience(t *testing.T) {
+	if !creatorPlanEligible("business", []string{domain.CreatorProperty}) {
+		t.Fatal("property managers should be eligible for business-audience plans")
+	}
+	if creatorPlanEligible("creator", []string{domain.CreatorProperty}) {
+		t.Fatal("property managers should not leak into the non-business creator audience")
+	}
+}
+
 func TestRegisterCreatorRejectsPlanForDifferentAudience(t *testing.T) {
 	repo := &creatorSignupMembers{}
 	plans := &fakePlans{rows: []domain.Plan{{

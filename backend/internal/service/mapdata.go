@@ -39,7 +39,7 @@ func (s *Service) MapData(ctx context.Context) (domain.MapPayload, error) {
 		}
 	}
 
-	// Points from approved listings (business / event / incident / lostfound).
+	// Points from approved listings (business / property / event / incident / lostfound).
 	approved, err := s.listings.Find(ctx, domain.ListingFilter{Status: domain.StatusApproved})
 	if err != nil {
 		return payload, err
@@ -113,6 +113,13 @@ func listingPoint(l domain.Listing, quarterName map[string]string) (domain.MapPo
 		pt.Kind, pt.Layer, pt.Href = "business", "business", "/business/"+l.Slug
 		pt.Category = asString(l.Details, "category")
 		pt.Subtitle = asString(l.Details, "address")
+	case domain.TypeProperty:
+		pt.Kind, pt.Layer, pt.Href = "property", "property", "/rent-stay/"+l.Slug
+		pt.Category = asString(l.Details, "propertyType")
+		pt.Subtitle = asString(l.Details, "area")
+		if pt.Subtitle == "" {
+			pt.Subtitle = asString(l.Details, "address")
+		}
 	case domain.TypeEvent:
 		pt.Kind, pt.Layer, pt.Href = "event", "events", "/events/"+l.Slug
 		pt.Subtitle = asString(l.Details, "venue")

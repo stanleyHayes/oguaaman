@@ -366,6 +366,87 @@ func TestSubmit_validatesAndDefaults(t *testing.T) {
 	}
 }
 
+func validPropertyDetails() map[string]any {
+	return map[string]any{
+		"offerType": " LONG-TERM ", "propertyType": "Apartment", "area": " Pedu ",
+		"address": "Pedu Estate, Cape Coast", "description": "A bright two-bedroom home with a quiet shared courtyard.",
+		"pricePesewas": float64(180000), "pricePeriod": "month", "depositPesewas": float64(360000),
+		"bedrooms": float64(2), "bathrooms": "2", "furnished": true,
+		"amenities": []any{"Water tank", "Parking", "Parking", ""},
+		"contact":   []any{map[string]any{"label": "WhatsApp", "url": "https://wa.me/233000000000"}},
+		"unknown":   "must be removed",
+	}
+}
+
+func TestSubmitPropertyCleansValidDetailsAndAddsDiscoveryTags(t *testing.T) {
+	svc := newTestService(&fakeRepo{})
+	l, err := svc.Submit(context.Background(), SubmitInput{
+		Type: domain.TypeProperty, Title: "Pedu Garden Apartment", OwnerID: "m-owner", Details: validPropertyDetails(),
+	})
+	if err != nil {
+		t.Fatalf("Submit property: %v", err)
+	}
+	if l.Details["offerType"] != "long-term" || l.Details["propertyType"] != "apartment" {
+		t.Fatalf("property enums were not normalised: %+v", l.Details)
+	}
+	if l.Details["pricePesewas"] != int64(180000) || l.Details["depositPesewas"] != int64(360000) || l.Details["bedrooms"] != int64(2) {
+		t.Fatalf("property numeric details were not normalised: %+v", l.Details)
+	}
+	if l.Details["availability"] != "available" {
+		t.Fatalf("availability = %v, want available", l.Details["availability"])
+	}
+	if _, ok := l.Details["unknown"]; ok {
+		t.Fatal("unknown property detail survived cleaning")
+	}
+	if !contains(l.Tags, "long-term") || !contains(l.Tags, "apartment") {
+		t.Fatalf("property discovery tags missing: %v", l.Tags)
+	}
+}
+
+func TestSubmitPropertyRejectsInvalidCommercialFields(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(map[string]any)
+		want   string
+	}{
+		{name: "offer", mutate: func(d map[string]any) { d["offerType"] = "sale" }, want: "offerType"},
+		{name: "fractional price", mutate: func(d map[string]any) { d["pricePesewas"] = 10.5 }, want: "positive integer"},
+		{name: "unsafe booking URL", mutate: func(d map[string]any) { d["bookingUrl"] = "javascript:alert(1)" }, want: "http(s) URL"},
+		{name: "scalar contact", mutate: func(d map[string]any) { d["contact"] = "tel:+233200000000" }, want: "contact must be a list"},
+		{name: "null contact item", mutate: func(d map[string]any) { d["contact"] = []any{nil} }, want: "contact must be a list"},
+		{name: "unsafe contact URL", mutate: func(d map[string]any) {
+			d["contact"] = []any{map[string]any{"label": "Call", "url": "javascript:alert(1)"}}
+		}, want: "safe links"},
+		{name: "malformed gallery", mutate: func(d map[string]any) { d["gallery"] = []any{"/uploads/photo.jpg"} }, want: "gallery must be a list"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			details := validPropertyDetails()
+			test.mutate(details)
+			_, err := newTestService(&fakeRepo{}).Submit(context.Background(), SubmitInput{
+				Type: domain.TypeProperty, Title: "Pedu Garden Apartment", OwnerID: "m-owner", Details: details,
+			})
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("error = %v, want message containing %q", err, test.want)
+			}
+		})
+	}
+}
+
+func TestSubmitPropertyAllowsAreaToBeOmitted(t *testing.T) {
+	details := validPropertyDetails()
+	delete(details, "area")
+	l, err := newTestService(&fakeRepo{}).Submit(context.Background(), SubmitInput{
+		Type: domain.TypeProperty, Title: "Apartment near the stadium", OwnerID: "m-owner", Details: details,
+	})
+	if err != nil {
+		t.Fatalf("Submit property without area: %v", err)
+	}
+	if _, exists := l.Details["area"]; exists {
+		t.Fatal("omitted area should remain omitted")
+	}
+}
+
 func TestSubmit_opportunityMentorshipRequiresSafeguardingPolicy(t *testing.T) {
 	ctx := context.Background()
 	svc := newTestService(&fakeRepo{})

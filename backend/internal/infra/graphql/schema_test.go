@@ -19,8 +19,8 @@ func TestNewSchemaBuilds(t *testing.T) {
 		t.Fatal("schema has no query type")
 	}
 	want := []string{
-		"artists", "people", "memorials", "businesses", "events", "opportunities",
-		"memories", "genres", "spotlightArtist", "artist", "memorial",
+		"artists", "people", "memorials", "businesses", "properties", "events", "opportunities",
+		"memories", "genres", "spotlightArtist", "artist", "property", "memorial",
 		"places", "schools", "institutions", "institution", "members", "member", "stats",
 	}
 	fields := q.Fields()

@@ -39,6 +39,7 @@ func NewSchema(svc *service.Service) (graphql.Schema, error) {
 			"musicLegacy":     &graphql.Field{Type: listingList, Resolve: listings(svc.MusicLegacy)},
 			"memorials":       &graphql.Field{Type: listingList, Resolve: listings(svc.Memorials)},
 			"businesses":      &graphql.Field{Type: listingList, Resolve: listings(svc.Businesses)},
+			"properties":      &graphql.Field{Type: listingList, Resolve: listings(svc.Properties)},
 			"events":          &graphql.Field{Type: listingList, Resolve: listings(svc.Events)},
 			"opportunities":   &graphql.Field{Type: listingList, Resolve: listings(svc.Opportunities)},
 			"memories":        &graphql.Field{Type: listingList, Resolve: listings(svc.Memories)},
@@ -46,6 +47,7 @@ func NewSchema(svc *service.Service) (graphql.Schema, error) {
 
 			"artist":   &graphql.Field{Type: listingType, Args: slugArg, Resolve: bySlug(svc, domain.TypeArtist)},
 			"business": &graphql.Field{Type: listingType, Args: slugArg, Resolve: bySlug(svc, domain.TypeBusiness)},
+			"property": &graphql.Field{Type: listingType, Args: slugArg, Resolve: bySlug(svc, domain.TypeProperty)},
 			"memorial": &graphql.Field{Type: listingType, Args: slugArg, Resolve: bySlug(svc, domain.TypeMemorial)},
 
 			"upcomingEvents": &graphql.Field{

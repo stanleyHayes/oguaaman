@@ -31,6 +31,7 @@ const (
 // Orthogonal to Role: any member may create; roles stay staff-only.
 const (
 	CreatorBusiness    = "business"
+	CreatorProperty    = "property"
 	CreatorArtist      = "artist"
 	CreatorOrganiser   = "organiser"
 	CreatorInstitution = "institution"
@@ -40,7 +41,7 @@ const (
 // ValidCreatorType reports whether t is a known creator type.
 func ValidCreatorType(t string) bool {
 	switch t {
-	case CreatorBusiness, CreatorArtist, CreatorOrganiser, CreatorInstitution, CreatorWriter:
+	case CreatorBusiness, CreatorProperty, CreatorArtist, CreatorOrganiser, CreatorInstitution, CreatorWriter:
 		return true
 	}
 	return false

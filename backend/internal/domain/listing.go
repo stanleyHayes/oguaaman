@@ -43,6 +43,7 @@ const (
 // incidents, resolved by the owner or a curator via details.lfStatus).
 const (
 	TypeBusiness    = "business"
+	TypeProperty    = "property"
 	TypeArtist      = "artist"
 	TypePerson      = "person"
 	TypeMemory      = "memory"
@@ -77,7 +78,7 @@ type Listing struct {
 	TownID    string   `json:"townId,omitempty" bson:"townId,omitempty"`
 	SchoolIDs []string `json:"schoolIds,omitempty" bson:"schoolIds,omitempty"`
 	// Optional map pin. Only set when the listing has a real, known coordinate
-	// (no server-side geocoding); businesses/events/incidents/lostfound carry it
+	// (no server-side geocoding); businesses/properties/events/incidents/lostfound carry it
 	// so the town map can drop an accurate pin. Both must be set to be usable.
 	Latitude        *float64       `json:"latitude,omitempty" bson:"latitude,omitempty"`
 	Longitude       *float64       `json:"longitude,omitempty" bson:"longitude,omitempty"`

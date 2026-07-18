@@ -12,7 +12,7 @@ import "github.com/oguaa/backend/internal/domain"
 // fptr returns a pointer to a float64 (for the optional geo fields).
 func fptr(v float64) *float64 { return &v }
 
-// listingGeo pins seeded listings (businesses, events, incidents, lost & found)
+// listingGeo pins seeded listings (businesses, properties, events, incidents, lost & found)
 // to their quarters. Only ids present here get a coordinate.
 var listingGeo = map[string][2]float64{
 	// Businesses.
@@ -23,6 +23,12 @@ var listingGeo = map[string][2]float64{
 	"b-campus-bookshop": {5.1136, -1.2876}, // Amamoma, UCC gate
 	"b-tantri-beach":    {5.1008, -1.2437}, // Tantri beachfront
 	"b-lagoon-view":     {5.1035, -1.2555}, // Bakaano, Fosu Lagoon
+
+	// Rent & Stay properties.
+	"prop-castle-studio":  {5.1048, -1.2428}, // Victoria Road, by the Castle
+	"prop-pedu-apartment": {5.1190, -1.2760}, // Pedu Estate
+	"prop-amamoma-room":   {5.1140, -1.2870}, // Amamoma, UCC gate
+	"prop-bakaano-house":  {5.1028, -1.2552}, // Fosu Lagoon side
 
 	// Events.
 	"e-fetu":                     {5.1038, -1.2432}, // Victoria Park durbar

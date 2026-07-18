@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,10 +16,25 @@ type submitListings struct {
 	inserted []domain.Listing
 }
 
-func (s *submitListings) Find(context.Context, domain.ListingFilter) ([]domain.Listing, error) {
-	return nil, nil
+func (s *submitListings) Find(_ context.Context, filter domain.ListingFilter) ([]domain.Listing, error) {
+	out := []domain.Listing{}
+	for _, listing := range s.inserted {
+		if filter.Type != "" && listing.Type != filter.Type {
+			continue
+		}
+		if filter.Status != "" && listing.Status != filter.Status {
+			continue
+		}
+		out = append(out, listing)
+	}
+	return out, nil
 }
-func (s *submitListings) GetBySlug(context.Context, string, string) (*domain.Listing, error) {
+func (s *submitListings) GetBySlug(_ context.Context, typ, slug string) (*domain.Listing, error) {
+	for i := range s.inserted {
+		if s.inserted[i].Type == typ && s.inserted[i].Slug == slug {
+			return &s.inserted[i], nil
+		}
+	}
 	return nil, &domain.NotFoundError{Entity: "listing"}
 }
 func (s *submitListings) GetByID(context.Context, string) (*domain.Listing, error) {
@@ -93,5 +109,42 @@ func TestSubmit_allowsVerifiedContact(t *testing.T) {
 	}
 	if len(listings.inserted) != 1 {
 		t.Fatalf("listing should have been inserted once, got %d", len(listings.inserted))
+	}
+}
+
+func TestPropertiesListAndDetailExposeApprovedPropertyData(t *testing.T) {
+	listings := &submitListings{inserted: []domain.Listing{
+		{ID: "p1", Slug: "pedu-flat", Type: domain.TypeProperty, Status: domain.StatusApproved, Title: "Pedu Flat", Details: map[string]any{"pricePesewas": int64(180000)}},
+		{ID: "p2", Slug: "hidden-flat", Type: domain.TypeProperty, Status: domain.StatusPending, Title: "Hidden Flat"},
+	}}
+	h := NewHandler(HandlerDeps{Svc: service.New(service.Deps{Listings: listings})})
+
+	listRequest := httptest.NewRequest(http.MethodGet, "/api/properties", nil)
+	listResponse := httptest.NewRecorder()
+	h.Properties(listResponse, listRequest)
+	if listResponse.Code != http.StatusOK {
+		t.Fatalf("list status = %d, want 200", listResponse.Code)
+	}
+	var items []domain.Listing
+	if err := json.Unmarshal(listResponse.Body.Bytes(), &items); err != nil {
+		t.Fatalf("decode property list: %v", err)
+	}
+	if len(items) != 1 || items[0].Slug != "pedu-flat" {
+		t.Fatalf("approved property list = %+v", items)
+	}
+
+	detailRequest := httptest.NewRequest(http.MethodGet, "/api/properties/pedu-flat", nil)
+	detailRequest.SetPathValue("slug", "pedu-flat")
+	detailResponse := httptest.NewRecorder()
+	h.Property(detailResponse, detailRequest)
+	if detailResponse.Code != http.StatusOK {
+		t.Fatalf("detail status = %d, body=%s", detailResponse.Code, detailResponse.Body.String())
+	}
+	var item domain.Listing
+	if err := json.Unmarshal(detailResponse.Body.Bytes(), &item); err != nil {
+		t.Fatalf("decode property detail: %v", err)
+	}
+	if item.Type != domain.TypeProperty || item.Slug != "pedu-flat" {
+		t.Fatalf("property detail = %+v", item)
 	}
 }

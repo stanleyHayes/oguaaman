@@ -29,6 +29,8 @@ func TestMapDataAggregates(t *testing.T) {
 	listings := &fakeRepo{listings: []domain.Listing{
 		{ID: "b1", Slug: "biz", Type: domain.TypeBusiness, Status: domain.StatusApproved, Title: "Fish spot", TownID: "kotokuraba",
 			Latitude: f64(5.108), Longitude: f64(-1.247), Details: map[string]any{"category": "Market", "address": "Kotokuraba"}},
+		{ID: "p1", Slug: "pedu-flat", Type: domain.TypeProperty, Status: domain.StatusApproved, Title: "Pedu flat", TownID: "pedu",
+			Latitude: f64(5.119), Longitude: f64(-1.276), Details: map[string]any{"propertyType": "apartment", "area": "Pedu Estate", "address": "Pedu"}},
 		{ID: "i1", Slug: "flood", Type: domain.TypeIncident, Status: domain.StatusApproved, Title: "Flood",
 			Latitude: f64(5.101), Longitude: f64(-1.256), Details: map[string]any{"severity": "high", "category": "flood", "location": "Bakaano"}},
 		// Approved but no coordinates → not a point.
@@ -76,6 +78,9 @@ func TestMapDataAggregates(t *testing.T) {
 	}
 	if biz.Category != "Market" || biz.Quarter != "kotokuraba" {
 		t.Errorf("business category/quarter wrong: %+v", biz)
+	}
+	if property := byID["p1"]; property.Kind != "property" || property.Layer != "property" || property.Category != "apartment" || property.Subtitle != "Pedu Estate" || property.Href != "/rent-stay/pedu-flat" {
+		t.Errorf("property point wrong: %+v", property)
 	}
 	if inc := byID["i1"]; inc.Kind != "incident" || inc.Layer != "safety" || inc.Severity != "high" || inc.Href != "/safety/flood" {
 		t.Errorf("incident point wrong: %+v", inc)

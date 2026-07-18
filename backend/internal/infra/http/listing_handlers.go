@@ -96,6 +96,14 @@ func (h *Handler) Businesses(w http.ResponseWriter, r *http.Request) {
 	}
 	writeList(w, r, out)
 }
+func (h *Handler) Properties(w http.ResponseWriter, r *http.Request) {
+	items, err := h.svc.Properties(r.Context())
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeList(w, r, items)
+}
 func (h *Handler) Events(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.Events(r.Context())
 	if err != nil {
@@ -194,6 +202,15 @@ func (h *Handler) Business(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, businessView{Listing: *l, Supporter: service.SupporterActive(*l, time.Now().UTC())})
+}
+
+func (h *Handler) Property(w http.ResponseWriter, r *http.Request) {
+	l, err := h.svc.ListingBySlug(r.Context(), domain.TypeProperty, r.PathValue("slug"))
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, l)
 }
 
 func (h *Handler) Memorial(w http.ResponseWriter, r *http.Request) {

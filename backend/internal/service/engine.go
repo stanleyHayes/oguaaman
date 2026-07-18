@@ -30,7 +30,7 @@ type SubmitInput struct {
 }
 
 var validTypes = map[string]bool{
-	domain.TypeBusiness: true, domain.TypeArtist: true, domain.TypePerson: true,
+	domain.TypeBusiness: true, domain.TypeProperty: true, domain.TypeArtist: true, domain.TypePerson: true,
 	domain.TypeMemory: true, domain.TypeEvent: true, domain.TypeOpportunity: true, domain.TypeMemorial: true,
 }
 
@@ -69,6 +69,16 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 			if !tagged {
 				in.Tags = append(in.Tags, kind)
 			}
+		}
+	}
+	if in.Type == domain.TypeProperty {
+		cleaned, err := cleanPropertyDetails(details)
+		if err != nil {
+			return nil, err
+		}
+		details = cleaned
+		for _, key := range []string{"offerType", "propertyType"} {
+			in.Tags = appendUniqueTag(in.Tags, asStringAny(details[key]))
 		}
 	}
 	if in.Type == domain.TypeMemorial {

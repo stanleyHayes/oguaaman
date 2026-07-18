@@ -48,6 +48,8 @@ func (s *Server) listingsByType(ctx context.Context, typ string) ([]domain.Listi
 		return s.svc.Memorials(ctx)
 	case domain.TypeBusiness:
 		return s.svc.Businesses(ctx)
+	case domain.TypeProperty:
+		return s.svc.Properties(ctx)
 	case domain.TypeEvent:
 		return s.svc.Events(ctx)
 	case domain.TypeOpportunity:
