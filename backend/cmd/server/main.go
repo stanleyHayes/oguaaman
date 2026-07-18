@@ -142,7 +142,7 @@ func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*se
 	subs := service.NewSubscriptionsService(mongox.NewListingRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPlanRepo(db), paystack, cfg.PortalURL)
 	promotions := service.NewPromotionsService(mongox.NewListingRepo(db), mongox.NewPromotionRepo(db), paystack, cfg.PortalURL)
 	revenue := service.NewRevenueService(mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
-	agentJobs := service.NewAgentJobsService(mongox.NewAgentJobRepo(db), mongox.NewAgentRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)
+	agentJobs := service.NewAgentJobsService(mongox.NewAgentJobRepo(db), mongox.NewAgentRepo(db), mongox.NewAgentReviewRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)
 
 	var stripeSvc *service.StripeService
 	if cfg.StripeSecretKey != "" {

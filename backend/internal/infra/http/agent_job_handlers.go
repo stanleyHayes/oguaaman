@@ -196,3 +196,72 @@ func (h *Handler) MyJobs(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"asClient": asClient, "asAgent": asAgent})
 }
+
+// ReviewJob — the client rates a completed job.
+func (h *Handler) ReviewJob(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	var in struct {
+		Rating int    `json:"rating"`
+		Body   string `json:"body"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	rv, err := h.agentJobs.ReviewJob(r.Context(), r.PathValue("id"), orDevMember(m).ID, in.Rating, in.Body)
+	if err != nil {
+		h.jobErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, rv)
+}
+
+// AgentReviews — public reviews for an agent.
+func (h *Handler) AgentReviews(w http.ResponseWriter, r *http.Request) {
+	items, err := h.agentJobs.AgentReviews(r.Context(), r.PathValue("slug"))
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
+}
+
+// AdminDisputes — disputed jobs for the vetting officer to resolve.
+func (h *Handler) AdminDisputes(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.requireRole(w, r, domain.RoleVettingOfficer); !ok {
+		return
+	}
+	items, err := h.agentJobs.AdminDisputes(r.Context())
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
+}
+
+// AdminResolveDispute — release to the agent or refund to the client (+ optional
+// bond forfeit). Vetting officer / steward.
+func (h *Handler) AdminResolveDispute(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireRole(w, r, domain.RoleVettingOfficer)
+	if !ok {
+		return
+	}
+	var in struct {
+		Resolution  string `json:"resolution"`
+		Note        string `json:"note"`
+		ForfeitBond bool   `json:"forfeitBond"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	j, err := h.agentJobs.ResolveDispute(r.Context(), r.PathValue("id"), in.Resolution, in.Note, in.ForfeitBond, *orDevSteward(m))
+	if err != nil {
+		h.jobErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, j)
+}

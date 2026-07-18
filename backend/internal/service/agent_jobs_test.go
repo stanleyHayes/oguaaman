@@ -80,6 +80,29 @@ func (s *stubAgents) Update(_ context.Context, a domain.Agent) (domain.Agent, er
 func (s *stubAgents) Delete(context.Context, string) error             { return nil }
 func (s *stubAgents) InsertMany(context.Context, []domain.Agent) error { return nil }
 
+type stubReviews struct{ m map[string]domain.AgentReview } // keyed by jobID
+
+func newStubReviews() *stubReviews { return &stubReviews{m: map[string]domain.AgentReview{}} }
+func (s *stubReviews) ByAgent(_ context.Context, agentID string) ([]domain.AgentReview, error) {
+	out := []domain.AgentReview{}
+	for _, r := range s.m {
+		if r.AgentID == agentID {
+			out = append(out, r)
+		}
+	}
+	return out, nil
+}
+func (s *stubReviews) ByJob(_ context.Context, jobID string) (domain.AgentReview, error) {
+	if r, ok := s.m[jobID]; ok {
+		return r, nil
+	}
+	return domain.AgentReview{}, fmt.Errorf("not found")
+}
+func (s *stubReviews) Create(_ context.Context, r domain.AgentReview) (domain.AgentReview, error) {
+	s.m[r.JobID] = r
+	return r, nil
+}
+
 // ── the flow ─────────────────────────────────────────────────────────────────
 
 func TestAgentJobEscrowFlow(t *testing.T) {
@@ -88,7 +111,8 @@ func TestAgentJobEscrowFlow(t *testing.T) {
 	}}
 	jobs := newStubJobs()
 	// 10% platform fee; Paystack verifies success for the quoted amount.
-	svc := NewAgentJobsService(jobs, agents, nil, stubPaystack{ok: true, amt: 50000}, "https://portal", 10)
+	reviews := newStubReviews()
+	svc := NewAgentJobsService(jobs, agents, reviews, nil, stubPaystack{ok: true, amt: 50000}, "https://portal", 10)
 	ctx := context.Background()
 	client := domain.Member{ID: "m-client", DisplayName: "Ama"}
 
@@ -156,5 +180,19 @@ func TestAgentJobEscrowFlow(t *testing.T) {
 	}
 	if agents.m["agent-1"].JobsCompleted != 5 {
 		t.Fatalf("JobsCompleted = %d, want 5", agents.m["agent-1"].JobsCompleted)
+	}
+
+	// 6 · review → reputation recomputed; double-review refused
+	if _, err := svc.ReviewJob(ctx, j.ID, "m-agent", 5, "x"); err == nil {
+		t.Fatal("expected non-client review to be forbidden")
+	}
+	if _, err := svc.ReviewJob(ctx, j.ID, "m-client", 5, "Excellent — photos before paying, delivered early."); err != nil {
+		t.Fatalf("ReviewJob: %v", err)
+	}
+	if a := agents.m["agent-1"]; a.RatingCount != 1 || a.RatingAvg != 5 {
+		t.Fatalf("rating not recomputed: count=%d avg=%v", a.RatingCount, a.RatingAvg)
+	}
+	if _, err := svc.ReviewJob(ctx, j.ID, "m-client", 4, "again"); err == nil {
+		t.Fatal("expected a second review to be refused")
 	}
 }

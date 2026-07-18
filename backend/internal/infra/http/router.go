@@ -112,6 +112,10 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/jobs/{id}/complete", h.CompleteJob)
 	mux.HandleFunc("POST /api/jobs/{id}/dispute", h.DisputeJob)
 	mux.HandleFunc("POST /api/jobs/{id}/cancel", h.CancelJob)
+	mux.HandleFunc("POST /api/jobs/{id}/review", h.ReviewJob)
+	mux.HandleFunc("GET /api/agents/{slug}/reviews", h.AgentReviews)
+	mux.HandleFunc("GET /api/admin/disputes", h.AdminDisputes)
+	mux.HandleFunc("POST /api/admin/jobs/{id}/resolve", h.AdminResolveDispute)
 
 	// Lost & found — lost items, found items, missing people (auto-published;
 	// the owner or a curator resolves the notice).

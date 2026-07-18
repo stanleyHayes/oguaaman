@@ -90,7 +90,7 @@ const SeedPassword = "Oguaa-2026!"
 // Seed resets the collections and loads the fact-checked Cape Coast seed data.
 // It is idempotent: collections are dropped and reinserted. (See agent_plan.md §1.)
 func Seed(ctx context.Context, db *mongo.Database) error {
-	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents} {
+	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents, collAgentJobs, collAgentReviews} {
 		if err := db.Collection(name).Drop(ctx); err != nil {
 			return err
 		}

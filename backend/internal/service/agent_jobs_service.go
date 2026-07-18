@@ -27,14 +27,15 @@ const (
 type AgentJobsService struct {
 	jobs       domain.AgentJobRepository
 	agents     domain.AgentRepository
+	reviews    domain.AgentReviewRepository
 	notifs     domain.NotificationRepository
 	paystack   PaystackClient
 	portal     string
 	feePercent int
 }
 
-func NewAgentJobsService(jobs domain.AgentJobRepository, agents domain.AgentRepository, notifs domain.NotificationRepository, ps PaystackClient, portalURL string, feePercent int) *AgentJobsService {
-	return &AgentJobsService{jobs: jobs, agents: agents, notifs: notifs, paystack: ps, portal: strings.TrimRight(portalURL, "/"), feePercent: feePercent}
+func NewAgentJobsService(jobs domain.AgentJobRepository, agents domain.AgentRepository, reviews domain.AgentReviewRepository, notifs domain.NotificationRepository, ps PaystackClient, portalURL string, feePercent int) *AgentJobsService {
+	return &AgentJobsService{jobs: jobs, agents: agents, reviews: reviews, notifs: notifs, paystack: ps, portal: strings.TrimRight(portalURL, "/"), feePercent: feePercent}
 }
 
 // Simulated reports whether the escrow runs against the labelled simulation.
@@ -302,6 +303,131 @@ func (s *AgentJobsService) MyClientJobs(ctx context.Context, memberID string) ([
 
 func (s *AgentJobsService) MyAgentJobs(ctx context.Context, memberID string) ([]domain.AgentJob, error) {
 	return s.jobs.ForAgentMember(ctx, memberID)
+}
+
+// ── reviews + reputation ─────────────────────────────────────────────────────
+
+// ReviewJob records a client's rating of a completed job and recomputes the
+// agent's reputation. One review per job.
+func (s *AgentJobsService) ReviewJob(ctx context.Context, jobID, clientMemberID string, rating int, body string) (domain.AgentReview, error) {
+	j, err := s.jobs.ByID(ctx, jobID)
+	if err != nil {
+		return domain.AgentReview{}, err
+	}
+	if j.ClientMemberID != clientMemberID {
+		return domain.AgentReview{}, &domain.ForbiddenError{Reason: "only the client can review this job"}
+	}
+	if j.Status != domain.JobStatusCompleted {
+		return domain.AgentReview{}, fmt.Errorf("you can review a job once it is completed")
+	}
+	if j.Reviewed {
+		return domain.AgentReview{}, fmt.Errorf("you have already reviewed this job")
+	}
+	if rating < 1 || rating > 5 {
+		return domain.AgentReview{}, fmt.Errorf("rating must be 1–5")
+	}
+	now := time.Now().UTC()
+	rv := domain.AgentReview{
+		ID:    "rev-" + fmt.Sprintf("%d", now.UnixNano()),
+		JobID: j.ID, AgentID: j.AgentID, AgentSlug: j.AgentSlug,
+		ClientMemberID: clientMemberID, ClientName: j.ClientName,
+		Rating: rating, Body: strings.TrimSpace(body),
+		CreatedAt: now.Format(time.RFC3339),
+	}
+	created, err := s.reviews.Create(ctx, rv)
+	if err != nil {
+		return domain.AgentReview{}, err
+	}
+	j.Reviewed = true
+	j.UpdatedAt = now.Format(time.RFC3339)
+	_, _ = s.jobs.Update(ctx, j)
+	s.recomputeAgentRating(ctx, j.AgentID)
+	return created, nil
+}
+
+// recomputeAgentRating averages an agent's reviews onto its profile.
+func (s *AgentJobsService) recomputeAgentRating(ctx context.Context, agentID string) {
+	all, err := s.reviews.ByAgent(ctx, agentID)
+	if err != nil || len(all) == 0 {
+		return
+	}
+	sum := 0
+	for _, r := range all {
+		sum += r.Rating
+	}
+	if agent, err := s.agents.ByID(ctx, agentID); err == nil {
+		agent.RatingCount = len(all)
+		agent.RatingAvg = float64(sum) / float64(len(all))
+		agent.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+		_, _ = s.agents.Update(ctx, agent)
+	}
+}
+
+// AgentReviews lists the public reviews for an agent (by slug).
+func (s *AgentJobsService) AgentReviews(ctx context.Context, agentSlug string) ([]domain.AgentReview, error) {
+	agent, err := s.agents.BySlug(ctx, agentSlug)
+	if err != nil {
+		return nil, err
+	}
+	return s.reviews.ByAgent(ctx, agent.ID)
+}
+
+// ── disputes (admin resolution) ──────────────────────────────────────────────
+
+// AdminDisputes lists disputed jobs for resolution.
+func (s *AgentJobsService) AdminDisputes(ctx context.Context) ([]domain.AgentJob, error) {
+	return s.jobs.Disputed(ctx)
+}
+
+// ResolveDispute settles a disputed job: "release" pays the agent (like a normal
+// completion), "refund" returns the escrow to the client. On a refund the officer
+// may also forfeit the agent's bond.
+func (s *AgentJobsService) ResolveDispute(ctx context.Context, jobID, resolution, note string, forfeitBond bool, officer domain.Member) (domain.AgentJob, error) {
+	j, err := s.jobs.ByID(ctx, jobID)
+	if err != nil {
+		return domain.AgentJob{}, err
+	}
+	if j.Status != domain.JobStatusDisputed {
+		return domain.AgentJob{}, fmt.Errorf("this job is not in dispute")
+	}
+	now := time.Now().UTC()
+	switch resolution {
+	case "release":
+		j.Status = domain.JobStatusCompleted
+		j.Escrow.Status = domain.EscrowReleased
+		if agent, err := s.agents.ByID(ctx, j.AgentID); err == nil {
+			agent.JobsCompleted++
+			agent.UpdatedAt = now.Format(time.RFC3339)
+			_, _ = s.agents.Update(ctx, agent)
+		}
+	case "refund":
+		j.Status = domain.JobStatusRefunded
+		j.Escrow.Status = domain.EscrowRefunded
+		if forfeitBond {
+			if agent, err := s.agents.ByID(ctx, j.AgentID); err == nil {
+				agent.Bond.Status = domain.BondStatusForfeited
+				agent.UpdatedAt = now.Format(time.RFC3339)
+				_, _ = s.agents.Update(ctx, agent)
+			}
+		}
+	default:
+		return domain.AgentJob{}, fmt.Errorf("resolution must be \"release\" or \"refund\"")
+	}
+	if strings.TrimSpace(note) != "" {
+		j.DisputeReason = strings.TrimSpace(j.DisputeReason + " · Resolution: " + strings.TrimSpace(note))
+	}
+	j.UpdatedAt = now.Format(time.RFC3339)
+	updated, err := s.jobs.Update(ctx, j)
+	if err != nil {
+		return domain.AgentJob{}, err
+	}
+	verdict := "released to the agent"
+	if resolution == "refund" {
+		verdict = "refunded to the client"
+	}
+	s.notify(j.ClientMemberID, "agent-job", "Dispute resolved", fmt.Sprintf("%q: escrow %s.", j.Title, verdict), "/outside/jobs")
+	s.notify(j.AgentMemberID, "agent-job", "Dispute resolved", fmt.Sprintf("%q: escrow %s.", j.Title, verdict), "/outside/jobs")
+	return updated, nil
 }
 
 func (s *AgentJobsService) isParty(j domain.AgentJob, memberID string) bool {
