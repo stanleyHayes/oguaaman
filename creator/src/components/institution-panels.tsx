@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { DatePicker } from "@/components/date-picker";
+import { BusyLabel } from "@/components/skeleton";
 
 const field =
   "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
@@ -21,7 +22,7 @@ const btnGhost =
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function Saver({ state }: Readonly<{ state: SaveState }>) {
-  if (state === "saving") return <span className="text-sm text-ink-faint">Saving…</span>;
+  if (state === "saving") return <BusyLabel label="Saving institution changes" width="w-20" />;
   if (state === "saved") return <span className="text-sm text-teal-text">Saved ✓</span>;
   if (state === "error") return <span className="text-sm text-clay-text">Couldn’t save — try again.</span>;
   return null;

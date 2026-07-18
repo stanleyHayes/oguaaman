@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { PORTAL } from "@/lib/portal";
 import { Mark } from "./layout";
 import { OtpInput } from "./otp-input";
+import { AuthSkeleton, BusyLabel } from "./skeleton";
 
 /**
  * Locks the creator studio behind a member session. Any signed-in member
@@ -12,29 +13,9 @@ import { OtpInput } from "./otp-input";
  */
 export function AuthGate({ children }: Readonly<{ children: ReactNode }>) {
   const { member, loading } = useAuth();
-  if (loading) return <Backdrop><LoadingSplash tag="Creator" /></Backdrop>;
+  if (loading) return <Backdrop><AuthSkeleton tag="Creator" /></Backdrop>;
   if (!member) return <SignIn />;
   return <>{children}</>;
-}
-
-/** Branded loading splash — crab mark, sliding gold bar, motto. Rendered
- * inside Backdrop, which pins the green field's colours in both themes. */
-function LoadingSplash({ tag }: Readonly<{ tag: string }>) {
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <span className="inline-flex items-center gap-2">
-        <span className="grid size-9 place-items-center rounded-lg bg-gradient-to-br from-gold to-gold-brand shadow-sm" aria-hidden>
-          <Mark size={20} color="#0C2C1F" />
-        </span>
-        <span className="text-3xl font-semibold tracking-tight text-cream">Oguaa</span>
-        <span className="rounded bg-gold/15 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-gold">{tag}</span>
-      </span>
-      <div className="mt-1 h-0.5 w-28 overflow-hidden rounded-full bg-gold/15" aria-hidden>
-        <div className="oguaa-loadbar h-full w-1/2 rounded-full bg-gold-brand" />
-      </div>
-      <p className="text-xs uppercase tracking-[0.2em] text-gold/80">Yɛn ara asaase ni</p>
-    </div>
-  );
 }
 
 const TRUST = [
@@ -150,7 +131,9 @@ function SignIn() {
               </div>
             )}
             {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-            <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Verifying…" : "Verify & sign in"}</button>
+            <button type="submit" disabled={busy} aria-busy={busy || undefined} className={primaryBtn}>
+              {busy ? <BusyLabel label="Verifying sign in" width="w-20" /> : "Verify & sign in"}
+            </button>
             <p className="text-center text-xs text-ink-faint">
               <button type="button" onClick={() => { setChallenge(null); setErr(null); setPassword(""); setRecovery(false); }} className="font-medium text-ink-muted underline hover:text-ink">← Back to sign in</button>
             </p>
@@ -188,8 +171,10 @@ function SignIn() {
             </div>
           </label>
           {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Signing in…" : "Sign in"}</button>
-          <p className="text-center text-xs text-ink-faint">New here? Join as a creator on the <a href={`${PORTAL}/signin`} className="font-semibold text-gold-text hover:underline">community portal</a>.</p>
+          <button type="submit" disabled={busy} aria-busy={busy || undefined} className={primaryBtn}>
+            {busy ? <BusyLabel label="Signing in" width="w-16" /> : "Sign in"}
+          </button>
+          <p className="text-center text-xs text-ink-faint">New here? Join as a creator on the <a href={`${PORTAL}/signin?mode=join&as=creator`} className="font-semibold text-gold-text hover:underline">community portal</a>.</p>
         </form>
       </Shell>
     </Backdrop>

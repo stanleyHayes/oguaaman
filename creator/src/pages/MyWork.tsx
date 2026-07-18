@@ -6,6 +6,8 @@ import type { Listing, MemberView, Promotion } from "@/lib/types";
 import { Card, Empty, StatusBadge } from "@/components/ui";
 import { Pagination, usePagedList } from "@/components/pagination";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { BusyLabel } from "@/components/skeleton";
+import { mediaUrl } from "@/lib/media";
 import { cedis, formatDate, initials } from "@/lib/format";
 import { ExternalLink, Megaphone, Pencil } from "lucide-react";
 
@@ -29,7 +31,7 @@ export function Component() {
   const revalidator = useRevalidator();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [promoFor, setPromoFor] = useState<string | null>(null);
-  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoBusy, setPromoBusy] = useState<number | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoConfirmed, setPromoConfirmed] = useState<Promotion | null>(null);
 
@@ -46,7 +48,7 @@ export function Component() {
 
   async function promote(l: Listing, days: number) {
     setPromoError(null);
-    setPromoBusy(true);
+    setPromoBusy(days);
     try {
       const r = await api.promoteListing(l.id, days);
       if (r.simulated) {
@@ -54,14 +56,14 @@ export function Component() {
         const p = await api.confirmPromotion(r.reference);
         setPromoConfirmed(p);
         setPromoFor(null);
-        setPromoBusy(false);
+        setPromoBusy(null);
         revalidator.revalidate();
       } else {
         window.location.assign(r.authorizationUrl); // off to Paystack
       }
     } catch (e) {
       setPromoError(e instanceof Error ? e.message : "Could not start the payment.");
-      setPromoBusy(false);
+      setPromoBusy(null);
     }
   }
 
@@ -115,7 +117,7 @@ export function Component() {
                 <StaggerItem as="li" key={l.id} index={idx} className="py-3.5">
                   <div className="flex items-center gap-3">
                     {l.coverImageUrl ? (
-                      <img src={l.coverImageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />
+                      <img src={mediaUrl(l.coverImageUrl)} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />
                     ) : (
                       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green/[0.08] text-xs font-bold text-green-text">{initials(l.title)}</span>
                     )}
@@ -148,9 +150,9 @@ export function Component() {
                       {promoFor === l.id ? (
                         <div className="flex flex-wrap items-center gap-1.5">
                           {[7, 14, 30].map((d) => (
-                            <button key={d} type="button" onClick={() => promote(l, d)} disabled={promoBusy}
+                            <button key={d} type="button" onClick={() => promote(l, d)} disabled={promoBusy != null} aria-busy={promoBusy === d || undefined}
                               className="rounded-full border border-green-text px-2.5 py-1 text-xs font-semibold text-green-text transition-colors hover:bg-green hover:text-on-green disabled:opacity-60">
-                              {d}d · {cedis(d * 1000)}
+                              {promoBusy === d ? <BusyLabel label={`Starting ${d}-day promotion checkout`} width="w-16" /> : `${d}d · ${cedis(d * 1000)}`}
                             </button>
                           ))}
                           <button type="button" onClick={() => setPromoFor(null)} className="text-xs text-ink-faint hover:text-ink">Cancel</button>

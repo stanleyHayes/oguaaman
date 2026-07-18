@@ -1,5 +1,7 @@
 import { useRef, useState, type ReactNode, type ChangeEvent } from "react";
 import { getToken } from "@/lib/api";
+import { BusyLabel, Skeleton } from "@/components/skeleton";
+import { mediaUrl } from "@/lib/media";
 
 // Image upload. Prefers Cloudinary (unsigned preset) when configured; otherwise
 // uploads to the first-party Go endpoint (POST /api/uploads) so uploads work out
@@ -10,7 +12,7 @@ const PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefin
 const cloudinaryConfigured = Boolean(CLOUD && PRESET);
 
 const inputCls =
-  "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
+  "min-h-11 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
 
 function xhrUpload(url: string, fd: FormData, auth: boolean, pick: (r: Record<string, unknown>) => string | undefined, onProgress: (pct: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -60,6 +62,7 @@ export function ImageUpload({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
+  const [manualUrl, setManualUrl] = useState("");
 
   async function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -80,13 +83,13 @@ export function ImageUpload({
   let picker: ReactNode;
   if (value) {
     picker = (
-        <div className="flex items-center gap-3">
-          <img src={value} alt="" className="h-20 w-28 shrink-0 rounded-lg border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
+        <div className="flex flex-wrap items-center gap-3">
+          <img src={mediaUrl(value)} alt="" className="h-20 w-28 shrink-0 rounded-lg border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="rounded-full border border-sand px-3.5 py-1.5 text-sm font-medium text-ink-muted hover:border-green/40 disabled:opacity-60">
-              {busy ? `Uploading… ${progress}%` : "Replace"}
+            <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} aria-busy={busy || undefined} className="min-h-11 rounded-full border border-sand px-3.5 py-1.5 text-sm font-medium text-ink-muted hover:border-green/40 disabled:opacity-60">
+              {busy ? <BusyLabel label={`Uploading image, ${progress}% complete`} width="w-16" /> : "Replace"}
             </button>
-            <button type="button" onClick={() => onChange("")} className="rounded-full border border-maroon-text/30 px-3.5 py-1.5 text-sm font-medium text-maroon-text hover:bg-maroon-900/[0.06]">
+            <button type="button" onClick={() => onChange("")} className="min-h-11 rounded-full border border-maroon-text/30 px-3.5 py-1.5 text-sm font-medium text-maroon-text hover:bg-maroon-900/[0.06]">
               Remove
             </button>
           </div>
@@ -94,7 +97,24 @@ export function ImageUpload({
     );
   } else if (manual) {
     picker = (
-        <input type="url" value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://…" className={inputCls} />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="url"
+            value={manualUrl}
+            onChange={(e) => setManualUrl(e.target.value)}
+            placeholder="https://…"
+            aria-label={`${label} URL`}
+            className={inputCls}
+          />
+          <button
+            type="button"
+            onClick={() => onChange(manualUrl.trim())}
+            disabled={!manualUrl.trim()}
+            className="min-h-11 shrink-0 rounded-full bg-green px-4 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-50"
+          >
+            Use URL
+          </button>
+        </div>
     );
   } else {
     picker = (
@@ -102,13 +122,14 @@ export function ImageUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={busy}
+          aria-busy={busy || undefined}
           className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-sand bg-paper px-4 py-7 text-center transition-colors hover:border-green/40 disabled:opacity-70"
         >
           {busy ? (
             <>
-              <span className="text-sm font-medium text-ink">Uploading… {progress}%</span>
+              <BusyLabel label={`Uploading image, ${progress}% complete`} width="w-24" />
               <span className="h-1.5 w-40 overflow-hidden rounded-full bg-sand">
-                <span className="block h-full rounded-full bg-green transition-all" style={{ width: `${progress}%` }} />
+                <Skeleton className="h-full rounded-full transition-[width]" style={{ width: `${progress}%` }} />
               </span>
             </>
           ) : (
@@ -132,11 +153,11 @@ export function ImageUpload({
 
       <input ref={inputRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
 
-      {error && <p className="mt-1.5 text-xs text-clay-text">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-clay-text" role="alert">{error}</p>}
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-faint">
         <span>{hint}</span>
         {!value && (
-          <button type="button" onClick={() => setManual((m) => !m)} className="font-medium text-green-text underline">
+          <button type="button" onClick={() => setManual((m) => !m)} className="inline-flex min-h-11 items-center font-medium text-green-text underline">
             {manual ? "upload a file instead" : "or paste an image URL"}
           </button>
         )}

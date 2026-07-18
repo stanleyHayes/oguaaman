@@ -5,6 +5,8 @@ import { PORTAL } from "@/lib/portal";
 import type { InstitutionKind, InstitutionRequest, Organization } from "@/lib/types";
 import { Card, Empty, Pill } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { mediaUrl } from "@/lib/media";
+import { BusyLabel } from "@/components/skeleton";
 import { BadgeCheck, Landmark } from "lucide-react";
 
 interface Data {
@@ -80,7 +82,7 @@ export function Component() {
               <StaggerItem as="li" key={o.id} index={idx} className="py-3.5">
                 <div className="flex items-center gap-3">
                   {o.crestUrl ? (
-                    <img src={o.crestUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />
+                    <img src={mediaUrl(o.crestUrl)} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" loading="lazy" />
                   ) : (
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green/[0.08] text-green-text"><Landmark size={18} aria-hidden /></span>
                   )}
@@ -131,9 +133,9 @@ export function Component() {
           <textarea id="req-note" rows={2} className={`resize-none ${field}`} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything that helps verify the institution — a GES number, a chief's palace, a website…" />
         </div>
         <div className="mt-4 flex items-center gap-3">
-          <button type="button" onClick={submit} disabled={busy || name.trim().length < 2 || !seat.trim()}
+          <button type="button" onClick={submit} disabled={busy || name.trim().length < 2 || !seat.trim()} aria-busy={busy || undefined}
             className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
-            Send request
+            {busy ? <BusyLabel label="Sending institution request" width="w-20" /> : "Send request"}
           </button>
           {flash && <span className={`text-sm ${flash.ok ? "text-teal-text" : "text-clay-text"}`}>{flash.text}</span>}
         </div>

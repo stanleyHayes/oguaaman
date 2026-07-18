@@ -1,6 +1,7 @@
-import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate, useNavigation } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
+import { PageSkeleton, type PageSkeletonVariant } from "@/components/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
 import { canWriteNews } from "@/lib/creator";
@@ -115,6 +116,15 @@ const COLLAPSE_KEY = "oguaa.creator.nav.collapsed";
 
 function isActivePath(pathname: string, to: string, end?: boolean): boolean {
   return end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
+}
+
+function pageSkeletonVariant(pathname: string): PageSkeletonVariant {
+  if (/^\/work\/[^/]+\/edit\/?$/.test(pathname) || pathname.startsWith("/write")) return "editor";
+  if (pathname.startsWith("/money")) return "money";
+  if (pathname.startsWith("/account") || pathname.startsWith("/settings")) return "settings";
+  if (pathname.startsWith("/work") || pathname.startsWith("/notifications")) return "list";
+  if (pathname.startsWith("/team") || pathname.startsWith("/institutions") || pathname.startsWith("/grow")) return "workspace";
+  return "overview";
 }
 
 /**
@@ -293,6 +303,7 @@ export function CreatorLayout() {
   const { member, signOut } = useAuth();
   const loc = useLocation();
   const navigate = useNavigate();
+  const navigation = useNavigation();
   const [open, setOpen] = useState(false); // mobile drawer
   const [userMenu, setUserMenu] = useState(false);
   const [term, setTerm] = useState("");
@@ -366,6 +377,8 @@ export function CreatorLayout() {
   const allItems = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   const current = allItems.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? allItems[0];
   const firstName = member?.displayName.split(" ")[0] ?? "";
+  const navigating = navigation.state !== "idle";
+  const destinationPath = navigation.location?.pathname ?? loc.pathname;
 
   return (
     <div className="min-h-screen bg-paper">
@@ -525,10 +538,14 @@ export function CreatorLayout() {
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-7 sm:px-6 lg:px-8">
+        <main className="flex-1 px-4 py-7 sm:px-6 lg:px-8" aria-busy={navigating || undefined}>
           <div className="mx-auto max-w-6xl">
             <PageTransition>
-              <Outlet />
+              {navigating ? (
+                <PageSkeleton variant={pageSkeletonVariant(destinationPath)} label="Loading creator page" />
+              ) : (
+                <Outlet />
+              )}
             </PageTransition>
           </div>
         </main>

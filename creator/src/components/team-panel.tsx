@@ -5,8 +5,10 @@ import { useState } from "react";
 import type { Invitation, TeamView } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Pill } from "@/components/ui";
+import { mediaUrl } from "@/lib/media";
 import { Pagination, usePagedList } from "@/components/pagination";
 import { Panel } from "@/components/institution-panels";
+import { BusyLabel } from "@/components/skeleton";
 
 const field =
   "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
@@ -24,12 +26,12 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
   const [identifier, setIdentifier] = useState("");
   const [role, setRole] = useState("");
   const [scope, setScope] = useState<"officer" | "manager">("officer");
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const [flash, setFlash] = useState<Flash>(null);
   const paged = usePagedList(view.team, 12);
 
-  async function run(action: () => Promise<unknown>, ok: string) {
-    setBusy(true);
+  async function run(action: () => Promise<unknown>, ok: string, actionKey: string) {
+    setBusyAction(actionKey);
     setFlash(null);
     try {
       await action();
@@ -38,7 +40,7 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
     } catch (e) {
       setFlash({ kind: "err", text: (e as Error).message || "Something went wrong." });
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }
 
@@ -47,6 +49,7 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
     await run(
       () => api.inviteToTeam(slug, { identifier: identifier.trim(), role: role.trim(), scope }),
       "Invitation sent — they’ll see it in their creator app.",
+      "invite",
     );
     setIdentifier(""); setRole(""); setScope("officer");
   }
@@ -61,7 +64,7 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
         {paged.pageItems.map((t) => (
           <li key={t.claimId} className="flex flex-wrap items-center gap-3 py-3">
             {t.photoUrl ? (
-              <img src={t.photoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" loading="lazy" />
+              <img src={mediaUrl(t.photoUrl)} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" loading="lazy" />
             ) : (
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green/[0.08] text-xs font-bold text-green-text">
                 {initials(t.memberName || "?")}
@@ -80,19 +83,21 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
               <span className="flex items-center gap-2">
                 <button
                   type="button"
-                  disabled={busy || t.status !== "approved"}
-                  onClick={() => run(() => api.setTeamScope(slug, t.memberId, t.scope === "manager" ? "officer" : "manager"), "Scope updated.")}
+                  disabled={busyAction != null || t.status !== "approved"}
+                  aria-busy={busyAction === `scope:${t.memberId}` || undefined}
+                  onClick={() => run(() => api.setTeamScope(slug, t.memberId, t.scope === "manager" ? "officer" : "manager"), "Scope updated.", `scope:${t.memberId}`)}
                   className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-green/40 hover:text-green-text disabled:opacity-40"
                 >
-                  {t.scope === "manager" ? "Make officer" : "Make manager"}
+                  {busyAction === `scope:${t.memberId}` ? <BusyLabel label="Updating team scope" width="w-20" /> : t.scope === "manager" ? "Make officer" : "Make manager"}
                 </button>
                 <button
                   type="button"
-                  disabled={busy}
-                  onClick={() => run(() => api.revokeTeamMember(slug, t.memberId), "Removed from the team.")}
+                  disabled={busyAction != null}
+                  aria-busy={busyAction === `remove:${t.memberId}` || undefined}
+                  onClick={() => run(() => api.revokeTeamMember(slug, t.memberId), "Removed from the team.", `remove:${t.memberId}`)}
                   className="rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-clay-text transition-colors hover:border-clay disabled:opacity-40"
                 >
-                  Remove
+                  {busyAction === `remove:${t.memberId}` ? <BusyLabel label="Removing team member" width="w-14" /> : "Remove"}
                 </button>
               </span>
             )}
@@ -123,8 +128,8 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
             </select>
           </div>
           <div className="mt-3 flex items-center gap-3">
-            <button type="button" onClick={invite} disabled={busy || !identifier.trim() || !role.trim()} className={btnPrimary}>
-              Send invitation
+            <button type="button" onClick={invite} disabled={busyAction != null || !identifier.trim() || !role.trim()} aria-busy={busyAction === "invite" || undefined} className={btnPrimary}>
+              {busyAction === "invite" ? <BusyLabel label="Sending team invitation" width="w-24" /> : "Send invitation"}
             </button>
             {flash && <span className={`text-sm ${flash.kind === "ok" ? "text-teal-text" : "text-clay-text"}`}>{flash.text}</span>}
           </div>
@@ -136,12 +141,13 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
 }
 
 export function InvitationsPanel({ items, onChanged }: Readonly<{ items: Invitation[]; onChanged: () => void }>) {
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const [flash, setFlash] = useState<Flash>(null);
   if (items.length === 0) return null;
 
   async function respond(id: string, accept: boolean) {
-    setBusy(true);
+    const actionKey = `${accept ? "accept" : "decline"}:${id}`;
+    setBusyAction(actionKey);
     setFlash(null);
     try {
       await api.respondToInvite(id, accept);
@@ -149,7 +155,7 @@ export function InvitationsPanel({ items, onChanged }: Readonly<{ items: Invitat
     } catch (e) {
       setFlash({ kind: "err", text: (e as Error).message || "Something went wrong." });
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }
 
@@ -166,11 +172,11 @@ export function InvitationsPanel({ items, onChanged }: Readonly<{ items: Invitat
             </div>
             <Pill tone={inv.scope === "manager" ? "gold" : "neutral"}>{inv.scope}</Pill>
             <span className="flex items-center gap-2">
-              <button type="button" onClick={() => respond(inv.id, true)} disabled={busy} className="rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
-                Accept
+              <button type="button" onClick={() => respond(inv.id, true)} disabled={busyAction != null} aria-busy={busyAction === `accept:${inv.id}` || undefined} className="rounded-full bg-green px-4 py-1.5 text-xs font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
+                {busyAction === `accept:${inv.id}` ? <BusyLabel label="Accepting invitation" width="w-14" /> : "Accept"}
               </button>
-              <button type="button" onClick={() => respond(inv.id, false)} disabled={busy} className="rounded-full border border-sand px-4 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-clay hover:text-clay-text disabled:opacity-60">
-                Decline
+              <button type="button" onClick={() => respond(inv.id, false)} disabled={busyAction != null} aria-busy={busyAction === `decline:${inv.id}` || undefined} className="rounded-full border border-sand px-4 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:border-clay hover:text-clay-text disabled:opacity-60">
+                {busyAction === `decline:${inv.id}` ? <BusyLabel label="Declining invitation" width="w-14" /> : "Decline"}
               </button>
             </span>
           </li>

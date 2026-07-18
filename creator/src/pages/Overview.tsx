@@ -1,17 +1,26 @@
 import { useLoaderData, Link } from "react-router-dom";
+import type { ReactNode } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PORTAL } from "@/lib/portal";
 import { canWriteNews } from "@/lib/creator";
-import type { CreatorOverview, Member } from "@/lib/types";
+import type { CreatorOverview, Member, MemberView, Listing, ListingStatus, ListingType } from "@/lib/types";
 import { MetricCard } from "@/components/metric-card";
 import { Card } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { BarsH, Donut, Histogram, type Datum } from "@/components/charts";
 import { cedis } from "@/lib/format";
 import { ListChecks, Hourglass, Megaphone, BadgeCheck, Ticket, HandCoins, Eye, PlusCircle, TrendingUp, Landmark, PenLine, Briefcase, Music, CalendarDays, ArrowRight, ExternalLink, type LucideIcon } from "lucide-react";
 
-export async function loader(): Promise<CreatorOverview> {
-  return api.creatorOverview();
+interface Data {
+  overview: CreatorOverview;
+  memberView: MemberView;
+}
+
+export async function loader(): Promise<Data> {
+  const [overview, me] = await Promise.all([api.creatorOverview(), api.me()]);
+  const memberView = await api.member(me.slug).catch(() => ({ member: me, listings: [] as Listing[] }));
+  return { overview, memberView };
 }
 
 interface QuickLink { to: string; label: string; desc: string; icon: LucideIcon; external?: boolean }
@@ -38,12 +47,83 @@ const TOOL_PANELS: ToolPanel[] = [
   { id: "institution", title: "Your institutions", desc: "Schools, civic and community pages.", cta: "Manage institutions", icon: Landmark, to: "/institutions", show: (m) => m.creatorTypes?.includes("institution") ?? false },
 ];
 
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function monthlyCounts(dates: (string | undefined)[]): { label: string; value: number }[] {
+  const keys = dates
+    .filter((d): d is string => !!d)
+    .map((d) => d.slice(0, 7))
+    .filter((s) => /^\d{4}-\d{2}$/.test(s))
+    .sort((a, b) => a.localeCompare(b));
+  if (!keys.length) return [];
+  const tally: Record<string, number> = {};
+  keys.forEach((k) => (tally[k] = (tally[k] ?? 0) + 1));
+  const [sy, sm] = keys[0].split("-").map(Number);
+  const [ey, em] = keys.at(-1)!.split("-").map(Number);
+  const out: { label: string; value: number }[] = [];
+  let y = sy, m = sm, guard = 0;
+  while ((y < ey || (y === ey && m <= em)) && guard++ < 60) {
+    const key = `${y}-${String(m).padStart(2, "0")}`;
+    out.push({ label: MON[m - 1], value: tally[key] ?? 0 });
+    if (++m > 12) { m = 1; y++; }
+  }
+  return out;
+}
+
+function countBy<T>(items: T[], pick: (t: T) => string): Record<string, number> {
+  return items.reduce<Record<string, number>>((acc, it) => {
+    const k = pick(it);
+    acc[k] = (acc[k] ?? 0) + 1;
+    return acc;
+  }, {});
+}
+
+const TYPE_LABEL: Record<ListingType, string> = {
+  business: "Businesses", artist: "Artists", person: "People", memory: "Memories",
+  event: "Events", opportunity: "Opportunities", memorial: "Memorials", project: "Projects",
+  incident: "Incidents", lostfound: "Lost & found",
+};
+const STATUS_COLOR: Record<ListingStatus, string> = {
+  approved: "var(--color-teal)", pending: "var(--color-gold-brand)", rejected: "var(--color-clay-text)",
+  unpublished: "var(--color-ink-faint)", draft: "var(--color-green-slate)",
+};
+
+function ChartCard({ title, hint, children }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
+  return (
+    <Card className="min-w-0 p-5">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 className="text-lg font-semibold text-ink">{title}</h2>
+        {hint && <span className="text-xs text-ink-faint">{hint}</span>}
+      </div>
+      {children}
+    </Card>
+  );
+}
+
 export function Component() {
-  const ov = useLoaderData() as CreatorOverview;
+  const { overview: ov, memberView } = useLoaderData() as Data;
   const { member } = useAuth();
   const firstName = member?.displayName.split(" ")[0] ?? "";
   const isCreator = (member?.creatorTypes?.length ?? 0) > 0;
   const panels = member ? TOOL_PANELS.filter((p) => p.show(member)) : [];
+  const listings = memberView.listings ?? [];
+
+  const statusMix: Datum[] = (["approved", "pending", "rejected", "unpublished", "draft"] as ListingStatus[])
+    .map((s) => ({ label: s[0].toUpperCase() + s.slice(1), value: countBy(listings, (l) => l.status)[s] ?? 0, color: STATUS_COLOR[s] }))
+    .filter((d) => d.value > 0);
+
+  const typeCounts = countBy(listings, (l) => l.type);
+  const contentMix: Datum[] = (Object.entries(TYPE_LABEL) as [ListingType, string][])
+    .map(([k, label]) => ({ label, value: typeCounts[k] ?? 0 }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const submissions: Datum[] = monthlyCounts(listings.map((l) => l.submittedAt ?? l.createdAt));
+
+  const money: Datum[] = [
+    { label: "Tickets", value: ov.ticketsGrossPesewas, color: "var(--color-teal)" },
+    { label: "Pledges", value: ov.pledgesRaisedPesewas, color: "var(--color-gold-brand)" },
+  ].filter((d) => d.value > 0);
 
   return (
     <>
@@ -90,6 +170,35 @@ export function Component() {
         </StaggerItem>
         <StaggerItem index={6}>
           <MetricCard label="Views this month" value={ov.viewsThisMonth ?? 0} icon={<Eye size={18} />} tone="teal" sub="Unique daily views on your listings" />
+        </StaggerItem>
+      </Stagger>
+
+      {/* Visualizations */}
+      <Stagger className="mt-6 grid items-start gap-5 lg:grid-cols-2">
+        <StaggerItem index={0} className="min-w-0">
+          <ChartCard title="Listing status" hint={`${ov.live} live`}>
+            <Donut data={statusMix} label="listings" />
+          </ChartCard>
+        </StaggerItem>
+        <StaggerItem index={1} className="min-w-0">
+          <ChartCard title="Content mix" hint="By type">
+            <BarsH data={contentMix} />
+          </ChartCard>
+        </StaggerItem>
+        <StaggerItem index={2} className="min-w-0">
+          <ChartCard title="Submissions" hint="Per month">
+            <Histogram data={submissions} />
+          </ChartCard>
+        </StaggerItem>
+        <StaggerItem index={3} className="min-w-0">
+          <ChartCard title="Money" hint={`${cedis(ov.ticketsGrossPesewas + ov.pledgesRaisedPesewas)} total`}>
+            {money.length > 0 ? <BarsH data={money} formatValue={cedis} /> : (
+              <div className="flex h-40 flex-col items-center justify-center gap-1 text-sm text-ink-faint">
+                <span>No ticket or pledge revenue yet.</span>
+                <Link to="/grow" className="text-xs font-semibold text-green-text hover:underline">Set up monetization →</Link>
+              </div>
+            )}
+          </ChartCard>
         </StaggerItem>
       </Stagger>
 

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { CreatorLayout, CreatorError } from "./components/layout";
+import { AppShellSkeleton } from "./components/skeleton";
 
 function buildRouter() {
   return createBrowserRouter([
     {
       element: <CreatorLayout />,
       errorElement: <CreatorError />,
+      hydrateFallbackElement: <AppShellSkeleton />,
       children: [
         { index: true, lazy: () => import("./pages/Overview") },
         { path: "work", lazy: () => import("./pages/MyWork") },

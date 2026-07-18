@@ -8,6 +8,8 @@ import { ImageUpload } from "@/components/image-upload";
 import { formatDate } from "@/lib/format";
 import type { NewsArticle, NewsStatus } from "@/lib/types";
 import { PenLine, Send } from "lucide-react";
+import { MarkdownEditor } from "@/components/markdown-editor";
+import { BusyLabel } from "@/components/skeleton";
 
 /** The writer's own posts in every status — drafts and in-review included. */
 export async function loader(): Promise<NewsArticle[]> {
@@ -107,12 +109,13 @@ export function Component() {
                 placeholder="One line shown on the news list." />
             </label>
 
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink">Body <span className="font-normal text-ink-faint">(Markdown)</span></span>
-              <textarea value={body} onChange={(e) => { setBody(e.target.value); setDone(null); }} rows={12}
-                className={`${inputCls} resize-y font-mono text-[0.8rem] leading-relaxed`}
-                placeholder={"Write your story here.\n\n## Use headings\n\n**Bold**, *italics*, and [links](https://…) all work."} />
-            </label>
+            <MarkdownEditor
+              label="Body"
+              value={body}
+              onChange={(v) => { setBody(v); setDone(null); }}
+              minRows={12}
+              placeholder={"Write your story here.\n\n## Use headings\n\n**Bold**, *italics*, and [links](https://…) all work."}
+            />
 
             <ImageUpload value={cover} onChange={setCover} label="Cover image (optional)" />
 
@@ -140,9 +143,13 @@ export function Component() {
             )}
 
             <div className="flex items-center gap-3 pt-1">
-              <button onClick={submit} disabled={!canSubmit}
+              <button onClick={submit} disabled={!canSubmit} aria-busy={busy || undefined}
                 className="inline-flex items-center gap-2 rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-50">
-                <Send size={15} aria-hidden /> {busy ? "Submitting…" : publishesDirectly ? "Publish post" : "Submit for review"}
+                {busy ? (
+                  <BusyLabel label={publishesDirectly ? "Publishing post" : "Submitting post for review"} width="w-24" />
+                ) : (
+                  <><Send size={15} aria-hidden /> {publishesDirectly ? "Publish post" : "Submit for review"}</>
+                )}
               </button>
               <span className="text-xs text-ink-faint">Title needs at least 3 characters.</span>
             </div>

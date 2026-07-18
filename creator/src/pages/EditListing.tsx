@@ -5,6 +5,7 @@ import type { Listing } from "@/lib/types";
 import { BackLink, Card, StatusBadge } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { DatePicker } from "@/components/date-picker";
+import { BusyLabel } from "@/components/skeleton";
 
 interface Data {
   listing: Listing | null;
@@ -301,8 +302,8 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
           {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
 
           <div className="flex items-center gap-3">
-            <button type="submit" disabled={busy} className="rounded-full bg-green px-8 py-3 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
-              {busy ? "Saving…" : resubmits ? "Save & resubmit" : "Save changes"}
+            <button type="submit" disabled={busy} aria-busy={busy || undefined} className="rounded-full bg-green px-8 py-3 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
+              {busy ? <BusyLabel label={resubmits ? "Saving and resubmitting listing" : "Saving listing changes"} width="w-24" /> : resubmits ? "Save & resubmit" : "Save changes"}
             </button>
             <Link to="/work" className="text-sm font-medium text-ink-faint hover:text-ink">Cancel</Link>
           </div>

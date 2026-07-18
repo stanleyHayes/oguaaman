@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "./layout";
 import { OtpInput } from "./otp-input";
+import { BusyLabel } from "./skeleton";
 
 // Shared with the auth gate / Settings — the studio's cream input + green
 // primary button idioms, so the two-factor flow feels native to the creator app.
@@ -122,7 +123,9 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
         </div>
         {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
         <div className="flex items-center gap-3">
-          <button type="submit" disabled={busy} className={primaryBtn}>{busy ? "Verifying…" : "Verify & turn on"}</button>
+          <button type="submit" disabled={busy} aria-busy={busy || undefined} className={primaryBtn}>
+            {busy ? <BusyLabel label="Verifying two-factor code" width="w-20" /> : "Verify & turn on"}
+          </button>
           <button type="button" onClick={() => { setStage(null); setErr(null); }} className="text-sm font-medium text-ink-muted hover:text-ink">Cancel</button>
         </div>
       </form>
@@ -132,8 +135,8 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
   return (
     <div>
       {err && <p className="mb-3 rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-      <button type="button" onClick={begin} disabled={busy} className={primaryBtn}>
-        {busy ? "Starting…" : "Set up two-factor"}
+      <button type="button" onClick={begin} disabled={busy} aria-busy={busy || undefined} className={primaryBtn}>
+        {busy ? <BusyLabel label="Starting two-factor setup" width="w-20" /> : "Set up two-factor"}
       </button>
     </div>
   );
@@ -184,8 +187,8 @@ export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
       )}
       {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={busy} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-on-green hover:bg-clay-text disabled:opacity-60">
-          {busy ? "Turning off…" : "Turn off two-factor"}
+        <button type="submit" disabled={busy} aria-busy={busy || undefined} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-on-green hover:bg-clay-text disabled:opacity-60">
+          {busy ? <BusyLabel label="Turning off two-factor" width="w-20" /> : "Turn off two-factor"}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="text-sm font-medium text-ink-muted hover:text-ink">Keep it on</button>
       </div>
