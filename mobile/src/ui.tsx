@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
-import type { SharedValue } from "react-native-reanimated";
+import { useEffect, useMemo, useState } from "react";
+import { Image, StyleSheet, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { HeroParallax } from "@/components/anim";
 import { D, S, SI, ON_GREEN, fillFor, onFill, withAlpha, type Palette } from "@/theme";
@@ -8,12 +8,33 @@ import { useTheme } from "@/lib/theme-context";
 import { cldCover } from "@/lib/cloudinary";
 import { mediaUrl } from "@/lib/api";
 
+/**
+ * Branded splash-style loader — the Oguaa crab (Kotokuraba) breathing over a
+ * soft expanding ripple, with the wordmark. Replaces the bare spinner across the
+ * app so every load feels like a moment of the brand, not a stall.
+ */
 export function Loading() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
+  const breath = useSharedValue(0);
+  const ripple = useSharedValue(0);
+  useEffect(() => {
+    breath.value = withRepeat(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) }), -1, true);
+    ripple.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.out(Easing.quad) }), -1, false);
+  }, [breath, ripple]);
+  const markStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + breath.value * 0.12 }] }));
+  const rippleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 0.4 + ripple.value * 1.3 }],
+    opacity: (1 - ripple.value) * 0.4,
+  }));
   return (
-    <View style={s.center}>
-      <ActivityIndicator color={C.greenText} size="large" />
+    <View style={s.splash}>
+      <View style={s.splashMarkWrap}>
+        <Animated.View style={[s.splashRipple, rippleStyle]} />
+        <Animated.View style={markStyle}><Mark size={58} /></Animated.View>
+      </View>
+      <Text style={s.splashWord}>Oguaa</Text>
+      <Text style={s.splashTag}>Cape Coast · Ghana</Text>
     </View>
   );
 }
@@ -269,6 +290,11 @@ const makeMdStyles = (C: Palette) => StyleSheet.create({
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, backgroundColor: C.paper, gap: 6 },
+  splash: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.paper, gap: 14 },
+  splashMarkWrap: { width: 128, height: 128, alignItems: "center", justifyContent: "center" },
+  splashRipple: { position: "absolute", width: 128, height: 128, borderRadius: 64, backgroundColor: withAlpha(C.greenText, 0.16) },
+  splashWord: { ...D(700), fontSize: 30, color: C.goldText, letterSpacing: 0.5 },
+  splashTag: { color: C.inkFaint, fontSize: 11, letterSpacing: 3, textTransform: "uppercase", ...S(600) },
   errTitle: { fontSize: 20, ...D(700), color: C.ink },
   errMsg: { color: C.clayText, textAlign: "center" },
   errHint: { color: C.inkFaint, fontSize: 12, marginTop: 4 },

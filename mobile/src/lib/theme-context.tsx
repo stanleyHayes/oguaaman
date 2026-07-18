@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Dimensions, Platform, StyleSheet, View, useColorScheme } from "react-native";
-import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import * as SecureStore from "expo-secure-store";
 import { DARK, LIGHT, type Palette, type ThemeName } from "@/theme";
 
@@ -85,70 +85,44 @@ export function ThemeProvider({ children }: Readonly<{ children: ReactNode }>) {
     return () => { alive = false; };
   }, []);
 
-  // Circular-reveal overlay: a full-screen circle of the *incoming* background,
-  // centred on the tapped control, that scales up to cover the screen before the
-  // palette actually swaps underneath it — so the new theme appears to radiate
-  // from the toggle, mirroring the web app's View-Transition reveal.
-  const [reveal, setReveal] = useState<{ x: number; y: number; r: number; color: string } | null>(null);
-  const grow = useSharedValue(0);
   const settingRef = useRef(setting);
   settingRef.current = setting;
 
-  const commit = useCallback((v: ThemeSetting) => {
+  // The theme swaps instantly — no screen-covering circle. The old reveal grew a
+  // solid incoming-background circle over everything (a dark-green flood when
+  // switching to dark), making every element vanish then reappear. Instead the
+  // whole app gently fades + settles in OVER the new background, so the new theme
+  // "develops in" with nothing ever disappearing. (A true circular content
+  // reveal isn't feasible in RN without heavy view snapshotting/masking.)
+  // origin is accepted for call-site compatibility but no longer used.
+  const setTheme = useCallback((v: ThemeSetting, _origin?: RevealOrigin) => {
+    if (v === settingRef.current) return;
     setSetting(v);
     writeSetting(v);
-    setReveal(null);
   }, []);
-
-  const setTheme = useCallback((v: ThemeSetting, origin?: RevealOrigin) => {
-    if (v === settingRef.current) return;
-    const incoming = resolve(v, system) === "dark" ? DARK : LIGHT;
-    // No origin: switch instantly (programmatic callers, e.g. Settings toggles).
-    if (!origin) { setSetting(v); writeSetting(v); return; }
-    const { width, height } = Dimensions.get("window");
-    // The header sits top-right; if a platform doesn't surface tap coords
-    // (some web synthetic events), radiate from there rather than skipping the
-    // animation or drawing a NaN-sized circle.
-    const x = Number.isFinite(origin.x) ? origin.x : width - 32;
-    const y = Number.isFinite(origin.y) ? origin.y : 48;
-    const r = Math.hypot(Math.max(x, width - x), Math.max(y, height - y)) + 8;
-    setReveal({ x, y, r, color: incoming.paper });
-    grow.value = 0;
-    grow.value = withTiming(1, { duration: 460, easing: Easing.out(Easing.cubic) }, (done) => {
-      if (done) runOnJS(commit)(v);
-    });
-  }, [system, grow, commit]);
-
-  const circleStyle = useAnimatedStyle(() => ({ transform: [{ scale: grow.value }] }));
 
   const theme: ThemeName = resolve(setting, system);
   const palette = theme === "dark" ? DARK : LIGHT;
+
+  // Gentle fade+scale on every theme change (and once on first paint).
+  const t = useSharedValue(1);
+  useEffect(() => {
+    t.value = 0;
+    t.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) });
+  }, [theme, t]);
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: 0.55 + t.value * 0.45,
+    transform: [{ scale: 0.985 + t.value * 0.015 }],
+  }));
+
   const value = useMemo(
     () => ({ theme, setting, setTheme, palette, C: palette }),
     [theme, setting, setTheme, palette],
   );
   return (
     <Ctx.Provider value={value}>
-      <View style={styles.fill}>
-        {children}
-        {reveal ? (
-          <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-            <Animated.View
-              style={[
-                {
-                  position: "absolute",
-                  left: reveal.x - reveal.r,
-                  top: reveal.y - reveal.r,
-                  width: reveal.r * 2,
-                  height: reveal.r * 2,
-                  borderRadius: reveal.r,
-                  backgroundColor: reveal.color,
-                },
-                circleStyle,
-              ]}
-            />
-          </View>
-        ) : null}
+      <View style={[styles.fill, { backgroundColor: palette.paper }]}>
+        <Animated.View style={[styles.fill, contentStyle]}>{children}</Animated.View>
       </View>
     </Ctx.Provider>
   );
