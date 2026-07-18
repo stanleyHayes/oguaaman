@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
 import { type Palette, S } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
+import { ArrowUpRightIcon, MapPinIcon } from "@/components/icons";
+import { MapView } from "@/components/map-view";
+import { RevealView } from "@/components/anim";
 
 const CAPE_COAST: [number, number] = [5.1053, -1.2466];
 const geoCache = new Map<string, [number, number]>();
 
-function staticMap(lat: number, lng: number): string {
-  return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=14&size=640x280&markers=${lat},${lng},red-pushpin`;
-}
+
 
 export function LocationCard({ address, query }: Readonly<{ address?: string; query?: string }>) {
   const { C } = useTheme();
@@ -53,18 +54,28 @@ export function LocationCard({ address, query }: Readonly<{ address?: string; qu
   }, [rawQuery, key, cached]);
 
   return (
+    <RevealView>
     <View style={s.card}>
-      <Image source={{ uri: staticMap(resolvedCoords[0], resolvedCoords[1]) }} style={s.map} resizeMode="cover" />
+      <MapView lat={resolvedCoords[0]} lng={resolvedCoords[1]} style={s.map} />
       <View style={s.body}>
-        {address ? <Text style={s.addr}>📍 {address}</Text> : null}
+        {address ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <MapPinIcon size={14} color={C.ink} strokeWidth={2} />
+            <Text style={s.addr}>{address}</Text>
+          </View>
+        ) : null}
         <Pressable accessibilityRole="button" style={s.btn} onPress={() => Linking.openURL(directions).catch(() => {})}>
-          <Text style={s.btnText}>Get directions ↗</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <Text style={s.btnText}>Get directions</Text>
+            <ArrowUpRightIcon size={12} color={C.cream} strokeWidth={2.5} />
+          </View>
         </Pressable>
         <Text style={s.meta}>
           Map data © OpenStreetMap contributors. {resolvedGeocoded ? "Pin is geocoded from this listing." : "Pin falls back to Cape Coast town centre."}
         </Text>
       </View>
     </View>
+    </RevealView>
   );
 }
 

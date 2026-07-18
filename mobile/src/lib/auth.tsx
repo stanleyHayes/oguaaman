@@ -10,6 +10,8 @@ export interface JoinInput {
   password: string;
   /** Optional creator kinds ("writer", …) chosen at sign-up. */
   creatorTypes?: string[];
+  /** Creator plan preference. Paid choices are intent-only until later checkout. */
+  creatorPlanIntent?: string;
 }
 
 interface AuthState {

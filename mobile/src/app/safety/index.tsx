@@ -11,6 +11,7 @@ import { ON_GREEN, S, type Palette, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
+import { CheckIcon } from "@/components/icons";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -92,7 +93,7 @@ export default function Safety() {
       </ScrollView>
 
       {data.length === 0 ? (
-        <EmptyState glyph="✓" title="The town is quiet" body="No incidents reported in this category." />
+        <EmptyState icon={<CheckIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="The town is quiet" body="No incidents reported in this category." />
       ) : (
         <View style={{ gap: 12, marginTop: 16 }}>
           {open.length > 0 && (

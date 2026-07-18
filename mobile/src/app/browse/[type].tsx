@@ -14,6 +14,7 @@ import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { CompassIcon } from "@/components/icons";
 import { ListFooter } from "@/components/list-footer";
 
 function openURL(url?: string) {
@@ -222,7 +223,7 @@ export default function Browse() {
   );
 
   const empty = items.length === 0
-    ? <View style={s.pad}><EmptyState glyph="◎" title="Nothing here yet" body="Be the first to contribute." /></View>
+    ? <View style={s.pad}><EmptyState icon={<CompassIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="Nothing here yet" body="Be the first to contribute." /></View>
     : null;
 
   const refreshControl = (

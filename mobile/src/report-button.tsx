@@ -4,6 +4,7 @@ import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { type Palette, S, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
+import { FlagIcon } from "@/components/icons";
 
 const REASONS: { value: string; label: string }[] = [
   { value: "inaccurate", label: "Not accurate" },
@@ -46,7 +47,10 @@ export function ReportButton({ listingId, memorial = false }: Readonly<{ listing
   if (!open) {
     return (
       <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={s.trigger}>
-        <Text style={s.triggerText}>⚑ Report this</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <FlagIcon size={14} color={C.inkFaint} strokeWidth={2} />
+          <Text style={s.triggerText}>Report this</Text>
+        </View>
       </Pressable>
     );
   }

@@ -1,27 +1,108 @@
 import { useEffect, useMemo, useState } from "react";
 import { Image, StyleSheet, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from "react-native-reanimated";
+import Svg, { Circle, G, Path } from "react-native-svg";
 import { T as Text } from "@/components/typography";
 import { HeroParallax } from "@/components/anim";
 import { D, S, SI, ON_GREEN, fillFor, onFill, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { cldCover } from "@/lib/cloudinary";
 import { mediaUrl } from "@/lib/api";
+import { SPLASH_LINES, randomSplashIndex, type SplashLine } from "@/lib/splash-lines";
 
 /**
  * Branded splash-style loader — the Oguaa crab (Kotokuraba) breathing over a
  * soft expanding ripple, with the wordmark. Replaces the bare spinner across the
  * app so every load feels like a moment of the brand, not a stall.
  */
+/** Category accent + glyph for a splash line. */
+function splashCategory(C: Palette, kind: string): { color: string; glyph: "quote" | "sparkle" | "leaf" } {
+  if (kind === "Did you know") return { color: C.clayText, glyph: "sparkle" };
+  if (kind === "The town’s code") return { color: C.greenText, glyph: "leaf" };
+  return { color: C.gold, glyph: "quote" };
+}
+
+function CatGlyph({ glyph, size, color }: Readonly<{ glyph: "quote" | "sparkle" | "leaf"; size: number; color: string }>) {
+  if (glyph === "sparkle") {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24">
+        <Path d="M12 1.8l1.9 6.5 6.5 1.9-6.5 1.9L12 18.6l-1.9-6.5L3.6 10.2l6.5-1.9z" fill={color} />
+      </Svg>
+    );
+  }
+  if (glyph === "leaf") {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24">
+        <Path d="M5 20s-1-8 6-12 9-4 9-4 1 8-6 12-9 4-9 4z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <Path d="M5 20 18 7" stroke={color} strokeWidth={2} strokeLinecap="round" fill="none" />
+      </Svg>
+    );
+  }
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M6.5 6.5h5v6a4 4 0 0 1-4 4v-2.2a1.8 1.8 0 0 0 1.8-1.8H6.5zM14 6.5h5v6a4 4 0 0 1-4 4v-2.2a1.8 1.8 0 0 0 1.8-1.8H14z" fill={color} />
+    </Svg>
+  );
+}
+
+/** One word of the splash line, revealed in sequence off a shared progress. */
+function SplashWord({ text, index, total, progress, style }: Readonly<{ text: string; index: number; total: number; progress: SharedValue<number>; style: StyleProp<TextStyle> }>) {
+  const st = useAnimatedStyle(() => {
+    const start = (index / (total + 3)) * 0.8;
+    const p = Math.min(1, Math.max(0, (progress.value - start) / 0.22));
+    return { opacity: p, transform: [{ translateY: (1 - p) * 9 }] };
+  });
+  return <Animated.Text style={[style, st]}>{text + " "}</Animated.Text>;
+}
+
+/** The eye-catching splash line — category badge + icon, word-by-word reveal,
+ *  and a drawing underline. Re-animates whenever `cycle` changes. */
+function SplashQuote({ line, cycle }: Readonly<{ line: SplashLine; cycle: number }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const cat = splashCategory(C, line.kind);
+  const progress = useSharedValue(0);
+  useEffect(() => {
+    progress.value = 0;
+    progress.value = withTiming(1, { duration: 720, easing: Easing.out(Easing.quad) });
+  }, [cycle, progress]);
+  const chipStyle = useAnimatedStyle(() => {
+    const p = Math.min(1, progress.value * 4);
+    return { opacity: p, transform: [{ scale: 0.88 + p * 0.12 }] };
+  });
+  const underlineStyle = useAnimatedStyle(() => ({ opacity: progress.value * 0.6, transform: [{ scaleX: progress.value }] }));
+  const words = line.text.split(" ");
+  return (
+    <View style={s.splashLine}>
+      <Animated.View style={[s.splashChip, { borderColor: withAlpha(cat.color, 0.35), backgroundColor: withAlpha(cat.color, 0.12) }, chipStyle]}>
+        <CatGlyph glyph={cat.glyph} size={11} color={cat.color} />
+        <Text style={[s.splashChipText, { color: cat.color }]}>{line.kind}</Text>
+      </Animated.View>
+      <View style={s.splashWords}>
+        {words.map((w, idx) => (
+          <SplashWord key={`${cycle}-${idx}`} text={w} index={idx} total={words.length} progress={progress} style={s.splashLineText} />
+        ))}
+      </View>
+      <Animated.View style={[s.splashUnderline, { backgroundColor: cat.color }, underlineStyle]} />
+    </View>
+  );
+}
+
 export function Loading() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const breath = useSharedValue(0);
   const ripple = useSharedValue(0);
+  // A different proverb/fact each load, gently rotating while you wait.
+  const [i, setI] = useState(randomSplashIndex);
   useEffect(() => {
     breath.value = withRepeat(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) }), -1, true);
     ripple.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.out(Easing.quad) }), -1, false);
   }, [breath, ripple]);
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % SPLASH_LINES.length), 4600);
+    return () => clearInterval(t);
+  }, []);
   const markStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + breath.value * 0.12 }] }));
   const rippleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 0.4 + ripple.value * 1.3 }],
@@ -35,6 +116,7 @@ export function Loading() {
       </View>
       <Text style={s.splashWord}>Oguaa</Text>
       <Text style={s.splashTag}>Cape Coast · Ghana</Text>
+      <SplashQuote line={SPLASH_LINES[i]} cycle={i} />
     </View>
   );
 }
@@ -51,12 +133,39 @@ export function ErrorView({ message }: Readonly<{ message: string }>) {
   );
 }
 
-/** The Oguaa crab mark — Kotokuraba, the crab market behind the town's name. */
+/**
+ * The Oguaa crab mark — Kotokuraba, the crab market behind the town's name.
+ * The same SVG the web wordmark uses (frontend CrabMark), so the logo reads
+ * identically on both — no emoji. Honours `color` (default: the theme gold).
+ */
 export function Mark({ size = 28, color }: Readonly<{ size?: number; color?: string }>) {
+  const { C } = useTheme();
+  const c = color ?? C.gold;
   return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontSize: size * 0.92, color }}>🦀</Text>
-    </View>
+    <Svg width={size} height={size} viewBox="0 0 64 64">
+      <G stroke={c} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" fill="none" transform="translate(0,-1)">
+        {/* right claw + legs */}
+        <Path d="M43 32.5C47 31 50 30.5 52 28" />
+        <Path d="M52 28C56 27 59.2 23.4 55.6 20.4 54 19.1 52.4 20.2 52.9 22" />
+        <Path d="M52 28C54.6 28.9 57 27.6 57.2 25.2" />
+        <Path d="M43.5 40.5C47.5 41.5 50.6 43.4 52.6 46.4" />
+        <Path d="M42.5 43C45.6 44.4 48 46.4 49.5 49.4" />
+        <Path d="M40.6 45C42.6 47 43.8 49 44.8 51.7" />
+        {/* left claw + legs (mirror) */}
+        <Path d="M21 32.5C17 31 14 30.5 12 28" />
+        <Path d="M12 28C8 27 4.8 23.4 8.4 20.4 10 19.1 11.6 20.2 11.1 22" />
+        <Path d="M12 28C9.4 28.9 7 27.6 6.8 25.2" />
+        <Path d="M20.5 40.5C16.5 41.5 13.4 43.4 11.4 46.4" />
+        <Path d="M21.5 43C18.4 44.4 16 46.4 14.5 49.4" />
+        <Path d="M23.4 45C21.4 47 20.2 49 19.2 51.7" />
+        {/* carapace + eyes on stalks */}
+        <Path d="M20 39C20 32 25.5 28.5 32 28.5 38.5 28.5 44 32 44 39 44 44 39 46.5 32 46.5 25 46.5 20 44 20 39Z" />
+        <Path d="M28 29L28 24" />
+        <Path d="M36 29L36 24" />
+        <Circle cx={28} cy={22.4} r={1.9} fill={c} stroke="none" />
+        <Circle cx={36} cy={22.4} r={1.9} fill={c} stroke="none" />
+      </G>
+    </Svg>
   );
 }
 
@@ -295,6 +404,12 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   splashRipple: { position: "absolute", width: 128, height: 128, borderRadius: 64, backgroundColor: withAlpha(C.greenText, 0.16) },
   splashWord: { ...D(700), fontSize: 30, color: C.goldText, letterSpacing: 0.5 },
   splashTag: { color: C.inkFaint, fontSize: 11, letterSpacing: 3, textTransform: "uppercase", ...S(600) },
+  splashLine: { marginTop: 12, maxWidth: 312, paddingHorizontal: 24, alignItems: "center" },
+  splashChip: { flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  splashChipText: { fontSize: 9.5, letterSpacing: 1.6, textTransform: "uppercase", ...D(700) },
+  splashWords: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginTop: 12 },
+  splashLineText: { color: withAlpha(C.ink, 0.85), fontSize: 14, lineHeight: 21, textAlign: "center", ...S(500) },
+  splashUnderline: { marginTop: 14, height: 1.5, width: 60, borderRadius: 1 },
   errTitle: { fontSize: 20, ...D(700), color: C.ink },
   errMsg: { color: C.clayText, textAlign: "center" },
   errHint: { color: C.inkFaint, fontSize: 12, marginTop: 4 },

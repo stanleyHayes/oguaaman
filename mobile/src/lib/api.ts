@@ -1,4 +1,4 @@
-import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest } from "./types";
+import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal } from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -12,7 +12,10 @@ export const API_BASE = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:80
  * fails — prefix the API origin so covers/crests resolve everywhere.
  */
 export function mediaUrl(src?: string): string | undefined {
-  return src?.startsWith("/") ? `${API_BASE}${src}` : src;
+  if (!src) return undefined;
+  if (/^https?:\/\//i.test(src) || src.startsWith("data:")) return src;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_BASE}${path}`;
 }
 
 function authHeaders(json = false): Record<string, string> {
@@ -326,6 +329,12 @@ export const api = {
   // The history hub — timeline + heritage sites + people + memories.
   history: () => get<HistoryView>("/api/history"),
 
+  // Build a better Oguaa — the civic hub: the town's code of behaviours (by
+  // ring of life) plus the civilizations whose civic habits made them great.
+  // Static authored content; public (no auth). The pledge is device-local.
+  civic: () => get<CivicData>("/api/civic"),
+  goals: () => get<Goal[]>("/api/goals"),
+
   // The map / Explore feed — every coordinate-bearing entity across the pillars,
   // plus heritage/festival trails and active geo-directives. Public; the client
   // filters layers locally (see app/explore.tsx).
@@ -363,7 +372,7 @@ export const api = {
     post<LoginResult>("/api/auth/login", { identifier, password }),
   mfaLogin: (challenge: string, code: string) =>
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
-  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[] }) =>
+  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[]; creatorPlanIntent?: string }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
   startPhoneVerification: () => post<PhoneVerificationResult>("/api/me/phone/verify/start", {}),
   confirmPhoneVerification: (code: string) =>

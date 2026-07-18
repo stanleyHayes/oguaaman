@@ -112,6 +112,8 @@ export interface Member {
   role: "member" | "curator" | "steward" | "editor";
   /** Creator kinds ("writer" | "business" | "artist" | "organiser" | …); empty = plain citizen. */
   creatorTypes?: string[];
+  /** Creator plan preference selected at signup; it is not an active entitlement. */
+  creatorPlanIntent?: string;
   phoneVerified: boolean;
   /** True for curators/stewards and approved managers of a verified authority org. */
   verified?: boolean;
@@ -657,4 +659,70 @@ export interface InstitutionRequest {
   status: "pending" | "approved" | "rejected";
   newOrg: { name: string; kind: string; seat: string };
   createdAt: string;
+}
+
+// ── Build a better Oguaa — the civic hub (GET /api/civic) ──
+// Static, authored content served from the API — no user writes. Mirrors the
+// web frontend/backend contract EXACTLY (the JSON key is "behaviors", US
+// spelling); the shape must not drift.
+
+/** The ring of civic life a behaviour touches. "town" is Cape-Coast civic life
+ *  itself — public cleanliness, the markets, the shore, elders, queueing. */
+export type CivicRing = "self" | "home" | "school" | "work" | "town" | "nation";
+
+/** One civic behaviour — a thing to keep doing ("do") or to stop ("stop"). */
+export interface CivicBehaviour {
+  slug: string;
+  ring: CivicRing;
+  type: "do" | "stop";
+  title: string;
+  description: string;
+  /** The reason it matters — surfaced on tap. */
+  why: string;
+}
+
+/** A civilization whose civic habits carry a lesson for a better town. */
+export interface CivicLesson {
+  slug: string;
+  name: string;
+  era: string;
+  principle: string;
+  lesson: string;
+}
+
+/** Payload of GET /api/civic. Note the JSON key is "behaviors" (US spelling). */
+export interface CivicData {
+  behaviors: CivicBehaviour[];
+  civilizations: CivicLesson[];
+}
+
+export type GoalCadence = "daily" | "weekly" | "monthly" | "quarterly" | "semiannual" | "annual";
+export type GoalStatus = "active" | "pending_review" | "achieved" | "missed";
+
+/** A collective town goal (GET /api/goals): set for a period, shown to remind
+ *  everyone, and judged achieved/missed by an accountability officer. Exactly one
+ *  is `featured` (the annual goal set at the grand durbar). `status` is computed
+ *  on read (pending_review = window closed, awaiting the officer). */
+export interface Goal {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  target?: string;
+  cadence: GoalCadence;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  status: GoalStatus;
+  reviewNote?: string;
+  reviewedById?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  setAtDurbar: boolean;
+  ring?: CivicRing;
+  featured: boolean;
+  createdById: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt?: string;
 }

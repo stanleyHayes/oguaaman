@@ -11,6 +11,7 @@ import type { Listing, Tribute } from "@/lib/types";
 import { D, S, SI, ON_GREEN, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb } from "@/ui";
+import { CandleIcon, HeartFilledIcon, HeartIcon } from "@/components/icons";
 import { ReportButton } from "@/report-button";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn } from "@/components/anim";
@@ -57,9 +58,12 @@ function RememberButton({ slug, initialCount }: Readonly<{ slug: string; initial
 
   return (
     <Pressable accessibilityRole="button" onPress={toggle} disabled={busy} style={[s.remember, following && s.rememberOn]}>
-      <Text style={[s.rememberText, following && s.rememberTextOn]}>
-        {following ? "♥ Remembering" : "♡ Remember"} · {count}
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+        {following ? <HeartFilledIcon size={14} color={following ? C.cream : C.greenText} strokeWidth={2} /> : <HeartIcon size={14} color={following ? C.cream : C.greenText} strokeWidth={2} />}
+        <Text style={[s.rememberText, following && s.rememberTextOn]}>
+          {following ? "Remembering" : "Remember"} · {count}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -131,7 +135,10 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
         {d.epitaph && <Text style={s.epitaph}>“{d.epitaph}”</Text>}
 
         <Pressable accessibilityRole="button" onPress={light} style={[s.candle, lit && { backgroundColor: C.green900 }]}>
-          <Text style={s.candleText}>{lit ? "🕯  Candle lit" : "🕯  Light a candle"} · {candles}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <CandleIcon size={14} color={lit ? ON_GREEN : C.greenText} strokeWidth={2} />
+            <Text style={s.candleText}>{lit ? "Candle lit" : "Light a candle"} · {candles}</Text>
+          </View>
         </Pressable>
         <RememberButton slug={slug} initialCount={d.rememberedByCount ?? 0} />
         <Text style={s.rememberHint}>Those who remember are quietly told on the anniversary each year.</Text>

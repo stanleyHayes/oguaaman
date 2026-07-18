@@ -10,6 +10,7 @@ import { severityColors } from "@/lib/incidents";
 import { directiveFill, isActiveAt, countdownTo, DIRECTIVE_KIND_LABEL, DIRECTIVE_SEVERITY_LABEL } from "@/lib/directives";
 import { Loading, ErrorView } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
+import { CheckIcon } from "@/components/icons";
 
 function fmtDateTime(iso?: string): string {
   if (!iso) return "";
@@ -97,7 +98,7 @@ export default function Alerts() {
       </Text>
 
       {data.length === 0 ? (
-        <EmptyState glyph="✓" title="No standing notices" body="There are no directives in effect right now." />
+        <EmptyState icon={<CheckIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="No standing notices" body="There are no directives in effect right now." />
       ) : (
         <View style={{ gap: 12, marginTop: 16 }}>
           {active.length > 0 && (

@@ -14,6 +14,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, HeroBand, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 import { fmtDate } from "@/components/studio-kit";
+import { CheckIcon, PenIcon, PlusIcon, StarIcon } from "@/components/icons";
 
 /*
  * My Work — ports creator/src/pages/MyWork.tsx. The member's own listings (all
@@ -120,7 +121,7 @@ export default function StudioWork() {
         {filtered.length === 0 ? (
           <View style={s.emptyCard}>
             <EmptyState
-              glyph="✎"
+              icon={<PenIcon size={56} color={C.inkFaint} strokeWidth={1.5} />}
               title={filter === "all" ? "Nothing yet" : `No ${filter} listings`}
               body={filter === "all"
                 ? "Your businesses, events, art and projects show up here once you submit them."
@@ -136,7 +137,10 @@ export default function StudioWork() {
         )}
 
         <Pressable accessibilityRole="button" onPress={() => push(ROUTES.submit)} style={s.addListingBtn}>
-          <Text style={s.addListingText}>+ Add a listing</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <PlusIcon size={16} color={C.goldText} strokeWidth={2.5} />
+            <Text style={s.addListingText}>Add a listing</Text>
+          </View>
         </Pressable>
 
         <Text style={s.footNote}>
@@ -174,7 +178,10 @@ function WorkRow({ listing: l, onChanged }: Readonly<{ listing: Listing; onChang
       </View>
 
       {featuredUntil && (
-        <Text style={s.featuredNote}>★ Featured until {fmtDate(featuredUntil)}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <StarIcon size={12} color={C.goldText} strokeWidth={2.5} />
+          <Text style={s.featuredNote}>Featured until {fmtDate(featuredUntil)}</Text>
+        </View>
       )}
 
       <View style={s.actions}>
@@ -267,7 +274,13 @@ function PromoteControl({ listing, onDone }: Readonly<{ listing: Listing; onDone
     } finally { setBusy(false); }
   }
 
-  if (confirmed) return <Text style={s.promoDone}>★ Featured {confirmed.days}d ✓</Text>;
+  if (confirmed) return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+      <StarIcon size={12} color={C.goldText} strokeWidth={2.5} />
+      <Text style={s.promoDone}>Featured {confirmed.days}d</Text>
+      <CheckIcon size={12} color={C.goldText} strokeWidth={2.5} />
+    </View>
+  );
   if (pendingRef) {
     return (
       <View style={{ alignItems: "flex-end", gap: 4 }}>

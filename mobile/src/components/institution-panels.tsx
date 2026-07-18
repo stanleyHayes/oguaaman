@@ -12,6 +12,7 @@ import { ImageField } from "@/components/image-field";
 import { DateField } from "@/components/date-field";
 import { D, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import type { MediaAsset, Office, Organization, ProfileSection, ProfileSectionType, SectionItem, SocialLink, SubEntity } from "@/lib/types";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, CloseIcon } from "@/components/icons";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -21,9 +22,15 @@ function usePanelStyles() {
 }
 
 export function Saver({ state }: Readonly<{ state: SaveState }>) {
+  const { C } = useTheme();
   const s = usePanelStyles();
   if (state === "saving") return <Text style={s.saverMuted}>Saving…</Text>;
-  if (state === "saved") return <Text style={s.saverOk}>Saved ✓</Text>;
+  if (state === "saved") return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+      <CheckIcon size={12} color={C.greenText} strokeWidth={3} />
+      <Text style={s.saverOk}>Saved</Text>
+    </View>
+  );
   if (state === "error") return <Text style={s.saverErr}>Couldn&apos;t save — try again.</Text>;
   return null;
 }
@@ -45,10 +52,11 @@ function FieldLabel({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 function CheckRow({ value, onValueChange, label }: Readonly<{ value: boolean; onValueChange: (v: boolean) => void; label: string }>) {
+  const { C } = useTheme();
   const s = usePanelStyles();
   return (
     <Pressable accessibilityRole="button" onPress={() => onValueChange(!value)} style={s.checkRow}>
-      <View style={[s.checkBox, value && s.checkBoxOn]}>{value ? <Text style={s.checkTick}>✓</Text> : null}</View>
+      <View style={[s.checkBox, value && s.checkBoxOn]}>{value ? <CheckIcon size={11} color={C.cream} strokeWidth={3} /> : null}</View>
       <Text style={s.checkLabel}>{label}</Text>
     </Pressable>
   );
@@ -175,7 +183,7 @@ export function ProfilePanel({ slug, org }: Readonly<{ slug: string; org: Organi
               <View key={i} style={s.rowItem}>
                 <TextInput style={[s.input, { flex: 1 }]} value={c.label} onChangeText={(v) => updateContact(i, { label: v })} placeholder="Label (e.g. Website)" placeholderTextColor={C.inkFaint} />
                 <TextInput style={[s.input, { flex: 1 }]} value={c.url} onChangeText={(v) => updateContact(i, { url: v })} placeholder="https://…" placeholderTextColor={C.inkFaint} autoCapitalize="none" keyboardType="url" />
-                <Pressable accessibilityRole="button" onPress={() => removeContact(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => removeContact(i)} hitSlop={6} style={s.removeBtn}><CloseIcon size={14} color={C.clayText} strokeWidth={2.5} /></Pressable>
               </View>
             ))}
             <Pressable accessibilityRole="button" onPress={addContact} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add contact</Text></Pressable>
@@ -235,7 +243,7 @@ export function OfficesPanel({ slug, initial }: Readonly<{ slug: string; initial
           <View key={o.id || i} style={{ gap: 8 }}>
             <View style={s.rowItem}>
               <TextInput style={[s.input, { flex: 1 }]} value={o.role} onChangeText={(v) => update(i, { role: v })} placeholder="Office (e.g. Headmaster)" placeholderTextColor={C.inkFaint} />
-              <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={s.removeBtn}><CloseIcon size={14} color={C.clayText} strokeWidth={2.5} /></Pressable>
             </View>
             <TextInput style={s.input} value={o.holderName ?? ""} onChangeText={(v) => update(i, { holderName: v })} placeholder="Holder's name" placeholderTextColor={C.inkFaint} />
           </View>
@@ -524,9 +532,9 @@ export function SectionsPanel({ slug, initial }: Readonly<{ slug: string; initia
             <View style={s.sectionHead}>
               <View style={s.typeBadge}><Text style={s.typeBadgeText}>{sectionTypeLabel(sec.type)}</Text></View>
               <View style={s.moveGroup}>
-                <Pressable accessibilityRole="button" onPress={() => move(i, -1)} disabled={i === 0} style={[s.moveBtn, i === 0 && s.dim]}><Text style={s.moveBtnText}>↑</Text></Pressable>
-                <Pressable accessibilityRole="button" onPress={() => move(i, 1)} disabled={i === sections.length - 1} style={[s.moveBtn, i === sections.length - 1 && s.dim]}><Text style={s.moveBtnText}>↓</Text></Pressable>
-                <Pressable accessibilityRole="button" onPress={() => remove(i)} style={s.moveBtn}><Text style={[s.moveBtnText, { color: C.clayText }]}>✕</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => move(i, -1)} disabled={i === 0} style={[s.moveBtn, i === 0 && s.dim]}><ChevronUpIcon size={14} color={C.inkMuted} strokeWidth={2.5} /></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => move(i, 1)} disabled={i === sections.length - 1} style={[s.moveBtn, i === sections.length - 1 && s.dim]}><ChevronDownIcon size={14} color={C.inkMuted} strokeWidth={2.5} /></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => remove(i)} style={s.moveBtn}><CloseIcon size={14} color={C.clayText} strokeWidth={2.5} /></Pressable>
               </View>
             </View>
             <TextInput style={[s.input, { marginTop: 8 }]} value={sec.title ?? ""} onChangeText={(v) => update(i, { title: v })} placeholder="Section title" placeholderTextColor={C.inkFaint} />
@@ -719,7 +727,7 @@ function AttrsEditor({ attrs, onChange }: Readonly<{ attrs: SectionItem[]; onCha
         <View key={a.id || i} style={s.rowItem}>
           <TextInput style={[s.input, { flex: 1 }]} value={a.label ?? ""} onChangeText={(v) => update(i, { label: v })} placeholder="Label (e.g. Housemaster)" placeholderTextColor={C.inkFaint} />
           <TextInput style={[s.input, { flex: 1 }]} value={a.value ?? ""} onChangeText={(v) => update(i, { value: v })} placeholder="Value" placeholderTextColor={C.inkFaint} />
-          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={6} style={s.removeBtn}><CloseIcon size={14} color={C.clayText} strokeWidth={2.5} /></Pressable>
         </View>
       ))}
       <Pressable accessibilityRole="button" onPress={add} style={s.ghostBtn}><Text style={s.ghostBtnText}>+ Add fact</Text></Pressable>

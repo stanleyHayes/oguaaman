@@ -11,6 +11,7 @@ import { D, ON_GREEN, S, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, HeroBand } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
+import { CediIcon, DiamondIcon, RefreshIcon, TicketIcon } from "@/components/icons";
 import { MetricCard, PayPill, cedis, fmtDate } from "@/components/studio-kit";
 
 /*
@@ -73,15 +74,15 @@ export default function StudioMoney() {
 
       <View style={s.body}>
         <View style={s.grid}>
-          <MetricCard label="Ticket sales (gross)" value={cedis(overview.ticketsGrossPesewas)} glyph="₵" tone="teal" sub={`${overview.ticketsSold} sold`} />
-          <MetricCard label="Pledges raised (net)" value={cedis(overview.pledgesRaisedPesewas)} glyph="♦" tone="gold" sub="Across your projects" />
-          <MetricCard label="Plan payments" value={successSubs.length} glyph="⟳" tone="green" sub={cedis(subSpend)} />
-          <MetricCard label="Tickets bought" value={tickets.length} glyph="▧" tone="ink" sub="Your own gate codes" />
+          <MetricCard label="Ticket sales (gross)" value={cedis(overview.ticketsGrossPesewas)} icon={CediIcon} tone="teal" sub={`${overview.ticketsSold} sold`} />
+          <MetricCard label="Pledges raised (net)" value={cedis(overview.pledgesRaisedPesewas)} icon={DiamondIcon} tone="gold" sub="Across your projects" />
+          <MetricCard label="Plan payments" value={successSubs.length} icon={RefreshIcon} tone="green" sub={cedis(subSpend)} />
+          <MetricCard label="Tickets bought" value={tickets.length} icon={TicketIcon} tone="ink" sub="Your own gate codes" />
         </View>
 
         <ListCard title="Plan payments" subtitle="Your Supporter subscriptions, newest first.">
           {subscriptions.length === 0 ? (
-            <EmptyState compact glyph="₵" title="No plan payments yet" />
+            <EmptyState compact icon={<CediIcon size={32} color={C.inkFaint} strokeWidth={1.5} />} title="No plan payments yet" />
           ) : (
             subscriptions.map((sub) => (
               <MoneyRow
@@ -97,7 +98,7 @@ export default function StudioMoney() {
 
         <ListCard title="Tickets you've bought" subtitle="Gate codes are shown on the event page.">
           {tickets.length === 0 ? (
-            <EmptyState compact glyph="▧" title="No tickets yet" />
+            <EmptyState compact icon={<TicketIcon size={32} color={C.inkFaint} strokeWidth={1.5} />} title="No tickets yet" />
           ) : (
             tickets.map((t) => (
               <MoneyRow
@@ -114,7 +115,7 @@ export default function StudioMoney() {
         {noSales && (
           <View style={s.emptyWrap}>
             <EmptyState
-              glyph="₵"
+              icon={<CediIcon size={56} color={C.inkFaint} strokeWidth={1.5} />}
               title="No sales yet"
               body="Earnings appear here when attendees buy tickets to your events or supporters pledge toward your projects."
             />
@@ -125,7 +126,7 @@ export default function StudioMoney() {
           <>
             <ListCard title="Ticket sales by event" subtitle="Confirmed ticket revenue from your events.">
               {earnings.ticketSales.length === 0 ? (
-                <EmptyState compact glyph="▧" title="No ticket sales yet" />
+                <EmptyState compact icon={<TicketIcon size={32} color={C.inkFaint} strokeWidth={1.5} />} title="No ticket sales yet" />
               ) : (
                 earnings.ticketSales.map((t: Ticket) => (
                   <MoneyRow
@@ -141,7 +142,7 @@ export default function StudioMoney() {
 
             <ListCard title="Pledges by project" subtitle="Net amount credited to your projects.">
               {earnings.pledges.length === 0 ? (
-                <EmptyState compact glyph="₵" title="No pledges received yet" />
+                <EmptyState compact icon={<DiamondIcon size={32} color={C.inkFaint} strokeWidth={1.5} />} title="No pledges received yet" />
               ) : (
                 earnings.pledges.map((p: Pledge) => (
                   <MoneyRow

@@ -10,6 +10,7 @@ import type { Listing } from "@/lib/types";
 import { S, type Palette, D } from "@/theme";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
+import { SparkleIcon } from "@/components/icons";
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
 const KINDS = ["scholarship", "internship", "apprenticeship", "training", "job", "investment", "mentorship"] as const;
@@ -110,7 +111,7 @@ export default function Youth() {
       </View>
 
       {shown.length === 0 ? (
-        <EmptyState glyph="✦" title="Nothing open right now" body="Nothing in this category at the moment — check back soon." />
+        <EmptyState icon={<SparkleIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="Nothing open right now" body="Nothing in this category at the moment — check back soon." />
       ) : (
         <View style={{ gap: 12, marginTop: 16 }}>
           {shown.map((o) => <OppCard key={o.id} opp={o} />)}

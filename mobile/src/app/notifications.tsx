@@ -13,6 +13,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { EnvelopeIcon } from "@/components/icons";
 
 function when(iso: string): string {
   if (!iso) return "";
@@ -100,7 +101,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
         )}
       </RevealView>
 
-      {items.length === 0 && <EmptyState glyph="✉" title="No notifications yet" body="Updates on your listings and remembrances will appear here." />}
+      {items.length === 0 && <EmptyState icon={<EnvelopeIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="No notifications yet" body="Updates on your listings and remembrances will appear here." />}
 
       {items.map((n, i) => {
         const linkable = mobileLink(n.link) != null;

@@ -7,7 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { T as Text } from "@/components/typography";
 import { S, withAlpha, type Palette, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
-import { BellIcon } from "@/components/icons";
+import { ArrowRightIcon, BellIcon, CloseIcon } from "@/components/icons";
 import { useDirectives, directiveFill, countdownTo, DIRECTIVE_KIND_LABEL, DIRECTIVE_SEVERITY_LABEL } from "@/lib/directives";
 
 /**
@@ -65,7 +65,7 @@ export function AlertBanner() {
               accessibilityLabel="Dismiss alert"
               style={s.dismiss}
             >
-              <Text style={[s.dismissText, { color: fg }]}>✕</Text>
+              <CloseIcon size={14} color={fg} strokeWidth={2.5} />
             </Pressable>
           ) : (
             <BellIcon size={15} color={fg} strokeWidth={2} />
@@ -76,7 +76,10 @@ export function AlertBanner() {
 
         {visible.action ? (
           <View style={[s.actionChip, { backgroundColor: withAlpha(fg, 0.16) }]}>
-            <Text style={[s.actionText, { color: fg }]} numberOfLines={2}>▸ {visible.action}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <ArrowRightIcon size={12} color={fg} strokeWidth={2.5} />
+              <Text style={[s.actionText, { color: fg }]} numberOfLines={2}>{visible.action}</Text>
+            </View>
           </View>
         ) : null}
 
@@ -85,7 +88,10 @@ export function AlertBanner() {
           <Text style={[s.meta, { color: fg }]}>{countdown ?? "Ongoing"}</Text>
         </View>
 
-        <Text style={[s.viewAll, { color: fg }]}>View all alerts →</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Text style={[s.viewAll, { color: fg }]}>View all alerts</Text>
+          <ArrowRightIcon size={12} color={fg} strokeWidth={2.5} />
+        </View>
       </Pressable>
     </View>
   );
@@ -98,7 +104,6 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 999 },
   kicker: { fontSize: 10, letterSpacing: 1.5, ...D(700), textTransform: "uppercase" },
   dismiss: { width: 26, height: 26, alignItems: "center", justifyContent: "center" },
-  dismissText: { fontSize: 14, ...S(700) },
   title: { ...S(700), fontSize: 16, lineHeight: 21 },
   actionChip: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, alignSelf: "flex-start", maxWidth: "100%" },
   actionText: { fontSize: 13, ...S(700), lineHeight: 18 },

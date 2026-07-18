@@ -8,14 +8,68 @@ import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
 import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
-import type { HomeData, Listing, NewsArticle } from "@/lib/types";
-import { D, S, SI, ON_GREEN, initials, type Palette } from "@/theme";
+import type { HomeData, Listing, NewsArticle, Goal } from "@/lib/types";
+import { D, S, SI, ON_GREEN, initials, onFill, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Mark, Pill, Thumb } from "@/ui";
 import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { useNavDrawer } from "@/components/nav-drawer";
 import { useDirectives } from "@/lib/directives";
 import { TopBarActions } from "@/components/top-bar-actions";
+import { ChevronRightIcon, HandsIcon } from "@/components/icons";
+
+// Prominent civic call-to-action at the top of the home feed — the resident's
+// door into "Build a better Oguaa" (the civic hub, /better). A bold gold banner
+// with a big icon, the pledge tease and a chevron, so it's never buried.
+function CivicBanner() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const fg = onFill(C.goldBrand);
+  return (
+    <View style={s.section}>
+      <PressScale onPress={() => push(ROUTES.better)} style={[s.civicBanner, { backgroundColor: C.goldBrand }]}>
+        <View style={[s.civicIcon, { backgroundColor: withAlpha(fg, 0.14), borderColor: withAlpha(fg, 0.35) }]}>
+          <HandsIcon size={30} color={fg} strokeWidth={2} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={[s.civicKicker, { color: withAlpha(fg, 0.85) }]}>THE CIVIC REVOLUTION</Text>
+          <Text style={[s.civicTitle, { color: fg }]}>Build a better Oguaa</Text>
+          <Text style={[s.civicTease, { color: withAlpha(fg, 0.85) }]} numberOfLines={2}>
+            Small daily habits that make a great town — take the pledge.
+          </Text>
+        </View>
+        <ChevronRightIcon size={24} color={fg} strokeWidth={2.5} />
+      </PressScale>
+    </View>
+  );
+}
+
+// The town's featured goal (annual/durbar), a prominent reminder that opens the
+// civic hub. Renders nothing until a featured goal loads.
+function CivicGoalBanner() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const { data } = useApi<Goal[]>(() => api.goals(), "home:goals");
+  const goals = data ?? [];
+  const featured = goals.find((g) => g.featured) ?? goals.find((g) => g.cadence === "annual");
+  if (!featured) return null;
+  return (
+    <View style={[s.section, { paddingTop: 0 }]}>
+      <PressScale onPress={() => push(ROUTES.better)} style={[s.civicBanner, { backgroundColor: C.green }]}>
+        <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+          <Text style={{ fontSize: 11, fontWeight: "800", letterSpacing: 1, color: C.gold }}>
+            OGUAA&apos;S GOAL FOR {featured.periodLabel.toUpperCase()}
+          </Text>
+          <Text style={{ fontSize: 16, fontWeight: "700", color: ON_GREEN }} numberOfLines={2}>{featured.title}</Text>
+          {featured.target ? (
+            <Text style={{ fontSize: 12.5, lineHeight: 18, color: withAlpha(ON_GREEN, 0.82) }} numberOfLines={2}>{featured.target}</Text>
+          ) : null}
+        </View>
+        <ChevronRightIcon size={24} color={C.gold} strokeWidth={2.5} />
+      </PressScale>
+    </View>
+  );
+}
 
 // Route a featured listing to its canonical screen (any type can be featured).
 function featuredRoute(l: Listing): Href {
@@ -137,6 +191,10 @@ export default function Home() {
         </HeroParallax>
       </View>
 
+      {/* prominent civic entry — first thing under the hero */}
+      <CivicBanner />
+      <CivicGoalBanner />
+
       {/* spotlight */}
       <View style={s.section}>
         <Text style={s.kicker}>ROTATING SPOTLIGHT</Text>
@@ -253,6 +311,11 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   statNum: { color: C.gold, ...S(700), fontSize: 24 },
   statLbl: { color: C.onDarkText60, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginTop: 2 },
   section: { paddingHorizontal: 20, paddingTop: 22 },
+  civicBanner: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 18, padding: 16 },
+  civicIcon: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  civicKicker: { fontSize: 10, letterSpacing: 1.6, ...D(700) },
+  civicTitle: { ...D(700), fontSize: 20, marginTop: 2 },
+  civicTease: { fontSize: 12.5, lineHeight: 17, ...S(500), marginTop: 3 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginBottom: 10 },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   link: { color: C.clayText, ...S(700), fontSize: 13 },

@@ -11,6 +11,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { DiamondIcon } from "@/components/icons";
 
 export const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
@@ -58,7 +59,7 @@ export default function Projects() {
         lede="Concrete, costed improvements for Cape Coast — proposed by verified institutions, funded by residents and the diaspora together. Receipts are published to backers."
       />
       <View style={{ padding: 16, gap: 14 }}>
-      {data.length === 0 && <EmptyState glyph="◈" title="No open projects yet" body="The first campaigns are being costed." />}
+      {data.length === 0 && <EmptyState icon={<DiamondIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="No open projects yet" body="The first campaigns are being costed." />}
       {data.map((l, i) => (
         <StaggerIn key={l.id} index={i}>
           <Link href={route.project(l.slug)} asChild>

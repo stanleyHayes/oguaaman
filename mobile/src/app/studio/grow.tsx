@@ -13,6 +13,7 @@ import { D, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, HeroBand } from "@/ui";
 import { MetricCard, cedis, fmtDate } from "@/components/studio-kit";
+import { ArrowUpRightIcon, CheckIcon, GridIcon, StarIcon } from "@/components/icons";
 
 /*
  * Grow — ports creator/src/pages/Grow.tsx. Two levers: feature individual
@@ -143,7 +144,10 @@ export default function StudioGrow() {
       <View style={s.body}>
         {confirmed && (
           <View style={s.okBanner}>
-            <Text style={s.okText}>Payment confirmed — “{confirmed.listingTitle}” is now a Supporter business. ✓</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <CheckIcon size={14} color={C.tealText} strokeWidth={2.5} />
+              <Text style={s.okText}>Payment confirmed — “{confirmed.listingTitle}” is now a Supporter business.</Text>
+            </View>
           </View>
         )}
         {err && (
@@ -153,9 +157,9 @@ export default function StudioGrow() {
         )}
 
         <View style={s.grid}>
-          <MetricCard label="Your plan" value={currentPlan} glyph="★" tone="ink" sub={overview.activeSubscription ? "Paid plan active" : "Free forever"} />
-          <MetricCard label="Active promotions" value={overview.activePromotions} glyph="↗" tone="green" sub={overview.promotionDaysLeft ? `${overview.promotionDaysLeft} days remaining` : "None running"} />
-          <MetricCard label="Live listings" value={overview.live} glyph="▦" tone="gold" sub={overview.pending ? `${overview.pending} in review` : "All reviewed"} href={ROUTES.studioWork} />
+          <MetricCard label="Your plan" value={currentPlan} icon={StarIcon} tone="ink" sub={overview.activeSubscription ? "Paid plan active" : "Free forever"} />
+          <MetricCard label="Active promotions" value={overview.activePromotions} icon={ArrowUpRightIcon} tone="green" sub={overview.promotionDaysLeft ? `${overview.promotionDaysLeft} days remaining` : "None running"} />
+          <MetricCard label="Live listings" value={overview.live} icon={GridIcon} tone="gold" sub={overview.pending ? `${overview.pending} in review` : "All reviewed"} href={ROUTES.studioWork} />
         </View>
 
         {paidPlans.length === 0 && (
@@ -173,7 +177,10 @@ export default function StudioGrow() {
             <View key={plan.id} style={[s.planCard, plan.goldBadge && s.planCardFeatured]}>
               {plan.goldBadge && (
                 <View style={s.recommendChip}>
-                  <Text style={s.recommendText}>★ Recommended</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                    <StarIcon size={10} color={C.goldText} strokeWidth={2.5} />
+                    <Text style={s.recommendText}>Recommended</Text>
+                  </View>
                 </View>
               )}
               <View style={s.planHead}>
@@ -192,7 +199,7 @@ export default function StudioGrow() {
                   <View style={{ gap: 9 }}>
                     {perks.map((perk) => (
                       <View key={perk} style={s.perkRow}>
-                        <View style={s.perkTick}><Text style={s.perkTickText}>✓</Text></View>
+                        <View style={s.perkTick}><CheckIcon size={11} color={C.goldText} strokeWidth={3} /></View>
                         <Text style={s.perkText}>{perk}</Text>
                       </View>
                     ))}
@@ -205,7 +212,10 @@ export default function StudioGrow() {
                     {activeSubs.map((sub) => (
                       <View key={sub.id} style={s.activeSubRow}>
                         <Text style={s.activeSubName} numberOfLines={1}>{sub.listingTitle} · {planName(sub.plan)}</Text>
-                        <Text style={s.activeSubUntil}>★ until {fmtDate(sub.periodEnd)}</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <StarIcon size={10} color={C.tealText} strokeWidth={2.5} />
+                          <Text style={s.activeSubUntil}>until {fmtDate(sub.periodEnd)}</Text>
+                        </View>
                       </View>
                     ))}
                   </View>
@@ -228,7 +238,10 @@ export default function StudioGrow() {
                           <View key={key} style={s.bizRow}>
                             <Text style={s.bizName} numberOfLines={1}>{b.title}</Text>
                             {active ? (
-                              <Text style={s.activeTag}>Active ✓</Text>
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                                <CheckIcon size={12} color={C.tealText} strokeWidth={2.5} />
+                                <Text style={s.activeTag}>Active</Text>
+                              </View>
                             ) : isPending ? (
                               <Pressable accessibilityRole="button" onPress={() => verify(key, pending.reference)} disabled={isBusy} style={[s.subBtn, s.verifyBtn, isBusy && { opacity: 0.6 }]}>
                                 <Text style={s.verifyBtnText}>{isBusy ? "Checking…" : "I've paid — verify"}</Text>
@@ -251,7 +264,7 @@ export default function StudioGrow() {
 
         <View style={s.card}>
           <View style={s.promoHead}>
-            <View style={s.promoIcon}><Text style={s.promoIconText}>↗</Text></View>
+            <View style={s.promoIcon}><ArrowUpRightIcon size={18} color={C.goldText} strokeWidth={2.5} /></View>
             <Text style={s.cardTitle}>Featured promotions</Text>
           </View>
           <Text style={s.cardLede}>
@@ -272,7 +285,10 @@ export default function StudioGrow() {
             })}
           </View>
           <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studioWork)} style={s.promoteBtn}>
-            <Text style={s.promoteBtnText}>↗ Promote a listing</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <ArrowUpRightIcon size={14} color={C.goldText} strokeWidth={2.5} />
+              <Text style={s.promoteBtnText}>Promote a listing</Text>
+            </View>
           </Pressable>
         </View>
       </View>

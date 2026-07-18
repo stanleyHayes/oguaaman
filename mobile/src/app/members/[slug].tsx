@@ -12,6 +12,7 @@ import { D, S, ON_GREEN, initials, type Palette } from "@/theme";
 import { Loading, ErrorView, Thumb, VerifiedBadge } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { PenIcon } from "@/components/icons";
 
 function FollowButton({ slug }: Readonly<{ slug: string }>) {
   const { member } = useAuth();
@@ -119,7 +120,7 @@ export default function MemberProfile() {
           <RevealView style={s.sectionCard}>
             <Text style={s.sectionTitle}>Contributions</Text>
             <Text style={s.sectionHelp}>Everything {m.displayName.split(" ")[0]} has shared with the town.</Text>
-            {published.length === 0 && <EmptyState compact glyph="✎" title="No public contributions yet" />}
+            {published.length === 0 && <EmptyState compact icon={<PenIcon size={32} color={C.inkFaint} strokeWidth={1.5} />} title="No public contributions yet" />}
             {published.map((l) => (
               <View key={l.id} style={s.card}>
                 <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cardThumb} labelStyle={s.cardThumbInit} />

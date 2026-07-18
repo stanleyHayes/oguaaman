@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { D, S, SI, ON_GREEN, initials, withAlpha, type Palette } from "@/theme";
+import { MapIcon, UserIcon, SparkleIcon, PenIcon, BellIcon, SearchIcon, SettingsIcon, InfoIcon, LogOutIcon, ArrowRightIcon } from "@/components/icons";
 import { Mark } from "@/ui";
 import { useAuth } from "@/lib/auth";
 import { canUseStudio } from "@/lib/api";
@@ -14,7 +15,7 @@ import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 // The More tab is the account & settings hub: profile banner, quick links,
 // language, legal, and auth. Section navigation lives in the ☰ drawer.
 
-type Row = { icon: string; label: string; href?: string; onPress?: () => void; danger?: boolean };
+type Row = { icon: React.ReactNode; label: string; href?: string; onPress?: () => void; danger?: boolean };
 
 function MenuCard({ rows }: Readonly<{ rows: Row[] }>) {
   const { C } = useTheme();
@@ -28,7 +29,7 @@ function MenuCard({ rows }: Readonly<{ rows: Row[] }>) {
             onPress={() => (r.onPress ? r.onPress() : r.href && push(r.href))}
             style={({ pressed }) => [s.row, pressed && { backgroundColor: C.sand + "55" }]}
           >
-            <Text style={[s.rowIcon, r.danger && { color: C.clayText }]}>{r.icon}</Text>
+            <View style={[s.rowIconWrap, r.danger && { color: C.clayText }]}>{r.icon}</View>
             <Text style={[s.rowLabel, r.danger && { color: C.clayText }]}>{r.label}</Text>
           </Pressable>
         </View>
@@ -78,7 +79,7 @@ export default function More() {
             <Text style={s.name} numberOfLines={1}>{member.displayName}</Text>
             <Text style={s.handle}>@{member.slug} · {roleLabel(member.role)}</Text>
           </View>
-          <Text style={s.goArrow}>→</Text>
+          <ArrowRightIcon size={20} color={C.inkFaint} strokeWidth={2.5} />
         </Pressable>
       ) : (
         <View>
@@ -100,17 +101,17 @@ export default function More() {
         rows={
           member
             ? [
-                { icon: "🗺", label: "Explore the map", href: ROUTES.explore },
-                { icon: "☺", label: "My Profile", href: ROUTES.me },
-                ...(canUseStudio(member) ? [{ icon: "✦", label: "Creator studio", href: ROUTES.studio }] : []),
-                { icon: "✎", label: "Contribute", href: ROUTES.submit },
-                { icon: "🔔", label: "Notifications", href: ROUTES.notifications },
-                { icon: "🔍", label: "Search", href: ROUTES.search },
-                { icon: "⚙", label: "Settings — security & preferences", href: ROUTES.settings },
+                { icon: <MapIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Explore the map", href: ROUTES.explore },
+                { icon: <UserIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "My Profile", href: ROUTES.me },
+                ...(canUseStudio(member) ? [{ icon: <SparkleIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Creator studio", href: ROUTES.studio }] : []),
+                { icon: <PenIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Contribute", href: ROUTES.submit },
+                { icon: <BellIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Notifications", href: ROUTES.notifications },
+                { icon: <SearchIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Search", href: ROUTES.search },
+                { icon: <SettingsIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Settings — security & preferences", href: ROUTES.settings },
               ]
             : [
-                { icon: "🗺", label: "Explore the map", href: ROUTES.explore },
-                { icon: "🔍", label: "Search people, places & memories", href: ROUTES.search },
+                { icon: <MapIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Explore the map", href: ROUTES.explore },
+                { icon: <SearchIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Search people, places & memories", href: ROUTES.search },
               ]
         }
       />
@@ -143,10 +144,10 @@ export default function More() {
       <View style={{ marginTop: 14 }}>
         <MenuCard
           rows={[
-            { icon: "ℹ", label: "Terms of Use", href: ROUTES.legalTerms },
-            { icon: "ℹ", label: "Privacy Policy", href: ROUTES.legalPrivacy },
-            { icon: "ℹ", label: "Acceptable Use", href: ROUTES.legalAcceptableUse },
-            { icon: "ℹ", label: "Safeguarding Policy", href: ROUTES.legalSafeguarding },
+            { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Terms of Use", href: ROUTES.legalTerms },
+            { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Privacy Policy", href: ROUTES.legalPrivacy },
+            { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Acceptable Use", href: ROUTES.legalAcceptableUse },
+            { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Safeguarding Policy", href: ROUTES.legalSafeguarding },
           ]}
         />
       </View>
@@ -154,12 +155,12 @@ export default function More() {
       {/* Auth */}
       <View style={{ marginTop: 14 }}>
         {member ? (
-          <MenuCard rows={[{ icon: "✕", label: "Sign out", danger: true, onPress: () => signOut() }]} />
+          <MenuCard rows={[{ icon: <LogOutIcon size={18} color={C.clayText} strokeWidth={2} />, label: "Sign out", danger: true, onPress: () => signOut() }]} />
         ) : (
           <MenuCard
             rows={[
-              { icon: "→", label: "Sign In", href: ROUTES.signIn },
-              { icon: "✎", label: "Create Account", href: ROUTES.signIn },
+              { icon: <ArrowRightIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Sign In", href: ROUTES.signIn },
+              { icon: <PenIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Create Account", href: ROUTES.signIn },
             ]}
           />
         )}
@@ -204,7 +205,6 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 18, gap: 12 },
   name: { ...D(700), fontSize: 26, color: C.ink, marginTop: 12 },
   handle: { color: C.inkFaint, fontSize: 14, marginTop: 3 },
-  goArrow: { color: C.inkFaint, fontSize: 22, ...S(700) },
   welcomeSub: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },
   authBtnRow: { flexDirection: "row", gap: 10, marginTop: 16, marginBottom: 18 },
   btnGold: { backgroundColor: C.gold, borderRadius: 999, paddingVertical: 11, paddingHorizontal: 22 },
@@ -219,7 +219,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
     overflow: "hidden",
   },
   row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 16, paddingVertical: 15 },
-  rowIcon: { width: 22, fontSize: 16, color: C.inkMuted, textAlign: "center" },
+  rowIconWrap: { width: 22, alignItems: "center", justifyContent: "center" },
   rowLabel: { fontSize: 15, ...S(600), color: C.ink },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: C.sand, marginLeft: 52 },
   cardKicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10 },

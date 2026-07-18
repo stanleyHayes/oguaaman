@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FC } from "react";
 import { push } from "@/lib/router";
 import { Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
@@ -10,6 +10,8 @@ import { ON_GREEN, S, withAlpha, type Palette, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Pill } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
+import { StaggerIn } from "@/components/anim";
+import { AlertTriangleIcon, ArrowUpRightIcon, BusIcon, CalendarIcon, ChevronRightIcon, GradCapIcon, HeartIcon, LandmarkIcon, MapIcon, SearchIcon, ShoppingBagIcon, WalkingIcon, type IconProps } from "@/components/icons";
 
 // Explore is the mobile stand-in for the web map: the same /api/map feed, but
 // presented as filterable, grouped lists so it works without a native map
@@ -46,19 +48,19 @@ function mobileRoute(href?: string): string | null {
   return href;
 }
 
-const LAYER_META: { layer: MapLayer; label: string; glyph: string }[] = [
-  { layer: "business", label: "Businesses", glyph: "🛍️" },
-  { layer: "events", label: "Events", glyph: "🎪" },
-  { layer: "institutions", label: "Schools & Institutions", glyph: "🎓" },
-  { layer: "landmarks", label: "Heritage & Landmarks", glyph: "🏛️" },
-  { layer: "safety", label: "Safety", glyph: "⚠️" },
-  { layer: "lostfound", label: "Lost & Found", glyph: "🔎" },
-  { layer: "services", label: "Services", glyph: "🚑" },
-  { layer: "transport", label: "Transport", glyph: "🚌" },
+const LAYER_META: { layer: MapLayer; label: string; icon: FC<IconProps> }[] = [
+  { layer: "business", label: "Businesses", icon: ShoppingBagIcon },
+  { layer: "events", label: "Events", icon: CalendarIcon },
+  { layer: "institutions", label: "Schools & Institutions", icon: GradCapIcon },
+  { layer: "landmarks", label: "Heritage & Landmarks", icon: LandmarkIcon },
+  { layer: "safety", label: "Safety", icon: AlertTriangleIcon },
+  { layer: "lostfound", label: "Lost & Found", icon: SearchIcon },
+  { layer: "services", label: "Services", icon: HeartIcon },
+  { layer: "transport", label: "Transport", icon: BusIcon },
 ];
-const LAYER_GLYPH: Record<MapLayer, string> = Object.fromEntries(
-  LAYER_META.map((m) => [m.layer, m.glyph]),
-) as Record<MapLayer, string>;
+const LAYER_ICON: Record<MapLayer, FC<IconProps>> = Object.fromEntries(
+  LAYER_META.map((m) => [m.layer, m.icon]),
+) as Record<MapLayer, React.FC<IconProps>>;
 
 function accentFor(layer: MapLayer, C: Palette): string {
   switch (layer) {
@@ -103,7 +105,11 @@ function DirectionsButton({ lat, lng, to, small = false }: Readonly<{ lat: numbe
       accessibilityRole="button"
       accessibilityLabel={`Walking directions to ${to}`}
     >
-      <Text style={[s.dirBtnText, small && s.dirBtnTextSmall]}>🚶 Directions ↗</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <WalkingIcon size={small ? 12 : 14} color={small ? C.greenText : ON_GREEN} strokeWidth={2} />
+        <Text style={[s.dirBtnText, small && s.dirBtnTextSmall]}>Directions</Text>
+        <ArrowUpRightIcon size={small ? 11 : 12} color={small ? C.greenText : ON_GREEN} strokeWidth={2.5} />
+      </View>
     </Pressable>
   );
 }
@@ -115,10 +121,11 @@ function PointCard({ p }: Readonly<{ p: MapPoint }>) {
   const accent = accentFor(p.layer, C);
   const sev = p.severity ? severityColors(C)[p.severity] : undefined;
 
+  const Icon = LAYER_ICON[p.layer];
   const head = (
     <View style={s.pointHead}>
       <View style={[s.pointGlyph, { borderColor: withAlpha(accent, 0.4) }]}>
-        <Text style={s.pointGlyphText}>{LAYER_GLYPH[p.layer]}</Text>
+        <Icon size={20} color={accent} strokeWidth={2} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={s.pointTitle}>{p.title}</Text>
@@ -131,7 +138,7 @@ function PointCard({ p }: Readonly<{ p: MapPoint }>) {
           </View>
         ) : null}
       </View>
-      {route ? <Text style={s.chevron}>›</Text> : null}
+      {route ? <ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /> : null}
     </View>
   );
 
@@ -232,45 +239,61 @@ export default function Explore() {
             <Pressable accessibilityRole="button" onPress={() => setLayer(null)} style={[s.filter, layer === null && s.filterOn]}>
               <Text style={[s.filterText, layer === null && s.filterTextOn]}>All</Text>
             </Pressable>
-            {presentLayers.map((m) => (
-              <Pressable accessibilityRole="button"
-                key={m.layer}
-                onPress={() => setLayer(layer === m.layer ? null : m.layer)}
-                style={[s.filter, layer === m.layer && s.filterOn]}
-              >
-                <Text style={[s.filterText, layer === m.layer && s.filterTextOn]}>{m.glyph} {m.label}</Text>
-              </Pressable>
-            ))}
+            {presentLayers.map((m) => {
+              const Icon = m.icon;
+              return (
+                <Pressable accessibilityRole="button"
+                  key={m.layer}
+                  onPress={() => setLayer(layer === m.layer ? null : m.layer)}
+                  style={[s.filter, layer === m.layer && s.filterOn]}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Icon size={14} color={layer === m.layer ? ON_GREEN : C.inkMuted} strokeWidth={2} />
+                    <Text style={[s.filterText, layer === m.layer && s.filterTextOn]}>{m.label}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
           </ScrollView>
         ) : null}
 
         {showExtras && data.areas.length > 0 ? (
           <View style={{ gap: 10 }}>
-            <Text style={s.section}>⚠  ACTIVE DIRECTIVES</Text>
-            {data.areas.map((a) => <AreaCard key={a.id} a={a} />)}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <AlertTriangleIcon size={14} color={C.maroonText} strokeWidth={2} />
+              <Text style={s.section}>ACTIVE DIRECTIVES</Text>
+            </View>
+            {data.areas.map((a, i) => <StaggerIn key={a.id} index={i}><AreaCard a={a} /></StaggerIn>)}
           </View>
         ) : null}
 
         {shownLayers.map((m) => {
           const pts = data.points.filter((p) => p.layer === m.layer);
           if (pts.length === 0) return null;
+          const Icon = LAYER_ICON[m.layer];
           return (
             <View key={m.layer} style={{ gap: 10 }}>
-              <Text style={s.section}>{m.glyph}  {m.label.toUpperCase()} · {pts.length}</Text>
-              {pts.map((p) => <PointCard key={p.id} p={p} />)}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Icon size={14} color={accentFor(m.layer, C)} strokeWidth={2} />
+                <Text style={s.section}>{m.label.toUpperCase()} · {pts.length}</Text>
+              </View>
+              {pts.map((p, i) => <StaggerIn key={p.id} index={i}><PointCard p={p} /></StaggerIn>)}
             </View>
           );
         })}
 
         {showExtras && data.trails.length > 0 ? (
           <View style={{ gap: 10 }}>
-            <Text style={s.section}>🚶  WALKING TRAILS</Text>
-            {data.trails.map((t) => <TrailCard key={t.id} t={t} />)}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <WalkingIcon size={14} color={C.greenText} strokeWidth={2} />
+              <Text style={s.section}>WALKING TRAILS</Text>
+            </View>
+            {data.trails.map((t, i) => <StaggerIn key={t.id} index={i}><TrailCard t={t} /></StaggerIn>)}
           </View>
         ) : null}
 
         {empty ? (
-          <EmptyState glyph="🗺" title="Nothing on the map yet" body="No listings carry coordinates yet. Pull to refresh, or check back soon." />
+          <EmptyState icon={<MapIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="Nothing on the map yet" body="No listings carry coordinates yet. Pull to refresh, or check back soon." />
         ) : null}
       </View>
     </ScrollView>

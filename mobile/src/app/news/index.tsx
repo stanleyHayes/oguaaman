@@ -12,6 +12,7 @@ import { Loading, ErrorView, VerifiedBadge } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { EnvelopeIcon } from "@/components/icons";
 import { ListFooter } from "@/components/list-footer";
 
 function newsDate(a: NewsArticle): string {
@@ -53,7 +54,7 @@ export default function News() {
 
       {items.length === 0 ? (
         <View style={s.pad}>
-          <EmptyState glyph="✉" title="No stories yet" body="The newsroom is just getting started." />
+          <EmptyState icon={<EnvelopeIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="No stories yet" body="The newsroom is just getting started." />
         </View>
       ) : null}
 

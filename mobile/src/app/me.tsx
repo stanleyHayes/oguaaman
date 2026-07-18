@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Promotion, Listing } from "@/lib/types";
 import { D, S, initials, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
+import { CalendarIcon, ChevronRightIcon, CloseIcon, FlagIcon, PenIcon, PlusIcon, RefreshIcon, SearchIcon, SparkleIcon, TicketIcon, UsersIcon } from "@/components/icons";
 import { Loading, ErrorView, Thumb, VerifiedBadge } from "@/ui";
 import { ImageField } from "@/components/image-field";
 import { DateField } from "@/components/date-field";
@@ -19,6 +20,15 @@ import { EmptyState } from "@/components/empty-state";
 import { SchoolCombobox } from "@/components/school-combobox";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+
+type TabId = "overview" | "profile" | "activity" | "connections" | "account";
+const TABS: { id: TabId; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "profile", label: "Profile" },
+  { id: "activity", label: "Activity" },
+  { id: "connections", label: "Connections" },
+  { id: "account", label: "Account" },
+] as const;
 
 export default function Me() {
   const { C } = useTheme();
@@ -43,162 +53,16 @@ function fmtDate(iso?: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function money(pesewas: number): string {
+  return `GH₵ ${(pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
+}
+
 function roleLabel(role: string): string {
   if (role === "curator") return "Curator";
   if (role === "steward") return "Steward";
+  if (role === "editor") return "Editor";
+  if (role === "moderator") return "Moderator";
   return "Member";
-}
-
-// Event tickets bought via Paystack — the gate code is shown here and at the door.
-function MyTickets() {
-  const { C } = useTheme();
-  const s = useMemo(() => makeStyles(C), [C]);
-  const { data, error, loading } = useApi<Ticket[]>(() => api.myTickets(), "me:tickets");
-  if (loading) return <Text style={s.help}>Loading your tickets…</Text>;
-  if (error) return <Text style={s.help}>Couldn&apos;t load your tickets.</Text>;
-  const list = data ?? [];
-  if (list.length === 0) return <EmptyState compact glyph="◇" title="No tickets yet" body="See what's on under Events." />;
-  return (
-    <View style={{ gap: 8 }}>
-      {list.map((t) => (
-        <Pressable accessibilityRole="button" key={t.id} onPress={() => push(route.event(t.eventSlug))} style={s.listingRow}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={s.listingTitle} numberOfLines={1}>{t.eventTitle}</Text>
-            <Text style={s.listingType}>{t.qty} × {t.tier} · {fmtDate(t.createdAt)}</Text>
-          </View>
-          {t.status === "success" && t.code ? (
-            <View style={s.codeChip}><Text style={s.codeText}>{t.code}</Text></View>
-          ) : (
-            <View style={[s.statusChip, t.status === "pending" ? s.statusPending : s.statusBad]}>
-              <Text style={[s.statusText, t.status === "pending" ? { color: C.goldText } : { color: C.maroonText }]}>{t.status}</Text>
-            </View>
-          )}
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-// Supporter subscriptions — each payment adds a month to the business.
-function MySubscriptions() {
-  const { C } = useTheme();
-  const s = useMemo(() => makeStyles(C), [C]);
-  const { data, error, loading } = useApi<Subscription[]>(() => api.mySubscriptions(), "me:subscriptions");
-  if (loading) return <Text style={s.help}>Loading your subscriptions…</Text>;
-  if (error) return <Text style={s.help}>Couldn&apos;t load your subscriptions.</Text>;
-  const list = data ?? [];
-  if (list.length === 0) return <EmptyState compact glyph="↻" title="No subscriptions yet" />;
-  return (
-    <View style={{ gap: 8 }}>
-      {list.map((sub) => {
-        const subChip = sub.status === "pending" ? s.statusPending : s.statusBad;
-        const subColor = sub.status === "pending" ? { color: C.goldText } : { color: C.maroonText };
-        return (
-          <Pressable accessibilityRole="button" key={sub.id} onPress={() => push(route.business(sub.listingSlug))} style={s.listingRow}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.listingTitle} numberOfLines={1}>{sub.listingTitle}</Text>
-              <Text style={s.listingType}>
-                GH₵ {(sub.amountPesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}{sub.periodEnd ? ` · until ${fmtDate(sub.periodEnd)}` : ""}
-              </Text>
-            </View>
-            <View style={[s.statusChip, sub.status === "success" ? s.statusOk : subChip]}>
-              <Text style={[s.statusText, sub.status === "success" ? { color: C.greenText } : subColor]}>{sub.status}</Text>
-            </View>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-// Paid featured placement on an owned listing — GH₵ 10/day, Paystack handoff
-// with a manual verify step, mirroring the projects pledge flow.
-function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
-  const { C } = useTheme();
-  const s = useMemo(() => makeStyles(C), [C]);
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [pendingRef, setPendingRef] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<Promotion | null>(null);
-
-  async function promote(days: number) {
-    setBusy(true); setErr("");
-    try {
-      const r = await api.promoteListing(listing.id, days);
-      const amountPesewas = days * 10 * 100;
-      const result = await presentCheckout(
-        sessionFromStartResponse(r, { amountPesewas, flow: "promotion", metadata: { listingId: listing.id, days: String(days) } })
-      );
-      if (result.kind === "error") {
-        setErr(result.message);
-      } else if (result.kind === "cancelled") {
-        // keep the picker open
-      } else if (result.provider === "simulated") {
-        const p = await api.confirmPromotion(r.reference);
-        setConfirmed(p);
-        setOpen(false);
-      } else if (result.provider === "stripe") {
-        const p = await api.confirmPromotion(r.reference);
-        setConfirmed(p);
-        setOpen(false);
-      } else {
-        setPendingRef(r.reference);
-      }
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not start the payment.");
-    } finally { setBusy(false); }
-  }
-
-  async function verify() {
-    if (!pendingRef) return;
-    setBusy(true); setErr("");
-    try {
-      const p = await api.confirmPromotion(pendingRef);
-      setConfirmed(p);
-      setPendingRef(null);
-      setOpen(false);
-    } catch {
-      setErr("Payment not confirmed yet. Finish paying in the browser, then verify again.");
-    } finally { setBusy(false); }
-  }
-
-  if (confirmed) {
-    return <Text style={s.promoDone}>★ Featured {confirmed.days}d ✓</Text>;
-  }
-  if (pendingRef) {
-    return (
-      <View style={{ alignItems: "flex-end", gap: 4 }}>
-        <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.promoBtn, busy && { opacity: 0.6 }]}>
-          <Text style={s.promoBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
-        </Pressable>
-        {err !== "" && <Text style={s.promoErr}>{err}</Text>}
-      </View>
-    );
-  }
-  if (open) {
-    return (
-      <View style={{ alignItems: "flex-end", gap: 6 }}>
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          {[7, 14, 30].map((d) => (
-            <Pressable accessibilityRole="button" key={d} onPress={() => promote(d)} disabled={busy} style={[s.promoDayBtn, busy && { opacity: 0.6 }]}>
-              <Text style={s.promoDayText}>{d}d</Text>
-              <Text style={s.promoDayPrice}>GH₵{d * 10}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Pressable accessibilityRole="button" onPress={() => { setOpen(false); setErr(""); }} hitSlop={6} style={{ minHeight: 32, justifyContent: "center" }}>
-          <Text style={s.promoCancel}>Cancel</Text>
-        </Pressable>
-        {err !== "" && <Text style={s.promoErr}>{err}</Text>}
-      </View>
-    );
-  }
-  return (
-    <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={s.promoBtn}>
-      <Text style={s.promoBtnText}>Promote</Text>
-    </Pressable>
-  );
 }
 
 function MeLoaded({ slug, onSignOut }: Readonly<{ slug: string; onSignOut: () => void }>) {
@@ -208,22 +72,76 @@ function MeLoaded({ slug, onSignOut }: Readonly<{ slug: string; onSignOut: () =>
   return <Profile view={data} onSignOut={onSignOut} />;
 }
 
+function TabBar({ active, onChange }: Readonly<{ active: TabId; onChange: (id: TabId) => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  return (
+    <View style={s.tabBar}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabBarContent}>
+        {TABS.map((t) => {
+          const isActive = active === t.id;
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t.label}
+              accessibilityState={{ selected: isActive }}
+              key={t.id}
+              onPress={() => onChange(t.id)}
+              style={[s.tab, isActive && s.tabActive]}
+            >
+              <Text style={[s.tabText, isActive && s.tabTextActive]}>{t.label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+function TabPanel({ id, active, visited, children }: Readonly<{ id: TabId; active: TabId; visited: Set<TabId>; children: ReactNode }>) {
+  const isVisible = active === id || visited.has(id);
+  if (!isVisible) return null;
+  return <View style={{ display: active === id ? "flex" : "none" }}>{children}</View>;
+}
+
 function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: () => void }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const { member: authMember, setMember } = useAuth();
   const m = view.member;
-  // Self-view (has creatorTypes/bio) drives the editors; fall back to the public view.
   const self = authMember ?? m;
   const places = view.places ?? [];
 
-  // Rep your quarter + Asafo (spec §8.6) — optimistic, like the web.
   const quarters = places.filter((p) => p.kind !== "asafo");
   const asafos = places.filter((p) => p.kind === "asafo");
   const [townId, setTownId] = useState(m.townId ?? "");
   const [asafoId, setAsafoId] = useState(m.asafoId ?? "");
   const quarter = quarters.find((p) => p.id === townId);
   const asafo = asafos.find((p) => p.id === asafoId);
+
+  const [connKey, setConnKey] = useState(0);
+
+  const [photo, setPhoto] = useState(m.photoUrl ?? "");
+  const [photoSave, setPhotoSave] = useState<SaveState>("idle");
+  const [verified, setVerified] = useState(m.phoneVerified);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyState, setVerifyState] = useState<SaveState>("idle");
+  const [verifyError, setVerifyError] = useState("");
+  const [verifySentCode, setVerifySentCode] = useState("");
+  const [verifyExpiresAt, setVerifyExpiresAt] = useState("");
+
+  const { data: ticketsData, error: ticketsError, loading: ticketsLoading } = useApi<Ticket[]>(() => api.myTickets(), "me:tickets");
+  const { data: subsData, error: subsError, loading: subsLoading } = useApi<Subscription[]>(() => api.mySubscriptions(), "me:subscriptions");
+  const tickets = ticketsData ?? [];
+  const subscriptions = subsData ?? [];
+
+  const [tab, setTab] = useState<TabId>("overview");
+  const [visited, setVisited] = useState<Set<TabId>>(new Set(["overview"]));
+  const selectTab = (id: TabId) => {
+    setTab(id);
+    setVisited((prev) => new Set(prev).add(id));
+  };
+
   async function chooseQuarter(id: string) {
     const next = townId === id ? "" : id;
     setTownId(next);
@@ -234,19 +152,6 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
     setAsafoId(next);
     try { await api.setAffiliations({ townId, asafoId: next }); } catch { /* keep optimistic */ }
   }
-
-  // Bumping this key refreshes "people you may know" after schooling changes.
-  const [connKey, setConnKey] = useState(0);
-
-  // Profile photo.
-  const [photo, setPhoto] = useState(m.photoUrl ?? "");
-  const [photoSave, setPhotoSave] = useState<SaveState>("idle");
-  const [verified, setVerified] = useState(m.phoneVerified);
-  const [verifyCode, setVerifyCode] = useState("");
-  const [verifyState, setVerifyState] = useState<SaveState>("idle");
-  const [verifyError, setVerifyError] = useState("");
-  const [verifySentCode, setVerifySentCode] = useState("");
-  const [verifyExpiresAt, setVerifyExpiresAt] = useState("");
   async function savePhoto(url: string) {
     setPhoto(url);
     setPhotoSave("saving");
@@ -290,7 +195,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
 
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-      {/* header */}
+      {/* Header card — identity, affiliations, and the most common actions. */}
       <View style={s.header}>
         {photo
           ? <Thumb seed={m.slug} src={photo} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
@@ -308,108 +213,167 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
           {asafo ? <View style={s.darkChip}><Text style={s.darkChipText}>{asafo.name}</Text></View> : null}
         </View>
         {!verified && <View style={s.warnChip}><Text style={s.warnChipText}>Verification needed</Text></View>}
+        <View style={s.headerActions}>
+          <Pressable accessibilityRole="button" onPress={() => selectTab("profile")} style={s.headerBtn}>
+            <Text style={s.headerBtnText}>Edit profile</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => push(route.member(m.slug))} style={[s.headerBtn, s.headerBtnPrimary]}>
+            <Text style={s.headerBtnText}>Public profile</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => push(ROUTES.settings)} style={s.headerBtn}>
+            <Text style={s.headerBtnText}>Settings</Text>
+          </Pressable>
+        </View>
       </View>
 
+      <TabBar active={tab} onChange={selectTab} />
+
       <View style={s.body}>
-        {!verified && (
-          <Section title="Verification needed" help="Submissions stay blocked until your account is verified. Send a code, then enter it here to unlock the submit form.">
-            <Pressable accessibilityRole="button" onPress={startVerification} disabled={verifyState === "saving"} style={[s.primaryBtn, { alignSelf: "flex-start" }, verifyState === "saving" && { opacity: 0.6 }]}>
-              <Text style={s.primaryBtnText}>{verifyState === "saving" ? "Sending…" : "Send code"}</Text>
-            </Pressable>
-            {verifySentCode ? (
-              <View style={{ gap: 10, marginTop: 12 }}>
-                <TextInput
-                  value={verifyCode}
-                  onChangeText={setVerifyCode}
-                  placeholder="123456"
-                  keyboardType="number-pad"
-                  autoComplete="one-time-code"
-                  style={s.codeInput}
-                />
-                <View style={{ flexDirection: "row", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <Pressable accessibilityRole="button"
-                    onPress={confirmVerification}
-                    disabled={verifyState === "saving" || verifyCode.trim() === ""}
-                    style={[s.secondaryBtn, (verifyState === "saving" || verifyCode.trim() === "") && { opacity: 0.6 }]}
-                  >
-                    <Text style={s.secondaryBtnText}>{verifyState === "saving" ? "Checking…" : "Confirm code"}</Text>
-                  </Pressable>
-                  {verifyExpiresAt ? <Text style={s.help}>Expires: {verifyExpiresAt}</Text> : null}
-                </View>
-                <Text style={s.help}>Dev mode shows the code here: <Text style={s.mono}>{verifySentCode}</Text></Text>
-              </View>
-            ) : null}
-            {verifyError ? <Text style={[s.errNote, { marginTop: 10 }]}>{verifyError}</Text> : null}
-          </Section>
-        )}
+        <TabPanel id="overview" active={tab} visited={visited}>
+          <View style={{ gap: 16 }}>
+            {!verified && (
+              <Pressable accessibilityRole="button" onPress={() => selectTab("account")} style={s.nudge}>
+                <Text style={s.nudgeTitle}>Verify your contact</Text>
+                <Text style={s.nudgeBody}>Unlock listings, incidents and reports by confirming your phone number.</Text>
+                <Text style={s.nudgeCta}>Go to Account →</Text>
+              </Pressable>
+            )}
 
-        <Section title="Your photo" help="Put a face to your name. It shows on your profile and across the community.">
-          <ImageField value={photo} onChange={savePhoto} />
-          {photoSave === "saving" && <Text style={[s.help, { marginTop: 8 }]}>Saving…</Text>}
-          {photoSave === "saved" && <Text style={[s.savedNote, { marginTop: 8 }]}>Saved ✓</Text>}
-          {photoSave === "error" && <Text style={[s.errNote, { marginTop: 8 }]}>Couldn&apos;t save your photo</Text>}
-        </Section>
+            <View style={s.statsGrid}>
+              <StatCard value={String(view.listings?.length ?? 0)} label="Listings" tone="green" />
+              <StatCard value={ticketsLoading ? "…" : String(tickets.length)} label="Tickets" tone="teal" />
+              <StatCard value={subsLoading ? "…" : String(subscriptions.length)} label="Subscriptions" tone="gold" />
+              <StatCard value={verified ? "Verified" : "Pending"} label="Contact" tone={verified ? "green" : "clay"} />
+            </View>
 
-        <Section title="Your bio" help="A short line about you — it shows on your public profile.">
-          <BioCard member={self} onSaved={setMember} />
-        </Section>
+            <QuickActions member={self} />
 
-        <Section title="Newsroom" help="Writers can publish stories in the Oguaa Newsroom.">
-          <WriterCard member={self} onUpdated={setMember} />
-        </Section>
+            <Section title="Recent listings" help="Your latest contributions.">
+              <ListingsPreview listings={view.listings ?? []} limit={3} onShowAll={() => selectTab("activity")} />
+            </Section>
 
-        <Section title="Rep your town" help={"Wear your community pride — your quarter and your Asafo company." + (quarter ? ` You rep ${quarter.name}.` : "")}>
-          <Text style={s.subLabel}>Quarter</Text>
-          <RepChips places={quarters} selectedId={townId} variant="green" onChoose={chooseQuarter} />
-          <Text style={[s.subLabel, { marginTop: 14 }]}>Asafo company</Text>
-          <RepChips places={asafos} selectedId={asafoId} variant="clay" onChoose={chooseAsafo} />
-        </Section>
+            <Section title="Upcoming tickets" help="Your event tickets and gate codes.">
+              <TicketsList tickets={tickets} limit={3} loading={ticketsLoading} error={ticketsError} onEvent={(slug) => push(route.event(slug))} onShowAll={() => selectTab("activity")} />
+            </Section>
 
-        <Section title="Your birthday" help="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
-          <BirthdayCard member={m} />
-        </Section>
+            <Section title="Active subscriptions" help="Your Supporter subscriptions — each payment adds a month to the business.">
+              <SubscriptionsList subscriptions={subscriptions} limit={3} loading={subsLoading} error={subsError} onBusiness={(slug) => push(route.business(slug))} onShowAll={() => selectTab("activity")} />
+            </Section>
+          </View>
+        </TabPanel>
 
-        <Section title="Oguaa abroad" help="A son or daughter of the Castle living away from home? Add yourself to the diaspora — the bridge for homecomings and giving back. Off by default.">
-          <DiasporaCard member={m} />
-        </Section>
+        <TabPanel id="profile" active={tab} visited={visited}>
+          <View style={{ gap: 16 }}>
+            <Section title="Your photo" help="Put a face to your name. It shows on your profile and across the community.">
+              <ImageField value={photo} onChange={savePhoto} />
+              {photoSave === "saving" && <Text style={[s.help, { marginTop: 8 }]}>Saving…</Text>}
+              {photoSave === "saved" && <Text style={[s.savedNote, { marginTop: 8 }]}>Saved ✓</Text>}
+              {photoSave === "error" && <Text style={[s.errNote, { marginTop: 8 }]}>Couldn&apos;t save your photo</Text>}
+            </Section>
 
-        <Section title="Your schooling" help="Add the schools you attended and the years you were there. Classmates who overlapped with you appear below.">
-          <SchoolingEditor member={m} schools={view.schools ?? []} onSaved={() => setConnKey((k) => k + 1)} />
-        </Section>
+            <Section title="Your bio" help="A short line about you — it shows on your public profile.">
+              <BioCard member={self} onSaved={setMember} />
+            </Section>
 
-        <Section title="People you may know" help="Classmates, neighbours from your quarter, and members of your Asafo.">
-          <PeopleYouMayKnow refreshKey={connKey} />
-        </Section>
+            <Section title="Rep your town" help={"Wear your community pride — your quarter and your Asafo company." + (quarter ? ` You rep ${quarter.name}.` : "")}>
+              <Text style={s.subLabel}>Quarter</Text>
+              <RepChips places={quarters} selectedId={townId} variant="green" onChoose={chooseQuarter} />
+              <Text style={[s.subLabel, { marginTop: 14 }]}>Asafo company</Text>
+              <RepChips places={asafos} selectedId={asafoId} variant="clay" onChoose={chooseAsafo} />
+            </Section>
 
-        <Section title="My tickets" help="Your event tickets and gate codes. Show the code at the entrance.">
-          <MyTickets />
-        </Section>
+            <Section title="Your birthday" help="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
+              <BirthdayCard member={m} />
+            </Section>
 
-        <Section title="My subscriptions" help="Your Supporter subscriptions — each payment adds a month to the business.">
-          <MySubscriptions />
-        </Section>
+            <Section title="Oguaa abroad" help="A son or daughter of the Castle living away from home? Add yourself to the diaspora — the bridge for homecomings and giving back. Off by default.">
+              <DiasporaCard member={m} />
+            </Section>
+          </View>
+        </TabPanel>
 
-        <Section title="Your listings" help="Everything you've contributed, with its review status. Promote an approved listing to feature it on the front pages — GH₵ 10 per day.">
-          <MyListings listings={view.listings ?? []} />
-        </Section>
+        <TabPanel id="activity" active={tab} visited={visited}>
+          <View style={{ gap: 16 }}>
+            <Section title="Your listings" help="Everything you've contributed, with its review status. Promote an approved listing to feature it on the front pages — GH₵ 10 per day.">
+              <MyListings listings={view.listings ?? []} />
+            </Section>
+            <Section title="My tickets" help="Your event tickets and gate codes. Show the code at the entrance.">
+              <TicketsList tickets={tickets} loading={ticketsLoading} error={ticketsError} onEvent={(slug) => push(route.event(slug))} />
+            </Section>
+            <Section title="My subscriptions" help="Your Supporter subscriptions — each payment adds a month to the business.">
+              <SubscriptionsList subscriptions={subscriptions} loading={subsLoading} error={subsError} onBusiness={(slug) => push(route.business(slug))} />
+            </Section>
+          </View>
+        </TabPanel>
 
-        <Section title="Account">
-          {canUseStudio(self) && (
-            <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studio)} style={s.linkRow}><Text style={s.linkRowText}>Creator studio</Text><Text style={s.chevron}>›</Text></Pressable>
-          )}
-          <Pressable accessibilityRole="button" onPress={() => push(ROUTES.settings)} style={s.linkRow}><Text style={s.linkRowText}>Settings — security & preferences</Text><Text style={s.chevron}>›</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.notifications)} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><Text style={s.chevron}>›</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><Text style={s.chevron}>›</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.push(route.member(m.slug))} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><Text style={s.chevron}>›</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={onSignOut} style={s.signOut}><Text style={s.signOutText}>Sign out</Text></Pressable>
-        </Section>
+        <TabPanel id="connections" active={tab} visited={visited}>
+          <View style={{ gap: 16 }}>
+            <Section title="Your schooling" help="Add the schools you attended and the years you were there. Classmates who overlapped with you appear below.">
+              <SchoolingEditor member={m} schools={view.schools ?? []} onSaved={() => setConnKey((k) => k + 1)} />
+            </Section>
+            <Section title="People you may know" help="Classmates, neighbours from your quarter, and members of your Asafo.">
+              <PeopleYouMayKnow refreshKey={connKey} />
+            </Section>
+          </View>
+        </TabPanel>
+
+        <TabPanel id="account" active={tab} visited={visited}>
+          <View style={{ gap: 16 }}>
+            {!verified && (
+              <Section title="Contact verification" help="Submissions stay blocked until your account is verified. Send a code, then enter it here to unlock the submit form.">
+                <Pressable accessibilityRole="button" onPress={startVerification} disabled={verifyState === "saving"} style={[s.primaryBtn, { alignSelf: "flex-start" }, verifyState === "saving" && { opacity: 0.6 }]}>
+                  <Text style={s.primaryBtnText}>{verifyState === "saving" ? "Sending…" : "Send code"}</Text>
+                </Pressable>
+                {verifySentCode ? (
+                  <View style={{ gap: 10, marginTop: 12 }}>
+                    <TextInput
+                      value={verifyCode}
+                      onChangeText={setVerifyCode}
+                      placeholder="123456"
+                      keyboardType="number-pad"
+                      autoComplete="one-time-code"
+                      style={s.codeInput}
+                    />
+                    <View style={{ flexDirection: "row", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                      <Pressable accessibilityRole="button"
+                        onPress={confirmVerification}
+                        disabled={verifyState === "saving" || verifyCode.trim() === ""}
+                        style={[s.secondaryBtn, (verifyState === "saving" || verifyCode.trim() === "") && { opacity: 0.6 }]}
+                      >
+                        <Text style={s.secondaryBtnText}>{verifyState === "saving" ? "Checking…" : "Confirm code"}</Text>
+                      </Pressable>
+                      {verifyExpiresAt ? <Text style={s.help}>Expires: {verifyExpiresAt}</Text> : null}
+                    </View>
+                    <Text style={s.help}>Dev mode shows the code here: <Text style={s.mono}>{verifySentCode}</Text></Text>
+                  </View>
+                ) : null}
+                {verifyError ? <Text style={[s.errNote, { marginTop: 10 }]}>{verifyError}</Text> : null}
+              </Section>
+            )}
+
+            <Section title="Newsroom" help="Writers can publish stories in the Oguaa Newsroom.">
+              <WriterCard member={self} onUpdated={setMember} />
+            </Section>
+
+            <Section title="Account">
+              {canUseStudio(self) && (
+                <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studio)} style={s.linkRow}><Text style={s.linkRowText}>Creator studio</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
+              )}
+              <Pressable accessibilityRole="button" onPress={() => push(ROUTES.settings)} style={s.linkRow}><Text style={s.linkRowText}>Settings — security & preferences</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.notifications)} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => router.push(route.member(m.slug))} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
+              <Pressable accessibilityRole="button" onPress={onSignOut} style={s.signOut}><Text style={s.signOutText}>Sign out</Text></Pressable>
+            </Section>
+          </View>
+        </TabPanel>
       </View>
     </ScrollView>
   );
 }
 
 // Dashboard section card — display title + optional help text wrapping a body slot.
-function Section({ title, help, children }: Readonly<{ title: string; help?: string; children: React.ReactNode }>) {
+function Section({ title, help, children }: Readonly<{ title: string; help?: string; children: ReactNode }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   return (
@@ -418,6 +382,56 @@ function Section({ title, help, children }: Readonly<{ title: string; help?: str
       {help ? <Text style={s.help}>{help}</Text> : <View style={{ height: 8 }} />}
       {children}
     </RevealView>
+  );
+}
+
+function StatCard({ value, label, tone }: Readonly<{ value: string; label: string; tone: "green" | "teal" | "gold" | "clay" }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const tones: Record<string, object> = {
+    green: { backgroundColor: withAlpha(C.green, 0.08), borderColor: withAlpha(C.green, 0.2) },
+    teal: { backgroundColor: withAlpha(C.teal, 0.09), borderColor: withAlpha(C.teal, 0.25) },
+    gold: { backgroundColor: withAlpha(C.gold, 0.14), borderColor: withAlpha(C.gold, 0.3) },
+    clay: { backgroundColor: withAlpha(C.clay, 0.08), borderColor: withAlpha(C.clay, 0.25) },
+  };
+  return (
+    <View style={[s.statCard, tones[tone]]}>
+      <Text style={s.statValue}>{value}</Text>
+      <Text style={s.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function QuickActions({ member }: Readonly<{ member: Member }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const actions = [
+    { label: "Add listing", icon: <PlusIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => router.push(ROUTES.submit) },
+    { label: "Report incident", icon: <FlagIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => router.push(ROUTES.safetyReport) },
+    { label: "Lost & found", icon: <SearchIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => router.push(ROUTES.lostFoundNew) },
+    { label: "Events", icon: <CalendarIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => router.push(ROUTES.browseEvents) },
+  ] as const;
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.quickActionsContent}>
+      {actions.map((a) => (
+        <Pressable accessibilityRole="button" key={a.label} onPress={a.onPress} style={s.quickChip}>
+          <View style={s.quickChipIcon}>{a.icon}</View>
+          <Text style={s.quickChipText}>{a.label}</Text>
+        </Pressable>
+      ))}
+      {canUseStudio(member) && (
+        <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.studio)} style={s.quickChip}>
+          <View style={s.quickChipIcon}><SparkleIcon size={18} color={C.goldText} strokeWidth={2} /></View>
+          <Text style={s.quickChipText}>Creator studio</Text>
+        </Pressable>
+      )}
+      {canWriteNews(member) && (
+        <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.write)} style={s.quickChip}>
+          <View style={s.quickChipIcon}><PenIcon size={18} color={C.goldText} strokeWidth={2} /></View>
+          <Text style={s.quickChipText}>Write a story</Text>
+        </Pressable>
+      )}
+    </ScrollView>
   );
 }
 
@@ -484,7 +498,7 @@ function WriterCard({ member: m, onUpdated }: Readonly<{ member: Member; onUpdat
   if (canWriteNews(m)) {
     return (
       <Pressable accessibilityRole="button" onPress={() => push(ROUTES.write)} style={s.linkRow}>
-        <Text style={s.linkRowText}>Write a story for the Newsroom</Text><Text style={s.chevron}>›</Text>
+        <Text style={s.linkRowText}>Write a story for the Newsroom</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} />
       </Pressable>
     );
   }
@@ -627,7 +641,7 @@ function SchoolingEditor({ member: m, schools, onSaved }: Readonly<{ member: Mem
               <TextInput style={s.yearInput} value={st.toYear ? String(st.toYear) : ""} onChangeText={(v) => setYear(i, "toYear", v)} placeholder="To" placeholderTextColor={C.inkFaint} keyboardType="number-pad" maxLength={4} />
             </View>
           </View>
-          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={8} style={s.removeBtn}><Text style={s.removeText}>✕</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => remove(i)} hitSlop={8} style={s.removeBtn}><CloseIcon size={18} color={C.clayText} strokeWidth={2.2} /></Pressable>
         </View>
       ))}
 
@@ -655,6 +669,46 @@ const LISTING_HREF: Record<string, string> = {
   artist: "/music/", memorial: "/memoriam/", business: "/business/", person: "/people/", project: "/projects/",
 };
 
+function ListingsPreview({ listings, limit, onShowAll }: Readonly<{ listings: Listing[]; limit?: number; onShowAll?: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  if (listings.length === 0) {
+    return (
+      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}>
+        <Text style={s.linkRowText}>Nothing yet — add your first</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} />
+      </Pressable>
+    );
+  }
+  const list = limit ? listings.slice(0, limit) : listings;
+  return (
+    <View style={{ gap: 8 }}>
+      {list.map((l) => <ListingPreviewRow key={l.id} listing={l} />)}
+      {limit && listings.length > limit && onShowAll ? (
+        <Pressable accessibilityRole="button" onPress={onShowAll} style={s.viewAllBtn}>
+          <Text style={s.viewAllText}>View all {listings.length} →</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+function ListingPreviewRow({ listing: l }: Readonly<{ listing: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const base = l.status === "approved" ? LISTING_HREF[l.type] : undefined;
+  const href = base ? `${base}${l.slug}` : null;
+  return (
+    <Pressable accessibilityRole="button" onPress={href ? () => push(href) : undefined} disabled={!href} style={[s.listingRow, !href && { opacity: 0.9 }]}>
+      <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.previewThumb} labelStyle={s.previewThumbText} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={s.listingTitle} numberOfLines={1}>{l.title}</Text>
+        <Text style={s.listingType}>{l.type}</Text>
+      </View>
+      <StatusChip status={l.status} />
+    </Pressable>
+  );
+}
+
 // Everything the member has contributed, with review status + promote control.
 function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
   const { C } = useTheme();
@@ -662,7 +716,7 @@ function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
   if (listings.length === 0) {
     return (
       <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}>
-        <Text style={s.linkRowText}>Nothing yet — add your first</Text><Text style={s.chevron}>›</Text>
+        <Text style={s.linkRowText}>Nothing yet — add your first</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} />
       </Pressable>
     );
   }
@@ -725,6 +779,164 @@ function StatusChip({ status }: Readonly<{ status: string }>) {
   );
 }
 
+function TicketsList({ tickets, limit, loading, error, onEvent, onShowAll }: Readonly<{ tickets: Ticket[]; limit?: number; loading?: boolean; error?: string | null; onEvent: (slug: string) => void; onShowAll?: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  if (loading) return <Text style={s.help}>Loading your tickets…</Text>;
+  if (error) return <Text style={s.help}>Couldn&apos;t load your tickets.</Text>;
+  if (tickets.length === 0) return <EmptyState compact icon={<TicketIcon size={20} color={C.goldText} strokeWidth={1.8} />} title="No tickets yet" body="See what's on under Events." />;
+  const list = limit ? tickets.slice(0, limit) : tickets;
+  return (
+    <View style={{ gap: 8 }}>
+      {list.map((t) => (
+        <Pressable accessibilityRole="button" key={t.id} onPress={() => onEvent(t.eventSlug)} style={s.listingRow}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={s.listingTitle} numberOfLines={1}>{t.eventTitle}</Text>
+            <Text style={s.listingType}>{t.qty} × {t.tier} · {fmtDate(t.createdAt)}</Text>
+          </View>
+          {t.status === "success" && t.code ? (
+            <View style={s.codeChip}><Text style={s.codeText}>{t.code}</Text></View>
+          ) : (
+            <View style={[s.statusChip, t.status === "pending" ? s.statusPending : s.statusBad]}>
+              <Text style={[s.statusText, t.status === "pending" ? { color: C.goldText } : { color: C.maroonText }]}>{t.status}</Text>
+            </View>
+          )}
+        </Pressable>
+      ))}
+      {limit && tickets.length > limit && onShowAll ? (
+        <Pressable accessibilityRole="button" onPress={onShowAll} style={s.viewAllBtn}>
+          <Text style={s.viewAllText}>View all {tickets.length} →</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+function SubscriptionsList({ subscriptions, limit, loading, error, onBusiness, onShowAll }: Readonly<{ subscriptions: Subscription[]; limit?: number; loading?: boolean; error?: string | null; onBusiness: (slug: string) => void; onShowAll?: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  if (loading) return <Text style={s.help}>Loading your subscriptions…</Text>;
+  if (error) return <Text style={s.help}>Couldn&apos;t load your subscriptions.</Text>;
+  if (subscriptions.length === 0) return <EmptyState compact icon={<RefreshIcon size={20} color={C.goldText} strokeWidth={1.8} />} title="No subscriptions yet" />;
+  const list = limit ? subscriptions.slice(0, limit) : subscriptions;
+  return (
+    <View style={{ gap: 8 }}>
+      {list.map((sub) => {
+        const subChip = sub.status === "pending" ? s.statusPending : s.statusBad;
+        const subColor = sub.status === "pending" ? { color: C.goldText } : { color: C.maroonText };
+        return (
+          <Pressable accessibilityRole="button" key={sub.id} onPress={() => onBusiness(sub.listingSlug)} style={s.listingRow}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.listingTitle} numberOfLines={1}>{sub.listingTitle}</Text>
+              <Text style={s.listingType}>
+                {money(sub.amountPesewas)}{sub.periodEnd ? ` · until ${fmtDate(sub.periodEnd)}` : ""}
+              </Text>
+            </View>
+            <View style={[s.statusChip, sub.status === "success" ? s.statusOk : subChip]}>
+              <Text style={[s.statusText, sub.status === "success" ? { color: C.greenText } : subColor]}>{sub.status}</Text>
+            </View>
+          </Pressable>
+        );
+      })}
+      {limit && subscriptions.length > limit && onShowAll ? (
+        <Pressable accessibilityRole="button" onPress={onShowAll} style={s.viewAllBtn}>
+          <Text style={s.viewAllText}>View all {subscriptions.length} →</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+// Paid featured placement on an owned listing — GH₵ 10/day, Paystack handoff
+// with a manual verify step, mirroring the projects pledge flow.
+function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [pendingRef, setPendingRef] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<Promotion | null>(null);
+
+  async function promote(days: number) {
+    setBusy(true); setErr("");
+    try {
+      const r = await api.promoteListing(listing.id, days);
+      const amountPesewas = days * 10 * 100;
+      const result = await presentCheckout(
+        sessionFromStartResponse(r, { amountPesewas, flow: "promotion", metadata: { listingId: listing.id, days: String(days) } })
+      );
+      if (result.kind === "error") {
+        setErr(result.message);
+      } else if (result.kind === "cancelled") {
+        // keep the picker open
+      } else if (result.provider === "simulated") {
+        const p = await api.confirmPromotion(r.reference);
+        setConfirmed(p);
+        setOpen(false);
+      } else if (result.provider === "stripe") {
+        const p = await api.confirmPromotion(r.reference);
+        setConfirmed(p);
+        setOpen(false);
+      } else {
+        setPendingRef(r.reference);
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not start the payment.");
+    } finally { setBusy(false); }
+  }
+
+  async function verify() {
+    if (!pendingRef) return;
+    setBusy(true); setErr("");
+    try {
+      const p = await api.confirmPromotion(pendingRef);
+      setConfirmed(p);
+      setPendingRef(null);
+      setOpen(false);
+    } catch {
+      setErr("Payment not confirmed yet. Finish paying in the browser, then verify again.");
+    } finally { setBusy(false); }
+  }
+
+  if (confirmed) {
+    return <Text style={s.promoDone}>★ Featured {confirmed.days}d ✓</Text>;
+  }
+  if (pendingRef) {
+    return (
+      <View style={{ alignItems: "flex-end", gap: 4 }}>
+        <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.promoBtn, busy && { opacity: 0.6 }]}>
+          <Text style={s.promoBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
+        </Pressable>
+        {err !== "" && <Text style={s.promoErr}>{err}</Text>}
+      </View>
+    );
+  }
+  if (open) {
+    return (
+      <View style={{ alignItems: "flex-end", gap: 6 }}>
+        <View style={{ flexDirection: "row", gap: 6 }}>
+          {[7, 14, 30].map((d) => (
+            <Pressable accessibilityRole="button" key={d} onPress={() => promote(d)} disabled={busy} style={[s.promoDayBtn, busy && { opacity: 0.6 }]}>
+              <Text style={s.promoDayText}>{d}d</Text>
+              <Text style={s.promoDayPrice}>GH₵{d * 10}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable accessibilityRole="button" onPress={() => { setOpen(false); setErr(""); }} hitSlop={6} style={{ minHeight: 32, justifyContent: "center" }}>
+          <Text style={s.promoCancel}>Cancel</Text>
+        </Pressable>
+        {err !== "" && <Text style={s.promoErr}>{err}</Text>}
+      </View>
+    );
+  }
+  return (
+    <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={s.promoBtn}>
+      <Text style={s.promoBtnText}>Promote</Text>
+    </Pressable>
+  );
+}
+
 function PeopleYouMayKnow({ refreshKey }: Readonly<{ refreshKey: number }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -733,7 +945,7 @@ function PeopleYouMayKnow({ refreshKey }: Readonly<{ refreshKey: number }>) {
   if (error) return <Text style={s.help}>Couldn&apos;t load suggestions.</Text>;
   const list = data ?? [];
   if (list.length === 0) {
-    return <EmptyState compact glyph="✧" title="No suggestions yet" body="Add your schooling, quarter and Asafo and we'll connect you with classmates and neighbours." />;
+    return <EmptyState compact icon={<UsersIcon size={20} color={C.goldText} strokeWidth={1.8} />} title="No suggestions yet" body="Add your schooling, quarter and Asafo and we'll connect you with classmates and neighbours." />;
   }
   return (
     <View style={{ gap: 10 }}>
@@ -794,26 +1006,55 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
   primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
-  header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.goldBrand },
-  avatarText: { color: ON_GREEN, ...S(700), fontSize: 30 },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, flexWrap: "wrap", justifyContent: "center" },
-  name: { ...D(700), fontSize: 26, color: ON_GREEN },
-  role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 2, textTransform: "uppercase" },
+  header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: C.goldBrand },
+  avatarText: { color: ON_GREEN, ...S(700), fontSize: 34 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, flexWrap: "wrap", justifyContent: "center" },
+  name: { ...D(700), fontSize: 28, color: ON_GREEN },
+  role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 4, textTransform: "uppercase", ...S(600) },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12, justifyContent: "center" },
-  // The warn chip's bright gold (#F7C44A) has no palette base; it sits on the
-  // header, which stays dark green in both themes, so the literal is kept.
   warnChip: { marginTop: 12, borderWidth: 1, borderColor: "rgba(247,196,74,0.4)", backgroundColor: "rgba(247,196,74,0.14)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   warnChipText: { color: C.gold, fontSize: 12, ...S(700) },
   darkChip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   darkChipText: { color: ON_GREEN, fontSize: 12 },
+  headerActions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 16 },
+  headerBtn: { borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
+  headerBtnPrimary: { backgroundColor: C.goldBrand },
+  headerBtnText: { color: ON_GREEN, ...S(700), fontSize: 13 },
+
+  tabBar: { backgroundColor: C.paper, borderBottomWidth: 1, borderBottomColor: C.sand },
+  tabBarContent: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  tab: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  tabActive: { backgroundColor: C.green, borderColor: C.green },
+  tabText: { color: C.inkMuted, ...S(600), fontSize: 13 },
+  tabTextActive: { color: ON_GREEN },
 
   body: { padding: 16, gap: 16 },
   section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   sectionTitle: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 4 },
   subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...S(700), textTransform: "uppercase", marginBottom: 8 },
-  kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginBottom: 6 },
   help: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginBottom: 12 },
+
+  nudge: { backgroundColor: withAlpha(C.gold, 0.1), borderWidth: 1, borderColor: withAlpha(C.goldBrand, 0.35), borderRadius: 16, padding: 16 },
+  nudgeTitle: { color: C.goldText, ...S(700), fontSize: 14 },
+  nudgeBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
+  nudgeCta: { color: C.goldText, ...S(700), fontSize: 13, marginTop: 8 },
+
+  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  statCard: { flex: 1, minWidth: 140, borderWidth: 1, borderRadius: 16, padding: 14 },
+  statValue: { ...D(700), fontSize: 24, color: C.ink },
+  statLabel: { ...S(600), fontSize: 11, color: C.inkFaint, textTransform: "uppercase", letterSpacing: 0.8, marginTop: 4 },
+
+  quickActionsContent: { flexDirection: "row", gap: 10, paddingVertical: 2 },
+  quickChip: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  quickChipIcon: { width: 20, height: 20, alignItems: "center", justifyContent: "center" },
+  quickChipText: { color: C.ink, fontSize: 13, ...S(600) },
+
+  viewAllBtn: { alignSelf: "center", paddingVertical: 8, paddingHorizontal: 12, marginTop: 2 },
+  viewAllText: { color: C.greenText, ...S(700), fontSize: 13 },
+
+  previewThumb: { width: 40, height: 40, borderRadius: 8 },
+  previewThumbText: { color: ON_GREEN, ...S(700), fontSize: 14 },
 
   stint: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
   stintName: { ...S(700), fontSize: 16, color: C.ink },

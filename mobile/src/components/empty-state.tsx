@@ -1,24 +1,25 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
 import { ON_GREEN, S, withAlpha, type Palette, D } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 /**
- * Shared empty state — a glyph inside a soft double-ring circle, a title, a
- * description, and an optional action button. `compact` renders a slim
- * left-aligned row for nested contexts (inside cards/lists). Glyphs are
- * unicode symbols, matching the tab bar's text-icon idiom (no icon font dep).
+ * Shared empty state — a glyph or SVG icon inside a soft double-ring circle, a
+ * title, a description, and an optional action button. `compact` renders a slim
+ * left-aligned row for nested contexts (inside cards/lists).
  */
 export function EmptyState({
   glyph,
+  icon,
   title,
   body,
   actionLabel,
   onAction,
   compact = false,
 }: Readonly<{
-  glyph: string;
+  glyph?: string;
+  icon?: ReactNode;
   title: string;
   body?: string;
   actionLabel?: string;
@@ -27,11 +28,12 @@ export function EmptyState({
 }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
+  const graphic = icon ?? (glyph ? <Text style={compact ? s.compactGlyph : s.glyph}>{glyph}</Text> : null);
   if (compact) {
     return (
       <View style={s.compactWrap}>
         <View style={s.compactCircle}>
-          <Text style={s.compactGlyph}>{glyph}</Text>
+          {graphic}
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.compactTitle}>{title}</Text>
@@ -49,7 +51,7 @@ export function EmptyState({
     <View style={s.wrap}>
       <View style={s.ring}>
         <View style={s.circle}>
-          <Text style={s.glyph}>{glyph}</Text>
+          {graphic}
         </View>
       </View>
       <Text style={s.title}>{title}</Text>

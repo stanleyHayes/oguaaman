@@ -12,7 +12,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
 import { DirectivesProvider } from "@/lib/directives";
 import { NavDrawerProvider } from "@/components/nav-drawer";
-import { StripeProvider } from "@stripe/stripe-react-native";
+import { AppStripeProvider } from "@/components/stripe-provider";
 
 // Keep the splash screen up until the brand fonts are ready, so the first
 // frame never flashes system type.
@@ -40,8 +40,6 @@ void SplashScreen.preventAutoHideAsync().catch(() => {});
  * useTheme() inside RootNavigator below.
  */
 
-const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
-
 function RootNavigator() {
   const { C } = useTheme();
 
@@ -62,6 +60,9 @@ function RootNavigator() {
           headerTintColor: C.cream,
           headerTitleStyle: { },
           contentStyle: { backgroundColor: C.paper },
+          animation: "slide_from_right",
+          animationDuration: 250,
+          gestureEnabled: true,
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -94,6 +95,7 @@ function RootNavigator() {
         <Stack.Screen name="events/[slug]" options={{ title: "Event", headerBackTitle: "Back" }} />
         <Stack.Screen name="music/the-oguaa-sound" options={{ title: "The Oguaa Sound", headerBackTitle: "Music" }} />
         <Stack.Screen name="me" options={{ title: "My profile", headerBackTitle: "More" }} />
+        <Stack.Screen name="better" options={{ title: "Build a better Oguaa", headerBackTitle: "Home" }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications", headerBackTitle: "Back" }} />
         <Stack.Screen name="alerts" options={{ title: "Alerts", headerBackTitle: "Back" }} />
         <Stack.Screen name="search" options={{ title: "Search", headerBackTitle: "More" }} />
@@ -135,13 +137,9 @@ export default function RootLayout() {
         <AuthProvider>
           <DirectivesProvider>
             <NavDrawerProvider>
-              {STRIPE_PK ? (
-                <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="gh.oguaa.app.stripe">
-                  <RootNavigator />
-                </StripeProvider>
-              ) : (
+              <AppStripeProvider>
                 <RootNavigator />
-              )}
+              </AppStripeProvider>
             </NavDrawerProvider>
           </DirectivesProvider>
         </AuthProvider>

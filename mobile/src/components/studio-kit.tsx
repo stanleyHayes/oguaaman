@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, type ComponentType } from "react";
 import { push } from "@/lib/router";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { T as Text } from "@/components/typography";
 import { S, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
+import { ArrowUpRightIcon, type IconProps } from "@/components/icons";
 
 /*
  * Studio kit — shared primitives for the Creator Studio dashboards (Overview,
@@ -59,7 +60,7 @@ const TONE_ACCENT: Record<MetricTone, (C: Palette) => string> = {
 export function MetricCard({
   label,
   value,
-  glyph,
+  icon: Icon,
   tone = "green",
   sub,
   href,
@@ -67,7 +68,7 @@ export function MetricCard({
 }: Readonly<{
   label: string;
   value: string | number;
-  glyph: string;
+  icon: ComponentType<IconProps>;
   tone?: MetricTone;
   sub?: string;
   href?: string;
@@ -81,9 +82,9 @@ export function MetricCard({
     <View style={[s.card, { borderLeftColor: accent, backgroundColor: withAlpha(accent, 0.05) }]}>
       <View style={s.cardTop}>
         <View style={[s.iconChip, { backgroundColor: withAlpha(accent, 0.12) }]}>
-          <Text style={[s.iconGlyph, { color: accent }]}>{glyph}</Text>
+          <Icon size={18} color={accent} strokeWidth={2} />
         </View>
-        {href ? <Text style={s.arrow}>↗</Text> : null}
+        {href ? <ArrowUpRightIcon size={14} color={C.inkFaint} strokeWidth={2.5} /> : null}
       </View>
       <Text style={s.value} numberOfLines={1}>{value}</Text>
       <Text style={s.label} numberOfLines={1}>{label}</Text>

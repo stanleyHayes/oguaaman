@@ -28,6 +28,7 @@ export const ROUTES = {
   music: "/music",
   oguaaSound: "/music/the-oguaa-sound",
   youth: "/youth",
+  better: "/better",
   search: "/search",
   browseEvents: "/browse/events",
   browsePeople: "/browse/people",

@@ -12,6 +12,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { QuestionIcon } from "@/components/icons";
 
 const TABS: { kind: LostFoundKind; label: string }[] = [
   { kind: "lost_item", label: "Lost" },
@@ -88,7 +89,7 @@ export default function LostFoundList() {
       </View>
 
       {shown.length === 0 ? (
-        <EmptyState glyph="?" title="Nothing here yet" body="…and may it stay that way." />
+        <EmptyState icon={<QuestionIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="Nothing here yet" body="…and may it stay that way." />
       ) : (
         <View style={{ gap: 12, marginTop: 16 }}>
           {shown.map((i, idx) => <StaggerIn key={i.id} index={idx}><NoticeCard i={i} /></StaggerIn>)}

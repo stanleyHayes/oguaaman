@@ -11,6 +11,7 @@ import { makeFormStyles } from "@/components/form-styles";
 import { ON_GREEN, type Palette, S } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import type { NewsArticle } from "@/lib/types";
+import { CheckIcon, HandsIcon } from "@/components/icons";
 
 // Cover accent swatches (used when no cover image is chosen). Palette-derived so
 // they read well in both themes.
@@ -66,7 +67,10 @@ export default function Write() {
     const published = done.status === "published";
     return (
       <View style={s.gate}>
-        <Text style={s.gateTitle}>{published ? "Published ✓" : "Sent for review 🙏"}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          {published ? <CheckIcon size={24} color={C.ink} strokeWidth={2.5} /> : <HandsIcon size={24} color={C.ink} strokeWidth={2} />}
+          <Text style={s.gateTitle}>{published ? "Published" : "Sent for review"}</Text>
+        </View>
         <Text style={s.gateBody}>
           {published
             ? "Your story is live in the Newsroom."

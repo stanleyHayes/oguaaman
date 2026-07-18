@@ -23,6 +23,7 @@ const STRINGS: Record<string, Partial<Record<Lang, string>>> = {
   "nav.home": { en: "Home", fante: "Fie" },
   "nav.music": { en: "Music" },
   "nav.memoriam": { en: "In Memoriam", fante: "Yɛnkae" },
+  "nav.events": { en: "Events" },
   "nav.more": { en: "More" },
   "common.welcome": { en: "Welcome", fante: "Akwaaba", twi: "Akwaaba" },
 };

@@ -12,6 +12,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Pill, Thumb } from "@/ui";
 import { PressScale, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
+import { MusicIcon } from "@/components/icons";
 
 // Genre filter chips (client-side filtering, like the web directory).
 function GenreChips({ active, onPick }: Readonly<{ active: string; onPick: (g: string) => void }>) {
@@ -60,7 +61,7 @@ export default function Music() {
         <Text style={s.soundSub}>The grandfathers of the sound — C.K. Mann, Ebo Taylor, and the osode wave.</Text>
       </PressScale>
       <GenreChips active={genre} onPick={setGenre} />
-      {shown.length === 0 && <EmptyState glyph="♪" title="No artists in this genre yet" />}
+      {shown.length === 0 && <EmptyState icon={<MusicIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="No artists in this genre yet" />}
       {shown.map((a, i) => (
         <StaggerIn key={a.id} index={i}>
           <Link href={route.music(a.slug)} asChild>
