@@ -51,6 +51,20 @@ export interface ListingDetails {
   address?: string;
   openingHours?: string;
   contact?: SocialLink[];
+  // property — compact Rent & Stay discovery and enquiry
+  offerType?: "short-stay" | "long-term";
+  propertyType?: "room" | "apartment" | "house" | "guesthouse" | "hostel";
+  area?: string;
+  pricePesewas?: number;
+  pricePeriod?: "night" | "month";
+  depositPesewas?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  furnished?: boolean;
+  availability?: "available" | "reserved" | "let";
+  availableFrom?: string;
+  amenities?: string[];
+  bookingUrl?: string;
   // project (adopt-a-project; money in pesewas; organiser shared with events)
   goalPesewas?: number;
   raisedPesewas?: number;
@@ -100,6 +114,8 @@ export interface SchoolStint { schoolId: string; fromYear?: number; toYear?: num
 
 export interface Diaspora { abroad: boolean; city?: string; country?: string }
 
+export type MemberRole = "member" | "curator" | "steward" | "editor" | "moderator" | "accountability" | "vetting";
+
 export interface Member {
   id: string;
   slug: string;
@@ -109,7 +125,7 @@ export interface Member {
   photoUrl?: string;
   /** Off-platform links (Instagram, website…) shown on the public profile. */
   links?: SocialLink[];
-  role: "member" | "curator" | "steward" | "editor";
+  role: MemberRole;
   /** Creator kinds ("writer" | "business" | "artist" | "organiser" | …); empty = plain citizen. */
   creatorTypes?: string[];
   /** Creator plan preference selected at signup; it is not an active entitlement. */
@@ -490,10 +506,10 @@ export interface HomeData {
  * Cape Coast centre ≈ [5.1053, -1.2466].
  */
 export type MapPointKind =
-  | "business" | "event" | "institution" | "school" | "incident"
+  | "business" | "property" | "event" | "institution" | "school" | "incident"
   | "lostfound" | "landmark" | "service" | "transport";
 export type MapLayer =
-  | "business" | "events" | "institutions" | "safety"
+  | "business" | "property" | "events" | "institutions" | "safety"
   | "lostfound" | "landmarks" | "services" | "transport";
 
 export interface MapPoint {
@@ -725,4 +741,135 @@ export interface Goal {
   createdByName?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+// ── Oguaa Outside — vetted agents and escrow-backed errands ────────────────
+
+export type AgentType = "individual" | "office";
+export type AgentStatus = "pending" | "verified" | "suspended" | "rejected";
+
+export interface AgentGuarantor {
+  name: string;
+  phone: string;
+  relation?: string;
+  note?: string;
+}
+
+export interface AgentBond {
+  amountPesewas: number;
+  status: "pending" | "held" | "refunded" | "forfeited" | string;
+  reference?: string;
+}
+
+export interface Agent {
+  id: string;
+  slug: string;
+  memberId: string;
+  type: AgentType;
+  displayName: string;
+  headline?: string;
+  bio?: string;
+  services: string[];
+  coverageAreas: string[];
+  rates?: string;
+  status: AgentStatus;
+  idDocUrl?: string;
+  guarantor?: AgentGuarantor;
+  bond: AgentBond;
+  verifiedByName?: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+  ratingAvg: number;
+  ratingCount: number;
+  jobsCompleted: number;
+  payoutMethod?: "momo" | "bank" | string;
+  payoutDetail?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AgentInput {
+  type: AgentType;
+  displayName: string;
+  headline: string;
+  bio: string;
+  services: string[];
+  coverageAreas: string[];
+  rates: string;
+  idDocUrl: string;
+  guarantor: AgentGuarantor;
+  payoutMethod: string;
+  payoutDetail: string;
+}
+
+export interface AgentService {
+  slug: string;
+  label: string;
+}
+
+export type AgentJobStatus =
+  | "requested"
+  | "quoted"
+  | "funded"
+  | "delivered"
+  | "completed"
+  | "disputed"
+  | "cancelled"
+  | "refunded";
+
+export interface AgentJobEscrow {
+  heldPesewas: number;
+  platformFeePesewas: number;
+  payoutPesewas: number;
+  status: "none" | "pending" | "held" | "released" | "refunded" | string;
+  simulated: boolean;
+}
+
+export interface AgentJob {
+  id: string;
+  reference: string;
+  agentId: string;
+  agentSlug: string;
+  agentName: string;
+  agentMemberId: string;
+  clientMemberId: string;
+  clientName?: string;
+  service: string;
+  title: string;
+  description: string;
+  deadline?: string;
+  budgetPesewas: number;
+  quotePesewas: number;
+  quoteNote?: string;
+  status: AgentJobStatus;
+  escrow: AgentJobEscrow;
+  disputeReason?: string;
+  reviewed: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AgentReview {
+  id: string;
+  jobId: string;
+  agentId: string;
+  agentSlug: string;
+  clientMemberId: string;
+  clientName?: string;
+  rating: number;
+  body?: string;
+  createdAt: string;
+}
+
+export interface AgentJobInput {
+  service: string;
+  title: string;
+  description: string;
+  budgetPesewas: number;
+  deadline?: string;
+}
+
+export interface MyAgentJobs {
+  asClient: AgentJob[];
+  asAgent: AgentJob[];
 }

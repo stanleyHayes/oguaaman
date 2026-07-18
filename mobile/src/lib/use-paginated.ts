@@ -47,24 +47,26 @@ export function usePaginatedList<T>(fetchPage: PageFetcher<T>, key: string, page
   // Latest-closure refs: keep re-fetch keyed on `key` alone while always calling
   // the fetcher/comparing against the key from the current render.
   const fetchRef = useRef(fetchPage);
-  fetchRef.current = fetchPage;
   const keyRef = useRef(key);
-  keyRef.current = key;
+  useEffect(() => { fetchRef.current = fetchPage; }, [fetchPage]);
+  useEffect(() => { keyRef.current = key; }, [key]);
   // Serialises loadMore/refresh so overlapping onEndReached fires can't double-append.
-  const busyRef = useRef(false);
+  const busyRef = useRef<symbol | null>(null);
 
   const [resolved, setResolved] = useState<Resolved<T>>({
     loadedKey: null, items: [], total: 0, totalPages: 0, page: 0, error: null,
   });
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  // Associate transient flags with the key that started them. Changing filters
+  // makes stale flags disappear by derivation, without synchronous effect resets.
+  const [loadingMoreKey, setLoadingMoreKey] = useState<string | null>(null);
+  const [refreshingKey, setRefreshingKey] = useState<string | null>(null);
+  const loadingMore = loadingMoreKey === key;
+  const refreshing = refreshingKey === key;
 
   // Initial load + reload on key change. The `alive` flag drops a stale response.
   useEffect(() => {
     let alive = true;
-    busyRef.current = false;
-    setLoadingMore(false);
-    setRefreshing(false);
+    busyRef.current = null;
     fetchRef.current(1, pageSize)
       .then((res) => {
         if (alive) setResolved({ loadedKey: key, items: res.items, total: res.total, totalPages: res.totalPages, page: res.page, error: null });
@@ -82,8 +84,9 @@ export function usePaginatedList<T>(fetchPage: PageFetcher<T>, key: string, page
     if (loading || refreshing || !hasMore || busyRef.current) return;
     const forKey = key;
     const next = resolved.page + 1;
-    busyRef.current = true;
-    setLoadingMore(true);
+    const request = Symbol(forKey);
+    busyRef.current = request;
+    setLoadingMoreKey(forKey);
     fetchRef.current(next, pageSize)
       .then((res) => {
         if (keyRef.current !== forKey) return;
@@ -100,16 +103,17 @@ export function usePaginatedList<T>(fetchPage: PageFetcher<T>, key: string, page
         if (keyRef.current === forKey) setResolved((s) => ({ ...s, error: e.message }));
       })
       .finally(() => {
-        busyRef.current = false;
-        if (keyRef.current === forKey) setLoadingMore(false);
+        if (busyRef.current === request) busyRef.current = null;
+        if (keyRef.current === forKey) setLoadingMoreKey(null);
       });
   }, [loading, refreshing, hasMore, resolved.page, key, pageSize]);
 
   const refresh = useCallback(() => {
     if (busyRef.current) return;
     const forKey = key;
-    busyRef.current = true;
-    setRefreshing(true);
+    const request = Symbol(forKey);
+    busyRef.current = request;
+    setRefreshingKey(forKey);
     fetchRef.current(1, pageSize)
       .then((res) => {
         if (keyRef.current === forKey) setResolved({ loadedKey: forKey, items: res.items, total: res.total, totalPages: res.totalPages, page: res.page, error: null });
@@ -118,8 +122,8 @@ export function usePaginatedList<T>(fetchPage: PageFetcher<T>, key: string, page
         if (keyRef.current === forKey) setResolved((s) => ({ ...s, error: e.message }));
       })
       .finally(() => {
-        busyRef.current = false;
-        if (keyRef.current === forKey) setRefreshing(false);
+        if (busyRef.current === request) busyRef.current = null;
+        if (keyRef.current === forKey) setRefreshingKey(null);
       });
   }, [key, pageSize]);
 

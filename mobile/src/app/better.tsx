@@ -222,7 +222,7 @@ function GoalChip({ status }: Readonly<{ status: GoalStatus }>) {
   const m = goalStatusMeta(C, status);
   return (
     <View style={{ alignSelf: "flex-start", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, backgroundColor: m.bg }}>
-      <Text style={{ fontSize: 11, fontWeight: "700", color: m.fg }}>{m.label}</Text>
+      <Text style={{ fontSize: 11, color: m.fg, ...S(700) }}>{m.label}</Text>
     </View>
   );
 }
@@ -239,7 +239,7 @@ function GoalCard({ g }: Readonly<{ g: Goal }>) {
       <Text style={gs.cardTitle}>{g.title}</Text>
       <Text style={gs.cardDesc}>{g.description}</Text>
       {g.target ? (
-        <Text style={gs.cardTarget}><Text style={{ fontWeight: "700" }}>Target — </Text>{g.target}</Text>
+        <Text style={gs.cardTarget}><Text style={S(700)}>Target — </Text>{g.target}</Text>
       ) : null}
     </View>
   );
@@ -290,7 +290,7 @@ function GoalsSection({ goals }: Readonly<{ goals: Goal[] }>) {
           <Text style={gs.featuredTitle}>{featured.title}</Text>
           <Text style={gs.featuredDesc}>{featured.description}</Text>
           {featured.target ? (
-            <Text style={gs.featuredTarget}><Text style={{ color: C.gold, fontWeight: "700" }}>The target — </Text>{featured.target}</Text>
+            <Text style={gs.featuredTarget}><Text style={{ color: C.gold, ...S(700) }}>The target — </Text>{featured.target}</Text>
           ) : null}
           {featured.setAtDurbar ? (
             <Text style={gs.durbar}>Set at the grand durbar · judged at the next Fetu Afahye.</Text>
@@ -320,24 +320,24 @@ function GoalsSection({ goals }: Readonly<{ goals: Goal[] }>) {
 
 const makeGoalStyles = (C: Palette) => StyleSheet.create({
   section: { paddingHorizontal: 20, paddingTop: 28 },
-  title: { fontSize: 22, fontWeight: "700", color: C.ink, marginTop: 4 },
+  title: { fontSize: 22, color: C.ink, marginTop: 4, ...D(700) },
   lede: { fontSize: 14, lineHeight: 21, color: C.inkMuted, marginTop: 6 },
   featured: { marginTop: 16, borderRadius: 20, padding: 20, backgroundColor: C.green },
-  featuredKicker: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2, color: C.gold },
-  featuredTitle: { fontSize: 20, fontWeight: "700", color: ON_GREEN, marginTop: 6 },
+  featuredKicker: { fontSize: 11, letterSpacing: 1.2, color: C.gold, ...S(700) },
+  featuredTitle: { fontSize: 20, color: ON_GREEN, marginTop: 6, ...D(600) },
   featuredDesc: { fontSize: 14, lineHeight: 21, color: withAlpha(ON_GREEN, 0.85), marginTop: 8 },
   featuredTarget: { fontSize: 13, lineHeight: 20, color: ON_GREEN, marginTop: 12, backgroundColor: withAlpha(ON_GREEN, 0.1), borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, overflow: "hidden" },
   durbar: { fontSize: 12, color: withAlpha(ON_GREEN, 0.7), marginTop: 10 },
   featuredChip: { alignSelf: "flex-start", marginTop: 14, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: withAlpha(ON_GREEN, 0.16) },
-  featuredChipText: { fontSize: 11, fontWeight: "700", color: ON_GREEN },
-  subhead: { fontSize: 12, fontWeight: "800", letterSpacing: 1, color: C.inkMuted },
+  featuredChipText: { fontSize: 11, color: ON_GREEN, ...S(700) },
+  subhead: { fontSize: 12, letterSpacing: 1, color: C.inkMuted, ...S(700) },
   card: { borderRadius: 16, borderWidth: 1, borderColor: withAlpha(C.green, 0.12), backgroundColor: C.paper, padding: 16 },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  cadence: { fontSize: 11, fontWeight: "800", letterSpacing: 0.8, color: C.goldText, textTransform: "uppercase", flexShrink: 1 },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: C.ink, marginTop: 8 },
+  cadence: { fontSize: 11, letterSpacing: 0.8, color: C.goldText, textTransform: "uppercase", flexShrink: 1, ...S(700) },
+  cardTitle: { fontSize: 16, color: C.ink, marginTop: 8, ...S(700) },
   cardDesc: { fontSize: 13, lineHeight: 20, color: C.inkMuted, marginTop: 4 },
   cardTarget: { fontSize: 12, lineHeight: 18, color: C.inkMuted, marginTop: 8 },
-  recordNote: { fontSize: 13, lineHeight: 20, fontStyle: "italic", color: C.inkMuted, marginTop: 6 },
+  recordNote: { fontSize: 13, lineHeight: 20, color: C.inkMuted, marginTop: 6, ...SI() },
   recordBy: { fontSize: 12, color: C.goldText, marginTop: 8 },
 });
 

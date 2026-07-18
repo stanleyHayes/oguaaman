@@ -10,6 +10,7 @@ import type { FestivalSummary } from "@/lib/types";
 import { S, type Palette } from "@/theme";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
+import { ArrowRightIcon } from "@/components/icons";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -40,16 +41,25 @@ export default function Festivals() {
       <View style={{ padding: 16, gap: 14 }}>
       {data.map((f, i) => (
         <StaggerIn key={f.slug} index={i}>
-          <Pressable accessibilityRole="button" accessibilityLabel={f.name} onPress={() => push(route.festival(f.slug))} style={s.card}>
-          <Thumb seed={f.slug} src={f.nextEdition?.coverImageUrl} label={f.name} style={s.cover} labelStyle={s.coverLabel} />
-          <View style={{ padding: 14 }}>
-            <Text style={s.name}>{f.name}</Text>
-            {f.tagline ? <Text style={s.tagline}>{f.tagline}</Text> : null}
-            <Text style={s.meta}>
-              {f.nextEdition?.details.startsAt ? <>Next: <Text style={s.metaNext}>{fmtDate(f.nextEdition.details.startsAt)}</Text> · </> : null}
-              {f.editions} edition{f.editions === 1 ? "" : "s"} archived
-            </Text>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={f.name}
+            onPress={() => push(route.festival(f.slug))}
+            style={({ pressed }) => [s.card, pressed && s.cardPressed]}
+          >
+            <Thumb seed={f.slug} src={f.nextEdition?.coverImageUrl} label={f.name} style={s.cover} labelStyle={s.coverLabel} />
+            <View style={s.cardBody}>
+              <Text style={s.kicker}>LIVING ARCHIVE</Text>
+              <Text style={s.name} numberOfLines={1}>{f.name}</Text>
+              {f.tagline ? <Text style={s.tagline} numberOfLines={2}>{f.tagline}</Text> : null}
+              <View style={s.metaRow}>
+                <Text style={s.meta} numberOfLines={1}>
+                  {f.nextEdition?.details.startsAt ? <>Next <Text style={s.metaNext}>{fmtDate(f.nextEdition.details.startsAt)}</Text> · </> : null}
+                  {f.editions} edition{f.editions === 1 ? "" : "s"} archived
+                </Text>
+                <View style={s.cardArrow}><ArrowRightIcon size={14} color={C.goldText} strokeWidth={2.3} /></View>
+              </View>
+            </View>
           </Pressable>
         </StaggerIn>
       ))}
@@ -59,11 +69,16 @@ export default function Festivals() {
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
-  card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
-  cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
-  coverLabel: { color: C.cream, ...S(700), fontSize: 24, textAlign: "center", paddingHorizontal: 16 },
-  name: { ...S(700), fontSize: 22, color: C.ink },
-  tagline: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
-  meta: { color: C.inkFaint, fontSize: 12, marginTop: 10 },
+  card: { minHeight: 118, flexDirection: "row", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18, overflow: "hidden" },
+  cardPressed: { opacity: 0.72, transform: [{ scale: 0.995 }] },
+  cover: { width: 108, alignSelf: "stretch", minHeight: 118, alignItems: "center", justifyContent: "center" },
+  coverLabel: { color: C.cream, ...S(700), fontSize: 15, lineHeight: 18, textAlign: "center", paddingHorizontal: 10 },
+  cardBody: { flex: 1, minWidth: 0, padding: 12 },
+  kicker: { color: C.goldText, fontSize: 8.5, letterSpacing: 1.25, ...S(700) },
+  name: { ...S(700), fontSize: 17, color: C.ink, marginTop: 2 },
+  tagline: { color: C.inkMuted, fontSize: 12.5, lineHeight: 17, marginTop: 3 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: "auto", paddingTop: 8 },
+  meta: { flex: 1, color: C.inkFaint, fontSize: 10.5 },
   metaNext: { color: C.goldText, ...S(700) },
+  cardArrow: { width: 25, height: 25, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: C.paper },
 });

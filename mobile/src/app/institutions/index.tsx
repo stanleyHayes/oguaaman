@@ -1,16 +1,16 @@
 import { route } from "@/lib/routes";
 import { useMemo } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Link } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { api, mediaUrl } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Organization } from "@/lib/types";
-import { S, initials, type Palette } from "@/theme";
+import { S, SI, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
-import { Loading, ErrorView, PhotoHero } from "@/ui";
-import { cldCover } from "@/lib/cloudinary";
+import { Loading, ErrorView, PhotoHero, Thumb, VerifiedBadge } from "@/ui";
 import { StaggerIn } from "@/components/anim";
+import { ArrowRightIcon } from "@/components/icons";
 
 const KIND_LABEL: Record<string, string> = {
   school: "School",
@@ -45,25 +45,19 @@ export default function Institutions() {
       {data.map((o, i) => (
           <StaggerIn key={o.id} index={i}>
             <Link href={route.institution(o.slug)} asChild>
-              <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={o.name}>
-              {o.crestUrl ? (
-                <Image source={{ uri: cldCover(mediaUrl(o.crestUrl), 120) }} resizeMode="cover" style={s.crest} />
-              ) : (
-                <View style={[s.crest, { backgroundColor: o.houseColors?.[0] ?? C.green, alignItems: "center", justifyContent: "center" }]}>
-                  <Text style={s.crestInit}>{initials(o.name)}</Text>
+              <Pressable style={({ pressed }) => [s.card, pressed && s.cardPressed]} accessibilityRole="button" accessibilityLabel={`Open ${o.name}`}>
+              <View style={[s.cardAccent, { backgroundColor: o.houseColors?.[0] ?? C.maroon }]} />
+              <Thumb seed={o.slug} src={o.crestUrl} label={initials(o.name)} style={s.crest} labelStyle={s.crestInit} />
+              <View style={s.cardBody}>
+                <View style={s.kickerRow}>
+                  <Text style={s.kind} numberOfLines={1}>{KIND_LABEL[o.kind] ?? o.kind}</Text>
+                  {o.verified ? <VerifiedBadge size={15} /> : null}
                 </View>
-              )}
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Text style={s.name} numberOfLines={1}>{o.name}</Text>
-                  {o.verified && <Text style={s.verified}>✓</Text>}
-                </View>
-                <Text style={s.kind} numberOfLines={1}>
-                  {KIND_LABEL[o.kind] ?? o.kind}{o.classification ? ` · ${o.classification}` : ""}
-                </Text>
-                {o.motto ? <Text style={s.motto} numberOfLines={1}>{o.motto}</Text> : null}
+                <Text style={s.name} numberOfLines={2}>{o.name}</Text>
+                {o.classification ? <Text style={s.classification} numberOfLines={1}>{o.classification}</Text> : null}
+                {o.motto ? <Text style={s.motto} numberOfLines={2}>“{o.motto}”</Text> : null}
               </View>
-              <Text style={s.chevron}>›</Text>
+              <View style={s.cardArrow}><ArrowRightIcon size={15} color={C.maroonText} strokeWidth={2.4} /></View>
               </Pressable>
             </Link>
           </StaggerIn>
@@ -74,12 +68,16 @@ export default function Institutions() {
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
-  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
-  crest: { width: 52, height: 52, borderRadius: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper },
+  card: { position: "relative", overflow: "hidden", flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 15, paddingVertical: 11, paddingLeft: 15, paddingRight: 11 },
+  cardPressed: { opacity: 0.72, transform: [{ scale: 0.995 }] },
+  cardAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
+  crest: { width: 64, height: 70, borderRadius: 12, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper },
   crestInit: { color: C.cream, ...S(700), fontSize: 18 },
-  name: { ...S(700), fontSize: 17, color: C.ink, flexShrink: 1 },
-  verified: { color: C.goldText, fontSize: 13, ...S(700) },
-  kind: { color: C.goldText, fontSize: 12, marginTop: 2 },
-  motto: { color: C.inkMuted, fontSize: 12, fontStyle: "italic", marginTop: 2 },
-  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
+  cardBody: { flex: 1, minWidth: 0 },
+  kickerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  name: { ...S(700), fontSize: 16, lineHeight: 20, color: C.ink, marginTop: 3 },
+  kind: { flex: 1, color: C.goldText, fontSize: 8.5, letterSpacing: 1.1, textTransform: "uppercase", ...S(700) },
+  classification: { color: C.inkFaint, fontSize: 10.5, marginTop: 2, ...S(600) },
+  motto: { ...SI(), color: C.inkMuted, fontSize: 11.5, lineHeight: 16, marginTop: 4 },
+  cardArrow: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand },
 });

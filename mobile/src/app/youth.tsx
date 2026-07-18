@@ -7,10 +7,10 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useTheme } from "@/lib/theme-context";
 import type { Listing } from "@/lib/types";
-import { S, type Palette, D } from "@/theme";
+import { S, type Palette, D, withAlpha } from "@/theme";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
-import { SparkleIcon } from "@/components/icons";
+import { ArrowRightIcon, SparkleIcon } from "@/components/icons";
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
 const KINDS = ["scholarship", "internship", "apprenticeship", "training", "job", "investment", "mentorship"] as const;
@@ -127,13 +127,20 @@ function TalentCard({ person: p }: Readonly<{ person: Listing }>) {
   const s = useMemo(() => makeStyles(C), [C]);
   const d = p.details;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={p.title} onPress={() => push(route.person(p.slug))} style={s.talentCard}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${p.title}'s profile`}
+      onPress={() => push(route.person(p.slug))}
+      style={({ pressed }) => [s.talentCard, pressed && s.cardPressed]}
+    >
       <Thumb seed={p.slug} label={initials(p.title)} src={p.coverImageUrl} style={s.talentThumb} labelStyle={s.talentThumbLabel} />
       <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={s.talentKicker}>RISING TALENT</Text>
         <Text style={s.talentName} numberOfLines={1}>{p.title}</Text>
         {d.era ? <Text style={s.talentEra}>{d.era}</Text> : null}
-        {d.whyNotable ? <Text style={s.talentBio} numberOfLines={3}>{d.whyNotable}</Text> : null}
+        {d.whyNotable ? <Text style={s.talentBio} numberOfLines={2}>{d.whyNotable}</Text> : null}
       </View>
+      <View style={s.cardArrow}><ArrowRightIcon size={15} color={C.tealText} strokeWidth={2.4} /></View>
     </Pressable>
   );
 }
@@ -142,7 +149,7 @@ function Chip({ label, active, onSelect }: Readonly<{ label: string; active: boo
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   return (
-    <Pressable accessibilityRole="button" onPress={onSelect} style={[s.chip, active && s.chipOn]}>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onSelect} style={[s.chip, active && s.chipOn]}>
       <Text style={[s.chipText, active && s.chipTextOn]}>{label}</Text>
     </Pressable>
   );
@@ -155,26 +162,31 @@ function OppCard({ opp: o }: Readonly<{ opp: Listing }>) {
   const kind = d.kind ?? "";
   return (
     <View style={s.card}>
+      <View style={s.cardAccent} />
       <View style={s.chipRow}>
         <View style={s.kindChip}>
-          <Text style={s.kindChipText}>{KIND_LABEL[kind as Kind] ?? kind}</Text>
+          <Text style={s.kindChipText}>{KIND_LABEL[kind as Kind] ?? (kind || "Opportunity")}</Text>
         </View>
         {d.deadline ? <Text style={s.deadline}>Apply by {fmtDate(d.deadline)}</Text> : null}
       </View>
       <Text style={s.title}>{o.title}</Text>
       {d.description ? <Text style={s.desc} numberOfLines={3}>{d.description}</Text> : null}
       {d.eligibility ? (
-        <Text style={s.eligibility}>
-          <Text style={s.eligibilityLabel}>Eligibility: </Text>
-          {d.eligibility}
-        </Text>
+        <View style={s.eligibilityBox}>
+          <Text style={s.eligibilityLabel}>ELIGIBILITY</Text>
+          <Text style={s.eligibility} numberOfLines={2}>{d.eligibility}</Text>
+        </View>
       ) : null}
       {d.guardianConsentRequired === true ? <Text style={s.guardian}>Guardian consent required for under-18 participants.</Text> : null}
       <View style={s.foot}>
-        <Text style={s.provider} numberOfLines={1}>{d.provider}</Text>
+        <View style={s.providerBlock}>
+          <Text style={s.providerKicker}>OFFERED BY</Text>
+          <Text style={s.provider} numberOfLines={1}>{d.provider || "Oguaa community"}</Text>
+        </View>
         {d.applyUrl ? (
-          <Pressable accessibilityRole="button" onPress={() => void Linking.openURL(d.applyUrl ?? "")} style={s.applyBtn}>
+          <Pressable accessibilityRole="link" accessibilityLabel={`How to apply for ${o.title}`} onPress={() => void Linking.openURL(d.applyUrl ?? "")} style={s.applyBtn}>
             <Text style={s.applyBtnText}>How to apply</Text>
+            <ArrowRightIcon size={13} color={C.tealText} strokeWidth={2.4} />
           </Pressable>
         ) : null}
       </View>
@@ -192,24 +204,31 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   chipOn: { borderColor: C.teal, backgroundColor: C.teal },
   chipText: { color: C.inkMuted, fontSize: 12, ...S(700) },
   chipTextOn: { color: C.cream },
-  talentCard: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
-  talentThumb: { width: 56, height: 56, borderRadius: 28 },
+  cardPressed: { opacity: 0.72, transform: [{ scale: 0.995 }] },
+  talentCard: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 15, padding: 11 },
+  talentThumb: { width: 64, height: 72, borderRadius: 12 },
   talentThumbLabel: { color: C.cream, ...S(700), fontSize: 18 },
-  talentName: { ...S(700), fontSize: 18, color: C.ink },
-  talentEra: { color: C.goldText, fontSize: 11, ...S(700), letterSpacing: 1, textTransform: "uppercase", marginTop: 2 },
-  talentBio: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
-  card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
+  talentKicker: { color: C.tealText, fontSize: 8.5, ...S(700), letterSpacing: 1.2 },
+  talentName: { ...S(700), fontSize: 16, lineHeight: 20, color: C.ink, marginTop: 2 },
+  talentEra: { color: C.goldText, fontSize: 10, ...S(700), letterSpacing: 0.8, textTransform: "uppercase", marginTop: 1 },
+  talentBio: { color: C.inkMuted, fontSize: 11.5, lineHeight: 16, marginTop: 4 },
+  cardArrow: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(C.teal, 0.09) },
+  card: { position: "relative", overflow: "hidden", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 15, paddingVertical: 13, paddingLeft: 17, paddingRight: 13 },
+  cardAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: C.teal },
   chipRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   kindChip: { borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   kindChipText: { color: C.tealText, fontSize: 11, ...S(700) },
   deadline: { marginLeft: "auto", color: C.clayText, fontSize: 11, ...S(700) },
-  title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 10 },
-  desc: { color: C.inkFaint, fontSize: 13, lineHeight: 19, marginTop: 6 },
-  eligibility: { color: C.inkMuted, fontSize: 12, lineHeight: 18, marginTop: 8 },
-  eligibilityLabel: { ...S(700) },
-  guardian: { color: C.maroonText, fontSize: 11, marginTop: 6, ...S(600) },
-  foot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
-  provider: { flex: 1, color: C.inkFaint, fontSize: 11 },
-  applyBtn: { borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },
-  applyBtnText: { color: C.tealText, fontSize: 13, ...S(700) },
+  title: { ...S(700), fontSize: 17, lineHeight: 21, color: C.ink, marginTop: 8 },
+  desc: { color: C.inkMuted, fontSize: 12.5, lineHeight: 18, marginTop: 4 },
+  eligibilityBox: { marginTop: 9, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: C.paper, borderWidth: StyleSheet.hairlineWidth, borderColor: C.sand },
+  eligibility: { color: C.inkMuted, fontSize: 11.5, lineHeight: 16, marginTop: 2 },
+  eligibilityLabel: { color: C.inkFaint, fontSize: 8, letterSpacing: 1.1, ...S(700) },
+  guardian: { color: C.maroonText, backgroundColor: withAlpha(C.maroonText, 0.08), borderRadius: 8, paddingHorizontal: 9, paddingVertical: 6, fontSize: 10.5, marginTop: 6, ...S(600) },
+  foot: { flexDirection: "row", alignItems: "flex-end", gap: 10, marginTop: 10, paddingTop: 9, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.sand },
+  providerBlock: { flex: 1, minWidth: 0 },
+  providerKicker: { color: C.inkFaint, fontSize: 8, letterSpacing: 1.1, ...S(700) },
+  provider: { color: C.inkMuted, fontSize: 11, marginTop: 2 },
+  applyBtn: { flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, minHeight: 44, justifyContent: "center" },
+  applyBtnText: { color: C.tealText, fontSize: 12, ...S(700) },
 });

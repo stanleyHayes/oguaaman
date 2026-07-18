@@ -13,7 +13,7 @@ import { ListFooter } from "@/components/list-footer";
 import { route } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { StaggerIn } from "@/components/anim";
-import { CalendarIcon } from "@/components/icons";
+import { ArrowRightIcon, CalendarIcon, MapPinIcon } from "@/components/icons";
 
 const MONTHS_LONG = [
   "January", "February", "March", "April", "May", "June",
@@ -45,16 +45,47 @@ function groupByMonth(list: Listing[]): MonthSection[] {
   return sections;
 }
 
+function eventDateParts(value?: string): { day: string; month: string } {
+  if (!value) return { day: "--", month: "TBA" };
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { day: "--", month: "TBA" };
+  return {
+    day: date.toLocaleDateString(undefined, { day: "2-digit" }),
+    month: date.toLocaleDateString(undefined, { month: "short" }).toUpperCase(),
+  };
+}
+
 function EventCard({ listing: l, index }: Readonly<{ listing: Listing; index: number }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
+  const date = eventDateParts(l.details.startsAt);
+  const meta = [l.details.startsAt, l.details.venue].filter(Boolean).join(" · ") || "Cape Coast";
   return (
     <StaggerIn index={index}>
-      <Pressable accessibilityRole="button" onPress={() => push(route.event(l.slug))} style={s.card}>
-        <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.thumb} labelStyle={s.thumbInit} />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={s.title}>{l.title}</Text>
-          <Text style={s.sub}>{[l.details.startsAt, l.details.venue].filter(Boolean).join(" · ") || "Cape Coast"}</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${l.title}. ${meta}`}
+        accessibilityHint="Opens event details"
+        onPress={() => push(route.event(l.slug))}
+        style={s.card}
+      >
+        <View style={s.thumbWrap}>
+          <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.thumb} labelStyle={s.thumbInit} />
+          <View style={s.dateBadge}>
+            <Text style={s.dateDay}>{date.day}</Text>
+            <Text style={s.dateMonth}>{date.month}</Text>
+          </View>
+        </View>
+        <View style={s.cardBody}>
+          <Text style={s.cardKicker}>{l.details.festival ? "Festival" : "Town event"}</Text>
+          <Text style={s.title} numberOfLines={2}>{l.title}</Text>
+          <View style={s.venueRow}>
+            <MapPinIcon size={13} color={C.inkFaint} strokeWidth={2} />
+            <Text style={s.sub} numberOfLines={1}>{l.details.venue || "Cape Coast"}</Text>
+          </View>
+        </View>
+        <View style={s.cardArrow}>
+          <ArrowRightIcon size={16} color={C.greenText} strokeWidth={2.2} />
         </View>
       </Pressable>
     </StaggerIn>
@@ -105,7 +136,10 @@ export default function EventsTab() {
         }
         renderItem={({ item: sec }) => (
           <View style={s.section}>
-            <Text style={s.sectionHeader}>{sec.label}</Text>
+            <View style={s.sectionHeadingRow}>
+              <Text style={s.sectionHeader}>{sec.label}</Text>
+              <Text style={s.sectionCount}>{sec.items.length} {sec.items.length === 1 ? "event" : "events"}</Text>
+            </View>
             {sec.items.map((l, i) => <EventCard key={l.id} listing={l} index={i} />)}
           </View>
         )}
@@ -120,11 +154,21 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   heroKicker: { color: C.gold, fontSize: 11, letterSpacing: 2, ...S(700) },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 32, marginTop: 6 },
   heroMeta: { color: "rgba(246,241,231,0.8)", fontSize: 13, marginTop: 6 },
-  section: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
-  sectionHeader: { color: C.goldText, ...S(700), fontSize: 15, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
-  card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  thumb: { width: 60, height: 60, borderRadius: 12 },
+  section: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
+  sectionHeadingRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 3, marginBottom: 1 },
+  sectionHeader: { color: C.goldText, ...S(700), fontSize: 14, textTransform: "uppercase", letterSpacing: 1.2 },
+  sectionCount: { color: C.inkFaint, ...S(500), fontSize: 11 },
+  card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18, padding: 10, minHeight: 104, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  thumbWrap: { width: 82, height: 82 },
+  thumb: { width: 82, height: 82, borderRadius: 14 },
   thumbInit: { color: ON_GREEN, ...S(700), fontSize: 20 },
-  title: { ...S(700), fontSize: 18, color: C.ink },
-  sub: { color: C.goldText, fontSize: 12, marginTop: 3 },
+  dateBadge: { position: "absolute", left: 6, bottom: 6, minWidth: 38, borderRadius: 9, backgroundColor: C.green900, paddingHorizontal: 7, paddingVertical: 4, alignItems: "center", borderWidth: 1, borderColor: C.onDarkText30 },
+  dateDay: { color: ON_GREEN, ...S(700), fontSize: 15, lineHeight: 16 },
+  dateMonth: { color: C.gold, ...S(700), fontSize: 8, letterSpacing: 0.8, marginTop: 1 },
+  cardBody: { flex: 1, minWidth: 0, paddingVertical: 2 },
+  cardKicker: { color: C.goldText, ...S(700), fontSize: 10, letterSpacing: 1.25, textTransform: "uppercase" },
+  title: { ...S(700), fontSize: 17, lineHeight: 21, color: C.ink, marginTop: 3 },
+  venueRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
+  sub: { flex: 1, color: C.inkMuted, fontSize: 12 },
+  cardArrow: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35 },
 });

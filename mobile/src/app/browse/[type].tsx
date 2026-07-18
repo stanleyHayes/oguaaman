@@ -14,7 +14,7 @@ import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
-import { CompassIcon } from "@/components/icons";
+import { ArrowRightIcon, ArrowUpRightIcon, CompassIcon } from "@/components/icons";
 import { ListFooter } from "@/components/list-footer";
 
 function openURL(url?: string) {
@@ -171,28 +171,55 @@ export default function Browse() {
 
   const renderCard = (l: Listing, i: number) => {
     const href = view.href?.(l);
+    const kicker = isOpportunities
+      ? (l.details.kind || "Open call")
+      : type === "people"
+        ? "Oguaa profile"
+        : type === "business"
+          ? "Local business"
+          : type === "memories"
+            ? "From the archive"
+            : "Town calendar";
     const card = (
-      <View style={[s.card, isOpportunities && { alignItems: "flex-start" }]}>
+      <View style={s.card}>
         <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.thumb} labelStyle={s.thumbInit} />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={s.title}>{l.title}</Text>
-          <Text style={s.sub}>{view.sub(l)}</Text>
+        <View style={s.cardBody}>
+          <Text style={s.cardKicker} numberOfLines={1}>{kicker}</Text>
+          <Text style={s.title} numberOfLines={2}>{l.title}</Text>
+          <Text style={s.sub} numberOfLines={2}>{view.sub(l)}</Text>
           {isOpportunities && l.details.description ? (
-            <Text style={s.oppDesc} numberOfLines={3}>{l.details.description}</Text>
+            <Text style={s.oppDesc} numberOfLines={2}>{l.details.description}</Text>
           ) : null}
           {isOpportunities && l.details.applyUrl ? (
-            <Pressable accessibilityRole="button" onPress={() => openURL(l.details.applyUrl)} style={s.applyBtn}>
-              <Text style={s.applyText}>How to apply ↗</Text>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`How to apply for ${l.title}`}
+              onPress={() => openURL(l.details.applyUrl)}
+              style={s.applyBtn}
+            >
+              <Text style={s.applyText}>How to apply</Text>
+              <ArrowUpRightIcon size={14} color={C.tealText} strokeWidth={2.2} />
             </Pressable>
           ) : null}
         </View>
-        {href ? <Text style={s.chevron}>›</Text> : null}
+        {href ? (
+          <View style={s.cardArrow}>
+            <ArrowRightIcon size={16} color={C.greenText} strokeWidth={2.2} />
+          </View>
+        ) : null}
       </View>
     );
     return (
       <StaggerIn key={l.id} index={i}>
         {href ? (
-          <Pressable accessibilityRole="button" onPress={() => push(href)}>{card}</Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${l.title}. ${view.sub(l)}`}
+            accessibilityHint="Opens details"
+            onPress={() => push(href)}
+          >
+            {card}
+          </Pressable>
         ) : (
           <View>{card}</View>
         )}
@@ -274,23 +301,25 @@ export default function Browse() {
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   pad: { paddingHorizontal: 16, paddingTop: 16 },
-  section: { gap: 12 },
+  section: { gap: 10 },
   sectionHeader: { color: C.goldText, ...S(700), fontSize: 15, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
-  card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  thumb: { width: 60, height: 60, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  thumbInit: { color: C.cream, ...S(700), fontSize: 20 },
-  title: { ...S(700), fontSize: 18, color: C.ink },
-  sub: { color: C.goldText, fontSize: 12, marginTop: 3 },
-  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
-  oppDesc: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
-  applyBtn: { alignSelf: "flex-start", borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, marginTop: 10 },
+  card: { flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18, padding: 10, minHeight: 94, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  thumb: { width: 74, height: 74, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  thumbInit: { ...S(700), fontSize: 20 },
+  cardBody: { flex: 1, minWidth: 0, paddingVertical: 2 },
+  cardKicker: { color: C.goldText, fontSize: 10, letterSpacing: 1.35, textTransform: "uppercase", ...S(700) },
+  title: { ...S(700), fontSize: 17, lineHeight: 21, color: C.ink, marginTop: 2 },
+  sub: { color: C.inkMuted, fontSize: 12, lineHeight: 16, marginTop: 2 },
+  cardArrow: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35 },
+  oppDesc: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 5 },
+  applyBtn: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6, marginTop: 8 },
   applyText: { color: C.tealText, fontSize: 13, ...S(700) },
   hero: { borderRadius: 16, overflow: "hidden" },
   heroImg: { width: "100%", height: 130 },
   heroBody: { padding: 16 },
   // On-dark kicker at 0.8 — no palette token carries this alpha, and the hero
   // fill stays dark in both themes, so the literal is effectively theme-proof.
-  heroKicker: { color: "rgba(246,241,231,0.8)", fontSize: 10, letterSpacing: 2, ...D(700) },
+  heroKicker: { color: "rgba(246,241,231,0.8)", fontSize: 10, letterSpacing: 2, ...S(700) },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 24, marginTop: 4 },
   heroMeta: { color: C.onDarkText85, fontSize: 13, marginTop: 4 },
   heroDesc: { color: C.onDarkText85, fontSize: 13, lineHeight: 19, marginTop: 8 },

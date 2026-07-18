@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { route, ROUTES } from "@/lib/routes";
-import { push } from "@/lib/router";
+import { push, replace } from "@/lib/router";
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
-import { Link, router } from "expo-router";
+import { Link } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api, canWriteNews, canUseStudio } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -11,13 +11,14 @@ import { useAuth } from "@/lib/auth";
 import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Promotion, Listing } from "@/lib/types";
 import { D, S, initials, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
-import { CalendarIcon, ChevronRightIcon, CloseIcon, FlagIcon, PenIcon, PlusIcon, RefreshIcon, SearchIcon, SparkleIcon, TicketIcon, UsersIcon } from "@/components/icons";
+import { CalendarIcon, ChevronRightIcon, CloseIcon, EyeIcon, FlagIcon, PenIcon, PlusIcon, RefreshIcon, SearchIcon, SettingsIcon, SparkleIcon, TicketIcon, UsersIcon } from "@/components/icons";
 import { Loading, ErrorView, Thumb, VerifiedBadge } from "@/ui";
 import { ImageField } from "@/components/image-field";
 import { DateField } from "@/components/date-field";
 import { RevealView } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
 import { SchoolCombobox } from "@/components/school-combobox";
+import { memberRoleLabel } from "@/lib/member-role";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -40,7 +41,7 @@ export default function Me() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Your profile</Text>
         <Text style={s.gateBody}>Sign in to build your profile, connect with classmates and neighbours, and rep your town.</Text>
-        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in / create account</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => replace(ROUTES.signIn)} style={s.primaryBtn}><Text style={s.primaryBtnText}>Sign in / create account</Text></Pressable>
       </View>
     );
   }
@@ -55,14 +56,6 @@ function fmtDate(iso?: string): string {
 
 function money(pesewas: number): string {
   return `GH₵ ${(pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
-}
-
-function roleLabel(role: string): string {
-  if (role === "curator") return "Curator";
-  if (role === "steward") return "Steward";
-  if (role === "editor") return "Editor";
-  if (role === "moderator") return "Moderator";
-  return "Member";
 }
 
 function MeLoaded({ slug, onSignOut }: Readonly<{ slug: string; onSignOut: () => void }>) {
@@ -194,33 +187,50 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
   }
 
   return (
-    <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-      {/* Header card — identity, affiliations, and the most common actions. */}
+    <ScrollView
+      style={{ backgroundColor: C.paper }}
+      contentContainerStyle={{ paddingBottom: 48 }}
+      stickyHeaderIndices={[1]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Compact identity dossier — photo, standing and useful actions in one view. */}
       <View style={s.header}>
-        {photo
-          ? <Thumb seed={m.slug} src={photo} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
-          : <View style={s.avatar}><Text style={s.avatarText}>{m.initials || initials(m.displayName)}</Text></View>}
-        <View style={s.nameRow}>
-          <Text style={s.name}>{m.displayName}</Text>
-          {m.verified ? <VerifiedBadge onDark size={18} /> : null}
-        </View>
-        <Text style={s.role}>{roleLabel(m.role)}{m.joinedAt ? ` · joined ${fmtDate(m.joinedAt)}` : ""}</Text>
-        {m.verified && m.verifiedAs ? (
-          <View style={{ marginTop: 8 }}><VerifiedBadge onDark label={`Verified · ${m.verifiedAs}`} /></View>
-        ) : null}
-        <View style={s.chipRow}>
-          {quarter ? <View style={s.darkChip}><Text style={s.darkChipText}>{quarter.name}</Text></View> : null}
-          {asafo ? <View style={s.darkChip}><Text style={s.darkChipText}>{asafo.name}</Text></View> : null}
+        <View style={s.headerOrbLarge} />
+        <View style={s.headerOrbSmall} />
+        <Text style={s.headerEyebrow}>YOUR ACCOUNT</Text>
+        <View style={s.identityRow}>
+          <View style={s.avatarFrame}>
+            {photo
+              ? <Thumb seed={m.slug} src={photo} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
+              : <View style={s.avatar}><Text style={s.avatarText}>{m.initials || initials(m.displayName)}</Text></View>}
+          </View>
+          <View style={s.identityCopy}>
+            <View style={s.nameRow}>
+              <Text style={s.name} numberOfLines={2}>{m.displayName}</Text>
+              {m.verified ? <VerifiedBadge onDark size={18} /> : null}
+            </View>
+            <Text style={s.role}>{memberRoleLabel(m.role)}{m.joinedAt ? ` · joined ${fmtDate(m.joinedAt)}` : ""}</Text>
+            {m.verified && m.verifiedAs ? (
+              <View style={s.verifiedRow}><VerifiedBadge onDark label={`Verified · ${m.verifiedAs}`} /></View>
+            ) : null}
+            <View style={s.chipRow}>
+              {quarter ? <View style={s.darkChip}><Text style={s.darkChipText}>{quarter.name}</Text></View> : null}
+              {asafo ? <View style={s.darkChip}><Text style={s.darkChipText}>{asafo.name}</Text></View> : null}
+            </View>
+          </View>
         </View>
         {!verified && <View style={s.warnChip}><Text style={s.warnChipText}>Verification needed</Text></View>}
         <View style={s.headerActions}>
-          <Pressable accessibilityRole="button" onPress={() => selectTab("profile")} style={s.headerBtn}>
-            <Text style={s.headerBtnText}>Edit profile</Text>
+          <Pressable accessibilityRole="button" onPress={() => selectTab("profile")} style={s.headerBtnPrimary}>
+            <PenIcon size={16} color={C.green900} strokeWidth={2.2} />
+            <Text style={s.headerBtnPrimaryText}>Edit profile</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => push(route.member(m.slug))} style={[s.headerBtn, s.headerBtnPrimary]}>
+          <Pressable accessibilityRole="button" onPress={() => push(route.member(m.slug))} style={s.headerBtn}>
+            <EyeIcon size={16} color={ON_GREEN} strokeWidth={2.2} />
             <Text style={s.headerBtnText}>Public profile</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => push(ROUTES.settings)} style={s.headerBtn}>
+            <SettingsIcon size={16} color={ON_GREEN} strokeWidth={2.2} />
             <Text style={s.headerBtnText}>Settings</Text>
           </Pressable>
         </View>
@@ -230,7 +240,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
 
       <View style={s.body}>
         <TabPanel id="overview" active={tab} visited={visited}>
-          <View style={{ gap: 16 }}>
+          <View style={s.panelStack}>
             {!verified && (
               <Pressable accessibilityRole="button" onPress={() => selectTab("account")} style={s.nudge}>
                 <Text style={s.nudgeTitle}>Verify your contact</Text>
@@ -263,7 +273,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
         </TabPanel>
 
         <TabPanel id="profile" active={tab} visited={visited}>
-          <View style={{ gap: 16 }}>
+          <View style={s.panelStack}>
             <Section title="Your photo" help="Put a face to your name. It shows on your profile and across the community.">
               <ImageField value={photo} onChange={savePhoto} />
               {photoSave === "saving" && <Text style={[s.help, { marginTop: 8 }]}>Saving…</Text>}
@@ -293,7 +303,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
         </TabPanel>
 
         <TabPanel id="activity" active={tab} visited={visited}>
-          <View style={{ gap: 16 }}>
+          <View style={s.panelStack}>
             <Section title="Your listings" help="Everything you've contributed, with its review status. Promote an approved listing to feature it on the front pages — GH₵ 10 per day.">
               <MyListings listings={view.listings ?? []} />
             </Section>
@@ -307,7 +317,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
         </TabPanel>
 
         <TabPanel id="connections" active={tab} visited={visited}>
-          <View style={{ gap: 16 }}>
+          <View style={s.panelStack}>
             <Section title="Your schooling" help="Add the schools you attended and the years you were there. Classmates who overlapped with you appear below.">
               <SchoolingEditor member={m} schools={view.schools ?? []} onSaved={() => setConnKey((k) => k + 1)} />
             </Section>
@@ -318,7 +328,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
         </TabPanel>
 
         <TabPanel id="account" active={tab} visited={visited}>
-          <View style={{ gap: 16 }}>
+          <View style={s.panelStack}>
             {!verified && (
               <Section title="Contact verification" help="Submissions stay blocked until your account is verified. Send a code, then enter it here to unlock the submit form.">
                 <Pressable accessibilityRole="button" onPress={startVerification} disabled={verifyState === "saving"} style={[s.primaryBtn, { alignSelf: "flex-start" }, verifyState === "saving" && { opacity: 0.6 }]}>
@@ -355,14 +365,18 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
               <WriterCard member={self} onUpdated={setMember} />
             </Section>
 
+            <Section title="Rent & Stay" help="Realtors and property managers can publish rooms, homes and short stays for the town.">
+              <PropertyCreatorCard member={self} onUpdated={setMember} />
+            </Section>
+
             <Section title="Account">
               {canUseStudio(self) && (
                 <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studio)} style={s.linkRow}><Text style={s.linkRowText}>Creator studio</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
               )}
               <Pressable accessibilityRole="button" onPress={() => push(ROUTES.settings)} style={s.linkRow}><Text style={s.linkRowText}>Settings — security & preferences</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
-              <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.notifications)} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
-              <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
-              <Pressable accessibilityRole="button" onPress={() => router.push(route.member(m.slug))} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => push(ROUTES.notifications)} style={s.linkRow}><Text style={s.linkRowText}>Notifications</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => push(ROUTES.submit)} style={s.linkRow}><Text style={s.linkRowText}>Contribute a listing</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => push(route.member(m.slug))} style={s.linkRow}><Text style={s.linkRowText}>View my public profile</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /></Pressable>
               <Pressable accessibilityRole="button" onPress={onSignOut} style={s.signOut}><Text style={s.signOutText}>Sign out</Text></Pressable>
             </Section>
           </View>
@@ -378,8 +392,11 @@ function Section({ title, help, children }: Readonly<{ title: string; help?: str
   const s = useMemo(() => makeStyles(C), [C]);
   return (
     <RevealView style={s.section}>
-      <Text style={s.sectionTitle}>{title}</Text>
-      {help ? <Text style={s.help}>{help}</Text> : <View style={{ height: 8 }} />}
+      <View style={s.sectionHeading}>
+        <View style={s.sectionMarker} />
+        <Text style={s.sectionTitle}>{title}</Text>
+      </View>
+      {help ? <Text style={s.help}>{help}</Text> : <View style={s.sectionSpacer} />}
       {children}
     </RevealView>
   );
@@ -406,32 +423,35 @@ function QuickActions({ member }: Readonly<{ member: Member }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const actions = [
-    { label: "Add listing", icon: <PlusIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => router.push(ROUTES.submit) },
-    { label: "Report incident", icon: <FlagIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => router.push(ROUTES.safetyReport) },
-    { label: "Lost & found", icon: <SearchIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => router.push(ROUTES.lostFoundNew) },
-    { label: "Events", icon: <CalendarIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => router.push(ROUTES.browseEvents) },
+    { label: "Add listing", icon: <PlusIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => push(ROUTES.submit) },
+    { label: "Report incident", icon: <FlagIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => push(ROUTES.safetyReport) },
+    { label: "Lost & found", icon: <SearchIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => push(ROUTES.lostFoundNew) },
+    { label: "Events", icon: <CalendarIcon size={18} color={C.goldText} strokeWidth={2} />, onPress: () => push(ROUTES.browseEvents) },
   ] as const;
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.quickActionsContent}>
+    <View style={s.quickActionsContent}>
       {actions.map((a) => (
         <Pressable accessibilityRole="button" key={a.label} onPress={a.onPress} style={s.quickChip}>
           <View style={s.quickChipIcon}>{a.icon}</View>
           <Text style={s.quickChipText}>{a.label}</Text>
+          <ChevronRightIcon size={15} color={C.inkFaint} strokeWidth={2.2} />
         </Pressable>
       ))}
       {canUseStudio(member) && (
-        <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.studio)} style={s.quickChip}>
+        <Pressable accessibilityRole="button" onPress={() => push(ROUTES.studio)} style={s.quickChip}>
           <View style={s.quickChipIcon}><SparkleIcon size={18} color={C.goldText} strokeWidth={2} /></View>
           <Text style={s.quickChipText}>Creator studio</Text>
+          <ChevronRightIcon size={15} color={C.inkFaint} strokeWidth={2.2} />
         </Pressable>
       )}
       {canWriteNews(member) && (
-        <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.write)} style={s.quickChip}>
+        <Pressable accessibilityRole="button" onPress={() => push(ROUTES.write)} style={s.quickChip}>
           <View style={s.quickChipIcon}><PenIcon size={18} color={C.goldText} strokeWidth={2} /></View>
           <Text style={s.quickChipText}>Write a story</Text>
+          <ChevronRightIcon size={15} color={C.inkFaint} strokeWidth={2.2} />
         </Pressable>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -517,6 +537,46 @@ function WriterCard({ member: m, onUpdated }: Readonly<{ member: Member; onUpdat
       <Text style={s.help}>Become a writer to publish in the Newsroom. Your drafts go to the newsroom for review before they appear.</Text>
       <Pressable accessibilityRole="button" onPress={becomeWriter} disabled={busy} style={[s.primaryBtn, { alignSelf: "flex-start", marginTop: 0 }, busy && { opacity: 0.6 }]}>
         <Text style={s.primaryBtnText}>{busy ? "Saving…" : "Become a writer"}</Text>
+      </Pressable>
+      {err ? <Text style={s.errNote}>{err}</Text> : null}
+    </View>
+  );
+}
+
+function PropertyCreatorCard({ member: m, onUpdated }: Readonly<{ member: Member; onUpdated: (m: Member) => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const enabled = m.creatorTypes?.includes("property") ?? false;
+
+  async function becomePropertyManager() {
+    setBusy(true); setErr("");
+    try {
+      const next = Array.from(new Set([...(m.creatorTypes ?? []), "property"]));
+      onUpdated(await api.setCreatorTypes(next));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't update.");
+    } finally { setBusy(false); }
+  }
+
+  if (enabled) {
+    return (
+      <View style={{ gap: 8 }}>
+        <Pressable accessibilityRole="button" onPress={() => push(ROUTES.rentStay)} style={s.linkRow}>
+          <Text style={s.linkRowText}>Browse Rent & Stay</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} />
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => push(`${ROUTES.submit}?type=property`)} style={s.linkRow}>
+          <Text style={s.linkRowText}>List a property</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} />
+        </Pressable>
+      </View>
+    );
+  }
+  return (
+    <View style={{ gap: 10 }}>
+      <Text style={s.help}>Add the realtor / property manager hat to your creator profile. Listings still go through the same local curator review.</Text>
+      <Pressable accessibilityRole="button" onPress={becomePropertyManager} disabled={busy} style={[s.primaryBtn, { alignSelf: "flex-start", marginTop: 0 }, busy && { opacity: 0.6 }]}>
+        <Text style={s.primaryBtnText}>{busy ? "Saving…" : "I manage properties"}</Text>
       </Pressable>
       {err ? <Text style={s.errNote}>{err}</Text> : null}
     </View>
@@ -666,15 +726,24 @@ function SchoolingEditor({ member: m, schools, onSaved }: Readonly<{ member: Mem
 }
 
 const LISTING_HREF: Record<string, string> = {
-  artist: "/music/", memorial: "/memoriam/", business: "/business/", person: "/people/", project: "/projects/",
+  artist: "/music/", memorial: "/memoriam/", business: "/business/", person: "/people/", project: "/projects/", event: "/events/",
+  property: "/rent-stay/",
 };
+
+function listingHref(listing: Listing): string | null {
+  if (listing.status !== "approved") return null;
+  if (listing.type === "memory") return ROUTES.browseMemories;
+  if (listing.type === "opportunity") return ROUTES.browseOpportunities;
+  const base = LISTING_HREF[listing.type];
+  return base ? `${base}${listing.slug}` : null;
+}
 
 function ListingsPreview({ listings, limit, onShowAll }: Readonly<{ listings: Listing[]; limit?: number; onShowAll?: () => void }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   if (listings.length === 0) {
     return (
-      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}>
+      <Pressable accessibilityRole="button" onPress={() => push(ROUTES.submit)} style={s.linkRow}>
         <Text style={s.linkRowText}>Nothing yet — add your first</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} />
       </Pressable>
     );
@@ -695,10 +764,15 @@ function ListingsPreview({ listings, limit, onShowAll }: Readonly<{ listings: Li
 function ListingPreviewRow({ listing: l }: Readonly<{ listing: Listing }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const base = l.status === "approved" ? LISTING_HREF[l.type] : undefined;
-  const href = base ? `${base}${l.slug}` : null;
+  const href = listingHref(l);
   return (
-    <Pressable accessibilityRole="button" onPress={href ? () => push(href) : undefined} disabled={!href} style={[s.listingRow, !href && { opacity: 0.9 }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${l.title}, ${l.status}`}
+      onPress={href ? () => push(href) : undefined}
+      disabled={!href}
+      style={({ pressed }) => [s.listingRow, !href && { opacity: 0.9 }, pressed && s.listingRowPressed]}
+    >
       <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.previewThumb} labelStyle={s.previewThumbText} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={s.listingTitle} numberOfLines={1}>{l.title}</Text>
@@ -715,7 +789,7 @@ function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
   const s = useMemo(() => makeStyles(C), [C]);
   if (listings.length === 0) {
     return (
-      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.linkRow}>
+      <Pressable accessibilityRole="button" onPress={() => push(ROUTES.submit)} style={s.linkRow}>
         <Text style={s.linkRowText}>Nothing yet — add your first</Text><ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} />
       </Pressable>
     );
@@ -723,7 +797,7 @@ function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
   return (
     <View style={{ gap: 8 }}>
       {listings.map((l) => <ListingRow key={l.id} listing={l} />)}
-      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.submit)} style={s.addListingBtn}>
+      <Pressable accessibilityRole="button" onPress={() => push(ROUTES.submit)} style={s.addListingBtn}>
         <Text style={s.addListingText}>+ Add a listing</Text>
       </Pressable>
     </View>
@@ -733,10 +807,10 @@ function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
 function ListingRow({ listing: l }: Readonly<{ listing: Listing }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const base = l.status === "approved" ? LISTING_HREF[l.type] : undefined;
-  const href = base ? `${base}${l.slug}` : null;
+  const href = listingHref(l);
   const inner = (
     <View style={s.listingRow}>
+      <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.previewThumb} labelStyle={s.previewThumbText} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={s.listingTitle} numberOfLines={1}>{l.title}</Text>
         <Text style={s.listingType}>{l.type}</Text>
@@ -789,7 +863,10 @@ function TicketsList({ tickets, limit, loading, error, onEvent, onShowAll }: Rea
   return (
     <View style={{ gap: 8 }}>
       {list.map((t) => (
-        <Pressable accessibilityRole="button" key={t.id} onPress={() => onEvent(t.eventSlug)} style={s.listingRow}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Ticket for ${t.eventTitle}`} key={t.id} onPress={() => onEvent(t.eventSlug)} style={({ pressed }) => [s.listingRow, pressed && s.listingRowPressed]}>
+          <View style={[s.activityIcon, { backgroundColor: withAlpha(C.teal, 0.12) }]}>
+            <TicketIcon size={18} color={C.tealText} strokeWidth={2} />
+          </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.listingTitle} numberOfLines={1}>{t.eventTitle}</Text>
             <Text style={s.listingType}>{t.qty} × {t.tier} · {fmtDate(t.createdAt)}</Text>
@@ -825,7 +902,10 @@ function SubscriptionsList({ subscriptions, limit, loading, error, onBusiness, o
         const subChip = sub.status === "pending" ? s.statusPending : s.statusBad;
         const subColor = sub.status === "pending" ? { color: C.goldText } : { color: C.maroonText };
         return (
-          <Pressable accessibilityRole="button" key={sub.id} onPress={() => onBusiness(sub.listingSlug)} style={s.listingRow}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Subscription to ${sub.listingTitle}`} key={sub.id} onPress={() => onBusiness(sub.listingSlug)} style={({ pressed }) => [s.listingRow, pressed && s.listingRowPressed]}>
+            <View style={[s.activityIcon, { backgroundColor: withAlpha(C.gold, 0.16) }]}>
+              <RefreshIcon size={18} color={C.goldText} strokeWidth={2} />
+            </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.listingTitle} numberOfLines={1}>{sub.listingTitle}</Text>
               <Text style={s.listingType}>
@@ -1006,54 +1086,66 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
   primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
-  header: { backgroundColor: C.green, alignItems: "center", paddingVertical: 26, paddingHorizontal: 20, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: C.goldBrand },
-  avatarText: { color: ON_GREEN, ...S(700), fontSize: 34 },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, flexWrap: "wrap", justifyContent: "center" },
-  name: { ...D(700), fontSize: 28, color: ON_GREEN },
-  role: { color: C.gold, fontSize: 12, letterSpacing: 1, marginTop: 4, textTransform: "uppercase", ...S(600) },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12, justifyContent: "center" },
-  warnChip: { marginTop: 12, borderWidth: 1, borderColor: "rgba(247,196,74,0.4)", backgroundColor: "rgba(247,196,74,0.14)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
+  header: { backgroundColor: C.green900, paddingTop: 18, paddingBottom: 16, paddingHorizontal: 18, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: "hidden" },
+  headerOrbLarge: { position: "absolute", width: 176, height: 176, borderRadius: 88, right: -72, top: -78, borderWidth: 1, borderColor: C.goldBorder35, backgroundColor: C.goldTint14 },
+  headerOrbSmall: { position: "absolute", width: 84, height: 84, borderRadius: 42, right: 64, bottom: -56, borderWidth: 1, borderColor: C.onDarkText10 },
+  headerEyebrow: { color: C.gold, fontSize: 10, letterSpacing: 2.2, ...S(700), marginBottom: 12 },
+  identityRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  avatarFrame: { width: 82, height: 82, borderRadius: 25, padding: 3, borderWidth: 1, borderColor: C.gold, backgroundColor: C.onDarkText10 },
+  avatar: { width: 74, height: 74, borderRadius: 21, backgroundColor: C.greenSlate, alignItems: "center", justifyContent: "center" },
+  avatarText: { color: ON_GREEN, ...S(700), fontSize: 27 },
+  identityCopy: { flex: 1, minWidth: 0 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  name: { ...D(700), fontSize: 24, lineHeight: 28, color: ON_GREEN, flexShrink: 1 },
+  role: { color: C.gold, fontSize: 10, letterSpacing: 0.9, marginTop: 4, textTransform: "uppercase", ...S(700) },
+  verifiedRow: { marginTop: 7 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 9 },
+  warnChip: { alignSelf: "flex-start", marginTop: 12, borderWidth: 1, borderColor: C.goldBorder35, backgroundColor: C.goldTint14, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },
   warnChipText: { color: C.gold, fontSize: 12, ...S(700) },
   darkChip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   darkChipText: { color: ON_GREEN, fontSize: 12 },
-  headerActions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 16 },
-  headerBtn: { borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
-  headerBtnPrimary: { backgroundColor: C.goldBrand },
-  headerBtnText: { color: ON_GREEN, ...S(700), fontSize: 13 },
+  headerActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 15 },
+  headerBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 13 },
+  headerBtnPrimary: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, flexGrow: 1, backgroundColor: C.gold, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16 },
+  headerBtnPrimaryText: { color: C.green900, ...S(700), fontSize: 13 },
+  headerBtnText: { color: ON_GREEN, ...S(700), fontSize: 12 },
 
-  tabBar: { backgroundColor: C.paper, borderBottomWidth: 1, borderBottomColor: C.sand },
-  tabBarContent: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
-  tab: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  tabActive: { backgroundColor: C.green, borderColor: C.green },
+  tabBar: { backgroundColor: C.paper, borderBottomWidth: 1, borderBottomColor: C.sand, zIndex: 20, elevation: 3 },
+  tabBarContent: { flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 10 },
+  tab: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 8 },
+  tabActive: { backgroundColor: C.gold, borderColor: C.gold },
   tabText: { color: C.inkMuted, ...S(600), fontSize: 13 },
-  tabTextActive: { color: ON_GREEN },
+  tabTextActive: { color: C.green900 },
 
-  body: { padding: 16, gap: 16 },
-  section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  sectionTitle: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 4 },
+  body: { padding: 14 },
+  panelStack: { gap: 12 },
+  section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 17, padding: 15 },
+  sectionHeading: { flexDirection: "row", alignItems: "center", gap: 9 },
+  sectionMarker: { width: 4, height: 19, borderRadius: 2, backgroundColor: C.gold },
+  sectionTitle: { ...D(700), fontSize: 18, color: C.ink, flex: 1 },
+  sectionSpacer: { height: 9 },
   subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...S(700), textTransform: "uppercase", marginBottom: 8 },
-  help: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginBottom: 12 },
+  help: { color: C.inkMuted, fontSize: 12, lineHeight: 18, marginTop: 5, marginBottom: 11 },
 
   nudge: { backgroundColor: withAlpha(C.gold, 0.1), borderWidth: 1, borderColor: withAlpha(C.goldBrand, 0.35), borderRadius: 16, padding: 16 },
   nudgeTitle: { color: C.goldText, ...S(700), fontSize: 14 },
   nudgeBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   nudgeCta: { color: C.goldText, ...S(700), fontSize: 13, marginTop: 8 },
 
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  statCard: { flex: 1, minWidth: 140, borderWidth: 1, borderRadius: 16, padding: 14 },
-  statValue: { ...D(700), fontSize: 24, color: C.ink },
+  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  statCard: { flex: 1, minWidth: 112, borderWidth: 1, borderRadius: 14, padding: 12 },
+  statValue: { ...D(700), fontSize: 22, color: C.ink },
   statLabel: { ...S(600), fontSize: 11, color: C.inkFaint, textTransform: "uppercase", letterSpacing: 0.8, marginTop: 4 },
 
-  quickActionsContent: { flexDirection: "row", gap: 10, paddingVertical: 2 },
-  quickChip: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
-  quickChipIcon: { width: 20, height: 20, alignItems: "center", justifyContent: "center" },
-  quickChipText: { color: C.ink, fontSize: 13, ...S(600) },
+  quickActionsContent: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  quickChip: { width: "48%", flexGrow: 1, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, paddingHorizontal: 11, paddingVertical: 11 },
+  quickChipIcon: { width: 30, height: 30, borderRadius: 10, backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35, alignItems: "center", justifyContent: "center" },
+  quickChipText: { color: C.ink, fontSize: 12, ...S(700), flex: 1 },
 
   viewAllBtn: { alignSelf: "center", paddingVertical: 8, paddingHorizontal: 12, marginTop: 2 },
   viewAllText: { color: C.greenText, ...S(700), fontSize: 13 },
 
-  previewThumb: { width: 40, height: 40, borderRadius: 8 },
+  previewThumb: { width: 46, height: 46, borderRadius: 13 },
   previewThumbText: { color: ON_GREEN, ...S(700), fontSize: 14 },
 
   stint: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
@@ -1085,7 +1177,8 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   asafoDot: { width: 9, height: 9, borderRadius: 5 },
   bdaySaveBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
 
-  listingRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11 },
+  listingRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 64, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 9 },
+  listingRowPressed: { opacity: 0.72 },
   listingWrap: { gap: 6 },
   promoSlot: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 10, paddingRight: 4 },
   promoBtn: { borderWidth: 1, borderColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, minHeight: 36, justifyContent: "center" },
@@ -1099,8 +1192,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   featuredNote: { color: C.goldText, fontSize: 12, ...S(700), flex: 1 },
   codeChip: { backgroundColor: withAlpha(C.green, 0.08), borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   codeText: { color: C.greenText, fontSize: 15, ...S(700), letterSpacing: 2 },
-  listingTitle: { color: C.ink, fontSize: 14, ...D(600) },
-  listingType: { color: C.inkFaint, fontSize: 11, textTransform: "capitalize", marginTop: 1 },
+  activityIcon: { width: 42, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  listingTitle: { color: C.ink, fontSize: 14, ...S(700) },
+  listingType: { color: C.inkFaint, fontSize: 10.5, ...S(500), textTransform: "capitalize", marginTop: 2 },
   statusChip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   statusOk: { backgroundColor: withAlpha(C.green, 0.08) },
   statusPending: { backgroundColor: withAlpha(C.gold, 0.16) },

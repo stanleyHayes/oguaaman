@@ -7,11 +7,11 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Incident, IncidentCategory } from "@/lib/types";
 import { CATEGORY_LABEL, INCIDENT_CATEGORIES, INCIDENT_STATUSES, SEVERITY_COLOR, STATUS_COLOR, STATUS_LABEL } from "@/lib/incidents";
-import { ON_GREEN, S, type Palette, D } from "@/theme";
+import { ON_GREEN, S, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
-import { CheckIcon } from "@/components/icons";
+import { ArrowRightIcon, CheckIcon } from "@/components/icons";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -25,7 +25,12 @@ function IncidentCard({ i }: Readonly<{ i: Incident }>) {
   const sev = SEVERITY_COLOR[i.details.severity] ?? C.inkMuted;
   const st = STATUS_COLOR[i.details.incidentStatus] ?? C.inkMuted;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={i.title} onPress={() => push(route.safety(i.slug))} style={s.card}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${i.details.severity} ${CATEGORY_LABEL[i.details.category] ?? i.details.category}: ${i.title}`}
+      onPress={() => push(route.safety(i.slug))}
+      style={({ pressed }) => [s.card, { borderLeftColor: sev }, pressed && s.cardPressed]}
+    >
       <View style={s.chipRow}>
         <View style={[s.chip, { borderColor: sev }]}>
           <Text style={[s.chipText, { color: sev }]}>{i.details.severity}</Text>
@@ -38,7 +43,10 @@ function IncidentCard({ i }: Readonly<{ i: Incident }>) {
       <Text style={s.title}>{i.title}</Text>
       <Text style={s.location}>{i.details.location}</Text>
       {i.details.description ? <Text style={s.desc} numberOfLines={2}>{i.details.description}</Text> : null}
-      <Text style={s.posted}>Reported {fmtDate(i.createdAt)}</Text>
+      <View style={s.cardFooter}>
+        <Text style={s.posted}>Reported {fmtDate(i.createdAt)}</Text>
+        <View style={s.cardArrow}><ArrowRightIcon size={14} color={st} strokeWidth={2.3} /></View>
+      </View>
     </Pressable>
   );
 }
@@ -123,14 +131,17 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   filterOn: { borderColor: C.green, backgroundColor: C.green },
   filterText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   filterTextOn: { color: ON_GREEN },
-  section: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginBottom: 2 },
-  card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
+  section: { color: C.inkFaint, fontSize: 10, letterSpacing: 1.8, ...S(700), marginBottom: 2 },
+  card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderLeftWidth: 3, borderRadius: 17, padding: 13 },
+  cardPressed: { opacity: 0.72 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" },
   chip: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   chipText: { color: C.inkMuted, fontSize: 11, ...S(700), textTransform: "capitalize" },
   status: { marginLeft: "auto", fontSize: 11, ...S(700), letterSpacing: 1, textTransform: "uppercase" },
-  title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 10 },
+  title: { ...S(700), fontSize: 17, lineHeight: 21, color: C.ink, marginTop: 9 },
   location: { color: C.inkMuted, fontSize: 13, marginTop: 3 },
   desc: { color: C.inkFaint, fontSize: 13, lineHeight: 19, marginTop: 6 },
-  posted: { color: C.inkFaint, fontSize: 11, marginTop: 10 },
+  cardFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 9, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.sand },
+  posted: { color: C.inkFaint, fontSize: 10.5, ...S(500) },
+  cardArrow: { width: 25, height: 25, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: C.paper },
 });

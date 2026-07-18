@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
@@ -11,9 +11,10 @@ import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme-context";
 import type { Member } from "@/lib/types";
-import { D, S, ON_GREEN, initials, type Palette } from "@/theme";
-import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
+import { D, S, ON_GREEN, initials, onFill, type Palette } from "@/theme";
+import { Loading, ErrorView, PhotoHero, Thumb, VerifiedBadge } from "@/ui";
 import { StaggerIn } from "@/components/anim";
+import { ArrowRightIcon } from "@/components/icons";
 
 type Group = { country: string; members: Member[] };
 
@@ -35,14 +36,23 @@ function MemberCard({ m, index }: Readonly<{ m: Member; index: number }>) {
   return (
     <StaggerIn index={index}>
       <Link href={route.member(m.slug)} asChild>
-        <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={m.displayName}>
+        <Pressable
+          style={({ pressed }) => [s.card, pressed && s.cardPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={[m.displayName, where].filter(Boolean).join(", ")}
+          accessibilityHint="Open community profile"
+        >
           <Thumb seed={m.slug} src={m.photoUrl} label={m.initials || initials(m.displayName)} style={s.avatar} labelStyle={s.avatarText} />
           <View style={s.cardBody}>
-            <Text style={s.cardName}>{m.displayName}</Text>
+            <Text style={s.cardKicker}>OGUAA ABROAD</Text>
+            <View style={s.cardNameRow}>
+              <Text style={s.cardName} numberOfLines={1}>{m.displayName}</Text>
+              {m.verified ? <VerifiedBadge size={14} /> : null}
+            </View>
             {where ? <Text style={s.cardWhere}>{where}</Text> : null}
             {m.bio ? <Text style={s.cardBio} numberOfLines={2}>{m.bio}</Text> : null}
           </View>
-          <Text style={s.chevron}>›</Text>
+          <View style={s.cardArrow}><ArrowRightIcon size={15} color={C.goldText} strokeWidth={2.3} /></View>
         </Pressable>
       </Link>
     </StaggerIn>
@@ -52,7 +62,6 @@ function MemberCard({ m, index }: Readonly<{ m: Member; index: number }>) {
 export default function Diaspora() {
   const { data, error, loading } = useApi<Member[]>(() => api.diaspora(), "diaspora");
   const { member } = useAuth();
-  const router = useRouter();
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   if (loading) return <Loading />;
@@ -137,19 +146,22 @@ export default function Diaspora() {
 const makeStyles = (C: Palette) => StyleSheet.create({
   statsRow: { flexDirection: "row", gap: 12 },
   stat: { flex: 1, backgroundColor: C.paper, borderRadius: 14, borderWidth: 1, borderColor: C.sand, padding: 12, alignItems: "center" },
-  statNum: { ...D(700), fontSize: 24, color: C.goldText },
+  statNum: { ...S(700), fontSize: 24, color: C.goldText },
   statLabel: { ...S(), fontSize: 12, color: C.inkMuted, marginTop: 2, textAlign: "center" },
   group: { marginTop: 28 },
   groupKicker: { ...S(600), fontSize: 10.5, letterSpacing: 1.4, color: C.inkFaint },
   groupTitle: { ...D(600), fontSize: 22, color: C.ink, marginTop: 4, marginBottom: 10 },
-  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderRadius: 16, borderWidth: 1, borderColor: C.sand, padding: 14, marginBottom: 10 },
-  avatar: { width: 52, height: 52, borderRadius: 26 },
+  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderRadius: 18, borderWidth: 1, borderColor: C.sand, borderLeftWidth: 3, borderLeftColor: C.goldBrand, padding: 12, marginBottom: 9 },
+  cardPressed: { opacity: 0.72, transform: [{ scale: 0.995 }] },
+  avatar: { width: 56, height: 56, borderRadius: 16 },
   avatarText: { ...S(600), fontSize: 17, color: C.cream },
-  cardBody: { flex: 1 },
-  cardName: { ...S(600), fontSize: 16, color: C.ink },
-  cardWhere: { ...S(500), fontSize: 13, color: C.goldText, marginTop: 1 },
-  cardBio: { ...S(), fontSize: 13, lineHeight: 18, color: C.inkMuted, marginTop: 4 },
-  chevron: { ...S(), fontSize: 22, color: C.inkFaint },
+  cardBody: { flex: 1, minWidth: 0 },
+  cardKicker: { ...S(700), fontSize: 8.5, letterSpacing: 1.25, color: C.goldText },
+  cardNameRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 1 },
+  cardName: { flexShrink: 1, ...S(700), fontSize: 16, color: C.ink },
+  cardWhere: { ...S(600), fontSize: 12, color: C.inkMuted, marginTop: 1 },
+  cardBio: { ...S(), fontSize: 12.5, lineHeight: 17, color: C.inkFaint, marginTop: 3 },
+  cardArrow: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: C.cream },
   empty: { marginTop: 24, borderRadius: 16, borderWidth: 1, borderStyle: "dashed", borderColor: C.goldBrand, backgroundColor: C.paper, padding: 20, alignItems: "center" },
   emptyTitle: { ...D(600), fontSize: 20, color: C.ink },
   emptyBody: { ...S(), fontSize: 14, lineHeight: 21, color: C.inkMuted, textAlign: "center", marginTop: 8 },
@@ -167,5 +179,5 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   // theme-independent light cream — no palette token exists at alpha 0.8.
   joinBody: { ...S(), fontSize: 14, lineHeight: 21, color: "rgba(246,241,231,0.8)", marginTop: 8 },
   joinBtn: { marginTop: 16, backgroundColor: C.goldBrand, borderRadius: 999, paddingVertical: 12, alignItems: "center" },
-  joinBtnText: { ...S(600), fontSize: 14, color: C.cream },
+  joinBtnText: { ...S(700), fontSize: 14, color: onFill(C.goldBrand) },
 });

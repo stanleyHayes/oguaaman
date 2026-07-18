@@ -10,6 +10,7 @@ import type { Listing } from "@/lib/types";
 import { D, S, ON_GREEN, initials, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Thumb } from "@/ui";
+import { ArrowRightIcon, MusicIcon } from "@/components/icons";
 
 // The long-read behind the Music section (fact-checked, agent_plan.md §1.4):
 // Cape Coast's place in the birth of highlife, and the grandfathers of the sound.
@@ -52,14 +53,25 @@ export default function OguaaSound() {
               <Text style={s.kicker}>GRANDFATHERS OF THE SOUND</Text>
               <View style={{ gap: 10 }}>
                 {legacy.map((l) => (
-                  <Pressable accessibilityRole="button" accessibilityLabel={l.title} key={l.id} onPress={() => push(route.person(l.slug))} style={s.card}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${l.title}. ${[l.details.era, l.details.whyNotable].filter(Boolean).join(". ")}`}
+                    accessibilityHint="Opens person profile"
+                    key={l.id}
+                    onPress={() => push(route.person(l.slug))}
+                    style={({ pressed }) => [s.card, pressed && s.cardPressed]}
+                  >
                     <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.thumb} labelStyle={s.thumbInit} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={s.cardTitle}>{l.title}</Text>
-                      {l.details.era ? <Text style={s.cardEra}>{l.details.era}</Text> : null}
+                    <View style={s.cardBody}>
+                      <View style={s.cardKickerRow}>
+                        <MusicIcon size={12} color={C.goldText} strokeWidth={1.9} />
+                        <Text style={s.cardKicker}>HIGHLIFE LEGACY</Text>
+                      </View>
+                      <Text style={s.cardTitle} numberOfLines={2}>{l.title}</Text>
+                      {l.details.era ? <Text style={s.cardEra} numberOfLines={1}>{l.details.era}</Text> : null}
                       {l.details.whyNotable ? <Text style={s.cardWhy} numberOfLines={2}>{l.details.whyNotable}</Text> : null}
                     </View>
-                    <Text style={s.chevron}>›</Text>
+                    <View style={s.cardArrow}><ArrowRightIcon size={15} color={C.greenText} strokeWidth={2.3} /></View>
                   </Pressable>
                 ))}
               </View>
@@ -81,11 +93,15 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },
   p: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
   kicker: { color: C.clayText, fontSize: 11, letterSpacing: 2, ...D(700), marginTop: 28, marginBottom: 10 },
-  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
-  thumb: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
+  card: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 17, padding: 10, minHeight: 104, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  cardPressed: { opacity: 0.72, transform: [{ scale: 0.995 }] },
+  thumb: { width: 76, height: 84, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   thumbInit: { color: C.cream, ...S(700), fontSize: 20 },
-  cardTitle: { ...S(700), fontSize: 18, color: C.ink },
-  cardEra: { color: C.goldText, fontSize: 12, marginTop: 1 },
-  cardWhy: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 4 },
-  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
+  cardBody: { flex: 1, minWidth: 0, paddingVertical: 2 },
+  cardKickerRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  cardKicker: { color: C.goldText, fontSize: 9, letterSpacing: 1.05, ...S(700) },
+  cardTitle: { ...S(700), fontSize: 17, lineHeight: 21, color: C.ink, marginTop: 2 },
+  cardEra: { color: C.goldText, fontSize: 11, ...S(600), marginTop: 1 },
+  cardWhy: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  cardArrow: { width: 29, height: 29, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35 },
 });

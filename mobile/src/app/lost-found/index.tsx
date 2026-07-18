@@ -7,12 +7,12 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { LostFound, LostFoundKind } from "@/lib/types";
 import { KIND_LABEL, LF_STATUS_LABEL, lfStatusColor } from "@/lib/lostfound";
-import { S, ON_GREEN, type Palette } from "@/theme";
+import { S, ON_GREEN, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
-import { Loading, ErrorView } from "@/ui";
+import { Loading, ErrorView, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
-import { QuestionIcon } from "@/components/icons";
+import { ArrowRightIcon, QuestionIcon } from "@/components/icons";
 
 const TABS: { kind: LostFoundKind; label: string }[] = [
   { kind: "lost_item", label: "Lost" },
@@ -34,21 +34,32 @@ function NoticeCard({ i }: Readonly<{ i: LostFound }>) {
   const stColor = lfStatusColor(C)[d.lfStatus] ?? C.inkMuted;
   const whereLabel = d.kind === "lost_item" ? "Lost" : "Found";
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={i.title} onPress={() => push(route.lostFound(i.slug))} style={[s.card, missing && s.cardMissing]}>
-      <View style={s.chipRow}>
-        <View style={[s.chip, { borderColor: missing ? C.maroon : C.teal }]}>
-          <Text style={[s.chipText, { color: missing ? C.maroonText : C.tealText }]}>{KIND_LABEL[d.kind] ?? d.kind}</Text>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${KIND_LABEL[d.kind] ?? d.kind}: ${i.title}`}
+      onPress={() => push(route.lostFound(i.slug))}
+      style={({ pressed }) => [s.card, missing && s.cardMissing, pressed && s.cardPressed]}
+    >
+      <Thumb seed={i.slug} src={i.coverImageUrl} label={initials(i.title)} style={s.thumb} labelStyle={s.thumbLabel} />
+      <View style={s.cardBody}>
+        <View style={s.chipRow}>
+          <View style={[s.chip, { borderColor: missing ? C.maroon : C.teal }]}>
+            <Text style={[s.chipText, { color: missing ? C.maroonText : C.tealText }]}>{KIND_LABEL[d.kind] ?? d.kind}</Text>
+          </View>
+          <Text style={[s.status, { color: stColor }]}>{LF_STATUS_LABEL[d.lfStatus] ?? d.lfStatus}</Text>
         </View>
-        <Text style={[s.status, { color: stColor }]}>{LF_STATUS_LABEL[d.lfStatus] ?? d.lfStatus}</Text>
+        <Text style={s.title} numberOfLines={2}>{i.title}</Text>
+        {d.lastSeenLocation ? (
+          <Text style={s.where} numberOfLines={1}>
+            {missing ? "Last seen" : whereLabel} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${fmtDate(d.lastSeenDate)}` : ""}
+          </Text>
+        ) : null}
+        {d.description ? <Text style={s.desc} numberOfLines={2}>{d.description}</Text> : null}
+        <View style={s.cardFooter}>
+          <Text style={s.posted}>Posted {fmtDate(i.createdAt)}</Text>
+          <View style={s.cardArrow}><ArrowRightIcon size={14} color={stColor} strokeWidth={2.3} /></View>
+        </View>
       </View>
-      <Text style={s.title}>{i.title}</Text>
-      {d.lastSeenLocation ? (
-        <Text style={s.where}>
-          {missing ? "Last seen" : whereLabel} at {d.lastSeenLocation}{d.lastSeenDate ? ` · ${fmtDate(d.lastSeenDate)}` : ""}
-        </Text>
-      ) : null}
-      {d.description ? <Text style={s.desc} numberOfLines={2}>{d.description}</Text> : null}
-      <Text style={s.posted}>Posted {fmtDate(i.createdAt)}</Text>
     </Pressable>
   );
 }
@@ -108,14 +119,20 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   tabOn: { borderColor: C.green, backgroundColor: C.green },
   tabText: { color: C.inkMuted, fontSize: 12, ...S(700), textAlign: "center" },
   tabTextOn: { color: ON_GREEN },
-  card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
+  card: { flexDirection: "row", gap: 11, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 17, padding: 10 },
   cardMissing: { borderLeftWidth: 4, borderLeftColor: C.maroon },
+  cardPressed: { opacity: 0.72 },
+  thumb: { width: 82, minHeight: 108, alignSelf: "stretch", borderRadius: 13 },
+  thumbLabel: { ...S(700), fontSize: 18 },
+  cardBody: { flex: 1, minWidth: 0 },
   chipRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   chipText: { fontSize: 11, ...S(700) },
   status: { marginLeft: "auto", fontSize: 11, ...S(700), letterSpacing: 1, textTransform: "uppercase" },
-  title: { ...S(700), fontSize: 18, color: C.ink, marginTop: 10 },
+  title: { ...S(700), fontSize: 16, lineHeight: 20, color: C.ink, marginTop: 7 },
   where: { color: C.inkMuted, fontSize: 13, marginTop: 3 },
   desc: { color: C.inkFaint, fontSize: 13, lineHeight: 19, marginTop: 6 },
-  posted: { color: C.inkFaint, fontSize: 11, marginTop: 10 },
+  cardFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 },
+  posted: { color: C.inkFaint, fontSize: 10.5 },
+  cardArrow: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: C.paper },
 });

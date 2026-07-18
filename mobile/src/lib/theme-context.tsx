@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import * as SecureStore from "expo-secure-store";
@@ -85,9 +85,6 @@ export function ThemeProvider({ children }: Readonly<{ children: ReactNode }>) {
     return () => { alive = false; };
   }, []);
 
-  const settingRef = useRef(setting);
-  settingRef.current = setting;
-
   // The theme swaps instantly — no screen-covering circle. The old reveal grew a
   // solid incoming-background circle over everything (a dark-green flood when
   // switching to dark), making every element vanish then reappear. Instead the
@@ -96,10 +93,10 @@ export function ThemeProvider({ children }: Readonly<{ children: ReactNode }>) {
   // reveal isn't feasible in RN without heavy view snapshotting/masking.)
   // origin is accepted for call-site compatibility but no longer used.
   const setTheme = useCallback((v: ThemeSetting, _origin?: RevealOrigin) => {
-    if (v === settingRef.current) return;
+    if (v === setting) return;
     setSetting(v);
     writeSetting(v);
-  }, []);
+  }, [setting]);
 
   const theme: ThemeName = resolve(setting, system);
   const palette = theme === "dark" ? DARK : LIGHT;

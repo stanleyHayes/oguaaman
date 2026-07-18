@@ -7,12 +7,27 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme-context";
-import type { MemberView } from "@/lib/types";
+import type { Listing, MemberView } from "@/lib/types";
 import { D, S, ON_GREEN, initials, type Palette } from "@/theme";
 import { Loading, ErrorView, Thumb, VerifiedBadge } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
-import { PenIcon } from "@/components/icons";
+import { ArrowRightIcon, PenIcon } from "@/components/icons";
+import { memberRoleLabel } from "@/lib/member-role";
+import { route, ROUTES } from "@/lib/routes";
+import { push } from "@/lib/router";
+
+function contributionHref(listing: Listing) {
+  if (listing.type === "artist") return route.music(listing.slug);
+  if (listing.type === "memorial") return route.memoriam(listing.slug);
+  if (listing.type === "business") return route.business(listing.slug);
+  if (listing.type === "person") return route.person(listing.slug);
+  if (listing.type === "project") return route.project(listing.slug);
+  if (listing.type === "event") return route.event(listing.slug);
+  if (listing.type === "memory") return ROUTES.browseMemories;
+  if (listing.type === "opportunity") return ROUTES.browseOpportunities;
+  return null;
+}
 
 function FollowButton({ slug }: Readonly<{ slug: string }>) {
   const { member } = useAuth();
@@ -56,12 +71,6 @@ function FollowButton({ slug }: Readonly<{ slug: string }>) {
   );
 }
 
-function roleLabel(role: string): string {
-  if (role === "curator") return "Curator";
-  if (role === "steward") return "Steward";
-  return "Member";
-}
-
 export default function MemberProfile() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<MemberView>(() => api.member(slug), `member:${slug}`);
@@ -98,7 +107,7 @@ export default function MemberProfile() {
               <Text style={s.name}>{m.displayName}</Text>
               {m.verified ? <VerifiedBadge onDark size={18} /> : null}
             </View>
-            <Text style={s.role}>{roleLabel(m.role)}{m.joinedAt ? ` · joined ${m.joinedAt}` : ""}</Text>
+            <Text style={s.role}>{memberRoleLabel(m.role)}{m.joinedAt ? ` · joined ${m.joinedAt}` : ""}</Text>
             {m.verified && m.verifiedAs ? (
               <View style={{ marginTop: 8 }}><VerifiedBadge onDark label={`Verified · ${m.verifiedAs}`} /></View>
             ) : null}
@@ -121,15 +130,24 @@ export default function MemberProfile() {
             <Text style={s.sectionTitle}>Contributions</Text>
             <Text style={s.sectionHelp}>Everything {m.displayName.split(" ")[0]} has shared with the town.</Text>
             {published.length === 0 && <EmptyState compact icon={<PenIcon size={32} color={C.inkFaint} strokeWidth={1.5} />} title="No public contributions yet" />}
-            {published.map((l) => (
-              <View key={l.id} style={s.card}>
-                <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cardThumb} labelStyle={s.cardThumbInit} />
-                <View style={{ flex: 1 }}>
-                  <Text style={s.cardType}>{l.type}</Text>
-                  <Text style={s.cardTitle}>{l.title}</Text>
-                </View>
-              </View>
-            ))}
+            {published.map((l) => {
+              const href = contributionHref(l);
+              const content = (
+                <>
+                  <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cardThumb} labelStyle={s.cardThumbInit} />
+                  <View style={s.cardBody}>
+                    <Text style={s.cardType}>{l.type}</Text>
+                    <Text style={s.cardTitle} numberOfLines={2}>{l.title}</Text>
+                  </View>
+                  {href ? <View style={s.cardArrow}><ArrowRightIcon size={15} color={C.goldText} strokeWidth={2.3} /></View> : null}
+                </>
+              );
+              return href ? (
+                <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={`Open ${l.title}`} onPress={() => push(href)} style={({ pressed }) => [s.card, pressed && s.cardPressed]}>{content}</Pressable>
+              ) : (
+                <View key={l.id} style={s.card}>{content}</View>
+              );
+            })}
           </RevealView>
         </View>
       </Animated.ScrollView>
@@ -158,9 +176,12 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   sectionCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   sectionTitle: { ...D(700), fontSize: 20, color: C.ink },
   sectionHelp: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 12 },
-  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 12, marginBottom: 10 },
-  cardThumb: { width: 48, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  card: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 10, marginBottom: 9 },
+  cardPressed: { opacity: 0.72 },
+  cardThumb: { width: 56, height: 56, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   cardThumbInit: { color: C.cream, ...S(700), fontSize: 18 },
+  cardBody: { flex: 1, minWidth: 0 },
   cardType: { color: C.goldText, fontSize: 10, letterSpacing: 1, ...S(700), textTransform: "uppercase" },
-  cardTitle: { ...S(400), fontSize: 18, color: C.ink, marginTop: 2 },
+  cardTitle: { ...S(700), fontSize: 16, lineHeight: 20, color: C.ink, marginTop: 2 },
+  cardArrow: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: C.cream },
 });

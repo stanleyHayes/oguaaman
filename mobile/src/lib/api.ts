@@ -1,4 +1,4 @@
-import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal } from "./types";
+import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs } from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -178,6 +178,32 @@ export const api = {
   // The public register — members who opted in as living away from Oguaa.
   diaspora: () => get<Member[]>("/api/diaspora"),
 
+  // Oguaa Outside — public vetted-agent discovery and the authenticated
+  // request → quote → escrow → delivery lifecycle. All money is in pesewas.
+  agents: (filter?: { service?: string; area?: string }) => {
+    const parts: string[] = [];
+    if (filter?.service) parts.push(`service=${encodeURIComponent(filter.service)}`);
+    if (filter?.area) parts.push(`area=${encodeURIComponent(filter.area)}`);
+    return get<Agent[]>(`/api/agents${parts.length ? `?${parts.join("&")}` : ""}`);
+  },
+  agent: (slug: string) => get<Agent>(`/api/agents/${slug}`),
+  agentServices: () => get<AgentService[]>("/api/agent-services"),
+  agentReviews: (slug: string) => get<AgentReview[]>(`/api/agents/${slug}/reviews`),
+  applyAgent: (body: AgentInput) => post<Agent>("/api/agents/apply", body),
+  myAgent: () => get<Agent>("/api/me/agent"),
+  updateAgent: (body: AgentInput) => post<Agent>("/api/me/agent", body),
+  requestAgentJob: (slug: string, body: AgentJobInput) => post<AgentJob>(`/api/agents/${slug}/jobs`, body),
+  myAgentJobs: () => get<MyAgentJobs>("/api/me/jobs"),
+  quoteAgentJob: (id: string, body: { amountPesewas: number; note: string }) => post<AgentJob>(`/api/jobs/${id}/quote`, body),
+  fundAgentJob: (id: string, email: string) =>
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/jobs/${id}/accept`, { email }),
+  confirmAgentJob: (reference: string) => get<AgentJob>(`/api/jobs/confirm?reference=${encodeURIComponent(reference)}`),
+  deliverAgentJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/deliver`),
+  completeAgentJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/complete`),
+  disputeAgentJob: (id: string, reason: string) => post<AgentJob>(`/api/jobs/${id}/dispute`, { reason }),
+  cancelAgentJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/cancel`),
+  reviewAgentJob: (id: string, rating: number, body: string) => post<AgentReview>(`/api/jobs/${id}/review`, { rating, body }),
+
   // Profile photo — uploaded to Cloudinary on the device; we store the URL.
   setPhoto: (photoUrl: string) => post<{ photoUrl: string }>("/api/me/photo", { photoUrl }),
   // Display name + bio setter (returns the updated member).
@@ -194,6 +220,8 @@ export const api = {
   // still returns the plain array; `api.businesses({ page, pageSize })` the Page.
   businesses: listBusinesses,
   business: (slug: string) => get<Listing>(`/api/businesses/${slug}`),
+  properties: () => get<Listing[]>("/api/properties"),
+  property: (slug: string) => get<Listing>(`/api/properties/${slug}`),
   events: listEvents,
   opportunities: () => get<Listing[]>("/api/opportunities"),
   memories: listMemories,

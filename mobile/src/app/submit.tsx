@@ -1,7 +1,7 @@
 import { ROUTES } from "@/lib/routes";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -18,8 +18,28 @@ const TYPES = [
   { id: "person", label: "Person" },
   { id: "event", label: "Event" },
   { id: "business", label: "Business" },
+  { id: "property", label: "Property" },
   { id: "opportunity", label: "Opportunity" },
   { id: "memorial", label: "Memorial" },
+] as const;
+
+const PROPERTY_OFFERS = [
+  { id: "long-term", label: "Rent monthly" },
+  { id: "short-stay", label: "Book a stay" },
+] as const;
+
+const PROPERTY_TYPES = [
+  { id: "room", label: "Room" },
+  { id: "apartment", label: "Apartment" },
+  { id: "house", label: "House" },
+  { id: "guesthouse", label: "Guesthouse" },
+  { id: "hostel", label: "Hostel" },
+] as const;
+
+const PROPERTY_AVAILABILITY = [
+  { id: "available", label: "Available" },
+  { id: "reserved", label: "Reserved" },
+  { id: "let", label: "Let" },
 ] as const;
 
 const OPPORTUNITY_KINDS = [
@@ -43,6 +63,18 @@ const TYPE_FIELDS: Record<string, ExtraField[]> = {
   business: [
     { key: "category", label: "CATEGORY", placeholder: "e.g. Guesthouse, Fishmonger, Tailor" },
     { key: "address", label: "LOCATION / ADDRESS", placeholder: "e.g. Kotokuraba Market, Cape Coast" },
+  ],
+  property: [
+    { key: "area", label: "AREA / NEIGHBOURHOOD", placeholder: "e.g. Abura, Pedu, Amamoma" },
+    { key: "address", label: "ADDRESS OR LANDMARK", placeholder: "e.g. Near Pedu Junction, Cape Coast" },
+    { key: "priceGhs", label: "PRICE (GH₵)", placeholder: "e.g. 1200" },
+    { key: "depositGhs", label: "DEPOSIT / ADVANCE (GH₵, OPTIONAL)", placeholder: "e.g. 2400" },
+    { key: "bedrooms", label: "BEDROOMS (OPTIONAL)", placeholder: "e.g. 2" },
+    { key: "bathrooms", label: "BATHROOMS (OPTIONAL)", placeholder: "e.g. 1" },
+    { key: "availableFrom", label: "AVAILABLE FROM (OPTIONAL)", placeholder: "Pick a date", kind: "date" },
+    { key: "amenities", label: "AMENITIES", placeholder: "Comma-separated: Wi-Fi, water, parking" },
+    { key: "contactUrl", label: "CONTACT LINK", placeholder: "https://wa.me/233… or tel:+233…" },
+    { key: "bookingUrl", label: "BOOKING LINK (OPTIONAL)", placeholder: "https://…" },
   ],
   event: [
     { key: "startsAt", label: "DATE", placeholder: "Pick a date", kind: "date" },
@@ -74,7 +106,16 @@ function addTypeExtras(details: Record<string, unknown>, type: string, extra: Re
     const v = (extra[f.key] ?? "").trim();
     if (!v) continue;
     if (f.key === "genres") details.genres = v.split(",").map((g) => g.trim()).filter(Boolean);
+    else if (f.key === "amenities") details.amenities = v.split(",").map((g) => g.trim()).filter(Boolean);
     else if (f.key === "link") details.streamingLinks = [{ label: "Listen", url: v }];
+    else if (f.key === "contactUrl") details.contact = [{ label: "Contact manager", url: v }];
+    else if (f.key === "priceGhs" || f.key === "depositGhs") {
+      const amount = Number(v.replace(/,/g, ""));
+      if (Number.isFinite(amount) && amount > 0) details[f.key === "priceGhs" ? "pricePesewas" : "depositPesewas"] = Math.round(amount * 100);
+    } else if (f.key === "bedrooms" || f.key === "bathrooms") {
+      const count = Number.parseInt(v, 10);
+      if (Number.isFinite(count) && count >= 0) details[f.key] = count;
+    }
     else details[f.key] = v;
   }
 }
@@ -101,6 +142,12 @@ function buildDetails(
   memorial: MemorialFields,
   opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["id"],
   guardianConsentRequired: boolean,
+  property: {
+    offerType: (typeof PROPERTY_OFFERS)[number]["id"];
+    propertyType: (typeof PROPERTY_TYPES)[number]["id"];
+    availability: (typeof PROPERTY_AVAILABILITY)[number]["id"];
+    furnished: boolean;
+  },
 ): Record<string, unknown> {
   const details: Record<string, unknown> = { description: description.trim() };
   addTypeExtras(details, type, extra);
@@ -109,6 +156,13 @@ function buildDetails(
     details.kind = opportunityKind;
     if (opportunityKind === "mentorship") details.guardianConsentRequired = guardianConsentRequired;
   }
+  if (type === "property") {
+    details.offerType = property.offerType;
+    details.propertyType = property.propertyType;
+    details.pricePeriod = property.offerType === "short-stay" ? "night" : "month";
+    details.availability = property.availability;
+    details.furnished = property.furnished;
+  }
   return details;
 }
 
@@ -116,7 +170,9 @@ export default function Submit() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const { member } = useAuth();
-  const [type, setType] = useState<string>("memory");
+  const { type: requestedType } = useLocalSearchParams<{ type?: string }>();
+  const initialType = TYPES.some((item) => item.id === requestedType) ? requestedType! : "memory";
+  const [type, setType] = useState<string>(initialType);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
@@ -131,6 +187,10 @@ export default function Submit() {
   const [extra, setExtra] = useState<Record<string, string>>({});
   const [opportunityKind, setOpportunityKind] = useState<(typeof OPPORTUNITY_KINDS)[number]["id"]>("scholarship");
   const [guardianConsentRequired, setGuardianConsentRequired] = useState(true);
+  const [propertyOffer, setPropertyOffer] = useState<(typeof PROPERTY_OFFERS)[number]["id"]>("long-term");
+  const [propertyType, setPropertyType] = useState<(typeof PROPERTY_TYPES)[number]["id"]>("apartment");
+  const [propertyAvailability, setPropertyAvailability] = useState<(typeof PROPERTY_AVAILABILITY)[number]["id"]>("available");
+  const [propertyFurnished, setPropertyFurnished] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
@@ -151,6 +211,10 @@ export default function Submit() {
     setExtra({});
     setOpportunityKind("scholarship");
     setGuardianConsentRequired(true);
+    setPropertyOffer("long-term");
+    setPropertyType("apartment");
+    setPropertyAvailability("available");
+    setPropertyFurnished(false);
   }
 
   async function submit() {
@@ -159,16 +223,37 @@ export default function Submit() {
       setError("Give it a title (at least 2 characters).");
       return;
     }
+    if (type === "property" && description.trim().length < 10) {
+      setError("Describe the property in at least 10 characters.");
+      return;
+    }
+    if (type === "property" && (extra.address ?? "").trim().length < 2) {
+      setError("Add an address or nearby landmark.");
+      return;
+    }
     setBusy(true);
     setError("");
 
-    const details = buildDetails(type, description, extra, { honorific, bornYear, diedDate, epitaph, birthday, associations }, opportunityKind, guardianConsentRequired);
+    const details = buildDetails(
+      type,
+      description,
+      extra,
+      { honorific, bornYear, diedDate, epitaph, birthday, associations },
+      opportunityKind,
+      guardianConsentRequired,
+      { offerType: propertyOffer, propertyType, availability: propertyAvailability, furnished: propertyFurnished },
+    );
+    if (type === "property" && typeof details.pricePesewas !== "number") {
+      setError("Add a valid price for this property.");
+      setBusy(false);
+      return;
+    }
     const cover = coverImageUrl.trim();
     try {
       await api.submit({ type, title: t, details, ...(cover ? { coverImageUrl: cover } : {}) });
       setDone(true);
-    } catch {
-      setError("Couldn’t submit. Check your connection and try again.");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Couldn’t submit. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -250,11 +335,48 @@ export default function Submit() {
               onChangeText={(v) => setExtra((cur) => ({ ...cur, [f.key]: v }))}
               placeholder={f.placeholder}
               placeholderTextColor={C.inkFaint}
-              autoCapitalize={f.key === "link" || f.key === "applyUrl" || f.key === "safeguardingPolicyUrl" ? "none" : "sentences"}
+              keyboardType={f.key === "link" || f.key.endsWith("Url") ? "url" : "default"}
+              autoCapitalize={f.key === "link" || f.key.endsWith("Url") ? "none" : "sentences"}
             />
           )}
         </View>
       ))}
+
+      {type === "property" && (
+        <>
+          <Text style={s.label}>HOW IS IT OFFERED?</Text>
+          <View style={s.chips}>
+            {PROPERTY_OFFERS.map((item) => (
+              <Pressable accessibilityRole="button" key={item.id} onPress={() => setPropertyOffer(item.id)} style={[s.chip, propertyOffer === item.id && s.chipOn]}>
+                <Text style={[s.chipText, propertyOffer === item.id && s.chipTextOn]}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={s.label}>PROPERTY TYPE</Text>
+          <View style={s.chips}>
+            {PROPERTY_TYPES.map((item) => (
+              <Pressable accessibilityRole="button" key={item.id} onPress={() => setPropertyType(item.id)} style={[s.chip, propertyType === item.id && s.chipOn]}>
+                <Text style={[s.chipText, propertyType === item.id && s.chipTextOn]}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={s.label}>AVAILABILITY</Text>
+          <View style={s.chips}>
+            {PROPERTY_AVAILABILITY.map((item) => (
+              <Pressable accessibilityRole="button" key={item.id} onPress={() => setPropertyAvailability(item.id)} style={[s.chip, propertyAvailability === item.id && s.chipOn]}>
+                <Text style={[s.chipText, propertyAvailability === item.id && s.chipTextOn]}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable accessibilityRole="switch" accessibilityState={{ checked: propertyFurnished }} onPress={() => setPropertyFurnished((value) => !value)} style={s.guardianRow}>
+            <View style={[s.guardianBox, propertyFurnished && s.guardianBoxOn]}>{propertyFurnished && <Text style={s.guardianTick}>✓</Text>}</View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.guardianTitle}>Furnished</Text>
+              <Text style={s.guardianHint}>The place includes the essential furniture shown in the listing.</Text>
+            </View>
+          </Pressable>
+        </>
+      )}
 
       {type === "opportunity" && (
         <>

@@ -9,7 +9,7 @@ export function AppStripeProvider({ children }: Readonly<{ children: ReactNode }
   if (!STRIPE_PK) return <>{children}</>;
   return (
     <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="gh.oguaa.app.stripe">
-      {children}
+      <>{children}</>
     </StripeProvider>
   );
 }

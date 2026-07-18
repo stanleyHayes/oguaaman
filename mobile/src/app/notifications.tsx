@@ -13,7 +13,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { RevealView, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
-import { EnvelopeIcon } from "@/components/icons";
+import { ArrowRightIcon, BellIcon, EnvelopeIcon } from "@/components/icons";
 
 function when(iso: string): string {
   if (!iso) return "";
@@ -27,6 +27,10 @@ const KIND_TOKEN: Record<string, keyof Palette> = {
   approved: "teal", rejected: "maroon", changes: "goldBrand", remembrance: "goldBrand",
   birthday: "gold", report: "maroon", welcome: "green", directive: "clay",
 };
+
+function kindLabel(kind: string): string {
+  return kind.replaceAll("_", " ").replaceAll("-", " ").trim() || "Update";
+}
 
 // Notification links are portal paths; translate them to mobile routes.
 function mobileLink(link?: string): Href | null {
@@ -97,7 +101,7 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
           <Text style={s.count}>{unread > 0 ? `${unread} unread` : "All caught up"}</Text>
         </View>
         {unread > 0 && (
-          <Pressable accessibilityRole="button" onPress={markAll} disabled={busy} style={s.markBtn}><Text style={s.markText}>Mark all read</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Mark all notifications as read" onPress={markAll} disabled={busy} style={({ pressed }) => [s.markBtn, pressed && s.buttonPressed]}><Text style={s.markText}>Mark all read</Text></Pressable>
         )}
       </RevealView>
 
@@ -105,18 +109,31 @@ function NotifList({ initial }: Readonly<{ initial: Notification[] }>) {
 
       {items.map((n, i) => {
         const linkable = mobileLink(n.link) != null;
+        const tone = C[KIND_TOKEN[n.kind] ?? "inkFaint"];
+        const date = when(n.createdAt);
         return (
           <StaggerIn key={n.id} index={i}>
-            <Pressable accessibilityRole="button" accessibilityLabel={n.title} onPress={() => openItem(n)} style={[s.card, !n.read && s.cardUnread]}>
-              <View style={[s.bar, { backgroundColor: C[KIND_TOKEN[n.kind] ?? "inkFaint"], opacity: n.read ? 0.3 : 1 }]} />
-              <View style={{ flex: 1 }}>
-                <View style={s.cardHead}>
-                  <Text style={s.cardTitle}>{n.title}</Text>
-                  <Text style={s.cardDate}>{when(n.createdAt)}</Text>
-                </View>
-                <Text style={s.cardBody}>{n.body}</Text>
-                {linkable && <Text style={s.cardOpen}>Open →</Text>}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${n.read ? "Read" : "Unread"} ${kindLabel(n.kind)} notification. ${n.title}. ${n.body}${date ? `. ${date}` : ""}`}
+              accessibilityHint={linkable ? "Marks as read and opens the related item" : n.read ? undefined : "Marks notification as read"}
+              onPress={() => openItem(n)}
+              style={({ pressed }) => [s.card, !n.read && s.cardUnread, pressed && s.cardPressed]}
+            >
+              <View style={[s.bar, { backgroundColor: tone, opacity: n.read ? 0.35 : 1 }]} />
+              <View style={[s.iconTile, { borderColor: tone }]}>
+                <BellIcon size={20} color={tone} strokeWidth={1.9} />
+                {!n.read ? <View style={[s.unreadDot, { backgroundColor: tone }]} /> : null}
               </View>
+              <View style={s.cardContent}>
+                <View style={s.cardHead}>
+                  <Text style={[s.cardKicker, { color: tone }]} numberOfLines={1}>{n.read ? kindLabel(n.kind) : `Unread · ${kindLabel(n.kind)}`}</Text>
+                  {date ? <Text style={s.cardDate}>{date}</Text> : null}
+                </View>
+                <Text style={s.cardTitle} numberOfLines={2}>{n.title}</Text>
+                <Text style={s.cardBody} numberOfLines={2}>{n.body}</Text>
+              </View>
+              {linkable ? <View style={s.cardArrow}><ArrowRightIcon size={15} color={C.greenText} strokeWidth={2.3} /></View> : null}
             </Pressable>
           </StaggerIn>
         );
@@ -138,15 +155,21 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   markBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   markText: { color: C.greenText, ...S(700), fontSize: 12 },
 
-  card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14, overflow: "hidden" },
+  card: { position: "relative", flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 17, paddingVertical: 11, paddingLeft: 14, paddingRight: 11, overflow: "hidden", minHeight: 102, shadowColor: "#000", shadowOpacity: 0.035, shadowRadius: 7, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
   // Unread lift: was the off-palette #fffdf7 (≈1.5% brighter than paper), which
   // would glare under light ink in dark mode — paper is the nearest token; the
   // goldBrand border stays the primary unread cue.
   cardUnread: { backgroundColor: C.paper, borderColor: C.goldBrand },
-  bar: { width: 4, borderRadius: 2 },
+  cardPressed: { opacity: 0.72, transform: [{ scale: 0.995 }] },
+  bar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
+  iconTile: { position: "relative", width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: C.paper, borderWidth: 1 },
+  unreadDot: { position: "absolute", right: 7, top: 7, width: 7, height: 7, borderRadius: 4, borderWidth: 1, borderColor: C.paper },
+  cardContent: { flex: 1, minWidth: 0 },
   cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
-  cardTitle: { ...S(700), fontSize: 16, color: C.ink, flexShrink: 1 },
-  cardDate: { color: C.inkFaint, fontSize: 11 },
-  cardBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 3 },
-  cardOpen: { color: C.tealText, fontSize: 12, ...S(700), marginTop: 6 },
+  cardKicker: { flex: 1, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", ...S(700) },
+  cardTitle: { ...S(700), fontSize: 16, lineHeight: 20, color: C.ink, marginTop: 2 },
+  cardDate: { color: C.inkFaint, fontSize: 10, ...S(600) },
+  cardBody: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  cardArrow: { width: 29, height: 29, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35 },
+  buttonPressed: { opacity: 0.68 },
 });

@@ -100,6 +100,10 @@ function RootNavigator() {
         <Stack.Screen name="alerts" options={{ title: "Alerts", headerBackTitle: "Back" }} />
         <Stack.Screen name="search" options={{ title: "Search", headerBackTitle: "More" }} />
         <Stack.Screen name="settings" options={{ title: "Settings", headerBackTitle: "Back" }} />
+        <Stack.Screen name="outside/index" options={{ title: "Oguaa Outside", headerBackTitle: "More" }} />
+        <Stack.Screen name="outside/agents/[slug]" options={{ title: "Agent", headerBackTitle: "Outside" }} />
+        <Stack.Screen name="outside/jobs" options={{ title: "My requests", headerBackTitle: "Outside" }} />
+        <Stack.Screen name="outside/become-agent" options={{ title: "Become an agent", headerBackTitle: "Outside" }} />
         {/* Creator studio (Phase 2 mobile parity). studio/index is the hub +
             Overview; the other tool screens are filled in by the screens agents. */}
         <Stack.Screen name="studio/index" options={{ title: "Creator studio", headerBackTitle: "Back" }} />

@@ -12,7 +12,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Pill, Thumb } from "@/ui";
 import { PressScale, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
-import { MusicIcon } from "@/components/icons";
+import { ArrowRightIcon, MusicIcon } from "@/components/icons";
 
 // Genre filter chips (client-side filtering, like the web directory).
 function GenreChips({ active, onPick }: Readonly<{ active: string; onPick: (g: string) => void }>) {
@@ -65,22 +65,31 @@ export default function Music() {
       {shown.map((a, i) => (
         <StaggerIn key={a.id} index={i}>
           <Link href={route.music(a.slug)} asChild>
-            <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={a.details.actName ?? a.title}>
-            <Thumb
-              seed={a.slug}
-              src={a.coverImageUrl}
-              label={initials(a.details.actName ?? a.title)}
-              style={s.thumb}
-              labelStyle={s.init}
-            />
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={s.name}>{a.details.actName ?? a.title}</Text>
-                {a.details.spotlight && <Pill label="Spotlight" color={C.cream} bg={C.clay} border={C.clay} />}
+            <Pressable
+              style={s.card}
+              accessibilityRole="button"
+              accessibilityLabel={`${a.details.actName ?? a.title}. ${(a.details.genres ?? []).join(", ")}`}
+              accessibilityHint="Opens artist profile"
+            >
+              <Thumb
+                seed={a.slug}
+                src={a.coverImageUrl}
+                label={initials(a.details.actName ?? a.title)}
+                style={s.thumb}
+                labelStyle={s.init}
+              />
+              <View style={s.cardBody}>
+                <View style={s.cardTopline}>
+                  <Text style={s.cardKicker}>Oguaa artist</Text>
+                  {a.details.spotlight && <Pill label="Spotlight" color={ON_GREEN} bg={C.clay} border={C.clay} />}
+                </View>
+                <Text style={s.name} numberOfLines={2}>{a.details.actName ?? a.title}</Text>
+                <Text style={s.genre} numberOfLines={1}>{(a.details.genres ?? []).join(" · ") || "Cape Coast sound"}</Text>
+                {a.details.bio ? <Text style={s.bio} numberOfLines={2}>{a.details.bio}</Text> : null}
               </View>
-              <Text style={s.genre}>{(a.details.genres ?? []).join(" · ")}</Text>
-              <Text style={s.bio} numberOfLines={2}>{a.details.bio}</Text>
-            </View>
+              <View style={s.cardArrow}>
+                <ArrowRightIcon size={16} color={C.greenText} strokeWidth={2.2} />
+              </View>
             </Pressable>
           </Link>
         </StaggerIn>
@@ -97,17 +106,21 @@ const onDarkText = (C: Palette, alpha: number) => C.onDarkText85.replace(/[^,]+\
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   soundCard: { backgroundColor: C.green900, borderRadius: 14, padding: 16 },
-  soundKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...D(700) },
+  soundKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...S(700) },
   soundTitle: { color: ON_GREEN, ...D(700), fontSize: 20, marginTop: 4 },
   soundSub: { color: onDarkText(C, 0.75), fontSize: 13, lineHeight: 19, marginTop: 4 },
   genreChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   genreChipOn: { backgroundColor: C.clay, borderColor: C.clay },
   genreChipText: { color: C.inkMuted, fontSize: 13, ...S(600) },
-  genreChipTextOn: { color: C.cream },
-  card: { flexDirection: "row", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 12 },
-  thumb: { width: 64, height: 64, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  init: { color: C.cream, ...S(700), fontSize: 22 },
-  name: { ...S(700), fontSize: 19, color: C.ink },
-  genre: { color: C.goldText, fontSize: 12, marginTop: 1 },
-  bio: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 4 },
+  genreChipTextOn: { color: ON_GREEN },
+  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18, padding: 10, minHeight: 106, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  thumb: { width: 82, height: 86, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  init: { ...S(700), fontSize: 22 },
+  cardBody: { flex: 1, minWidth: 0, paddingVertical: 2 },
+  cardTopline: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 },
+  cardKicker: { color: C.goldText, ...S(700), fontSize: 10, letterSpacing: 1.25, textTransform: "uppercase" },
+  name: { ...S(700), fontSize: 17, lineHeight: 21, color: C.ink, marginTop: 3 },
+  genre: { color: C.tealText, ...S(600), fontSize: 11, marginTop: 2 },
+  bio: { color: C.inkMuted, fontSize: 12, lineHeight: 16, marginTop: 4 },
+  cardArrow: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35 },
 });

@@ -59,7 +59,7 @@ function RememberButton({ slug, initialCount }: Readonly<{ slug: string; initial
   return (
     <Pressable accessibilityRole="button" onPress={toggle} disabled={busy} style={[s.remember, following && s.rememberOn]}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-        {following ? <HeartFilledIcon size={14} color={following ? C.cream : C.greenText} strokeWidth={2} /> : <HeartIcon size={14} color={following ? C.cream : C.greenText} strokeWidth={2} />}
+        {following ? <HeartFilledIcon size={14} color={ON_GREEN} /> : <HeartIcon size={14} color={C.greenText} strokeWidth={2} />}
         <Text style={[s.rememberText, following && s.rememberTextOn]}>
           {following ? "Remembering" : "Remember"} · {count}
         </Text>

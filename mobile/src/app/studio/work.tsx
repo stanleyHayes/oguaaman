@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
@@ -26,17 +26,19 @@ import { CheckIcon, PenIcon, PlusIcon, StarIcon } from "@/components/icons";
 
 const TYPE_LABELS: Record<string, string> = {
   business: "Business", artist: "Artist", person: "Person", memory: "Memory",
+  property: "Property",
   event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
   incident: "Incident", lostfound: "Lost & found",
 };
 
 // The owner editor covers the member-submittable types; incident/lostfound have
 // their own flows and projects belong to institutions.
-const EDITABLE = new Set(["artist", "business", "event", "memory", "opportunity", "person", "memorial"]);
+const EDITABLE = new Set(["artist", "business", "property", "event", "memory", "opportunity", "person", "memorial"]);
 
 // In-app public detail routes for an approved listing (null = no detail page).
 const LISTING_HREF: Record<string, string> = {
   artist: "/music/", business: "/business/", memorial: "/memoriam/",
+  property: "/rent-stay/",
   project: "/projects/", event: "/events/", person: "/people/",
 };
 
@@ -65,7 +67,7 @@ export default function StudioWork() {
   // focus — the mount fetch already covers it. reload is read via a ref so the
   // focus effect stays stable and never loops.
   const reloadRef = useRef(reload);
-  reloadRef.current = reload;
+  useEffect(() => { reloadRef.current = reload; }, [reload]);
   const firstFocus = useRef(true);
   useFocusEffect(useCallback(() => {
     if (firstFocus.current) { firstFocus.current = false; return; }

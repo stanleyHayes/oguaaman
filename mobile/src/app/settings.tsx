@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ROUTES } from "@/lib/routes";
+import { push, replace } from "@/lib/router";
 import { Image, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
-import { router } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 import type { Member } from "@/lib/types";
-import { D, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
-import { Loading, VerifiedBadge } from "@/ui";
+import { D, initials, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
+import { SettingsIcon, ShieldIcon, UserIcon } from "@/components/icons";
+import { Loading, Thumb, VerifiedBadge } from "@/ui";
+import { memberRoleLabel } from "@/lib/member-role";
 
 // The mobile Settings screen — parity with the web creator Settings page
 // (creator/src/pages/Settings.tsx) and admin MFA (admin/src/components/mfa.tsx):
@@ -18,13 +20,6 @@ import { Loading, VerifiedBadge } from "@/ui";
 // (change password + TOTP two-factor enrol/disable with recovery codes).
 
 type SaveState = "idle" | "saving" | "saved" | "error";
-
-function roleLabel(role: string): string {
-  if (role === "curator") return "Curator";
-  if (role === "steward") return "Steward";
-  if (role === "editor") return "Editor";
-  return "Member";
-}
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -34,7 +29,7 @@ function fmtDate(iso?: string): string {
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function Settings() {
-  const { C } = useTheme();
+  const { C, setting } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const { member, loading, setMember } = useAuth();
 
@@ -44,7 +39,7 @@ export default function Settings() {
       <View style={s.gate}>
         <Text style={s.gateTitle}>Settings</Text>
         <Text style={s.gateBody}>Sign in to manage your password, two-factor sign-in, and preferences.</Text>
-        <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.primaryBtn}>
+        <Pressable accessibilityRole="button" onPress={() => replace(ROUTES.signIn)} style={s.primaryBtn}>
           <Text style={s.primaryBtnText}>Sign in / create account</Text>
         </Pressable>
       </View>
@@ -54,26 +49,35 @@ export default function Settings() {
   return (
     <ScrollView
       style={{ backgroundColor: C.paper }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 48, gap: 16 }}
+      contentContainerStyle={s.content}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
-      <View>
-        <Text style={s.kicker}>ACCOUNT</Text>
+      <View style={s.settingsHero}>
+        <View style={s.heroOrb} />
+        <Text style={s.kicker}>ACCOUNT CONTROL</Text>
         <Text style={s.pageTitle}>Settings</Text>
-        <Text style={s.pageLede}>Your account, how you sign in, and how the app looks and reaches you.</Text>
+        <Text style={s.pageLede}>Your sign-in, privacy and preferences — together, without the clutter.</Text>
+        <View style={s.heroStatusRow}>
+          <View style={s.heroStatus}><Text style={s.heroStatusKey}>PHONE</Text><Text style={s.heroStatusValue}>{member.phoneVerified ? "Verified" : "Pending"}</Text></View>
+          <View style={s.heroStatusRule} />
+          <View style={s.heroStatus}><Text style={s.heroStatusKey}>TWO-FACTOR</Text><Text style={s.heroStatusValue}>{member.mfaEnabled ? "On" : "Off"}</Text></View>
+          <View style={s.heroStatusRule} />
+          <View style={s.heroStatus}><Text style={s.heroStatusKey}>THEME</Text><Text style={s.heroStatusValue}>{setting === "system" ? "System" : setting === "dark" ? "Dark" : "Light"}</Text></View>
+        </View>
       </View>
 
-      <Section icon="☺" title="Account" description="Who you are in Oguaa.">
+      <Section icon={<UserIcon size={18} color={C.goldText} strokeWidth={2} />} title="Account" description="Who you are in Oguaa.">
         <AccountCard member={member} />
       </Section>
 
-      <Section icon="⚙" title="Preferences" description="How the app looks and what it tells you about.">
+      <Section icon={<SettingsIcon size={18} color={C.goldText} strokeWidth={2} />} title="Preferences" description="How the app looks and what it tells you about.">
         <ThemeControl />
         <View style={{ height: 18 }} />
         <NotificationPrefs />
       </Section>
 
-      <Section icon="🛡" title="Security" description="Your password and two-factor sign-in.">
+      <Section icon={<ShieldIcon size={18} color={C.goldText} strokeWidth={2} />} title="Security" description="Your password and two-factor sign-in.">
         <Text style={s.subLabel}>CHANGE PASSWORD</Text>
         <ChangePassword />
         <View style={s.hr} />
@@ -85,19 +89,19 @@ export default function Settings() {
 }
 
 // A titled card mirroring the web Section (icon-led header, gold accent).
-function Section({ icon, title, description, children }: Readonly<{ icon: string; title: string; description?: string; children: ReactNode }>) {
+function Section({ icon, title, description, children }: Readonly<{ icon: ReactNode; title: string; description?: string; children: ReactNode }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={s.section}>
       <View style={s.sectionHead}>
-        <View style={s.sectionIcon}><Text style={s.sectionIconText}>{icon}</Text></View>
+        <View style={s.sectionIcon}>{icon}</View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.sectionTitle}>{title}</Text>
           {description ? <Text style={s.sectionDesc}>{description}</Text> : null}
         </View>
       </View>
-      <View style={{ marginTop: 14 }}>{children}</View>
+      <View style={s.sectionBody}>{children}</View>
     </View>
   );
 }
@@ -108,19 +112,22 @@ function AccountCard({ member: m }: Readonly<{ member: Member }>) {
   const s = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={s.accountCard}>
-      <View style={s.accountNameRow}>
-        <Text style={s.accountName}>{m.displayName}</Text>
-        {m.verified ? <VerifiedBadge label={m.verifiedAs ? `Verified · ${m.verifiedAs}` : "Verified"} /> : null}
-      </View>
-      <View style={s.metaRow}>
-        <View style={s.roleChip}><Text style={s.roleChipText}>{roleLabel(m.role)}</Text></View>
-        {m.creatorTypes && m.creatorTypes.length > 0 ? (
-          <Text style={s.metaFaint}>{m.creatorTypes.length} creator {m.creatorTypes.length === 1 ? "type" : "types"}</Text>
-        ) : null}
-      </View>
-      <View style={s.metaLine}>
-        <Text style={s.metaKey}>Handle</Text>
-        <Text style={s.metaVal}>@{m.slug}</Text>
+      <View style={s.accountIntro}>
+        <Thumb seed={m.slug} src={m.photoUrl} label={m.initials || initials(m.displayName)} style={s.accountAvatar} labelStyle={s.accountAvatarText} />
+        <View style={s.accountIdentity}>
+          <View style={s.accountNameRow}>
+            <Text style={s.accountName} numberOfLines={2}>{m.displayName}</Text>
+            {m.verified ? <VerifiedBadge /> : null}
+          </View>
+          <Text style={s.accountHandle}>@{m.slug}</Text>
+          <View style={s.metaRow}>
+            <View style={s.roleChip}><Text style={s.roleChipText}>{memberRoleLabel(m.role)}</Text></View>
+            {m.creatorTypes && m.creatorTypes.length > 0 ? (
+              <Text style={s.metaFaint}>{m.creatorTypes.length} creator {m.creatorTypes.length === 1 ? "type" : "types"}</Text>
+            ) : null}
+          </View>
+          {m.verified && m.verifiedAs ? <View style={s.accountVerified}><VerifiedBadge label={`Verified · ${m.verifiedAs}`} /></View> : null}
+        </View>
       </View>
       {m.joinedAt ? (
         <View style={s.metaLine}>
@@ -132,7 +139,7 @@ function AccountCard({ member: m }: Readonly<{ member: Member }>) {
         <Text style={s.metaKey}>Phone</Text>
         <Text style={s.metaVal}>{m.phoneVerified ? "Verified" : "Not verified"}</Text>
       </View>
-      <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.me)} style={s.profileLink}>
+      <Pressable accessibilityRole="button" onPress={() => push(ROUTES.me)} style={s.profileLink}>
         <Text style={s.profileLinkText}>Edit name, photo, bio & links in your Profile</Text>
         <Text style={s.chevron}>›</Text>
       </Pressable>
@@ -540,25 +547,39 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   primaryBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24, marginTop: 18 },
   primaryBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
 
-  kicker: { color: C.goldText, fontSize: 11, letterSpacing: 2, ...D(700) },
-  pageTitle: { ...D(700), fontSize: 30, color: C.ink, marginTop: 4 },
-  pageLede: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
+  content: { padding: 14, paddingBottom: 48, gap: 12 },
+  settingsHero: { backgroundColor: C.green900, borderRadius: 22, padding: 18, overflow: "hidden" },
+  heroOrb: { position: "absolute", width: 168, height: 168, borderRadius: 84, right: -66, top: -82, backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35 },
+  kicker: { color: C.gold, fontSize: 10, letterSpacing: 2.2, ...S(700) },
+  pageTitle: { ...D(700), fontSize: 29, color: ON_GREEN, marginTop: 5 },
+  pageLede: { color: C.onDarkText85, fontSize: 13, lineHeight: 19, marginTop: 5, maxWidth: 320 },
+  heroStatusRow: { flexDirection: "row", alignItems: "center", marginTop: 17, borderWidth: 1, borderColor: C.onDarkText10, backgroundColor: C.onDarkText10, borderRadius: 13, paddingVertical: 10, paddingHorizontal: 6 },
+  heroStatus: { flex: 1, alignItems: "center", minWidth: 0 },
+  heroStatusKey: { color: C.onDarkText50, fontSize: 8, letterSpacing: 1.1, ...S(700) },
+  heroStatusValue: { color: ON_GREEN, fontSize: 11, ...S(700), marginTop: 3, textAlign: "center" },
+  heroStatusRule: { width: StyleSheet.hairlineWidth, height: 27, backgroundColor: C.onDarkText30 },
 
-  section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  sectionHead: { flexDirection: "row", alignItems: "center", gap: 12, borderLeftWidth: 2, borderLeftColor: C.goldBorder35, paddingLeft: 12 },
-  sectionIcon: { width: 36, height: 36, borderRadius: 11, borderWidth: 1, borderColor: C.goldBorder35, backgroundColor: C.goldTint14, alignItems: "center", justifyContent: "center" },
-  sectionIconText: { fontSize: 17, color: C.goldText },
-  sectionTitle: { ...S(700), fontSize: 18, color: C.ink },
-  sectionDesc: { color: C.inkMuted, fontSize: 13, marginTop: 1 },
+  section: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 17, padding: 15 },
+  sectionHead: { flexDirection: "row", alignItems: "center", gap: 11 },
+  sectionIcon: { width: 34, height: 34, borderRadius: 11, borderWidth: 1, borderColor: C.goldBorder35, backgroundColor: C.goldTint14, alignItems: "center", justifyContent: "center" },
+  sectionTitle: { ...D(600), fontSize: 18, color: C.ink },
+  sectionDesc: { color: C.inkMuted, fontSize: 12, marginTop: 1 },
+  sectionBody: { marginTop: 13 },
 
   subLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...S(700), marginBottom: 8 },
   hr: { height: StyleSheet.hairlineWidth, backgroundColor: C.sand, marginVertical: 18 },
   hint: { color: C.inkFaint, fontSize: 12, marginTop: 8, lineHeight: 17 },
 
-  accountCard: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
-  accountNameRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  accountName: { ...S(700), fontSize: 17, color: C.ink },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" },
+  accountCard: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 13 },
+  accountIntro: { flexDirection: "row", alignItems: "center", gap: 12 },
+  accountAvatar: { width: 62, height: 62, borderRadius: 19, borderWidth: 2, borderColor: C.goldBorder35 },
+  accountAvatarText: { ...S(700), fontSize: 20 },
+  accountIdentity: { flex: 1, minWidth: 0 },
+  accountNameRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+  accountName: { ...S(700), fontSize: 17, color: C.ink, flexShrink: 1 },
+  accountHandle: { color: C.inkFaint, fontSize: 12, marginTop: 2 },
+  accountVerified: { marginTop: 6 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 6, flexWrap: "wrap" },
   roleChip: { backgroundColor: withAlpha(C.green, 0.1), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   roleChipText: { color: C.greenText, fontSize: 11, ...S(700) },
   metaFaint: { color: C.inkFaint, fontSize: 12 },

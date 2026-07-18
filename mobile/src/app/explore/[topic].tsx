@@ -8,10 +8,11 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { HistoryView } from "@/lib/types";
-import { D, S, type Palette } from "@/theme";
+import { D, S, initials, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
-import { Loading, ErrorView, PhotoHero } from "@/ui";
+import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn, useHeroParallax } from "@/components/anim";
+import { ArrowRightIcon, FileTextIcon, LandmarkIcon, UserIcon } from "@/components/icons";
 
 // Static editorial for Heritage / Culture / Visit, ported from the portal and
 // grounded in the fact-checked Cape Coast research brief (agent_plan.md §1).
@@ -105,8 +106,19 @@ export default function Explore() {
             </StaggerIn>
           ))}
           {t.link ? (
-            <Pressable accessibilityRole="button" onPress={() => push(t.link!.href)} style={s.linkCard}>
-              <Text style={s.linkText}>{t.link.label}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t.link.label.replace(/\s*→$/, "")}
+              accessibilityHint="Opens the institution page"
+              onPress={() => push(t.link!.href)}
+              style={({ pressed }) => [s.linkCard, pressed && s.cardPressed]}
+            >
+              <View style={s.linkIcon}><LandmarkIcon size={20} color={C.greenText} strokeWidth={1.9} /></View>
+              <View style={s.linkBody}>
+                <Text style={s.linkKicker}>TRADITIONAL COUNCIL</Text>
+                <Text style={s.linkText}>{t.link.label.replace(/\s*→$/, "")}</Text>
+              </View>
+              <View style={s.cardArrow}><ArrowRightIcon size={15} color={C.greenText} strokeWidth={2.3} /></View>
             </Pressable>
           ) : null}
         </View>
@@ -135,9 +147,15 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
           <Text style={s.h}>A timeline of Oguaa</Text>
           <View style={{ gap: 8, marginTop: 4 }}>
             {data.timeline.map((e, i) => (
-              <StaggerIn key={e.id} index={i} style={s.itemRow}>
-                <Text style={[s.itemLabel, { color: C.greenText }]}>{e.year}</Text>
-                <Text style={s.itemText}><Text style={{ ...S(700) }}>{e.title}</Text>{e.summary ? ` — ${e.summary}` : ""}</Text>
+              <StaggerIn key={e.id} index={i} style={s.timelineCard}>
+                <View style={s.yearTile}>
+                  <Text style={s.yearTileLabel}>YEAR</Text>
+                  <Text style={s.yearTileValue}>{e.year}</Text>
+                </View>
+                <View style={s.timelineBody}>
+                  <Text style={s.timelineTitle}>{e.title}</Text>
+                  {e.summary ? <Text style={s.timelineSummary}>{e.summary}</Text> : null}
+                </View>
               </StaggerIn>
             ))}
           </View>
@@ -149,9 +167,15 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
               <View style={{ gap: 10, marginTop: 4 }}>
                 {data.heritage.map((o, i) => (
                   <StaggerIn key={o.id} index={i} style={s.placeCard}>
-                    <Text style={s.placeName}>{o.name}</Text>
-                    {o.classification ? <Text style={s.placeClass}>{o.classification}</Text> : null}
-                    {o.summary ? <Text style={s.placeSummary}>{o.summary}</Text> : null}
+                    <Thumb seed={o.slug} src={o.crestUrl} label={initials(o.name)} style={s.placeThumb} labelStyle={s.placeThumbLabel} />
+                    <View style={s.placeBody}>
+                      <View style={s.kickerRow}>
+                        <LandmarkIcon size={12} color={C.goldText} strokeWidth={1.9} />
+                        <Text style={s.placeClass} numberOfLines={1}>{o.classification || "Heritage place"}</Text>
+                      </View>
+                      <Text style={s.placeName} numberOfLines={2}>{o.name}</Text>
+                      {o.summary ? <Text style={s.placeSummary} numberOfLines={2}>{o.summary}</Text> : null}
+                    </View>
                   </StaggerIn>
                 ))}
               </View>
@@ -165,12 +189,23 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
               <View style={{ gap: 8, marginTop: 4 }}>
                 {data.people.map((p, i) => (
                   <StaggerIn key={p.id} index={i}>
-                    <Pressable accessibilityRole="button" onPress={() => push(route.person(p.slug))} style={s.linkRow}>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={s.linkTitle}>{p.title}</Text>
-                      <Text style={s.linkSub} numberOfLines={1}>{[p.details.era, p.details.whyNotable].filter(Boolean).join(" · ")}</Text>
-                    </View>
-                    <Text style={s.chevron}>›</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${p.title}. ${[p.details.era, p.details.whyNotable].filter(Boolean).join(". ")}`}
+                      accessibilityHint="Opens person profile"
+                      onPress={() => push(route.person(p.slug))}
+                      style={({ pressed }) => [s.linkRow, pressed && s.cardPressed]}
+                    >
+                      <Thumb seed={p.slug} src={p.coverImageUrl} label={initials(p.title)} style={s.personThumb} labelStyle={s.personThumbLabel} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <View style={s.kickerRow}>
+                          <UserIcon size={12} color={C.goldText} strokeWidth={1.9} />
+                          <Text style={s.personKicker} numberOfLines={1}>{p.details.era || "Oguaa legacy"}</Text>
+                        </View>
+                        <Text style={s.linkTitle} numberOfLines={2}>{p.title}</Text>
+                        {p.details.whyNotable ? <Text style={s.linkSub} numberOfLines={2}>{p.details.whyNotable}</Text> : null}
+                      </View>
+                      <View style={s.cardArrow}><ArrowRightIcon size={15} color={C.greenText} strokeWidth={2.3} /></View>
                     </Pressable>
                   </StaggerIn>
                 ))}
@@ -185,8 +220,15 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
               <View style={{ gap: 8, marginTop: 4 }}>
                 {data.memories.map((m, i) => (
                   <StaggerIn key={m.id} index={i} style={s.placeCard}>
-                    <Text style={s.placeName}>{m.title}</Text>
-                    {m.details.text ? <Text style={s.placeSummary}>{m.details.text}</Text> : null}
+                    <Thumb seed={m.slug} src={m.coverImageUrl} label={initials(m.title)} style={s.placeThumb} labelStyle={s.placeThumbLabel} />
+                    <View style={s.placeBody}>
+                      <View style={s.kickerRow}>
+                        <FileTextIcon size={12} color={C.clayText} strokeWidth={1.9} />
+                        <Text style={[s.placeClass, { color: C.clayText }]}>MEMORY WALL</Text>
+                      </View>
+                      <Text style={s.placeName} numberOfLines={2}>{m.title}</Text>
+                      {m.details.text ? <Text style={s.placeSummary} numberOfLines={2}>{m.details.text}</Text> : null}
+                    </View>
                   </StaggerIn>
                 ))}
               </View>
@@ -202,18 +244,36 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   body: { padding: 20 },
   h: { ...D(700), fontSize: 20, color: C.ink, marginBottom: 6 },
   p: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink },
-  itemRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
+  itemRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9 },
   itemLabel: { ...S(700), fontSize: 14, minWidth: 78 },
   itemText: { color: C.ink, fontSize: 14, flex: 1, lineHeight: 20 },
   colorDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: C.sand },
-  linkCard: { marginTop: 24, borderWidth: 1, borderColor: C.green, borderRadius: 12, paddingVertical: 13, alignItems: "center" },
-  linkText: { color: C.greenText, ...S(700), fontSize: 14 },
-  placeCard: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 12 },
-  placeName: { ...S(700), fontSize: 16, color: C.ink },
-  placeClass: { color: C.goldText, fontSize: 11, ...S(700), letterSpacing: 0.5, marginTop: 2, textTransform: "uppercase" },
-  placeSummary: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
-  linkRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
-  linkTitle: { ...S(700), fontSize: 15, color: C.ink },
-  linkSub: { color: C.inkFaint, fontSize: 12, marginTop: 1 },
-  chevron: { color: C.inkFaint, fontSize: 22, ...S(700) },
+  timelineCard: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 10, minHeight: 86 },
+  yearTile: { width: 70, minHeight: 64, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, paddingHorizontal: 5 },
+  yearTileLabel: { ...S(700), color: C.goldText, fontSize: 8, letterSpacing: 1.3 },
+  yearTileValue: { ...S(700), color: C.greenText, fontSize: 15, marginTop: 2, textAlign: "center" },
+  timelineBody: { flex: 1, minWidth: 0, paddingVertical: 2 },
+  timelineTitle: { ...S(700), color: C.ink, fontSize: 15, lineHeight: 19 },
+  timelineSummary: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  linkCard: { flexDirection: "row", alignItems: "center", gap: 11, marginTop: 24, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 11 },
+  linkIcon: { width: 48, height: 48, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand },
+  linkBody: { flex: 1, minWidth: 0 },
+  linkKicker: { color: C.goldText, fontSize: 9, letterSpacing: 1.2, ...S(700) },
+  linkText: { color: C.ink, ...S(700), fontSize: 14, lineHeight: 18, marginTop: 2 },
+  placeCard: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 10, minHeight: 92 },
+  placeThumb: { width: 70, height: 70, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: C.paper },
+  placeThumbLabel: { color: C.cream, ...S(700), fontSize: 18 },
+  placeBody: { flex: 1, minWidth: 0, paddingVertical: 2 },
+  kickerRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  placeName: { ...S(700), fontSize: 16, lineHeight: 20, color: C.ink, marginTop: 2 },
+  placeClass: { flexShrink: 1, color: C.goldText, fontSize: 9, ...S(700), letterSpacing: 1, textTransform: "uppercase" },
+  placeSummary: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 4 },
+  linkRow: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, padding: 10, minHeight: 92 },
+  personThumb: { width: 70, height: 70, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  personThumbLabel: { color: C.cream, ...S(700), fontSize: 18 },
+  personKicker: { flexShrink: 1, color: C.goldText, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", ...S(700) },
+  linkTitle: { ...S(700), fontSize: 16, lineHeight: 20, color: C.ink, marginTop: 2 },
+  linkSub: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  cardArrow: { width: 29, height: 29, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35 },
+  cardPressed: { opacity: 0.72, transform: [{ scale: 0.995 }] },
 });

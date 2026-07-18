@@ -11,7 +11,7 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Thumb } from "@/ui";
 import { StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
-import { DiamondIcon } from "@/components/icons";
+import { ArrowRightIcon, DiamondIcon } from "@/components/icons";
 
 export const cedis = (pesewas?: number) =>
   `GH₵ ${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
@@ -63,16 +63,23 @@ export default function Projects() {
       {data.map((l, i) => (
         <StaggerIn key={l.id} index={i}>
           <Link href={route.project(l.slug)} asChild>
-            <Pressable style={s.card} accessibilityRole="button" accessibilityLabel={l.title}>
+            <Pressable style={({ pressed }) => [s.card, pressed && s.cardPressed]} accessibilityRole="button" accessibilityLabel={`Open project ${l.title}`}>
             <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.cover} labelStyle={s.coverInit} />
-            <View style={{ padding: 14 }}>
-              <Text style={s.title}>{l.title}</Text>
-              {l.details.organiser ? <Text style={s.organiser}>{l.details.organiser}</Text> : null}
+            <View style={s.cardBody}>
+              <View style={s.kickerRow}>
+                <Text style={s.cardKicker}>COMMUNITY PROJECT</Text>
+                <View style={s.cardArrow}><ArrowRightIcon size={14} color={C.greenText} strokeWidth={2.4} /></View>
+              </View>
+              <Text style={s.title} numberOfLines={2}>{l.title}</Text>
+              {l.details.organiser ? <Text style={s.organiser} numberOfLines={1}>{l.details.organiser}</Text> : null}
               <Text style={s.desc} numberOfLines={2}>{l.details.description}</Text>
-              <View style={{ marginTop: 12 }}>
+              <View style={s.progressWrap}>
                 <Progress raised={l.details.raisedPesewas} goal={l.details.goalPesewas} />
               </View>
-              <Text style={s.meta}>{l.details.backers ?? 0} backers{l.details.deadline ? ` · closes ${l.details.deadline}` : ""}</Text>
+              <View style={s.metaRow}>
+                <Text style={s.metaStrong}>{l.details.backers ?? 0} backers</Text>
+                {l.details.deadline ? <Text style={s.meta} numberOfLines={1}>Closes {l.details.deadline}</Text> : null}
+              </View>
             </View>
             </Pressable>
           </Link>
@@ -84,11 +91,19 @@ export default function Projects() {
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
-  card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },
-  cover: { width: "100%", height: 130, alignItems: "center", justifyContent: "center" },
-  coverInit: { color: C.cream, ...S(700), fontSize: 32 },
-  title: { ...S(700), fontSize: 20, color: C.ink },
-  organiser: { color: C.goldText, fontSize: 12, marginTop: 2 },
-  desc: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
-  meta: { color: C.inkFaint, fontSize: 12, marginTop: 8 },
+  card: { minHeight: 180, flexDirection: "row", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 16, overflow: "hidden" },
+  cardPressed: { opacity: 0.72, transform: [{ scale: 0.995 }] },
+  cover: { width: 100, alignSelf: "stretch", alignItems: "center", justifyContent: "center" },
+  coverInit: { color: C.cream, ...S(700), fontSize: 25 },
+  cardBody: { flex: 1, minWidth: 0, paddingHorizontal: 13, paddingVertical: 12 },
+  kickerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  cardKicker: { color: C.greenText, fontSize: 8.5, letterSpacing: 1.2, ...S(700) },
+  cardArrow: { width: 27, height: 27, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand },
+  title: { ...S(700), fontSize: 16, lineHeight: 20, color: C.ink, marginTop: 4 },
+  organiser: { color: C.goldText, fontSize: 10.5, marginTop: 2, ...S(600) },
+  desc: { color: C.inkMuted, fontSize: 11.5, lineHeight: 16, marginTop: 4 },
+  progressWrap: { marginTop: 9 },
+  metaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 7 },
+  metaStrong: { color: C.greenText, fontSize: 10.5, ...S(700) },
+  meta: { flexShrink: 1, color: C.inkFaint, fontSize: 10, textAlign: "right" },
 });

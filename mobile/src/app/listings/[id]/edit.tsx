@@ -27,12 +27,14 @@ import { makeFormStyles } from "@/components/form-styles";
 
 const TYPE_LABELS: Record<string, string> = {
   business: "Business", artist: "Artist", person: "Person", memory: "Memory",
+  property: "Property",
   event: "Event", opportunity: "Opportunity", memorial: "Memorial",
 };
 
 const COVER_COPY: Record<string, { label: string; hint: string }> = {
   artist: { label: "Photo", hint: "A promo shot, performance photo, or portrait of the act." },
   business: { label: "Photo or logo", hint: "Your storefront, a product, or the business logo." },
+  property: { label: "Property photo", hint: "A clear, current view of the room, home or guesthouse." },
   event: { label: "Poster or photo", hint: "The event flyer, or a photo that represents it." },
   memory: { label: "Old photo", hint: "A photograph from the time, if you have one to share." },
   opportunity: { label: "Flyer or poster", hint: "The opportunity's flyer or poster, if there is one." },
@@ -44,6 +46,7 @@ const COVER_COPY: Record<string, { label: string; hint: string }> = {
 const TEXT_FIELD: Record<string, { name: string; label: string }> = {
   artist: { name: "bio", label: "Bio" },
   business: { name: "description", label: "Short description" },
+  property: { name: "description", label: "Property description" },
   event: { name: "description", label: "Description" },
   memory: { name: "text", label: "Your memory" },
   opportunity: { name: "eligibility", label: "Eligibility" },
@@ -55,19 +58,21 @@ const TEXT_FIELD: Record<string, { name: string; label: string }> = {
 const SIMPLE_KEYS: Record<string, string[]> = {
   artist: ["genres", "link"],
   business: ["category", "address"],
+  property: ["area", "address", "pricePesewas", "depositPesewas", "bedrooms", "bathrooms", "availableFrom", "amenities", "bookingUrl"],
   event: ["venue"],
   memory: ["era"],
   opportunity: ["description", "provider", "safeguardingPolicyUrl", "minAge", "maxAge", "applyUrl"],
   person: ["era"],
   memorial: ["honorific", "bornYear", "birthday", "epitaph", "associations"],
 };
-const LIST_KEYS = new Set(["genres", "associations"]);
+const LIST_KEYS = new Set(["genres", "associations", "amenities"]);
 
 // Detail keys the form manages per type (mirrors web MANAGED_KEYS) — anything
 // whitelisted but NOT here is passed through untouched from the stored listing.
 const MANAGED_KEYS: Record<string, string[]> = {
   artist: ["genres", "link", "bio", "actName"],
   business: ["category", "address", "description"],
+  property: ["offerType", "propertyType", "area", "description", "address", "pricePesewas", "pricePeriod", "depositPesewas", "bedrooms", "bathrooms", "furnished", "availability", "availableFrom", "amenities", "bookingUrl"],
   event: ["startsAt", "venue", "description"],
   memory: ["era", "text"],
   opportunity: ["kind", "description", "applyUrl", "eligibility", "provider", "safeguardingPolicyUrl", "minAge", "maxAge", "guardianConsentRequired"],
@@ -79,6 +84,7 @@ const MANAGED_KEYS: Record<string, string[]> = {
 const WHITELIST: Record<string, string[]> = {
   artist: ["actName", "genres", "bio", "link", "streamingLinks", "socials", "booking"],
   business: ["category", "description", "address", "openingHours", "services", "contact"],
+  property: ["offerType", "propertyType", "area", "description", "address", "pricePesewas", "pricePeriod", "depositPesewas", "bedrooms", "bathrooms", "furnished", "availability", "availableFrom", "amenities", "contact", "bookingUrl", "gallery"],
   event: ["description", "startsAt", "venue", "organiser"],
   memory: ["text", "era"],
   opportunity: ["kind", "description", "eligibility", "deadline", "applyUrl", "provider", "safeguardingPolicyUrl", "minAge", "maxAge", "guardianConsentRequired"],
@@ -90,7 +96,15 @@ const FIELD_META: Record<string, { label: string; hint?: string; url?: boolean; 
   genres: { label: "Genre(s)", hint: "Comma-separated, e.g. Highlife, Gospel" },
   link: { label: "Streaming link", hint: "We link out, we don't host audio.", url: true },
   category: { label: "Category / sector" },
+  area: { label: "Area / neighbourhood", hint: "e.g. Pedu, Abura, Amamoma" },
   address: { label: "Location / address" },
+  pricePesewas: { label: "Price (GH₵)", numeric: true },
+  depositPesewas: { label: "Deposit / advance (GH₵, optional)", numeric: true },
+  bedrooms: { label: "Bedrooms (optional)", numeric: true },
+  bathrooms: { label: "Bathrooms (optional)", numeric: true },
+  availableFrom: { label: "Available from", hint: "YYYY-MM-DD" },
+  amenities: { label: "Amenities", hint: "Comma-separated — water, Wi-Fi, parking…" },
+  bookingUrl: { label: "Booking link (optional)", url: true },
   venue: { label: "Venue / location" },
   era: { label: "Era", hint: "e.g. 1980s / Colonial era" },
   description: { label: "Description", area: true },
@@ -115,6 +129,13 @@ const OPPORTUNITY_KINDS = [
   { id: "investment", label: "Investment" },
   { id: "mentorship", label: "Mentorship" },
 ] as const;
+
+const PROPERTY_OFFERS = [
+  { id: "long-term", label: "Rent monthly" },
+  { id: "short-stay", label: "Book a stay" },
+] as const;
+const PROPERTY_TYPES = ["room", "apartment", "house", "guesthouse", "hostel"] as const;
+const PROPERTY_AVAILABILITY = ["available", "reserved", "let"] as const;
 
 function str(v: unknown): string {
   if (typeof v === "string") return v;
@@ -196,7 +217,10 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
   const [text, setText] = useState(textField ? str(details[textField.name]) : "");
   const [fields, setFields] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
-    for (const k of simpleKeys) init[k] = LIST_KEYS.has(k) ? strList(details[k]) : str(details[k]);
+    for (const k of simpleKeys) {
+      if ((k === "pricePesewas" || k === "depositPesewas") && typeof details[k] === "number") init[k] = String((details[k] as number) / 100);
+      else init[k] = LIST_KEYS.has(k) ? strList(details[k]) : str(details[k]);
+    }
     return init;
   });
   const [startsAt, setStartsAt] = useState(str(details.startsAt));
@@ -205,6 +229,10 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
   const [guardianConsent, setGuardianConsent] = useState(details.guardianConsentRequired !== false);
   const [reminders, setReminders] = useState(details.remindersEnabled !== false);
   const [observeBday, setObserveBday] = useState(details.observeBirthday === true);
+  const [propertyOffer, setPropertyOffer] = useState(str(details.offerType) || "long-term");
+  const [propertyType, setPropertyType] = useState(str(details.propertyType) || "apartment");
+  const [propertyAvailability, setPropertyAvailability] = useState(str(details.availability) || "available");
+  const [propertyFurnished, setPropertyFurnished] = useState(details.furnished === true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [saved, setSaved] = useState<"live" | "queued" | null>(null);
@@ -221,7 +249,14 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
     for (const k of simpleKeys) {
       const v = (fields[k] ?? "").trim();
       if (!v) continue;
-      d[k] = LIST_KEYS.has(k) ? v.split(",").map((x) => x.trim()).filter(Boolean) : v;
+      if (LIST_KEYS.has(k)) d[k] = v.split(",").map((x) => x.trim()).filter(Boolean);
+      else if (type === "property" && (k === "pricePesewas" || k === "depositPesewas")) {
+        const amount = Number(v.replace(/,/g, ""));
+        if (Number.isFinite(amount) && amount > 0) d[k] = Math.round(amount * 100);
+      } else if (type === "property" && (k === "bedrooms" || k === "bathrooms")) {
+        const count = Number.parseInt(v, 10);
+        if (Number.isFinite(count) && count >= 0) d[k] = count;
+      } else d[k] = v;
     }
     if (type === "event" && startsAt.trim()) d.startsAt = startsAt.trim();
     if (type === "memorial" && diedDate.trim()) d.diedDate = diedDate.trim();
@@ -238,6 +273,13 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
     if (type === "opportunity") {
       d.kind = opportunityKind;
       d.guardianConsentRequired = guardianConsent;
+    }
+    if (type === "property") {
+      d.offerType = propertyOffer;
+      d.propertyType = propertyType;
+      d.pricePeriod = propertyOffer === "short-stay" ? "night" : "month";
+      d.availability = propertyAvailability;
+      d.furnished = propertyFurnished;
     }
     // Passthrough: whitelisted keys the form doesn't manage survive untouched.
     const managed = new Set(MANAGED_KEYS[type] ?? []);
@@ -310,7 +352,9 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
       )}
       {listing.status === "approved" && (
         <View style={[s.banner, s.bannerLive]}>
-          <Text style={s.bannerLiveText}>This listing is live. Your changes publish immediately; curators can spot-check them in the audit trail.</Text>
+          <Text style={s.bannerLiveText}>{type === "property"
+            ? "This property is live. Availability and booking-link updates stay live; price, description or location changes return to curator review."
+            : "This listing is live. Minor changes publish immediately; significant content changes return to curator review."}</Text>
         </View>
       )}
 
@@ -332,6 +376,39 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
                 </Pressable>
               ))}
             </View>
+          </>
+        )}
+
+        {type === "property" && (
+          <>
+            <Text style={s.label}>HOW IS IT OFFERED?</Text>
+            <View style={s.chips}>
+              {PROPERTY_OFFERS.map((item) => (
+                <Pressable accessibilityRole="button" key={item.id} onPress={() => setPropertyOffer(item.id)} style={[s.chip, propertyOffer === item.id && s.chipOn]}>
+                  <Text style={[s.chipText, propertyOffer === item.id && s.chipTextOn]}>{item.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={s.label}>PROPERTY TYPE</Text>
+            <View style={s.chips}>
+              {PROPERTY_TYPES.map((item) => (
+                <Pressable accessibilityRole="button" key={item} onPress={() => setPropertyType(item)} style={[s.chip, propertyType === item && s.chipOn]}>
+                  <Text style={[s.chipText, propertyType === item && s.chipTextOn]}>{item[0].toUpperCase() + item.slice(1)}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={s.label}>AVAILABILITY</Text>
+            <View style={s.chips}>
+              {PROPERTY_AVAILABILITY.map((item) => (
+                <Pressable accessibilityRole="button" key={item} onPress={() => setPropertyAvailability(item)} style={[s.chip, propertyAvailability === item && s.chipOn]}>
+                  <Text style={[s.chipText, propertyAvailability === item && s.chipTextOn]}>{item[0].toUpperCase() + item.slice(1)}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable accessibilityRole="switch" accessibilityState={{ checked: propertyFurnished }} onPress={() => setPropertyFurnished((value) => !value)} style={s.checkRow}>
+              <View style={[s.checkBox, propertyFurnished && s.checkBoxOn]}>{propertyFurnished && <Text style={s.checkTick}>✓</Text>}</View>
+              <View style={{ flex: 1 }}><Text style={s.checkTitle}>Furnished</Text><Text style={s.checkHint}>The listing includes the essential furniture shown.</Text></View>
+            </Pressable>
           </>
         )}
 

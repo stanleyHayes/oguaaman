@@ -32,6 +32,7 @@ type Mode = "signin" | "join";
 
 const CREATOR_KINDS = [
   { id: "business", label: "Business owner" },
+  { id: "property", label: "Realtor / property manager" },
   { id: "artist", label: "Artist" },
   { id: "organiser", label: "Event organiser" },
   { id: "writer", label: "Writer" },
@@ -54,8 +55,8 @@ const STARTER_FALLBACK: Plan = {
 type PlanCatalogStatus = "loading" | "ready" | "fallback" | "unavailable";
 
 function creatorPlansFor(plans: Plan[], creatorTypes: string[]): Plan[] {
-  const hasBusiness = creatorTypes.includes("business");
-  const hasNonBusinessCreator = creatorTypes.some((type) => type !== "business");
+  const hasBusiness = creatorTypes.some((type) => type === "business" || type === "property");
+  const hasNonBusinessCreator = creatorTypes.some((type) => type !== "business" && type !== "property");
   return plans
     .filter((plan) => {
       if (!plan.active) return false;
@@ -75,7 +76,7 @@ function starterPlanFor(plans: Plan[]): Plan {
 function planPrice(plan: Plan, creatorTypes: string[]): number {
   const audiencePrice = plan.audience === "creator"
     ? plan.prices.creator
-    : creatorTypes.includes("business")
+    : creatorTypes.some((type) => type === "business" || type === "property")
       ? plan.prices.business
       : plan.prices.creator;
   return audiencePrice ?? plan.prices.default ?? 0;

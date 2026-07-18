@@ -11,12 +11,12 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, PhotoHero, Pill } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 import { StaggerIn } from "@/components/anim";
-import { AlertTriangleIcon, ArrowUpRightIcon, BusIcon, CalendarIcon, ChevronRightIcon, GradCapIcon, HeartIcon, LandmarkIcon, MapIcon, SearchIcon, ShoppingBagIcon, WalkingIcon, type IconProps } from "@/components/icons";
+import { TownMap } from "@/components/map-view";
+import { AlertTriangleIcon, ArrowUpRightIcon, BuildingIcon, BusIcon, CalendarIcon, ChevronRightIcon, GradCapIcon, HeartIcon, LandmarkIcon, MapIcon, SearchIcon, ShoppingBagIcon, WalkingIcon, type IconProps } from "@/components/icons";
 
-// Explore is the mobile stand-in for the web map: the same /api/map feed, but
-// presented as filterable, grouped lists so it works without a native map
-// module. Every pin, trail stop and directive centre carries a WALKING
-// "Directions" button that hands off to the phone's maps app via Linking.
+// Explore uses the same /api/map feed as the portal. A lightweight Leaflet view
+// now restores the category pins on mobile; the grouped cards remain directly
+// below as an accessible, low-bandwidth fallback with walking directions.
 
 /**
  * Open turn-by-turn WALKING directions in the device's maps app. On iOS we
@@ -50,6 +50,7 @@ function mobileRoute(href?: string): string | null {
 
 const LAYER_META: { layer: MapLayer; label: string; icon: FC<IconProps> }[] = [
   { layer: "business", label: "Businesses", icon: ShoppingBagIcon },
+  { layer: "property", label: "Rent & Stay", icon: BuildingIcon },
   { layer: "events", label: "Events", icon: CalendarIcon },
   { layer: "institutions", label: "Schools & Institutions", icon: GradCapIcon },
   { layer: "landmarks", label: "Heritage & Landmarks", icon: LandmarkIcon },
@@ -65,6 +66,7 @@ const LAYER_ICON: Record<MapLayer, FC<IconProps>> = Object.fromEntries(
 function accentFor(layer: MapLayer, C: Palette): string {
   switch (layer) {
     case "business": return C.goldBrand;
+    case "property": return C.tealText;
     case "events": return C.teal;
     case "institutions": return C.green;
     case "landmarks": return C.goldText;
@@ -73,6 +75,10 @@ function accentFor(layer: MapLayer, C: Palette): string {
     case "services": return C.tealText;
     case "transport": return C.greenSlate;
   }
+}
+
+function layerLabel(layer: MapLayer): string {
+  return LAYER_META.find((item) => item.layer === layer)?.label ?? layer;
 }
 
 // Category strings arrive in mixed shapes ("Market & Fishing", "found_item",
@@ -124,11 +130,12 @@ function PointCard({ p }: Readonly<{ p: MapPoint }>) {
   const Icon = LAYER_ICON[p.layer];
   const head = (
     <View style={s.pointHead}>
-      <View style={[s.pointGlyph, { borderColor: withAlpha(accent, 0.4) }]}>
-        <Icon size={20} color={accent} strokeWidth={2} />
+      <View style={[s.pointGlyph, { borderColor: withAlpha(accent, 0.42), backgroundColor: withAlpha(accent, 0.08) }]}>
+        <Icon size={18} color={accent} strokeWidth={2} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={s.pointTitle}>{p.title}</Text>
+        <Text style={[s.pointKicker, { color: accent }]}>{layerLabel(p.layer).toUpperCase()}</Text>
+        <Text style={s.pointTitle} numberOfLines={2}>{p.title}</Text>
         {p.subtitle ? <Text style={s.pointSub} numberOfLines={2}>{p.subtitle}</Text> : null}
         {(p.category || p.quarter || p.severity) ? (
           <View style={s.chipRow}>
@@ -138,18 +145,22 @@ function PointCard({ p }: Readonly<{ p: MapPoint }>) {
           </View>
         ) : null}
       </View>
-      {route ? <ChevronRightIcon size={20} color={C.inkFaint} strokeWidth={2} /> : null}
+      {route ? <View style={s.cardChevron}><ChevronRightIcon size={15} color={C.greenText} strokeWidth={2.3} /></View> : null}
     </View>
   );
 
   return (
     <View style={s.card}>
+      <View style={[s.cardAccent, { backgroundColor: accent }]} />
       {route ? (
-        <Pressable accessibilityRole="button" onPress={() => push(route)} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Open ${p.title}`} onPress={() => push(route)} style={({ pressed }) => pressed && s.cardPressed}>
           {head}
         </Pressable>
       ) : head}
-      <DirectionsButton lat={p.lat} lng={p.lng} to={p.title} />
+      <View style={s.pointActions}>
+        <Text style={s.coordinates}>{p.lat.toFixed(4)} · {p.lng.toFixed(4)}</Text>
+        <DirectionsButton lat={p.lat} lng={p.lng} to={p.title} small />
+      </View>
     </View>
   );
 }
@@ -160,16 +171,21 @@ function AreaCard({ a }: Readonly<{ a: MapArea }>) {
   const sev = severityColors(C)[a.severity];
   return (
     <View style={[s.card, { borderColor: withAlpha(sev, 0.5) }]}>
-      <View style={[s.chipRow, { marginTop: 0 }]}>
+      <View style={[s.cardAccent, { backgroundColor: sev }]} />
+      <Text style={[s.pointKicker, { color: sev }]}>ACTIVE DIRECTIVE</Text>
+      <View style={[s.chipRow, { marginTop: 5 }]}>
         <Pill label={a.severity} color={sev} border={sev} />
         <Pill label="Directive" />
       </View>
-      <Text style={[s.pointTitle, { marginTop: 8 }]}>{a.title}</Text>
+      <Text style={[s.pointTitle, { marginTop: 7 }]}>{a.title}</Text>
       <Text style={s.pointSub}>
         Affected radius ≈ {formatRadius(a.radiusM)}
         {a.until ? ` · in effect until ${fmtDateTime(a.until)}` : ""}
       </Text>
-      <DirectionsButton lat={a.lat} lng={a.lng} to={a.title} />
+      <View style={s.pointActions}>
+        <Text style={s.coordinates}>Safety notice</Text>
+        <DirectionsButton lat={a.lat} lng={a.lng} to={a.title} small />
+      </View>
     </View>
   );
 }
@@ -180,13 +196,15 @@ function TrailCard({ t }: Readonly<{ t: MapTrail }>) {
   const accent = t.color ?? C.goldBrand;
   return (
     <View style={s.card}>
-      <View style={[s.chipRow, { marginTop: 0 }]}>
+      <View style={[s.cardAccent, { backgroundColor: accent }]} />
+      <Text style={[s.pointKicker, { color: accent }]}>EXPLORE ON FOOT</Text>
+      <View style={[s.chipRow, { marginTop: 5 }]}>
         <Pill label={t.kind === "festival" ? "Festival route" : "Heritage walk"} color={accent} border={accent} />
         <Pill label={`${t.stops.length} stops`} />
       </View>
       <Text style={[s.pointTitle, { marginTop: 8 }]}>{t.title}</Text>
       {t.description ? <Text style={s.pointSub}>{t.description}</Text> : null}
-      <View style={{ marginTop: 14, gap: 14 }}>
+      <View style={s.stopsList}>
         {t.stops.map((stop) => (
           <View key={`${t.id}-${stop.n}`} style={s.stopRow}>
             <View style={[s.stopNum, { backgroundColor: accent }]}>
@@ -208,6 +226,7 @@ export default function Explore() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const [layer, setLayer] = useState<MapLayer | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data, error, loading, refreshing, reload } = useApi<MapData>(() => api.mapData(), "map");
 
   if (loading) return <Loading />;
@@ -215,6 +234,8 @@ export default function Explore() {
 
   const presentLayers = LAYER_META.filter((m) => data.points.some((p) => p.layer === m.layer));
   const shownLayers = layer ? presentLayers.filter((m) => m.layer === layer) : presentLayers;
+  const visiblePoints = layer ? data.points.filter((point) => point.layer === layer) : data.points;
+  const selectedPoint = visiblePoints.find((point) => point.id === selectedId) ?? null;
   // Directives + trails are their own cross-cutting sections — surface them in
   // the "All" view; a specific-layer filter narrows to just that layer's pins.
   const showExtras = layer === null;
@@ -229,14 +250,14 @@ export default function Explore() {
       <PhotoHero
         kicker="The map · Cape Coast"
         title="Explore Oguaa"
-        lede="Everything on the coast that sits on the map — businesses, events, schools, heritage, safety notices, and the walking trails between them. Tap Directions on any pin to set off on foot."
+        lede="Businesses, schools, heritage, safety notices and walking trails — now with the town’s category pins back on the map."
         count={`${data.points.length} places · ${data.trails.length} trails · ${data.areas.length} active ${data.areas.length === 1 ? "directive" : "directives"}`}
       />
 
       <View style={{ padding: 16, gap: 18 }}>
         {presentLayers.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filters}>
-            <Pressable accessibilityRole="button" onPress={() => setLayer(null)} style={[s.filter, layer === null && s.filterOn]}>
+            <Pressable accessibilityRole="button" accessibilityState={{ selected: layer === null }} onPress={() => setLayer(null)} style={[s.filter, layer === null && s.filterOn]}>
               <Text style={[s.filterText, layer === null && s.filterTextOn]}>All</Text>
             </Pressable>
             {presentLayers.map((m) => {
@@ -244,6 +265,7 @@ export default function Explore() {
               return (
                 <Pressable accessibilityRole="button"
                   key={m.layer}
+                  accessibilityState={{ selected: layer === m.layer }}
                   onPress={() => setLayer(layer === m.layer ? null : m.layer)}
                   style={[s.filter, layer === m.layer && s.filterOn]}
                 >
@@ -255,6 +277,33 @@ export default function Explore() {
               );
             })}
           </ScrollView>
+        ) : null}
+
+        {visiblePoints.length > 0 ? (
+          <View style={s.mapShell}>
+            <View style={s.mapHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.mapKicker}>{layer ? "FILTERED MAP" : "THE TOWN AT A GLANCE"}</Text>
+                <Text style={s.mapTitle}>{visiblePoints.length} {visiblePoints.length === 1 ? "place" : "places"} on this view</Text>
+              </View>
+              <View style={s.liveBadge}>
+                <View style={s.liveDot} />
+                <Text style={s.liveText}>LIVE</Text>
+              </View>
+            </View>
+            <TownMap points={visiblePoints} onPointPress={setSelectedId} style={s.map} />
+            <Text style={s.mapHint}>Tap a pin for its name. The full details and walking directions remain in the cards below.</Text>
+            {selectedPoint ? (
+              <View style={s.mapSelection}>
+                <View style={[s.selectionMark, { backgroundColor: accentFor(selectedPoint.layer, C) }]} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={s.selectionKind}>{layerLabel(selectedPoint.layer).toUpperCase()}</Text>
+                  <Text style={s.selectionTitle} numberOfLines={1}>{selectedPoint.title}</Text>
+                </View>
+                <DirectionsButton lat={selectedPoint.lat} lng={selectedPoint.lng} to={selectedPoint.title} small />
+              </View>
+            ) : null}
+          </View>
         ) : null}
 
         {showExtras && data.areas.length > 0 ? (
@@ -306,21 +355,41 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   filterOn: { borderColor: C.green, backgroundColor: C.green },
   filterText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   filterTextOn: { color: ON_GREEN },
-  section: { color: C.inkFaint, fontSize: 11, letterSpacing: 1.5, ...D(700) },
-  card: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, padding: 14 },
-  pointHead: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-  pointGlyph: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.paper },
+  section: { color: C.inkFaint, fontSize: 10, letterSpacing: 1.5, ...S(700) },
+  mapShell: { overflow: "hidden", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18 },
+  mapHeader: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 13 },
+  mapKicker: { color: C.goldText, fontSize: 9, letterSpacing: 1.5, ...S(700) },
+  mapTitle: { color: C.ink, fontSize: 17, marginTop: 2, ...D(600) },
+  liveBadge: { flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.teal },
+  liveText: { color: C.inkMuted, fontSize: 9, letterSpacing: 1, ...S(700) },
+  map: { height: 300, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.sand },
+  mapHint: { color: C.inkFaint, fontSize: 11.5, lineHeight: 16, paddingHorizontal: 16, paddingVertical: 11 },
+  mapSelection: { flexDirection: "row", alignItems: "center", gap: 10, borderTopWidth: 1, borderTopColor: C.sand, paddingHorizontal: 16, paddingBottom: 12, paddingTop: 10 },
+  selectionMark: { width: 4, height: 32, borderRadius: 2 },
+  selectionKind: { color: C.inkFaint, fontSize: 9, letterSpacing: 1.2, ...S(700) },
+  selectionTitle: { color: C.ink, fontSize: 14, marginTop: 1, ...S(700) },
+  card: { position: "relative", overflow: "hidden", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 15, paddingVertical: 12, paddingLeft: 16, paddingRight: 12 },
+  cardAccent: { position: "absolute", top: 0, bottom: 0, left: 0, width: 3 },
+  cardPressed: { opacity: 0.7 },
+  pointHead: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  pointGlyph: { width: 36, height: 36, borderRadius: 11, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   pointGlyphText: { fontSize: 19 },
-  pointTitle: { ...S(700), fontSize: 16, color: C.ink },
-  pointSub: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 3 },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center", marginTop: 8 },
+  pointKicker: { ...S(700), fontSize: 8.5, letterSpacing: 1.2 },
+  pointTitle: { ...S(700), fontSize: 15.5, lineHeight: 19, color: C.ink, marginTop: 2 },
+  pointSub: { color: C.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 2 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 5, alignItems: "center", marginTop: 6 },
+  cardChevron: { width: 27, height: 27, borderRadius: 14, backgroundColor: withAlpha(C.green, 0.09), alignItems: "center", justifyContent: "center" },
+  pointActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 9, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.sand },
+  coordinates: { ...S(600), color: C.inkFaint, fontSize: 9.5, letterSpacing: 0.3 },
   chevron: { color: C.inkFaint, fontSize: 22, ...S(700), marginLeft: 4 },
-  dirBtn: { alignSelf: "flex-start", marginTop: 12, backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  dirBtn: { alignSelf: "flex-start", marginTop: 10, backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
   dirBtnText: { color: ON_GREEN, ...S(700), fontSize: 13 },
-  dirBtnSmall: { marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: C.paper, borderWidth: 1, borderColor: C.green },
-  dirBtnTextSmall: { color: C.greenText, fontSize: 12 },
-  stopRow: { flexDirection: "row", gap: 12 },
-  stopNum: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center", marginTop: 2 },
+  dirBtnSmall: { minHeight: 44, marginTop: 0, paddingHorizontal: 11, paddingVertical: 6, justifyContent: "center", backgroundColor: C.paper, borderWidth: 1, borderColor: C.green },
+  dirBtnTextSmall: { color: C.greenText, fontSize: 11 },
+  stopsList: { marginTop: 12, gap: 0, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.sand },
+  stopRow: { flexDirection: "row", gap: 10, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.sand },
+  stopNum: { width: 25, height: 25, borderRadius: 13, alignItems: "center", justifyContent: "center", marginTop: 1 },
   stopNumText: { color: ON_GREEN, ...S(700), fontSize: 13 },
   stopTitle: { ...S(700), fontSize: 15, color: C.ink },
   stopStory: { color: C.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 3 },
