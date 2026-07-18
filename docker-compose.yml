@@ -43,7 +43,10 @@ services:
     environment:
       PORT: "8080"
       GRPC_PORT: "50051"
-      MONGODB_URI: mongodb://mongo:27017
+      # Defaults to the compose mongo; set MONGODB_URI (e.g. in a root .env) to
+      # point the API at Atlas instead. Seed stays on the compose mongo — reseed
+      # Atlas deliberately via `cd backend && go run ./cmd/seed`.
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
       MONGODB_DB: oguaa
       ALLOWED_ORIGIN: "*"
       JWT_SECRET: ${JWT_SECRET:-oguaa-dev-secret-change-me}

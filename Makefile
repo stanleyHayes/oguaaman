@@ -1,6 +1,6 @@
 # Oguaa — common commands. `make up` (Docker) or `make dev` (local).
 
-.PHONY: help up down logs dev seed test build lint proto tidy ci
+.PHONY: help up down logs dev seed seed-empty test build lint proto tidy ci
 
 help:
 	@echo "Oguaa:"
@@ -9,6 +9,7 @@ help:
 	@echo "  make logs   - Docker: tail logs"
 	@echo "  make dev    - Local: start backend + web + admin (needs local mongod, go, pnpm)"
 	@echo "  make seed   - Reseed MongoDB with the Cape Coast data"
+	@echo "  make seed-empty - Safely fill only completely empty demo activity collections"
 	@echo "  make proto  - Regenerate gRPC code from proto/ (needs buf)"
 	@echo "  make lint   - Lint Go (vet), proto (buf), and the web/admin apps (eslint)"
 	@echo "  make test   - Run Go tests"
@@ -31,6 +32,9 @@ dev:
 
 seed:
 	cd backend && go run ./cmd/seed
+
+seed-empty:
+	cd backend && go run ./cmd/seedmissing -apply
 
 proto:
 	cd backend && buf lint && buf generate
