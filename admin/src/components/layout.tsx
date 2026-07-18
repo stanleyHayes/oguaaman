@@ -6,7 +6,7 @@ import {
   Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
   Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
-  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, Target, type LucideIcon,
+  LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, Target, HeartHandshake, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -34,6 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: "/directives", label: "Directives", icon: Megaphone, roles: ["curator", "steward"] },
       { to: "/goals", label: "Town goals", icon: Target, roles: ["curator", "steward", "accountability"] },
+      { to: "/civic", label: "Civic pledges", icon: HeartHandshake, roles: ["curator", "steward"] },
     ],
   },
   {

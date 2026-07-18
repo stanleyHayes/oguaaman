@@ -146,6 +146,32 @@ export interface Goal {
   updatedAt?: string;
 }
 
+/** Civic behaviours — the "pledges" curators publish on the /better "Building a
+ *  Better Cape Coast" page. Each is a DO or a STOP scoped to a concentric ring
+ *  (Self → Nation). The slug is minted from the title on create and is IMMUTABLE
+ *  thereafter (residents' pledges are keyed by it), so edits never change it. */
+export type CivicRing = "self" | "home" | "school" | "work" | "town" | "nation";
+export type CivicBehaviourType = "do" | "stop";
+
+export interface CivicBehaviour {
+  slug: string;
+  ring: CivicRing;
+  type: CivicBehaviourType;
+  title: string;
+  description: string;
+  why: string;
+}
+
+/** Create/edit body. On create the backend derives (and locks) the slug from the
+ *  title; edits POST the same fields to /{slug} and the slug stays put. */
+export interface CivicBehaviourInput {
+  ring: CivicRing;
+  type: CivicBehaviourType;
+  title: string;
+  description: string;
+  why: string;
+}
+
 export interface Member {
   id: string;
   slug: string;

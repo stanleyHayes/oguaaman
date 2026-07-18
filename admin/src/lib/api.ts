@@ -1,4 +1,4 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, Paged } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged } from "./types";
 
 /** Optional server-side pagination for the heavy list endpoints. Passing this
  *  switches the response to the { items, total, page, pageSize, totalPages }
@@ -210,6 +210,15 @@ export const api = {
   // Accountability role only — a 403 surfaces when the caller lacks it.
   reviewGoal: (id: string, body: { status: GoalVerdict; note: string }) =>
     post<Goal>(`/api/admin/goals/${id}/review`, body),
+
+  // Civic pledges — the DO/STOP behaviours curators publish on the /better page.
+  // Curators author (create/edit/delete); the public /better page reads them.
+  // POST (not PATCH) for updates — the deployed CORS policy allows GET/POST/DELETE
+  // only — and the slug is immutable (minted from the title on create).
+  civicBehaviours: () => get<CivicBehaviour[]>("/api/admin/civic/behaviours"),
+  createCivicBehaviour: (body: CivicBehaviourInput) => post<CivicBehaviour>("/api/admin/civic/behaviours", body),
+  updateCivicBehaviour: (slug: string, body: CivicBehaviourInput) => post<CivicBehaviour>(`/api/admin/civic/behaviours/${slug}`, body),
+  deleteCivicBehaviour: (slug: string) => del<{ status: string }>(`/api/admin/civic/behaviours/${slug}`),
 
   // Community safety triage (auto-published; curators transition the lifecycle).
   incidents: () => get<Incident[]>("/api/incidents"),
