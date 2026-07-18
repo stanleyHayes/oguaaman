@@ -39,29 +39,33 @@ func main() {
 	}()
 
 	memberRepo := mongox.NewMemberRepo(db)
+	planRepo := mongox.NewPlanRepo(db)
 	wa := wax.New(cfg.WhatsAppToken, cfg.WhatsAppPhoneID, log)
 	email := emailx.New(cfg.ResendAPIKey, cfg.EmailFrom, log)
 	svc := service.New(service.Deps{
-		Listings:   mongox.NewListingRepo(db),
-		Members:    memberRepo,
-		Orgs:       mongox.NewOrgRepo(db),
-		Places:     mongox.NewPlaceRepo(db),
-		Mod:        mongox.NewModerationRepo(db),
-		Notifs:     mongox.NewNotificationRepo(db),
-		Follows:    mongox.NewFollowRepo(db),
-		Claims:     mongox.NewOrgClaimRepo(db),
-		News:       mongox.NewNewsRepo(db),
-		Reports:    mongox.NewReportRepo(db),
-		Timeline:   mongox.NewTimelineRepo(db),
-		Plans:      mongox.NewPlanRepo(db),
-		Directives: mongox.NewDirectiveRepo(db),
-		Email:      email,
-		WhatsApp:   wa,
-		Log:        log,
+		Listings:        mongox.NewListingRepo(db),
+		Members:         memberRepo,
+		Orgs:            mongox.NewOrgRepo(db),
+		Places:          mongox.NewPlaceRepo(db),
+		Mod:             mongox.NewModerationRepo(db),
+		Notifs:          mongox.NewNotificationRepo(db),
+		Follows:         mongox.NewFollowRepo(db),
+		Claims:          mongox.NewOrgClaimRepo(db),
+		News:            mongox.NewNewsRepo(db),
+		Reports:         mongox.NewReportRepo(db),
+		Timeline:        mongox.NewTimelineRepo(db),
+		Plans:           planRepo,
+		Directives:      mongox.NewDirectiveRepo(db),
+		CivicBehaviours: mongox.NewCivicBehaviourRepo(db),
+		CivicLessons:    mongox.NewCivicLessonRepo(db),
+		Goals:           mongox.NewGoalRepo(db),
+		Email:           email,
+		WhatsApp:        wa,
+		Log:             log,
 	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db)).
 		WithFallback(cfg.KimiAPIKey, cfg.KimiModel, cfg.KimiBaseURL)
-	auth := newAuthService(memberRepo, cfg, email, wa)
+	auth := newAuthService(memberRepo, planRepo, cfg, email, wa)
 	ensureUploadDir(log, cfg)
 	payments, tickets, subs, promotions, revenue, stripeSvc := moneyServices(db, cfg, log)
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
@@ -107,8 +111,8 @@ func connectMongo(ctx context.Context, log *slog.Logger, cfg config.Config) (*mo
 	return client, db
 }
 
-func newAuthService(members domain.MemberRepository, cfg config.Config, email service.EmailSender, wa wax.Sender) *service.AuthService {
-	auth := service.NewAuthService(members, cfg.JWTSecret)
+func newAuthService(members domain.MemberRepository, plans domain.PlanRepository, cfg config.Config, email service.EmailSender, wa wax.Sender) *service.AuthService {
+	auth := service.NewAuthService(members, cfg.JWTSecret).WithPlans(plans)
 	// OTPSender delivers phone-verification codes; the notifiers deliver
 	// password-reset codes over email/WhatsApp (mirrors notifyOutOfBand).
 	return auth.WithOTPSender(wa).WithNotifiers(email, wa)

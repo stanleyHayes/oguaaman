@@ -271,6 +271,7 @@ func (stubMembers) SetProfile(context.Context, string, string, string, string) e
 func (stubMembers) SetPasswordHash(context.Context, string, string) error            { return nil }
 func (stubMembers) SetDateOfBirth(context.Context, string, string) error             { return nil }
 func (stubMembers) SetCreatorTypes(context.Context, string, []string) error          { return nil }
+func (stubMembers) SetCreatorPlanIntent(context.Context, string, string) error       { return nil }
 func (stubMembers) SetMFA(context.Context, string, bool, string, []string) error     { return nil }
 func (stubMembers) Anonymize(context.Context, string) error                          { return nil }
 

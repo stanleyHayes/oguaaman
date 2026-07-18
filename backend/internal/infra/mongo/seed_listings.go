@@ -1,10 +1,6 @@
 package mongo
 
-import (
-	"time"
-
-	"github.com/oguaa/backend/internal/domain"
-)
+import "github.com/oguaa/backend/internal/domain"
 
 // ── seed listing constants ───────────────────────────────────────────────────
 // Each listing stamps CreatedAt/SubmittedAt/PublishedAt (and its status history)
@@ -197,7 +193,7 @@ func seedListings() []domain.Listing {
 			"address":  "Victoria Road, near Cape Coast Castle", "openingHours": "Reception 24/7",
 			"contact": []domain.SocialLink{sl("Phone", placeholderPhone), sl("WhatsApp", placeholderWhatsApp)},
 			// An active Supporter subscription (Phase 7) — badge + priority placement.
-			"subscribedUntil": time.Now().UTC().Add(21 * 24 * time.Hour).Format(time.RFC3339),
+			"subscribedUntil": seedActiveSubscriptionPeriodEnd(),
 		}},
 		{ID: "b-fish", Slug: "kotokuraba-fresh-fish", CoverImageURL: seedImg("fishermen.jpg"), Type: domain.TypeBusiness, OwnerID: "m-esi", Title: "Esi's Fresh Fish — Kotokuraba", Status: domain.StatusApproved, Tags: []string{"fishing", "market", "kotokuraba"}, TownID: "kotokuraba", CreatedAt: d20260312, SubmittedAt: d20260312, PublishedAt: d20260312, Details: map[string]any{
 			"category": "Market & Fishing", "description": "Same-day catch from the Bakaano canoes, sold at Kotokuraba market. Tilapia, redfish, and the morning's best.",

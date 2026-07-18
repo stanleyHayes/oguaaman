@@ -37,6 +37,11 @@ type Plan struct {
 // subscribe call names no plan (the Creator plan §5 default).
 const DefaultSupporterPlanSlug = "supporter"
 
+// DefaultCreatorPlanIntentSlug is the active free plan selected when a creator
+// joins without choosing one. This records onboarding intent only; it does not
+// create a Subscription or grant paid-plan benefits.
+const DefaultCreatorPlanIntentSlug = "starter"
+
 // PriceFor returns the plan's pesewas price for an audience key
 // ("business"/"creator"), falling back to the default price.
 func (p Plan) PriceFor(audience string) int64 {

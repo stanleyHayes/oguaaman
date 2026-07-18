@@ -23,42 +23,48 @@ type MessageSender interface {
 
 // Service is the application core. Delivery layers (HTTP/GraphQL/gRPC) depend only on this.
 type Service struct {
-	listings   domain.ListingRepository
-	members    domain.MemberRepository
-	orgs       domain.OrganizationRepository
-	places     domain.PlaceRepository
-	mod        domain.ModerationRepository
-	notifs     domain.NotificationRepository
-	follows    domain.FollowRepository
-	claims     domain.OrgClaimRepository
-	news       domain.NewsRepository
-	reports    domain.ReportRepository
-	timeline   domain.TimelineRepository
-	plans      domain.PlanRepository
-	directives domain.DirectiveRepository
-	email      EmailSender
-	wa         MessageSender
-	log        *slog.Logger
+	listings        domain.ListingRepository
+	members         domain.MemberRepository
+	orgs            domain.OrganizationRepository
+	places          domain.PlaceRepository
+	mod             domain.ModerationRepository
+	notifs          domain.NotificationRepository
+	follows         domain.FollowRepository
+	claims          domain.OrgClaimRepository
+	news            domain.NewsRepository
+	reports         domain.ReportRepository
+	timeline        domain.TimelineRepository
+	plans           domain.PlanRepository
+	directives      domain.DirectiveRepository
+	civicBehaviours domain.CivicBehaviourRepository
+	civicLessons    domain.CivicLessonRepository
+	goals           domain.GoalRepository
+	email           EmailSender
+	wa              MessageSender
+	log             *slog.Logger
 }
 
 // Deps are the repositories the Service core is built from.
 type Deps struct {
-	Listings   domain.ListingRepository
-	Members    domain.MemberRepository
-	Orgs       domain.OrganizationRepository
-	Places     domain.PlaceRepository
-	Mod        domain.ModerationRepository
-	Notifs     domain.NotificationRepository
-	Follows    domain.FollowRepository
-	Claims     domain.OrgClaimRepository
-	News       domain.NewsRepository
-	Reports    domain.ReportRepository
-	Timeline   domain.TimelineRepository
-	Plans      domain.PlanRepository
-	Directives domain.DirectiveRepository
-	Email      EmailSender
-	WhatsApp   MessageSender
-	Log        *slog.Logger
+	Listings        domain.ListingRepository
+	Members         domain.MemberRepository
+	Orgs            domain.OrganizationRepository
+	Places          domain.PlaceRepository
+	Mod             domain.ModerationRepository
+	Notifs          domain.NotificationRepository
+	Follows         domain.FollowRepository
+	Claims          domain.OrgClaimRepository
+	News            domain.NewsRepository
+	Reports         domain.ReportRepository
+	Timeline        domain.TimelineRepository
+	Plans           domain.PlanRepository
+	Directives      domain.DirectiveRepository
+	CivicBehaviours domain.CivicBehaviourRepository
+	CivicLessons    domain.CivicLessonRepository
+	Goals           domain.GoalRepository
+	Email           EmailSender
+	WhatsApp        MessageSender
+	Log             *slog.Logger
 }
 
 func New(d Deps) *Service {
@@ -70,7 +76,9 @@ func New(d Deps) *Service {
 		listings: d.Listings, members: d.Members, orgs: d.Orgs, places: d.Places,
 		mod: d.Mod, notifs: d.Notifs, follows: d.Follows, claims: d.Claims,
 		news: d.News, reports: d.Reports, timeline: d.Timeline, plans: d.Plans,
-		directives: d.Directives,
-		email:      d.Email, wa: d.WhatsApp, log: l,
+		directives:      d.Directives,
+		civicBehaviours: d.CivicBehaviours, civicLessons: d.CivicLessons,
+		goals: d.Goals,
+		email: d.Email, wa: d.WhatsApp, log: l,
 	}
 }

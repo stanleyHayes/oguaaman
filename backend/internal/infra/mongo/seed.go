@@ -90,7 +90,7 @@ const SeedPassword = "Oguaa-2026!"
 // Seed resets the collections and loads the fact-checked Cape Coast seed data.
 // It is idempotent: collections are dropped and reinserted. (See agent_plan.md §1.)
 func Seed(ctx context.Context, db *mongo.Database) error {
-	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline, collDirectives, collStripeIntents} {
+	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals} {
 		if err := db.Collection(name).Drop(ctx); err != nil {
 			return err
 		}
@@ -133,6 +133,18 @@ func Seed(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 	if err := insertAll(ctx, db.Collection(collDirectives), seedDirectives()); err != nil {
+		return err
+	}
+	if err := seedCivic(ctx, db); err != nil {
+		return err
+	}
+	if err := seedGoalsData(ctx, db); err != nil {
+		return err
+	}
+	// Activity collections are otherwise empty after a fresh reset. Populate
+	// representative records through the same empty-only path used by the safe
+	// seedmissing command; operational ai_usage and stripe_intents stay empty.
+	if _, err := SeedEmptyCollections(ctx, db); err != nil {
 		return err
 	}
 	return createIndexes(ctx, db)

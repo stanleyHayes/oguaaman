@@ -140,6 +140,18 @@ func (r *MemberRepo) SetCreatorTypes(ctx context.Context, id string, types []str
 	return err
 }
 
+// SetCreatorPlanIntent records a creator's onboarding plan choice. An empty
+// slug removes the preference; paid entitlement still comes only from a
+// confirmed subscription record.
+func (r *MemberRepo) SetCreatorPlanIntent(ctx context.Context, id, planSlug string) error {
+	update := bson.M{"$set": bson.M{"creatorPlanIntent": planSlug}}
+	if planSlug == "" {
+		update = bson.M{"$unset": bson.M{"creatorPlanIntent": ""}}
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, update)
+	return err
+}
+
 // SetMFA persists the member's TOTP state (spec §14): enabled flag, base32
 // secret (empty clears it), and bcrypt hashes of unused recovery codes.
 func (r *MemberRepo) SetMFA(ctx context.Context, id string, enabled bool, secret string, recoveryHashes []string) error {
@@ -172,7 +184,7 @@ func (r *MemberRepo) Anonymize(ctx context.Context, id string) error {
 			"passwordResetCodeHash": "", "passwordResetExpiresAt": "",
 			"mfaEnabled": false, "totpSecret": "", "mfaRecoveryHashes": []string{},
 		},
-		"$unset": bson.M{"email": "", "phone": ""},
+		"$unset": bson.M{"email": "", "phone": "", "creatorPlanIntent": ""},
 	})
 	return err
 }

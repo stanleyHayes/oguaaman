@@ -135,6 +135,17 @@ func (h *Handler) History(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, view)
 }
+
+// Civic — the civic hub: the town's code of behaviours (by ring) and the
+// lessons drawn from great civilizations. Public, no auth.
+func (h *Handler) Civic(w http.ResponseWriter, r *http.Request) {
+	view, err := h.svc.Civic(r.Context())
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, view)
+}
 func (h *Handler) Opportunities(w http.ResponseWriter, r *http.Request) {
 	h.list(w, r, func() ([]domain.Listing, error) { return h.svc.Opportunities(r.Context()) })
 }

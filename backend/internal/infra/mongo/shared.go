@@ -31,6 +31,10 @@ const (
 	collListingViews  = "listing_views"
 	collDirectives    = "directives"
 	collStripeIntents = "stripe_intents"
+
+	collCivicBehaviours = "civic_behaviours"
+	collCivicLessons    = "civic_lessons"
+	collGoals           = "goals"
 )
 
 // notFound maps the driver's no-documents sentinel to a domain NotFoundError.

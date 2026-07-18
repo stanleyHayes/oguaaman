@@ -34,18 +34,26 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 		DateOfBirth  string   `json:"dateOfBirth"`
 		Password     string   `json:"password"`
 		CreatorTypes []string `json:"creatorTypes"`
+		// CreatorPlanIntent is a catalog preference, not proof of a paid
+		// subscription. Creators default to the active free Starter plan.
+		CreatorPlanIntent string `json:"creatorPlanIntent"`
 	}
 	if err := decodeBody(r, &in); err != nil {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	token, member, err := h.auth.Register(r.Context(), in.Identifier, in.DisplayName, in.DateOfBirth, in.Password, in.CreatorTypes)
+	token, member, err := h.auth.Register(r.Context(), in.Identifier, in.DisplayName, in.DateOfBirth, in.Password, in.CreatorTypes, in.CreatorPlanIntent)
 	if errors.Is(err, service.ErrUnderage) {
 		fail(w, http.StatusForbidden, "You must be 18 or older to join Oguaa.")
 		return
 	}
 	if errors.Is(err, service.ErrIdentifierTaken) {
 		fail(w, http.StatusConflict, "An account already exists for that email or phone.")
+		return
+	}
+	var validation *domain.ValidationError
+	if errors.As(err, &validation) {
+		fail(w, http.StatusBadRequest, validation.Error())
 		return
 	}
 	if err != nil {

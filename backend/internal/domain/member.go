@@ -9,15 +9,19 @@ const (
 	RoleSteward   = "steward"
 	RoleEditor    = "editor"    // newsroom / editorial (spec §8.12)
 	RoleModerator = "moderator" // queue/listings/reports/incidents only (Creator Platform plan §9.3)
+	// RoleAccountabilityOfficer judges Town Goals achieved/missed. Kept separate
+	// from the curators who SET goals — a deliberate separation of duties so the
+	// people who make the promise are not the ones who mark it kept.
+	RoleAccountabilityOfficer = "accountability"
 )
 
 // DevDemoMemberIDs are the seeded demo identities used only when AUTH_REQUIRED is
 // false. They must never be reached in production. The constants keep the literal
 // IDs in one place for security scanning and auditing.
 const (
-	DevDemoMemberID       = "m-akua"
-	DevDemoModeratorID    = "m-nana"
-	DevDemoStewardMember  = "m-nana"
+	DevDemoMemberID      = "m-akua"
+	DevDemoModeratorID   = "m-nana"
+	DevDemoStewardMember = "m-nana"
 )
 
 // Creator types — the self-serve creator account kinds (Creator Platform plan §3).
@@ -65,6 +69,10 @@ type Member struct {
 	// CreatorTypes — empty means a plain citizen; any value makes the member a
 	// creator with dashboard access (Creator Platform plan §3).
 	CreatorTypes []string `json:"creatorTypes,omitempty" bson:"creatorTypes,omitempty"`
+	// CreatorPlanIntent is the plan a creator chose while joining. It is only a
+	// preference for onboarding; paid access is granted exclusively by a
+	// confirmed Subscription and must never be inferred from this field.
+	CreatorPlanIntent string `json:"creatorPlanIntent,omitempty" bson:"creatorPlanIntent,omitempty"`
 	// Verified / VerifiedAs are the checkmark-badge signal. They are COMPUTED at
 	// serialization time (never persisted — bson:"-"): a member is verified as a
 	// curator/steward, or as an approved manager of a verified authority-kind
@@ -138,6 +146,7 @@ type MemberRepository interface {
 	SetDiaspora(ctx context.Context, id string, d *Diaspora) error
 	SetLinks(ctx context.Context, id string, links []SocialLink) error
 	SetCreatorTypes(ctx context.Context, id string, types []string) error
+	SetCreatorPlanIntent(ctx context.Context, id, planSlug string) error
 	// SetMFA persists the member's TOTP state: enabled flag, base32 secret
 	// (empty clears it), and bcrypt hashes of unused recovery codes.
 	SetMFA(ctx context.Context, id string, enabled bool, secret string, recoveryHashes []string) error

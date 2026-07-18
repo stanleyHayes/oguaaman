@@ -91,6 +91,7 @@ const passwordResetTTL = 10 * time.Minute
 // AuthService implements password-based sign-in → JWT sessions (spec §8.1, §9).
 type AuthService struct {
 	members domain.MemberRepository
+	plans   domain.PlanRepository
 	secret  []byte
 	otp     OTPSender // nil = return code in response (dev mode)
 	// email/wa deliver password-reset codes out-of-band (mirrors notifyOutOfBand).
@@ -108,6 +109,14 @@ type OTPSender interface {
 
 func NewAuthService(members domain.MemberRepository, secret string) *AuthService {
 	return &AuthService{members: members, secret: []byte(secret), log: slog.Default()}
+}
+
+// WithPlans attaches the staff-managed plans catalog used to validate a
+// creator's signup choice. The stored choice is onboarding intent only; this
+// service never creates subscriptions or grants paid benefits.
+func (a *AuthService) WithPlans(plans domain.PlanRepository) *AuthService {
+	a.plans = plans
+	return a
 }
 
 // WithOTPSender attaches an out-of-band OTP delivery channel.
@@ -129,7 +138,9 @@ func (a *AuthService) WithNotifiers(email EmailSender, wa MessageSender) *AuthSe
 // dateOfBirth ("YYYY-MM-DD") is required for first-time sign-ups and enforces the
 // 18+ self-registration gate (spec §14.4). creatorTypes may name the creator
 // kinds the member joins with (Creator Platform plan §3); empty = plain citizen.
-func (a *AuthService) Register(ctx context.Context, identifier, displayName, dateOfBirth, password string, creatorTypes []string) (string, *domain.Member, error) {
+// creatorPlanIntent is validated against the active catalog and defaults to
+// Starter for creators. It never grants paid entitlement.
+func (a *AuthService) Register(ctx context.Context, identifier, displayName, dateOfBirth, password string, creatorTypes []string, creatorPlanIntent string) (string, *domain.Member, error) {
 	identifier = normalizeIdentifier(identifier)
 	if identifier == "" {
 		return "", nil, fmt.Errorf("a phone number or email is required")
@@ -138,6 +149,10 @@ func (a *AuthService) Register(ctx context.Context, identifier, displayName, dat
 		return "", nil, fmt.Errorf("password must be at least %d characters", minPasswordLen)
 	}
 	types, err := cleanCreatorTypes(creatorTypes)
+	if err != nil {
+		return "", nil, err
+	}
+	planIntent, err := a.resolveCreatorPlanIntent(ctx, types, creatorPlanIntent)
 	if err != nil {
 		return "", nil, err
 	}
@@ -166,6 +181,10 @@ func (a *AuthService) Register(ctx context.Context, identifier, displayName, dat
 			return "", nil, err
 		}
 		member.CreatorTypes = types
+		if err := a.members.SetCreatorPlanIntent(ctx, member.ID, planIntent); err != nil {
+			return "", nil, err
+		}
+		member.CreatorPlanIntent = planIntent
 	}
 
 	token, err := a.issue(member)
@@ -173,6 +192,59 @@ func (a *AuthService) Register(ctx context.Context, identifier, displayName, dat
 		return "", nil, err
 	}
 	return token, member, nil
+}
+
+// resolveCreatorPlanIntent validates a creator's onboarding preference before
+// any account is inserted or claimed. Citizens carry no plan intent. An active
+// paid plan may be remembered, but no entitlement is created here.
+func (a *AuthService) resolveCreatorPlanIntent(ctx context.Context, creatorTypes []string, requested string) (string, error) {
+	if len(creatorTypes) == 0 {
+		return "", nil
+	}
+	if a.plans == nil {
+		return "", fmt.Errorf("creator plans catalog is not configured")
+	}
+
+	slug := strings.ToLower(strings.TrimSpace(requested))
+	if slug == "" {
+		slug = domain.DefaultCreatorPlanIntentSlug
+	}
+	plan, err := a.plans.BySlug(ctx, slug)
+	if err != nil {
+		var nf *domain.NotFoundError
+		if errors.As(err, &nf) {
+			return "", &domain.ValidationError{Message: "That creator plan is no longer available."}
+		}
+		return "", err
+	}
+	if !plan.Active {
+		return "", &domain.ValidationError{Message: "That creator plan is not available right now."}
+	}
+	if !creatorPlanEligible(plan.Audience, creatorTypes) {
+		return "", &domain.ValidationError{Message: "That plan is not available for the creator type you selected."}
+	}
+	if slug == domain.DefaultCreatorPlanIntentSlug && (plan.Interval != "free" || plan.Prices["default"] != 0) {
+		return "", fmt.Errorf("default creator plan %q is not configured as free", domain.DefaultCreatorPlanIntentSlug)
+	}
+	return plan.Slug, nil
+}
+
+// creatorPlanEligible applies the staff-managed catalog audience to the
+// creator kinds selected during signup. Mixed creator accounts can choose from
+// either side of the catalog; "any" plans are available to every creator.
+func creatorPlanEligible(audience string, creatorTypes []string) bool {
+	if audience == "any" {
+		return true
+	}
+	for _, creatorType := range creatorTypes {
+		if audience == "business" && creatorType == domain.CreatorBusiness {
+			return true
+		}
+		if audience == "creator" && creatorType != domain.CreatorBusiness {
+			return true
+		}
+	}
+	return false
 }
 
 // cleanCreatorTypes validates and dedupes creator-type slugs, preserving order.

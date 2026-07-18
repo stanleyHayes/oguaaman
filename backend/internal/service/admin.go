@@ -33,7 +33,7 @@ func (s *Service) AuditLog(ctx context.Context) ([]domain.ModerationRecord, erro
 }
 
 func validRole(role string) bool {
-	return role == domain.RoleMember || role == domain.RoleCurator || role == domain.RoleSteward || role == domain.RoleEditor || role == domain.RoleModerator
+	return role == domain.RoleMember || role == domain.RoleCurator || role == domain.RoleSteward || role == domain.RoleEditor || role == domain.RoleModerator || role == domain.RoleAccountabilityOfficer
 }
 
 func (s *Service) SetMemberRole(ctx context.Context, id, role string) error {

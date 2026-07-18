@@ -79,6 +79,15 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/admin/directives", h.AdminCreateDirective)
 	mux.HandleFunc("POST /api/admin/directives/{id}/cancel", h.AdminCancelDirective)
 
+	// Town goals — collective civic commitments + accountability. Curators set
+	// them; a separate accountability officer records the achieved/missed verdict.
+	mux.HandleFunc("GET /api/goals", h.Goals)
+	mux.HandleFunc("GET /api/admin/goals", h.AdminGoals)
+	mux.HandleFunc("POST /api/admin/goals", h.AdminCreateGoal)
+	mux.HandleFunc("POST /api/admin/goals/{id}", h.AdminUpdateGoal)
+	mux.HandleFunc("DELETE /api/admin/goals/{id}", h.AdminDeleteGoal)
+	mux.HandleFunc("POST /api/admin/goals/{id}/review", h.AdminReviewGoal)
+
 	// Lost & found — lost items, found items, missing people (auto-published;
 	// the owner or a curator resolves the notice).
 	mux.HandleFunc("GET /api/lost-found", h.LostFound)
@@ -130,6 +139,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/festivals", h.Festivals)
 	mux.HandleFunc("GET /api/festivals/{slug}", h.Festival)
 	mux.HandleFunc("GET /api/history", h.History)
+	mux.HandleFunc("GET /api/civic", h.Civic)
 	mux.HandleFunc("GET /api/opportunities", h.Opportunities)
 	mux.HandleFunc("GET /api/memories", h.Memories)
 	mux.HandleFunc("GET /api/featured", h.Featured)
