@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -395,13 +396,68 @@ export function DatePicker({
   const [jumpMenu, setJumpMenu] = useState<"month" | "year" | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const dayGridRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  // The calendar renders in a portal (document.body) with fixed positioning so
+  // it can never be clipped by an `overflow-hidden`/scrolling ancestor (e.g. the
+  // rounded sign-in card). We anchor it to the trigger and flip above when
+  // there isn't room below.
+  const [coords, setCoords] = useState<{ left: number; width: number; top?: number; bottom?: number; maxHeight: number } | null>(null);
+
+  const place = useCallback(() => {
+    const el = triggerRef.current;
+    if (el == null || typeof window === "undefined") return;
+    const r = el.getBoundingClientRect();
+    const gap = 8;
+    const estimatedHeight = 380; // approx calendar panel height
+    const width = Math.min(320, window.innerWidth - 16);
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - width - 8));
+    const spaceBelow = window.innerHeight - r.bottom;
+    const spaceAbove = r.top;
+    const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    // Cap the panel to the room on the chosen side so it never overflows the
+    // viewport unreachably (a fixed element can't be scrolled into view); the
+    // panel scrolls internally on very short screens.
+    const maxHeight = Math.min(estimatedHeight, Math.max(0, (openUp ? spaceAbove : spaceBelow) - gap - 8));
+    setCoords(openUp
+      ? { left, width, bottom: window.innerHeight - r.top + gap, maxHeight }
+      : { left, width, top: r.bottom + gap, maxHeight });
+  }, []);
+
+  // Position on open, and keep it anchored while scrolling/resizing.
+  useLayoutEffect(() => {
+    if (!open) return; // keep last coords so the exit animation stays anchored
+    place();
+    const onReflow = () => place();
+    window.addEventListener("scroll", onReflow, true);
+    window.addEventListener("resize", onReflow);
+    return () => {
+      window.removeEventListener("scroll", onReflow, true);
+      window.removeEventListener("resize", onReflow);
+    };
+  }, [open, place]);
+
+  // Move focus into the day grid when the calendar opens. It's portalled to the
+  // end of <body>, so a keyboard user tabbing from the trigger would otherwise
+  // skip past it entirely; focusing the active day keeps arrow-key nav reachable.
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const grid = dayGridRef.current;
+      const target = grid?.querySelector<HTMLButtonElement>('[data-calendar-day][tabindex="0"]')
+        ?? grid?.querySelector<HTMLButtonElement>('[data-calendar-day]:not(:disabled)');
+      target?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) {
+      const target = e.target as Node;
+      // The panel is portalled to <body>, so also treat clicks inside it as inside.
+      if (!ref.current?.contains(target) && !panelRef.current?.contains(target)) {
         setJumpMenu(null);
         setOpen(false);
       }
@@ -518,16 +574,19 @@ export function DatePicker({
         </svg>
       </button>
 
+      {typeof document !== "undefined" && createPortal(
       <AnimatePresence>
-        {open && (
+        {open && coords && (
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: 6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
             role="dialog"
             aria-label="Choose a date"
-            className="absolute z-30 mt-2 w-[min(100%,20rem)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-sand bg-paper p-3 shadow-xl sm:p-4"
+            style={{ position: "fixed", left: coords.left, width: coords.width, top: coords.top, bottom: coords.bottom, maxHeight: coords.maxHeight, overflowY: "auto", zIndex: 80 }}
+            className="rounded-2xl border border-sand bg-paper p-3 shadow-xl sm:p-4"
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <button type="button" onClick={prev} className="shrink-0 rounded-lg p-1.5 text-ink-muted hover:bg-cream sm:p-2" aria-label="Previous month">
@@ -631,7 +690,9 @@ export function DatePicker({
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }
