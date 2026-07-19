@@ -43,13 +43,13 @@ services:
         value: "true"
       # Every Vercel frontend that calls the API, comma-separated (CORS). Add a
       # custom domain here later. Keep in sync with the deployed Vercel URLs:
-      #   marketing https://oguaa.vercel.app · citizen/portal https://citizen-oguaa.vercel.app
+      #   marketing https://oguaa.vercel.app · citizen/portal https://oguaa-citizen.vercel.app
       #   admin/steward https://oguaa-steward.vercel.app · creator https://oguaa-creator.vercel.app
       - key: ALLOWED_ORIGIN
-        value: https://oguaa.vercel.app,https://citizen-oguaa.vercel.app,https://oguaa-steward.vercel.app,https://oguaa-creator.vercel.app
+        value: https://oguaa.vercel.app,https://oguaa-citizen.vercel.app,https://oguaa-steward.vercel.app,https://oguaa-creator.vercel.app
       # The citizen web app (portal) — where payers return after Paystack checkout.
       - key: PUBLIC_PORTAL_URL
-        value: https://citizen-oguaa.vercel.app
+        value: https://oguaa-citizen.vercel.app
       # Absolute base for returned image URLs.
       - key: PUBLIC_API_URL
         value: https://oguaa-api.onrender.com

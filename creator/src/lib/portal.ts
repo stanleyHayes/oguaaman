@@ -8,7 +8,7 @@ import type { Listing } from "./types";
  * links never dead-end on localhost in a real deployment; local dev overrides
  * it via .env.local (or the Vite proxy on :3000).
  */
-const DEFAULT_PORTAL = "https://citizen-oguaa.vercel.app";
+const DEFAULT_PORTAL = "https://oguaa-citizen.vercel.app";
 export const PORTAL = ((import.meta.env.VITE_PORTAL_URL as string | undefined)?.trim() || DEFAULT_PORTAL).replace(/\/+$/, "");
 
 /** Where an approved listing can be viewed on the portal (null = no public page). */
