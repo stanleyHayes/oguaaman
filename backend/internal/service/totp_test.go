@@ -198,3 +198,48 @@ func TestMFAFlow(t *testing.T) {
 		t.Fatalf("post-disable session rejected: %v", err)
 	}
 }
+
+// TestMFAEncryptionAtRest verifies that with a key configured the stored TOTP
+// secret is sealed (not the raw base32), still validates, and that a legacy
+// plaintext secret both validates and is migrated to sealed form on next write.
+func TestMFAEncryptionAtRest(t *testing.T) {
+	hash, _ := bcrypt.GenerateFromPassword([]byte("pw"), bcrypt.MinCost)
+	repo := &mfaFakeRepo{m: &domain.Member{
+		ID: "m-1", Slug: "kojo", DisplayName: "Kojo", Email: "kojo@oguaa.test",
+		Role: domain.RoleMember, PasswordHash: string(hash),
+	}}
+	svc := NewAuthService(repo, "test-secret").WithMFAEncryption("a-strong-mfa-key")
+	ctx := context.Background()
+
+	secret, _, err := svc.MFASetup(ctx, "m-1")
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if !isSealed(repo.m.TOTPSecret) {
+		t.Fatalf("stored secret not sealed: %q", repo.m.TOTPSecret)
+	}
+	if repo.m.TOTPSecret == secret {
+		t.Fatal("stored secret equals plaintext")
+	}
+	code, _ := totpCode(secret, time.Now())
+	if _, err := svc.MFAConfirm(ctx, "m-1", code); err != nil {
+		t.Fatalf("confirm with sealed secret: %v", err)
+	}
+
+	// Legacy plaintext secret: still validates, then re-seals on a write.
+	repo.m.TOTPSecret = rfc6238Secret // no marker → legacy
+	repo.m.MFAEnabled = true
+	legacyCode, _ := totpCode(rfc6238Secret, time.Now())
+	if !svc.checkMFACode(ctx, repo.m, legacyCode) {
+		t.Fatal("legacy plaintext secret rejected")
+	}
+	if !isSealed(repo.m.TOTPSecret) {
+		t.Fatalf("legacy secret not migrated to sealed on write: %q", repo.m.TOTPSecret)
+	}
+
+	// A different key cannot decrypt → validation fails closed.
+	other := NewAuthService(repo, "test-secret").WithMFAEncryption("different-key")
+	if other.revealSecret(repo.m.TOTPSecret) != "" {
+		t.Fatal("wrong key decrypted the secret")
+	}
+}

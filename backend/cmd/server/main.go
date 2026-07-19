@@ -113,7 +113,7 @@ func connectMongo(ctx context.Context, log *slog.Logger, cfg config.Config) (*mo
 }
 
 func newAuthService(members domain.MemberRepository, plans domain.PlanRepository, cfg config.Config, email service.EmailSender, wa wax.Sender) *service.AuthService {
-	auth := service.NewAuthService(members, cfg.JWTSecret).WithPlans(plans)
+	auth := service.NewAuthService(members, cfg.JWTSecret).WithPlans(plans).WithMFAEncryption(cfg.MFAEncKey)
 	// OTPSender delivers phone-verification codes; the notifiers deliver
 	// password-reset codes over email/WhatsApp (mirrors notifyOutOfBand).
 	return auth.WithOTPSender(wa).WithNotifiers(email, wa)

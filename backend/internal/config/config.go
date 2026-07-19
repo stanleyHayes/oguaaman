@@ -29,7 +29,8 @@ type Config struct {
 
 	// Auth (spec §8.1, §9). Password-based sign-in → JWT sessions.
 	JWTSecret    string
-	AuthRequired bool // when false (dev default), unauthenticated writes fall back to a demo identity
+	AuthRequired bool   // when false (dev default), unauthenticated writes fall back to a demo identity
+	MFAEncKey    string // optional; when set, TOTP secrets are AES-GCM encrypted at rest
 
 	// Image uploads (first-party). Files are written to UploadDir and served at
 	// /uploads/*. PublicBaseURL is prefixed onto returned URLs; empty = derive the
@@ -105,6 +106,7 @@ func load() Config {
 		KimiBaseURL:   env("KIMI_BASE_URL", "https://api.moonshot.ai/v1"),
 		JWTSecret:     env("JWT_SECRET", "oguaa-dev-secret-change-me"),
 		AuthRequired:  os.Getenv("AUTH_REQUIRED") == "true",
+		MFAEncKey:     os.Getenv("MFA_ENC_KEY"),
 
 		UploadDir:     env("UPLOAD_DIR", "./uploads"),
 		PublicBaseURL: os.Getenv("PUBLIC_API_URL"),

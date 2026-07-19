@@ -28,6 +28,12 @@ services:
       # Render generates a strong secret on first deploy.
       - key: JWT_SECRET
         generateValue: true
+      # Encrypts members' TOTP (2FA) secrets at rest with AES-GCM. Render
+      # generates it once; the AES key is derived from it via SHA-256. Do not
+      # rotate casually — changing it makes existing enrolled 2FA unverifiable
+      # (users would re-enroll). Absent => secrets stored plaintext (not advised).
+      - key: MFA_ENC_KEY
+        generateValue: true
       # Turns on the backend's production safety validation (JWT/CORS/
       # PUBLIC_API_URL must be real, not dev defaults). Fails fast on misconfig.
       - key: GO_ENV

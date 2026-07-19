@@ -93,7 +93,8 @@ type AuthService struct {
 	members domain.MemberRepository
 	plans   domain.PlanRepository
 	secret  []byte
-	otp     OTPSender // nil = return code in response (dev mode)
+	enc     *mfaCipher // seals TOTP secrets at rest; nil = plaintext (no key)
+	otp     OTPSender  // nil = return code in response (dev mode)
 	// email/wa deliver password-reset codes out-of-band (mirrors notifyOutOfBand).
 	// Either may be nil; in dev the code is echoed by the handler instead.
 	email EmailSender
@@ -109,6 +110,55 @@ type OTPSender interface {
 
 func NewAuthService(members domain.MemberRepository, secret string) *AuthService {
 	return &AuthService{members: members, secret: []byte(secret), log: slog.Default()}
+}
+
+// WithMFAEncryption enables AES-GCM encryption of TOTP secrets at rest, keyed
+// by the given secret (empty = disabled, secrets stay plaintext). Returns the
+// service for chaining. A malformed key is a fatal misconfiguration.
+func (a *AuthService) WithMFAEncryption(key string) *AuthService {
+	c, err := newMFACipher(key)
+	if err != nil {
+		a.log.Error("mfa encryption disabled: bad key", "err", err)
+		return a
+	}
+	a.enc = c
+	return a
+}
+
+// sealSecret returns the on-disk form of a fresh plaintext TOTP secret: AES-GCM
+// sealed when a key is configured, plaintext otherwise.
+func (a *AuthService) sealSecret(plain string) (string, error) {
+	if a.enc == nil {
+		return plain, nil
+	}
+	return a.enc.seal(plain)
+}
+
+// revealSecret decrypts a stored secret for validation. Legacy plaintext values
+// (no marker) pass through unchanged so pre-encryption enrolments keep working.
+func (a *AuthService) revealSecret(stored string) string {
+	if a.enc == nil || !isSealed(stored) {
+		return stored
+	}
+	plain, err := a.enc.open(stored)
+	if err != nil {
+		a.log.Error("mfa secret decrypt failed", "err", err)
+		return ""
+	}
+	return plain
+}
+
+// reseal migrates a stored secret to sealed form when a key is configured and
+// the value is still legacy plaintext; otherwise it returns it unchanged. Used
+// on writes so existing enrolments become encrypted the next time they change.
+func (a *AuthService) reseal(stored string) string {
+	if a.enc == nil || stored == "" || isSealed(stored) {
+		return stored
+	}
+	if sealed, err := a.enc.seal(stored); err == nil {
+		return sealed
+	}
+	return stored
 }
 
 // WithPlans attaches the staff-managed plans catalog used to validate a
@@ -580,7 +630,11 @@ func (a *AuthService) MFASetup(ctx context.Context, memberID string) (secret, ac
 	if err != nil {
 		return "", "", err
 	}
-	if err := a.members.SetMFA(ctx, m.ID, false, secret, nil); err != nil {
+	stored, err := a.sealSecret(secret)
+	if err != nil {
+		return "", "", err
+	}
+	if err := a.members.SetMFA(ctx, m.ID, false, stored, nil); err != nil {
 		return "", "", err
 	}
 	account = m.Email
@@ -601,7 +655,7 @@ func (a *AuthService) MFAConfirm(ctx context.Context, memberID, code string) ([]
 	if m.TOTPSecret == "" {
 		return nil, ErrMFANotSetup
 	}
-	if !validTOTP(m.TOTPSecret, code, time.Now()) {
+	if !validTOTP(a.revealSecret(m.TOTPSecret), code, time.Now()) {
 		return nil, ErrInvalidMFACode
 	}
 	codes := make([]string, 0, mfaRecoveryCount)
@@ -618,7 +672,7 @@ func (a *AuthService) MFAConfirm(ctx context.Context, memberID, code string) ([]
 		codes = append(codes, c)
 		hashes = append(hashes, string(h))
 	}
-	if err := a.members.SetMFA(ctx, m.ID, true, m.TOTPSecret, hashes); err != nil {
+	if err := a.members.SetMFA(ctx, m.ID, true, a.reseal(m.TOTPSecret), hashes); err != nil {
 		return nil, err
 	}
 	return codes, nil
@@ -669,7 +723,12 @@ func (a *AuthService) MFADisable(ctx context.Context, memberID, code string) err
 
 // checkMFACode accepts a live TOTP, or an unused recovery code (consuming it).
 func (a *AuthService) checkMFACode(ctx context.Context, m *domain.Member, code string) bool {
-	if validTOTP(m.TOTPSecret, code, time.Now()) {
+	if validTOTP(a.revealSecret(m.TOTPSecret), code, time.Now()) {
+		// Migrate a legacy plaintext secret to sealed form on first use.
+		if sealed := a.reseal(m.TOTPSecret); sealed != m.TOTPSecret {
+			m.TOTPSecret = sealed
+			_ = a.members.SetMFA(ctx, m.ID, m.MFAEnabled, sealed, m.MFARecoveryHashes)
+		}
 		return true
 	}
 	norm := normalizeRecovery(code)
@@ -680,7 +739,7 @@ func (a *AuthService) checkMFACode(ctx context.Context, m *domain.Member, code s
 		if bcrypt.CompareHashAndPassword([]byte(h), []byte(norm)) == nil {
 			remaining := append([]string{}, m.MFARecoveryHashes[:i]...)
 			remaining = append(remaining, m.MFARecoveryHashes[i+1:]...)
-			_ = a.members.SetMFA(ctx, m.ID, true, m.TOTPSecret, remaining)
+			_ = a.members.SetMFA(ctx, m.ID, true, a.reseal(m.TOTPSecret), remaining)
 			return true
 		}
 	}
