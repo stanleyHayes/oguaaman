@@ -3,8 +3,10 @@
 interface ImportMetaEnv {
   /** Base URL of the Oguaa API. Empty means same-origin. */
   readonly VITE_API_URL?: string;
-  /** Base URL of the client portal (the web app Cape Coasters use). */
+  /** Base URL of the client portal (the citizen web app "Open the app" opens). */
   readonly VITE_PORTAL_URL?: string;
+  /** Canonical/site URL of the marketing site itself, for SEO meta tags. */
+  readonly VITE_SITE_URL?: string;
   /** App Store listing URL (iOS). */
   readonly VITE_IOS_URL?: string;
   /** Play Store listing URL (Android). */

@@ -4,6 +4,10 @@ import { Nav } from "@/sections/Nav";
 import { Footer } from "@/sections/Footer";
 import { PageTransition } from "@/components/page-transition";
 import { setMeta, setLink, DEFAULT_OG_IMAGE } from "@/lib/meta";
+import { SITE_URL } from "@/config";
+
+/** Absolute share image (social scrapers need an absolute URL, not a path). */
+const OG_IMAGE_ABS = `${SITE_URL}${DEFAULT_OG_IMAGE}`;
 
 const DEFAULT_TITLE = "Oguaa — the home of Cape Coast";
 
@@ -33,10 +37,12 @@ function useRouteMeta() {
     }
     // Reset the share image to the site default; per-place pages (/visit/:slug)
     // override it with their own photo, so it must reset on navigation away.
-    setMeta("property", "og:image", DEFAULT_OG_IMAGE);
-    setMeta("name", "twitter:image", DEFAULT_OG_IMAGE);
-    // Canonical + og:url track the current page so each route shares as itself.
-    const url = window.location.origin + window.location.pathname;
+    setMeta("property", "og:image", OG_IMAGE_ABS);
+    setMeta("name", "twitter:image", OG_IMAGE_ABS);
+    // Canonical + og:url track the current page. Base is the configured
+    // SITE_URL (VITE_SITE_URL) so it stays correct across localhost / Vercel /
+    // the live domain; falls back to the actual serving origin.
+    const url = `${SITE_URL}${window.location.pathname}`;
     setLink("canonical", url);
     setMeta("property", "og:url", url);
   }, [matches]);

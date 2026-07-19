@@ -1,6 +1,12 @@
 // Where the marketing site's calls-to-action point. The portal is a SEPARATE
 // app (frontend/) — the web equivalent of the mobile app that Cape Coasters use.
-// Override at build time with VITE_PORTAL_URL / VITE_IOS_URL / VITE_ANDROID_URL.
+// Set VITE_PORTAL_URL (see .env.production / .env.example) to the citizen web
+// app for each environment; it always wins. When it's absent we fall back to
+// sensible defaults so "Open the app" still lands on the portal, never a dead
+// link: localhost auto-detection in dev, the deployed citizen app otherwise.
+
+/** Deployed default when no VITE_PORTAL_URL is set (updated per environment). */
+const DEFAULT_PORTAL_URL = "https://citizen-oguaa.vercel.app";
 
 function resolvePortalUrl(): string {
   const configured = import.meta.env.VITE_PORTAL_URL?.trim();
@@ -16,10 +22,17 @@ function resolvePortalUrl(): string {
     }
   }
 
-  return "http://localhost:3000";
+  return DEFAULT_PORTAL_URL;
 }
 
 export const PORTAL_URL = resolvePortalUrl();
+
+/** Canonical/meta base for the marketing site itself (SEO). Env-driven so it
+ *  tracks localhost / Vercel / the live domain; see index.html %VITE_SITE_URL%. */
+export const SITE_URL = (
+  import.meta.env.VITE_SITE_URL?.trim() ||
+  (typeof window !== "undefined" ? window.location.origin : "https://oguaa.vercel.app")
+).replace(/\/+$/, "");
 
 /** "Open the web app" — the portal home. */
 export const PORTAL_APP_URL = PORTAL_URL;
