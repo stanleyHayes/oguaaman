@@ -178,7 +178,7 @@ export function Component() {
   usePageTitle(null); // Home uses the site name alone
   const [tradeCategory, setTradeCategory] = useState<string | null>(null);
   const featuredSpots = featured.slice(0, 6);
-  const moreArtists = artists.filter((a) => a.id !== spotlight.id).slice(0, 3);
+  const moreArtists = artists.filter((a) => a.id !== spotlight?.id).slice(0, 3);
   const headlines = news.slice(0, 3);
   // Featured businesses: prefer real paid placements (spec §8.14), fall back to
   // the latest approved businesses so the showcase is never empty in dev/seed.
@@ -251,6 +251,7 @@ export function Component() {
         </section>
       )}
 
+      {spotlight && (
       <section className="on-dark on-dark-pin relative overflow-hidden text-cream">
         {/* The stage: clay-to-green wash, gold footlight glow, this week's cover bleeding through */}
         <Parallax strength={24} className="absolute -inset-y-6 inset-x-0">
@@ -321,6 +322,7 @@ export function Component() {
           <Link to="/music" className="mt-8 inline-block text-sm font-semibold text-gold hover:underline sm:hidden">All artists →</Link>
         </Container>
       </section>
+      )}
 
       <GoalBanner goals={goals} />
 

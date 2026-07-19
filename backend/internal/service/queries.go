@@ -42,7 +42,9 @@ func (s *Service) SpotlightArtist(ctx context.Context) (*domain.Listing, error) 
 	if len(artists) > 0 {
 		return &artists[0], nil
 	}
-	return nil, &domain.NotFoundError{Entity: "artist"}
+	// No artists yet (e.g. a freshly-launched town): there is simply nothing to
+	// spotlight. Return nil rather than a 404 so the home endpoint still renders.
+	return nil, nil
 }
 
 func (s *Service) Genres(ctx context.Context) ([]string, error) {
