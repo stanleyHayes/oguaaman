@@ -55,7 +55,7 @@ services:
       - key: KIMI_API_KEY
         sync: false
       - key: KIMI_MODEL
-        value: kimi-k2-0711-preview # ← set to your Kimi 3 model id
+        value: k3 # Kimi K3
       - key: KIMI_BASE_URL
         value: https://api.moonshot.ai/v1
       # Anthropic — optional backup; blank => Kimi only, then labelled simulation.

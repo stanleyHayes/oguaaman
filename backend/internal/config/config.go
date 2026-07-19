@@ -101,7 +101,7 @@ func load() Config {
 		AIDailyBudget: envInt("OGUAA_AI_DAILY_BUDGET", 60),
 		AIPerMember:   envInt("OGUAA_AI_PER_MEMBER", 20),
 		KimiAPIKey:    os.Getenv("KIMI_API_KEY"),
-		KimiModel:     env("KIMI_MODEL", "kimi-k2-0711-preview"),
+		KimiModel:     env("KIMI_MODEL", "k3"),
 		KimiBaseURL:   env("KIMI_BASE_URL", "https://api.moonshot.ai/v1"),
 		JWTSecret:     env("JWT_SECRET", "oguaa-dev-secret-change-me"),
 		AuthRequired:  os.Getenv("AUTH_REQUIRED") == "true",
