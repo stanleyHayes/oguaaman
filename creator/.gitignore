@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Public build-time config (URLs only, no secrets) — committed so the deployed
+# build is self-contained. Vite ships VITE_* to the client anyway.
+!.env.production
+!.env.example

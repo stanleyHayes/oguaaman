@@ -1,11 +1,15 @@
 import type { Listing } from "./types";
 
 /**
- * The community portal origin. Public listing pages, the submission form and
- * institution editors live there; the creator app links out to them.
- * In Docker the portal is published on :3000; override with VITE_PORTAL_URL.
+ * The community portal (citizen web app) origin. Public listing pages, the
+ * submission form and institution editors live there; the creator app links
+ * out to them. Set VITE_PORTAL_URL per environment (see .env.production /
+ * .env.example) — it always wins. The fallback is the deployed citizen app so
+ * links never dead-end on localhost in a real deployment; local dev overrides
+ * it via .env.local (or the Vite proxy on :3000).
  */
-export const PORTAL = (import.meta.env.VITE_PORTAL_URL as string | undefined) ?? "http://localhost:3000";
+const DEFAULT_PORTAL = "https://citizen-oguaa.vercel.app";
+export const PORTAL = ((import.meta.env.VITE_PORTAL_URL as string | undefined)?.trim() || DEFAULT_PORTAL).replace(/\/+$/, "");
 
 /** Where an approved listing can be viewed on the portal (null = no public page). */
 export function publicPathFor(l: Listing): string | null {
