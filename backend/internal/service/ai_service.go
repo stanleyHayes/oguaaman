@@ -53,9 +53,10 @@ func NewAIService(apiKey, model string, budget, perMember int, usage domain.AIUs
 	}
 }
 
-// WithFallback configures a Kimi (Moonshot AI) backup provider, tried when the
-// primary Anthropic call is unavailable or errors. Returns the service so it can
-// be chained off NewAIService. An empty key disables the fallback.
+// WithFallback configures the Kimi (Moonshot AI) provider. Kimi is now the
+// PRIMARY provider (see Generate); the Anthropic key given to NewAIService is
+// the backup, tried only when Kimi is absent or errors. Returns the service so
+// it can be chained off NewAIService. An empty Kimi key falls back to Anthropic.
 func (s *AIService) WithFallback(kimiKey, kimiModel, kimiBase string) *AIService {
 	s.kimiKey = kimiKey
 	s.kimiModel = kimiModel
@@ -181,18 +182,19 @@ func (s *AIService) Generate(ctx context.Context, memberID, action, text, langua
 		return AIResult{Result: simulate(action, text, language, prompt), Remaining: remaining, Simulated: true}, nil
 	}
 
-	// Anthropic is primary; Kimi is the backup. If Anthropic is absent, Kimi
-	// becomes primary. If Anthropic errors and Kimi is configured, retry on Kimi.
+	// Kimi (Moonshot) is the primary provider; Anthropic is the backup. If Kimi
+	// is absent, Anthropic becomes primary. If Kimi errors and Anthropic is
+	// configured, retry on Anthropic.
 	var out string
 	var err error
 	switch {
-	case s.apiKey != "":
-		out, err = s.callAnthropic(ctx, sys, user)
-		if err != nil && s.kimiKey != "" {
-			out, err = s.callKimi(ctx, sys, user)
+	case s.kimiKey != "":
+		out, err = s.callKimi(ctx, sys, user)
+		if err != nil && s.apiKey != "" {
+			out, err = s.callAnthropic(ctx, sys, user)
 		}
 	default:
-		out, err = s.callKimi(ctx, sys, user)
+		out, err = s.callAnthropic(ctx, sys, user)
 	}
 	if err != nil {
 		return AIResult{}, err

@@ -28,16 +28,22 @@ services:
       # Render generates a strong secret on first deploy.
       - key: JWT_SECRET
         generateValue: true
+      # Turns on the backend's production safety validation (JWT/CORS/
+      # PUBLIC_API_URL must be real, not dev defaults). Fails fast on misconfig.
+      - key: GO_ENV
+        value: production
       # Enforce real sign-in on writes/admin in production.
       - key: AUTH_REQUIRED
         value: "true"
-      # Portal origin(s) allowed by CORS — comma-separate to add more
-      # (e.g. a custom domain later). Must match the Vercel deployment URL.
+      # Every Vercel frontend that calls the API, comma-separated (CORS). Add a
+      # custom domain here later. Keep in sync with the deployed Vercel URLs:
+      #   marketing https://oguaa.vercel.app · citizen/portal https://citizen-oguaa.vercel.app
+      #   admin/steward https://oguaa-steward.vercel.app · creator https://oguaa-creator.vercel.app
       - key: ALLOWED_ORIGIN
-        value: https://oguaa.vercel.app
-      # Used for Paystack callback URLs.
+        value: https://oguaa.vercel.app,https://citizen-oguaa.vercel.app,https://oguaa-steward.vercel.app,https://oguaa-creator.vercel.app
+      # The citizen web app (portal) — where payers return after Paystack checkout.
       - key: PUBLIC_PORTAL_URL
-        value: https://oguaa.vercel.app
+        value: https://citizen-oguaa.vercel.app
       # Absolute base for returned image URLs.
       - key: PUBLIC_API_URL
         value: https://oguaa-api.onrender.com
@@ -45,8 +51,34 @@ services:
         value: /app/uploads
       - key: PLATFORM_FEE_PERCENT
         value: "5"
-      # Optional — leave blank prompts empty to stay in labelled simulation:
+      # ── AI: Kimi (Moonshot) is the PRIMARY provider; Anthropic is the backup ──
+      - key: KIMI_API_KEY
+        sync: false
+      - key: KIMI_MODEL
+        value: kimi-k2-0711-preview # ← set to your Kimi 3 model id
+      - key: KIMI_BASE_URL
+        value: https://api.moonshot.ai/v1
+      # Anthropic — optional backup; blank => Kimi only, then labelled simulation.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+      # ── Payments — blank => pledge/escrow runs a labelled simulation ──
       - key: PAYSTACK_SECRET_KEY
         sync: false
-      - key: ANTHROPIC_API_KEY
+      - key: STRIPE_SECRET_KEY # optional — Stripe mobile checkout
+        sync: false
+
+      # ── Transactional email (Resend) — password-reset codes, OTPs, notices ──
+      # Blank => email is skipped (in-app notices still work). Recommended in
+      # production so reset/OTP codes are delivered, not returned in the response.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: Oguaa <noreply@oguaa.gh> # use a Resend-verified sender
+
+      # ── WhatsApp OTP (Meta WhatsApp Business Cloud API) — optional ──
+      # Blank => phone-verification OTP is returned in the API response (dev only).
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_ID
         sync: false
