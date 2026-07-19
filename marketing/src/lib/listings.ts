@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { Pill } from "@/components/ui";
 import { PORTAL_APP_URL } from "@/config";
+import { apiUrl } from "./api";
 
 export interface Listing {
   id: string;
@@ -45,7 +46,7 @@ export function useListings(endpoint: string, limit?: number): Listing[] {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(endpoint, { headers: { Accept: "application/json" } })
+    fetch(apiUrl(endpoint), { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: unknown) => {
         if (!cancelled && isListingArray(data)) setItems(data);

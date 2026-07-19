@@ -4,6 +4,7 @@
 // never shows an error). Nothing here is hardcoded — every behaviour and lesson
 // comes from the database.
 import { useEffect, useState } from "react";
+import { apiUrl } from "./api";
 
 export type CivicRing = "self" | "home" | "school" | "work" | "town" | "nation";
 
@@ -43,7 +44,7 @@ export function useCivic(): CivicData {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/civic", { headers: { Accept: "application/json" } })
+    fetch(apiUrl("/api/civic"), { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((d: unknown) => {
         if (!cancelled && isCivicData(d)) setData(d);

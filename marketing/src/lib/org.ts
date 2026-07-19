@@ -5,6 +5,7 @@
 // portal's types. See oguaa/Institution-Pages-Spec.md.
 import { useEffect, useState } from "react";
 import type { Listing } from "@/lib/listings";
+import { apiUrl } from "./api";
 
 export interface MediaAsset {
   id: string;
@@ -96,7 +97,7 @@ export function useHeritageDirectory(): HeritageDirectoryState {
   const [state, setState] = useState<HeritageDirectoryState>({ status: "loading", items: [] });
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/institutions?kind=heritage", { headers: { Accept: "application/json" } })
+    fetch(apiUrl("/api/institutions?kind=heritage"), { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: unknown) => {
         if (cancelled) return;
@@ -131,7 +132,7 @@ export interface PlaceView {
  */
 export async function fetchPlace(slug: string): Promise<PlaceView | null> {
   try {
-    const res = await fetch(`/api/institutions/${slug}`, { headers: { Accept: "application/json" } });
+    const res = await fetch(apiUrl(`/api/institutions/${slug}`), { headers: { Accept: "application/json" } });
     if (!res.ok) return null;
     const data = (await res.json()) as { institution?: Organization; officialEvents?: Listing[] } & Partial<Organization>;
     const org = (data && typeof data === "object" && "institution" in data ? data.institution : (data as Organization)) as Organization | undefined;

@@ -4,6 +4,7 @@
 // never shows an error). Nothing here is hardcoded — every goal, status and
 // review verdict comes from the database (status is already computed server-side).
 import { useEffect, useState } from "react";
+import { apiUrl } from "./api";
 
 export type GoalCadence =
   | "daily"
@@ -63,7 +64,7 @@ export function useGoals(): Goal[] {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/goals", { headers: { Accept: "application/json" } })
+    fetch(apiUrl("/api/goals"), { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((d: unknown) => {
         if (!cancelled && isGoalArray(d)) setGoals(d);

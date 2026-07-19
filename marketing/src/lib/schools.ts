@@ -4,6 +4,7 @@
 // a profile in the admin dashboard appears on the marketing site automatically.
 // There is no client-side fallback: the list starts empty and fills from the API.
 import { useEffect, useState } from "react";
+import { apiUrl } from "./api";
 
 export interface SchoolOrg {
   id: string;
@@ -40,7 +41,7 @@ export function useSchools(): SchoolOrg[] {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/schools", { headers: { Accept: "application/json" } })
+    fetch(apiUrl("/api/schools"), { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: unknown) => {
         if (!cancelled && isSchoolArray(data)) setItems(data);

@@ -4,6 +4,7 @@
 // the backend answers; on error it stays empty (a marketing page never shows an
 // error). Nothing here is hardcoded — every agent shown comes from the database.
 import { useEffect, useState } from "react";
+import { apiUrl } from "./api";
 
 export interface Agent {
   displayName: string;
@@ -53,7 +54,7 @@ export function useAgents(): Agent[] {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/agents", {
+    fetch(apiUrl("/api/agents"), {
       headers: { Accept: "application/json" },
       signal: controller.signal,
     })

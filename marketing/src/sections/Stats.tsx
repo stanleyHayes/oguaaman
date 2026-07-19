@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Section, SectionHeading } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { apiUrl } from "@/lib/api";
 
 /**
  * Stats — a dark "community numbers" band (tone="green").
@@ -62,7 +63,7 @@ export function Stats() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch("/api/stats", { headers: { Accept: "application/json" } })
+    fetch(apiUrl("/api/stats"), { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: unknown) => {
         // Only ever mutate state inside the async resolution, and only when
