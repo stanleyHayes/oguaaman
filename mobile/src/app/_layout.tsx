@@ -11,6 +11,7 @@ import { AuthProvider } from "@/lib/auth";
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
 import { DirectivesProvider } from "@/lib/directives";
+import { MobileRingingAlert } from "@/components/ringing-alert";
 import { NavDrawerProvider } from "@/components/nav-drawer";
 import { AppStripeProvider } from "@/components/stripe-provider";
 
@@ -145,6 +146,7 @@ export default function RootLayout() {
                 <RootNavigator />
               </AppStripeProvider>
             </NavDrawerProvider>
+            <MobileRingingAlert />
           </DirectivesProvider>
         </AuthProvider>
         </LanguageProvider>

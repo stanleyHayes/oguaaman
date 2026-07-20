@@ -27,6 +27,9 @@ const SEEN_CAP = 100; // keep the persisted set small (SecureStore favours < 2KB
 // The severity alert cadence: short-short-long buzz. Import { Vibration } from
 // "react-native" (built-in) — expo-haptics would need a native rebuild.
 const ALERT_PATTERN = [0, 300, 150, 300, 150, 500];
+// A critical alert rings like a call: this pattern LOOPS (Vibration.vibrate(p,
+// true)) until the person answers/dismisses. Built-in Vibration, no native dep.
+const RING_PATTERN = [0, 700, 500, 700, 500];
 
 function alerting(sev: DirectiveSeverity): boolean {
   return sev === "high" || sev === "critical";
@@ -121,6 +124,10 @@ interface DirectivesState {
   /** Convenience: is the alert banner currently showing something. */
   bannerVisible: boolean;
   dismiss: (id: string) => void;
+  /** A CRITICAL directive that's ringing like a call (full-screen), or null. */
+  ringing: Directive | null;
+  /** Stop the ring (cancels the looping vibration). */
+  clearRing: () => void;
 }
 
 const Ctx = createContext<DirectivesState | null>(null);
@@ -128,6 +135,7 @@ const Ctx = createContext<DirectivesState | null>(null);
 export function DirectivesProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [active, setActive] = useState<Directive[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
+  const [ringing, setRinging] = useState<Directive | null>(null);
   // null until hydrated; stays null when no baseline was ever persisted.
   const seenRef = useRef<Set<string> | null>(null);
   const hydratedRef = useRef(false);
@@ -146,7 +154,20 @@ export function DirectivesProvider({ children }: Readonly<{ children: ReactNode 
     if (fresh.length === 0) return;
     for (const id of fresh) seenRef.current.add(id);
     persistSeen(seenRef.current);
-    Vibration.vibrate(ALERT_PATTERN);
+    // A fresh CRITICAL directive rings like a call (looping vibration + a
+    // full-screen takeover); a high one buzzes once.
+    const critical = list.find((d) => d.severity === "critical" && fresh.includes(d.id));
+    if (critical) {
+      setRinging(critical);
+      Vibration.vibrate(RING_PATTERN, true); // repeat=true → loops until cleared
+    } else {
+      Vibration.vibrate(ALERT_PATTERN);
+    }
+  }, []);
+
+  const clearRing = useCallback(() => {
+    Vibration.cancel();
+    setRinging(null);
   }, []);
 
   useEffect(() => {
@@ -191,8 +212,8 @@ export function DirectivesProvider({ children }: Readonly<{ children: ReactNode 
   );
 
   const value = useMemo<DirectivesState>(
-    () => ({ active, visible, bannerVisible: visible !== null, dismiss }),
-    [active, visible, dismiss],
+    () => ({ active, visible, bannerVisible: visible !== null, dismiss, ringing, clearRing }),
+    [active, visible, dismiss, ringing, clearRing],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
