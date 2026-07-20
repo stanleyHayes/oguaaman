@@ -8,6 +8,7 @@ import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { Container, Pill, SampleNote } from "@/components/ui";
 import { LocationMap } from "@/components/location-map";
+import { Storefront } from "@/components/storefront";
 import { ReportButton } from "@/components/report-button";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { cldCover } from "@/lib/cloudinary";
@@ -202,6 +203,8 @@ export function Component() {
               <div className="mt-7 rounded-[var(--radius-card)] border border-dashed border-sand bg-cream p-6 text-ink-muted">Contact the business for its current services and prices.</div>
             )}
           </Reveal>
+
+          <Storefront business={b} />
 
           {b.tags.length > 0 && (
             <Reveal as="section">

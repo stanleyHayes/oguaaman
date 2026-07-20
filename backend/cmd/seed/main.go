@@ -15,7 +15,9 @@ func main() {
 	log := logger.New()
 	cfg := config.Load()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Generous window: a full reseed writes many collections, and a high-latency
+	// link (e.g. Ghana → an eu-west Atlas cluster) can take minutes.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	client, db, err := mongox.Connect(ctx, cfg.MongoURI, cfg.MongoDB)

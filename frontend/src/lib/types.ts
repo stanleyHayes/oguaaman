@@ -517,6 +517,12 @@ export interface Listing {
   featuredUntil?: string;
   supporter?: boolean; // live flag on business list/detail responses (Phase 7)
   viewCount?: number;  // daily-deduped lifetime page views (spec §4 / Creator §7.5)
+  // Business storefront (Supporter feature): owner-composed profile + media
+  // gallery + shareable clean handle (/s/<handle>).
+  sections?: ProfileSection[];
+  photos?: MediaAsset[];
+  videos?: MediaAsset[];
+  handle?: string;
   details: ListingDetails;
   tributes?: Tribute[];
   createdAt: string;

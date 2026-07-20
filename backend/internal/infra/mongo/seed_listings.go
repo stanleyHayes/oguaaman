@@ -226,7 +226,24 @@ func seedListings() []domain.Listing {
 			"contact": []domain.SocialLink{sl("Phone", placeholderPhone), sl("WhatsApp", placeholderWhatsApp)},
 			// An active Supporter subscription (Phase 7) — badge + priority placement.
 			"subscribedUntil": seedActiveSubscriptionPeriodEnd(),
-		}},
+		},
+			// Supporter storefront: owner-composed profile sections + a device-
+			// uploaded media gallery (photos + a walkthrough video) + clean handle.
+			Handle: "castle-view",
+			Sections: []domain.ProfileSection{
+				{ID: "sf-cv-about", Type: domain.SectionRichText, Title: "Our story", Body: "Three generations of the family have kept rooms above the old harbour. The rooftop catches the Atlantic breeze, and Cape Coast Castle is a five-minute walk down Victoria Road."},
+				{ID: "sf-cv-menu", Type: domain.SectionMenu, Title: "Rooms & rates", Items: []domain.SectionItem{{ID: "cv-m1", Label: "Standard room", Value: "GHS 250/night", Detail: "Fan · ensuite · fits two"}, {ID: "cv-m2", Label: "Sea-view room", Value: "GHS 380/night", Detail: "AC · balcony · the sunset room"}}},
+				{ID: "sf-cv-know", Type: domain.SectionSchedule, Title: "Good to know", Items: []domain.SectionItem{{ID: "cv-s1", Label: "Check-in", Value: "2:00 p.m."}, {ID: "cv-s2", Label: "Check-out", Value: "11:00 a.m."}, {ID: "cv-s3", Label: "Breakfast", Value: "7–10 a.m., on the roof"}}},
+			},
+			Photos: []domain.MediaAsset{
+				{ID: "sf-cv-p1", URL: seedImg("castle-exterior.jpg"), Kind: "photo", Caption: "The rooftop at dusk"},
+				{ID: "sf-cv-p2", URL: seedImg("beach.jpg"), Kind: "photo", Caption: "A minute from the sand"},
+				{ID: "sf-cv-p3", URL: seedImg("downtown.jpg"), Kind: "photo", Caption: "In the heart of Oguaa"},
+			},
+			Videos: []domain.MediaAsset{
+				{ID: "sf-cv-v1", URL: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", Kind: "video", Caption: "A walk through the house"},
+			},
+		},
 		{ID: "b-fish", Slug: "kotokuraba-fresh-fish", CoverImageURL: seedImg("fishermen.jpg"), Type: domain.TypeBusiness, OwnerID: "m-esi", Title: "Esi's Fresh Fish — Kotokuraba", Status: domain.StatusApproved, Tags: []string{"fishing", "market", "kotokuraba"}, TownID: "kotokuraba", CreatedAt: d20260312, SubmittedAt: d20260312, PublishedAt: d20260312, Details: map[string]any{
 			"category": "Market & Fishing", "description": "Same-day catch from the Bakaano canoes, sold at Kotokuraba market. Tilapia, redfish, and the morning's best.",
 			"services": []map[string]any{{"name": "Fresh tilapia", "price": "by weight"}, {"name": "Smoked fish", "price": "by weight"}, {"name": "Bulk / event orders", "note": "Order a day ahead"}},
