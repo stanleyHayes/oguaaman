@@ -356,6 +356,11 @@ export const api = {
     post<Organization>(`/api/institutions/${slug}/gallery`, { gallery }),
   setOrgSections: (slug: string, sections: ProfileSection[]) =>
     post<Organization>(`/api/institutions/${slug}/sections`, { sections }),
+  // Safety-alert push registration.
+  pushKey: () => get<{ publicKey: string }>("/api/push/key"),
+  pushSubscribe: (body: { platform: string; endpoint?: string; p256dh?: string; auth?: string; expoToken?: string }) =>
+    post<{ ok: boolean }>("/api/push/subscribe", body),
+  pushUnsubscribe: (body: { id: string }) => post<{ ok: boolean }>("/api/push/unsubscribe", body),
   // Business storefront (Supporter feature): sections + photo/video gallery +
   // a clean shareable handle, saved atomically.
   setStorefront: (id: string, body: { handle?: string; sections?: ProfileSection[]; photos?: MediaAsset[]; videos?: MediaAsset[] }) =>

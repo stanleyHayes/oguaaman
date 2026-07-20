@@ -4,7 +4,7 @@
 // cache-first; /uploads images stale-while-revalidate; /api network-only
 // (stale data is worse than an honest error).
 
-const VERSION = "oguaa-shell-v1";
+const VERSION = "oguaa-shell-v2";
 const SHELL_CACHE = `${VERSION}:shell`;
 const RUNTIME_CACHE = `${VERSION}:runtime`;
 const SHELL = ["/", "/manifest.webmanifest", "/icon.svg", "/icon-192.png"];
@@ -65,6 +65,54 @@ const networkFirstShell = async (request) => {
     return shell || Response.error();
   }
 };
+
+// ── Safety-alert push ────────────────────────────────────────────────────────
+// A push carries a JSON PushPayload {title,body,url,tag,severity,kind,ring}.
+// We show a notification (critical = sticky) AND relay it to any open tab so the
+// in-app RingingCall can take over the screen with a looping ringtone.
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { title: "Safety alert", body: event.data ? event.data.text() : "" };
+  }
+  const title = payload.title || "Oguaa safety alert";
+  const options = {
+    body: payload.body || "",
+    tag: payload.tag || "oguaa-alert",
+    data: { url: payload.url || "/alerts" },
+    requireInteraction: Boolean(payload.ring),
+    renotify: true,
+    icon: "/icon-192.png",
+    badge: "/icon.svg",
+    vibrate: payload.ring ? [500, 300, 500, 300, 500] : [200, 100, 200],
+  };
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+        for (const client of clients) client.postMessage({ type: "oguaa-alert", payload });
+      }),
+    ]),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/alerts";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          client.postMessage({ type: "oguaa-alert-open", url });
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;

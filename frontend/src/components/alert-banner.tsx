@@ -265,11 +265,13 @@ export function AlertBanner() {
           const seenSev = seenSevRef.current!;
           // Alarm when a directive is newly seen, or when an already-seen one
           // has escalated into the high/critical band since we last saw it.
-          const alarm = list.some((d) => {
+          // Capture the trigger BEFORE the seen-stores are mutated below.
+          const trigger = list.find((d) => {
             if (!isLoud(d.severity)) return false;
             if (!seen.has(d.id)) return true;
             return !isLoud(seenSev.get(d.id) ?? "");
           });
+          const alarm = Boolean(trigger);
           const activeIds = new Set(list.map((d) => d.id));
           let changed = false;
           for (const d of list) {
@@ -311,7 +313,15 @@ export function AlertBanner() {
             return mutated ? next : prev;
           });
           setDirectives(list);
-          if (alarm) fireAlert();
+          if (alarm) {
+            fireAlert();
+            // A critical directive rings like a call (RingingCall listens for this).
+            if (trigger && trigger.severity === "critical") {
+              window.dispatchEvent(new CustomEvent("oguaa:alert", {
+                detail: { title: trigger.title, url: "/alerts", severity: "critical", kind: "directive", ring: true },
+              }));
+            }
+          }
         })
         .catch(() => {
           /* offline / API down — keep whatever we last showed */

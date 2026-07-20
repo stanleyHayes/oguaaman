@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AlertBanner } from "@/components/alert-banner";
+import { AlertListener } from "@/components/alert-listener";
 import { CookieConsent } from "@/components/cookie-consent";
 import { PageTransition } from "@/components/page-transition";
 import { Wordmark } from "@/components/wordmark";
@@ -78,6 +79,7 @@ export function RootLayout() {
       <NavigationProgress />
       <SiteHeader />
       <AlertBanner />
+      <AlertListener />
       <main className="flex-1">
         <PageTransition>
           <Outlet />
