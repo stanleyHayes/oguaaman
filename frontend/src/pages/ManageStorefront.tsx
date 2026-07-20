@@ -5,11 +5,8 @@ import { useAuth } from "@/lib/auth";
 import { usePageTitle } from "@/lib/use-page-title";
 import { Container } from "@/components/ui";
 import { StorefrontMediaEditor } from "@/components/storefront-media-editor";
+import { storefrontUrl, storefrontUrlParts } from "@/lib/storefront-url";
 import type { Listing, ProfileSection, ProfileSectionType, SectionItem } from "@/lib/types";
-
-// The storefront lives on the citizen app itself (/s/:handle), so the shareable
-// base is this app's own origin (Vercel URL now, custom domain later).
-const SITE = typeof window !== "undefined" ? window.location.origin : "";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const business = await api.business(params.slug as string);
@@ -129,7 +126,8 @@ export function Component() {
     }
   }
 
-  const shareUrl = handle ? `${SITE}/s/${handle}` : "";
+  const shareUrl = storefrontUrl(handle);
+  const urlParts = storefrontUrlParts();
 
   return (
     <Container className="space-y-8 py-10" size="narrow">
@@ -144,11 +142,16 @@ export function Component() {
 
       <Panel title="Your shareable link">
         <p className="mb-3 text-sm text-ink-muted">Pick a clean link people can share — letters, numbers and dashes.</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-ink-faint">{SITE.replace(/^https?:\/\//, "")}/s/</span>
-          <input value={handle} onChange={(e) => { setHandle(e.target.value); setState("idle"); }} placeholder="aunties-kitchen" className={`${field} max-w-[16rem] flex-1`} aria-label="Storefront link handle" />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-sm text-ink-faint">{urlParts.prefix}</span>
+          <input value={handle} onChange={(e) => { setHandle(e.target.value); setState("idle"); }} placeholder="neurodynecorp" className={`${field} w-[12rem]`} aria-label="Storefront link handle" />
+          {urlParts.suffix && <span className="text-sm text-ink-faint">{urlParts.suffix}</span>}
         </div>
-        {shareUrl && <p className="mt-2 break-all text-xs text-ink-muted">Shareable: <a href={shareUrl} className="text-green-text underline">{shareUrl}</a></p>}
+        {shareUrl && (
+          <p className="mt-2 break-all text-xs text-ink-muted">
+            Shareable: <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="text-green-text underline">{shareUrl}</a>
+          </p>
+        )}
       </Panel>
 
       <Panel title="Photos & videos">

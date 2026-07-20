@@ -254,6 +254,9 @@ func seedListings() []domain.Listing {
 			"category": "Food & Drink", "description": "Fante kenkey (dokonu) steamed in plantain leaves, with fresh fried fish, shito and ground pepper. The junction's been here longer than the bridge.",
 			"services": []map[string]any{{"name": "Kenkey & fish", "price": "GHS 20"}, {"name": "Kenkey & one-man-thousand", "price": "GHS 15"}},
 			"address":  "The junction, Bakaano", "openingHours": "Daily, 11:00 a.m.–9:00 p.m.",
+			// A Supporter who has NOT built a storefront yet — shows the empty
+			// "needs data" builder state (no sections/photos/videos/handle).
+			"subscribedUntil": seedActiveSubscriptionPeriodEnd(),
 		}},
 		{ID: "b-pending-prints", Slug: "oguaa-prints", CoverImageURL: seedImg("downtown.jpg"), Type: domain.TypeBusiness, OwnerID: "m-yaw", Title: "Oguaa Prints & Textiles", Status: domain.StatusPending, Tags: []string{"textile", "craft"}, TownID: "oguaa", CreatedAt: "2026-05-30", SubmittedAt: "2026-05-30", Details: map[string]any{
 			"category": "Craft & Textiles", "description": "Hand-finished prints and cloth inspired by the bold appliqué grammar of the coast. Submitted for review.",
