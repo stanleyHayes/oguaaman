@@ -122,6 +122,11 @@ export function Component() {
                 )}
                 {b.supporter && <span className="rounded-full bg-gold-brand px-3 py-1 text-xs font-bold text-green-900">★ Oguaa Supporter</span>}
                 {b.featured && <span className="rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">Featured locally</span>}
+                {isOwner && (
+                  <Link to={`/business/${b.slug}/manage`} className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs font-semibold text-cream backdrop-blur-sm transition-colors hover:border-gold hover:text-gold">
+                    {b.supporter ? "Edit storefront" : "★ Build your storefront"}
+                  </Link>
+                )}
               </Reveal>
               <Reveal as="h1" delay={0.1} className="mt-4 max-w-3xl text-5xl font-semibold leading-[0.98] text-cream sm:text-6xl">
                 {b.title}

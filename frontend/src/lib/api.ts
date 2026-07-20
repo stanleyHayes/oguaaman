@@ -230,6 +230,7 @@ export const api = {
 
   businesses,
   business: (slug: string) => get<Listing>(`/api/businesses/${slug}`),
+  storefront: (handle: string) => get<Listing>(`/api/storefront/${handle}`),
 
   properties,
   property: (slug: string) => get<Listing>(`/api/properties/${slug}`),
@@ -355,6 +356,10 @@ export const api = {
     post<Organization>(`/api/institutions/${slug}/gallery`, { gallery }),
   setOrgSections: (slug: string, sections: ProfileSection[]) =>
     post<Organization>(`/api/institutions/${slug}/sections`, { sections }),
+  // Business storefront (Supporter feature): sections + photo/video gallery +
+  // a clean shareable handle, saved atomically.
+  setStorefront: (id: string, body: { handle?: string; sections?: ProfileSection[]; photos?: MediaAsset[]; videos?: MediaAsset[] }) =>
+    post<Listing>(`/api/listings/${id}/storefront`, body),
   postOrgEvent: (slug: string, body: { title: string; details?: Record<string, unknown> }) =>
     post<Listing>(`/api/institutions/${slug}/events`, body),
 
