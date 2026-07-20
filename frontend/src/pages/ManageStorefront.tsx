@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { usePageTitle } from "@/lib/use-page-title";
 import { Container } from "@/components/ui";
 import { StorefrontMediaEditor } from "@/components/storefront-media-editor";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { storefrontUrl, storefrontUrlParts } from "@/lib/storefront-url";
 import type { Listing, ProfileSection, ProfileSectionType, SectionItem } from "@/lib/types";
 
@@ -163,6 +164,17 @@ export function Component() {
 
       <Panel title="Sections">
         <p className="mb-4 text-sm text-ink-muted">Tell your story — an About, a menu or price list, opening hours, a tagline.</p>
+        {sections.length === 0 && (
+          <div className="mb-4 rounded-[var(--radius-card)] border border-dashed border-sand bg-gradient-to-b from-cream to-cream/40">
+            <EmptyState
+              tone="green"
+              icon={<EmptyGlyph name="layout" size={34} />}
+              title="Build your story"
+              description="Add sections to describe your business. Pick one below to start — you can reorder and remove them any time."
+              className="!py-10"
+            />
+          </div>
+        )}
         <div className="space-y-4">
           {sections.map((s, i) => (
             <div key={s.id || i} className="rounded-[var(--radius-card)] border border-sand bg-paper p-4">

@@ -2,6 +2,7 @@ import { useId, useRef, useState, type ChangeEvent } from "react";
 import type { MediaAsset } from "@/lib/types";
 import { uploadMedia } from "@/lib/upload";
 import { cldCover } from "@/lib/cloudinary";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 
 // A controlled photo/video gallery editor for the business storefront: add from
 // device (multiple), delete, replace one, caption, and reorder. Enforces the
@@ -123,9 +124,27 @@ export function StorefrontMediaEditor({
       {error && <p role="alert" className="mt-2 text-sm text-clay-text">{error}</p>}
 
       {items.length === 0 ? (
-        <p className="mt-3 rounded-[var(--radius-card)] border border-dashed border-sand bg-cream px-4 py-6 text-center text-sm text-ink-muted">
-          No {kind}s yet — add up to {max} from your device.
-        </p>
+        <div className="mt-3 rounded-[var(--radius-card)] border border-dashed border-sand bg-gradient-to-b from-cream to-cream/40">
+          <EmptyState
+            tone="green"
+            icon={<EmptyGlyph name={kind === "video" ? "video" : "image"} size={34} />}
+            title={kind === "video" ? "Show your place in motion" : "Bring your storefront to life"}
+            description={kind === "video"
+              ? `Add up to ${max} short videos from your device — a walkthrough, your kitchen, the view.`
+              : `Add up to ${max} photos from your device — your space, products, team and signage.`}
+            actions={
+              <button
+                type="button"
+                onClick={() => addRef.current?.click()}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green shadow-sm transition-colors hover:bg-green-900 disabled:opacity-50"
+              >
+                <span aria-hidden className="text-base leading-none">＋</span> Add {kind}s
+              </button>
+            }
+            className="!py-12"
+          />
+        </div>
       ) : (
         <ul className="mt-3 grid gap-3 sm:grid-cols-2">
           {items.map((m, i) => (

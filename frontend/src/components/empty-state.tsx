@@ -5,7 +5,7 @@ import { CrabMark } from "./wordmark";
 export type EmptyIconName =
   | "sparkle" | "check" | "pen" | "ticket" | "bell" | "chart" | "building"
   | "shield" | "search" | "heart" | "money" | "image" | "inbox" | "calendar"
-  | "users" | "megaphone";
+  | "users" | "megaphone" | "video" | "layout";
 
 const EMPTY_ICONS: Record<EmptyIconName, ReactNode> = {
   sparkle: <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" />,
@@ -96,6 +96,19 @@ const EMPTY_ICONS: Record<EmptyIconName, ReactNode> = {
     <>
       <path d="m3 11 18-5v12L3 14v-3z" />
       <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+    </>
+  ),
+  video: (
+    <>
+      <rect x="2" y="6" width="14" height="12" rx="2" />
+      <path d="m16 10 6-3v10l-6-3" />
+    </>
+  ),
+  layout: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M9 9v11" />
     </>
   ),
 };
