@@ -52,14 +52,14 @@ func TestPushRegister_Validation(t *testing.T) {
 	ctx := context.Background()
 
 	// Web without keys → error.
-	if err := p.Register(ctx, domain.PushSubscription{MemberID: "m1", Platform: domain.PushWeb, Endpoint: "https://push/x"}); err == nil {
+	if err := p.Register(ctx, domain.PushSubscription{MemberID: "m1", Platform: domain.PushWeb, Endpoint: "https://fcm.googleapis.com/x"}); err == nil {
 		t.Error("web sub without keys should fail")
 	}
 	// Web with keys → stored, id = endpoint.
-	if err := p.Register(ctx, domain.PushSubscription{MemberID: "m1", Platform: domain.PushWeb, Endpoint: "https://push/x", P256dh: "k", Auth: "a"}); err != nil {
+	if err := p.Register(ctx, domain.PushSubscription{MemberID: "m1", Platform: domain.PushWeb, Endpoint: "https://fcm.googleapis.com/x", P256dh: "k", Auth: "a"}); err != nil {
 		t.Fatalf("valid web sub: %v", err)
 	}
-	if _, ok := repo.subs["https://push/x"]; !ok {
+	if _, ok := repo.subs["https://fcm.googleapis.com/x"]; !ok {
 		t.Error("web sub not stored under endpoint id")
 	}
 	// Expo needs a token.
@@ -75,6 +75,38 @@ func TestPushRegister_Validation(t *testing.T) {
 	// Unknown platform.
 	if err := p.Register(ctx, domain.PushSubscription{MemberID: "m1", Platform: "sms"}); err == nil {
 		t.Error("unknown platform should fail")
+	}
+}
+
+func TestPushEndpointSSRFGuard(t *testing.T) {
+	repo := newFakePushRepo()
+	p := NewPushSender(repo, PushConfig{}, nil)
+	ctx := context.Background()
+	web := func(ep string) domain.PushSubscription {
+		return domain.PushSubscription{MemberID: "m1", Platform: domain.PushWeb, Endpoint: ep, P256dh: "k", Auth: "a"}
+	}
+	// Rejected: internal / arbitrary hosts (SSRF vectors).
+	for _, bad := range []string{
+		"http://fcm.googleapis.com/x",              // not https
+		"https://169.254.169.254/latest/meta-data", // cloud metadata
+		"https://localhost:8080/api/x",
+		"https://evil.example.com/x",
+		"https://fcm.googleapis.com.evil.com/x", // suffix trick
+	} {
+		if err := p.Register(ctx, web(bad)); err == nil {
+			t.Errorf("endpoint %q should be rejected", bad)
+		}
+	}
+	// Allowed: real push services (incl. subdomains).
+	for _, ok := range []string{
+		"https://fcm.googleapis.com/fcm/send/abc",
+		"https://updates.push.services.mozilla.com/wpush/v2/xyz",
+		"https://web.push.apple.com/abc",
+		"https://ABC.notify.windows.com/w/?token=1",
+	} {
+		if err := p.Register(ctx, web(ok)); err != nil {
+			t.Errorf("endpoint %q should be allowed: %v", ok, err)
+		}
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -76,6 +77,11 @@ func (p *PushSender) Register(ctx context.Context, sub domain.PushSubscription) 
 	case domain.PushWeb:
 		if sub.Endpoint == "" || sub.P256dh == "" || sub.Auth == "" {
 			return fmt.Errorf("a web push subscription needs endpoint + keys")
+		}
+		// SSRF guard: the server later POSTs to this endpoint, so only accept the
+		// known browser push services — never an arbitrary/internal URL.
+		if !allowedPushEndpoint(sub.Endpoint) {
+			return fmt.Errorf("push endpoint is not a recognised push service")
 		}
 		sub.ID = sub.Endpoint
 	case domain.PushExpo:
@@ -196,6 +202,33 @@ func (p *PushSender) sendExpo(ctx context.Context, tokens []string, payload Push
 	if resp.StatusCode >= 300 {
 		p.log.Warn("push: expo upstream", "status", resp.StatusCode)
 	}
+}
+
+// pushEndpointHosts are the hosts of the legitimate Web Push services. A web
+// push endpoint must be https and served from one of these (or a subdomain).
+var pushEndpointHosts = []string{
+	"fcm.googleapis.com",                // Chrome/Edge (FCM)
+	"android.googleapis.com",            // legacy GCM/FCM
+	"updates.push.services.mozilla.com", // Firefox autopush
+	"web.push.apple.com",                // Safari / Apple
+	"notify.windows.com",                // Windows WNS (*.notify.windows.com)
+	"push.microsoft.com",                // Microsoft (*.push.microsoft.com)
+}
+
+// allowedPushEndpoint reports whether raw is an https URL served by a known push
+// service — the SSRF allowlist for outbound Web Push requests.
+func allowedPushEndpoint(raw string) bool {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Scheme != "https" || u.Host == "" {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	for _, h := range pushEndpointHosts {
+		if host == h || strings.HasSuffix(host, "."+h) {
+			return true
+		}
+	}
+	return false
 }
 
 // normalizeSubject makes a VAPID subject valid (mailto: or https:) — a bare
