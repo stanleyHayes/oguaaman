@@ -29,3 +29,6 @@ backend/uploads/
 
 # NOTE: backend/gen/ (generated gRPC code) is intentionally committed so CI can
 # verify it is up to date (`buf generate` + git diff). Do not ignore it.
+
+# Backed-up production env (prod Atlas URI + secrets) — never commit.
+production.env
