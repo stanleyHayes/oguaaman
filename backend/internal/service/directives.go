@@ -241,12 +241,12 @@ func (s *Service) broadcastDirective(ctx context.Context, d *domain.Directive) {
 	if s.notifs == nil {
 		return
 	}
+	body := directiveNoticeBody(d)
 	go func() {
 		members, err := s.members.All(context.Background())
 		if err != nil {
 			return
 		}
-		body := directiveNoticeBody(d)
 		for i := range members {
 			m := &members[i]
 			_ = s.notifs.Insert(context.Background(), domain.Notification{
@@ -259,6 +259,13 @@ func (s *Service) broadcastDirective(ctx context.Context, d *domain.Directive) {
 			})
 		}
 	}()
+	// A push in parallel: a critical/emergency directive rings like a call.
+	if s.push != nil {
+		go s.push.BroadcastAll(context.Background(), PushPayload{
+			Title: d.Title, Body: body, URL: "/alerts", Tag: "directive-" + d.ID,
+			Severity: d.Severity, Kind: "directive", Ring: d.Severity == "critical" || d.Kind == "emergency",
+		})
+	}
 }
 
 // directiveNoticeBody builds the short notification body: the action if the

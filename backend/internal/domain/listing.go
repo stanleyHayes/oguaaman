@@ -87,31 +87,31 @@ type Listing struct {
 	// Optional map pin. Only set when the listing has a real, known coordinate
 	// (no server-side geocoding); businesses/properties/events/incidents/lostfound carry it
 	// so the town map can drop an accurate pin. Both must be set to be usable.
-	Latitude        *float64       `json:"latitude,omitempty" bson:"latitude,omitempty"`
-	Longitude       *float64       `json:"longitude,omitempty" bson:"longitude,omitempty"`
-	PostedByOrgID   string         `json:"postedByOrgId,omitempty" bson:"postedByOrgId,omitempty"`
-	CoverImageURL   string         `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
-	Featured        bool           `json:"featured" bson:"featured"`                               // surfaced on front pages (paid placement, spec §8.14)
-	FeaturedUntil   string         `json:"featuredUntil,omitempty" bson:"featuredUntil,omitempty"` // RFC3339; empty = no expiry. Past = lapsed.
-	ViewCount       int            `json:"viewCount" bson:"viewCount"`
-	Details         map[string]any `json:"details" bson:"details"`
+	Latitude      *float64       `json:"latitude,omitempty" bson:"latitude,omitempty"`
+	Longitude     *float64       `json:"longitude,omitempty" bson:"longitude,omitempty"`
+	PostedByOrgID string         `json:"postedByOrgId,omitempty" bson:"postedByOrgId,omitempty"`
+	CoverImageURL string         `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
+	Featured      bool           `json:"featured" bson:"featured"`                               // surfaced on front pages (paid placement, spec §8.14)
+	FeaturedUntil string         `json:"featuredUntil,omitempty" bson:"featuredUntil,omitempty"` // RFC3339; empty = no expiry. Past = lapsed.
+	ViewCount     int            `json:"viewCount" bson:"viewCount"`
+	Details       map[string]any `json:"details" bson:"details"`
 	// Storefront (business Supporter feature) — an owner-composed profile that
 	// renders on the listing's public page. Sections reuse the institution
 	// section engine (ProfileSection); Photos/Videos are a device-uploaded media
 	// gallery (capped: MaxStorefrontPhotos / MaxStorefrontVideos). Handle is an
 	// optional clean, unique, shareable slug (e.g. /s/aunties-kitchen) that a
 	// future <handle>.oguaaman.com subdomain can map onto. Supporter-gated writes.
-	Sections []ProfileSection `json:"sections,omitempty" bson:"sections,omitempty"`
-	Photos   []MediaAsset     `json:"photos,omitempty" bson:"photos,omitempty"`
-	Videos   []MediaAsset     `json:"videos,omitempty" bson:"videos,omitempty"`
-	Handle   string           `json:"handle,omitempty" bson:"handle,omitempty"`
-	Tributes []Tribute        `json:"tributes,omitempty" bson:"tributes,omitempty"`
-	CreatedAt       string         `json:"createdAt" bson:"createdAt"`
-	SubmittedAt     string         `json:"submittedAt,omitempty" bson:"submittedAt,omitempty"`
-	ReviewedByID    string         `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
-	ReviewedAt      string         `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
-	RejectionReason string         `json:"rejectionReason,omitempty" bson:"rejectionReason,omitempty"`
-	PublishedAt     string         `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
+	Sections        []ProfileSection `json:"sections,omitempty" bson:"sections,omitempty"`
+	Photos          []MediaAsset     `json:"photos,omitempty" bson:"photos,omitempty"`
+	Videos          []MediaAsset     `json:"videos,omitempty" bson:"videos,omitempty"`
+	Handle          string           `json:"handle,omitempty" bson:"handle,omitempty"`
+	Tributes        []Tribute        `json:"tributes,omitempty" bson:"tributes,omitempty"`
+	CreatedAt       string           `json:"createdAt" bson:"createdAt"`
+	SubmittedAt     string           `json:"submittedAt,omitempty" bson:"submittedAt,omitempty"`
+	ReviewedByID    string           `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
+	ReviewedAt      string           `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
+	RejectionReason string           `json:"rejectionReason,omitempty" bson:"rejectionReason,omitempty"`
+	PublishedAt     string           `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
 }
 
 // ListingFilter expresses the read predicates the API needs. Empty fields are

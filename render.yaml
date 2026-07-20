@@ -88,3 +88,13 @@ services:
         sync: false
       - key: WHATSAPP_PHONE_ID
         sync: false
+
+      # ── Web Push (VAPID) — browser safety-alert push (the "ring") ──
+      # Generate once: `npx web-push generate-vapid-keys`. Blank => browsers can't
+      # subscribe and the ring stays in-app/foreground; Expo (mobile) needs no key.
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        value: mailto:hello@oguaa.gh

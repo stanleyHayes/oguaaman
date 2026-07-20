@@ -31,6 +31,7 @@ const (
 	collListingViews  = "listing_views"
 	collDirectives    = "directives"
 	collStripeIntents = "stripe_intents"
+	collPushSubs      = "push_subscriptions"
 
 	collCivicBehaviours = "civic_behaviours"
 	collCivicLessons    = "civic_lessons"

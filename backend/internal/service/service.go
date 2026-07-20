@@ -6,6 +6,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -42,6 +43,7 @@ type Service struct {
 	agents          domain.AgentRepository
 	email           EmailSender
 	wa              MessageSender
+	push            *PushSender
 	log             *slog.Logger
 }
 
@@ -66,6 +68,7 @@ type Deps struct {
 	Agents          domain.AgentRepository
 	Email           EmailSender
 	WhatsApp        MessageSender
+	Push            *PushSender
 	Log             *slog.Logger
 }
 
@@ -81,6 +84,31 @@ func New(d Deps) *Service {
 		directives:      d.Directives,
 		civicBehaviours: d.CivicBehaviours, civicLessons: d.CivicLessons,
 		goals: d.Goals, agents: d.Agents,
-		email: d.Email, wa: d.WhatsApp, log: l,
+		email: d.Email, wa: d.WhatsApp, push: d.Push, log: l,
 	}
+}
+
+// RegisterPush stores a member's push subscription (web endpoint or expo token).
+func (s *Service) RegisterPush(ctx context.Context, sub domain.PushSubscription) error {
+	if s.push == nil {
+		return fmt.Errorf("push is not configured")
+	}
+	return s.push.Register(ctx, sub)
+}
+
+// UnregisterPush removes a member's push subscription by id.
+func (s *Service) UnregisterPush(ctx context.Context, memberID, id string) error {
+	if s.push == nil {
+		return nil
+	}
+	return s.push.Unregister(ctx, memberID, id)
+}
+
+// PushPublicKey returns the VAPID public key for browser subscription ("" when
+// web push is not configured).
+func (s *Service) PushPublicKey() string {
+	if s.push == nil {
+		return ""
+	}
+	return s.push.PublicKey()
 }

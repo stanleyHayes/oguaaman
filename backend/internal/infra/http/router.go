@@ -133,6 +133,10 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("DELETE /api/memorials/{slug}/follow", h.UnfollowMemorial)
 	mux.HandleFunc("POST /api/memorials/{slug}/keeper-claim", h.KeeperClaim)
 
+	// Push registration for safety-alert delivery (web VAPID key + subscribe).
+	mux.HandleFunc("GET /api/push/key", h.PushKey)
+	mux.HandleFunc("POST /api/push/subscribe", h.PushSubscribe)
+	mux.HandleFunc("POST /api/push/unsubscribe", h.PushUnsubscribe)
 	mux.HandleFunc("GET /api/notifications", h.Notifications)
 	mux.HandleFunc("GET /api/notifications/unread-count", h.UnreadCount)
 	mux.HandleFunc("POST /api/notifications/read-all", h.MarkAllNotificationsRead)

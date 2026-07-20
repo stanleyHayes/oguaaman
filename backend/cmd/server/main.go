@@ -42,6 +42,9 @@ func main() {
 	planRepo := mongox.NewPlanRepo(db)
 	wa := wax.New(cfg.WhatsAppToken, cfg.WhatsAppPhoneID, log)
 	email := emailx.New(cfg.ResendAPIKey, cfg.EmailFrom, log)
+	push := service.NewPushSender(mongox.NewPushRepo(db), service.PushConfig{
+		VAPIDPublic: cfg.VAPIDPublic, VAPIDPrivate: cfg.VAPIDPrivate, VAPIDSubject: cfg.VAPIDSubject,
+	}, log)
 	svc := service.New(service.Deps{
 		Listings:        mongox.NewListingRepo(db),
 		Members:         memberRepo,
@@ -62,6 +65,7 @@ func main() {
 		Agents:          mongox.NewAgentRepo(db),
 		Email:           email,
 		WhatsApp:        wa,
+		Push:            push,
 		Log:             log,
 	})
 	ai := service.NewAIService(cfg.AnthropicKey, cfg.AIModel, cfg.AIDailyBudget, cfg.AIPerMember, mongox.NewAIUsageRepo(db)).

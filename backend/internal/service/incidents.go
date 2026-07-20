@@ -98,8 +98,64 @@ func (s *Service) SubmitIncident(ctx context.Context, member *domain.Member, in 
 	}
 	if in.Severity == "high" || in.Severity == "critical" {
 		s.notifyCuratorsOfIncident(ctx, &l)
+		s.broadcastIncident(ctx, &l)
 	}
 	return &l, nil
+}
+
+// broadcastIncident alerts the whole town to a severe incident: an in-app notice
+// to every member plus a push (a critical incident rings like a call — see
+// PushPayload.Ring). Previously severe incidents reached only curators; citizens
+// now get the safety alert too. Runs in goroutines so it never delays the
+// time-critical incident response.
+func (s *Service) broadcastIncident(_ context.Context, l *domain.Listing) {
+	severity := asString(l.Details, "severity")
+	title := "Safety alert: " + l.Title
+	body := incidentAlertBody(l)
+	link := "/safety/" + l.Slug
+
+	if s.notifs != nil {
+		go func() {
+			members, err := s.members.All(context.Background())
+			if err != nil {
+				return
+			}
+			for i := range members {
+				m := &members[i]
+				_ = s.notifs.Insert(context.Background(), domain.Notification{
+					ID:       "ntf-" + fmt.Sprintf("%d-%s", time.Now().UnixNano(), m.ID),
+					MemberID: m.ID, Kind: "incident",
+					Title:     title,
+					Body:      body,
+					Link:      link,
+					CreatedAt: time.Now().UTC().Format(time.RFC3339),
+				})
+			}
+		}()
+	}
+	if s.push != nil {
+		go s.push.BroadcastAll(context.Background(), PushPayload{
+			Title: title, Body: body, URL: link, Tag: "incident-" + l.ID,
+			Severity: severity, Kind: "incident", Ring: severity == "critical",
+		})
+	}
+}
+
+// incidentAlertBody is the short citizen-facing alert line.
+func incidentAlertBody(l *domain.Listing) string {
+	category := asString(l.Details, "category")
+	location := asString(l.Details, "location")
+	if category != "" {
+		category = strings.ToUpper(category[:1]) + category[1:]
+	}
+	switch {
+	case category != "" && location != "":
+		return fmt.Sprintf("%s reported near %s. Take care and avoid the area.", category, location)
+	case location != "":
+		return fmt.Sprintf("An incident was reported near %s. Take care.", location)
+	default:
+		return "A safety incident was reported nearby. Take care."
+	}
 }
 
 // notifyCuratorsOfIncident alerts every curator/steward to a severe incident,

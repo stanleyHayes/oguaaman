@@ -57,6 +57,14 @@ type Config struct {
 	// Without a token the OTP code is returned in the API response (dev/sim mode).
 	WhatsAppToken   string // Bearer token for the WhatsApp Business API
 	WhatsAppPhoneID string // WhatsApp Business Account phone number ID
+
+	// Web Push (VAPID) for browser safety alerts. Generate a key pair once
+	// (e.g. `npx web-push generate-vapid-keys`). Without them, browsers can't
+	// subscribe and the ring stays in-app/foreground only; Expo (mobile) push
+	// needs no key. Subject is a mailto:/https: contact the push services require.
+	VAPIDPublic  string
+	VAPIDPrivate string
+	VAPIDSubject string
 }
 
 // Load reads configuration from a local .env (if present) and the environment,
@@ -121,6 +129,10 @@ func load() Config {
 
 		WhatsAppToken:   os.Getenv("WHATSAPP_TOKEN"),
 		WhatsAppPhoneID: os.Getenv("WHATSAPP_PHONE_ID"),
+
+		VAPIDPublic:  os.Getenv("VAPID_PUBLIC_KEY"),
+		VAPIDPrivate: os.Getenv("VAPID_PRIVATE_KEY"),
+		VAPIDSubject: env("VAPID_SUBJECT", "mailto:hello@oguaa.gh"),
 	}
 }
 
