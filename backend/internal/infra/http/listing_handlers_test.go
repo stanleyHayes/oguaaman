@@ -59,6 +59,13 @@ func (s *submitListings) UpdateIncidentStatus(context.Context, string, string, m
 }
 func (s *submitListings) SetLostFoundStatus(context.Context, string, string) error { return nil }
 func (s *submitListings) SetSubscribedUntil(context.Context, string, string) error { return nil }
+func (s *submitListings) SetStorefront(context.Context, string, string, []domain.ProfileSection, []domain.MediaAsset, []domain.MediaAsset) error {
+	return nil
+}
+func (s *submitListings) GetByHandle(context.Context, string) (*domain.Listing, error) {
+	return nil, &domain.NotFoundError{Entity: "listing"}
+}
+func (s *submitListings) HandleTaken(context.Context, string, string) (bool, error) { return false, nil }
 func (s *submitListings) SetKeeperID(context.Context, string, string) error        { return nil }
 func (s *submitListings) AvgApprovalHours(context.Context) (float64, error)        { return 0, nil }
 func (s *submitListings) RecordView(context.Context, string, string) (bool, error) { return true, nil }

@@ -55,6 +55,13 @@ const (
 	TypeLostFound   = "lostfound"
 )
 
+// Storefront media caps (business Supporter feature). Owners may upload up to
+// this many photos and videos to their storefront gallery.
+const (
+	MaxStorefrontPhotos = 10
+	MaxStorefrontVideos = 5
+)
+
 // Tribute — a condolence/memory left on a memorial (spec §8.11).
 type Tribute struct {
 	ID         string `json:"id" bson:"id"`
@@ -88,7 +95,17 @@ type Listing struct {
 	FeaturedUntil   string         `json:"featuredUntil,omitempty" bson:"featuredUntil,omitempty"` // RFC3339; empty = no expiry. Past = lapsed.
 	ViewCount       int            `json:"viewCount" bson:"viewCount"`
 	Details         map[string]any `json:"details" bson:"details"`
-	Tributes        []Tribute      `json:"tributes,omitempty" bson:"tributes,omitempty"`
+	// Storefront (business Supporter feature) — an owner-composed profile that
+	// renders on the listing's public page. Sections reuse the institution
+	// section engine (ProfileSection); Photos/Videos are a device-uploaded media
+	// gallery (capped: MaxStorefrontPhotos / MaxStorefrontVideos). Handle is an
+	// optional clean, unique, shareable slug (e.g. /s/aunties-kitchen) that a
+	// future <handle>.oguaaman.com subdomain can map onto. Supporter-gated writes.
+	Sections []ProfileSection `json:"sections,omitempty" bson:"sections,omitempty"`
+	Photos   []MediaAsset     `json:"photos,omitempty" bson:"photos,omitempty"`
+	Videos   []MediaAsset     `json:"videos,omitempty" bson:"videos,omitempty"`
+	Handle   string           `json:"handle,omitempty" bson:"handle,omitempty"`
+	Tributes []Tribute        `json:"tributes,omitempty" bson:"tributes,omitempty"`
 	CreatedAt       string         `json:"createdAt" bson:"createdAt"`
 	SubmittedAt     string         `json:"submittedAt,omitempty" bson:"submittedAt,omitempty"`
 	ReviewedByID    string         `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
@@ -140,6 +157,14 @@ type ListingRepository interface {
 	// SetSubscribedUntil sets details.subscribedUntil (RFC3339) — the paid-until
 	// date of a business's Supporter subscription (Phase 7).
 	SetSubscribedUntil(ctx context.Context, listingID, until string) error
+	// SetStorefront replaces a business listing's owner-composed storefront:
+	// profile sections + the photo/video gallery + optional clean handle.
+	SetStorefront(ctx context.Context, id, handle string, sections []ProfileSection, photos, videos []MediaAsset) error
+	// GetByHandle returns a listing by its clean storefront handle (or NotFound).
+	GetByHandle(ctx context.Context, handle string) (*Listing, error)
+	// HandleTaken reports whether a storefront handle is already used by another
+	// listing (exceptID is the listing being edited, allowed to keep its handle).
+	HandleTaken(ctx context.Context, handle, exceptID string) (bool, error)
 	// SetKeeperID sets details.keeperId on a memorial listing (a curator action
 	// taken after reviewing a family keeper-claim request).
 	SetKeeperID(ctx context.Context, listingID, keeperMemberID string) error

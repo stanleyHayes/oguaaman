@@ -140,6 +140,9 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	mux.HandleFunc("GET /api/businesses", h.Businesses)
 	mux.HandleFunc("GET /api/businesses/{slug}", h.Business)
+	// Business storefront (Supporter feature): the shareable clean-handle lookup
+	// and the owner save (sections + photo/video gallery).
+	mux.HandleFunc("GET /api/storefront/{handle}", h.Storefront)
 	mux.HandleFunc("GET /api/properties", h.Properties)
 	mux.HandleFunc("GET /api/properties/{slug}", h.Property)
 	// Business subscriptions (Phase 7): the Supporter plan via Paystack.
@@ -265,6 +268,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	mux.HandleFunc("POST /api/listings", h.Submit)
 	mux.HandleFunc("POST /api/listings/{id}/edit", h.EditListing)
+	mux.HandleFunc("POST /api/listings/{id}/storefront", h.SetStorefront)
 	mux.HandleFunc("POST /api/listings/{id}/report", h.Report)
 	mux.HandleFunc("POST /api/listings/{id}/view", h.RecordView)
 	mux.HandleFunc("POST /api/uploads", h.Upload)

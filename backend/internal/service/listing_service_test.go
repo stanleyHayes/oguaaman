@@ -152,6 +152,35 @@ func (f *fakeRepo) SetSubscribedUntil(_ context.Context, id, until string) error
 	return &domain.NotFoundError{Entity: "listing"}
 }
 
+func (f *fakeRepo) SetStorefront(_ context.Context, id, handle string, sections []domain.ProfileSection, photos, videos []domain.MediaAsset) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			f.listings[i].Handle = handle
+			f.listings[i].Sections = sections
+			f.listings[i].Photos = photos
+			f.listings[i].Videos = videos
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
+func (f *fakeRepo) GetByHandle(_ context.Context, handle string) (*domain.Listing, error) {
+	for i := range f.listings {
+		if handle != "" && f.listings[i].Handle == handle {
+			return &f.listings[i], nil
+		}
+	}
+	return nil, &domain.NotFoundError{Entity: "listing"}
+}
+func (f *fakeRepo) HandleTaken(_ context.Context, handle, exceptID string) (bool, error) {
+	for i := range f.listings {
+		if f.listings[i].Handle == handle && f.listings[i].ID != exceptID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (f *fakeRepo) RecordView(_ context.Context, _, _ string) (bool, error) { return true, nil }
 func (f *fakeRepo) ViewsThisMonth(_ context.Context, _ []string) (int, error) {
 	return 0, nil

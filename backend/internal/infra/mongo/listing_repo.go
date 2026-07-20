@@ -156,6 +156,36 @@ func (r *ListingRepo) SetSubscribedUntil(ctx context.Context, id, until string) 
 	return err
 }
 
+// SetStorefront replaces a business listing's storefront in one $set: the
+// profile sections, the photo/video gallery, and the clean handle (unset when
+// blank so it never collides on the unique-ish lookup).
+func (r *ListingRepo) SetStorefront(ctx context.Context, id, handle string, sections []domain.ProfileSection, photos, videos []domain.MediaAsset) error {
+	set := bson.M{"sections": sections, "photos": photos, "videos": videos}
+	update := bson.M{"$set": set}
+	if handle == "" {
+		update["$unset"] = bson.M{"handle": ""}
+	} else {
+		set["handle"] = handle
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, update)
+	return err
+}
+
+// GetByHandle returns a listing by its clean storefront handle.
+func (r *ListingRepo) GetByHandle(ctx context.Context, handle string) (*domain.Listing, error) {
+	var l domain.Listing
+	if err := r.c.FindOne(ctx, bson.M{"handle": handle}).Decode(&l); err != nil {
+		return nil, notFound("listing", err)
+	}
+	return &l, nil
+}
+
+// HandleTaken reports whether another listing already uses this handle.
+func (r *ListingRepo) HandleTaken(ctx context.Context, handle, exceptID string) (bool, error) {
+	n, err := r.c.CountDocuments(ctx, bson.M{"handle": handle, "_id": bson.M{"$ne": exceptID}})
+	return n > 0, err
+}
+
 // SetKeeperID assigns a keeper (family administrator) to a memorial listing.
 func (r *ListingRepo) SetKeeperID(ctx context.Context, id, keeperMemberID string) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"details.keeperId": keeperMemberID}})

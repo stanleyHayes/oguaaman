@@ -297,6 +297,51 @@ func (h *Handler) EditListing(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, l)
 }
 
+// SetStorefront saves a business owner's storefront (profile sections + photo/
+// video gallery + optional clean shareable handle). The service enforces
+// ownership AND an active Supporter subscription (a paid feature).
+func (h *Handler) SetStorefront(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "storefront:"+clientKey(r), 60, time.Hour) {
+		return
+	}
+	var in service.StorefrontInput
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	l, err := h.svc.SetListingStorefront(r.Context(), m, r.PathValue("id"), in)
+	if err != nil {
+		var nf *domain.NotFoundError
+		var fb *domain.ForbiddenError
+		if errors.As(err, &nf) || errors.As(err, &fb) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, businessView{Listing: *l, Supporter: service.SupporterActive(*l, time.Now().UTC())})
+}
+
+// Storefront resolves a business by its clean handle (/s/:handle), for the
+// shareable custom URL.
+func (h *Handler) Storefront(w http.ResponseWriter, r *http.Request) {
+	l, err := h.svc.ListingByHandle(r.Context(), r.PathValue("handle"))
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, businessView{Listing: *l, Supporter: service.SupporterActive(*l, time.Now().UTC())})
+}
+
 func (h *Handler) Candle(w http.ResponseWriter, r *http.Request) {
 	count, err := h.svc.LightCandle(r.Context(), r.PathValue("slug"))
 	if err != nil {
