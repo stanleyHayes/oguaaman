@@ -6,6 +6,7 @@ import { BackLink, Card, StatusBadge } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { DatePicker } from "@/components/date-picker";
 import { BusyLabel } from "@/components/skeleton";
+import { PORTAL } from "@/lib/portal";
 
 interface Data {
   listing: Listing | null;
@@ -335,6 +336,10 @@ function EditForm({ listing }: Readonly<{ listing: Listing }>) {
           {type === "business" && (<>
             <Field label="Category / sector"><input name="category" defaultValue={str(listing.details.category)} className={inputCls} /></Field>
             <Field label="Location / address"><input name="address" defaultValue={str(listing.details.address)} className={inputCls} /></Field>
+            <a href={`${PORTAL}/business/${listing.slug}/manage`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 rounded-xl border border-gold-border/50 bg-gold/[0.06] px-4 py-3 text-sm transition-colors hover:border-gold-border">
+              <span><span className="font-semibold text-gold-text">★ Build your storefront</span> <span className="text-ink-faint">— photos, videos &amp; a shareable link (Supporter)</span></span>
+              <span aria-hidden className="text-gold-text">↗</span>
+            </a>
           </>)}
           {type === "property" && (
             <div className="space-y-5 rounded-xl border border-gold-border/40 bg-gold/[0.06] p-4 sm:p-5">
