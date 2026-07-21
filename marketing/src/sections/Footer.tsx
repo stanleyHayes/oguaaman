@@ -3,7 +3,7 @@ import { Container } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
 import { Reveal } from "@/components/motion";
-import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL } from "@/config";
+import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL, CONTACT_PHONE } from "@/config";
 
 // Hand-rolled inline icon set — no icon library is installed here, so we mirror
 // the house style used by SocialIcon: 24×24 grid, 1.7 stroke, currentColor so
@@ -81,7 +81,6 @@ const COLUMNS: FooterColumn[] = [
     links: [
       { label: "About Oguaa", to: "/about", icon: "info" },
       { label: "Contact", to: "/contact", icon: "mail" },
-      { label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}`, icon: "mail" },
     ],
   },
 ];
@@ -122,12 +121,14 @@ function LinkColumn({ column }: Readonly<{ column: FooterColumn }>) {
   );
 }
 
-type SocialName = "instagram" | "facebook" | "x";
+type SocialName = "instagram" | "facebook" | "x" | "mail" | "phone";
 
-const SOCIALS: { name: SocialName; label: string; href: string }[] = [
+const SOCIALS: { name: SocialName; label: string; href: string; external?: boolean }[] = [
   { name: "instagram", label: "Instagram", href: "https://instagram.com/oguaa" },
   { name: "facebook", label: "Facebook", href: "https://facebook.com/oguaa" },
   { name: "x", label: "X (Twitter)", href: "https://x.com/oguaa" },
+  { name: "mail", label: `Email ${CONTACT_EMAIL}`, href: `mailto:${CONTACT_EMAIL}`, external: false },
+  { name: "phone", label: `Call ${CONTACT_PHONE}`, href: `tel:${CONTACT_PHONE}`, external: false },
 ];
 
 function SocialIcon({ name }: Readonly<{ name: SocialName }>) {
@@ -135,6 +136,8 @@ function SocialIcon({ name }: Readonly<{ name: SocialName }>) {
     instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.2 6.8h.01" /></>,
     facebook: <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />,
     x: <><path d="M4 4h4.6L20 20h-4.6Z" /><path d="M4 20l6.8-7.5" /><path d="M13.2 11.4 20 4" /></>,
+    mail: <><rect x="2" y="4" width="20" height="16" rx="2.5" /><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></>,
+    phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.69 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.28-1.28a2 2 0 0 1 2.11-.45c.9.33 1.84.56 2.8.69A2 2 0 0 1 22 16.92Z" />,
   }[name];
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden>
@@ -145,14 +148,13 @@ function SocialIcon({ name }: Readonly<{ name: SocialName }>) {
 
 function SocialRow() {
   return (
-    <div className="mt-4 flex items-center gap-3">
+    <div className="mt-4 flex flex-wrap items-center gap-3">
       {SOCIALS.map((s) => (
         <a
           key={s.name}
           href={s.href}
           aria-label={s.label}
-          target="_blank"
-          rel="noopener noreferrer"
+          {...(s.external === false ? {} : { target: "_blank", rel: "noopener noreferrer" })}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-cream/15 text-cream/70 transition-colors hover:border-gold-brand/50 hover:text-gold"
         >
           <SocialIcon name={s.name} />
