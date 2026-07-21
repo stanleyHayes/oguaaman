@@ -1,46 +1,56 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type Point = { x: number; y: number; z: number; size: number; rx: number; ry: number };
+type CubiePoint = { x: -1 | 0 | 1; y: -1 | 0 | 1; z: -1 | 0 | 1 };
 
-const CUBES: Point[] = [
-  { x: -112, y: -112, z: 14, size: 84, rx: 6, ry: -12 },
-  { x: -30, y: -128, z: 28, size: 90, rx: -10, ry: 16 },
-  { x: 54, y: -108, z: -12, size: 80, rx: 12, ry: -10 },
-  { x: -136, y: -24, z: 4, size: 86, rx: -6, ry: 9 },
-  { x: -52, y: -24, z: 44, size: 74, rx: 8, ry: -16 },
-  { x: 34, y: -16, z: 10, size: 92, rx: -8, ry: 12 },
-  { x: 118, y: -22, z: -22, size: 80, rx: 10, ry: -12 },
-  { x: -122, y: 66, z: -16, size: 90, rx: -10, ry: 8 },
-  { x: -30, y: 56, z: 8, size: 92, rx: 6, ry: -8 },
-  { x: 58, y: 68, z: 28, size: 84, rx: -12, ry: 14 },
-  { x: 136, y: 62, z: -8, size: 76, rx: 6, ry: -16 },
-  { x: -18, y: 146, z: -14, size: 88, rx: -8, ry: 6 },
-];
+const CUBIE_SIZE = 66;
+const CUBIE_GAP = 6;
+const CUBIE_STEP = CUBIE_SIZE + CUBIE_GAP;
 
-const SYMBOLS = [
-  { s: "lambda", x: "8%", y: "18%" },
-  { s: "pi", x: "20%", y: "74%" },
-  { s: "Sigma", x: "84%", y: "20%" },
-  { s: "sqrt", x: "76%", y: "48%" },
-  { s: "delta", x: "92%", y: "70%" },
-  { s: "integral", x: "56%", y: "12%" },
-];
+const AXIS_VALUES = [-1, 0, 1] as const;
+const CUBIES: CubiePoint[] = AXIS_VALUES.flatMap((x) =>
+  AXIS_VALUES.flatMap((y) =>
+    AXIS_VALUES.map((z) => ({ x, y, z })),
+  ),
+);
 
-function Cube({ cube }: Readonly<{ cube: Point }>) {
-  const half = cube.size / 2;
-  const shell = `translate3d(${cube.x}px, ${cube.y}px, ${cube.z}px) rotateX(${cube.rx}deg) rotateY(${cube.ry}deg)`;
-  const face = "absolute inset-0 border border-cream/65 bg-transparent";
+function Cubie({ cubie }: Readonly<{ cubie: CubiePoint }>) {
+  const half = CUBIE_SIZE / 2;
+  const shell = `translate3d(${cubie.x * CUBIE_STEP}px, ${cubie.y * CUBIE_STEP}px, ${cubie.z * CUBIE_STEP}px)`;
+  const face = "absolute inset-0 rounded-[8px] border border-cream/25 bg-[#0f3a2b]";
+  const sticker = "absolute inset-[14%] rounded-[5px]";
+
+  const faceFill = {
+    front: "#f4efe0",
+    back: "#1e6b4f",
+    right: "#b07d32",
+    left: "#b0503c",
+    top: "#0e7c6b",
+    bottom: "#2e4d90",
+  } as const;
+
   return (
     <div
       className="absolute left-1/2 top-1/2 [transform-style:preserve-3d]"
-      style={{ width: cube.size, height: cube.size, transform: shell }}
+      style={{ width: CUBIE_SIZE, height: CUBIE_SIZE, transform: shell }}
     >
-      <span className={face} style={{ transform: `translateZ(${half}px)` }} />
-      <span className={face} style={{ transform: `rotateY(180deg) translateZ(${half}px)` }} />
-      <span className={face} style={{ transform: `rotateY(90deg) translateZ(${half}px)` }} />
-      <span className={face} style={{ transform: `rotateY(-90deg) translateZ(${half}px)` }} />
-      <span className={face} style={{ transform: `rotateX(90deg) translateZ(${half}px)` }} />
-      <span className={face} style={{ transform: `rotateX(-90deg) translateZ(${half}px)` }} />
+      <span className={face} style={{ transform: `translateZ(${half}px)` }}>
+        {cubie.z === 1 && <span className={sticker} style={{ backgroundColor: faceFill.front }} />}
+      </span>
+      <span className={face} style={{ transform: `rotateY(180deg) translateZ(${half}px)` }}>
+        {cubie.z === -1 && <span className={sticker} style={{ backgroundColor: faceFill.back }} />}
+      </span>
+      <span className={face} style={{ transform: `rotateY(90deg) translateZ(${half}px)` }}>
+        {cubie.x === 1 && <span className={sticker} style={{ backgroundColor: faceFill.right }} />}
+      </span>
+      <span className={face} style={{ transform: `rotateY(-90deg) translateZ(${half}px)` }}>
+        {cubie.x === -1 && <span className={sticker} style={{ backgroundColor: faceFill.left }} />}
+      </span>
+      <span className={face} style={{ transform: `rotateX(90deg) translateZ(${half}px)` }}>
+        {cubie.y === -1 && <span className={sticker} style={{ backgroundColor: faceFill.top }} />}
+      </span>
+      <span className={face} style={{ transform: `rotateX(-90deg) translateZ(${half}px)` }}>
+        {cubie.y === 1 && <span className={sticker} style={{ backgroundColor: faceFill.bottom }} />}
+      </span>
     </div>
   );
 }
@@ -81,19 +91,9 @@ export function HeroWireframe() {
     <div className="relative ml-auto hidden w-full max-w-[36rem] lg:block">
       <div className="pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full bg-gold/10 blur-3xl" aria-hidden />
       <div className="pointer-events-none absolute -bottom-16 -left-14 h-52 w-52 rounded-full bg-teal/15 blur-3xl" aria-hidden />
-      {SYMBOLS.map((glyph) => (
-        <span
-          key={glyph.s}
-          className="pointer-events-none absolute text-base font-medium tracking-wide text-cream/20"
-          style={{ left: glyph.x, top: glyph.y }}
-          aria-hidden
-        >
-          {glyph.s}
-        </span>
-      ))}
       <div
-        className={`relative h-[32rem] w-full touch-none select-none overflow-hidden rounded-[2.5rem] border border-cream/16 bg-gradient-to-b from-green-900/20 via-green-900/10 to-teal/20 shadow-[var(--shadow-lift)] ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
-        style={{ perspective: "1200px" }}
+        className={`relative h-[32rem] w-full touch-none select-none overflow-hidden rounded-[2.5rem] border border-cream/16 bg-gradient-to-b from-green-900/35 via-green-900/20 to-teal/25 shadow-[var(--shadow-lift)] ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+        style={{ perspective: "1400px" }}
         onPointerDown={(event) => {
           setDragging(true);
           dragPoint.current = { x: event.clientX, y: event.clientY };
@@ -128,15 +128,15 @@ export function HeroWireframe() {
           setDragging(false);
         }}
         role="img"
-        aria-label="Interactive wireframe cube sculpture"
+        aria-label="Interactive rotating Rubik's cube"
       >
         <div className="absolute inset-0 [transform-style:preserve-3d]">
           <div
             className="absolute left-1/2 top-1/2 [transform-style:preserve-3d] will-change-transform"
             style={{ transform: wireTransform }}
           >
-            {CUBES.map((cube, index) => (
-              <Cube key={`${cube.x}-${cube.y}-${index}`} cube={cube} />
+            {CUBIES.map((cubie, index) => (
+              <Cubie key={`${cubie.x}-${cubie.y}-${cubie.z}-${index}`} cubie={cubie} />
             ))}
           </div>
         </div>
