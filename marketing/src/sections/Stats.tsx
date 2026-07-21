@@ -85,8 +85,8 @@ export function Stats() {
     };
   }, []);
 
-  if (!stats && !loadFailed) return null;
-  if (!stats && loadFailed) {
+  if (!stats) {
+    if (!loadFailed) return null;
     return (
       <Section id="community" tone="green">
         <SectionHeading
