@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { PageHero } from "@/components/page-hero";
 import { Container } from "@/components/ui";
 import { CoastScene } from "@/components/scenes";
 import { Reveal } from "@/components/motion";
@@ -78,49 +79,6 @@ function StoryTag({ article, light = false, preferred }: Readonly<{ article: New
     <span className={`inline-flex min-h-7 items-center rounded-full px-3 text-[0.62rem] font-bold uppercase tracking-[0.17em] ${light ? "border border-cream/20 bg-green-900/60 text-gold backdrop-blur-sm" : "bg-gold/[0.13] text-gold-text"}`}>
       {tagLabel(tag)}
     </span>
-  );
-}
-
-function NewsMasthead({ latest }: Readonly<{ latest?: NewsArticle }>) {
-  return (
-    <header className="on-dark on-dark-pin relative isolate overflow-hidden border-b border-gold/20 bg-green-900 text-cream">
-      <div aria-hidden className="absolute inset-0 opacity-[0.18]"><CoastScene /></div>
-      <div aria-hidden className="absolute inset-0 bg-[linear-gradient(110deg,rgba(12,44,31,0.98)_10%,rgba(12,44,31,0.86)_58%,rgba(12,44,31,0.6))]" />
-      <div aria-hidden className="absolute -right-24 -top-44 h-[34rem] w-[34rem] rounded-full border border-gold/15" />
-      <div aria-hidden className="absolute -right-10 -top-32 h-[27rem] w-[27rem] rounded-full border border-cream/10" />
-
-      <Container size="wide" className="relative py-14 sm:py-16 lg:py-20">
-        <nav aria-label="Breadcrumb" className="flex min-h-11 items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-cream/60">
-          <Link to="/" className="inline-flex min-h-11 items-center transition-colors hover:text-gold">Home</Link>
-          <span aria-hidden>/</span>
-          <span className="text-cream">Newsroom</span>
-        </nav>
-
-        <div className="mt-7 grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <div>
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-gold">The Oguaa Newsroom</p>
-            <h1 className="mt-3 max-w-4xl text-5xl font-semibold leading-[0.98] text-cream sm:text-6xl lg:text-[5rem]">
-              The city, in its own words.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-cream/78 sm:text-lg">
-              Reporting, notices and opportunities from the people and institutions shaping Cape Coast—open to everyone, without a paywall.
-            </p>
-          </div>
-
-          {latest && (
-            <Link
-              to={`/news/${latest.slug}`}
-              className="group border-y border-cream/20 py-4 transition-colors hover:border-gold/60"
-            >
-              <span className="flex min-h-11 items-center justify-between gap-3 text-[0.64rem] font-bold uppercase tracking-[0.18em] text-gold">
-                New on the desk <span className="text-lg transition-transform group-hover:translate-x-1" aria-hidden>→</span>
-              </span>
-              <span className="mt-2 block text-base font-semibold leading-snug text-cream">{latest.title}</span>
-            </Link>
-          )}
-        </div>
-      </Container>
-    </header>
   );
 }
 
@@ -324,7 +282,51 @@ export function Component() {
 
   return (
     <>
-      <NewsMasthead latest={articles[0]} />
+      <PageHero
+        scene={CoastScene}
+        kicker="News"
+        title="The city, in its own words."
+        lede="Reporting, notices and opportunities from the people and institutions shaping Cape Coast — open to everyone, without a paywall."
+      >
+        <div className="flex max-w-4xl flex-wrap gap-2">
+          <a
+            href="#front-page"
+            className="group inline-flex min-h-11 items-center gap-2 rounded-full border border-cream/25 bg-green-900/35 px-4 text-sm text-cream backdrop-blur-sm transition-colors hover:border-gold hover:bg-gold hover:text-green-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+          >
+            <span className="text-[0.62rem] font-semibold tracking-[0.15em] text-gold transition-colors group-hover:text-green-900/65" aria-hidden>
+              01
+            </span>
+            <span className="font-semibold">Front page</span>
+          </a>
+          <a
+            href="#latest"
+            className="group inline-flex min-h-11 items-center gap-2 rounded-full border border-cream/25 bg-green-900/35 px-4 text-sm text-cream backdrop-blur-sm transition-colors hover:border-gold hover:bg-gold hover:text-green-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+          >
+            <span className="text-[0.62rem] font-semibold tracking-[0.15em] text-gold transition-colors group-hover:text-green-900/65" aria-hidden>
+              02
+            </span>
+            <span className="font-semibold">Latest</span>
+          </a>
+          <a
+            href="#city-desk"
+            className="group inline-flex min-h-11 items-center gap-2 rounded-full border border-cream/25 bg-green-900/35 px-4 text-sm text-cream backdrop-blur-sm transition-colors hover:border-gold hover:bg-gold hover:text-green-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+          >
+            <span className="text-[0.62rem] font-semibold tracking-[0.15em] text-gold transition-colors group-hover:text-green-900/65" aria-hidden>
+              03
+            </span>
+            <span className="font-semibold">City desk</span>
+          </a>
+        </div>
+        {articles[0] && (
+          <Link
+            to={`/news/${articles[0].slug}`}
+            className="mt-5 inline-flex max-w-md items-center gap-2 rounded-full border border-cream/25 bg-green-900/35 px-4 py-2 text-sm font-semibold text-cream backdrop-blur-sm transition-colors hover:border-gold hover:bg-gold hover:text-green-900"
+          >
+            New on the desk: {articles[0].title}
+            <span aria-hidden>→</span>
+          </Link>
+        )}
+      </PageHero>
 
       <section className="bg-paper py-12 text-ink sm:py-16 lg:py-20" aria-label="Newsroom stories">
         <Container size="wide">
@@ -343,15 +345,19 @@ export function Component() {
 
               {lead && (
                 <Reveal className="mt-8">
-                  <section aria-label="Front page" className={`grid items-start gap-5 ${briefings.length > 0 ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(20rem,0.65fr)]" : ""}`}>
+                  <section id="front-page" aria-label="Front page" className={`grid items-start gap-5 ${briefings.length > 0 ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(20rem,0.65fr)]" : ""}`}>
                     <LeadStory article={lead} activeTag={activeTag} />
-                    {briefings.length > 0 && <BriefingRail articles={briefings} activeTag={activeTag} />}
+                    {briefings.length > 0 && (
+                      <div id="latest">
+                        <BriefingRail articles={briefings} activeTag={activeTag} />
+                      </div>
+                    )}
                   </section>
                 </Reveal>
               )}
 
               {desk.length > 0 && (
-                <section className="mt-14 border-t border-green/15 pt-8 sm:mt-16">
+                <section id="city-desk" className="mt-14 border-t border-green/15 pt-8 sm:mt-16">
                   <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
                     <div>
                       <p className="text-[0.66rem] font-bold uppercase tracking-[0.21em] text-gold-text">Across Cape Coast</p>
