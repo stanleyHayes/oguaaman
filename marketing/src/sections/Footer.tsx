@@ -170,7 +170,7 @@ export function Footer() {
       <span aria-hidden className="pointer-events-none absolute inset-0 bg-contours opacity-[0.06]" />
       <span aria-hidden className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-gold-brand/[0.08] blur-3xl" />
 
-      <Container className="relative py-16 sm:py-20" size="wide">
+      <Container className="relative pb-16 pt-5 sm:pb-20 sm:pt-7" size="wide">
         {/* CTA card */}
         <Reveal className="og-card og-card-dark on-dark-pin og-card-accent-gold relative mb-14 border-cream/10 bg-cream/[0.05] p-7 backdrop-blur-sm sm:p-9">
           <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-gold">Yɛn ara asaase ni</p>

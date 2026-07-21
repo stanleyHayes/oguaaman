@@ -1,5 +1,5 @@
 import { Container, CTA as Cta, Eyebrow } from "@/components/ui";
-import { Magnetic, Parallax, Stagger, StaggerItem, WordReveal } from "@/components/motion";
+import { Parallax, Stagger, StaggerItem, WordReveal } from "@/components/motion";
 import { HeroWireframe } from "@/components/hero-wireframe";
 import { Wordmark } from "@/components/wordmark";
 import { PORTAL_APP_URL } from "@/config";
@@ -60,26 +60,24 @@ export function Hero() {
             </StaggerItem>
 
             <StaggerItem index={3}>
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Magnetic>
-                  <Cta href={PORTAL_APP_URL} variant="gold" external>
-                    Open the web app
-                    <svg
-                      width={16}
-                      height={16}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.6}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      <path d="M5 12h14M13 6l6 6-6 6" />
-                    </svg>
-                  </Cta>
-                </Magnetic>
-                <Cta href="#get" variant="outline-dark">
+              <div className="mt-9 flex flex-col gap-3">
+                <Cta href={PORTAL_APP_URL} variant="gold" external className="w-full justify-center">
+                  Open the web app
+                  <svg
+                    width={16}
+                    height={16}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </Cta>
+                <Cta href="#get" variant="outline-dark" className="w-full justify-center">
                   Get the mobile app
                 </Cta>
               </div>

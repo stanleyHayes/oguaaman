@@ -141,7 +141,7 @@ export function Download() {
           <ScanPanel />
         </div>
 
-        <SymbolDivider name="crab" tone="text-gold" className="mt-16 opacity-60" />
+        <SymbolDivider name="crab" tone="text-gold" className="mt-8 opacity-60 sm:mt-10" />
       </Container>
     </Section>
   );
