@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { Wordmark } from "@/components/wordmark";
-import { PORTAL_APP_URL } from "@/config";
+import { CONTACT_EMAIL, PORTAL_APP_URL } from "@/config";
 import { SectionIcon } from "@/components/section-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -41,13 +41,26 @@ const NAV_LINKS: NavItem[] = [
   { to: "/visit", label: "Visit", note: "Castle, Kakum, the lagoon, the shore.", icon: "visit", tone: "teal" },
   { to: "/leadership", label: "Leadership", note: "The stool and the civic assembly.", icon: "leadership", tone: "green" },
   { to: "/news", label: "News", note: "Notices and stories from the town.", icon: "news", tone: "gold" },
-  { to: "/about", label: "About", note: "What Oguaa is building for Cape Coast.", icon: "about", tone: "green" },
-  { to: "/contact", label: "Contact", note: "Speak with the Oguaa team.", icon: "contact", tone: "teal" },
 ];
 
 const MAIN_LINKS = NAV_LINKS.slice(0, 4);
 const EXPLORE_LINKS = NAV_LINKS.slice(4, 6);
 const COMMUNITY_LINKS = NAV_LINKS.slice(6);
+
+interface UtilityLink {
+  label: string;
+  to?: string;
+  href?: string;
+  external?: boolean;
+}
+
+const TOP_LINKS: UtilityLink[] = [
+  { label: "About", to: "/about" },
+  { label: "Contact", to: "/contact" },
+  { label: "Privacy", to: "/privacy" },
+  { label: "Terms", to: "/terms" },
+  { label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
+];
 
 function MenuTile({ item, onClick }: Readonly<{ item: NavItem; onClick: () => void }>) {
   const tone = TONE[item.tone];
@@ -177,9 +190,35 @@ export function Nav() {
   const shell = dark
     ? "on-dark-pin border-cream/20 bg-green-900/40 text-cream backdrop-blur-xl"
     : "border-gold-border/25 bg-paper/92 text-ink shadow-[var(--shadow-card)] backdrop-blur-xl";
+  const utilityShell = dark
+    ? "on-dark-pin border-cream/15 bg-green-950/65 text-cream/85"
+    : "border-gold-border/25 bg-paper/92 text-ink-faint shadow-[var(--shadow-card)]";
+  const utilityLink = dark
+    ? "text-cream/80 hover:text-gold"
+    : "text-ink-faint hover:text-green";
 
   return (
-    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5">
+    <header className="sticky top-0 z-50 px-3 pt-2 sm:px-5">
+      <div className={`mx-auto mb-2 hidden w-full max-w-[76rem] items-center justify-between rounded-full border px-4 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] lg:flex ${utilityShell}`}>
+        <div className="flex items-center gap-2">
+          <span className="text-gold/85">Oguaa links</span>
+          <span className={`h-3.5 w-px ${dark ? "bg-cream/20" : "bg-sand-dark/35"}`} aria-hidden />
+          <span className={dark ? "text-cream/70" : "text-ink-faint"}>Cape Coast</span>
+        </div>
+        <nav aria-label="Top navigation" className="flex items-center gap-4">
+          {TOP_LINKS.map((link) => (
+            link.to ? (
+              <NavLink key={link.label} to={link.to} className={({ isActive }) => `${utilityLink} transition-colors ${isActive ? (dark ? "text-gold" : "text-green") : ""}`}>
+                {link.label}
+              </NavLink>
+            ) : (
+              <a key={link.label} href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined} className={`${utilityLink} transition-colors`}>
+                {link.label}
+              </a>
+            )
+          ))}
+        </nav>
+      </div>
       <nav
         aria-label="Primary"
         className={`mx-auto flex w-full max-w-[76rem] items-center justify-between gap-4 rounded-full border px-4 py-2.5 transition-colors duration-300 sm:px-5 ${shell}`}
@@ -275,6 +314,22 @@ export function Nav() {
                 </li>
               ))}
             </ul>
+            <div className="mt-5 rounded-2xl border border-sand bg-cream/60 p-3">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-gold-text">Info</p>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-semibold">
+                {TOP_LINKS.map((link) => (
+                  link.to ? (
+                    <NavLink key={link.label} to={link.to} className={({ isActive }) => `transition-colors ${isActive ? "text-green" : "text-ink-muted hover:text-green"}`}>
+                      {link.label}
+                    </NavLink>
+                  ) : (
+                    <a key={link.label} href={link.href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined} className="text-ink-muted transition-colors hover:text-green">
+                      {link.label}
+                    </a>
+                  )
+                ))}
+              </div>
+            </div>
             <EnterApp className="mt-5 w-full justify-center bg-gold-brand text-green-900 hover:bg-gold" />
           </motion.div>
         </div>
