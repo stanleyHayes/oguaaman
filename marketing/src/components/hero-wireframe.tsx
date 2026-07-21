@@ -96,9 +96,9 @@ function Cubie({
   activeTurn: TurnState | null;
 }>) {
   const half = CUBIE_SIZE / 2;
-  let x = cubie.x;
-  let y = cubie.y;
-  let z = cubie.z;
+  let x: number = cubie.x;
+  let y: number = cubie.y;
+  let z: number = cubie.z;
   let extraRotate = "";
 
   if (activeTurn && cubie[activeTurn.axis] === activeTurn.layer) {
