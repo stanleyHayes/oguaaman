@@ -12,7 +12,7 @@ function EnterApp({ className = "" }: Readonly<{ className?: string }>) {
       href={PORTAL_APP_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group inline-flex items-center justify-center gap-2 rounded-full bg-cream px-5 py-2.5 text-sm font-semibold text-green-900 transition-colors hover:bg-white ${className}`}
+      className={`group inline-flex items-center justify-center gap-2 rounded-full bg-gold-brand px-6 py-2.5 text-sm font-bold text-green-900 shadow-[0_8px_24px_rgba(176,125,50,0.38)] transition-all hover:bg-gold hover:shadow-[0_10px_30px_rgba(176,125,50,0.48)] ${className}`}
     >
       <span>Get started</span>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="transition-transform group-hover:translate-x-0.5">
@@ -188,7 +188,7 @@ export function Nav() {
   const dark = !scrolled && !mobileOpen;
   const linkBase = "relative isolate inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium transition-colors";
   const shell = dark
-    ? "on-dark-pin border-cream/20 bg-green-900/40 text-cream backdrop-blur-xl"
+    ? "on-dark-pin border-cream/15 bg-green-900/92 text-cream backdrop-blur-xl"
     : "border-gold-border/25 bg-paper/92 text-ink shadow-[var(--shadow-card)] backdrop-blur-xl";
   const utilityShell = dark
     ? "on-dark-pin border-cream/15 bg-green-950/65 text-cream/85"
@@ -221,7 +221,7 @@ export function Nav() {
       </div>
       <nav
         aria-label="Primary"
-        className={`mx-auto flex w-[calc(100%-1.5rem)] max-w-[76rem] items-center justify-between gap-4 rounded-full border px-4 py-2.5 transition-colors duration-300 sm:w-[calc(100%-2.5rem)] sm:px-5 ${shell}`}
+        className={`flex w-full items-center justify-between gap-4 border-b px-4 py-2.5 transition-colors duration-300 sm:px-5 ${shell}`}
       >
         <Link to="/" aria-label="Oguaa - home">
           <Wordmark tone={dark ? "text-cream" : "text-ink"} markTone="text-gold" size="text-2xl" />
@@ -250,19 +250,6 @@ export function Nav() {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium ${dark ? "border-cream/25 text-cream/80" : "border-gold-border/35 text-ink-muted"}`}>
-            Cape Coast
-          </span>
-          <a
-            href={PORTAL_APP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
-              dark ? "text-cream/85 hover:bg-cream/10 hover:text-cream" : "text-ink-muted hover:bg-green/10 hover:text-green"
-            }`}
-          >
-            Log in
-          </a>
           <ThemeToggle className={dark ? "border-cream/25 text-cream hover:bg-cream/10" : "border-gold-border/30 text-ink hover:bg-cream"} />
           <EnterApp />
         </div>
