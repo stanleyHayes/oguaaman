@@ -209,6 +209,10 @@ function Icon({
           <path {...common} d="M10 30l22-18 22 18M16 28v24h32V28M28 52V38h8v14" />
         </svg>
       );
+    default: {
+      const _exhaustive: never = kind;
+      return _exhaustive;
+    }
   }
 }
 
