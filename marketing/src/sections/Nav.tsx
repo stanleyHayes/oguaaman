@@ -198,8 +198,8 @@ export function Nav() {
     : "text-ink-faint hover:text-green";
 
   return (
-    <header className="sticky top-0 z-50 px-3 pt-2 sm:px-5">
-      <div className={`mx-auto mb-2 hidden w-full max-w-[76rem] items-center justify-between rounded-full border px-4 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] lg:flex ${utilityShell}`}>
+    <header className="sticky top-0 z-50">
+      <div className={`mb-2 hidden w-full items-center justify-between border-b px-4 py-1.5 text-[0.72rem] font-semibold tracking-[0.03em] lg:flex sm:px-5 ${utilityShell}`}>
         <div className="flex items-center gap-2">
           <span className="text-gold/85">Oguaa links</span>
           <span className={`h-3.5 w-px ${dark ? "bg-cream/20" : "bg-sand-dark/35"}`} aria-hidden />
@@ -221,7 +221,7 @@ export function Nav() {
       </div>
       <nav
         aria-label="Primary"
-        className={`mx-auto flex w-full max-w-[76rem] items-center justify-between gap-4 rounded-full border px-4 py-2.5 transition-colors duration-300 sm:px-5 ${shell}`}
+        className={`mx-auto flex w-[calc(100%-1.5rem)] max-w-[76rem] items-center justify-between gap-4 rounded-full border px-4 py-2.5 transition-colors duration-300 sm:w-[calc(100%-2.5rem)] sm:px-5 ${shell}`}
       >
         <Link to="/" aria-label="Oguaa - home">
           <Wordmark tone={dark ? "text-cream" : "text-ink"} markTone="text-gold" size="text-2xl" />
