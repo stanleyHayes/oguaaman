@@ -239,7 +239,7 @@ export function Component() {
         lede="A town that goes silent for a week, then erupts — seven Asafo companies, palanquins, musketry and the durbar at Victoria Park. And a coast that keeps the diaspora's homecoming, soberly, every year."
       >
         <div className="inline-flex overflow-hidden rounded-full border border-cream/20 bg-green-900/60 shadow-lg backdrop-blur-sm">
-          <span className="bg-gold-brand px-4 py-2.5 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.17em] text-green-900">
+          <span className="inline-flex self-stretch items-center bg-gold-brand px-4 py-2.5 font-mono text-[0.65rem] font-semibold uppercase leading-none tracking-[0.17em] text-green-900">
             Fetu Afahye 2026
           </span>
           <time dateTime="2026-09-05" className="px-5 py-2.5 font-semibold text-cream">

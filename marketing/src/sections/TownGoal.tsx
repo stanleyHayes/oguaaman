@@ -54,6 +54,7 @@ export function TownGoal() {
         aria-labelledby="town-goal-title"
         className="on-dark on-dark-pin relative isolate overflow-hidden rounded-[var(--radius-card)] border border-green/10 bg-green-900 shadow-[var(--shadow-lift)] lg:grid lg:grid-cols-[minmax(0,1.16fr)_minmax(21rem,0.84fr)]"
       >
+        <div className="panel-perspective-grid" aria-hidden />
         <Adinkra
           name="adinkrahene"
           size={320}

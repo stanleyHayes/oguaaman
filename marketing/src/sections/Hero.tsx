@@ -1,5 +1,5 @@
 import { Container, CTA as Cta, Eyebrow } from "@/components/ui";
-import { Parallax, Stagger, StaggerItem, WordReveal } from "@/components/motion";
+import { Stagger, StaggerItem, WordReveal } from "@/components/motion";
 import { HeroWireframe } from "@/components/hero-wireframe";
 import { Wordmark } from "@/components/wordmark";
 import { PORTAL_APP_URL } from "@/config";
@@ -16,18 +16,7 @@ export function Hero() {
       id="top"
       className="relative isolate overflow-hidden bg-green-900 text-cream on-dark on-dark-pin"
     >
-      {/* Texture + warm glow */}
-      <Parallax className="absolute -inset-16 -z-10" distance={40} aria-hidden>
-        <div className="bg-contours h-full w-full" />
-      </Parallax>
-      <div
-        className="absolute inset-0 -z-10 bg-gradient-to-b from-green-900 via-green-900 to-green/60 aurora-bg"
-        aria-hidden
-      />
-      <Parallax className="absolute -right-24 -top-24 -z-10 h-[36rem] w-[36rem]" distance={70} aria-hidden>
-        <div className="h-full w-full rounded-full bg-gold/10 blur-3xl" />
-      </Parallax>
-
+      <div className="hero-gold-grid pointer-events-none -z-10" aria-hidden />
       <Container size="wide" className="relative">
         <div className="grid min-h-[88vh] grid-cols-1 items-center gap-12 py-24 sm:py-28 lg:min-h-[92vh] lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           {/* ---- Left: the message ---- */}
@@ -47,7 +36,7 @@ export function Hero() {
                 text="The home of Cape Coast."
                 accentWords={["Cape", "Coast"]}
                 accentClassName="text-gradient-gold text-shimmer-gold"
-                className="text-4xl font-semibold leading-[1.05] tracking-tight text-cream sm:text-5xl lg:text-[3.75rem]"
+                className="font-sans text-[clamp(2.8rem,6vw,5.4rem)] font-semibold leading-[0.92] tracking-[-0.035em] text-cream"
               />
             </div>
 
@@ -94,12 +83,6 @@ export function Hero() {
           <HeroWireframe />
         </div>
       </Container>
-
-      {/* Soft fade into the next band */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-green-900/0"
-        aria-hidden
-      />
     </section>
   );
 }

@@ -26,53 +26,57 @@ export function Component() {
     <>
       <PageHero
         scene={MarketScene}
-        kicker="Oguaa Outside"
-        title="Trusted hands for your business, beyond the town."
-        lede="Hire a vetted person or office to handle procurement, inspections, travel help and official errands beyond Cape Coast. Agree the work in the app; your payment stays in managed escrow until the job is delivered."
+        kicker="The trusted route network"
+        title={<>Your reach goes further with <span className="italic text-gold">Oguaa Outside.</span></>}
+        lede="A vetted person on the ground. A clear brief in the app. Your payment protected in managed escrow until the work is proven and delivered."
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <CTA href={FIND_URL} variant="gold" external className="min-h-11">Find an agent <ArrowIcon /></CTA>
-          <CTA href={BECOME_URL} variant="outline-dark" external className="min-h-11">Become an agent</CTA>
-          {agents.length > 0 && (
-            <Pill tone="on-dark" className="ml-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-gold" aria-hidden />
-              <span aria-live="polite">
-                {agents.length} verified {agents.length === 1 ? "agent" : "agents"} ready
-              </span>
-            </Pill>
-          )}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(24rem,1.28fr)] lg:items-end">
+          <div className="flex flex-wrap items-center gap-3">
+            <CTA href={FIND_URL} variant="gold" external className="min-h-11">Find an agent <ArrowIcon /></CTA>
+            <CTA href={BECOME_URL} variant="outline-dark" external className="min-h-11">Become an agent</CTA>
+            {agents.length > 0 && (
+              <Pill tone="on-dark" className="ml-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-gold" aria-hidden />
+                <span aria-live="polite">
+                  {agents.length} verified {agents.length === 1 ? "agent" : "agents"} ready
+                </span>
+              </Pill>
+            )}
+          </div>
+          <OutsideRoute />
         </div>
       </PageHero>
 
       {/* The idea. */}
-      <Section tone="cream" size="wide">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-16">
+      <Section tone="cream" size="wide" className="relative overflow-hidden">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-20">
           <Reveal>
             <Eyebrow className="text-gold-text">The idea</Eyebrow>
-            <h2 className="mt-3 max-w-xl text-3xl font-semibold sm:text-4xl">
-              A person you can trust, where you cannot be.
+            <p className="mt-5 font-mono text-7xl font-semibold leading-none text-green/[0.12] sm:text-8xl" aria-hidden>01</p>
+            <h2 className="-mt-4 max-w-xl text-3xl font-semibold sm:text-4xl">
+              Be present without making the journey.
             </h2>
             <div className="mt-4 h-[3px] w-14 rounded-full bg-gold-brand" />
           </Reveal>
-          <Reveal className="border-t border-green/15 pt-7 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
+          <Reveal className="border-t border-green/15 pt-7 lg:border-l lg:border-t-0 lg:pl-14 lg:pt-0">
             <div className="space-y-4 leading-relaxed text-ink-muted">
-              <p className="text-lg sm:text-xl">
+              <p className="text-xl leading-relaxed text-ink sm:text-2xl">
                 Every Cape Coaster knows the problem. The goods are in a Guangzhou
                 market, the form must be filed in Accra, the car is parked in Kumasi
-                — but the trip costs more than the errand. Too often, the only option
-                is sending money to a stranger and hoping for the best.
+                — but the trip costs more than the errand.
               </p>
               <p>
-                Oguaa Outside replaces that hope with a visible, accountable system:
-                choose a vetted agent, agree the terms, and keep payment in <span className="font-semibold text-green-text">managed
-                escrow</span> until they deliver.
+                Instead of sending money and hoping, choose a vetted agent, agree the
+                terms and keep payment in <span className="font-semibold text-green-text">managed escrow</span> until proof arrives.
               </p>
             </div>
-            <dl className="mt-7 grid divide-y divide-green/10 overflow-hidden rounded-[var(--radius-card)] border border-green/15 bg-green/10 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-              {TRUST_SIGNALS.map((signal) => (
-                <div key={signal.label} className="bg-paper px-4 py-4">
-                  <dt className="text-[0.67rem] font-bold uppercase tracking-[0.14em] text-green-text">{signal.label}</dt>
-                  <dd className="mt-1.5 text-sm leading-snug text-ink-muted">{signal.detail}</dd>
+            <dl className="mt-9 grid border-y border-green/15 sm:grid-cols-3">
+              {TRUST_SIGNALS.map((signal, index) => (
+                <div key={signal.label} className="relative px-0 py-5 sm:px-5 sm:first:pl-0 sm:[&:not(:first-child)]:border-l sm:[&:not(:first-child)]:border-green/15">
+                  <dt className="flex items-center gap-2 text-[0.67rem] font-bold uppercase tracking-[0.14em] text-green-text">
+                    <span className="font-mono text-gold-text">0{index + 1}</span>{signal.label}
+                  </dt>
+                  <dd className="mt-2 text-sm leading-snug text-ink-muted">{signal.detail}</dd>
                 </div>
               ))}
             </dl>
@@ -87,26 +91,26 @@ export function Component() {
           title="The errands that need a person on the ground."
           lede="These are the jobs Cape Coasters already pay for — now with a vetted agent and escrow behind every one."
         />
-        <Stagger className="mt-10 grid gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+        <Stagger className="mt-10 grid gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-12">
           {SERVICES.map((s, i) => (
-            <StaggerItem key={s.title} index={i} as="article" className="h-full">
-              <ServiceCard service={s} />
+            <StaggerItem key={s.title} index={i} as="article" className={`h-full ${servicePlacement(i)}`}>
+              <ServiceCard service={s} index={i} featured={i < 2} />
             </StaggerItem>
           ))}
         </Stagger>
       </Section>
 
       {/* How it works — the escrow flow. */}
-      <Section tone="deep">
+      <Section tone="deep" size="wide" className="section-perspective-grid section-perspective-grid--high">
         <SectionHeading
           onDark
           kicker="How it works"
           title="Your money moves only when the job is done."
           lede="Five steps, and escrow sits in the middle of all of them — so no one is paid on a promise."
         />
-        <Stagger className="mt-10 grid gap-4 sm:mt-12 md:grid-cols-6 lg:grid-cols-10">
+        <Stagger className="relative mt-10 grid gap-4 sm:mt-12 lg:grid-cols-5 lg:gap-0 before:absolute before:left-[10%] before:right-[10%] before:top-7 before:hidden before:h-px before:bg-gold/25 lg:before:block">
           {STEPS.map((step, i) => (
-            <StaggerItem key={step.title} index={i} className={`h-full ${balancedFiveItemPlacement(i)}`}>
+            <StaggerItem key={step.title} index={i} className="relative h-full">
               <StepCard step={step} index={i} />
             </StaggerItem>
           ))}
@@ -114,19 +118,27 @@ export function Component() {
       </Section>
 
       {/* The trust layer. */}
-      <Section tone="sand">
-        <SectionHeading
-          kicker="The trust layer"
-          title="Five checks stand behind every agent."
-          lede="An agent cannot take a single job until they clear all of this — and one broken promise can end their standing in the network."
-        />
-        <Stagger className="mt-10 grid gap-4 sm:mt-12 sm:gap-5 md:grid-cols-6 lg:grid-cols-10">
-          {TRUST.map((t, i) => (
-            <StaggerItem key={t.title} index={i} as="article" className={`h-full ${balancedFiveItemPlacement(i)}`}>
-              <TrustCard item={t} />
-            </StaggerItem>
-          ))}
-        </Stagger>
+      <Section tone="sand" size="wide">
+        <div className="grid gap-10 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-16">
+          <Reveal className="lg:sticky lg:top-28 lg:self-start">
+            <Eyebrow>The trust layer</Eyebrow>
+            <h2 className="mt-3 text-3xl font-semibold sm:text-[2.6rem]">Five checks. One accountable network.</h2>
+            <div className="mt-4 h-[3px] w-14 rounded-full bg-gold-brand" />
+            <p className="mt-5 max-w-md leading-relaxed text-ink-muted">
+              No agent takes a job until every check is complete. Their standing remains visible after every delivery.
+            </p>
+            <div className="mt-8 hidden aspect-square max-w-[15rem] place-items-center rounded-full border border-green/15 lg:grid">
+              <div className="grid h-[72%] w-[72%] place-items-center rounded-full border border-gold/25 text-green-text"><ShieldIcon /></div>
+            </div>
+          </Reveal>
+          <Stagger className="border-t border-green/15">
+            {TRUST.map((t, i) => (
+              <StaggerItem key={t.title} index={i} as="article">
+                <TrustRow item={t} index={i} />
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </div>
       </Section>
 
       {/* Live featured agents — only when the backend has verified agents. */}
@@ -186,16 +198,14 @@ export function Component() {
       </Section>
 
       {/* Closing CTA. */}
-      <Section tone="green" className="!py-16 sm:!py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold sm:text-4xl">
-            Get it done from wherever you are.
-          </h2>
-          <p className="mt-4 text-cream/85">
-            Find a vetted agent for the job — or, if you are the trusted one who
-            gets things done, put your name on the network.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+      <Section tone="green" size="wide" className="section-perspective-grid !py-16 sm:!py-20">
+        <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div>
+            <Eyebrow className="!text-gold">Your next move</Eyebrow>
+            <h2 className="mt-3 max-w-3xl text-3xl font-semibold sm:text-5xl">The distance should not stop the work.</h2>
+            <p className="mt-4 max-w-2xl text-cream/78">Find a vetted agent for the job—or put your own trusted name on the network.</p>
+          </div>
+          <div className="flex flex-wrap gap-3 lg:justify-end">
             <CTA href={FIND_URL} variant="gold" external>Find an agent</CTA>
             <CTA href={BECOME_URL} variant="outline-dark" external>Become an agent</CTA>
           </div>
@@ -316,12 +326,8 @@ const TRUST: Trust[] = [
 
 /* --------------------------------------------------------------- components */
 
-/** Keep five-item groups balanced at tablet widths (3 + 2) and in one even
- * row on wide screens. Literal classes keep Tailwind's static scanner happy. */
-function balancedFiveItemPlacement(index: number) {
-  return index < 3
-    ? "md:col-span-2 lg:col-span-2"
-    : "md:col-span-3 lg:col-span-2";
+function servicePlacement(index: number) {
+  return index < 2 ? "lg:col-span-6" : "lg:col-span-3";
 }
 
 /** Do not leave a conspicuous empty third column when only one or two live
@@ -343,38 +349,72 @@ function agentTypeLabel(type: string) {
   return humanizeLabel(type);
 }
 
-function ServiceCard({ service }: Readonly<{ service: Service }>) {
+function OutsideRoute() {
+  const stops = [
+    { label: "Your brief", meta: "Cape Coast" },
+    { label: "Vetted agent", meta: "On the ground" },
+    { label: "Proof & delivery", meta: "Funds released" },
+  ] as const;
+
   return (
-    <div className="og-card og-card-accent-teal og-card-interactive flex h-full flex-col p-5 sm:p-6">
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-teal/[0.1] text-teal-text">
-        {service.icon}
-      </span>
-      <h3 className="mt-4 text-lg font-semibold leading-snug text-ink">{service.title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-muted">{service.body}</p>
+    <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-cream/15 bg-green-900/45 px-5 py-5 backdrop-blur-sm sm:px-6">
+      <div className="absolute inset-0 opacity-50 section-perspective-grid section-perspective-grid--high" aria-hidden />
+      <div className="relative z-10 flex items-start justify-between gap-2">
+        {stops.map((stop, index) => (
+          <div key={stop.label} className="relative flex min-w-0 flex-1 flex-col items-center text-center">
+            {index < stops.length - 1 && <span className="absolute left-[58%] top-3 h-px w-[84%] bg-gold/30" aria-hidden />}
+            <span className={`relative z-10 grid h-6 w-6 place-items-center rounded-full border font-mono text-[0.58rem] font-bold ${index === 1 ? "border-gold bg-gold text-green-900" : "border-cream/30 bg-green-900 text-cream"}`}>
+              {index + 1}
+            </span>
+            <span className="mt-3 text-xs font-bold text-cream sm:text-sm">{stop.label}</span>
+            <span className="mt-1 text-[0.58rem] uppercase tracking-[0.12em] text-cream/50 sm:text-[0.62rem]">{stop.meta}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ServiceCard({ service, index, featured }: Readonly<{ service: Service; index: number; featured: boolean }>) {
+  return (
+    <div className={`og-card og-card-accent-teal og-card-interactive relative flex h-full flex-col overflow-hidden ${featured ? "min-h-[18rem] p-6 sm:p-8" : "p-5 sm:p-6"}`}>
+      <span className="absolute right-4 top-2 font-mono text-5xl font-semibold leading-none text-green/[0.07]" aria-hidden>0{index + 1}</span>
+      <div className="flex items-center justify-between gap-4">
+        <span className={`inline-flex items-center justify-center rounded-full border border-teal/20 bg-teal/[0.08] text-teal-text ${featured ? "h-13 w-13" : "h-11 w-11"}`}>
+          {service.icon}
+        </span>
+        <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-faint">Agent service</span>
+      </div>
+      <h3 className={`mt-auto font-semibold leading-snug text-ink ${featured ? "pt-12 text-2xl sm:text-3xl" : "pt-8 text-lg"}`}>{service.title}</h3>
+      <p className={`mt-3 leading-relaxed text-ink-muted ${featured ? "max-w-xl text-base" : "text-sm"}`}>{service.body}</p>
     </div>
   );
 }
 
 function StepCard({ step, index }: Readonly<{ step: Step; index: number }>) {
   return (
-    <div className="og-card og-card-dark og-card-accent-gold flex h-full flex-col p-5 sm:p-6">
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gold/15 text-base font-bold tabular-nums text-gold">
+    <div className="relative flex h-full flex-col border border-cream/12 bg-green-900/65 p-5 backdrop-blur-[2px] lg:border-y lg:border-l lg:border-r-0 lg:last:border-r sm:p-6">
+      <span className="relative z-10 inline-flex h-14 w-14 items-center justify-center rounded-full border border-gold/35 bg-green-900 text-base font-bold tabular-nums text-gold">
         {index + 1}
       </span>
-      <h3 className="mt-4 text-lg font-semibold leading-snug text-cream">{step.title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-cream/75">{step.body}</p>
+      <p className="mt-6 font-mono text-[0.6rem] uppercase tracking-[0.16em] text-gold/65">Step 0{index + 1}</p>
+      <h3 className="mt-2 text-lg font-semibold leading-snug text-cream">{step.title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-cream/68">{step.body}</p>
     </div>
   );
 }
 
-function TrustCard({ item }: Readonly<{ item: Trust }>) {
+function TrustRow({ item, index }: Readonly<{ item: Trust; index: number }>) {
   return (
-    <div className="og-card og-card-accent-green flex h-full flex-col p-5 sm:p-6">
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-green/[0.08] text-green-text">
+    <div className="group grid gap-4 border-b border-green/15 py-6 sm:grid-cols-[3rem_minmax(0,0.7fr)_minmax(0,1.3fr)] sm:items-center sm:gap-6 sm:py-7">
+      <span className="font-mono text-xs font-bold text-gold-text">0{index + 1}</span>
+      <div className="flex items-center gap-4">
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-green/15 bg-paper text-green-text transition-colors group-hover:border-gold/40 group-hover:text-gold-text">
         {item.icon}
-      </span>
-      <h3 className="mt-4 text-lg font-semibold leading-snug text-ink">{item.title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-muted">{item.body}</p>
+        </span>
+        <h3 className="text-lg font-semibold leading-snug text-ink">{item.title}</h3>
+      </div>
+      <p className="text-sm leading-relaxed text-ink-muted">{item.body}</p>
     </div>
   );
 }

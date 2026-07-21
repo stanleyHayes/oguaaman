@@ -121,12 +121,15 @@ function LinkColumn({ column }: Readonly<{ column: FooterColumn }>) {
   );
 }
 
-type SocialName = "instagram" | "facebook" | "x" | "mail" | "phone";
+type SocialName = "instagram" | "facebook" | "x" | "tiktok" | "linkedin" | "youtube" | "mail" | "phone";
 
 const SOCIALS: { name: SocialName; label: string; href: string; external?: boolean }[] = [
   { name: "instagram", label: "Instagram", href: "https://instagram.com/oguaa" },
   { name: "facebook", label: "Facebook", href: "https://facebook.com/oguaa" },
   { name: "x", label: "X (Twitter)", href: "https://x.com/oguaa" },
+  { name: "tiktok", label: "TikTok", href: "https://tiktok.com/@oguaa" },
+  { name: "linkedin", label: "LinkedIn", href: "https://linkedin.com/company/oguaa" },
+  { name: "youtube", label: "YouTube", href: "https://youtube.com/@oguaa" },
   { name: "mail", label: `Email ${CONTACT_EMAIL}`, href: `mailto:${CONTACT_EMAIL}`, external: false },
   { name: "phone", label: `Call ${CONTACT_PHONE}`, href: `tel:${CONTACT_PHONE}`, external: false },
 ];
@@ -136,6 +139,9 @@ function SocialIcon({ name }: Readonly<{ name: SocialName }>) {
     instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.2 6.8h.01" /></>,
     facebook: <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />,
     x: <><path d="M4 4h4.6L20 20h-4.6Z" /><path d="M4 20l6.8-7.5" /><path d="M13.2 11.4 20 4" /></>,
+    tiktok: <><path d="M15 4v10.5a4.5 4.5 0 1 1-3.5-4.4" /><path d="M15 4c.6 2.7 2.2 4.2 5 4.6" /></>,
+    linkedin: <><rect x="3" y="3" width="18" height="18" rx="2.5" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" /><path d="M8 11v6M12 17v-6M12 13.5a3 3 0 0 1 6 0V17" /></>,
+    youtube: <><rect x="2.5" y="6" width="19" height="12" rx="4" /><path d="m10 9 5 3-5 3Z" /></>,
     mail: <><rect x="2" y="4" width="20" height="16" rx="2.5" /><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></>,
     phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.69 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.28-1.28a2 2 0 0 1 2.11-.45c.9.33 1.84.56 2.8.69A2 2 0 0 1 22 16.92Z" />,
   }[name];
@@ -169,7 +175,7 @@ export function Footer() {
 
   return (
     <footer className="on-dark on-dark-pin relative overflow-hidden bg-green-900 text-cream/80">
-      <span aria-hidden className="pointer-events-none absolute inset-0 bg-contours opacity-[0.06]" />
+      <span aria-hidden className="panel-perspective-grid opacity-70" />
       <span aria-hidden className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-gold-brand/[0.08] blur-3xl" />
 
       <Container className="relative pb-16 pt-5 sm:pb-20 sm:pt-7" size="wide">

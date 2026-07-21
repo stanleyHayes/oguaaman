@@ -147,7 +147,7 @@ export function TownCode() {
   const hasExamples = dos.length > 0 || stops.length > 0;
 
   return (
-    <Section tone="sand" size="wide" className="relative overflow-hidden">
+    <Section tone="sand" size="wide" className="relative overflow-hidden !py-12 sm:!py-16">
       <div
         className="pointer-events-none absolute -left-28 top-16 h-64 w-64 rounded-full border border-gold/15"
         aria-hidden
@@ -161,15 +161,8 @@ export function TownCode() {
         aria-labelledby="town-code-title"
         className="on-dark on-dark-pin relative isolate overflow-hidden rounded-[calc(var(--radius-card)+0.5rem)] border border-green/10 bg-green-900 shadow-[var(--shadow-lift)] lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(28rem,1.1fr)]"
       >
-        <div className="bg-contours relative overflow-hidden px-6 py-10 sm:px-10 sm:py-12 lg:px-12 lg:py-16">
-          <div
-            className="pointer-events-none absolute -left-32 -top-36 h-80 w-80 rounded-full border border-gold/10"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute -left-16 -top-20 h-56 w-56 rounded-full border border-gold/10"
-            aria-hidden
-          />
+        <div className="relative overflow-hidden px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
+          <div className="panel-perspective-grid" aria-hidden />
           <Adinkra
             name="funtunfunefu"
             size={260}
@@ -179,8 +172,8 @@ export function TownCode() {
           />
 
           <Reveal className="relative z-10">
-            <div className="mb-7 flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-full border border-gold/25 bg-gold/[0.12] text-gold">
+            <div className="mb-5 flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-full border border-gold/25 bg-gold/[0.12] text-gold">
                 <SectionIcon id="better" className="h-5 w-5" />
               </span>
               <Eyebrow className="!text-gold">The civic revolution · Oguaa</Eyebrow>
@@ -188,21 +181,21 @@ export function TownCode() {
 
             <h2
               id="town-code-title"
-              className="max-w-lg font-display text-[clamp(2.8rem,6vw,5.4rem)] font-semibold leading-[0.92] tracking-[-0.035em] text-cream"
+              className="max-w-lg font-display text-[clamp(2.55rem,5vw,4.35rem)] font-semibold leading-[0.92] tracking-[-0.035em] text-cream"
             >
               Build a <span className="italic text-gold">better</span>
               <br />
               Oguaa.
             </h2>
 
-            <p className="mt-7 max-w-xl text-base leading-relaxed text-cream/78 sm:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-cream/78">
               A great town is built by small habits, kept by everyone — the way we
               greet, the way we trade, the way we keep the shore and the street.
               This is the code of Cape Coast, ringed from the self to the nation —
               and a pledge you can make today.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/better#pledge"
                 className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gold-brand px-5 py-2.5 text-sm font-bold text-green-900 transition-colors hover:bg-gold"
@@ -222,8 +215,8 @@ export function TownCode() {
           </Reveal>
         </div>
 
-        <div className="theme-surface relative border-t border-green/10 bg-cream px-5 py-7 text-ink sm:px-7 sm:py-9 lg:border-l lg:border-t-0 lg:px-8 lg:py-10">
-          <div className="mb-7 flex items-end justify-between gap-4">
+        <div className="theme-surface relative border-t border-green/10 bg-cream px-5 py-7 text-ink sm:px-7 sm:py-8 lg:border-l lg:border-t-0 lg:px-8">
+          <div className="mb-5 flex items-end justify-between gap-4">
             <div>
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-gold-text">
                 The code, in practice
@@ -240,7 +233,7 @@ export function TownCode() {
             </div>
           </div>
 
-          <ol className="relative mb-7 grid grid-cols-6" aria-label="Six civic rings, from self to nation">
+          <ol className="relative mb-5 grid grid-cols-6" aria-label="Six civic rings, from self to nation">
             <span className="absolute left-[8.33%] right-[8.33%] top-3.5 h-px bg-green/15" aria-hidden />
             {RINGS.map((ring, index) => (
               <li key={ring.key} className="relative flex min-w-0 flex-col items-center text-center">

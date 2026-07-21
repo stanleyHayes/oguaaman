@@ -88,7 +88,7 @@ export function Stats() {
   if (!stats) {
     if (!loadFailed) return null;
     return (
-      <Section id="community" tone="green">
+      <Section id="community" tone="green" className="section-perspective-grid">
         <SectionHeading
           onDark
           center
@@ -101,7 +101,7 @@ export function Stats() {
   }
 
   return (
-    <Section id="community" tone="green">
+    <Section id="community" tone="green" className="section-perspective-grid">
       <SectionHeading
         onDark
         center
@@ -145,8 +145,8 @@ function StatFigure({
         />
         <span className="mt-3 text-center">{figure.label}</span>
       </dt>
-      <dd className="mt-3 text-center text-4xl font-semibold leading-none tabular-nums text-gradient-gold sm:text-5xl">
-        {formatCount(value)}
+      <dd className="mt-3 text-center text-4xl font-semibold leading-none tabular-nums sm:text-5xl">
+        <span className="stat-number-3d">{formatCount(value)}</span>
       </dd>
     </>
   );

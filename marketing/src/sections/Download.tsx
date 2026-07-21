@@ -84,8 +84,7 @@ const QR_CELLS = QR_GRID.flat().map((cell, i) => ({ id: `cell-${i}`, cell }));
 
 export function Download() {
   return (
-    <Section id="get" tone="deep" size="wide" className="relative overflow-hidden">
-      <div aria-hidden="true" className="bg-contours pointer-events-none absolute inset-0 opacity-[0.18]" />
+    <Section id="get" tone="deep" size="wide" className="section-perspective-grid section-perspective-grid--high !pb-10 sm:!pb-12">
 
       <Container size="wide" className="relative">
         <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
@@ -141,7 +140,7 @@ export function Download() {
           <ScanPanel />
         </div>
 
-        <SymbolDivider name="crab" tone="text-gold" className="mt-8 opacity-60 sm:mt-10" />
+        <SymbolDivider name="crab" tone="text-gold" className="mt-5 opacity-60 sm:mt-6" />
       </Container>
     </Section>
   );

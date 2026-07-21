@@ -114,8 +114,8 @@ function Cubie({
   }
 
   const shell = `translate3d(${x * CUBIE_STEP}px, ${y * CUBIE_STEP}px, ${z * CUBIE_STEP}px)${extraRotate}`;
-  const face = "absolute inset-0 rounded-[8px] border border-cream/25 bg-[#0f3a2b]";
-  const sticker = "absolute inset-[14%] rounded-[5px]";
+  const face = "absolute inset-0 rounded-[6px] border border-cream/22 bg-transparent";
+  const sticker = "absolute inset-[14%] rounded-[4px] border bg-transparent opacity-90";
 
   return (
     <div
@@ -123,22 +123,22 @@ function Cubie({
       style={{ width: CUBIE_SIZE, height: CUBIE_SIZE, transform: shell }}
     >
       <span className={face} style={{ transform: `translateZ(${half}px)` }}>
-        {cubie.stickers.front && <span className={sticker} style={{ backgroundColor: cubie.stickers.front }} />}
+        {cubie.stickers.front && <span className={sticker} style={{ borderColor: cubie.stickers.front }} />}
       </span>
       <span className={face} style={{ transform: `rotateY(180deg) translateZ(${half}px)` }}>
-        {cubie.stickers.back && <span className={sticker} style={{ backgroundColor: cubie.stickers.back }} />}
+        {cubie.stickers.back && <span className={sticker} style={{ borderColor: cubie.stickers.back }} />}
       </span>
       <span className={face} style={{ transform: `rotateY(90deg) translateZ(${half}px)` }}>
-        {cubie.stickers.right && <span className={sticker} style={{ backgroundColor: cubie.stickers.right }} />}
+        {cubie.stickers.right && <span className={sticker} style={{ borderColor: cubie.stickers.right }} />}
       </span>
       <span className={face} style={{ transform: `rotateY(-90deg) translateZ(${half}px)` }}>
-        {cubie.stickers.left && <span className={sticker} style={{ backgroundColor: cubie.stickers.left }} />}
+        {cubie.stickers.left && <span className={sticker} style={{ borderColor: cubie.stickers.left }} />}
       </span>
       <span className={face} style={{ transform: `rotateX(90deg) translateZ(${half}px)` }}>
-        {cubie.stickers.top && <span className={sticker} style={{ backgroundColor: cubie.stickers.top }} />}
+        {cubie.stickers.top && <span className={sticker} style={{ borderColor: cubie.stickers.top }} />}
       </span>
       <span className={face} style={{ transform: `rotateX(-90deg) translateZ(${half}px)` }}>
-        {cubie.stickers.bottom && <span className={sticker} style={{ backgroundColor: cubie.stickers.bottom }} />}
+        {cubie.stickers.bottom && <span className={sticker} style={{ borderColor: cubie.stickers.bottom }} />}
       </span>
     </div>
   );
@@ -229,10 +229,8 @@ export function HeroWireframe() {
 
   return (
     <div className="relative ml-auto hidden w-full max-w-[36rem] lg:block">
-      <div className="pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full bg-gold/10 blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute -bottom-16 -left-14 h-52 w-52 rounded-full bg-teal/15 blur-3xl" aria-hidden />
       <div
-        className={`relative h-[32rem] w-full touch-none select-none overflow-hidden rounded-[2.5rem] border border-cream/16 bg-gradient-to-b from-green-900/35 via-green-900/20 to-teal/25 shadow-[var(--shadow-lift)] ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+        className={`relative h-[32rem] w-full touch-none select-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
         style={{ perspective: "1400px" }}
         onPointerDown={(event) => {
           setDragging(true);
