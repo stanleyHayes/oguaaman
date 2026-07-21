@@ -123,9 +123,9 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
-  /* Only h1 uses the Fraunces display face; every other heading (h2–h6) and all
-     body text is Outfit (--font-sans). */
-  h1 {
+  /* Display titles use Fraunces; smaller headings and body copy stay in Outfit. */
+  h1,
+  h2 {
     font-family: "Fraunces", Georgia, "Times New Roman", serif;
   }
   h1,

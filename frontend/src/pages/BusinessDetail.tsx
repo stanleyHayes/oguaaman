@@ -97,11 +97,18 @@ export function Component() {
 
   return (
     <article>
-      <section className="on-dark on-dark-pin relative isolate overflow-hidden bg-teal text-cream">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(199,162,74,0.25),transparent_31%),linear-gradient(130deg,#083F37_0%,#0B6557_54%,#123F2D_100%)]" aria-hidden />
-        <div className="bg-dotgrid absolute inset-0 opacity-35" aria-hidden />
-        <div className="absolute -bottom-28 -left-16 h-72 w-72 rounded-full border border-cream/10" aria-hidden />
-        <Container size="wide" className="relative py-10 sm:py-14 lg:py-16">
+      <section className="on-dark on-dark-pin relative isolate overflow-hidden bg-green-900 text-cream">
+        {b.coverImageUrl && (
+          <img
+            src={cldCover(b.coverImageUrl, 1800)}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-55"
+            onError={(event) => { event.currentTarget.style.display = "none"; }}
+          />
+        )}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,27,18,0.98)_0%,rgba(5,27,18,0.88)_46%,rgba(5,27,18,0.3)_100%),linear-gradient(0deg,rgba(5,27,18,0.82),transparent_60%)]" aria-hidden />
+        <div className="bg-dotgrid absolute inset-y-0 left-0 w-1/2 opacity-25" aria-hidden />
+        <Container size="wide" className="relative py-10 sm:py-14 lg:py-20">
           <Reveal>
             <nav aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-2 text-sm text-cream/65">
@@ -114,8 +121,8 @@ export function Component() {
             </nav>
           </Reveal>
 
-          <div className="mt-7 grid items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-12">
-            <div className="flex flex-col justify-center">
+          <div className="mt-14 max-w-4xl lg:mt-20">
+            <div>
               <Reveal delay={0.05} className="flex flex-wrap items-center gap-2">
                 {d.category && (
                   <span className="rounded-full border border-cream/20 bg-cream/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cream backdrop-blur-sm">{d.category}</span>
@@ -128,53 +135,41 @@ export function Component() {
                   </Link>
                 )}
               </Reveal>
-              <Reveal as="h1" delay={0.1} className="mt-4 max-w-3xl text-5xl font-semibold leading-[0.98] text-cream sm:text-6xl">
+              <Reveal as="h1" delay={0.1} className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] text-cream sm:text-7xl lg:text-[5.5rem]">
                 {b.title}
               </Reveal>
-              {d.description && <Reveal delay={0.16} className="mt-6 max-w-2xl text-lg leading-relaxed text-cream/82">{d.description}</Reveal>}
-              <Reveal delay={0.2} className="mt-7 flex flex-wrap gap-3 text-sm">
+              {d.description && <Reveal delay={0.16} className="mt-7 max-w-2xl text-lg leading-relaxed text-cream/82 sm:text-xl">{d.description}</Reveal>}
+              <Reveal delay={0.2} className="mt-8 flex flex-wrap items-center gap-3 text-sm">
+                {d.contact?.[0] && (
+                  <a href={d.contact[0].url} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-3 rounded-full bg-gold-brand px-5 py-3 font-semibold text-green-900 transition-colors hover:bg-gold">
+                    {d.contact[0].label} <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>↗</span>
+                  </a>
+                )}
                 {d.address && (
-                  <a href="#location" className="inline-flex items-center gap-2 rounded-full border border-cream/20 bg-cream/10 px-4 py-2 text-cream transition-colors hover:border-gold hover:text-gold">
+                  <a href="#location" className="inline-flex items-center gap-2 rounded-full border border-cream/25 bg-green-900/35 px-4 py-3 text-cream backdrop-blur-sm transition-colors hover:border-gold hover:text-gold">
                     <span aria-hidden>⌖</span> {d.address}
                   </a>
                 )}
                 {d.openingHours && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-cream/20 bg-cream/10 px-4 py-2 text-cream/85">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-cream/25 bg-green-900/35 px-4 py-3 text-cream/85 backdrop-blur-sm">
                     <span aria-hidden>◷</span> {d.openingHours}
                   </span>
                 )}
               </Reveal>
             </div>
-
-            <Reveal delay={0.12} className="relative min-h-64 overflow-hidden rounded-[1.5rem] border border-cream/15 bg-green-900/40 shadow-2xl">
-              {b.coverImageUrl ? (
-                <img
-                  src={cldCover(b.coverImageUrl, 900)}
-                  alt={b.title}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  onError={(event) => { event.currentTarget.style.display = "none"; }}
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-teal to-green-900">
-                  <span className="text-8xl font-semibold text-cream/20" aria-hidden>{b.title.charAt(0)}</span>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-green-900/80 via-transparent to-transparent" aria-hidden />
-              <div className="absolute inset-x-0 bottom-0 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold">Made in Cape Coast</p>
-                <p className="mt-1 text-sm text-cream/80">A community-listed local business</p>
-              </div>
-            </Reveal>
           </div>
+          <Reveal delay={0.26} className="mt-14 flex items-center gap-3 border-t border-cream/15 pt-5 text-xs font-semibold uppercase tracking-[0.16em] text-cream/65 lg:mt-20">
+            <span className="h-2 w-2 rounded-full bg-gold" aria-hidden /> Made in Cape Coast · Community listed
+          </Reveal>
         </Container>
       </section>
 
       {(d.contact?.length ?? 0) > 0 && (
-        <div className="border-b border-sand bg-cream">
-          <Container size="wide" className="flex flex-wrap items-center gap-2 py-3">
-            <span className="mr-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Contact</span>
+        <div className="border-b border-sand bg-cream shadow-[0_8px_24px_rgba(18,63,45,0.05)]">
+          <Container size="wide" className="flex flex-wrap items-center gap-2 py-4">
+            <span className="mr-auto text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Ready when you are</span>
             {d.contact?.map((contact) => (
-              <a key={contact.label} href={contact.url} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2 rounded-full border border-sand bg-paper px-4 py-2 text-sm font-semibold text-teal-text transition-colors hover:border-teal/50 hover:bg-teal/[0.06]">
+              <a key={contact.label} href={contact.url} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2 rounded-full border border-teal/25 bg-paper px-4 py-2 text-sm font-semibold text-teal-text transition-colors hover:border-teal hover:bg-teal/[0.06]">
                 {contact.label} <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>↗</span>
               </a>
             ))}
