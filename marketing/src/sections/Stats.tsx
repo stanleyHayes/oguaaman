@@ -112,7 +112,7 @@ export function Stats() {
 
       <Stagger as="dl" className="mt-12 grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-y-12 md:mt-16 md:grid-cols-3 lg:grid-cols-6">
         {FIGURES.map((figure, i) => (
-          <StaggerItem key={figure.key} index={i}>
+          <StaggerItem key={figure.key} index={i} className="flex flex-col items-center text-center">
             <StatFigure figure={figure} value={stats[figure.key] ?? 0} />
           </StaggerItem>
         ))}
@@ -143,9 +143,9 @@ function StatFigure({
           strokeWidth={1.4}
           className="text-gold/70"
         />
-        <span className="mt-3">{figure.label}</span>
+        <span className="mt-3 text-center">{figure.label}</span>
       </dt>
-      <dd className="mt-3 text-4xl font-semibold leading-none tabular-nums text-gradient-gold sm:text-5xl">
+      <dd className="mt-3 text-center text-4xl font-semibold leading-none tabular-nums text-gradient-gold sm:text-5xl">
         {formatCount(value)}
       </dd>
     </>

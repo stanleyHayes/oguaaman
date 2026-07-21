@@ -13,6 +13,8 @@ const PATHS: Record<string, ReactNode> = {
   visit: <><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z" /><circle cx="12" cy="10" r="2.5" /></>,
   leadership: <><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="M16 6.5a3 3 0 0 1 0 5.8" /><path d="M17 14.5a5.5 5.5 0 0 1 3.5 4.5" /></>,
   news: <><path d="M4 5h12v14H5a1 1 0 0 1-1-1Z" /><path d="M16 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1" /><path d="M7 8h6M7 11h6M7 14h4" /></>,
+  about: <><circle cx="12" cy="12" r="9" /><path d="M12 16v-5" /><path d="M12 8h.01" /></>,
+  contact: <><rect x="3" y="6" width="18" height="12" rx="2.2" /><path d="M21 8.5 13.1 13a2 2 0 0 1-2.2 0L3 8.5" /></>,
   privacy: <><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6Z" /><path d="M12 8v4" /><path d="M12 15.5v.5" /></>,
   terms: <><path d="M6 3h9l3 3v15H6Z" /><path d="M15 3v3h3" /><path d="M9 8h3M9 12h6M9 16h6" /></>,
   better: <><path d="M12 21s-7-4.35-7-9.5A3.5 3.5 0 0 1 12 8a3.5 3.5 0 0 1 7 3.5c0 5.15-7 9.5-7 9.5Z" /><path d="m9.5 12 1.8 1.8 3.2-3.4" /></>,

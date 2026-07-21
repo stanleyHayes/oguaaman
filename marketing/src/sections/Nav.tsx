@@ -41,6 +41,8 @@ const NAV_LINKS: NavItem[] = [
   { to: "/visit", label: "Visit", note: "Castle, Kakum, the lagoon, the shore.", icon: "visit", tone: "teal" },
   { to: "/leadership", label: "Leadership", note: "The stool and the civic assembly.", icon: "leadership", tone: "green" },
   { to: "/news", label: "News", note: "Notices and stories from the town.", icon: "news", tone: "gold" },
+  { to: "/about", label: "About", note: "What Oguaa is building for Cape Coast.", icon: "about", tone: "green" },
+  { to: "/contact", label: "Contact", note: "Speak with the Oguaa team.", icon: "contact", tone: "teal" },
 ];
 
 const MAIN_LINKS = NAV_LINKS.slice(0, 4);
