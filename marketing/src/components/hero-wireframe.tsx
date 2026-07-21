@@ -205,7 +205,7 @@ export function HeroWireframe() {
       const settledAngle = reached ? TURN_TARGET * current.dir : nextAngle;
       const nextTurn = { ...current, angle: settledAngle };
       activeTurnRef.current = nextTurn;
-      setActiveTurn(nextTurn);
+      setActiveTurn((prevTurn) => (prevTurn ? { ...prevTurn, angle: settledAngle } : prevTurn));
 
       if (reached) {
         setCubies((prevCubies) => applyTurn(prevCubies, current));
@@ -220,7 +220,7 @@ export function HeroWireframe() {
     return () => {
       if (turnFrame.current !== null) window.cancelAnimationFrame(turnFrame.current);
     };
-  }, [activeTurn]);
+  }, [activeTurn?.axis, activeTurn?.layer, activeTurn?.dir]);
 
   const wireTransform = useMemo(
     () => `translate(-50%, -50%) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
