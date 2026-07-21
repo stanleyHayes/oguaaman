@@ -11,7 +11,7 @@ import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL } from "@/config";
 type IconName =
   | "compass" | "smartphone" | "mail"
   | "scroll" | "palette" | "sparkles" | "graduation" | "map-pin" | "crown" | "newspaper"
-  | "globe" | "app-window" | "login";
+  | "globe" | "app-window" | "login" | "info";
 
 function FooterIcon({ name, className = "" }: Readonly<{ name: IconName; className?: string }>) {
   const body = {
@@ -28,6 +28,7 @@ function FooterIcon({ name, className = "" }: Readonly<{ name: IconName; classNa
     globe: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2c2.6 2.7 4 6.2 4 10s-1.4 7.3-4 10c-2.6-2.7-4-6.2-4-10s1.4-7.3 4-10Z" /></>,
     "app-window": <><rect x="2" y="4" width="20" height="16" rx="2.5" /><path d="M2 9h20" /><circle cx="5.5" cy="6.5" r=".6" fill="currentColor" stroke="none" /><circle cx="8" cy="6.5" r=".6" fill="currentColor" stroke="none" /></>,
     login: <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></>,
+    info: <><circle cx="12" cy="12" r="10" /><path d="M12 16v-5" /><path d="M12 8h.01" /></>,
   }[name];
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
@@ -77,7 +78,11 @@ const COLUMNS: FooterColumn[] = [
   {
     heading: "Connect",
     icon: "mail",
-    links: [{ label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}`, icon: "mail" }],
+    links: [
+      { label: "About Oguaa", to: "/about", icon: "info" },
+      { label: "Contact", to: "/contact", icon: "mail" },
+      { label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}`, icon: "mail" },
+    ],
   },
 ];
 

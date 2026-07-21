@@ -148,20 +148,42 @@ export function Download() {
 }
 
 function StoreButton({ href, glyph, topLine, bottomLine, ariaLabel }: Readonly<StoreBadge>) {
-  // A placeholder ("#") link stays non-active (no new tab) but carries no "coming soon" label.
+  // Placeholder links are rendered as disabled badges so they never jump to #top.
   const inactive = href === "#";
-  return (
-    <a
-      href={href}
-      aria-label={ariaLabel}
-      {...(inactive ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-      className="group inline-flex min-w-[10.5rem] items-center gap-3 rounded-2xl border border-gold-border/35 bg-cream/[0.04] px-4 py-2.5 transition-colors hover:border-gold/70 hover:bg-cream/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-    >
-      <span className="text-cream/90 transition-colors group-hover:text-gold">{glyph}</span>
+  const classes = `group inline-flex min-w-[10.5rem] items-center gap-3 rounded-2xl border border-gold-border/35 bg-cream/[0.04] px-4 py-2.5 ${
+    inactive
+      ? "cursor-not-allowed opacity-70"
+      : "transition-colors hover:border-gold/70 hover:bg-cream/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+  }`;
+
+  const content = (
+    <>
+      <span className={`text-cream/90 ${inactive ? "" : "transition-colors group-hover:text-gold"}`}>{glyph}</span>
       <span className="flex flex-col leading-none">
         <span className="text-[0.62rem] font-medium uppercase tracking-wide text-cream/55">{topLine}</span>
         <span className="mt-1 text-lg font-semibold text-cream">{bottomLine}</span>
       </span>
+      {inactive && <span className="ml-auto rounded-full border border-gold/25 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-gold/80">Soon</span>}
+    </>
+  );
+
+  if (inactive) {
+    return (
+      <span aria-label={`${ariaLabel} (coming soon)`} aria-disabled className={classes}>
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      aria-label={ariaLabel}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={classes}
+    >
+      {content}
     </a>
   );
 }

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Wordmark } from "./wordmark";
 import { NotificationsBell } from "./notifications-bell";
@@ -20,6 +20,7 @@ import { api } from "@/lib/api";
 function AlertsNavLink() {
   const { pathname } = useLocation();
   const [urgent, setUrgent] = useState(0);
+  const hasLoggedLoadFailure = useRef(false);
   const active = pathname.startsWith("/alerts");
 
   useEffect(() => {
@@ -27,9 +28,18 @@ function AlertsNavLink() {
     const load = () => {
       api.directives(true)
         .then((list) => {
-          if (alive) setUrgent(list.filter((d) => d.severity === "high" || d.severity === "critical").length);
+          if (!alive) return;
+          hasLoggedLoadFailure.current = false;
+          setUrgent(list.filter((d) => d.severity === "high" || d.severity === "critical").length);
         })
-        .catch(() => {});
+        .catch((error: unknown) => {
+          if (!alive) return;
+          setUrgent(0);
+          if (!hasLoggedLoadFailure.current) {
+            hasLoggedLoadFailure.current = true;
+            console.warn("Failed to refresh directives count", error);
+          }
+        });
     };
     load();
     const id = window.setInterval(load, 30_000);
@@ -188,7 +198,7 @@ function SectionMenuItem({ s, lang, onClick }: Readonly<{ s: NavSection; lang: R
   const { pathname } = useLocation();
   const active = pathname.startsWith(s.href);
   return (
-    <Link to={s.href} onClick={onClick} aria-current={active ? "page" : undefined} className={`group relative flex items-start gap-3 overflow-hidden rounded-lg px-3 py-2.5 transition-colors ${active ? "bg-paper" : "hover:bg-paper"}`}>
+    <Link to={s.href} onClick={onClick} role="menuitem" aria-current={active ? "page" : undefined} className={`group relative flex items-start gap-3 overflow-hidden rounded-lg px-3 py-2.5 transition-colors ${active ? "bg-paper" : "hover:bg-paper"}`}>
       <SectionIcon id={s.id} className={`pointer-events-none absolute -bottom-3 -right-2 h-14 w-14 opacity-[0.06] transition-opacity group-hover:opacity-[0.11] ${t.text}`} />
       <span className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${t.soft} ${t.text}`}>
         <SectionIcon id={s.id} className="h-[18px] w-[18px]" />
@@ -205,8 +215,8 @@ function SectionMenuItem({ s, lang, onClick }: Readonly<{ s: NavSection; lang: R
 }
 
 const navPill = (active: boolean) =>
-  `relative inline-flex h-11 items-center gap-1 whitespace-nowrap rounded-xl px-3 text-[0.92rem] transition-colors ${
-    active ? "font-semibold text-gold" : "text-cream/80 hover:bg-cream/[0.07] hover:text-cream"
+  `relative inline-flex h-11 items-center gap-1 whitespace-nowrap rounded-full px-3.5 text-[0.92rem] transition-colors ${
+    active ? "font-semibold text-cream" : "text-cream/85 hover:bg-cream/[0.1] hover:text-cream"
   }`;
 
 // "Build a better Oguaa" — the flagship civic entry. Kept visually distinct from
@@ -214,17 +224,17 @@ const navPill = (active: boolean) =>
 // deliberately NOT sharing the `nav-pill` layoutId so its active state never
 // competes with the other pills for the single sliding gold background.
 const betterNavPill = (active: boolean) =>
-  `relative inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[0.92rem] font-semibold transition-colors ${
+  `relative inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[0.92rem] font-semibold transition-all ${
     active
-      ? "bg-gold-brand text-green-900"
-      : "text-gold ring-1 ring-inset ring-gold/35 hover:bg-gold/10 hover:ring-gold/70"
+      ? "bg-gradient-to-r from-[#ffe29a] via-gold-brand to-[#f6bf50] text-green-950 shadow-[0_8px_24px_rgba(241,193,97,0.4)]"
+      : "bg-gradient-to-r from-gold-brand to-[#f3bf58] text-green-950 shadow-[0_6px_18px_rgba(241,193,97,0.32)] hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(241,193,97,0.45)]"
   }`;
 
 /** Pill label + the shared-layout gold background that slides between active entries. */
 function PillLabel({ active, children }: Readonly<{ active: boolean; children: ReactNode }>) {
   return (
     <>
-      {active && <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-gold-brand" aria-hidden />}
+      {active && <span className="absolute inset-0 -z-10 rounded-full bg-cream/16" aria-hidden />}
       <span className="relative inline-flex items-center gap-1">{children}</span>
     </>
   );
@@ -234,17 +244,53 @@ function PillLabel({ active, children }: Readonly<{ active: boolean; children: R
 function NavDropdown({ label, active, items, lang }: Readonly<{ label: string; active: boolean; items: NavSection[]; lang: ReturnType<typeof useLang>["lang"] }>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<number | null>(null);
+  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   useDismiss(open, () => setOpen(false), ref);
 
+  useEffect(() => () => {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+  }, []);
+
+  function openNow() {
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setOpen(true);
+  }
+
+  function closeSoon() {
+    if (!canHover) return;
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setOpen(false), 120);
+  }
+
   return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => {
+        if (!canHover) return;
+        openNow();
+      }}
+      onMouseLeave={closeSoon}
+    >
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu">
         <span className={navPill(active || open)}><PillLabel active={active || open}>{label} <Chevron open={open} /></PillLabel></span>
       </button>
+      {open && <span className="absolute left-0 right-0 top-full h-2" aria-hidden />}
       {open && (
-        <div className="theme-surface absolute left-0 z-50 mt-2 w-72 rounded-xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]">
+        <motion.div
+          role="menu"
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.16, ease: "easeOut" }}
+          className="theme-surface absolute left-0 z-50 mt-2 w-80 rounded-2xl border border-sand bg-cream p-2 text-ink shadow-[var(--shadow-lift)]"
+        >
           {items.map((s) => <SectionMenuItem key={s.id} s={s} lang={lang} onClick={() => setOpen(false)} />)}
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -279,24 +325,12 @@ function UtilityNavLink({ to, active, children }: Readonly<{ to: string; active:
 
 const DESKTOP_HEADER_QUERY = "(min-width: 1280px)";
 
-function subscribeDesktopHeader(onChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const query = window.matchMedia(DESKTOP_HEADER_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-function getDesktopHeaderSnapshot() {
-  return typeof window !== "undefined" && window.matchMedia(DESKTOP_HEADER_QUERY).matches;
-}
-
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const reduceMotion = useReducedMotion();
-  const desktopHeader = useSyncExternalStore(subscribeDesktopHeader, getDesktopHeaderSnapshot, () => false);
   const { pathname } = useLocation();
   const { member, signOut } = useAuth();
   const { lang } = useLang();
@@ -310,13 +344,13 @@ export function SiteHeader() {
       : member?.role === "member"
         ? "Community member"
         : `${member?.role ?? "Member"} account`);
-  const musicActive = isActive("/music");
-  const festivalsActive = isActive("/festivals");
-  const memoriamActive = isActive("/memoriam");
   const discoverActive = groupActive(DISCOVER);
   const betterActive = isActive("/better");
   const cityActive = groupActive(CITY);
   const noticesActive = groupActive(NOTICES);
+  const musicActive = isActive("/music");
+  const festivalsActive = isActive("/festivals");
+  const memoriamActive = isActive("/memoriam");
 
   useEffect(() => {
     if (!open) return;
@@ -447,7 +481,7 @@ export function SiteHeader() {
             <UtilityNavLink to="/festivals" active={festivalsActive}>{sectionLabel(byId.festivals, lang)}</UtilityNavLink>
             <UtilityNavLink to="/memoriam" active={memoriamActive}>{sectionLabel(byId.memoriam, lang)}</UtilityNavLink>
           </nav>
-          {desktopHeader && utilityControls}
+          {utilityControls}
         </div>
       </div>
 
@@ -467,18 +501,18 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          {!desktopHeader && utilityControls}
+          <div className="xl:hidden">{utilityControls}</div>
 
-          <Link to="/search" aria-label="Search Oguaa" className="inline-flex h-11 w-11 items-center justify-center rounded-full text-cream/85 transition-colors hover:bg-cream/10 hover:text-cream">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
-            </svg>
-          </Link>
-          <AlertsNavLink />
+            <Link to="/search" aria-label="Search Oguaa" className="inline-flex h-11 w-11 items-center justify-center rounded-full text-cream/85 transition-colors hover:bg-cream/10 hover:text-cream">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
+              </svg>
+            </Link>
+            <AlertsNavLink />
 
-          <Link to="/submit" className="hidden h-11 items-center rounded-full bg-gold-brand px-5 text-sm font-bold text-green-900 shadow-[0_6px_18px_rgba(12,44,31,0.2)] transition-all hover:-translate-y-0.5 hover:bg-gold sm:inline-flex">
-            Contribute
-          </Link>
+            <Link to="/submit" className="hidden h-11 items-center rounded-full bg-cream px-5 text-sm font-bold text-green-900 transition-colors hover:bg-white sm:inline-flex">
+              Contribute
+            </Link>
 
           <button
             ref={menuButtonRef}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { useTheme } from "@/lib/theme-context";
@@ -96,7 +96,10 @@ export function ImageField({ value, onChange }: Readonly<{ value: string; onChan
     <View>
       <Pressable accessibilityRole="button" onPress={pick} disabled={busy} style={s.drop}>
         {busy ? (
-          <ActivityIndicator color={C.greenText} />
+          <View style={s.uploadSkeleton}>
+            <View style={s.uploadSkeletonLineLg} />
+            <View style={s.uploadSkeletonLineSm} />
+          </View>
         ) : (
           <>
             <Text style={s.dropText}>Tap to upload an image</Text>
@@ -122,6 +125,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 14 },
   thumb: { width: 84, height: 84, borderRadius: 12, borderWidth: 1, borderColor: C.sand, backgroundColor: C.cream },
   drop: { borderWidth: 2, borderStyle: "dashed", borderColor: C.sand, backgroundColor: C.cream, borderRadius: 12, paddingVertical: 28, alignItems: "center", justifyContent: "center", gap: 6 },
+  uploadSkeleton: { width: "100%", alignItems: "center", justifyContent: "center", gap: 8 },
+  uploadSkeletonLineLg: { width: 148, height: 12, borderRadius: 4, backgroundColor: C.sand },
+  uploadSkeletonLineSm: { width: 112, height: 10, borderRadius: 4, backgroundColor: C.sand },
   dropText: { color: C.ink, fontSize: 15, ...S(600) },
   dropHint: { color: C.inkFaint, fontSize: 12 },
   btnGhost: { borderWidth: 1, borderColor: C.sand, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 9, alignItems: "center" },

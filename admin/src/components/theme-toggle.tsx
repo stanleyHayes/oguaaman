@@ -46,7 +46,10 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
               { duration: 450, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
             );
           })
-          .catch(() => {});
+          .catch((error: unknown) => {
+            if (error instanceof DOMException && error.name === "AbortError") return;
+            console.warn("Theme transition failed", error);
+          });
       }}
       aria-label={label}
       title={label}

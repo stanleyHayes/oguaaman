@@ -8,9 +8,9 @@ export interface PaginatedList<T> {
   items: T[];
   /** Full filtered count reported by the server (drives headers/counts). */
   total: number;
-  /** Initial load — no items on screen yet, so show a full-screen spinner. */
+  /** Initial load — no items on screen yet, so show a full-screen skeleton. */
   loading: boolean;
-  /** A next-page fetch is in flight — show an inline footer spinner. */
+  /** A next-page fetch is in flight — show an inline footer skeleton. */
   loadingMore: boolean;
   /** A pull-to-refresh re-fetch is in flight — content stays visible. */
   refreshing: boolean;
@@ -35,7 +35,7 @@ interface Resolved<T> {
 /**
  * Infinite-scroll list state over a paginated endpoint. Mirrors `useApi`'s
  * derived-`loading` model — `loading` stays true until the resolved data matches
- * the current `key`, so a key change drops back to the full-screen spinner — and
+ * the current `key`, so a key change drops back to the full-screen skeleton — and
  * adds `loadMore`/`refresh` for FlatList `onEndReached` + pull-to-refresh.
  *
  * `fetchPage` may be a fresh closure each render; only `key` drives re-fetching,

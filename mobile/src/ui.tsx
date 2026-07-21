@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Image, StyleSheet, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from "react-native-reanimated";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from "react-native-reanimated";
 import Svg, { Circle, G, Path } from "react-native-svg";
 import { T as Text } from "@/components/typography";
 import { HeroParallax } from "@/components/anim";
@@ -11,9 +11,8 @@ import { mediaUrl } from "@/lib/api";
 import { SPLASH_LINES, randomSplashIndex, type SplashLine } from "@/lib/splash-lines";
 
 /**
- * Branded splash-style loader — the Oguaa crab (Kotokuraba) breathing over a
- * soft expanding ripple, with the wordmark. Replaces the bare spinner across the
- * app so every load feels like a moment of the brand, not a stall.
+ * Branded splash-style skeleton loader — keeps the Oguaa tone while using shape
+ * placeholders (no circular spinner/ripple indicators) across the app.
  */
 /** Category accent + glyph for a splash line. */
 function splashCategory(C: Palette, kind: string): { color: string; glyph: "quote" | "sparkle" | "leaf" } {
@@ -91,31 +90,27 @@ function SplashQuote({ line, cycle }: Readonly<{ line: SplashLine; cycle: number
 export function Loading() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const breath = useSharedValue(0);
-  const ripple = useSharedValue(0);
-  // A different proverb/fact each load, gently rotating while you wait.
+  // Keep the rotating line for warmth, but use skeleton blocks instead of circles.
   const [i, setI] = useState(randomSplashIndex);
-  useEffect(() => {
-    breath.value = withRepeat(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) }), -1, true);
-    ripple.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.out(Easing.quad) }), -1, false);
-  }, [breath, ripple]);
   useEffect(() => {
     const t = setInterval(() => setI((n) => (n + 1) % SPLASH_LINES.length), 4600);
     return () => clearInterval(t);
   }, []);
-  const markStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + breath.value * 0.12 }] }));
-  const rippleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 0.4 + ripple.value * 1.3 }],
-    opacity: (1 - ripple.value) * 0.4,
-  }));
+
   return (
     <View style={s.splash}>
-      <View style={s.splashMarkWrap}>
-        <Animated.View style={[s.splashRipple, rippleStyle]} />
-        <Animated.View style={markStyle}><Mark size={58} /></Animated.View>
+      <View style={s.skeletonPanel}>
+        <View style={s.skeletonKicker} />
+        <View style={s.skeletonTitle} />
+        <View style={s.skeletonLine} />
+        <View style={s.skeletonLineShort} />
+        <View style={s.skeletonTilesRow}>
+          <View style={s.skeletonTile} />
+          <View style={s.skeletonTile} />
+          <View style={s.skeletonTile} />
+        </View>
       </View>
-      <Text style={s.splashWord}>Oguaa</Text>
-      <Text style={s.splashTag}>Cape Coast · Ghana</Text>
+      <Text style={s.splashTag}>Loading Oguaa</Text>
       <SplashQuote line={SPLASH_LINES[i]} cycle={i} />
     </View>
   );
@@ -400,6 +395,23 @@ const makeMdStyles = (C: Palette) => StyleSheet.create({
 const makeStyles = (C: Palette) => StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, backgroundColor: C.paper, gap: 6 },
   splash: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.paper, gap: 14 },
+  skeletonPanel: {
+    width: "84%",
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: C.sand,
+    borderRadius: 16,
+    backgroundColor: C.cream,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 10,
+  },
+  skeletonKicker: { width: 96, height: 8, borderRadius: 3, backgroundColor: withAlpha(C.gold, 0.45) },
+  skeletonTitle: { width: "74%", height: 22, borderRadius: 6, backgroundColor: withAlpha(C.inkFaint, 0.35) },
+  skeletonLine: { width: "100%", height: 10, borderRadius: 4, backgroundColor: C.sand },
+  skeletonLineShort: { width: "72%", height: 10, borderRadius: 4, backgroundColor: C.sand },
+  skeletonTilesRow: { flexDirection: "row", gap: 8, marginTop: 2 },
+  skeletonTile: { flex: 1, height: 48, borderRadius: 8, backgroundColor: withAlpha(C.greenText, 0.12) },
   splashMarkWrap: { width: 128, height: 128, alignItems: "center", justifyContent: "center" },
   splashRipple: { position: "absolute", width: 128, height: 128, borderRadius: 64, backgroundColor: withAlpha(C.greenText, 0.16) },
   splashWord: { ...D(700), fontSize: 30, color: C.goldText, letterSpacing: 0.5 },

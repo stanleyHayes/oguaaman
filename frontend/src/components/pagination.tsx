@@ -112,7 +112,7 @@ export function LoadMore({
       >
         {loading ? (
           <>
-            <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-ink-faint border-t-green" />
+            <span aria-hidden className="skeleton h-2.5 w-8 rounded-full" />
             Loading…
           </>
         ) : (

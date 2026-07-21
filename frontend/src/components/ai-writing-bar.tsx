@@ -234,7 +234,9 @@ export function AiWritingBar({
 
           {loading && (
             <div className="flex items-center justify-center gap-3 px-4 py-8 font-medium text-ai">
-              <span className="animate-spin rounded-full border-2 border-ai-line border-t-ai" style={{ width: 18, height: 18 }} /> Writing…
+              <span aria-hidden className="skeleton h-2.5 w-10 rounded-full" />
+              <span aria-hidden className="skeleton h-2.5 w-16 rounded-full" />
+              Writing…
             </div>
           )}
 

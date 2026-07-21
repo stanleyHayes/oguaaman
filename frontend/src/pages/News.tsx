@@ -3,9 +3,10 @@ import { Link, useLoaderData } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { NewsArticle } from "@/lib/types";
 import { api } from "@/lib/api";
+import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta, VerifiedBadge } from "@/components/ui";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
-import { LayoutPill, Reveal, Reveal3D, StaggerItem } from "@/components/motion";
+import { LayoutPill, Reveal3D, StaggerItem } from "@/components/motion";
 import { LoadMore } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
@@ -123,16 +124,14 @@ export function Component() {
 
   return (
     <>
-      <section className="on-dark on-dark-pin relative overflow-hidden bg-green-900 py-14 text-cream">
-        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-brand/[0.08] blur-3xl" />
-        <Container className="relative">
-          <Reveal>
-            <p className="eyebrow text-gold/80">The Oguaa Newsroom</p>
-            <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">News &amp; notices</h1>
-            <p className="mt-3 max-w-2xl text-cream/80">Festivals, scholarships, homecomings and announcements — from the community and its institutions.</p>
-          </Reveal>
-        </Container>
-      </section>
+      <PageHero
+        tone="gold"
+        kicker="The Oguaa Newsroom"
+        title="News & notices"
+        symbol="funtunfunefu"
+        image="/uploads/seed/fetu-crowd.jpg"
+        lede="Festivals, scholarships, homecomings and announcements — from the community and its institutions."
+      />
 
       <Container className="py-12">
         {articles.length === 0 ? (

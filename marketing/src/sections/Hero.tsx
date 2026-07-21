@@ -1,14 +1,14 @@
 import { Container, CTA as Cta, Eyebrow } from "@/components/ui";
-import { Adinkra } from "@/components/adinkra";
+import { Magnetic, Parallax, Stagger, StaggerItem, WordReveal } from "@/components/motion";
+import { HeroWireframe } from "@/components/hero-wireframe";
 import { Wordmark } from "@/components/wordmark";
-import { CircularReveal, Magnetic, Parallax, Stagger, StaggerItem, WordReveal } from "@/components/motion";
 import { PORTAL_APP_URL } from "@/config";
 
 /**
  * Opening hero for the Oguaa marketing site — a tall dark green band carrying the
  * promise of "the community home of Cape Coast." Left: wordmark, headline, subhead,
- * two CTAs and a trust line. Right (lg+): a stylized "portal" card mock crowned by
- * an Atlantic sun-and-waves motif and a quiet row of Adinkra marks.
+ * two CTAs and a trust line. Right (lg+): an interactive wireframe object inspired
+ * by the Graphify hero treatment.
  */
 export function Hero() {
   return (
@@ -92,111 +92,8 @@ export function Hero() {
             </StaggerItem>
           </Stagger>
 
-          {/* ---- Right: the portal card mock (lg+) ---- */}
-          <div className="relative hidden lg:block" aria-hidden>
-            {/* Atlantic sun + waves motif behind the card */}
-            <svg
-              className="absolute -top-10 right-2 h-40 w-40 text-gold/70"
-              viewBox="0 0 120 120"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.6}
-              strokeLinecap="round"
-            >
-              <circle cx="60" cy="44" r="16" />
-              {Array.from({ length: 12 }).map((_, i) => {
-                const a = (i * Math.PI) / 6;
-                const r1 = 22;
-                const r2 = 30;
-                return (
-                  <line
-                    key={a}
-                    x1={60 + r1 * Math.cos(a)}
-                    y1={44 + r1 * Math.sin(a)}
-                    x2={60 + r2 * Math.cos(a)}
-                    y2={44 + r2 * Math.sin(a)}
-                  />
-                );
-              })}
-              <path
-                className="text-teal/70"
-                d="M6 86c10 0 10-7 20-7s10 7 20 7 10-7 20-7 10 7 20 7 10-7 20-7 10 7 8 7"
-              />
-              <path
-                className="text-teal/50"
-                d="M6 100c10 0 10-7 20-7s10 7 20 7 10-7 20-7 10 7 20 7 10-7 20-7 10 7 8 7"
-              />
-            </svg>
-
-            <CircularReveal className="relative ml-auto w-full max-w-md">
-            <div className="og-card og-card-dark on-dark-pin og-card-accent-gold relative border-cream/15 bg-green/40 p-6 shadow-[var(--shadow-lift)] backdrop-blur-sm">
-              {/* Card chrome */}
-              <div className="flex items-center justify-between border-b border-cream/10 pb-4">
-                <Wordmark size="text-lg" markTone="text-gold" />
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-[0.65rem] font-medium uppercase tracking-wider text-gold/90">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-                  {"Verified"}
-                </span>
-              </div>
-
-              {/* Feature rows */}
-              <ul className="mt-5 space-y-3">
-                {[
-                  {
-                    name: "funtunfunefu" as const,
-                    title: "People & families",
-                    note: "Reconnect across the diaspora",
-                  },
-                  {
-                    name: "sankofa" as const,
-                    title: "Heritage & schools",
-                    note: "Mfantsipim · Adisadel · Wesley Girls'",
-                  },
-                  {
-                    name: "owuo-atwedee" as const,
-                    title: "Yɛnkae — those we remember",
-                    note: "Da yie. Held with dignity.",
-                  },
-                ].map((row) => (
-                  <li
-                    key={row.name}
-                    className="flex items-center gap-4 rounded-xl border border-cream/10 bg-green-900/40 px-4 py-3"
-                  >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-cream/[0.06] text-gold">
-                      <Adinkra name={row.name} size={20} labelled={false} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-base font-semibold leading-tight text-cream">
-                        {row.title}
-                      </span>
-                      <span className="block text-xs text-cream/55">
-                        {row.note}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* Footer chip row */}
-              <div className="mt-5 flex items-center justify-between border-t border-cream/10 pt-4">
-                <span className="font-mono text-[0.65rem] uppercase tracking-widest text-cream/45">
-                  Kotokuraba
-                </span>
-                <span className="inline-flex items-center gap-2 text-gold/80">
-                  <Adinkra name="crab" size={18} labelled={false} />
-                  <span className="font-mono text-[0.65rem] uppercase tracking-widest">
-                    Akwaaba
-                  </span>
-                </span>
-              </div>
-            </div>
-            </CircularReveal>
-
-            {/* Floating accent mark */}
-            <span className="absolute -bottom-6 -left-6 grid h-16 w-16 place-items-center rounded-full border border-gold/30 bg-green-900 text-gold shadow-[var(--shadow-lift)]">
-              <Adinkra name="adinkrahene" size={26} labelled={false} />
-            </span>
-          </div>
+          {/* ---- Right: interactive wireframe object (lg+) ---- */}
+          <HeroWireframe />
         </div>
       </Container>
 

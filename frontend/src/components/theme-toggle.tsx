@@ -67,8 +67,11 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
               { duration: 450, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
             );
           })
-          // A rapid re-toggle can skip/abort the transition — swallow the rejection.
-          .catch(() => {});
+          // A rapid re-toggle can abort the transition; surface only real failures.
+          .catch((error: unknown) => {
+            if (error instanceof DOMException && error.name === "AbortError") return;
+            console.warn("Theme transition failed", error);
+          });
       }}
       aria-label={label}
       title={label}

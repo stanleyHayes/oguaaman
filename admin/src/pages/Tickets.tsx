@@ -34,6 +34,7 @@ export function Component() {
   // fetch for the newly-selected event is in flight (avoids a loading flag
   // set synchronously inside the effect).
   const [ledger, setLedger] = useState<{ slug: string; tickets: Ticket[] } | null>(null);
+  const [ledgerError, setLedgerError] = useState<string | null>(null);
   const tickets = useMemo(() => (ledger?.slug === slug ? ledger.tickets : []), [ledger, slug]);
   const loading = !!slug && ledger?.slug !== slug;
 
@@ -45,9 +46,15 @@ export function Component() {
   useEffect(() => {
     if (!slug) return; // no ticketed events — the empty state renders instead
     let alive = true;
+    setLedgerError(null);
     api.eventTickets(slug)
       .then((t) => { if (alive) setLedger({ slug, tickets: t }); })
-      .catch(() => { if (alive) setLedger({ slug, tickets: [] }); });
+      .catch((error: unknown) => {
+        if (!alive) return;
+        setLedger({ slug, tickets: [] });
+        setLedgerError("We couldn't load ticket sales for this event. Please try again.");
+        console.warn("Failed to load event ticket ledger", error);
+      });
     return () => { alive = false; };
   }, [slug]);
 
@@ -70,7 +77,17 @@ export function Component() {
       setResult({ ok: true, msg: `Admitted — ${t.qty} × ${t.tier} · ${t.eventTitle}` });
       setCode("");
       // Refresh the ledger so the admitted row updates in place.
-      if (slug) api.eventTickets(slug).then((t) => setLedger({ slug, tickets: t })).catch(() => {});
+      if (slug) {
+        api.eventTickets(slug)
+          .then((next) => {
+            setLedger({ slug, tickets: next });
+            setLedgerError(null);
+          })
+          .catch((error: unknown) => {
+            setLedgerError("Ticket was checked in, but we couldn't refresh the sales list.");
+            console.warn("Failed to refresh event ticket ledger", error);
+          });
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not check that code.";
       setResult({ ok: false, msg });
@@ -176,6 +193,12 @@ export function Component() {
               </button>
             ))}
           </div>
+
+          {ledgerError && (
+            <Card className="mb-4 border-maroon-900/20 bg-maroon-900/[0.05] px-4 py-3 text-sm text-maroon-text">
+              {ledgerError}
+            </Card>
+          )}
 
           <Stagger className="mb-6 grid grid-cols-3 gap-4">
             <StaggerItem index={0}><MetricCard label="Revenue (confirmed)" value={cedis(totals.revenue)} tone="green" icon={<Banknote size={18} />} /></StaggerItem>

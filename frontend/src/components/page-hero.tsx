@@ -4,6 +4,7 @@ import { Container, Eyebrow } from "./ui";
 import { Adinkra, type AdinkraName } from "./adinkra";
 import { Parallax, Reveal } from "./motion";
 import { Breadcrumbs, HeroIcon, HeroWatermark } from "./hero-chrome";
+import { HeroRelic } from "./hero-relic";
 import { deriveCrumbs, sectionIdFromPath, type Crumb } from "@/lib/breadcrumbs";
 import { cldCover } from "@/lib/cloudinary";
 import { TONES, type Tone } from "@/lib/sections";
@@ -54,6 +55,7 @@ export function PageHero({
         <div className="absolute inset-0 bg-gradient-to-r from-green-900/95 via-green-900/70 to-green-900/25" />
         <div className="absolute inset-0 bg-gradient-to-t from-green-900/70 via-transparent to-green-900/20" />
         <HeroWatermark sectionId={iconId} onDark />
+        <HeroRelic sectionId={iconId} onDark />
         {symbol && (
           <Parallax strength={20} className="pointer-events-none absolute right-4 top-6 hidden text-gold sm:block">
             <Adinkra name={symbol} size={120} labelled={false} className="opacity-[0.10]" />
@@ -79,6 +81,7 @@ export function PageHero({
   return (
     <section className={`relative overflow-hidden border-t-4 ${t.border} bg-cream`}>
       <HeroWatermark sectionId={iconId} toneText={t.text} />
+      <HeroRelic sectionId={iconId} />
       <Container className="relative py-14 sm:py-16">
         {symbol && (
           <Parallax strength={20} className={`pointer-events-none absolute right-4 top-6 hidden sm:block ${t.text}`}>

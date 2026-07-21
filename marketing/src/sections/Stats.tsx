@@ -59,30 +59,46 @@ function isCommunityStats(value: unknown): value is CommunityStats {
 
 export function Stats() {
   const [stats, setStats] = useState<CommunityStats | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
-    fetch(apiUrl("/api/stats"), { headers: { Accept: "application/json" } })
+    fetch(apiUrl("/api/stats"), { headers: { Accept: "application/json" }, signal: controller.signal })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: unknown) => {
-        // Only ever mutate state inside the async resolution, and only when
-        // the payload is well-formed and this effect run is still current.
-        if (!cancelled && isCommunityStats(data)) {
+        if (isCommunityStats(data)) {
           setStats(data);
+          setLoadFailed(false);
+          return;
         }
+        setLoadFailed(true);
       })
-      .catch(() => {
-        // Keep the seeded fallback silently. No error UI on a brochure band.
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.warn("Failed to load community stats", error);
+        setLoadFailed(true);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, []);
 
-  // API-only: don't render the band until the real numbers load (no placeholders).
-  if (!stats) return null;
+  if (!stats && !loadFailed) return null;
+  if (!stats && loadFailed) {
+    return (
+      <Section id="community" tone="green">
+        <SectionHeading
+          onDark
+          center
+          kicker="THE COMMUNITY, IN NUMBERS"
+          title="Community stats are temporarily unavailable."
+          lede="Please check back shortly while we reconnect live numbers from Oguaa."
+        />
+      </Section>
+    );
+  }
 
   return (
     <Section id="community" tone="green">

@@ -23,6 +23,8 @@ export const router = createBrowserRouter([
       { path: "leadership", handle: { title: `Leadership — the two orders of Oguaa — ${SUFFIX}`, description: "The traditional chieftaincy and the civic government of Cape Coast, shown as two living hierarchies — from the Omanhene and the Asafo to the Assembly." }, lazy: () => import("./pages/LeadershipPage") },
       { path: "news", handle: { title: `News — the Oguaa Newsroom — ${SUFFIX}`, description: "Festivals, scholarships, homecomings and announcements from Cape Coast and its institutions. Free to read." }, lazy: () => import("./pages/NewsPage") },
       { path: "news/:slug", lazy: () => import("./pages/NewsArticlePage") },
+      { path: "about", handle: { title: `About Oguaa — ${SUFFIX}`, description: "What Oguaa is building for Cape Coast and the diaspora: a living cultural archive, civic platform, and community home." }, lazy: () => import("./pages/AboutPage") },
+      { path: "contact", handle: { title: `Contact Oguaa — ${SUFFIX}`, description: "How to reach the Oguaa team for support, partnerships, corrections, and stewardship of Cape Coast's public memory." }, lazy: () => import("./pages/ContactPage") },
       { path: "privacy", handle: { title: `Privacy — ${SUFFIX}` }, lazy: () => import("./pages/PrivacyPage") },
       { path: "terms", handle: { title: `Terms — ${SUFFIX}` }, lazy: () => import("./pages/TermsPage") },
     ],

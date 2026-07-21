@@ -1,12 +1,12 @@
 import { useMemo } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
 import { S, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 
 /**
  * Footer for an infinite-scroll list (drop into `ListFooterComponent`). Shows a
- * spinner while the next page loads, a tappable "Load more" fallback while pages
+ * skeleton shimmer while the next page loads, a tappable "Load more" fallback while pages
  * remain (so users on short screens / with `onEndReached` misses can still
  * advance), or a quiet end-cap once everything is loaded. Theme-aware. Renders
  * nothing on an empty/single page unless `endLabel` is given.
@@ -29,7 +29,10 @@ export function ListFooter({
   if (loadingMore) {
     return (
       <View style={s.wrap}>
-        <ActivityIndicator color={C.greenText} />
+        <View style={s.skeletonRow}>
+          <View style={s.skeletonDot} />
+          <View style={s.skeletonLine} />
+        </View>
         <Text style={s.hint}>Loading more…</Text>
       </View>
     );
@@ -56,6 +59,9 @@ export function ListFooter({
 const makeStyles = (C: Palette) => StyleSheet.create({
   wrap: { alignItems: "center", justifyContent: "center", paddingVertical: 22, paddingHorizontal: 16, gap: 8 },
   hint: { color: C.inkFaint, fontSize: 12, ...S(500) },
+  skeletonRow: { flexDirection: "row", alignItems: "center", gap: 8, opacity: 0.9 },
+  skeletonDot: { width: 10, height: 10, borderRadius: 3, backgroundColor: C.sand },
+  skeletonLine: { width: 82, height: 10, borderRadius: 4, backgroundColor: C.sand },
   btn: { borderWidth: 1, borderColor: C.goldBorder, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 22, backgroundColor: C.cream },
   btnText: { color: C.goldText, fontSize: 13, ...S(700) },
   end: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", ...S(600) },
