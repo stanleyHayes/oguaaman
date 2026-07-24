@@ -47,6 +47,9 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	mux.HandleFunc("GET /api/artists", h.Artists)
 	mux.HandleFunc("GET /api/artists/{slug}", h.Artist)
+	// Artist donations ("tip jar", Creator Monetization) via Paystack.
+	mux.HandleFunc("POST /api/artists/{slug}/donate", h.Donate)
+	mux.HandleFunc("GET /api/donations/confirm", h.ConfirmDonation)
 	mux.HandleFunc("GET /api/genres", h.Genres)
 	mux.HandleFunc("GET /api/music/legacy", h.MusicLegacy)
 
@@ -62,6 +65,10 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/projects/{slug}/pledge", h.Pledge)
 	mux.HandleFunc("GET /api/pledges/confirm", h.ConfirmPledge)
 	mux.HandleFunc("GET /api/me/pledges", h.MyPledges)
+	// Fundraising campaigns (Creator Monetization) — member-created projects.
+	mux.HandleFunc("GET /api/campaigns", h.Campaigns)
+	mux.HandleFunc("POST /api/campaigns", h.CreateCampaign)
+	mux.HandleFunc("GET /api/me/campaigns", h.MyCampaigns)
 	mux.HandleFunc("POST /api/payments/paystack/webhook", h.PaystackWebhook)
 	mux.HandleFunc("POST /api/payments/stripe/intent", h.StripeIntent)
 	mux.HandleFunc("POST /api/payments/stripe/confirm", h.StripeConfirm)
@@ -151,6 +158,8 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/properties/{slug}", h.Property)
 	// Business subscriptions (Phase 7): the Supporter plan via Paystack.
 	mux.HandleFunc("POST /api/businesses/{slug}/subscribe", h.Subscribe)
+	// Creator (member-level) subscription — unlocks donations & campaigns.
+	mux.HandleFunc("POST /api/me/subscribe", h.SubscribeCreator)
 	mux.HandleFunc("GET /api/subscriptions/confirm", h.ConfirmSubscription)
 	mux.HandleFunc("GET /api/me/subscriptions", h.MySubscriptions)
 	mux.HandleFunc("GET /api/admin/subscriptions", h.AdminSubscriptions)

@@ -37,11 +37,12 @@ type SubscriptionRevenue struct {
 // RevenueOverview is the GET /api/admin/revenue payload.
 type RevenueOverview struct {
 	Pledges       PledgeRevenue       `json:"pledges"`
+	Donations     PledgeRevenue       `json:"donations"` // artist tip-jar fee split (Creator Monetization)
 	Tickets       StreamRevenue       `json:"tickets"`
 	Subscriptions SubscriptionRevenue `json:"subscriptions"`
 	Promotions    StreamRevenue       `json:"promotions"`
-	// TotalPesewas is platform income: pledge fees + the gross of every
-	// direct-sale stream (tickets, subscriptions, promotions).
+	// TotalPesewas is platform income: pledge + donation fees + the gross of
+	// every direct-sale stream (tickets, subscriptions, promotions).
 	TotalPesewas int64 `json:"totalPesewas"`
 }
 
@@ -72,11 +73,12 @@ func (s *RevenueService) Overview(ctx context.Context) (*RevenueOverview, error)
 	if err := s.sumPromotions(ctx, out); err != nil {
 		return nil, err
 	}
-	out.TotalPesewas = out.Pledges.FeePesewas + out.Tickets.GrossPesewas + out.Subscriptions.GrossPesewas + out.Promotions.GrossPesewas
+	out.TotalPesewas = out.Pledges.FeePesewas + out.Donations.FeePesewas + out.Tickets.GrossPesewas + out.Subscriptions.GrossPesewas + out.Promotions.GrossPesewas
 	return out, nil
 }
 
-// sumPledges aggregates the platform-fee split across successful pledges.
+// sumPledges aggregates the platform-fee split across successful pledges,
+// routing artist donations into their own bucket (Creator Monetization).
 func (s *RevenueService) sumPledges(ctx context.Context, out *RevenueOverview) error {
 	pledges, err := s.pledges.All(ctx)
 	if err != nil {
@@ -86,9 +88,13 @@ func (s *RevenueService) sumPledges(ctx context.Context, out *RevenueOverview) e
 		if p.Status != domain.PledgeSuccess {
 			continue
 		}
-		out.Pledges.GrossPesewas += p.AmountPesewas
-		out.Pledges.FeePesewas += p.FeePesewas
-		out.Pledges.NetPesewas += p.NetPesewas
+		bucket := &out.Pledges
+		if p.Kind == domain.PledgeKindDonation {
+			bucket = &out.Donations
+		}
+		bucket.GrossPesewas += p.AmountPesewas
+		bucket.FeePesewas += p.FeePesewas
+		bucket.NetPesewas += p.NetPesewas
 	}
 	return nil
 }

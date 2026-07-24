@@ -274,6 +274,15 @@ func (s *Service) Moderate(ctx context.Context, listingID, action, reason, moder
 			return err
 		}
 	}
+	// First-time campaign approval vets the owner so their subsequent campaigns
+	// auto-publish (Creator Monetization).
+	if action == actionApprove && listing.Type == domain.TypeProject && isCampaign(*listing) && listing.OwnerID != "" {
+		if owner, err := s.members.ByID(ctx, listing.OwnerID); err == nil && !owner.CampaignerVetted {
+			if err := s.members.SetCampaignerVetted(ctx, listing.OwnerID, true); err != nil {
+				return err
+			}
+		}
+	}
 	if err := s.mod.Insert(ctx, domain.ModerationRecord{
 		ID:          newID(domain.PrefixModeration),
 		ListingID:   listingID,

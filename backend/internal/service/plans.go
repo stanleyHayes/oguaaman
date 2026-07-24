@@ -27,6 +27,9 @@ type PlanInput struct {
 	Perks             []string         `json:"perks"`
 	MaxListings       int              `json:"maxListings"`
 	IncludedPromoDays int              `json:"includedPromoDays"`
+	TakeRatePercent   int              `json:"takeRatePercent"`
+	MaxProducts       int              `json:"maxProducts"`
+	MaxServices       int              `json:"maxServices"`
 	GoldBadge         bool             `json:"goldBadge"`
 	Active            bool             `json:"active"`
 	SortOrder         int              `json:"sortOrder"`
@@ -38,8 +41,9 @@ func validatePlan(in PlanInput) (domain.Plan, error) {
 	p := domain.Plan{
 		Name: strings.TrimSpace(in.Name), Audience: strings.TrimSpace(in.Audience),
 		Interval: strings.TrimSpace(in.Interval), MaxListings: in.MaxListings,
-		IncludedPromoDays: in.IncludedPromoDays, GoldBadge: in.GoldBadge,
-		Active: in.Active, SortOrder: in.SortOrder,
+		IncludedPromoDays: in.IncludedPromoDays, TakeRatePercent: in.TakeRatePercent,
+		MaxProducts: in.MaxProducts, MaxServices: in.MaxServices,
+		GoldBadge: in.GoldBadge, Active: in.Active, SortOrder: in.SortOrder,
 	}
 	if len(p.Name) < 2 || len(p.Name) > 80 {
 		return p, fmt.Errorf("name must be 2–80 characters")
@@ -101,6 +105,15 @@ func validatePlan(in PlanInput) (domain.Plan, error) {
 	}
 	if p.IncludedPromoDays < 0 || p.IncludedPromoDays > 31 {
 		return p, fmt.Errorf("included promotion days must be 0–31")
+	}
+	if p.TakeRatePercent < 0 || p.TakeRatePercent > 90 {
+		return p, fmt.Errorf("platform take-rate must be 0–90%%")
+	}
+	if p.MaxProducts < 0 || p.MaxProducts > 1000 {
+		return p, fmt.Errorf("max products must be 0–1000")
+	}
+	if p.MaxServices < 0 || p.MaxServices > 1000 {
+		return p, fmt.Errorf("max services must be 0–1000")
 	}
 	return p, nil
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -16,7 +17,15 @@ type StorefrontInput struct {
 	Sections []domain.ProfileSection `json:"sections"`
 	Photos   []domain.MediaAsset     `json:"photos"`
 	Videos   []domain.MediaAsset     `json:"videos"`
+	Products []domain.StoreItem      `json:"products"`
+	Services []domain.StoreItem      `json:"services"`
 }
+
+const (
+	maxStoreItemNameRunes = 120
+	maxStoreItemDescRunes = 600
+	maxStoreItemPesewas   = 100_000_000 // GH₵ 1,000,000 per item — a guardrail
+)
 
 // reservedHandles can't be claimed as storefront handles — they'd shadow app
 // routes today and subdomains later.
@@ -80,10 +89,73 @@ func (s *Service) SetListingStorefront(ctx context.Context, actor *domain.Member
 		return nil, err
 	}
 
-	if err := s.listings.SetStorefront(ctx, l.ID, handle, sections, photos, videos); err != nil {
+	// Products & services are capped by the business's subscription plan
+	// (admin-configured Plan.MaxProducts / MaxServices).
+	maxProducts, maxServices := s.storefrontItemCaps(ctx, *l)
+	products, err := cleanStoreItems(in.Products, "product", maxProducts)
+	if err != nil {
+		return nil, err
+	}
+	services, err := cleanStoreItems(in.Services, "service", maxServices)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.listings.SetStorefront(ctx, l.ID, handle, sections, photos, videos, products, services); err != nil {
 		return nil, err
 	}
 	return s.listings.GetByID(ctx, l.ID)
+}
+
+// storefrontItemCaps resolves how many products/services a business may publish:
+// its active subscription plan's caps, or the default free plan's caps when it
+// has no active paid plan. Missing plans mean a zero cap (feature unavailable).
+func (s *Service) storefrontItemCaps(ctx context.Context, l domain.Listing) (maxProducts, maxServices int) {
+	if s.plans == nil {
+		return 0, 0
+	}
+	slug, _ := l.Details["plan"].(string)
+	if slug == "" || !SupporterActive(l, time.Now()) {
+		slug = domain.DefaultCreatorPlanIntentSlug // the free "starter" plan
+	}
+	plan, err := s.plans.BySlug(ctx, slug)
+	if err != nil {
+		return 0, 0
+	}
+	return plan.MaxProducts, plan.MaxServices
+}
+
+// cleanStoreItems validates and normalises a product/service catalog, enforcing
+// the per-plan count cap. idPrefix seeds ids for new items lacking one.
+func cleanStoreItems(items []domain.StoreItem, idPrefix string, max int) ([]domain.StoreItem, error) {
+	out := make([]domain.StoreItem, 0, len(items))
+	for i := range items {
+		it := items[i]
+		it.Name = strings.TrimSpace(it.Name)
+		if it.Name == "" {
+			continue // skip blank rows silently (empty editor rows)
+		}
+		if len([]rune(it.Name)) > maxStoreItemNameRunes {
+			return nil, fmt.Errorf("a %s name is too long (max %d characters)", idPrefix, maxStoreItemNameRunes)
+		}
+		it.Description = strings.TrimSpace(it.Description)
+		if len([]rune(it.Description)) > maxStoreItemDescRunes {
+			return nil, fmt.Errorf("a %s description is too long (max %d characters)", idPrefix, maxStoreItemDescRunes)
+		}
+		if it.PricePesewas < 0 || it.PricePesewas > maxStoreItemPesewas {
+			return nil, fmt.Errorf("a %s price is out of range", idPrefix)
+		}
+		it.Unit = strings.TrimSpace(it.Unit)
+		it.ImageURL = safeURL(strings.TrimSpace(it.ImageURL))
+		if strings.TrimSpace(it.ID) == "" {
+			it.ID = fmt.Sprintf("%s-%d", idPrefix, i+1)
+		}
+		out = append(out, it)
+	}
+	if len(out) > max {
+		return nil, fmt.Errorf("your plan allows at most %d %ss — upgrade to add more", max, idPrefix)
+	}
+	return out, nil
 }
 
 // resolveHandle normalises and validates a requested storefront handle. Blank is

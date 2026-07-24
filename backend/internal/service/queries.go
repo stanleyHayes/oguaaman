@@ -88,9 +88,21 @@ func (s *Service) Memorials(ctx context.Context) ([]domain.Listing, error) {
 	return s.approved(ctx, domain.TypeMemorial)
 }
 
-// Projects — adopt-a-project campaigns (spec §4/§6/§15), open ones first.
+// Projects — curated civic adopt-a-project listings (spec §4/§6/§15). Member-
+// created fundraising campaigns share the `project` type but are surfaced on
+// their own wall (Campaigns), so they're excluded here.
 func (s *Service) Projects(ctx context.Context) ([]domain.Listing, error) {
-	return s.approved(ctx, domain.TypeProject)
+	items, err := s.approved(ctx, domain.TypeProject)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]domain.Listing, 0, len(items))
+	for _, l := range items {
+		if !isCampaign(l) {
+			out = append(out, l)
+		}
+	}
+	return out, nil
 }
 func (s *Service) Businesses(ctx context.Context) ([]domain.Listing, error) {
 	items, err := s.approved(ctx, domain.TypeBusiness)

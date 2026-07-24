@@ -77,6 +77,18 @@ type Member struct {
 	// preference for onboarding; paid access is granted exclusively by a
 	// confirmed Subscription and must never be inferred from this field.
 	CreatorPlanIntent string `json:"creatorPlanIntent,omitempty" bson:"creatorPlanIntent,omitempty"`
+	// CreatorSubscribedUntil / CreatorPlan are the member-level creator
+	// subscription (Creator Monetization): a confirmed paid plan on the account
+	// that unlocks artist donations and fundraising campaigns and sets the
+	// platform take-rate for both. CreatorSubscribedUntil is RFC3339; a value in
+	// the future means the plan is active. Set only by ConfirmSubscription after
+	// Paystack verifies the charge — never inferred from CreatorPlanIntent.
+	CreatorSubscribedUntil string `json:"creatorSubscribedUntil,omitempty" bson:"creatorSubscribedUntil,omitempty"`
+	CreatorPlan            string `json:"creatorPlan,omitempty" bson:"creatorPlan,omitempty"`
+	// CampaignerVetted is set true when a curator approves the member's FIRST
+	// fundraising campaign. Once vetted, subsequent campaigns auto-publish on
+	// submit instead of entering the moderation queue (Creator Monetization).
+	CampaignerVetted bool `json:"campaignerVetted,omitempty" bson:"campaignerVetted,omitempty"`
 	// Verified / VerifiedAs are the checkmark-badge signal. They are COMPUTED at
 	// serialization time (never persisted — bson:"-"): a member is verified as a
 	// curator/steward, or as an approved manager of a verified authority-kind
@@ -151,6 +163,12 @@ type MemberRepository interface {
 	SetLinks(ctx context.Context, id string, links []SocialLink) error
 	SetCreatorTypes(ctx context.Context, id string, types []string) error
 	SetCreatorPlanIntent(ctx context.Context, id, planSlug string) error
+	// SetCreatorSubscription records a confirmed member-level creator plan: its
+	// slug and the RFC3339 paid-until date. Unlocks donations & campaigns.
+	SetCreatorSubscription(ctx context.Context, id, planSlug, until string) error
+	// SetCampaignerVetted flips the member's campaign auto-publish entitlement,
+	// set true when their first campaign is approved.
+	SetCampaignerVetted(ctx context.Context, id string, vetted bool) error
 	// SetMFA persists the member's TOTP state: enabled flag, base32 secret
 	// (empty clears it), and bcrypt hashes of unused recovery codes.
 	SetMFA(ctx context.Context, id string, enabled bool, secret string, recoveryHashes []string) error

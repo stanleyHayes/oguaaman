@@ -186,13 +186,22 @@ func (h *Handler) Genres(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, g)
 }
 
+// artistView is an artist listing plus whether the artist is accepting
+// donations (owner holds an active creator subscription) — the portal shows the
+// donate panel only when true (Creator Monetization).
+type artistView struct {
+	domain.Listing
+	DonationsEnabled bool `json:"donationsEnabled"`
+}
+
 func (h *Handler) Artist(w http.ResponseWriter, r *http.Request) {
 	l, err := h.svc.ListingBySlug(r.Context(), domain.TypeArtist, r.PathValue("slug"))
 	if err != nil {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, l)
+	enabled := h.payments.DonationsEnabledForOwner(r.Context(), l.OwnerID)
+	writeJSON(w, http.StatusOK, artistView{Listing: *l, DonationsEnabled: enabled})
 }
 
 func (h *Handler) Business(w http.ResponseWriter, r *http.Request) {

@@ -150,17 +150,21 @@ func (r *ListingRepo) SetLostFoundStatus(ctx context.Context, id, status string)
 	return err
 }
 
-// SetSubscribedUntil records a business's Supporter paid-until date (Phase 7).
-func (r *ListingRepo) SetSubscribedUntil(ctx context.Context, id, until string) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"details.subscribedUntil": until}})
+// SetSubscribedUntil records a business's Supporter paid-until date (Phase 7)
+// and its active plan slug (details.plan), which resolves storefront caps.
+func (r *ListingRepo) SetSubscribedUntil(ctx context.Context, id, plan, until string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"details.subscribedUntil": until,
+		"details.plan":            plan,
+	}})
 	return err
 }
 
 // SetStorefront replaces a business listing's storefront in one $set: the
 // profile sections, the photo/video gallery, and the clean handle (unset when
 // blank so it never collides on the unique-ish lookup).
-func (r *ListingRepo) SetStorefront(ctx context.Context, id, handle string, sections []domain.ProfileSection, photos, videos []domain.MediaAsset) error {
-	set := bson.M{"sections": sections, "photos": photos, "videos": videos}
+func (r *ListingRepo) SetStorefront(ctx context.Context, id, handle string, sections []domain.ProfileSection, photos, videos []domain.MediaAsset, products, services []domain.StoreItem) error {
+	set := bson.M{"sections": sections, "photos": photos, "videos": videos, "products": products, "services": services}
 	update := bson.M{"$set": set}
 	if handle == "" {
 		update["$unset"] = bson.M{"handle": ""}
@@ -196,6 +200,16 @@ func (r *ListingRepo) IncrementRaised(ctx context.Context, listingID string, del
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{
 		"details.raisedPesewas": deltaPesewas,
 		"details.backers":       1,
+	}})
+	return err
+}
+
+// IncrementDonations adds a confirmed artist donation's net to the artist
+// listing's running total and bumps its donor count (Creator Monetization).
+func (r *ListingRepo) IncrementDonations(ctx context.Context, listingID string, deltaNetPesewas int64) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{
+		"details.donationsNetPesewas": deltaNetPesewas,
+		"details.donorCount":          1,
 	}})
 	return err
 }

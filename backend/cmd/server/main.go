@@ -141,9 +141,13 @@ func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*se
 	} else {
 		log.Info("payments SIMULATED — set PAYSTACK_SECRET_KEY for live charges")
 	}
-	payments := service.NewPaymentsService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)
+	creatorURL := cfg.CreatorURL
+	if creatorURL == "" {
+		creatorURL = cfg.PortalURL
+	}
+	payments := service.NewPaymentsService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewNotificationRepo(db), mongox.NewMemberRepo(db), mongox.NewPlanRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)
 	tickets := service.NewTicketsService(mongox.NewListingRepo(db), mongox.NewTicketRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL)
-	subs := service.NewSubscriptionsService(mongox.NewListingRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPlanRepo(db), paystack, cfg.PortalURL)
+	subs := service.NewSubscriptionsService(mongox.NewListingRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPlanRepo(db), mongox.NewMemberRepo(db), paystack, cfg.PortalURL, creatorURL)
 	promotions := service.NewPromotionsService(mongox.NewListingRepo(db), mongox.NewPromotionRepo(db), paystack, cfg.PortalURL)
 	revenue := service.NewRevenueService(mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
 	agentJobs := service.NewAgentJobsService(mongox.NewAgentJobRepo(db), mongox.NewAgentRepo(db), mongox.NewAgentReviewRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)

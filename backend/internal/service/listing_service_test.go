@@ -139,26 +139,43 @@ func (f *fakeRepo) SetLostFoundStatus(_ context.Context, id, status string) erro
 	return &domain.NotFoundError{Entity: "listing"}
 }
 
-func (f *fakeRepo) SetSubscribedUntil(_ context.Context, id, until string) error {
+func (f *fakeRepo) IncrementDonations(_ context.Context, id string, delta int64) error {
 	for i := range f.listings {
 		if f.listings[i].ID == id {
 			if f.listings[i].Details == nil {
 				f.listings[i].Details = map[string]any{}
 			}
-			f.listings[i].Details["subscribedUntil"] = until
+			cur, _ := f.listings[i].Details["donationsNetPesewas"].(int64)
+			f.listings[i].Details["donationsNetPesewas"] = cur + delta
 			return nil
 		}
 	}
 	return &domain.NotFoundError{Entity: "listing"}
 }
 
-func (f *fakeRepo) SetStorefront(_ context.Context, id, handle string, sections []domain.ProfileSection, photos, videos []domain.MediaAsset) error {
+func (f *fakeRepo) SetSubscribedUntil(_ context.Context, id, plan, until string) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			if f.listings[i].Details == nil {
+				f.listings[i].Details = map[string]any{}
+			}
+			f.listings[i].Details["subscribedUntil"] = until
+			f.listings[i].Details["plan"] = plan
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
+
+func (f *fakeRepo) SetStorefront(_ context.Context, id, handle string, sections []domain.ProfileSection, photos, videos []domain.MediaAsset, products, services []domain.StoreItem) error {
 	for i := range f.listings {
 		if f.listings[i].ID == id {
 			f.listings[i].Handle = handle
 			f.listings[i].Sections = sections
 			f.listings[i].Photos = photos
 			f.listings[i].Videos = videos
+			f.listings[i].Products = products
+			f.listings[i].Services = services
 			return nil
 		}
 	}
@@ -301,8 +318,12 @@ func (stubMembers) SetPasswordHash(context.Context, string, string) error       
 func (stubMembers) SetDateOfBirth(context.Context, string, string) error             { return nil }
 func (stubMembers) SetCreatorTypes(context.Context, string, []string) error          { return nil }
 func (stubMembers) SetCreatorPlanIntent(context.Context, string, string) error       { return nil }
-func (stubMembers) SetMFA(context.Context, string, bool, string, []string) error     { return nil }
-func (stubMembers) Anonymize(context.Context, string) error                          { return nil }
+func (stubMembers) SetCreatorSubscription(context.Context, string, string, string) error {
+	return nil
+}
+func (stubMembers) SetCampaignerVetted(context.Context, string, bool) error      { return nil }
+func (stubMembers) SetMFA(context.Context, string, bool, string, []string) error { return nil }
+func (stubMembers) Anonymize(context.Context, string) error                      { return nil }
 
 type stubOrgs struct{}
 

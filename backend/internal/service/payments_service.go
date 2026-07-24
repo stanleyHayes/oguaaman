@@ -145,19 +145,21 @@ func (s SimulatedPaystack) Verify(context.Context, string) (bool, int64, error) 
 
 // ── the payments service ──────────────────────────────────────────────────────
 
-// PaymentsService runs the pledge flow. Standalone (like AuthService/AIService)
-// so the core Service stays read/moderation-focused.
+// PaymentsService runs the pledge & donation flows. Standalone (like
+// AuthService/AIService) so the core Service stays read/moderation-focused.
 type PaymentsService struct {
 	listings   domain.ListingRepository
 	pledges    domain.PledgeRepository
 	notifs     domain.NotificationRepository
+	members    domain.MemberRepository
+	plans      domain.PlanRepository
 	paystack   PaystackClient
 	portal     string // public portal origin for callback URLs
-	feePercent int    // platform fee kept from each confirmed pledge (integer %)
+	feePercent int    // fallback platform fee for legacy civic pledges (integer %)
 }
 
-func NewPaymentsService(l domain.ListingRepository, p domain.PledgeRepository, n domain.NotificationRepository, ps PaystackClient, portalURL string, feePercent int) *PaymentsService {
-	return &PaymentsService{listings: l, pledges: p, notifs: n, paystack: ps, portal: strings.TrimRight(portalURL, "/"), feePercent: feePercent}
+func NewPaymentsService(l domain.ListingRepository, p domain.PledgeRepository, n domain.NotificationRepository, members domain.MemberRepository, plans domain.PlanRepository, ps PaystackClient, portalURL string, feePercent int) *PaymentsService {
+	return &PaymentsService{listings: l, pledges: p, notifs: n, members: members, plans: plans, paystack: ps, portal: strings.TrimRight(portalURL, "/"), feePercent: feePercent}
 }
 
 // Simulated reports whether pledges run against the labelled simulation.
@@ -185,6 +187,7 @@ func (s *PaymentsService) StartPledge(ctx context.Context, projectSlug, memberID
 	pledge := domain.Pledge{
 		ID:            "p" + reference,
 		Reference:     reference,
+		Kind:          domain.PledgeKindCampaign,
 		ProjectID:     project.ID,
 		ProjectSlug:   project.Slug,
 		ProjectTitle:  project.Title,
@@ -205,6 +208,77 @@ func (s *PaymentsService) StartPledge(ctx context.Context, projectSlug, memberID
 		return "", "", "", err
 	}
 	return authURL, accessCode, reference, nil
+}
+
+// StartDonation records a pending "tip jar" donation to an artist and returns
+// the Paystack authorization URL. It is gated: the artist's owner must hold an
+// active creator subscription (donations are a paid feature). message/anonymous
+// are optional donor touches carried on the record.
+func (s *PaymentsService) StartDonation(ctx context.Context, artistSlug, memberID, email string, amountPesewas int64, message string, anonymous bool) (authorizationURL, accessCode, reference string, err error) {
+	if amountPesewas < minPledgePesewas || amountPesewas > maxPledgePesewas {
+		return "", "", "", ErrPledgeAmount
+	}
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return "", "", "", fmt.Errorf("an email is required for the payment receipt")
+	}
+	artist, err := s.listings.GetBySlug(ctx, domain.TypeArtist, artistSlug)
+	if err != nil {
+		return "", "", "", err
+	}
+	if artist.Status != domain.StatusApproved {
+		return "", "", "", &domain.NotFoundError{Entity: "artist"}
+	}
+	if !s.donationsEnabled(ctx, artist.OwnerID) {
+		return "", "", "", &domain.ForbiddenError{Reason: "this artist isn't accepting donations — the feature needs an active creator plan"}
+	}
+	now := time.Now().UTC()
+	reference = fmt.Sprintf("don-%s-%d", artist.Slug, now.UnixNano())
+	donation := domain.Pledge{
+		ID:            "p" + reference,
+		Reference:     reference,
+		Kind:          domain.PledgeKindDonation,
+		ProjectID:     artist.ID,
+		ProjectSlug:   artist.Slug,
+		ProjectTitle:  artist.Title,
+		Message:       strings.TrimSpace(message),
+		Anonymous:     anonymous,
+		MemberID:      memberID,
+		Email:         email,
+		AmountPesewas: amountPesewas,
+		Currency:      "GHS",
+		Status:        domain.PledgePending,
+		Simulated:     s.paystack.Simulated(),
+		CreatedAt:     now.Format(time.RFC3339),
+	}
+	if err := s.pledges.Insert(ctx, donation); err != nil {
+		return "", "", "", err
+	}
+	callback := fmt.Sprintf("%s/artists/%s?donation_ref=%s", s.portal, artist.Slug, url.QueryEscape(reference))
+	authURL, accessCode, err := s.paystack.Initialize(ctx, email, amountPesewas, "GHS", reference, callback)
+	if err != nil {
+		return "", "", "", err
+	}
+	return authURL, accessCode, reference, nil
+}
+
+// donationsEnabled reports whether an artist's owner may receive donations —
+// i.e. holds an active creator subscription.
+func (s *PaymentsService) donationsEnabled(ctx context.Context, ownerID string) bool {
+	if s.members == nil || ownerID == "" {
+		return false
+	}
+	owner, err := s.members.ByID(ctx, ownerID)
+	if err != nil {
+		return false
+	}
+	return CreatorSubscriptionActive(owner, time.Now().UTC())
+}
+
+// DonationsEnabledForOwner is the exported gate the read layer uses to decide
+// whether to show an artist's donate panel.
+func (s *PaymentsService) DonationsEnabledForOwner(ctx context.Context, ownerID string) bool {
+	return s.donationsEnabled(ctx, ownerID)
 }
 
 // ConfirmPledge verifies a transaction with Paystack and, on first success,
@@ -247,40 +321,78 @@ func (s *PaymentsService) fulfillPledge(ctx context.Context, pledge *domain.Pled
 	if err := s.pledges.UpdateStatus(ctx, pledge.Reference, domain.PledgeSuccess, now); err != nil {
 		return nil, err
 	}
-	// Split the platform fee (integer pesewas, rounded down); the project is
-	// credited the NET. The fee is recorded on the pledge for the steward ledger.
-	fee := pledge.AmountPesewas * int64(s.feePercent) / 100
+	// Split the platform fee (integer pesewas, rounded down); the recipient is
+	// credited the NET. The rate is the TARGET listing owner's plan take-rate
+	// (Creator Monetization), falling back to the flat platform fee for legacy
+	// civic projects whose owner has no active creator plan.
+	feePercent := s.takeRateForOwner(ctx, pledge.ProjectID)
+	fee := pledge.AmountPesewas * int64(feePercent) / 100
 	net := pledge.AmountPesewas - fee
 	if err := s.pledges.SetFeeNet(ctx, pledge.Reference, fee, net); err != nil {
 		return nil, err
 	}
-	if err := s.listings.IncrementRaised(ctx, pledge.ProjectID, net); err != nil {
+	// Credit the recipient: donations bump the artist's donation total; campaign
+	// and project pledges bump the project's raised total.
+	if pledge.Kind == domain.PledgeKindDonation {
+		if err := s.listings.IncrementDonations(ctx, pledge.ProjectID, net); err != nil {
+			return nil, err
+		}
+	} else if err := s.listings.IncrementRaised(ctx, pledge.ProjectID, net); err != nil {
 		return nil, err
 	}
 	pledge.Status = domain.PledgeSuccess
 	pledge.FeePesewas = fee
 	pledge.NetPesewas = net
 	pledge.ConfirmedAt = now
-	s.notifyProjectOwner(ctx, pledge)
+	s.notifyRecipient(ctx, pledge)
 	return pledge, nil
 }
 
-// notifyProjectOwner tells the project's steward/owner a pledge landed.
-func (s *PaymentsService) notifyProjectOwner(ctx context.Context, p *domain.Pledge) {
+// takeRateForOwner resolves the platform fee percent for a confirmed
+// contribution to targetListingID: the target owner's active creator plan
+// take-rate, or the flat platform fee when the owner has no active plan.
+func (s *PaymentsService) takeRateForOwner(ctx context.Context, targetListingID string) int {
+	if s.members == nil || s.plans == nil {
+		return s.feePercent
+	}
+	listing, err := s.listings.GetByID(ctx, targetListingID)
+	if err != nil || listing.OwnerID == "" {
+		return s.feePercent
+	}
+	owner, err := s.members.ByID(ctx, listing.OwnerID)
+	if err != nil || !CreatorSubscriptionActive(owner, time.Now().UTC()) || owner.CreatorPlan == "" {
+		return s.feePercent
+	}
+	plan, err := s.plans.BySlug(ctx, owner.CreatorPlan)
+	if err != nil {
+		return s.feePercent
+	}
+	return plan.TakeRatePercent
+}
+
+// notifyRecipient tells the target's owner that a pledge or donation landed.
+func (s *PaymentsService) notifyRecipient(ctx context.Context, p *domain.Pledge) {
 	if s.notifs == nil {
 		return
 	}
-	project, err := s.listings.GetByID(ctx, p.ProjectID)
-	if err != nil || project.OwnerID == "" {
+	target, err := s.listings.GetByID(ctx, p.ProjectID)
+	if err != nil || target.OwnerID == "" {
 		return
 	}
 	cedis := float64(p.AmountPesewas) / 100
+	simTail := map[bool]string{true: " (Simulated — dev mode.)", false: ""}[p.Simulated]
+	kind, title, body, link := "pledge", "A pledge came in 🎉",
+		fmt.Sprintf("GH₵ %.2f was pledged to “%s”.%s", cedis, p.ProjectTitle, simTail),
+		"/projects/"+p.ProjectSlug
+	if p.Kind == domain.PledgeKindDonation {
+		kind, title, body, link = "donation", "A fan supported you 💚",
+			fmt.Sprintf("GH₵ %.2f was donated to “%s”.%s", cedis, p.ProjectTitle, simTail),
+			"/artists/"+p.ProjectSlug
+	}
 	_ = s.notifs.Insert(ctx, domain.Notification{
-		ID: newID(domain.PrefixNotification), MemberID: project.OwnerID,
-		Kind:  "pledge",
-		Title: "A pledge came in 🎉",
-		Body:  fmt.Sprintf("GH₵ %.2f was pledged to “%s”.%s", cedis, p.ProjectTitle, map[bool]string{true: " (Simulated — dev mode.)", false: ""}[p.Simulated]),
-		Link:  "/projects/" + p.ProjectSlug, CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		ID: newID(domain.PrefixNotification), MemberID: target.OwnerID,
+		Kind: kind, Title: title, Body: body, Link: link,
+		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	})
 }
 

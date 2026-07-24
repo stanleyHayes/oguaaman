@@ -92,7 +92,7 @@ func paymentsFixtureFee(verifyOK bool, verifyAmount int64, feePercent int) (*Pay
 	}}
 	pledges := &fakePledges{}
 	ps := &fakePaystack{verifyOK: verifyOK, verifyAmount: verifyAmount}
-	svc := NewPaymentsService(listings, pledges, stubNotifs{}, ps, "http://localhost:5173", feePercent)
+	svc := NewPaymentsService(listings, pledges, stubNotifs{}, stubMembers{}, &fakePlans{}, ps, "http://localhost:5173", feePercent)
 	return svc, listings, pledges, ps
 }
 

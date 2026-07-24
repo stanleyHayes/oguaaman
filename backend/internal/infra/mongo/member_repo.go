@@ -152,6 +152,23 @@ func (r *MemberRepo) SetCreatorPlanIntent(ctx context.Context, id, planSlug stri
 	return err
 }
 
+// SetCreatorSubscription records a confirmed member-level creator plan (slug +
+// RFC3339 paid-until). Set only after Paystack verifies the charge; it unlocks
+// artist donations and fundraising campaigns and sets the platform take-rate.
+func (r *MemberRepo) SetCreatorSubscription(ctx context.Context, id, planSlug, until string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"creatorPlan": planSlug, "creatorSubscribedUntil": until,
+	}})
+	return err
+}
+
+// SetCampaignerVetted flips the member's campaign auto-publish entitlement,
+// set true when a curator approves their first fundraising campaign.
+func (r *MemberRepo) SetCampaignerVetted(ctx context.Context, id string, vetted bool) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"campaignerVetted": vetted}})
+	return err
+}
+
 // SetMFA persists the member's TOTP state (spec §14): enabled flag, base32
 // secret (empty clears it), and bcrypt hashes of unused recovery codes.
 func (r *MemberRepo) SetMFA(ctx context.Context, id string, enabled bool, secret string, recoveryHashes []string) error {
@@ -177,14 +194,17 @@ func (r *MemberRepo) Anonymize(ctx context.Context, id string) error {
 			"photoUrl": "", "bio": "", "townId": "", "asafoId": "",
 			"schoolIds": []string{}, "schooling": []domain.SchoolStint{}, "links": []domain.SocialLink{},
 			"phoneVerified": false, "role": domain.RoleMember, "creatorTypes": []string{},
-			"suspended": true,
-			"birthday":  "", "broadcastBirthday": false, "diaspora": nil,
+			"suspended": true, "campaignerVetted": false,
+			"birthday": "", "broadcastBirthday": false, "diaspora": nil,
 			"dateOfBirth": "", "passwordHash": "",
 			"phoneVerificationCodeHash": "", "phoneVerificationExpiresAt": "",
 			"passwordResetCodeHash": "", "passwordResetExpiresAt": "",
 			"mfaEnabled": false, "totpSecret": "", "mfaRecoveryHashes": []string{},
 		},
-		"$unset": bson.M{"email": "", "phone": "", "creatorPlanIntent": ""},
+		"$unset": bson.M{
+			"email": "", "phone": "", "creatorPlanIntent": "",
+			"creatorPlan": "", "creatorSubscribedUntil": "",
+		},
 	})
 	return err
 }

@@ -25,17 +25,33 @@ type Plan struct {
 	MaxListings int      `json:"maxListings,omitempty" bson:"maxListings,omitempty"`
 	// IncludedPromoDays are promotion days auto-applied to the subscribed
 	// listing on every confirmed payment (Featured bundle: 7/month).
-	IncludedPromoDays int    `json:"includedPromoDays,omitempty" bson:"includedPromoDays,omitempty"`
-	GoldBadge         bool   `json:"goldBadge,omitempty" bson:"goldBadge,omitempty"`
-	Active            bool   `json:"active" bson:"active"` // only active plans are sold/listed publicly
-	SortOrder         int    `json:"sortOrder" bson:"sortOrder"`
-	CreatedAt         string `json:"createdAt" bson:"createdAt"`
-	UpdatedAt         string `json:"updatedAt" bson:"updatedAt"`
+	IncludedPromoDays int `json:"includedPromoDays,omitempty" bson:"includedPromoDays,omitempty"`
+	// TakeRatePercent is the platform's cut (integer %) on donations and
+	// campaign contributions raised by a member on this plan — configured per
+	// plan from the admin dashboard. Only meaningful on paid plans; a member
+	// with no active paid plan cannot receive donations or run campaigns at all.
+	// Replaces the flat PLATFORM_FEE_PERCENT for creator monetization flows;
+	// the flat value stays the fallback for legacy civic (adopt-a-project) pledges.
+	TakeRatePercent int `json:"takeRatePercent,omitempty" bson:"takeRatePercent,omitempty"`
+	// MaxProducts / MaxServices cap how many storefront products and services a
+	// business on this plan may publish — configured per plan from the admin
+	// dashboard. 0 means none allowed on that plan.
+	MaxProducts int    `json:"maxProducts,omitempty" bson:"maxProducts,omitempty"`
+	MaxServices int    `json:"maxServices,omitempty" bson:"maxServices,omitempty"`
+	GoldBadge   bool   `json:"goldBadge,omitempty" bson:"goldBadge,omitempty"`
+	Active      bool   `json:"active" bson:"active"` // only active plans are sold/listed publicly
+	SortOrder   int    `json:"sortOrder" bson:"sortOrder"`
+	CreatedAt   string `json:"createdAt" bson:"createdAt"`
+	UpdatedAt   string `json:"updatedAt" bson:"updatedAt"`
 }
 
 // DefaultSupporterPlanSlug is the catalog slug of the plan bought when a
-// subscribe call names no plan (the Creator plan §5 default).
+// business subscribe call names no plan (the Creator plan §5 default).
 const DefaultSupporterPlanSlug = "supporter"
+
+// DefaultCreatorPlanSlug is the catalog slug bought when a member-level creator
+// subscribe call names no plan (Creator Monetization).
+const DefaultCreatorPlanSlug = "creator-supporter"
 
 // DefaultCreatorPlanIntentSlug is the active free plan selected when a creator
 // joins without choosing one. This records onboarding intent only; it does not

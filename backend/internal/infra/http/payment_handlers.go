@@ -84,6 +84,66 @@ func (h *Handler) Pledge(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Donate starts a "tip jar" donation to an artist (Creator Monetization).
+// Requires a signed-in member; the service gates on the artist's owner holding
+// an active creator subscription.
+func (h *Handler) Donate(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if h.rateLimited(w, r, "donate:"+clientKey(r), 10, time.Hour) {
+		return
+	}
+	var in struct {
+		AmountPesewas int64  `json:"amountPesewas"`
+		Email         string `json:"email"`
+		Message       string `json:"message"`
+		Anonymous     bool   `json:"anonymous"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	memberID, email := "", in.Email
+	if m != nil {
+		memberID = m.ID
+		if email == "" {
+			email = m.Email
+		}
+	}
+	if email == "" {
+		email = "donation@oguaa.test" // dev mode without auth — Paystack requires an email
+	}
+	authURL, accessCode, reference, err := h.payments.StartDonation(r.Context(), r.PathValue("slug"), memberID, email, in.AmountPesewas, in.Message, in.Anonymous)
+	if errors.Is(err, service.ErrPledgeAmount) {
+		fail(w, http.StatusBadRequest, "Donate between GH₵ 1 and GH₵ 100,000.")
+		return
+	}
+	if err != nil {
+		var nf *domain.NotFoundError
+		var fb *domain.ForbiddenError
+		if errors.As(err, &nf) || errors.As(err, &fb) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadGateway, "Could not start the payment. Please try again.")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authorizationUrl": authURL,
+		"accessCode":       accessCode,
+		"reference":        reference,
+		"simulated":        h.payments.Simulated(),
+	})
+}
+
+// ConfirmDonation verifies a donation after the donor returns from Paystack.
+// Donations are pledges, so it shares the pledge confirm path (idempotent).
+func (h *Handler) ConfirmDonation(w http.ResponseWriter, r *http.Request) {
+	h.ConfirmPledge(w, r)
+}
+
 // ConfirmPledge verifies a transaction after the payer returns from Paystack.
 func (h *Handler) ConfirmPledge(w http.ResponseWriter, r *http.Request) {
 	reference := r.URL.Query().Get("reference")

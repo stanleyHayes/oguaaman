@@ -62,6 +62,21 @@ const (
 	MaxStorefrontVideos = 5
 )
 
+// StoreItem — one product or service a business publishes on its storefront
+// (business Supporter feature). Prices are integer pesewas. How many a business
+// may publish is capped by its subscription plan (Plan.MaxProducts /
+// MaxServices), configured from the admin dashboard. Services reuse the same
+// shape; Unit labels a service's pricing basis (e.g. "per hour", "from").
+type StoreItem struct {
+	ID           string `json:"id" bson:"id"`
+	Name         string `json:"name" bson:"name"`
+	Description  string `json:"description,omitempty" bson:"description,omitempty"`
+	PricePesewas int64  `json:"pricePesewas,omitempty" bson:"pricePesewas,omitempty"`
+	Unit         string `json:"unit,omitempty" bson:"unit,omitempty"` // services: "per hour", "from", …
+	ImageURL     string `json:"imageUrl,omitempty" bson:"imageUrl,omitempty"`
+	Available    bool   `json:"available" bson:"available"`
+}
+
 // Tribute — a condolence/memory left on a memorial (spec §8.11).
 type Tribute struct {
 	ID         string `json:"id" bson:"id"`
@@ -101,17 +116,22 @@ type Listing struct {
 	// gallery (capped: MaxStorefrontPhotos / MaxStorefrontVideos). Handle is an
 	// optional clean, unique, shareable slug (e.g. /s/aunties-kitchen) that a
 	// future <handle>.oguaaman.com subdomain can map onto. Supporter-gated writes.
-	Sections        []ProfileSection `json:"sections,omitempty" bson:"sections,omitempty"`
-	Photos          []MediaAsset     `json:"photos,omitempty" bson:"photos,omitempty"`
-	Videos          []MediaAsset     `json:"videos,omitempty" bson:"videos,omitempty"`
-	Handle          string           `json:"handle,omitempty" bson:"handle,omitempty"`
-	Tributes        []Tribute        `json:"tributes,omitempty" bson:"tributes,omitempty"`
-	CreatedAt       string           `json:"createdAt" bson:"createdAt"`
-	SubmittedAt     string           `json:"submittedAt,omitempty" bson:"submittedAt,omitempty"`
-	ReviewedByID    string           `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
-	ReviewedAt      string           `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
-	RejectionReason string           `json:"rejectionReason,omitempty" bson:"rejectionReason,omitempty"`
-	PublishedAt     string           `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
+	Sections []ProfileSection `json:"sections,omitempty" bson:"sections,omitempty"`
+	Photos   []MediaAsset     `json:"photos,omitempty" bson:"photos,omitempty"`
+	Videos   []MediaAsset     `json:"videos,omitempty" bson:"videos,omitempty"`
+	// Products / Services are the business storefront catalog (Supporter
+	// feature). How many may be published is capped by the business's
+	// subscription plan (Plan.MaxProducts / MaxServices).
+	Products        []StoreItem `json:"products,omitempty" bson:"products,omitempty"`
+	Services        []StoreItem `json:"services,omitempty" bson:"services,omitempty"`
+	Handle          string      `json:"handle,omitempty" bson:"handle,omitempty"`
+	Tributes        []Tribute   `json:"tributes,omitempty" bson:"tributes,omitempty"`
+	CreatedAt       string      `json:"createdAt" bson:"createdAt"`
+	SubmittedAt     string      `json:"submittedAt,omitempty" bson:"submittedAt,omitempty"`
+	ReviewedByID    string      `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
+	ReviewedAt      string      `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
+	RejectionReason string      `json:"rejectionReason,omitempty" bson:"rejectionReason,omitempty"`
+	PublishedAt     string      `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
 }
 
 // ListingFilter expresses the read predicates the API needs. Empty fields are
@@ -147,6 +167,11 @@ type ListingRepository interface {
 	// IncrementRaised atomically adds a confirmed pledge to a project's running
 	// total (details.raisedPesewas) and bumps its backer count (details.backers).
 	IncrementRaised(ctx context.Context, listingID string, deltaPesewas int64) error
+	// IncrementDonations atomically adds a confirmed artist donation to the
+	// artist listing's running net total (details.donationsNetPesewas) and bumps
+	// its donor count (details.donorCount). The "tip jar" counterpart of
+	// IncrementRaised (Creator Monetization).
+	IncrementDonations(ctx context.Context, listingID string, deltaNetPesewas int64) error
 	SetFeatured(ctx context.Context, id string, featured bool, until string) error
 	// UpdateIncidentStatus sets details.incidentStatus and appends the history
 	// entry to details.statusHistory (the incident operational lifecycle).
@@ -155,11 +180,13 @@ type ListingRepository interface {
 	// lifecycle: open → reunited | closed).
 	SetLostFoundStatus(ctx context.Context, listingID, status string) error
 	// SetSubscribedUntil sets details.subscribedUntil (RFC3339) — the paid-until
-	// date of a business's Supporter subscription (Phase 7).
-	SetSubscribedUntil(ctx context.Context, listingID, until string) error
+	// date of a business's Supporter subscription (Phase 7) — and details.plan,
+	// the active plan slug used to resolve storefront product/service caps.
+	SetSubscribedUntil(ctx context.Context, listingID, plan, until string) error
 	// SetStorefront replaces a business listing's owner-composed storefront:
-	// profile sections + the photo/video gallery + optional clean handle.
-	SetStorefront(ctx context.Context, id, handle string, sections []ProfileSection, photos, videos []MediaAsset) error
+	// profile sections + the photo/video gallery + the product/service catalog +
+	// optional clean handle.
+	SetStorefront(ctx context.Context, id, handle string, sections []ProfileSection, photos, videos []MediaAsset, products, services []StoreItem) error
 	// GetByHandle returns a listing by its clean storefront handle (or NotFound).
 	GetByHandle(ctx context.Context, handle string) (*Listing, error)
 	// HandleTaken reports whether a storefront handle is already used by another

@@ -72,7 +72,7 @@ func subsFixture(verifyOK bool, verifyAmount int64) (*SubscriptionsService, *fak
 	}}
 	subs := &fakeSubs{}
 	ps := &fakePaystack{verifyOK: verifyOK, verifyAmount: verifyAmount}
-	svc := NewSubscriptionsService(listings, subs, &fakePlans{}, ps, "http://localhost:5173")
+	svc := NewSubscriptionsService(listings, subs, &fakePlans{}, stubMembers{}, ps, "http://localhost:5173", "http://localhost:5175")
 	return svc, listings, subs
 }
 
@@ -196,7 +196,7 @@ func TestStartSubscription_usesCatalogPrice(t *testing.T) {
 			Prices: map[string]int64{"default": 3_000, "business": 5_500}, Active: true},
 	}}
 	subs := &fakeSubs{}
-	svc := NewSubscriptionsService(listings, subs, plans, &fakePaystack{verifyOK: true}, "http://localhost:5173")
+	svc := NewSubscriptionsService(listings, subs, plans, stubMembers{}, &fakePaystack{verifyOK: true}, "http://localhost:5173", "http://localhost:5175")
 
 	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", ""); err != nil {
 		t.Fatalf("StartSubscription failed: %v", err)
@@ -218,7 +218,7 @@ func TestStartSubscription_explicitPlanIsStrict(t *testing.T) {
 		{ID: "plan-old", Slug: "old-bundle", Name: "Old", Audience: "business", Interval: "month",
 			Prices: map[string]int64{"default": 9_000}, Active: false},
 	}}
-	svc := NewSubscriptionsService(listings, &fakeSubs{}, plans, &fakePaystack{verifyOK: true}, "http://localhost:5173")
+	svc := NewSubscriptionsService(listings, &fakeSubs{}, plans, stubMembers{}, &fakePaystack{verifyOK: true}, "http://localhost:5173", "http://localhost:5175")
 
 	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "no-such-plan"); err == nil {
 		t.Error("expected not-found for an unknown plan slug")
@@ -238,7 +238,7 @@ func TestConfirmSubscription_appliesBundledPromoDays(t *testing.T) {
 			Prices: map[string]int64{"default": 12_000}, IncludedPromoDays: 7, Active: true},
 	}}
 	subs := &fakeSubs{}
-	svc := NewSubscriptionsService(listings, subs, plans, &fakePaystack{verifyOK: true, verifyAmount: 12_000}, "http://localhost:5173")
+	svc := NewSubscriptionsService(listings, subs, plans, stubMembers{}, &fakePaystack{verifyOK: true, verifyAmount: 12_000}, "http://localhost:5173", "http://localhost:5175")
 
 	_, _, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@oguaa.test", "featured")
 	if err != nil {

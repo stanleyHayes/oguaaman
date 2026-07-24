@@ -41,33 +41,45 @@ type SubscriptionsService struct {
 	listings domain.ListingRepository
 	subs     domain.SubscriptionRepository
 	plans    domain.PlanRepository
+	members  domain.MemberRepository
 	paystack PaystackClient
-	portal   string // public portal origin for callback URLs
+	portal   string // public portal origin for business callback URLs
+	creator  string // creator-app origin for creator subscription callback URLs
 }
 
-func NewSubscriptionsService(l domain.ListingRepository, s domain.SubscriptionRepository, plans domain.PlanRepository, ps PaystackClient, portalURL string) *SubscriptionsService {
-	return &SubscriptionsService{listings: l, subs: s, plans: plans, paystack: ps, portal: strings.TrimRight(portalURL, "/")}
+func NewSubscriptionsService(l domain.ListingRepository, s domain.SubscriptionRepository, plans domain.PlanRepository, members domain.MemberRepository, ps PaystackClient, portalURL, creatorURL string) *SubscriptionsService {
+	return &SubscriptionsService{
+		listings: l, subs: s, plans: plans, members: members, paystack: ps,
+		portal:  strings.TrimRight(portalURL, "/"),
+		creator: strings.TrimRight(creatorURL, "/"),
+	}
 }
 
 // Simulated reports whether subscriptions run against the labelled simulation.
 func (s *SubscriptionsService) Simulated() bool { return s.paystack.Simulated() }
 
-// resolvePlan looks up the plan being bought and its business price. An empty
-// slug means the default Supporter plan; when the catalog has no such plan
-// (unmigrated install) the legacy constant price keeps the flow working. An
-// explicit slug is strict: it must exist and be active — staff control what's
-// for sale.
-func (s *SubscriptionsService) resolvePlan(ctx context.Context, slug string) (planSlug string, amount int64, err error) {
+// resolvePlan looks up the plan being bought and its price for the given
+// audience ("business" | "creator"). An empty slug means the default Supporter
+// plan; when the catalog has no such plan (unmigrated install) the legacy
+// constant price keeps the business flow working. An explicit slug is strict:
+// it must exist and be active — staff control what's for sale.
+func (s *SubscriptionsService) resolvePlan(ctx context.Context, slug, audience string) (planSlug string, amount int64, err error) {
 	if slug == "" {
 		slug = domain.DefaultSupporterPlanSlug
+		if audience == "creator" {
+			slug = domain.DefaultCreatorPlanSlug
+		}
 		p, lerr := s.plans.BySlug(ctx, slug)
 		if lerr != nil {
-			return domain.PlanBusinessSupporter, supporterAmountPesewas, nil // legacy fallback
+			if audience == "business" {
+				return domain.PlanBusinessSupporter, supporterAmountPesewas, nil // legacy fallback
+			}
+			return "", 0, fmt.Errorf("no subscription plan is configured")
 		}
 		if !p.Active {
 			return "", 0, fmt.Errorf("that plan isn't on sale right now")
 		}
-		return p.Slug, p.PriceFor("business"), nil
+		return p.Slug, p.PriceFor(audience), nil
 	}
 	p, err := s.plans.BySlug(ctx, slug)
 	if err != nil {
@@ -76,7 +88,7 @@ func (s *SubscriptionsService) resolvePlan(ctx context.Context, slug string) (pl
 	if !p.Active {
 		return "", 0, fmt.Errorf("that plan isn't on sale right now")
 	}
-	return p.Slug, p.PriceFor("business"), nil
+	return p.Slug, p.PriceFor(audience), nil
 }
 
 // StartSubscription records a pending subscription against an approved business
@@ -95,7 +107,7 @@ func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlu
 	if listing.Status != domain.StatusApproved || listing.OwnerID == "" || listing.OwnerID != memberID {
 		return "", "", "", &domain.ForbiddenError{Reason: "only the owner of an approved business can subscribe it"}
 	}
-	plan, amount, err := s.resolvePlan(ctx, planSlug)
+	plan, amount, err := s.resolvePlan(ctx, planSlug, "business")
 	if err != nil {
 		return "", "", "", err
 	}
@@ -108,6 +120,7 @@ func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlu
 		ID:            "s" + reference,
 		Reference:     reference,
 		MemberID:      memberID,
+		Scope:         domain.SubscriptionScopeBusiness,
 		ListingID:     listing.ID,
 		ListingSlug:   listing.Slug,
 		ListingTitle:  listing.Title,
@@ -121,6 +134,50 @@ func (s *SubscriptionsService) StartSubscription(ctx context.Context, listingSlu
 		return "", "", "", err
 	}
 	callback := fmt.Sprintf("%s/business/%s?sub_ref=%s", s.portal, listing.Slug, url.QueryEscape(reference))
+	authURL, accessCode, err := s.paystack.Initialize(ctx, email, sub.AmountPesewas, "GHS", reference, callback)
+	if err != nil {
+		return "", "", "", err
+	}
+	return authURL, accessCode, reference, nil
+}
+
+// StartCreatorSubscription records a pending member-level creator subscription
+// and returns the Paystack authorization URL. Unlike the business flow it is not
+// tied to a listing: it unlocks artist donations and fundraising campaigns for
+// the member and sets the platform take-rate from the chosen plan. planSlug
+// selects the catalog plan ("" = the default Supporter plan, creator price).
+func (s *SubscriptionsService) StartCreatorSubscription(ctx context.Context, memberID, email, planSlug string) (authorizationURL, accessCode, reference string, err error) {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return "", "", "", fmt.Errorf("an email is required for the payment receipt")
+	}
+	if strings.TrimSpace(memberID) == "" {
+		return "", "", "", &domain.ForbiddenError{Reason: "sign in to subscribe to a creator plan"}
+	}
+	plan, amount, err := s.resolvePlan(ctx, planSlug, "creator")
+	if err != nil {
+		return "", "", "", err
+	}
+	if amount <= 0 {
+		return "", "", "", fmt.Errorf("that plan has no paid monthly price for creators")
+	}
+	now := time.Now().UTC()
+	reference = fmt.Sprintf("csub-%s-%d", memberID, now.UnixNano())
+	sub := domain.Subscription{
+		ID:            "s" + reference,
+		Reference:     reference,
+		MemberID:      memberID,
+		Scope:         domain.SubscriptionScopeCreator,
+		Plan:          plan,
+		AmountPesewas: amount,
+		Status:        domain.PledgePending,
+		Simulated:     s.paystack.Simulated(),
+		CreatedAt:     now.Format(time.RFC3339),
+	}
+	if err := s.subs.Insert(ctx, sub); err != nil {
+		return "", "", "", err
+	}
+	callback := fmt.Sprintf("%s/grow?sub_ref=%s", s.creator, url.QueryEscape(reference))
 	authURL, accessCode, err := s.paystack.Initialize(ctx, email, sub.AmountPesewas, "GHS", reference, callback)
 	if err != nil {
 		return "", "", "", err
@@ -168,6 +225,42 @@ func (s *SubscriptionsService) fulfillSubscription(ctx context.Context, sub *dom
 		_ = s.subs.UpdateStatus(ctx, sub.Reference, domain.PledgeFailed, nowStr)
 		return nil, fmt.Errorf("payment was not completed")
 	}
+	if sub.Scope == domain.SubscriptionScopeCreator {
+		return s.fulfillCreatorSubscription(ctx, sub, now, nowStr)
+	}
+	return s.fulfillBusinessSubscription(ctx, sub, now, nowStr)
+}
+
+// fulfillCreatorSubscription settles a member-level creator subscription: it
+// extends the member's paid-until (stacking onto the current period) and stamps
+// the active plan slug — the entitlement gate for donations & campaigns.
+func (s *SubscriptionsService) fulfillCreatorSubscription(ctx context.Context, sub *domain.Subscription, now time.Time, nowStr string) (*domain.Subscription, error) {
+	base := now
+	if m, err := s.members.ByID(ctx, sub.MemberID); err == nil && m.CreatorSubscribedUntil != "" {
+		if until, perr := time.Parse(time.RFC3339, m.CreatorSubscribedUntil); perr == nil && until.After(base) {
+			base = until // stack onto the current paid period
+		}
+	}
+	periodEnd := base.Add(supporterPeriod).Format(time.RFC3339)
+	if err := s.subs.UpdateStatus(ctx, sub.Reference, domain.PledgeSuccess, nowStr); err != nil {
+		return nil, err
+	}
+	if err := s.subs.SetPeriodEnd(ctx, sub.Reference, periodEnd); err != nil {
+		return nil, err
+	}
+	if err := s.members.SetCreatorSubscription(ctx, sub.MemberID, sub.Plan, periodEnd); err != nil {
+		return nil, err
+	}
+	sub.Status = domain.PledgeSuccess
+	sub.PeriodEnd = periodEnd
+	sub.ConfirmedAt = nowStr
+	return sub, nil
+}
+
+// fulfillBusinessSubscription settles a business subscription: it extends the
+// listing's paid-until, stamps its active plan (so storefront product/service
+// caps resolve), and applies any bundled promotion days.
+func (s *SubscriptionsService) fulfillBusinessSubscription(ctx context.Context, sub *domain.Subscription, now time.Time, nowStr string) (*domain.Subscription, error) {
 	listing, err := s.listings.GetByID(ctx, sub.ListingID)
 	if err != nil {
 		return nil, err
@@ -185,7 +278,7 @@ func (s *SubscriptionsService) fulfillSubscription(ctx context.Context, sub *dom
 	if err := s.subs.SetPeriodEnd(ctx, sub.Reference, periodEnd); err != nil {
 		return nil, err
 	}
-	if err := s.listings.SetSubscribedUntil(ctx, sub.ListingID, periodEnd); err != nil {
+	if err := s.listings.SetSubscribedUntil(ctx, sub.ListingID, sub.Plan, periodEnd); err != nil {
 		return nil, err
 	}
 	// Bundled promotion days (Featured plan) auto-apply on every confirmed
@@ -206,6 +299,17 @@ func (s *SubscriptionsService) fulfillSubscription(ctx context.Context, sub *dom
 	sub.PeriodEnd = periodEnd
 	sub.ConfirmedAt = nowStr
 	return sub, nil
+}
+
+// CreatorSubscriptionActive reports whether a member's creator subscription is
+// current (creatorSubscribedUntil is an RFC3339 time in the future) — the gate
+// for artist donations and fundraising campaigns.
+func CreatorSubscriptionActive(m *domain.Member, now time.Time) bool {
+	if m == nil || m.CreatorSubscribedUntil == "" {
+		return false
+	}
+	until, err := time.Parse(time.RFC3339, m.CreatorSubscribedUntil)
+	return err == nil && until.After(now)
 }
 
 // MemberSubscriptions lists a member's own subscriptions, newest first.

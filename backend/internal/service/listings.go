@@ -108,9 +108,11 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 	if l.Type == domain.TypeBusiness || l.Type == domain.TypeProperty {
 		// Plan entitlement is system-managed and must survive a creator's full
 		// content replacement. Property subscriptions are not sold yet, but
-		// retaining the key keeps the generic editor safe for future plans.
-		if cur, ok := l.Details["subscribedUntil"]; ok {
-			details["subscribedUntil"] = cur
+		// retaining the keys keeps the generic editor safe for future plans.
+		for _, sys := range []string{"subscribedUntil", "plan"} {
+			if cur, ok := l.Details[sys]; ok {
+				details[sys] = cur
+			}
 		}
 	}
 	if l.Type == domain.TypeMemorial {

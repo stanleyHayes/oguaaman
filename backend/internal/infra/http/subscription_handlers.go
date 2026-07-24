@@ -56,6 +56,57 @@ func (h *Handler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// SubscribeCreator starts a member-level creator subscription (Creator
+// Monetization): the paid plan that unlocks artist donations and fundraising
+// campaigns. Requires a signed-in member; the plan slug selects the catalog plan.
+func (h *Handler) SubscribeCreator(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if h.rateLimited(w, r, "csub:"+clientKey(r), 10, time.Hour) {
+		return
+	}
+	var in struct {
+		Plan  string `json:"plan"`
+		Email string `json:"email"`
+	}
+	if r.Body != nil && r.ContentLength > 0 {
+		if err := decodeBody(r, &in); err != nil {
+			fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+			return
+		}
+	}
+	email := in.Email
+	if email == "" {
+		email = m.Email
+	}
+	if email == "" {
+		email = "creator@oguaa.test" // dev mode without auth — Paystack requires an email
+	}
+	authURL, accessCode, reference, err := h.subs.StartCreatorSubscription(r.Context(), m.ID, email, in.Plan)
+	if err != nil {
+		var nf *domain.NotFoundError
+		var fb *domain.ForbiddenError
+		if errors.As(err, &nf) || errors.As(err, &fb) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadGateway, "Could not start the payment. Please try again.")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authorizationUrl": authURL,
+		"accessCode":       accessCode,
+		"reference":        reference,
+		"simulated":        h.subs.Simulated(),
+	})
+}
+
 // ConfirmSubscription verifies a transaction after the owner returns from Paystack.
 func (h *Handler) ConfirmSubscription(w http.ResponseWriter, r *http.Request) {
 	reference := r.URL.Query().Get("reference")

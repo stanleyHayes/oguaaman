@@ -44,7 +44,8 @@ type Config struct {
 	PaystackSecretKey  string
 	StripeSecretKey    string // optional; enables Stripe PaymentSheet mobile checkouts
 	PortalURL          string
-	PlatformFeePercent int // kept by the platform on each confirmed pledge; net goes to the project
+	CreatorURL         string // creator-app origin for creator-subscription callbacks; defaults to PortalURL
+	PlatformFeePercent int    // kept by the platform on each confirmed pledge; net goes to the project
 
 	// Email delivery via Resend (transactional — OTP codes, moderation outcomes,
 	// notification digests). Without a key, email delivery is silently skipped
@@ -122,6 +123,7 @@ func load() Config {
 		PaystackSecretKey:  os.Getenv("PAYSTACK_SECRET_KEY"),
 		StripeSecretKey:    os.Getenv("STRIPE_SECRET_KEY"),
 		PortalURL:          env("PUBLIC_PORTAL_URL", "http://localhost:5173"),
+		CreatorURL:         env("PUBLIC_CREATOR_URL", env("PUBLIC_PORTAL_URL", "http://localhost:5173")),
 		PlatformFeePercent: envInt("PLATFORM_FEE_PERCENT", 5),
 
 		ResendAPIKey: os.Getenv("RESEND_API_KEY"),
