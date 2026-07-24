@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
 import { canWriteNews } from "@/lib/creator";
 import { creatorHelpTopic } from "@/lib/help";
-import { Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone, Banknote, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing, Map, PanelLeftClose, PanelLeft, PenLine, Settings, BookOpen, CircleHelp, type LucideIcon } from "lucide-react";
+import { Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone, Banknote, HeartHandshake, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing, Map, PanelLeftClose, PanelLeft, PenLine, Settings, BookOpen, CircleHelp, type LucideIcon } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
@@ -33,6 +33,7 @@ function buildNavGroups(canWrite: boolean): NavGroup[] {
       icon: TrendingUp,
       items: [
         { to: "/grow", label: "Promote & plan", icon: Megaphone },
+        { to: "/campaigns", label: "Campaigns", icon: HeartHandshake },
         { to: "/money", label: "Money", icon: Banknote },
       ],
     },

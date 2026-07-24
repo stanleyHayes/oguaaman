@@ -7,11 +7,57 @@ import { Container } from "@/components/ui";
 import { StorefrontMediaEditor } from "@/components/storefront-media-editor";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { storefrontUrl, storefrontUrlParts } from "@/lib/storefront-url";
-import type { Listing, ProfileSection, ProfileSectionType, SectionItem } from "@/lib/types";
+import type { Listing, Plan, ProfileSection, ProfileSectionType, SectionItem, StoreItem } from "@/lib/types";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const business = await api.business(params.slug as string);
-  return { business };
+  const plans = await api.plans().catch(() => [] as Plan[]);
+  return { business, plans };
+}
+
+// ItemDraft is the editable form of a StoreItem — price is kept as text while
+// typing and converted to integer pesewas on save.
+interface ItemDraft {
+  id?: string;
+  name: string;
+  description: string;
+  priceText: string;
+  unit: string;
+  available: boolean;
+  imageUrl?: string;
+}
+
+function toDraft(item: StoreItem): ItemDraft {
+  return {
+    id: item.id,
+    name: item.name ?? "",
+    description: item.description ?? "",
+    priceText: item.pricePesewas ? String(item.pricePesewas / 100) : "",
+    unit: item.unit ?? "",
+    available: item.available ?? true,
+    imageUrl: item.imageUrl,
+  };
+}
+
+function toStoreItem(d: ItemDraft): StoreItem {
+  const cedisNum = Number(d.priceText);
+  return {
+    id: stripTmp(d.id),
+    name: d.name.trim(),
+    description: d.description.trim() || undefined,
+    pricePesewas: Number.isFinite(cedisNum) && cedisNum > 0 ? Math.round(cedisNum * 100) : undefined,
+    unit: d.unit.trim() || undefined,
+    imageUrl: d.imageUrl,
+    available: d.available,
+  };
+}
+
+// planCaps resolves the business's storefront product/service caps from its
+// active plan (or the free "starter" plan), mirroring the server.
+function planCaps(business: Listing, plans: Plan[]): { products: number; services: number } {
+  const slug = (business.supporter && business.details.plan) ? business.details.plan : "starter";
+  const plan = plans.find((p) => p.slug === slug) ?? plans.find((p) => p.slug === "starter");
+  return { products: plan?.maxProducts ?? 0, services: plan?.maxServices ?? 0 };
 }
 
 const field =
@@ -34,7 +80,7 @@ function stripTmp(id?: string) {
 }
 
 export function Component() {
-  const { business: initial } = useLoaderData() as { business: Listing };
+  const { business: initial, plans } = useLoaderData() as { business: Listing; plans: Plan[] };
   const { member } = useAuth();
   usePageTitle(`Manage ${initial.title}`);
 
@@ -42,8 +88,11 @@ export function Component() {
   const [sections, setSections] = useState<ProfileSection[]>(initial.sections ?? []);
   const [photos, setPhotos] = useState(initial.photos ?? []);
   const [videos, setVideos] = useState(initial.videos ?? []);
+  const [products, setProducts] = useState<ItemDraft[]>((initial.products ?? []).map(toDraft));
+  const [services, setServices] = useState<ItemDraft[]>((initial.services ?? []).map(toDraft));
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const caps = planCaps(initial, plans);
 
   const isOwner = member != null && (member.id === initial.ownerId || member.role === "curator" || member.role === "steward");
   const isSupporter = Boolean(initial.supporter) || member?.role === "curator" || member?.role === "steward";
@@ -114,12 +163,16 @@ export function Component() {
         sections: sections.map((s) => ({ ...s, id: stripTmp(s.id), items: (s.items ?? []).map((it) => ({ ...it, id: stripTmp(it.id) })) })),
         photos,
         videos,
+        products: products.filter((p) => p.name.trim()).map(toStoreItem),
+        services: services.filter((p) => p.name.trim()).map(toStoreItem),
       };
       const updated = await api.setStorefront(initial.id, payload);
       setHandle(updated.handle ?? "");
       setSections(updated.sections ?? []);
       setPhotos(updated.photos ?? []);
       setVideos(updated.videos ?? []);
+      setProducts((updated.products ?? []).map(toDraft));
+      setServices((updated.services ?? []).map(toDraft));
       setState("saved");
     } catch (err) {
       setState("error");
@@ -220,6 +273,19 @@ export function Component() {
         </div>
       </Panel>
 
+      <StoreItemsPanel
+        kind="product"
+        items={products}
+        max={caps.products}
+        onChange={(next) => { setProducts(next); setState("idle"); }}
+      />
+      <StoreItemsPanel
+        kind="service"
+        items={services}
+        max={caps.services}
+        onChange={(next) => { setServices(next); setState("idle"); }}
+      />
+
       <div className="sticky bottom-4 flex items-center gap-3 rounded-full border border-sand bg-paper/95 p-2 pl-5 shadow-[var(--shadow-lift)] backdrop-blur">
         <span className="text-sm text-ink-muted">
           {state === "saved" ? "Saved ✓" : state === "error" ? (error ?? "Error") : state === "saving" ? "Saving…" : "Unsaved changes"}
@@ -229,6 +295,63 @@ export function Component() {
         </button>
       </div>
     </Container>
+  );
+}
+
+function StoreItemsPanel({ kind, items, max, onChange }: Readonly<{ kind: "product" | "service"; items: ItemDraft[]; max: number; onChange: (next: ItemDraft[]) => void }>) {
+  const noun = kind === "product" ? "Products" : "Services";
+  const atCap = items.length >= max;
+
+  function add() {
+    if (atCap) return;
+    onChange([...items, { name: "", description: "", priceText: "", unit: "", available: true, id: `tmp-${kind}-${Date.now()}` }]);
+  }
+  function patch(i: number, p: Partial<ItemDraft>) {
+    onChange(items.map((it, idx) => (idx === i ? { ...it, ...p } : it)));
+  }
+  function remove(i: number) {
+    onChange(items.filter((_, idx) => idx !== i));
+  }
+
+  return (
+    <Panel title={noun}>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-ink-muted">
+          {max === 0
+            ? `Your plan doesn't include storefront ${kind}s — upgrade to add them.`
+            : `List what you ${kind === "product" ? "sell" : "offer"}. ${items.length} of ${max} used.`}
+        </p>
+      </div>
+      {max > 0 && (
+        <>
+          <div className="space-y-3">
+            {items.map((it, i) => (
+              <div key={it.id ?? i} className="rounded-[var(--radius-card)] border border-sand bg-paper p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input className={`${field} min-w-[10rem] flex-1`} value={it.name} onChange={(e) => patch(i, { name: e.target.value })} placeholder={`${noun.slice(0, -1)} name`} />
+                  <div className="flex items-center gap-1 text-sm text-ink-faint">
+                    <span>GH₵</span>
+                    <input className={`${field} w-24`} inputMode="decimal" value={it.priceText} onChange={(e) => patch(i, { priceText: e.target.value })} placeholder="0.00" aria-label="Price" />
+                  </div>
+                  {kind === "service" && (
+                    <input className={`${field} w-32`} value={it.unit} onChange={(e) => patch(i, { unit: e.target.value })} placeholder="per hour…" aria-label="Unit" />
+                  )}
+                  <button type="button" onClick={() => remove(i)} aria-label="Remove" className="rounded-md border border-sand px-2 py-1.5 text-sm text-ink-muted hover:border-clay hover:text-clay-text">✕</button>
+                </div>
+                <textarea rows={2} value={it.description} onChange={(e) => patch(i, { description: e.target.value })} placeholder="Short description (optional)" className={`mt-2 resize-none ${field}`} />
+                <label className="mt-2 flex items-center gap-2 text-sm text-ink-muted">
+                  <input type="checkbox" checked={it.available} onChange={(e) => patch(i, { available: e.target.checked })} className="h-4 w-4 rounded border-sand text-green" />
+                  Show on the public page
+                </label>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={add} disabled={atCap} className="mt-4 rounded-full border border-sand px-3.5 py-1.5 text-sm font-medium text-ink-muted hover:border-green/40 hover:text-ink disabled:opacity-50">
+            {atCap ? `Plan limit reached (${max})` : `+ Add ${kind}`}
+          </button>
+        </>
+      )}
+    </Panel>
   );
 }
 

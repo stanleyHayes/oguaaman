@@ -1,7 +1,10 @@
-import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
-import type { Listing, Organization } from "@/lib/types";
+import type { Listing, Organization, Pledge } from "@/lib/types";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { completePayment } from "@/lib/paystack";
 import { useRecordView } from "@/lib/use-record-view";
 import { Container, Pill, SampleNote } from "@/components/ui";
 import { Thumb } from "@/components/cards";
@@ -9,6 +12,11 @@ import { cldCover } from "@/lib/cloudinary";
 import { ReportButton } from "@/components/report-button";
 import { initials } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
+import { cedis } from "./Projects";
+
+const DONATION_AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
+const MAX_DONATION_CEDIS = 100_000;
+const DONATION_PRESETS = [10, 20, 50, 100];
 
 interface Data {
   artist: Listing;
@@ -60,6 +68,7 @@ export function Component() {
   usePageTitle(artist.title);
   useRecordView(artist.id);
   const d = artist.details;
+  const donate = useDonate(artist);
 
   return (
     <>
@@ -114,6 +123,7 @@ export function Component() {
         </div>
 
         <aside className="space-y-6">
+          {artist.donationsEnabled && <DonatePanel artist={artist} donate={donate} />}
           <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5">
             <Headphones className="pointer-events-none absolute -right-3 -top-3 h-20 w-20 text-clay-text opacity-[0.06]" />
             <div className="relative flex items-center gap-2.5">
@@ -155,5 +165,178 @@ export function Component() {
         <ReportButton listingId={artist.id} />
       </Container>
     </>
+  );
+}
+
+interface DonateState {
+  amount: string;
+  setAmount: (v: string) => void;
+  message: string;
+  setMessage: (v: string) => void;
+  anonymous: boolean;
+  setAnonymous: (v: boolean) => void;
+  busy: boolean;
+  confirming: boolean;
+  error: string | null;
+  confirmed: Pledge | null;
+  signedIn: boolean;
+  start: () => Promise<void>;
+}
+
+// useDonate holds the artist "tip jar" flow: preset/custom amount, the Paystack
+// modal, and confirmation — mirroring the project pledge flow.
+function useDonate(artist: Listing): DonateState {
+  const { member } = useAuth();
+  const navigate = useNavigate();
+  const revalidator = useRevalidator();
+  const [params, setParams] = useSearchParams();
+  const [amount, setAmount] = useState("20");
+  const [message, setMessage] = useState("");
+  const [anonymous, setAnonymous] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<Pledge | null>(null);
+  const confirmedRef = useRef(false);
+
+  useEffect(() => {
+    const ref = params.get("donation_ref");
+    if (!ref || confirmedRef.current) return;
+    confirmedRef.current = true;
+    setConfirming(true);
+    api.confirmDonation(ref)
+      .then((pledge) => {
+        setConfirmed(pledge);
+        setParams({}, { replace: true });
+        revalidator.revalidate();
+      })
+      .catch(() => setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly."))
+      .finally(() => setConfirming(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function start() {
+    setError(null);
+    const normalized = amount.trim();
+    if (!DONATION_AMOUNT_PATTERN.test(normalized)) {
+      setError("Enter a valid cedi amount with no more than two decimal places.");
+      return;
+    }
+    const cedisNum = Number(normalized);
+    if (!Number.isFinite(cedisNum) || cedisNum < 1 || cedisNum > MAX_DONATION_CEDIS) {
+      setError("Enter an amount between GH₵ 1 and GH₵ 100,000.");
+      return;
+    }
+    if (!member) {
+      navigate("/signin", { state: { from: `/music/${artist.slug}` } });
+      return;
+    }
+    setBusy(true);
+    try {
+      const response = await api.donate(artist.slug, {
+        amountPesewas: Math.round(cedisNum * 100),
+        message: message.trim() || undefined,
+        anonymous,
+      });
+      await completePayment(response, {
+        onSuccess: async () => {
+          setConfirming(true);
+          try {
+            setConfirmed(await api.confirmDonation(response.reference));
+            revalidator.revalidate();
+          } catch {
+            setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly.");
+          } finally {
+            setConfirming(false);
+          }
+        },
+      });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not start the payment.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return { amount, setAmount, message, setMessage, anonymous, setAnonymous, busy, confirming, error, confirmed, signedIn: Boolean(member), start };
+}
+
+function DonatePanel({ artist, donate }: Readonly<{ artist: Listing; donate: DonateState }>) {
+  const supporters = artist.details.donorCount ?? 0;
+  let label = "Support with Paystack";
+  if (donate.confirming) label = "Confirming…";
+  else if (donate.busy) label = "Starting payment…";
+  else if (!donate.signedIn) label = "Sign in to support";
+
+  if (donate.confirmed) {
+    return (
+      <div className="rounded-[var(--radius-card)] border border-green/25 bg-green/[0.06] p-5">
+        <p className="eyebrow text-green-text">Medaase 💚</p>
+        <p className="mt-2 text-lg font-semibold text-ink">Your support of {cedis(donate.confirmed.amountPesewas)} is confirmed.</p>
+        <p className="mt-1 text-sm text-ink-muted">Thank you for backing {artist.details.actName ?? artist.title}.</p>
+      </div>
+    );
+  }
+
+  return (
+    <section aria-labelledby="donate-heading" className="overflow-hidden rounded-[var(--radius-card)] border border-clay/25 bg-cream shadow-[var(--shadow-card)]">
+      <div className="bg-clay/[0.08] px-5 py-4">
+        <p className="eyebrow text-clay-text">Support this artist</p>
+        <h2 id="donate-heading" className="mt-1 text-xl font-semibold text-ink">Send a donation</h2>
+        {supporters > 0 && (
+          <p className="mt-1 text-xs text-ink-faint">{supporters} {supporters === 1 ? "fan has" : "fans have"} shown love so far.</p>
+        )}
+      </div>
+      <div className="p-5">
+        <div className="grid grid-cols-4 gap-2">
+          {DONATION_PRESETS.map((preset) => {
+            const active = donate.amount === String(preset);
+            return (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => donate.setAmount(String(preset))}
+                className={`rounded-lg border px-2 py-2 text-sm font-semibold transition-colors ${active ? "border-clay bg-clay/[0.1] text-clay-text" : "border-sand bg-paper text-ink-muted hover:border-clay/40"}`}
+              >
+                {preset}
+              </button>
+            );
+          })}
+        </div>
+        <label htmlFor="donate-amount" className="mt-4 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Or enter another amount (GH₵)</label>
+        <input
+          id="donate-amount"
+          inputMode="decimal"
+          value={donate.amount}
+          onChange={(e) => donate.setAmount(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-sand bg-paper px-3 py-2 text-ink focus:border-clay focus:outline-none"
+          aria-describedby={donate.error ? "donate-error" : undefined}
+        />
+        <label htmlFor="donate-message" className="mt-4 block text-xs font-semibold uppercase tracking-wide text-ink-faint">Add a note (optional)</label>
+        <textarea
+          id="donate-message"
+          value={donate.message}
+          onChange={(e) => donate.setMessage(e.target.value)}
+          rows={2}
+          maxLength={280}
+          className="mt-1 w-full resize-none rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-clay focus:outline-none"
+          placeholder="Keep making great music!"
+        />
+        <label className="mt-3 flex items-center gap-2 text-sm text-ink-muted">
+          <input type="checkbox" checked={donate.anonymous} onChange={(e) => donate.setAnonymous(e.target.checked)} className="h-4 w-4 rounded border-sand text-clay" />
+          Donate anonymously
+        </label>
+        {donate.error && <p id="donate-error" role="alert" className="mt-3 rounded-lg border border-clay/25 bg-clay/[0.06] p-3 text-sm text-clay-text">{donate.error}</p>}
+        <button
+          type="button"
+          onClick={donate.start}
+          disabled={donate.busy || donate.confirming}
+          className="mt-4 w-full rounded-full bg-clay px-4 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-clay/90 disabled:opacity-60"
+        >
+          {label}
+        </button>
+        <p className="mt-2 text-center text-xs text-ink-faint">Secured by Paystack. A small platform fee applies.</p>
+      </div>
+    </section>
   );
 }

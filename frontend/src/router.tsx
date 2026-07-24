@@ -26,6 +26,7 @@ export const router = createBrowserRouter([
       { path: "search", lazy: () => import("./pages/Search") },
       { path: "projects", lazy: () => import("./pages/Projects") },
       { path: "projects/:slug", lazy: () => import("./pages/Project") },
+      { path: "campaigns", lazy: () => import("./pages/Campaigns") },
       { path: "business", lazy: () => import("./pages/Business") },
       { path: "business/:slug", lazy: () => import("./pages/BusinessDetail") },
       { path: "business/:slug/manage", lazy: () => import("./pages/ManageStorefront") },

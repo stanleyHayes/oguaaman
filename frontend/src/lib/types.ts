@@ -39,11 +39,16 @@ export interface PropertyDetails {
 export interface Pledge {
   id: string;
   reference: string;
+  kind?: "campaign" | "donation";
   projectId: string;
   projectSlug: string;
   projectTitle: string;
+  message?: string;
+  anonymous?: boolean;
   memberId?: string;
   amountPesewas: number;
+  feePesewas?: number;
+  netPesewas?: number;
   currency: string;
   status: PaymentStatus;
   simulated?: boolean;
@@ -117,6 +122,9 @@ export interface Plan {
   perks: string[];
   maxListings?: number;
   includedPromoDays?: number;
+  takeRatePercent?: number; // platform cut on donations/campaigns (Creator Monetization)
+  maxProducts?: number;     // storefront product cap
+  maxServices?: number;     // storefront service cap
   goldBadge?: boolean;
   active: boolean;
   sortOrder: number;
@@ -213,6 +221,18 @@ export interface MediaAsset {
   caption?: string;
   credit?: string;
   moderation?: string;    // approved | pending | rejected
+}
+
+// StoreItem — a product or service on a business storefront (Supporter feature).
+// Prices are integer pesewas; count is capped by the plan's max (admin-set).
+export interface StoreItem {
+  id?: string;
+  name: string;
+  description?: string;
+  pricePesewas?: number;
+  unit?: string;          // services: "per hour", "from", …
+  imageUrl?: string;
+  available: boolean;
 }
 
 /** One row in a list-style section (stat, team member, timeline, FAQ, doc). */
@@ -483,6 +503,13 @@ export interface ListingDetails {
   goalPesewas?: number;
   raisedPesewas?: number;
   backers?: number;
+  // fundraising campaign (member-created project; Creator Monetization)
+  campaign?: boolean;
+  // artist donations ("tip jar" running totals; Creator Monetization)
+  donationsNetPesewas?: number;
+  donorCount?: number;
+  // active subscription plan slug (business storefront caps resolution)
+  plan?: string;
   // memorial
   honorific?: string;
   bornYear?: number;
@@ -522,7 +549,13 @@ export interface Listing {
   sections?: ProfileSection[];
   photos?: MediaAsset[];
   videos?: MediaAsset[];
+  // Storefront catalog (Supporter feature): capped per subscription plan.
+  products?: StoreItem[];
+  services?: StoreItem[];
   handle?: string;
+  // Artist detail only: whether the artist is accepting donations (owner holds
+  // an active creator subscription).
+  donationsEnabled?: boolean;
   details: ListingDetails;
   tributes?: Tribute[];
   createdAt: string;

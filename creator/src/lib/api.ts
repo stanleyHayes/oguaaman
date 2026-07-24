@@ -182,6 +182,14 @@ export const api = {
     post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
   confirmSubscription: (reference: string) => get<Subscription>(`/api/subscriptions/confirm?reference=${encodeURIComponent(reference)}`),
   mySubscriptions: () => get<Subscription[]>("/api/me/subscriptions"),
+  // Member-level creator subscription — unlocks donations & fundraising campaigns.
+  subscribeCreator: (plan?: string) =>
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>("/api/me/subscribe", plan ? { plan } : {}),
+
+  // Fundraising campaigns (Creator Monetization).
+  myCampaigns: () => get<Listing[]>("/api/me/campaigns"),
+  createCampaign: (body: { title: string; category?: string; coverImageUrl?: string; description: string; goalPesewas: number; deadline?: string; townId?: string }) =>
+    post<Listing>("/api/campaigns", body),
 
   // Tickets the member has bought (gate codes live on the portal).
   myTickets: () => get<Ticket[]>("/api/me/tickets"),

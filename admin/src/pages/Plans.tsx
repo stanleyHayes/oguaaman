@@ -20,13 +20,15 @@ interface FormState {
   name: string; slug: string; audience: "any" | "business" | "creator";
   interval: "free" | "month"; defaultPrice: string; businessPrice: string; creatorPrice: string;
   perks: string; maxListings: string; includedPromoDays: string; goldBadge: boolean;
+  takeRatePercent: string; maxProducts: string; maxServices: string;
   active: boolean; sortOrder: string;
 }
 
 const EMPTY_FORM: FormState = {
   name: "", slug: "", audience: "business", interval: "month",
   defaultPrice: "", businessPrice: "", creatorPrice: "", perks: "",
-  maxListings: "", includedPromoDays: "", goldBadge: false, active: true, sortOrder: "10",
+  maxListings: "", includedPromoDays: "", goldBadge: false,
+  takeRatePercent: "", maxProducts: "", maxServices: "", active: true, sortOrder: "10",
 };
 
 function toForm(p: Plan): FormState {
@@ -38,7 +40,11 @@ function toForm(p: Plan): FormState {
     perks: (p.perks ?? []).join("\n"),
     maxListings: p.maxListings ? String(p.maxListings) : "",
     includedPromoDays: p.includedPromoDays ? String(p.includedPromoDays) : "",
-    goldBadge: !!p.goldBadge, active: p.active, sortOrder: String(p.sortOrder),
+    goldBadge: !!p.goldBadge,
+    takeRatePercent: p.takeRatePercent ? String(p.takeRatePercent) : "",
+    maxProducts: p.maxProducts ? String(p.maxProducts) : "",
+    maxServices: p.maxServices ? String(p.maxServices) : "",
+    active: p.active, sortOrder: String(p.sortOrder),
   };
 }
 
@@ -51,6 +57,9 @@ function toPayload(f: FormState): PlanPayload {
     prices, perks: f.perks.split("\n").map((s) => s.trim()).filter(Boolean),
     maxListings: f.maxListings.trim() ? Number.parseInt(f.maxListings, 10) : 0,
     includedPromoDays: f.includedPromoDays.trim() ? Number.parseInt(f.includedPromoDays, 10) : 0,
+    takeRatePercent: f.takeRatePercent.trim() ? Number.parseInt(f.takeRatePercent, 10) : 0,
+    maxProducts: f.maxProducts.trim() ? Number.parseInt(f.maxProducts, 10) : 0,
+    maxServices: f.maxServices.trim() ? Number.parseInt(f.maxServices, 10) : 0,
     goldBadge: f.goldBadge, active: f.active,
     sortOrder: Number.parseInt(f.sortOrder || "10", 10) || 10,
   };
@@ -134,6 +143,12 @@ export function Component() {
               <input value={form.maxListings} onChange={(e) => set("maxListings", e.target.value)} inputMode="numeric" className={inputCls} placeholder="3" /></label>
             <label className="block"><span className={labelCls}>Included promotion days / month</span>
               <input value={form.includedPromoDays} onChange={(e) => set("includedPromoDays", e.target.value)} inputMode="numeric" className={inputCls} placeholder="0" /></label>
+            <label className="block"><span className={labelCls}>Platform fee on donations/campaigns (%)</span>
+              <input value={form.takeRatePercent} onChange={(e) => set("takeRatePercent", e.target.value)} inputMode="numeric" className={inputCls} placeholder="15" /></label>
+            <label className="block"><span className={labelCls}>Max storefront products</span>
+              <input value={form.maxProducts} onChange={(e) => set("maxProducts", e.target.value)} inputMode="numeric" className={inputCls} placeholder="0" /></label>
+            <label className="block"><span className={labelCls}>Max storefront services</span>
+              <input value={form.maxServices} onChange={(e) => set("maxServices", e.target.value)} inputMode="numeric" className={inputCls} placeholder="0" /></label>
             <label className="block"><span className={labelCls}>Sort order</span>
               <input value={form.sortOrder} onChange={(e) => set("sortOrder", e.target.value)} inputMode="numeric" className={inputCls} placeholder="10" /></label>
             <label className="block sm:col-span-2 lg:col-span-3"><span className={labelCls}>Perks (one per line)</span>

@@ -254,7 +254,7 @@ func (s *PaymentsService) StartDonation(ctx context.Context, artistSlug, memberI
 	if err := s.pledges.Insert(ctx, donation); err != nil {
 		return "", "", "", err
 	}
-	callback := fmt.Sprintf("%s/artists/%s?donation_ref=%s", s.portal, artist.Slug, url.QueryEscape(reference))
+	callback := fmt.Sprintf("%s/music/%s?donation_ref=%s", s.portal, artist.Slug, url.QueryEscape(reference))
 	authURL, accessCode, err := s.paystack.Initialize(ctx, email, amountPesewas, "GHS", reference, callback)
 	if err != nil {
 		return "", "", "", err
@@ -387,7 +387,7 @@ func (s *PaymentsService) notifyRecipient(ctx context.Context, p *domain.Pledge)
 	if p.Kind == domain.PledgeKindDonation {
 		kind, title, body, link = "donation", "A fan supported you 💚",
 			fmt.Sprintf("GH₵ %.2f was donated to “%s”.%s", cedis, p.ProjectTitle, simTail),
-			"/artists/"+p.ProjectSlug
+			"/music/"+p.ProjectSlug
 	}
 	_ = s.notifs.Insert(ctx, domain.Notification{
 		ID: newID(domain.PrefixNotification), MemberID: target.OwnerID,

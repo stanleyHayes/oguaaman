@@ -1,7 +1,7 @@
 // Thin client for the Go API. In dev, calls go to relative /api (Vite proxies to
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
-  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams,
+  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, StoreItem, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams,
   Agent, AgentInput, AgentJob, AgentReview, AgentService, JobInput, MyJobs,
 } from "./types";
 
@@ -186,6 +186,17 @@ export const api = {
   confirmPledge: (reference: string) => get<Pledge>(`/api/pledges/confirm?reference=${encodeURIComponent(reference)}`),
   myPledges: () => get<Pledge[]>("/api/me/pledges"),
 
+  // Artist donations ("tip jar", Creator Monetization; amounts in pesewas).
+  donate: (slug: string, body: { amountPesewas: number; email?: string; message?: string; anonymous?: boolean }) =>
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/artists/${slug}/donate`, body),
+  confirmDonation: (reference: string) => get<Pledge>(`/api/donations/confirm?reference=${encodeURIComponent(reference)}`),
+
+  // Fundraising campaigns (member-created projects; Creator Monetization).
+  campaigns: () => get<Listing[]>("/api/campaigns"),
+  myCampaigns: () => get<Listing[]>("/api/me/campaigns"),
+  createCampaign: (body: { title: string; category?: string; coverImageUrl?: string; description: string; goalPesewas: number; deadline?: string; townId?: string }) =>
+    post<Listing>("/api/campaigns", body),
+
   // Cross-pillar search (spec §12) and the diaspora register (Phase 2 foundation).
   search: (q: string) => get<SearchHit[]>(`/api/search?q=${encodeURIComponent(q)}`),
   diaspora,
@@ -241,6 +252,9 @@ export const api = {
     post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
   confirmSubscription: (reference: string) => get<Subscription>(`/api/subscriptions/confirm?reference=${encodeURIComponent(reference)}`),
   mySubscriptions: () => get<Subscription[]>("/api/me/subscriptions"),
+  // Member-level creator subscription — unlocks donations & campaigns.
+  subscribeCreator: (plan?: string) =>
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>("/api/me/subscribe", plan ? { plan } : {}),
 
   // Paid promotions (Phase 8): self-serve featured placements via Paystack.
   promoteListing: (id: string, days: number) =>
@@ -363,7 +377,7 @@ export const api = {
   pushUnsubscribe: (body: { id: string }) => post<{ ok: boolean }>("/api/push/unsubscribe", body),
   // Business storefront (Supporter feature): sections + photo/video gallery +
   // a clean shareable handle, saved atomically.
-  setStorefront: (id: string, body: { handle?: string; sections?: ProfileSection[]; photos?: MediaAsset[]; videos?: MediaAsset[] }) =>
+  setStorefront: (id: string, body: { handle?: string; sections?: ProfileSection[]; photos?: MediaAsset[]; videos?: MediaAsset[]; products?: StoreItem[]; services?: StoreItem[] }) =>
     post<Listing>(`/api/listings/${id}/storefront`, body),
   postOrgEvent: (slug: string, body: { title: string; details?: Record<string, unknown> }) =>
     post<Listing>(`/api/institutions/${slug}/events`, body),

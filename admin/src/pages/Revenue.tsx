@@ -48,7 +48,7 @@ export function Component() {
 
   const recent = useMemo<Activity[]>(() => {
     const rows: Activity[] = [
-      ...pledges.map((p) => ({ id: p.id, stream: "Pledge", title: p.projectTitle, amountPesewas: p.amountPesewas, status: p.status, simulated: p.simulated, at: p.confirmedAt ?? p.createdAt })),
+      ...pledges.map((p) => ({ id: p.id, stream: p.kind === "donation" ? "Donation" : "Pledge", title: p.projectTitle, amountPesewas: p.amountPesewas, status: p.status, simulated: p.simulated, at: p.confirmedAt ?? p.createdAt })),
       ...subscriptions.map((s) => ({ id: s.id, stream: "Subscription", title: s.listingTitle, amountPesewas: s.amountPesewas, status: s.status, simulated: s.simulated, at: s.confirmedAt ?? s.createdAt })),
       ...promotions.map((p) => ({ id: p.id, stream: "Promotion", title: `${p.listingTitle} · ${p.days}d`, amountPesewas: p.amountPesewas, status: p.status, simulated: p.simulated, at: p.confirmedAt ?? p.createdAt })),
     ];
@@ -70,12 +70,18 @@ export function Component() {
       </div>
 
       {/* one card per stream */}
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Crowdfunding fees</p>
           <p className="mt-2 text-2xl font-semibold text-green-text">{cedis(overview.pledges.feePesewas)}</p>
           <p className="mt-1 text-xs text-ink-muted">Platform fee on pledges</p>
           <p className="mt-1 text-xs text-ink-faint">{cedis(overview.pledges.grossPesewas)} pledged · {cedis(overview.pledges.netPesewas)} to projects</p>
+        </Card>
+        <Card className="p-5">
+          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Donation fees</p>
+          <p className="mt-2 text-2xl font-semibold text-green-text">{cedis(overview.donations.feePesewas)}</p>
+          <p className="mt-1 text-xs text-ink-muted">Platform fee on artist donations</p>
+          <p className="mt-1 text-xs text-ink-faint">{cedis(overview.donations.grossPesewas)} donated · {cedis(overview.donations.netPesewas)} to artists</p>
         </Card>
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Ticket sales</p>

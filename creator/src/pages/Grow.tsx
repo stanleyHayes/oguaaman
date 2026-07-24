@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLoaderData, useRevalidator } from "react-router-dom";
 import { api } from "@/lib/api";
 import { completePayment } from "@/lib/paystack";
-import type { CreatorOverview, MemberView, Plan, Subscription } from "@/lib/types";
+import type { CreatorOverview, Member, MemberView, Plan, Subscription } from "@/lib/types";
 import { BusyLabel } from "@/components/skeleton";
 import { formatDate } from "@/lib/format";
 import { mediaUrl } from "@/lib/media";
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 interface Data {
+  me: Member;
   overview: CreatorOverview;
   view: MemberView;
   subscriptions: Subscription[];
@@ -54,6 +55,7 @@ export async function loader(): Promise<Data> {
     loadCollection(api.plans()),
   ]);
   return {
+    me,
     overview,
     view,
     subscriptions: subscriptionsResult.items,
@@ -62,6 +64,9 @@ export async function loader(): Promise<Data> {
     plansUnavailable: plansResult.unavailable,
   };
 }
+
+// The per-creator price of a plan (creator override, else the default).
+const creatorPrice = (p: Plan) => p.prices.creator ?? p.prices.default ?? 0;
 
 const cedis = (pesewas: number) =>
   `GH₵ ${(pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
@@ -94,11 +99,30 @@ const PROMO_STEPS = [
 ];
 
 export function Component() {
-  const { overview, view, subscriptions, plans, subscriptionsUnavailable, plansUnavailable } = useLoaderData() as Data;
+  const { me, overview, view, subscriptions, plans, subscriptionsUnavailable, plansUnavailable } = useLoaderData() as Data;
   const revalidator = useRevalidator();
   const [busy, setBusy] = useState<string | null>(null); // "slug:plan" being subscribed
   const [err, setErr] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<Subscription | null>(null);
+
+  // Creator (member-level) subscription — unlocks donations & campaigns.
+  const creatorPlans = plans.filter((p) => p.active && p.interval === "month" && (p.audience === "creator" || p.audience === "any") && creatorPrice(p) > 0);
+  const creatorActive = Boolean(me.creatorSubscribedUntil && me.creatorSubscribedUntil > new Date().toISOString());
+
+  async function subscribeCreator(plan: string) {
+    setErr(null);
+    setBusy(`creator:${plan}`);
+    try {
+      const r = await api.subscribeCreator(plan);
+      const settle = async () => { await api.confirmSubscription(r.reference); revalidator.revalidate(); };
+      if (r.simulated) await settle();
+      else await completePayment(r, { onSuccess: settle });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not start the payment.");
+    } finally {
+      setBusy(null);
+    }
+  }
 
   // Plans are per-business subscriptions — offer each paid catalog plan on
   // every approved business listing.
@@ -258,6 +282,62 @@ export function Component() {
           </div>
         ))}
       </dl>
+
+      {creatorPlans.length > 0 && (
+        <section className="mt-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-[0.62rem] font-bold uppercase tracking-[0.15em] text-clay-text">Fan support</p>
+              <h2 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Accept donations &amp; run campaigns.</h2>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-sand bg-cream px-3.5 py-2 text-xs font-semibold text-ink-muted">
+              <BadgeCheck size={14} className={creatorActive ? "text-teal-text" : "text-ink-faint"} aria-hidden />
+              {creatorActive ? `Active — ${planName(me.creatorPlan ?? "")}` : "Not subscribed"}
+            </div>
+          </div>
+
+          {creatorActive ? (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal/20 bg-teal/[0.07] px-4 py-3.5 text-sm text-ink-muted">
+              <span>Your creator plan is active until <strong className="text-ink">{me.creatorSubscribedUntil ? formatDate(me.creatorSubscribedUntil) : ""}</strong>. Fans can donate on your artist profile, and you can start fundraising campaigns.</span>
+              <Link to="/campaigns" className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-clay px-4 text-xs font-bold text-cream transition hover:opacity-90">Start a campaign <ArrowRight size={12} aria-hidden /></Link>
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {creatorPlans.map((plan) => {
+                const key = `creator:${plan.slug}`;
+                return (
+                  <article key={plan.id} className="overflow-hidden rounded-[1.75rem] border border-sand bg-cream p-5 sm:p-6">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h3 className="text-xl font-semibold text-ink">{plan.name}</h3>
+                      <span className="text-sm text-ink-muted"><strong className="text-lg text-ink">{cedis(creatorPrice(plan))}</strong>/mo</span>
+                    </div>
+                    {typeof plan.takeRatePercent === "number" && (
+                      <p className="mt-1 text-xs font-semibold text-clay-text">{plan.takeRatePercent}% platform fee on what you raise</p>
+                    )}
+                    <ul className="mt-4 space-y-2">
+                      {(plan.perks ?? []).map((perk) => (
+                        <li key={perk} className="flex items-start gap-2 text-sm leading-5 text-ink-muted">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-clay/15 text-clay-text"><Check size={12} strokeWidth={3} aria-hidden /></span>
+                          {perk}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={() => subscribeCreator(plan.slug)}
+                      disabled={busy != null}
+                      aria-busy={busy === key || undefined}
+                      className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-clay px-4 py-2.5 text-sm font-bold text-cream transition hover:opacity-90 disabled:opacity-60"
+                    >
+                      {busy === key ? <BusyLabel label="Starting checkout" width="w-20" /> : `Subscribe · ${cedis(creatorPrice(plan))}/mo`}
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="mt-8">
         <div className="flex flex-wrap items-end justify-between gap-4">

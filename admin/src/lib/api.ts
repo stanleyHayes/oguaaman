@@ -49,7 +49,9 @@ export interface NewsPayload { title: string; summary: string; body: string; cov
 export interface PlanPayload {
   name: string; slug?: string; audience: "any" | "business" | "creator";
   prices: Record<string, number>; interval: "free" | "month"; perks: string[];
-  maxListings?: number; includedPromoDays?: number; goldBadge?: boolean;
+  maxListings?: number; includedPromoDays?: number;
+  takeRatePercent?: number; maxProducts?: number; maxServices?: number;
+  goldBadge?: boolean;
   active: boolean; sortOrder: number;
 }
 

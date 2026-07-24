@@ -26,6 +26,11 @@ export interface ListingDetails {
   contact?: SocialLink[];
   bookingUrl?: string;
   gallery?: { url: string; label?: string; caption?: string }[];
+  // project / fundraising campaign (money in pesewas)
+  goalPesewas?: number;
+  raisedPesewas?: number;
+  backers?: number;
+  campaign?: boolean;
   [k: string]: unknown;
 }
 
@@ -59,6 +64,11 @@ export interface Member {
   role: "member" | "curator" | "steward" | "editor" | "moderator";
   /** What they create ("business" | "artist" | "organiser" | "institution" | "writer" | "property"…); empty = plain citizen. */
   creatorTypes?: string[];
+  /** Member-level creator subscription (Creator Monetization): a value in the future means donations & campaigns are unlocked. */
+  creatorSubscribedUntil?: string;
+  creatorPlan?: string;
+  /** Set once the member's first campaign is approved; then campaigns auto-publish. */
+  campaignerVetted?: boolean;
   suspended: boolean;
   phoneVerified: boolean;
   /** True for curators/stewards and approved managers of a verified authority org. */
@@ -300,6 +310,9 @@ export interface Plan {
   perks: string[];
   maxListings?: number;
   includedPromoDays?: number;
+  takeRatePercent?: number; // platform cut on donations/campaigns (Creator Monetization)
+  maxProducts?: number;
+  maxServices?: number;
   goldBadge?: boolean;
   active: boolean;
   sortOrder: number;

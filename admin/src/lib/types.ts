@@ -364,6 +364,7 @@ export type PaymentStatus = "pending" | "success" | "failed";
 export interface Pledge {
   id: string;
   reference: string;
+  kind?: "campaign" | "donation";
   projectId: string;
   projectSlug: string;
   projectTitle: string;
@@ -439,6 +440,9 @@ export interface Plan {
   perks: string[];
   maxListings?: number;
   includedPromoDays?: number;
+  takeRatePercent?: number; // platform cut on donations/campaigns (Creator Monetization)
+  maxProducts?: number;     // storefront product cap
+  maxServices?: number;     // storefront service cap
   goldBadge?: boolean;
   active: boolean;
   sortOrder: number;
@@ -465,6 +469,7 @@ export interface Promotion {
 // Platform income overview across all four money streams (GET /api/admin/revenue).
 export interface RevenueOverview {
   pledges: { grossPesewas: number; feePesewas: number; netPesewas: number };
+  donations: { grossPesewas: number; feePesewas: number; netPesewas: number };
   tickets: { grossPesewas: number; count: number };
   subscriptions: { grossPesewas: number; count: number; active: number };
   promotions: { grossPesewas: number; count: number };
