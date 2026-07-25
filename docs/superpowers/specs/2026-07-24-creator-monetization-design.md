@@ -238,3 +238,38 @@ duplicated literals, cognitive complexity ≤15, real `<button>`s, `Readonly<>` 
 - Automated Paystack subaccount/split/transfer disbursement.
 - Recurring/auto-renewing subscriptions (renewal stays manual, stacking a period).
 - Refunds/chargeback handling beyond the existing failed-payment path.
+
+## Addendum — added during implementation
+
+### Feature C — Business products & services (subscription-capped)
+
+Added at the user's request alongside A/B. Businesses publish a **products** and
+**services** catalog on their storefront; how many they may publish is capped
+per subscription plan, configured from the admin dashboard.
+
+- `domain.StoreItem` (id, name, description, pricePesewas, unit, imageUrl,
+  available) + `Listing.Products` / `Listing.Services`.
+- `Plan.MaxProducts` / `Plan.MaxServices` (admin-configured caps).
+- The business's active plan slug is stamped on the listing
+  (`details.plan`) at subscription confirm (`SetSubscribedUntil(id, plan,
+  until)`), so the cap resolves from the plan; no active paid plan falls back to
+  the free "starter" plan's caps.
+- `SetStorefront` extended to persist products/services; `SetListingStorefront`
+  cleans/validates them and enforces the cap. Rendered on the public business
+  page (`Storefront` component); edited in the portal's `ManageStorefront`.
+- Admin Plans editor gained the take-rate + product/service cap fields.
+
+### Implementation notes (reality vs. plan)
+
+- Portal artist route is `/music/:slug` (not `/artists/`); donation callback and
+  the owner notification link use `/music/`.
+- Seeded creator-audience plans: `creator-supporter` (15% take-rate) and
+  `creator-pro` (10%), plus product/service caps on the business plans — all
+  admin-editable starting values.
+- Creator subscription callback returns to the creator app's `/grow`
+  (`PUBLIC_CREATOR_URL`, defaulting to the portal URL).
+- All four surfaces build clean (`go build/vet/test/gofmt`; `pnpm build` in
+  frontend/admin/creator). `pnpm lint` is currently broken repo-wide by a
+  toolchain mismatch (TypeScript 7.0.2 vs. typescript-eslint 8.65, which errors
+  before evaluating any file) — unrelated to this change; `tsc` in the build is
+  the effective gate.
