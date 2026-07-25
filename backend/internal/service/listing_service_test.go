@@ -152,6 +152,19 @@ func (f *fakeRepo) IncrementDonations(_ context.Context, id string, delta int64)
 	}
 	return &domain.NotFoundError{Entity: "listing"}
 }
+func (f *fakeRepo) SetRating(_ context.Context, id string, avg float64, count int) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			if f.listings[i].Details == nil {
+				f.listings[i].Details = map[string]any{}
+			}
+			f.listings[i].Details["ratingAvg"] = avg
+			f.listings[i].Details["ratingCount"] = count
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
 
 func (f *fakeRepo) SetSubscribedUntil(_ context.Context, id, plan, until string) error {
 	for i := range f.listings {

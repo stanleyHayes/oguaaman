@@ -151,6 +151,9 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	mux.HandleFunc("GET /api/businesses", h.Businesses)
 	mux.HandleFunc("GET /api/businesses/{slug}", h.Business)
+	// Business reviews & ratings.
+	mux.HandleFunc("GET /api/businesses/{slug}/reviews", h.BusinessReviews)
+	mux.HandleFunc("POST /api/businesses/{slug}/reviews", h.SubmitBusinessReview)
 	// Business storefront (Supporter feature): the shareable clean-handle lookup
 	// and the owner save (sections + photo/video gallery).
 	mux.HandleFunc("GET /api/storefront/{handle}", h.Storefront)

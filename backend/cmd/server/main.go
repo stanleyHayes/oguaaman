@@ -63,6 +63,7 @@ func main() {
 		CivicLessons:    mongox.NewCivicLessonRepo(db),
 		Goals:           mongox.NewGoalRepo(db),
 		Agents:          mongox.NewAgentRepo(db),
+		Reviews:         mongox.NewReviewRepo(db),
 		Email:           email,
 		WhatsApp:        wa,
 		Push:            push,

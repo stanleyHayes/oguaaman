@@ -54,6 +54,7 @@ func (s *submitListings) AddTribute(context.Context, string, domain.Tribute) err
 func (s *submitListings) IncrementCandles(context.Context, string) (int, error)    { return 0, nil }
 func (s *submitListings) IncrementRaised(context.Context, string, int64) error     { return nil }
 func (s *submitListings) IncrementDonations(context.Context, string, int64) error  { return nil }
+func (s *submitListings) SetRating(context.Context, string, float64, int) error    { return nil }
 func (s *submitListings) SetFeatured(context.Context, string, bool, string) error  { return nil }
 func (s *submitListings) UpdateIncidentStatus(context.Context, string, string, map[string]any) error {
 	return nil

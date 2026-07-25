@@ -34,6 +34,7 @@ const (
 	PrefixClaim        = "clm-"
 	PrefixNews         = "news-"
 	PrefixStripeIntent = "sti-"
+	PrefixReview       = "rev-"
 )
 
 // Listing types (spec §8.3; project = adopt-a-project, spec §4/§6/§15 Phase 2;
@@ -172,6 +173,9 @@ type ListingRepository interface {
 	// its donor count (details.donorCount). The "tip jar" counterpart of
 	// IncrementRaised (Creator Monetization).
 	IncrementDonations(ctx context.Context, listingID string, deltaNetPesewas int64) error
+	// SetRating stores a listing's recomputed review aggregate
+	// (details.ratingAvg, details.ratingCount) so the directory reads it cheaply.
+	SetRating(ctx context.Context, listingID string, avg float64, count int) error
 	SetFeatured(ctx context.Context, id string, featured bool, until string) error
 	// UpdateIncidentStatus sets details.incidentStatus and appends the history
 	// entry to details.statusHistory (the incident operational lifecycle).

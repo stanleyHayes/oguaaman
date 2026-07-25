@@ -214,6 +214,15 @@ func (r *ListingRepo) IncrementDonations(ctx context.Context, listingID string, 
 	return err
 }
 
+// SetRating stores a listing's recomputed review aggregate.
+func (r *ListingRepo) SetRating(ctx context.Context, listingID string, avg float64, count int) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$set": bson.M{
+		"details.ratingAvg":   avg,
+		"details.ratingCount": count,
+	}})
+	return err
+}
+
 func (r *ListingRepo) IncrementCandles(ctx context.Context, listingID string) (int, error) {
 	var l domain.Listing
 	if err := r.c.FindOneAndUpdate(ctx,
