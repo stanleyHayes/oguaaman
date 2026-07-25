@@ -154,6 +154,9 @@ export const api = {
   // Adopt-a-project + pledges via Paystack (spec §4/§6/§15; amounts in pesewas).
   projects: () => get<Listing[]>("/api/projects"),
   projectDetail: (slug: string) => get<Listing>(`/api/projects/${slug}`),
+  // Fundraising campaigns (Creator Monetization) — member-created projects.
+  // A campaign's detail + funding reuse the project screen / pledge flow.
+  campaigns: () => get<Listing[]>("/api/campaigns"),
   pledge: (slug: string, body: { amountPesewas: number; email?: string }) =>
     post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean; provider?: "paystack" | "stripe" }>(`/api/projects/${slug}/pledge`, body),
   confirmPledge: (reference: string) =>

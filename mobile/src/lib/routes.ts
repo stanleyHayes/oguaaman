@@ -21,6 +21,7 @@ export const ROUTES = {
   outsideJobs: "/outside/jobs",
   outsideBecomeAgent: "/outside/become-agent",
   projects: "/projects",
+  campaigns: "/campaigns",
   festivals: "/festivals",
   institutions: "/institutions",
   lostFound: "/lost-found",

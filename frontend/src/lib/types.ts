@@ -223,6 +223,18 @@ export interface MediaAsset {
   moderation?: string;    // approved | pending | rejected
 }
 
+// Review — a member's rating + note on a business.
+export interface Review {
+  id: string;
+  listingId: string;
+  listingSlug: string;
+  memberId?: string;
+  authorName: string;
+  rating: number; // 1–5
+  body?: string;
+  createdAt: string;
+}
+
 // StoreItem — a product or service on a business storefront (Supporter feature).
 // Prices are integer pesewas; count is capped by the plan's max (admin-set).
 export interface StoreItem {
@@ -510,6 +522,9 @@ export interface ListingDetails {
   donorCount?: number;
   // active subscription plan slug (business storefront caps resolution)
   plan?: string;
+  // business reviews aggregate
+  ratingAvg?: number;
+  ratingCount?: number;
   // memorial
   honorific?: string;
   bornYear?: number;

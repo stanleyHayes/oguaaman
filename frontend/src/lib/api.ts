@@ -1,7 +1,7 @@
 // Thin client for the Go API. In dev, calls go to relative /api (Vite proxies to
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
-  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, StoreItem, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams,
+  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, StoreItem, Review, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams,
   Agent, AgentInput, AgentJob, AgentReview, AgentService, JobInput, MyJobs,
 } from "./types";
 
@@ -242,6 +242,10 @@ export const api = {
   businesses,
   business: (slug: string) => get<Listing>(`/api/businesses/${slug}`),
   storefront: (handle: string) => get<Listing>(`/api/storefront/${handle}`),
+  // Business reviews & ratings.
+  businessReviews: (slug: string) => get<{ reviews: Review[]; ratingAvg: number; ratingCount: number }>(`/api/businesses/${slug}/reviews`),
+  reviewBusiness: (slug: string, body: { rating: number; body?: string }) =>
+    post<Review>(`/api/businesses/${slug}/reviews`, body),
 
   properties,
   property: (slug: string) => get<Listing>(`/api/properties/${slug}`),

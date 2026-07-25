@@ -79,6 +79,7 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
     items: [
       { label: "Better Oguaa", blurb: "Take the civic pledge", href: ROUTES.better, icon: HandsIcon, accent: "goldText" },
       { label: "Festivals", blurb: "Every edition, year by year", href: ROUTES.festivals, icon: PartyIcon, accent: "clayText" },
+      { label: "Campaigns", blurb: "Back creator fundraisers", href: ROUTES.campaigns, icon: CediIcon, accent: "clayText" },
       { label: "Adopt a project", blurb: "Fund practical improvements", href: ROUTES.projects, icon: CediIcon, accent: "greenText" },
       { label: "Oguaa Outside", blurb: "Vetted help for errands back home", href: ROUTES.outside, icon: BriefcaseIcon, accent: "goldText" },
       { label: "Diaspora", blurb: "The bridge home", href: ROUTES.diaspora, icon: UsersIcon, accent: "goldText" },

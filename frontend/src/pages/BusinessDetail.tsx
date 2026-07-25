@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
-import type { Listing, Plan, Subscription } from "@/lib/types";
+import type { Listing, Plan, Review, Subscription } from "@/lib/types";
 import { api } from "@/lib/api";
 import { completePayment } from "@/lib/paystack";
 import { useRecordView } from "@/lib/use-record-view";
@@ -16,18 +16,19 @@ import { SAMPLE_NOTICE } from "@/lib/content";
 import { formatDate } from "@/lib/format";
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const [business, plans] = await Promise.all([
+  const [business, plans, reviews] = await Promise.all([
     api.business(params.slug!),
     api.plans().catch(() => [] as Plan[]),
+    api.businessReviews(params.slug!).catch(() => ({ reviews: [] as Review[], ratingAvg: 0, ratingCount: 0 })),
   ]);
-  return { business, plans };
+  return { business, plans, reviews };
 }
 
 const cedis = (pesewas: number) =>
   "GH₵ " + (pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 });
 
 export function Component() {
-  const { business: b, plans } = useLoaderData() as { business: Listing; plans: Plan[] };
+  const { business: b, plans, reviews: initialReviews } = useLoaderData() as { business: Listing; plans: Plan[]; reviews: { reviews: Review[]; ratingAvg: number; ratingCount: number } };
   usePageTitle(b.title);
   useRecordView(b.id);
   const { member } = useAuth();
@@ -223,6 +224,8 @@ export function Component() {
               </div>
             </Reveal>
           )}
+
+          <BusinessReviews slug={b.slug} initial={initialReviews} canReview={member != null && !isOwner} />
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
@@ -232,6 +235,12 @@ export function Component() {
               <h2 className="mt-1 text-2xl font-semibold text-on-green">At a glance</h2>
             </div>
             <dl className="divide-y divide-sand p-5 text-sm">
+              {initialReviews.ratingCount > 0 && (
+                <div className="flex items-center justify-between gap-4 py-3 first:pt-0">
+                  <dt className="text-ink-faint">Rating</dt>
+                  <dd className="flex items-center gap-1.5 font-medium text-ink"><Stars value={initialReviews.ratingAvg} /> {initialReviews.ratingAvg.toFixed(1)} <span className="text-ink-faint">({initialReviews.ratingCount})</span></dd>
+                </div>
+              )}
               {d.category && <div className="flex justify-between gap-4 py-3 first:pt-0"><dt className="text-ink-faint">Category</dt><dd className="text-right font-medium text-ink">{d.category}</dd></div>}
               {d.address && <div className="flex justify-between gap-4 py-3"><dt className="text-ink-faint">Location</dt><dd className="max-w-48 text-right text-ink">{d.address}</dd></div>}
               {d.openingHours && <div className="flex justify-between gap-4 py-3 last:pb-0"><dt className="text-ink-faint">Hours</dt><dd className="max-w-48 text-right text-ink">{d.openingHours}</dd></div>}
@@ -286,5 +295,93 @@ export function Component() {
 
       <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </article>
+  );
+}
+
+// Stars renders a 0–5 star rating (rounded to the nearest half is overkill here;
+// we fill whole stars up to the rounded value).
+function Stars({ value, size = "text-base" }: Readonly<{ value: number; size?: string }>) {
+  const filled = Math.round(value);
+  return (
+    <span className={`inline-flex ${size} leading-none text-gold-brand`} aria-label={`${value.toFixed(1)} out of 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= filled ? "text-gold-brand" : "text-sand"}>★</span>
+      ))}
+    </span>
+  );
+}
+
+function BusinessReviews({ slug, initial, canReview }: Readonly<{ slug: string; initial: { reviews: Review[]; ratingAvg: number; ratingCount: number }; canReview: boolean }>) {
+  const [data, setData] = useState(initial);
+  const [rating, setRating] = useState(5);
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  async function submit() {
+    setError(null);
+    setBusy(true);
+    try {
+      await api.reviewBusiness(slug, { rating, body: body.trim() || undefined });
+      setData(await api.businessReviews(slug));
+      setBody("");
+      setDone(true);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not post your review.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Reveal as="section" className="scroll-mt-24">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow text-gold-text">What people say</p>
+          <h2 className="mt-3 text-3xl font-semibold text-ink">Reviews &amp; ratings</h2>
+        </div>
+        {data.ratingCount > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-3xl font-semibold text-ink">{data.ratingAvg.toFixed(1)}</span>
+            <div><Stars value={data.ratingAvg} /><p className="text-xs text-ink-faint">{data.ratingCount} {data.ratingCount === 1 ? "review" : "reviews"}</p></div>
+          </div>
+        )}
+      </div>
+
+      {canReview && !done && (
+        <div className="mt-6 rounded-[var(--radius-card)] border border-sand bg-cream p-5">
+          <p className="text-sm font-semibold text-ink">Leave a review</p>
+          <div className="mt-3 flex items-center gap-1" role="radiogroup" aria-label="Your rating">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n} star${n > 1 ? "s" : ""}`} onClick={() => setRating(n)} className={`text-2xl leading-none transition-transform hover:scale-110 ${n <= rating ? "text-gold-brand" : "text-sand"}`}>★</button>
+            ))}
+          </div>
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} maxLength={1500} placeholder="Share your experience (optional)" className="mt-3 w-full resize-none rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-green focus:outline-none" />
+          {error && <p role="alert" className="mt-2 text-sm text-clay-text">{error}</p>}
+          <button type="button" onClick={submit} disabled={busy} className="mt-3 rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:opacity-60">
+            {busy ? "Posting…" : "Post review"}
+          </button>
+        </div>
+      )}
+      {done && <p className="mt-6 rounded-[var(--radius-card)] border border-green/25 bg-green/[0.06] p-4 text-sm text-green-text">Medaase — your review is posted.</p>}
+
+      {data.reviews.length === 0 ? (
+        <p className="mt-6 text-ink-muted">No reviews yet{canReview ? " — be the first." : "."}</p>
+      ) : (
+        <div className="mt-6 space-y-4">
+          {data.reviews.map((r) => (
+            <div key={r.id} className="rounded-[var(--radius-card)] border border-sand bg-cream p-5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-semibold text-ink">{r.authorName}</span>
+                <Stars value={r.rating} size="text-sm" />
+              </div>
+              {r.body && <p className="mt-2 text-sm leading-relaxed text-ink-muted">{r.body}</p>}
+              <p className="mt-2 text-xs text-ink-faint">{formatDate(r.createdAt)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </Reveal>
   );
 }
