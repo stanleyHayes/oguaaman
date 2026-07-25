@@ -509,7 +509,7 @@ export function SiteHeader() {
         <nav aria-label="Primary navigation" className="hidden items-center gap-0.5 xl:flex">
           <NavDropdown label="Discover" active={discoverActive} items={DISCOVER} lang={lang} />
           <NavDropdown label="City" active={cityActive} items={CITY} lang={lang} />
-          <Link to="/better" aria-label="Build a better Oguaa" aria-current={betterActive ? "page" : undefined} className={betterNavPill(betterActive)}>
+          <Link to="/better" aria-label="Build a better Oguaa" aria-current={betterActive ? "page" : undefined} className={`${betterNavPill(betterActive)} mx-4 2xl:mx-7`}>
             <SectionIcon id="better" className="h-3.5 w-3.5" />
             <span>Better Oguaa</span>
           </Link>
