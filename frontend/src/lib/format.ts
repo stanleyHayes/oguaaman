@@ -7,6 +7,12 @@ export function formatDate(iso: string): string {
   return `${d} ${MONTHS[m - 1]} ${y}`;
 }
 
+export function formatDateRange(startsAt?: string, endsAt?: string): string {
+  if (!startsAt) return "";
+  if (!endsAt || endsAt.slice(0, 10) === startsAt.slice(0, 10)) return formatDate(startsAt);
+  return `${formatDate(startsAt)} – ${formatDate(endsAt)}`;
+}
+
 export function dayMonth(iso: string): { day: string; mon: string } {
   const [, m, d] = iso.slice(0, 10).split("-").map(Number);
   return { day: String(d).padStart(2, "0"), mon: MONTHS[m - 1].toUpperCase() };

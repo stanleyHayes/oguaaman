@@ -9,6 +9,7 @@ export const ROUTES = {
   settings: "/settings",
   studio: "/studio",
   studioWork: "/studio/work",
+  studioBookings: "/studio/bookings",
   studioTeam: "/studio/team",
   studioGrow: "/studio/grow",
   submit: "/submit",

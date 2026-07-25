@@ -36,7 +36,10 @@ const DETAIL_LABELS: Record<string, string> = {
   bornYear: "Born", diedDate: "Died", birthday: "Birthday", observeBirthday: "Observe birthday",
   associations: "Associations", candles: "Candles", rememberedByCount: "Remembered by",
 };
-const HIDDEN_KEYS = new Set(["gallery", "streamingLinks", "socials", "services"]);
+const HIDDEN_KEYS = new Set(["gallery", "streamingLinks", "socials", "services", "ratingAvg", "ratingCount"]);
+
+const cedis = (pesewas?: number) =>
+  `GH₵${((pesewas ?? 0) / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
 
 function renderValue(v: unknown): string {
   if (Array.isArray(v)) return v.map((x) => (typeof x === "object" ? JSON.stringify(x) : String(x))).join(", ");
@@ -67,6 +70,10 @@ export function Component() {
   const gallery = Array.isArray(d.gallery)
     ? d.gallery.filter((g) => g && typeof g.url === "string" && g.url)
     : [];
+  const products = Array.isArray(l.products) ? l.products : [];
+  const services = Array.isArray(l.services) ? l.services : [];
+  const ratingAvg = Number(d.ratingAvg) || 0;
+  const ratingCount = Number(d.ratingCount) || 0;
 
   async function moderate(action: "approve" | "reject") {
     if (action === "reject" && !reason.trim()) { setRejecting(true); return; }
@@ -220,9 +227,51 @@ export function Component() {
               </div>
             </Card>
           )}
+
+          {(products.length > 0 || services.length > 0) && (
+            <Card className="p-5 sm:p-6">
+              <div className="mb-3 flex items-baseline justify-between">
+                <h2 className="text-lg font-semibold">Storefront</h2>
+                <span className="text-xs text-ink-faint">{products.length} products · {services.length} services</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[["Products", products] as const, ["Services", services] as const].map(([label, items]) =>
+                  items.length > 0 ? (
+                    <div key={label}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">{label}</p>
+                      <ul className="space-y-2">
+                        {items.map((it, i) => (
+                          <li key={it.id ?? i} className="flex items-start justify-between gap-3 rounded-lg border border-sand px-3 py-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-ink">{it.name}{!it.available && <span className="ml-1.5 text-[0.6rem] font-bold uppercase text-ink-faint">unavailable</span>}</p>
+                              {it.description && <p className="truncate text-xs text-ink-muted">{it.description}</p>}
+                            </div>
+                            {(it.pricePesewas ?? 0) > 0 && (
+                              <span className="whitespace-nowrap text-sm font-semibold text-green-text">{cedis(it.pricePesewas)}{it.unit ? <span className="text-xs font-normal text-ink-faint">/{it.unit}</span> : null}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null,
+                )}
+              </div>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-5">
+          {ratingCount > 0 && (
+            <Card className="p-5">
+              <h2 className="mb-2 text-lg font-semibold">Rating</h2>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-gold-text">{ratingAvg.toFixed(1)}</span>
+                <span className="text-sm text-gold-text">★</span>
+                <span className="text-sm text-ink-muted">from {ratingCount} review{ratingCount === 1 ? "" : "s"}</span>
+              </div>
+            </Card>
+          )}
+
           <Card className="p-5">
             <h2 className="mb-2 text-lg font-semibold">Timeline</h2>
             <dl>

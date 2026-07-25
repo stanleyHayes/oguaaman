@@ -59,7 +59,8 @@ func (s *submitListings) SetFeatured(context.Context, string, bool, string) erro
 func (s *submitListings) UpdateIncidentStatus(context.Context, string, string, map[string]any) error {
 	return nil
 }
-func (s *submitListings) SetLostFoundStatus(context.Context, string, string) error { return nil }
+func (s *submitListings) SetLostFoundStatus(context.Context, string, string) error      { return nil }
+func (s *submitListings) SetPropertyAvailability(context.Context, string, string) error { return nil }
 func (s *submitListings) SetSubscribedUntil(context.Context, string, string, string) error {
 	return nil
 }

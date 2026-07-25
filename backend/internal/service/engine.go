@@ -81,6 +81,19 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 			in.Tags = appendUniqueTag(in.Tags, asStringAny(details[key]))
 		}
 	}
+	if in.Type == domain.TypeArtist {
+		details = cleanArtistDetails(details)
+	}
+	if in.Type == domain.TypeEvent {
+		if err := validateEventRange(details); err != nil {
+			return nil, err
+		}
+		cleaned, err := cleanEventDetails(details)
+		if err != nil {
+			return nil, err
+		}
+		details = cleaned
+	}
 	if in.Type == domain.TypeMemorial {
 		if _, ok := details["candles"]; !ok {
 			details["candles"] = 0

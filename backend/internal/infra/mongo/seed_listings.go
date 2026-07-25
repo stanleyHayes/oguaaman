@@ -75,6 +75,11 @@ func seedListings() []domain.Listing {
 			"actName": "Esi Sunshine", "genres": []string{"Gospel Highlife", "Gospel"}, "spotlight": true,
 			"bio":            "Raised in the chapel choirs of the coast, Esi turns Methodist hymn-craft and the osode pulse into radiant gospel highlife. A regular at Cape Coast crusades and Fetu Afahye thanksgiving services.",
 			"streamingLinks": streams(), "socials": []domain.SocialLink{sl("Instagram", "https://instagram.com")},
+			"releases": []map[string]any{
+				{"id": "esi-release-1", "title": "Nyame Ayɛ", "kind": "album", "year": 2026, "coverImageUrl": seedImg("fetu-queenmother.jpg"), "description": "A gospel-highlife record shaped by chapel harmonies, osode rhythm and the sound of home.", "url": "https://open.spotify.com", "tracks": []map[string]any{{"title": "Nyame Ayɛ"}, {"title": "Oguaa Mba"}, {"title": "Morning Bells"}, {"title": "By the Sea"}, {"title": "Medaase"}}},
+				{"id": "esi-release-2", "title": "Oguaa Mba", "kind": "single", "year": 2025, "coverImageUrl": seedImg(imgFetuCrowd), "url": "https://audiomack.com", "tracks": []map[string]any{{"title": "Oguaa Mba"}}},
+				{"id": "esi-release-3", "title": "Chapel Sessions", "kind": "ep", "year": 2024, "tracks": []map[string]any{{"title": "Ahenman"}, {"title": "Grace at Dawn"}, {"title": "Homecoming"}}},
+			},
 			"latestRelease": map[string]any{"title": "Nyame Ayɛ (God Has Done It)", "year": 2026}, "booking": "Via management",
 		}},
 		{ID: "a-kojo-castle", Slug: "kojo-castle", CoverImageURL: seedImg("posuban.jpg"), Type: domain.TypeArtist, OwnerID: memberAkua, Title: "Kojo Castle", Status: domain.StatusApproved, Tags: []string{"hiplife", "drill", "oguaa"}, TownID: "oguaa", SchoolIDs: []string{"adisadel"}, CreatedAt: d20260222, SubmittedAt: d20260222, PublishedAt: d20260222, Details: map[string]any{
@@ -291,6 +296,11 @@ func seedListings() []domain.Listing {
 		{ID: "e-fetu", Slug: "fetu-afahye-2026", CoverImageURL: seedImg(imgFetuProcession), Type: domain.TypeEvent, OwnerID: memberNana, Title: "Oguaa Fetu Afahye 2026", Status: domain.StatusApproved, Featured: true, Tags: []string{"festival", "oguaa", "homecoming"}, TownID: "oguaa", PostedByOrgID: orgOguaaTraditional, CreatedAt: d20260301, SubmittedAt: d20260301, PublishedAt: d20260301, Details: map[string]any{
 			"description": "The annual harvest and cleansing festival of Oguaa, giving thanks to the 77 gods and to the sea. A week of rites culminating in the grand durbar of chiefs — palanquins, state umbrellas, and the seven Asafo companies. The homecoming beat of the year.",
 			"startsAt":    "2026-09-05", "venue": venueVictoriaPark, "organiser": oguaaTraditionalCouncil, "anchorFestival": true,
+			"eventFormat": "festival", "audience": []string{"all-ages", "families"}, "admission": "paid", "startTime": "10:00",
+			"highlights":     []string{"Grand Durbar of chiefs and queen mothers", "Orange Friday street carnival", "Seven Asafo companies on procession", "Food, craft and heritage village"},
+			"featuredGuests": []string{"Omanhen and Oguaa Traditional Council", "The seven Asafo companies of Oguaa"},
+			"ageGuidance":    "All ages; children should remain with a guardian.", "accessibility": "Accessible seating is available near the main stand. Arrive early for the shortest route through the crowd.",
+			"contactInfo": "Oguaa Traditional Council information desk", "refundPolicy": "Tickets are refundable only if the advertised programme is cancelled.",
 			"festival": festivalFetuAfahye, "edition": "2026",
 			"programme": []map[string]any{
 				{"day": "Monday 31 August", "title": "Health Day — community cleanup across Cape Coast", "time": "from 6:00 a.m."},
@@ -306,6 +316,10 @@ func seedListings() []domain.Listing {
 		{ID: "e-bakaano-prize", Slug: "bakaano-prize-giving", CoverImageURL: seedImg(imgClassroomGhana), Type: domain.TypeEvent, OwnerID: memberAidoo, Title: "68th Speech & Prize-Giving Day", Status: domain.StatusApproved, Tags: []string{"education", "bakaano"}, TownID: "bakaano", SchoolIDs: []string{schoolBakaanoBasic}, PostedByOrgID: schoolBakaanoBasic, CreatedAt: d20260515, SubmittedAt: d20260515, PublishedAt: d20260515, Details: map[string]any{
 			"description": "Bakaano M/A Basic School warmly invites parents, old students, and well-wishers to its 68th Speech & Prize-Giving Day. Doors open 8:00 a.m.; pupils report 7:30 a.m. in full uniform.",
 			"startsAt":    "2026-11-22", "venue": "School park, Bakaano", "organiser": "Bakaano M/A Basic School",
+			"eventFormat": "ceremony", "audience": []string{"families", "students", "all-ages"}, "admission": "free", "startTime": "08:00", "endTime": "14:00",
+			"highlights":     []string{"Academic and service awards", "Pupil performances", "Headteacher's annual address", "Old students' homecoming"},
+			"featuredGuests": []string{"School cultural troupe", "Past students and community leaders"}, "ageGuidance": "All ages; pupils report in full uniform.",
+			"accessibility": "Level entry is available from the main school gate. Contact the school office before the event if reserved seating is needed.",
 		}},
 		{ID: "e-funmatch", Slug: "mfantsipim-adisadel-fun-games", CoverImageURL: seedImg("adisadel-campus.jpg"), Type: domain.TypeEvent, OwnerID: memberKojo, Title: "Mfantsipim–Adisadel Fun Games", Status: domain.StatusApproved, Tags: []string{"education", "sports", "rivalry"}, TownID: "oguaa", SchoolIDs: []string{"mfantsipim", "adisadel"}, CreatedAt: d20260410, SubmittedAt: d20260410, PublishedAt: d20260410, Details: map[string]any{
 			"description": "The friendly continuation of Ghana's oldest school rivalry, run since 1992 to turn competition into cooperation. Football, athletics, and brass bands.",
@@ -314,6 +328,11 @@ func seedListings() []domain.Listing {
 		{ID: "e-soundlive", Slug: "the-oguaa-sound-live", CoverImageURL: seedImg(imgFetuCrowd), Type: domain.TypeEvent, OwnerID: memberAkua, Title: "The Oguaa Sound — Live at the Castle Gardens", Status: domain.StatusApproved, Featured: true, Tags: []string{"music", "oguaa"}, TownID: "oguaa", CreatedAt: d20260501, SubmittedAt: d20260501, PublishedAt: d20260501, Details: map[string]any{
 			"description": "An evening of highlife, gospel and coastal fusion from the artists of the Oguaa Sound, in the gardens beside the Castle.",
 			"startsAt":    "2026-08-15", "venue": "Cape Coast Castle Gardens", "organiser": "Oguaa Music Curators",
+			"eventFormat": "concert", "audience": []string{"adults", "students"}, "admission": "paid", "startTime": "18:00", "endTime": "23:00",
+			"highlights":     []string{"Live highlife and coastal fusion", "Acoustic sunset opening set", "Collaborative finale by the Oguaa Sound artists"},
+			"featuredGuests": []string{"Artists from The Oguaa Sound", "Cape Coast brass ensemble"}, "ageGuidance": "16+; guests under 18 must attend with an adult.",
+			"accessibility": "The garden entrance is step-free. Contact the organiser ahead of time for reserved seating assistance.", "dressCode": "Smart casual with comfortable outdoor footwear.",
+			"contactInfo": "Oguaa Music Curators", "refundPolicy": "Tickets are refundable if the concert is cancelled; date changes will be announced on the event page.",
 			"tiers": []map[string]any{
 				{"name": "Standard", "pricePesewas": int64(2_000), "capacity": 300},
 			},

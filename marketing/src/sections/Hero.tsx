@@ -49,8 +49,8 @@ export function Hero() {
             </StaggerItem>
 
             <StaggerItem index={3}>
-              <div className="mt-9 flex flex-col gap-3">
-                <Cta href={PORTAL_APP_URL} variant="gold" external className="w-full justify-center">
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <Cta href={PORTAL_APP_URL} variant="gold" external className="w-full justify-center sm:flex-1">
                   Open the web app
                   <svg
                     width={16}
@@ -66,7 +66,7 @@ export function Hero() {
                     <path d="M5 12h14M13 6l6 6-6 6" />
                   </svg>
                 </Cta>
-                <Cta href="#get" variant="outline-dark" className="w-full justify-center">
+                <Cta href="#get" variant="outline-dark" className="w-full justify-center sm:flex-1">
                   Get the mobile app
                 </Cta>
               </div>

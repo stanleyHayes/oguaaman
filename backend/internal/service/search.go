@@ -64,6 +64,11 @@ func (s *Service) searchListings(ctx context.Context, terms []string) ([]SearchH
 	}
 	hits := []SearchHit{}
 	for _, l := range listings {
+		// A property marked "let" (taken) is hidden from the public browse, so it
+		// should not surface in search either. See SetPropertyAvailability.
+		if l.Type == domain.TypeProperty && asString(l.Details, "availability") == domain.PropertyAvailabilityLet {
+			continue
+		}
 		score := scoreTerms(terms,
 			l.Title,
 			strings.Join(l.Tags, " "),

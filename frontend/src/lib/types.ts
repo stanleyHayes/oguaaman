@@ -63,6 +63,9 @@ export interface TicketTier {
   capacity: number;
 }
 
+export type EventAdmission = "free" | "paid";
+export type EventFormat = "festival" | "concert" | "workshop" | "conference" | "community" | "sports" | "ceremony" | "exhibition" | "nightlife" | "fundraiser" | "other";
+
 /** A tier with live sales numbers, as served by the event view. */
 export interface TicketTierView extends TicketTier {
   sold: number;
@@ -461,6 +464,7 @@ export interface ListingDetails {
   socials?: SocialLink[];
   booking?: string;
   latestRelease?: { title: string; year?: number; url?: string };
+  releases?: ArtistRelease[];
   // person
   whyNotable?: string;
   era?: string;
@@ -471,10 +475,23 @@ export interface ListingDetails {
   // event
   description?: string;
   startsAt?: string;
+  endsAt?: string;
   venue?: string;
   organiser?: string;
-  anchorFestival?: boolean;
+  eventFormat?: EventFormat;
+  audience?: string[];
+  admission?: EventAdmission;
+  startTime?: string;
+  endTime?: string;
+  highlights?: string[];
+  featuredGuests?: string[];
+  ageGuidance?: string;
+  accessibility?: string;
+  dressCode?: string;
+  contactInfo?: string;
+  refundPolicy?: string;
   tiers?: TicketTier[];
+  anchorFestival?: boolean;
   // festival archive — events tagged with a festival slug + edition year
   festival?: string;
   edition?: string;
@@ -492,6 +509,7 @@ export interface ListingDetails {
   guardianConsentRequired?: boolean;
   // business
   category?: string;
+  categories?: string[];
   services?: { name: string; price?: string; note?: string }[];
   address?: string;
   openingHours?: string;
@@ -539,6 +557,42 @@ export interface ListingDetails {
   candles?: number;
   rememberedByCount?: number;
   keeperId?: string;
+}
+
+export interface ArtistTrack {
+  title: string;
+}
+
+export interface ArtistRelease {
+  id?: string;
+  title: string;
+  kind?: "album" | "ep" | "single" | "mixtape" | "live" | "compilation";
+  year?: number;
+  coverImageUrl?: string;
+  description?: string;
+  tracks?: ArtistTrack[];
+  url?: string;
+}
+
+export interface ArtistBooking {
+  id: string;
+  artistId: string;
+  artistSlug: string;
+  artistName: string;
+  requesterId: string;
+  requesterName: string;
+  requesterEmail?: string;
+  requesterPhone?: string;
+  eventType: string;
+  eventDate: string;
+  location: string;
+  audienceSize?: number;
+  budgetPesewas?: number;
+  message?: string;
+  status: "new" | "reviewing" | "accepted" | "declined";
+  artistNote?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Listing {

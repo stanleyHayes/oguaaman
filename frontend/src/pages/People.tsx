@@ -7,7 +7,11 @@ import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/
 import { SymbolDivider } from "@/components/adinkra";
 import { PersonCard } from "@/components/cards";
 import { Reveal, StaggerItem } from "@/components/motion";
+import { Pagination } from "@/components/pagination";
+import { useClientPagination } from "@/lib/use-pagination";
 import { SAMPLE_NOTICE } from "@/lib/content";
+
+const PER_PAGE = 12;
 
 export async function loader() {
   return api.people();
@@ -18,6 +22,8 @@ export function Component() {
   usePageTitle("People of Oguaa");
   const living = people.filter((p) => p.details.living);
   const remembered = people.filter((p) => !p.details.living);
+  const livingPage = useClientPagination(living, PER_PAGE);
+  const rememberedPage = useClientPagination(remembered, PER_PAGE);
   return (
     <>
       <PageHero tone="gold" kicker="The sons & daughters wall" title="People of Oguaa" symbol="dwennimmen" image="/uploads/seed/fetu-queenmother.jpg" lede="The icons, the personalities, the quietly remarkable — historical and living. A wall of pride for the people this town has given the world.">
@@ -34,7 +40,8 @@ export function Component() {
               accentClass="bg-gold-brand"
             />
           </Reveal>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{living.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}</div>
+          <div ref={livingPage.listRef} className="mt-8 grid gap-5 scroll-mt-24 sm:grid-cols-2 lg:grid-cols-3">{livingPage.pageItems.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}</div>
+          <Pagination page={livingPage.page} totalPages={livingPage.totalPages} onPageChange={livingPage.goToPage} />
         </Container>
       )}
 
@@ -52,7 +59,8 @@ export function Component() {
                 />
               </Reveal>
             </div>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{remembered.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}</div>
+            <div ref={rememberedPage.listRef} className="mt-8 grid gap-5 scroll-mt-24 sm:grid-cols-2 lg:grid-cols-3">{rememberedPage.pageItems.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}</div>
+            <Pagination page={rememberedPage.page} totalPages={rememberedPage.totalPages} onPageChange={rememberedPage.goToPage} />
           </Container>
         </section>
       )}

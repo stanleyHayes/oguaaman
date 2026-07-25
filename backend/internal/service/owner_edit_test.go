@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -53,6 +55,44 @@ func TestOwnerEditApprovedMinorStaysLive(t *testing.T) {
 	// Audit record written with minor kind.
 	if len(f.mods) != 1 || f.mods[0].Action != "owner-edit-minor" || f.mods[0].ModeratorID != "m-owner" {
 		t.Fatalf("expected one owner-edit-minor audit record, got %+v", f.mods)
+	}
+}
+
+func TestOwnerEditArtistAcceptsEveryPlatformAndCleansReleases(t *testing.T) {
+	f := &fakeRepo{listings: []domain.Listing{{
+		ID: "artist-1", Type: domain.TypeArtist, OwnerID: "m-owner", Title: "Esi Sunshine",
+		Status: domain.StatusPending, Details: map[string]any{"bio": "same bio"},
+	}}}
+	svc := newTestService(f)
+	links := make([]any, 0, 36)
+	for i := 0; i < 36; i++ {
+		links = append(links, map[string]any{"label": fmt.Sprintf("Platform %d", i+1), "url": fmt.Sprintf("https://music.example/%d", i+1)})
+	}
+	l, err := svc.UpdateOwnerListing(context.Background(), ownerActor(), "artist-1", OwnerEditInput{
+		Title: "Esi Sunshine",
+		Details: map[string]any{
+			"bio":            "same bio",
+			"streamingLinks": links,
+			"releases": []any{map[string]any{
+				"id": "release-1", "title": "Castle Lights", "kind": "album", "year": float64(2026),
+				"coverImageUrl": "javascript:alert(1)", "url": "https://music.example/castle-lights",
+				"tracks": []any{map[string]any{"title": "First Light"}, map[string]any{"title": "Sea Wall"}},
+			}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("edit artist: %v", err)
+	}
+	if got := l.Details["streamingLinks"].([]any); len(got) != 36 {
+		t.Fatalf("streaming links = %d, want all 36", len(got))
+	}
+	releases := l.Details["releases"].([]any)
+	release := releases[0].(map[string]any)
+	if _, ok := release["coverImageUrl"]; ok {
+		t.Fatal("unsafe release artwork URL was retained")
+	}
+	if tracks := release["tracks"].([]any); len(tracks) != 2 {
+		t.Fatalf("tracks = %d, want 2", len(tracks))
 	}
 }
 
@@ -199,6 +239,20 @@ func TestOwnerEditPendingStaysPending(t *testing.T) {
 	}
 	if l.Status != domain.StatusPending || l.SubmittedAt != "2026-05-01T00:00:00Z" {
 		t.Fatalf("pending edit must keep status/submittedAt, got %q / %q", l.Status, l.SubmittedAt)
+	}
+}
+
+func TestOwnerEditRejectsEventEndBeforeStart(t *testing.T) {
+	f := &fakeRepo{listings: []domain.Listing{{
+		ID: "l1", Type: domain.TypeEvent, OwnerID: "m-owner", Title: "Festival", Status: domain.StatusPending,
+	}}}
+	svc := newTestService(f)
+	_, err := svc.UpdateOwnerListing(context.Background(), ownerActor(), "l1", OwnerEditInput{
+		Title:   "Festival",
+		Details: map[string]any{"startsAt": "2026-09-05", "endsAt": "2026-09-03"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "end date") {
+		t.Fatalf("expected invalid event range error, got %v", err)
 	}
 }
 

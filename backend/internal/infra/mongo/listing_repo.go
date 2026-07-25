@@ -150,6 +150,14 @@ func (r *ListingRepo) SetLostFoundStatus(ctx context.Context, id, status string)
 	return err
 }
 
+// SetPropertyAvailability flips a property's letting state (available | reserved
+// | let) without touching its moderation status. A "let" property drops out of
+// the public browse + search; the owner can flip it back to available anytime.
+func (r *ListingRepo) SetPropertyAvailability(ctx context.Context, id, availability string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"details.availability": availability}})
+	return err
+}
+
 // SetSubscribedUntil records a business's Supporter paid-until date (Phase 7)
 // and its active plan slug (details.plan), which resolves storefront caps.
 func (r *ListingRepo) SetSubscribedUntil(ctx context.Context, id, plan, until string) error {

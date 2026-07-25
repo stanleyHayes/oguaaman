@@ -33,6 +33,7 @@ const TAKE_PART: FooterLink[] = [
   { to: "/mentorship", label: "Become a mentor", icon: "users" },
   { to: "/diaspora", label: "The diaspora register", icon: "globe" },
   { to: "/projects", label: "Adopt a project", icon: "heart" },
+  { to: "/campaigns", label: "Back a campaign", icon: "hand-heart" },
   { to: "/me", label: "Your profile", icon: "user" },
   { to: "/admin", label: "Curator dashboard", icon: "grid" },
 ];

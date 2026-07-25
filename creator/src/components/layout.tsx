@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
 import { canWriteNews } from "@/lib/creator";
 import { creatorHelpTopic } from "@/lib/help";
-import { Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone, Banknote, HeartHandshake, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing, Map, PanelLeftClose, PanelLeft, PenLine, Settings, BookOpen, CircleHelp, type LucideIcon } from "lucide-react";
+import { Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone, Banknote, HeartHandshake, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing, Map, PanelLeftClose, PanelLeft, PenLine, Settings, BookOpen, CircleHelp, CalendarCheck, type LucideIcon } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
@@ -21,6 +21,7 @@ interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
 function buildNavGroups(canWrite: boolean): NavGroup[] {
   const myWork: NavItem[] = [
     { to: "/work", label: "Listings", icon: List },
+    { to: "/bookings", label: "Artist bookings", icon: CalendarCheck },
     { to: "/institutions", label: "Institutions", icon: Landmark },
     { to: "/team", label: "Team", icon: Users },
   ];
@@ -127,7 +128,7 @@ function pageSkeletonVariant(pathname: string): PageSkeletonVariant {
   if (pathname.startsWith("/money")) return "money";
   if (pathname.startsWith("/account") || pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/help")) return "workspace";
-  if (pathname.startsWith("/work") || pathname.startsWith("/notifications")) return "list";
+  if (pathname.startsWith("/work") || pathname.startsWith("/bookings") || pathname.startsWith("/notifications")) return "list";
   if (pathname.startsWith("/team") || pathname.startsWith("/institutions") || pathname.startsWith("/grow")) return "workspace";
   return "overview";
 }

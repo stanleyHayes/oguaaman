@@ -37,9 +37,9 @@
   --color-ai-tint: #f6f5fd;
   --color-ai-line: #e2dff4;
 
-  --font-display: "Fraunces", Georgia, serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "Outfit", ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: 12px;
 

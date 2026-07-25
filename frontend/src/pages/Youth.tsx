@@ -8,7 +8,11 @@ import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/
 import { OpportunityCard, PersonCard } from "@/components/cards";
 import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
+import { Pagination } from "@/components/pagination";
+import { useClientPagination } from "@/lib/use-pagination";
 import { SAMPLE_NOTICE } from "@/lib/content";
+
+const PER_PAGE = 12;
 
 // The opportunity kinds we filter the board by (spec §8.8), derived from tags.
 const KINDS = ["scholarship", "internship", "apprenticeship", "training", "job", "investment", "mentorship"] as const;
@@ -64,6 +68,7 @@ export function Component() {
 }
 
 function Spotlight({ talents }: Readonly<{ talents: Listing[] }>) {
+  const talentsPage = useClientPagination(talents, PER_PAGE);
   if (talents.length === 0) return null;
   return (
     <Container size="wide" className="py-12">
@@ -75,8 +80,11 @@ function Spotlight({ talents }: Readonly<{ talents: Listing[] }>) {
           accentClass="bg-teal"
         />
       </Reveal>
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {talents.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}
+      <div ref={talentsPage.listRef} className="mt-8 scroll-mt-24">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {talentsPage.pageItems.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}
+        </div>
+        <Pagination page={talentsPage.page} totalPages={talentsPage.totalPages} onPageChange={talentsPage.goToPage} />
       </div>
     </Container>
   );
@@ -85,6 +93,7 @@ function Spotlight({ talents }: Readonly<{ talents: Listing[] }>) {
 function Board({ opps }: Readonly<{ opps: Listing[] }>) {
   const [filter, setFilter] = useState<KindFilter>("all");
   const shown = filter === "all" ? opps : opps.filter((o) => o.tags.includes(filter));
+  const oppsPage = useClientPagination(shown, PER_PAGE, filter);
   return (
     <section className="bg-cream py-12">
       <Container size="wide">
@@ -100,8 +109,11 @@ function Board({ opps }: Readonly<{ opps: Listing[] }>) {
         {shown.length === 0 ? (
           <EmptyState icon={<EmptyGlyph name="sparkle" />} title="Nothing open right now" description="Nothing in this category at the moment — check back soon." />
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((o, i) => <StaggerItem key={o.id} index={i} lift><OpportunityCard opp={o} /></StaggerItem>)}
+          <div ref={oppsPage.listRef} className="scroll-mt-24">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {oppsPage.pageItems.map((o, i) => <StaggerItem key={o.id} index={i} lift><OpportunityCard opp={o} /></StaggerItem>)}
+            </div>
+            <Pagination page={oppsPage.page} totalPages={oppsPage.totalPages} onPageChange={oppsPage.goToPage} />
           </div>
         )}
       </Container>

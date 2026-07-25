@@ -6,8 +6,12 @@ import { Container, CTA as Cta, Pill } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Thumb } from "@/components/cards";
 import { Reveal, StaggerItem } from "@/components/motion";
+import { Pagination } from "@/components/pagination";
+import { useClientPagination } from "@/lib/use-pagination";
 import { YENKAE_DESCRIPTION } from "@/lib/content";
 import { initials, lifeDates } from "@/lib/format";
+
+const PER_PAGE = 12;
 
 export async function loader() {
   return api.memorials();
@@ -25,6 +29,7 @@ export function Component() {
   const remaining = featured ? memorials.filter((memorial) => memorial.id !== featured.id) : [];
   const candles = memorials.reduce((total, memorial) => total + (memorial.details.candles ?? 0), 0);
   const remembering = memorials.reduce((total, memorial) => total + (memorial.details.rememberedByCount ?? 0), 0);
+  const { pageItems, page, totalPages, goToPage, listRef } = useClientPagination(remaining, PER_PAGE);
 
   return (
     <>
@@ -115,12 +120,15 @@ export function Component() {
             <div className="mt-10">
               <FeaturedMemorial memorial={featured} />
               {remaining.length > 0 && (
-                <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {remaining.map((memorial, index) => (
-                    <StaggerItem key={memorial.id} index={index} lift>
-                      <MemorialTile memorial={memorial} />
-                    </StaggerItem>
-                  ))}
+                <div ref={listRef} className="scroll-mt-24">
+                  <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {pageItems.map((memorial, index) => (
+                      <StaggerItem key={memorial.id} index={index} lift>
+                        <MemorialTile memorial={memorial} />
+                      </StaggerItem>
+                    ))}
+                  </div>
+                  <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
                 </div>
               )}
             </div>

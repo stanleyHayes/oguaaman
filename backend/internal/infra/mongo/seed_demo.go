@@ -129,15 +129,36 @@ func SeedDemo(ctx context.Context, db *mongo.Database) (int, error) {
 		CoverImageURL: seedImg("fetu-queenmother.jpg"), CreatedAt: created, SubmittedAt: created, PublishedAt: created,
 		Details: map[string]any{
 			"actName": "Adwoa B", "genres": []string{"Highlife", "Gospel"},
-			"bio":            "Cape Coast highlife and gospel singer. Sunday mornings at Emintsimadze, festival stages at Fetu Afahye. Recording my first EP with your support.",
-			"streamingLinks": []map[string]any{{"label": "Spotify", "url": "https://open.spotify.com/"}, {"label": "Audiomack", "url": "https://audiomack.com/"}},
-			"socials":        []map[string]any{{"label": "Instagram", "url": "https://instagram.com/"}},
+			"bio": "Cape Coast highlife and gospel singer. Sunday mornings at Emintsimadze, festival stages at Fetu Afahye. Recording my first EP with your support.",
+			"streamingLinks": []map[string]any{
+				{"label": "Spotify", "url": "https://open.spotify.com/"},
+				{"label": "Apple Music", "url": "https://music.apple.com/"},
+				{"label": "YouTube Music", "url": "https://music.youtube.com/"},
+				{"label": "Audiomack", "url": "https://audiomack.com/"},
+				{"label": "Boomplay", "url": "https://www.boomplay.com/"},
+				{"label": "TIDAL", "url": "https://tidal.com/"},
+			},
+			"socials": []map[string]any{{"label": "Instagram", "url": "https://instagram.com/"}},
+			"booking": "https://example.org/book/adwoa-b",
+			"releases": []map[string]any{
+				{"id": "adwoa-release-1", "title": "Sunday by the Sea", "kind": "ep", "year": 2026, "coverImageUrl": seedImg("fetu-queenmother.jpg"), "description": "Highlife warmth and gospel harmonies recorded for the coast.", "url": "https://open.spotify.com/", "tracks": []map[string]any{{"title": "Sunday by the Sea"}, {"title": "Emintsimadze"}, {"title": "Carry Me Home"}, {"title": "Medaase"}}},
+				{"id": "adwoa-release-2", "title": "Afahye Morning", "kind": "single", "year": 2025, "tracks": []map[string]any{{"title": "Afahye Morning"}}},
+			},
 			// Existing donation activity so the "tip jar" shows numbers.
 			"donationsNetPesewas": int64(48500), "donorCount": 17,
 		},
 	}
 	if err := up(collListings, artist.ID, artist); err != nil {
 		return n, err
+	}
+	for _, booking := range []domain.ArtistBooking{
+		{ID: "artist-booking-demo-1", ArtistID: demoArtistID, ArtistSlug: artist.Slug, ArtistName: artist.Title, ArtistOwnerID: demoCreatorID, RequesterID: memberAkua, RequesterName: "Akua Mensah", RequesterEmail: "akua@example.com", RequesterPhone: "+233 24 000 0000", EventType: "Wedding reception", EventDate: "2026-10-17", Location: "Elmina Beach Resort", AudienceSize: 280, BudgetPesewas: 450000, Message: "A warm 75-minute highlife set after dinner. Sound system is available at the venue.", Status: domain.ArtistBookingNew, CreatedAt: "2026-07-24T14:30:00Z", UpdatedAt: "2026-07-24T14:30:00Z"},
+		{ID: "artist-booking-demo-2", ArtistID: demoArtistID, ArtistSlug: artist.Slug, ArtistName: artist.Title, ArtistOwnerID: demoCreatorID, RequesterID: memberKojo, RequesterName: "Kojo Annan", RequesterEmail: "kojo@example.com", EventType: "Corporate event", EventDate: "2026-09-05", Location: "UCC New Examination Centre", AudienceSize: 500, BudgetPesewas: 700000, Message: "Opening-night performance for a regional alumni conference.", Status: domain.ArtistBookingReviewing, CreatedAt: "2026-07-22T09:10:00Z", UpdatedAt: "2026-07-23T08:00:00Z"},
+		{ID: "artist-booking-demo-3", ArtistID: demoArtistID, ArtistSlug: artist.Slug, ArtistName: artist.Title, ArtistOwnerID: demoCreatorID, RequesterID: memberNana, RequesterName: "Nana Essien", RequesterPhone: "+233 20 000 0000", EventType: "Church programme", EventDate: "2026-11-29", Location: "Christ Church, Cape Coast", AudienceSize: 350, Message: "Thanksgiving service with a 30-minute gospel-highlife feature.", Status: domain.ArtistBookingAccepted, ArtistNote: "Date held pending final programme.", CreatedAt: "2026-07-18T11:45:00Z", UpdatedAt: "2026-07-19T15:20:00Z"},
+	} {
+		if err := up(collArtistBookings, booking.ID, booking); err != nil {
+			return n, err
+		}
 	}
 
 	// 6 · Three approved fundraising campaigns she owns.

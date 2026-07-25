@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"net/url"
@@ -8,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/oguaa/backend/internal/domain"
 )
 
 var propertyEditableDetailsKeys = map[string]bool{
@@ -268,6 +271,31 @@ func propertyLinkFields(value reflect.Value) (map[string]string, bool) {
 	}
 	_, hasURL := fields["url"]
 	return fields, hasURL
+}
+
+// SetPropertyAvailability lets a property's owner (or a curator/steward) flip its
+// letting state — e.g. marking a rented place "let" so it leaves the public
+// browse and search, or back to "available" when it frees up again. It never
+// re-queues the listing for moderation, so the change takes effect immediately.
+func (s *Service) SetPropertyAvailability(ctx context.Context, listingID string, actor *domain.Member, availability string) error {
+	if actor == nil {
+		return &domain.ForbiddenError{Reason: "a signed-in member is required to update availability"}
+	}
+	availability = strings.ToLower(strings.TrimSpace(availability))
+	if !validPropertyAvailability[availability] {
+		return fmt.Errorf("property availability must be available, reserved or let")
+	}
+	l, err := s.listings.GetByID(ctx, listingID)
+	if err != nil {
+		return err
+	}
+	if l.Type != domain.TypeProperty {
+		return &domain.NotFoundError{Entity: "property"}
+	}
+	if actor.ID != l.OwnerID && actor.Role != domain.RoleCurator && actor.Role != domain.RoleSteward {
+		return &domain.ForbiddenError{Reason: "only the property's owner can update its availability"}
+	}
+	return s.listings.SetPropertyAvailability(ctx, l.ID, availability)
 }
 
 func appendUniqueTag(tags []string, tag string) []string {

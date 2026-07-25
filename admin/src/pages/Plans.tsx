@@ -178,6 +178,7 @@ export function Component() {
                 <th className="px-4 py-3">Plan</th>
                 <th className="px-4 py-3">Audience</th>
                 <th className="px-4 py-3">Price</th>
+                <th className="px-4 py-3">Fee / caps</th>
                 <th className="px-4 py-3">Perks</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Updated</th>
@@ -196,6 +197,11 @@ export function Component() {
                     <p className="text-ink">{p.interval === "free" ? "Free" : `${cedis(p.prices.default)}/mo`}</p>
                     {p.prices.business != null && <p className="text-xs text-ink-faint">business {cedis(p.prices.business)}/mo</p>}
                     {p.prices.creator != null && <p className="text-xs text-ink-faint">creator {cedis(p.prices.creator)}/mo</p>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-ink-muted">
+                    {(p.takeRatePercent ?? 0) > 0 && <span className="block font-semibold text-clay-text">{p.takeRatePercent}% platform fee</span>}
+                    {((p.maxProducts ?? 0) > 0 || (p.maxServices ?? 0) > 0) && <span className="block">{p.maxProducts ?? 0} products · {p.maxServices ?? 0} services</span>}
+                    {(p.takeRatePercent ?? 0) === 0 && (p.maxProducts ?? 0) === 0 && (p.maxServices ?? 0) === 0 && <span className="text-ink-faint">—</span>}
                   </td>
                   <td className="px-4 py-3 text-xs text-ink-muted">
                     {(p.perks ?? []).slice(0, 2).join(" · ")}{(p.perks ?? []).length > 2 ? ` +${(p.perks ?? []).length - 2}` : ""}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Image, StyleSheet, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from "react-native-reanimated";
 import Svg, { Circle, G, Path } from "react-native-svg";
@@ -215,7 +215,7 @@ export function HeroBand({ tone, kicker, title, lede }: Readonly<{ tone: string;
 
 /**
  * Media-first section hero — the portal PageHero photo variant mirrored: a
- * seed photo full-bleed under a green-900 scrim, gold kicker, cream Fraunces
+ * seed photo full-bleed under a green-900 scrim, gold kicker, cream Outfit
  * title. Without `image` it renders the flat tonal band. Pass `scrollY` to
  * keep the gentle parallax the browse/explore heroes already had.
  */
@@ -228,6 +228,8 @@ export function PhotoHero({
   lede,
   count,
   scrollY,
+  icon,
+  children,
 }: Readonly<{
   /** Seed photo path ("/uploads/seed/...") — resolved via mediaUrl. */
   image?: string;
@@ -239,11 +241,16 @@ export function PhotoHero({
   lede?: string;
   count?: string;
   scrollY?: SharedValue<number>;
+  /** Optional section glyph shown as banner chrome and a faint watermark. */
+  icon?: ReactNode;
+  /** Optional stats, badges, or actions placed below the banner copy. */
+  children?: ReactNode;
 }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const content = (
     <>
+      {icon ? <View style={s.heroIcon}>{icon}</View> : null}
       <Text style={s.heroKicker}>{kicker}</Text>
       {title ? (
         <Text style={s.heroTitle}>
@@ -253,6 +260,7 @@ export function PhotoHero({
       ) : null}
       {lede ? <Text style={s.heroLede}>{lede}</Text> : null}
       {count ? <Text style={s.heroCount}>{count}</Text> : null}
+      {children ? <View style={s.heroChildren}>{children}</View> : null}
     </>
   );
   return (
@@ -264,6 +272,7 @@ export function PhotoHero({
           <View style={[StyleSheet.absoluteFill, s.heroScrimLow]} />
         </>
       ) : null}
+      {icon ? <View style={s.heroWatermark}>{icon}</View> : null}
       {scrollY ? <HeroParallax scrollY={scrollY}>{content}</HeroParallax> : content}
     </View>
   );
@@ -429,10 +438,13 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   pillText: { fontSize: 12, ...S(600) },
   heroBand: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22, overflow: "hidden" },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...D(700), textTransform: "uppercase" },
+  heroIcon: { width: 48, height: 48, borderRadius: 15, borderWidth: 1, borderColor: C.goldBorder35, backgroundColor: C.goldTint14, alignItems: "center", justifyContent: "center", marginBottom: 14 },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 28, marginTop: 6 },
   heroFante: { color: C.gold, ...SI(), fontSize: 24 },
   heroLede: { color: C.onDarkText85, fontSize: 14, lineHeight: 20, marginTop: 6 },
   heroCount: { color: C.onDarkText60, fontSize: 12, marginTop: 10, textTransform: "uppercase", letterSpacing: 1 },
+  heroChildren: { marginTop: 16 },
+  heroWatermark: { position: "absolute", right: -26, bottom: -30, width: 48, height: 48, opacity: 0.08, transform: [{ scale: 5.5 }], pointerEvents: "none" },
   // These two scrims use bespoke alphas (0.62/0.25) with no semantic token, so
   // they derive from green900 directly — light values are unchanged.
   heroScrim: { backgroundColor: withAlpha(C.green900, 0.62) },

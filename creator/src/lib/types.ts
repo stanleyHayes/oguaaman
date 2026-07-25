@@ -3,13 +3,37 @@ export type ListingType = "business" | "artist" | "person" | "memory" | "event" 
 
 export interface SocialLink { label: string; url: string }
 
+export interface ArtistTrack { title: string }
+export interface ArtistRelease {
+  id?: string;
+  title: string;
+  kind?: "album" | "ep" | "single" | "mixtape" | "live" | "compilation";
+  year?: number;
+  coverImageUrl?: string;
+  description?: string;
+  tracks?: ArtistTrack[];
+  url?: string;
+}
+
+export interface ArtistBooking {
+  id: string; artistId: string; artistSlug: string; artistName: string;
+  requesterId: string; requesterName: string; requesterEmail?: string; requesterPhone?: string;
+  eventType: string; eventDate: string; location: string; audienceSize?: number; budgetPesewas?: number;
+  message?: string; status: "new" | "reviewing" | "accepted" | "declined"; artistNote?: string;
+  createdAt: string; updatedAt: string;
+}
+
 export interface ListingDetails {
   actName?: string; genres?: string[]; bio?: string; booking?: string;
   streamingLinks?: SocialLink[]; socials?: SocialLink[];
-  text?: string; description?: string; startsAt?: string; venue?: string; organiser?: string;
+  releases?: ArtistRelease[];
+  text?: string; description?: string; startsAt?: string; endsAt?: string; venue?: string; organiser?: string;
+  eventFormat?: string; audience?: string[]; admission?: "free" | "paid"; startTime?: string; endTime?: string;
+  highlights?: string[]; featuredGuests?: string[]; ageGuidance?: string; accessibility?: string; dressCode?: string;
+  contactInfo?: string; refundPolicy?: string; tiers?: { name: string; pricePesewas: number; capacity: number }[];
   kind?: string; eligibility?: string; provider?: string; deadline?: string; applyUrl?: string;
   safeguardingPolicyUrl?: string; minAge?: number; maxAge?: number; guardianConsentRequired?: boolean;
-  category?: string; address?: string; openingHours?: string;
+  category?: string; categories?: string[]; address?: string; openingHours?: string;
   services?: { name: string; price?: string; note?: string }[];
   offerType?: "long-term" | "short-stay";
   propertyType?: "room" | "apartment" | "house" | "guesthouse" | "hostel";

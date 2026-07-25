@@ -1,0 +1,16 @@
+export const STREAMING_PLATFORMS = [
+  { label: "Spotify", mark: "◉" }, { label: "Apple Music", mark: "♪" },
+  { label: "YouTube Music", mark: "▶" }, { label: "YouTube", mark: "▷" },
+  { label: "Amazon Music", mark: "a" }, { label: "Audiomack", mark: "▥" },
+  { label: "Boomplay", mark: "B" }, { label: "SoundCloud", mark: "☁" },
+  { label: "Bandcamp", mark: "▰" }, { label: "Deezer", mark: "▤" },
+  { label: "TIDAL", mark: "◆" }, { label: "Qobuz", mark: "Q" },
+  { label: "Pandora", mark: "P" }, { label: "Anghami", mark: "A" },
+  { label: "JioSaavn", mark: "J" }, { label: "JOOX", mark: "JX" },
+  { label: "Claro Música", mark: "C" }, { label: "iHeartRadio", mark: "♥" },
+  { label: "NetEase Cloud Music", mark: "N" }, { label: "QQ Music", mark: "QQ" },
+  { label: "Kugou Music", mark: "K" }, { label: "Kuwo Music", mark: "K" },
+  { label: "WeSing", mark: "W" }, { label: "Mixcloud", mark: "M" },
+  { label: "Beatport", mark: "b" }, { label: "Traxsource", mark: "T" },
+  { label: "ReverbNation", mark: "R" }, { label: "Shazam", mark: "S" },
+] as const;

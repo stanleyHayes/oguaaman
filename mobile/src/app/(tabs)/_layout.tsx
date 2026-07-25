@@ -184,8 +184,19 @@ export default function TabsLayout() {
           tabBarInactiveTintColor: C.onDarkText60,
           tabBarHideOnKeyboard: true,
           headerStyle: { backgroundColor: C.green900 },
+          headerBackground: () => (
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: C.green900,
+                borderBottomColor: C.goldBorder,
+                borderBottomWidth: 1,
+              }}
+            />
+          ),
           headerTintColor: ON_GREEN,
           headerTitleStyle: { ...S(600), color: ON_GREEN, fontSize: 17 },
+          headerShadowVisible: false,
           headerStatusBarHeight: bannerVisible ? 0 : undefined,
           headerLeft: () => <HeaderMenuButton />,
           // Shared action cluster on every tab: theme toggle, alerts bell

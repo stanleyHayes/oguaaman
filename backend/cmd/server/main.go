@@ -75,9 +75,10 @@ func main() {
 	ensureUploadDir(log, cfg)
 	payments, tickets, subs, promotions, revenue, stripeSvc, agentJobs := moneyServices(db, cfg, log)
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
+	artistBookings := service.NewArtistBookingService(mongox.NewListingRepo(db), mongox.NewArtistBookingRepo(db), mongox.NewNotificationRepo(db))
 
 	handler := httpx.NewHandler(httpx.HandlerDeps{
-		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Stripe: stripeSvc, Revenue: revenue, Creator: creator, AgentJobs: agentJobs,
+		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Stripe: stripeSvc, Revenue: revenue, Creator: creator, AgentJobs: agentJobs, ArtistBookings: artistBookings,
 		PaystackSecret: cfg.PaystackSecretKey, AuthRequired: cfg.AuthRequired, UploadDir: cfg.UploadDir, UploadBase: cfg.PublicBaseURL, Log: log,
 	})
 	router := newRouter(log, cfg, svc, handler)

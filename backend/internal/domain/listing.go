@@ -22,6 +22,12 @@ const (
 	LostFoundStatusOpen     = "open"
 	LostFoundStatusReunited = "reunited"
 	LostFoundStatusClosed   = "closed"
+
+	// Property letting states (details.availability), owner-controlled. "let"
+	// means taken — such listings drop out of the public browse + search.
+	PropertyAvailabilityAvailable = "available"
+	PropertyAvailabilityReserved  = "reserved"
+	PropertyAvailabilityLet       = "let"
 )
 
 // ID prefixes for generated records. Centralised to satisfy SonarQube S1192.
@@ -183,6 +189,10 @@ type ListingRepository interface {
 	// SetLostFoundStatus sets details.lfStatus (the lost & found resolution
 	// lifecycle: open → reunited | closed).
 	SetLostFoundStatus(ctx context.Context, listingID, status string) error
+	// SetPropertyAvailability sets details.availability (available | reserved |
+	// let) — the owner-controlled letting state. A "let" property drops out of
+	// the public browse + search without re-queuing for moderation.
+	SetPropertyAvailability(ctx context.Context, listingID, availability string) error
 	// SetSubscribedUntil sets details.subscribedUntil (RFC3339) — the paid-until
 	// date of a business's Supporter subscription (Phase 7) — and details.plan,
 	// the active plan slug used to resolve storefront product/service caps.

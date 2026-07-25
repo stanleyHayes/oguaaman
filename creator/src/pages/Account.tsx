@@ -5,6 +5,7 @@ import { PORTAL } from "@/lib/portal";
 import { Card, RoleBadge, VerifiedBadge } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { BusyLabel } from "@/components/skeleton";
+import { PlatformCombobox } from "@/components/platform-combobox";
 import { CREATOR_TYPES } from "@/lib/creator";
 import { formatDate, initials } from "@/lib/format";
 import { mediaUrl } from "@/lib/media";
@@ -90,7 +91,7 @@ export function Component() {
   function addLinkRow() {
     if (links.length >= 20) return;
     setLinksState("idle");
-    setLinks((cur) => [...cur, { label: "", url: "" }]);
+    setLinks((cur) => [...cur, { label: "Website", url: "" }]);
   }
   function removeLinkRow(i: number) {
     setLinksState("idle");
@@ -332,8 +333,7 @@ export function Component() {
                 <div className="space-y-2.5">
                   {links.map((l, i) => (
                     <div key={i} className="grid gap-2 rounded-2xl border border-sand bg-paper/40 p-2.5 sm:grid-cols-[9rem_minmax(0,1fr)_2.75rem] sm:items-center">
-                      <input value={l.label} onChange={(e) => setLinkRow(i, { label: e.target.value })} placeholder="Instagram"
-                        className={inputCls} aria-label={`Link ${i + 1} label`} />
+                      <PlatformCombobox kind="social" value={l.label} onChange={(label) => setLinkRow(i, { label })} label={`Link ${i + 1} platform`} />
                       <input value={l.url} onChange={(e) => setLinkRow(i, { url: e.target.value })} placeholder="https://…"
                         className={inputCls} aria-label={`Link ${i + 1} URL`} type="url" />
                       <button type="button" onClick={() => removeLinkRow(i)} aria-label={`Remove link ${i + 1}`}

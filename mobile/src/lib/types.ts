@@ -1,12 +1,35 @@
 export interface SocialLink { label: string; url: string }
 
+export interface ArtistTrack { title: string }
+export interface ArtistRelease {
+  id?: string;
+  title: string;
+  kind?: "album" | "ep" | "single" | "mixtape" | "live" | "compilation";
+  year?: number;
+  coverImageUrl?: string;
+  description?: string;
+  tracks?: ArtistTrack[];
+  url?: string;
+}
+
+export interface ArtistBooking {
+  id: string; artistId: string; artistSlug: string; artistName: string;
+  requesterId: string; requesterName: string; requesterEmail?: string; requesterPhone?: string;
+  eventType: string; eventDate: string; location: string; audienceSize?: number; budgetPesewas?: number;
+  message?: string; status: "new" | "reviewing" | "accepted" | "declined"; artistNote?: string;
+  createdAt: string; updatedAt: string;
+}
+
 export interface ListingDetails {
   actName?: string;
   genres?: string[];
   bio?: string;
   spotlight?: boolean;
   streamingLinks?: SocialLink[];
-  latestRelease?: { title: string; year?: number };
+  socials?: SocialLink[];
+  booking?: string;
+  latestRelease?: { title: string; year?: number; url?: string };
+  releases?: ArtistRelease[];
   honorific?: string;
   bornYear?: number;
   diedDate?: string;
@@ -27,8 +50,22 @@ export interface ListingDetails {
   // event
   description?: string;
   startsAt?: string;
+  endsAt?: string;
   venue?: string;
   organiser?: string;
+  eventFormat?: string;
+  audience?: string[];
+  admission?: "free" | "paid";
+  startTime?: string;
+  endTime?: string;
+  highlights?: string[];
+  featuredGuests?: string[];
+  ageGuidance?: string;
+  accessibility?: string;
+  dressCode?: string;
+  contactInfo?: string;
+  refundPolicy?: string;
+  tiers?: { name: string; pricePesewas: number; capacity: number }[];
   anchorFestival?: boolean;
   edition?: string;
   festival?: string;
@@ -47,6 +84,7 @@ export interface ListingDetails {
   guardianConsentRequired?: boolean;
   // business
   category?: string;
+  categories?: string[];
   services?: { name: string; price?: string; note?: string }[];
   address?: string;
   openingHours?: string;

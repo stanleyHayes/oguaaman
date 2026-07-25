@@ -46,9 +46,8 @@ export function Component() {
   useEffect(() => {
     if (!slug) return; // no ticketed events — the empty state renders instead
     let alive = true;
-    setLedgerError(null);
     api.eventTickets(slug)
-      .then((t) => { if (alive) setLedger({ slug, tickets: t }); })
+      .then((t) => { if (alive) { setLedger({ slug, tickets: t }); setLedgerError(null); } })
       .catch((error: unknown) => {
         if (!alive) return;
         setLedger({ slug, tickets: [] });

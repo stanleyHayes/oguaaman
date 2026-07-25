@@ -3,9 +3,9 @@ import { Text as RNText, TextInput as RNTextInput, type Text as RNTextType, type
 import { SANS } from "@/theme";
 
 /**
- * Brand default type. The spec is "Fraunces for display titles, Outfit for
- * everything else" — these wrappers make Outfit the family of every text node
- * by default. Their base style sits FIRST in the style array, so an explicit
+ * Brand default type. Outfit is the only bundled family, so these wrappers
+ * make it the family of every text node by default. Their base style sits
+ * FIRST in the style array, so an explicit
  * fontFamily later (the S()/D()/SI()/DI() helpers from @/theme) always wins.
  *
  * Use `T` everywhere you'd use react-native's Text, and `TI` for TextInput.

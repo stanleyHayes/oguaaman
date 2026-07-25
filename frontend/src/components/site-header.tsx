@@ -94,7 +94,22 @@ const OUTSIDE_ENTRY: NavSection = {
 };
 
 const DISCOVER = [...["heritage", "culture", "people", "visit"].map((id) => byId[id]).filter(Boolean), MAP_ENTRY];
-const CITY = [...["education", "business", "property", "youth", "community", "diaspora"].map((id) => byId[id]).filter(Boolean), OUTSIDE_ENTRY];
+
+// Adopt-a-project — curated civic fundraising. Not in SECTIONS, so a literal.
+const PROJECTS_ENTRY: NavSection = {
+  id: "projects",
+  href: "/projects",
+  label: "Adopt a project",
+  tagline: "Fund concrete, costed improvements for Cape Coast.",
+  tone: "green",
+  depth: "live",
+};
+// The everyday town — living, learning, working and gathering in Cape Coast.
+const CITY = ["education", "business", "property", "youth", "community"].map((id) => byId[id]).filter(Boolean);
+
+// "Support" — ways to back Cape Coast from anywhere: the diaspora bridge home,
+// creator fundraisers, costed civic projects, and the vetted errand marketplace.
+const SUPPORT = [byId.diaspora, byId.campaigns, PROJECTS_ENTRY, OUTSIDE_ENTRY].filter(Boolean);
 
 // Time-sensitive postings get their own group; the section entries below are
 // not in SECTIONS, so they carry a minimal NavSection-shaped literal.
@@ -347,6 +362,7 @@ export function SiteHeader() {
   const discoverActive = groupActive(DISCOVER);
   const betterActive = isActive("/better");
   const cityActive = groupActive(CITY);
+  const supportActive = groupActive(SUPPORT);
   const noticesActive = groupActive(NOTICES);
   const musicActive = isActive("/music");
   const festivalsActive = isActive("/festivals");
@@ -491,12 +507,13 @@ export function SiteHeader() {
         </Link>
 
         <nav aria-label="Primary navigation" className="hidden items-center gap-0.5 xl:flex">
+          <NavDropdown label="Discover" active={discoverActive} items={DISCOVER} lang={lang} />
+          <NavDropdown label="City" active={cityActive} items={CITY} lang={lang} />
           <Link to="/better" aria-label="Build a better Oguaa" aria-current={betterActive ? "page" : undefined} className={betterNavPill(betterActive)}>
             <SectionIcon id="better" className="h-3.5 w-3.5" />
             <span>Better Oguaa</span>
           </Link>
-          <NavDropdown label="Discover" active={discoverActive} items={DISCOVER} lang={lang} />
-          <NavDropdown label="City" active={cityActive} items={CITY} lang={lang} />
+          <NavDropdown label="Support" active={supportActive} items={SUPPORT} lang={lang} />
           <NavDropdown label="Notices" active={noticesActive} items={NOTICES} lang={lang} />
         </nav>
 
@@ -606,6 +623,7 @@ export function SiteHeader() {
                 />
                 <DrawerGroup heading="Discover" items={DISCOVER} lang={lang} onPick={closeDrawerAndReturnFocus} />
                 <DrawerGroup heading="City" items={CITY} lang={lang} onPick={closeDrawerAndReturnFocus} />
+                <DrawerGroup heading="Support" items={SUPPORT} lang={lang} onPick={closeDrawerAndReturnFocus} />
                 <DrawerGroup heading="Notices" items={NOTICES} lang={lang} onPick={closeDrawerAndReturnFocus} />
 
                 <motion.div variants={drawerItemVariants} className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-cream/10 bg-cream/[0.04] p-3">

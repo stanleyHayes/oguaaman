@@ -11,6 +11,7 @@ import { LocationMap } from "@/components/location-map";
 import { Storefront } from "@/components/storefront";
 import { ReportButton } from "@/components/report-button";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
+import { Breadcrumbs, HeroIcon, HeroWatermark } from "@/components/hero-chrome";
 import { cldCover } from "@/lib/cloudinary";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { formatDate } from "@/lib/format";
@@ -37,6 +38,8 @@ export function Component() {
   const [params, setParams] = useSearchParams();
   const d = b.details;
   const isOwner = member?.id === b.ownerId;
+  const productCount = (b.products ?? []).filter((item) => item.available).length;
+  const storefrontServiceCount = (b.services ?? []).filter((item) => item.available).length;
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,88 +102,67 @@ export function Component() {
   return (
     <article>
       <section className="on-dark on-dark-pin relative isolate overflow-hidden bg-green-900 text-cream">
-        {b.coverImageUrl && (
-          <img
-            src={cldCover(b.coverImageUrl, 1800)}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-55"
-            onError={(event) => { event.currentTarget.style.display = "none"; }}
-          />
-        )}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,27,18,0.98)_0%,rgba(5,27,18,0.88)_46%,rgba(5,27,18,0.3)_100%),linear-gradient(0deg,rgba(5,27,18,0.82),transparent_60%)]" aria-hidden />
-        <div className="bg-dotgrid absolute inset-y-0 left-0 w-1/2 opacity-25" aria-hidden />
-        <Container size="wide" className="relative py-10 sm:py-14 lg:py-20">
-          <Reveal>
-            <nav aria-label="Breadcrumb">
-              <ol className="flex flex-wrap items-center gap-2 text-sm text-cream/65">
-                <li><Link to="/" className="transition-colors hover:text-gold">Home</Link></li>
-                <li aria-hidden>/</li>
-                <li><Link to="/business" className="transition-colors hover:text-gold">Business directory</Link></li>
-                <li aria-hidden>/</li>
-                <li className="max-w-48 truncate text-cream/90" aria-current="page">{b.title}</li>
-              </ol>
-            </nav>
-          </Reveal>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(199,162,74,0.18),transparent_32%),linear-gradient(135deg,#0C2C1F_0%,#123F2D_60%,#071A12_100%)]" aria-hidden />
+        <div className="bg-dotgrid absolute inset-0 opacity-25" aria-hidden />
+        <HeroWatermark sectionId="business" onDark />
+        <Container size="wide" className="relative py-10 sm:py-14 lg:py-16">
+          <Reveal><Breadcrumbs crumbs={[{ label: "Home", to: "/" }, { label: "Business directory", to: "/business" }, { label: b.title }]} onDark /></Reveal>
 
-          <div className="mt-14 max-w-4xl lg:mt-20">
-            <div>
-              <Reveal delay={0.05} className="flex flex-wrap items-center gap-2">
-                {d.category && (
-                  <span className="rounded-full border border-cream/20 bg-cream/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cream backdrop-blur-sm">{d.category}</span>
-                )}
+          <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
+            <div className="min-w-0">
+              <Reveal delay={0.04}><HeroIcon sectionId="business" onDark /></Reveal>
+              <Reveal delay={0.08} className="mt-5 flex flex-wrap items-center gap-2">
+                {d.category && <span className="rounded-full border border-cream/20 bg-cream/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cream backdrop-blur-sm">{d.category}</span>}
                 {b.supporter && <span className="rounded-full bg-gold-brand px-3 py-1 text-xs font-bold text-green-900">★ Oguaa Supporter</span>}
                 {b.featured && <span className="rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">Featured locally</span>}
-                {isOwner && (
-                  <Link to={`/business/${b.slug}/manage`} className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs font-semibold text-cream backdrop-blur-sm transition-colors hover:border-gold hover:text-gold">
-                    {b.supporter ? "Edit storefront" : "★ Build your storefront"}
-                  </Link>
-                )}
               </Reveal>
-              <Reveal as="h1" delay={0.1} className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] text-cream sm:text-7xl lg:text-[5.5rem]">
-                {b.title}
-              </Reveal>
-              {d.description && <Reveal delay={0.16} className="mt-7 max-w-2xl text-lg leading-relaxed text-cream/82 sm:text-xl">{d.description}</Reveal>}
+              <Reveal as="h1" delay={0.12} className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] text-cream sm:text-6xl lg:text-7xl">{b.title}</Reveal>
+              {d.description && <Reveal delay={0.16} className="mt-6 max-w-2xl text-lg leading-relaxed text-cream/82">{d.description}</Reveal>}
               <Reveal delay={0.2} className="mt-8 flex flex-wrap items-center gap-3 text-sm">
-                {d.contact?.[0] && (
-                  <a href={d.contact[0].url} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-3 rounded-full bg-gold-brand px-5 py-3 font-semibold text-green-900 transition-colors hover:bg-gold">
-                    {d.contact[0].label} <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>↗</span>
-                  </a>
-                )}
-                {d.address && (
-                  <a href="#location" className="inline-flex items-center gap-2 rounded-full border border-cream/25 bg-green-900/35 px-4 py-3 text-cream backdrop-blur-sm transition-colors hover:border-gold hover:text-gold">
-                    <span aria-hidden>⌖</span> {d.address}
-                  </a>
-                )}
-                {d.openingHours && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-cream/25 bg-green-900/35 px-4 py-3 text-cream/85 backdrop-blur-sm">
-                    <span aria-hidden>◷</span> {d.openingHours}
-                  </span>
-                )}
+                {d.contact?.[0] && <a href={d.contact[0].url} target="_blank" rel="noopener noreferrer" className="group inline-flex min-h-11 items-center gap-3 rounded-full bg-gold-brand px-5 font-semibold text-green-900 transition-colors hover:bg-gold">Start an enquiry <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>↗</span></a>}
+                {d.address && <a href="#location" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-cream/25 bg-cream/[0.07] px-4 text-cream transition-colors hover:border-gold hover:text-gold"><span aria-hidden>⌖</span> Plan a visit</a>}
+                {isOwner && <Link to={`/business/${b.slug}/manage`} className="inline-flex min-h-11 items-center rounded-full border border-cream/25 px-4 font-semibold text-cream transition-colors hover:border-gold hover:text-gold">{b.supporter ? "Edit storefront" : "Build your storefront"}</Link>}
               </Reveal>
             </div>
+
+            <Reveal delay={0.12} className="relative mx-auto w-full max-w-md lg:mx-0">
+              <div className="absolute -inset-3 rotate-2 rounded-[1.75rem] border border-gold/30 bg-gold/[0.08]" aria-hidden />
+              <figure className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-cream/20 bg-green-900 shadow-2xl">
+                {b.coverImageUrl ? <img src={cldCover(b.coverImageUrl, 900)} alt={b.title} className="h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} /> : <div className="flex h-full items-center justify-center text-8xl text-gold/30" aria-hidden>◇</div>}
+                <div className="absolute inset-0 bg-gradient-to-t from-green-900/85 via-transparent to-transparent" aria-hidden />
+                <figcaption className="absolute inset-x-0 bottom-0 p-6">
+                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-gold">Cape Coast storefront</p>
+                  <p className="mt-2 text-xl font-semibold text-cream">{d.category ?? "Local business"}</p>
+                  {initialReviews.ratingCount > 0 && <p className="mt-2 flex items-center gap-2 text-sm text-cream/75"><Stars value={initialReviews.ratingAvg} size="text-sm" /> {initialReviews.ratingAvg.toFixed(1)} from {initialReviews.ratingCount} reviews</p>}
+                </figcaption>
+              </figure>
+            </Reveal>
           </div>
-          <Reveal delay={0.26} className="mt-14 flex items-center gap-3 border-t border-cream/15 pt-5 text-xs font-semibold uppercase tracking-[0.16em] text-cream/65 lg:mt-20">
-            <span className="h-2 w-2 rounded-full bg-gold" aria-hidden /> Made in Cape Coast · Community listed
+
+          <Reveal delay={0.24} className="mt-10 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-cream/15 bg-cream/15 sm:grid-cols-3">
+            <HeroFact label="Storefront" value={`${productCount} products · ${storefrontServiceCount} services`} />
+            <HeroFact label="Location" value={d.address ?? "Cape Coast"} />
+            <HeroFact label="Hours" value={d.openingHours ?? "Contact for current hours"} />
           </Reveal>
         </Container>
       </section>
 
-      {(d.contact?.length ?? 0) > 0 && (
-        <div className="border-b border-sand bg-cream shadow-[0_8px_24px_rgba(18,63,45,0.05)]">
-          <Container size="wide" className="flex flex-wrap items-center gap-2 py-4">
-            <span className="mr-auto text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Ready when you are</span>
-            {d.contact?.map((contact) => (
-              <a key={contact.label} href={contact.url} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2 rounded-full border border-teal/25 bg-paper px-4 py-2 text-sm font-semibold text-teal-text transition-colors hover:border-teal hover:bg-teal/[0.06]">
-                {contact.label} <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>↗</span>
-              </a>
-            ))}
-          </Container>
-        </div>
-      )}
+      <div className="sticky top-0 z-20 border-b border-sand bg-paper/95 shadow-[0_8px_24px_rgba(18,63,45,0.05)] backdrop-blur-md">
+        <Container size="wide" className="flex items-center gap-5 overflow-x-auto py-3 text-sm [scrollbar-width:none]">
+          <a href="#storefront" className="shrink-0 font-semibold text-green-text hover:text-gold-text">Storefront</a>
+          {productCount > 0 && <a href="#products" className="shrink-0 text-ink-muted hover:text-green-text">Products <span className="ml-1 rounded-full bg-gold/[0.12] px-2 py-0.5 text-xs text-gold-text">{productCount}</span></a>}
+          {storefrontServiceCount > 0 && <a href="#storefront-services" className="shrink-0 text-ink-muted hover:text-green-text">Services <span className="ml-1 rounded-full bg-teal/[0.1] px-2 py-0.5 text-xs text-teal-text">{storefrontServiceCount}</span></a>}
+          {d.address && <a href="#location" className="shrink-0 text-ink-muted hover:text-green-text">Visit</a>}
+          <a href="#reviews" className="shrink-0 text-ink-muted hover:text-green-text">Reviews</a>
+          <div className="ml-auto flex shrink-0 gap-2">
+            {d.contact?.map((contact) => <a key={contact.label} href={contact.url} target="_blank" rel="noopener noreferrer" className="rounded-full border border-teal/30 px-3 py-1.5 font-semibold text-teal-text transition-colors hover:bg-teal hover:text-cream">{contact.label} ↗</a>)}
+          </div>
+        </Container>
+      </div>
 
       <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[minmax(0,1.5fr)_22rem] lg:gap-14 lg:py-16">
-        <div className="min-w-0 space-y-12">
-          <Reveal as="section">
+        <div className="min-w-0 space-y-16">
+          {storefrontServiceCount === 0 && <Reveal as="section">
             <p className="eyebrow text-teal-text">What they offer</p>
             <h2 className="mt-3 text-3xl font-semibold text-ink sm:text-4xl">Services &amp; prices</h2>
             <div className="mt-4 h-1 w-16 rounded-full bg-teal" aria-hidden />
@@ -203,7 +185,7 @@ export function Component() {
             ) : (
               <div className="mt-7 rounded-[var(--radius-card)] border border-dashed border-sand bg-cream p-6 text-ink-muted">Contact the business for its current services and prices.</div>
             )}
-          </Reveal>
+          </Reveal>}
 
           <Storefront business={b} />
 
@@ -298,6 +280,15 @@ export function Component() {
   );
 }
 
+function HeroFact({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="bg-green-900/70 px-5 py-4 backdrop-blur-sm">
+      <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-gold">{label}</p>
+      <p className="mt-1 line-clamp-2 text-sm text-cream/82">{value}</p>
+    </div>
+  );
+}
+
 // Stars renders a 0–5 star rating (rounded to the nearest half is overkill here;
 // we fill whole stars up to the rounded value).
 function Stars({ value, size = "text-base" }: Readonly<{ value: number; size?: string }>) {
@@ -335,7 +326,8 @@ function BusinessReviews({ slug, initial, canReview }: Readonly<{ slug: string; 
   }
 
   return (
-    <Reveal as="section" className="scroll-mt-24">
+    <section id="reviews" className="scroll-mt-28">
+      <Reveal>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow text-gold-text">What people say</p>
@@ -382,6 +374,7 @@ function BusinessReviews({ slug, initial, canReview }: Readonly<{ slug: string; 
           ))}
         </div>
       )}
-    </Reveal>
+      </Reveal>
+    </section>
   );
 }

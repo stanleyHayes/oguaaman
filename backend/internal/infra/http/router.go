@@ -49,6 +49,9 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/artists/{slug}", h.Artist)
 	// Artist donations ("tip jar", Creator Monetization) via Paystack.
 	mux.HandleFunc("POST /api/artists/{slug}/donate", h.Donate)
+	mux.HandleFunc("POST /api/artists/{slug}/bookings", h.RequestArtistBooking)
+	mux.HandleFunc("GET /api/me/artist-bookings", h.MyArtistBookings)
+	mux.HandleFunc("POST /api/me/artist-bookings/{id}/status", h.UpdateArtistBookingStatus)
 	mux.HandleFunc("GET /api/donations/confirm", h.ConfirmDonation)
 	mux.HandleFunc("GET /api/genres", h.Genres)
 	mux.HandleFunc("GET /api/music/legacy", h.MusicLegacy)
@@ -159,6 +162,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/storefront/{handle}", h.Storefront)
 	mux.HandleFunc("GET /api/properties", h.Properties)
 	mux.HandleFunc("GET /api/properties/{slug}", h.Property)
+	mux.HandleFunc("POST /api/properties/{slug}/availability", h.SetPropertyAvailability)
 	// Business subscriptions (Phase 7): the Supporter plan via Paystack.
 	mux.HandleFunc("POST /api/businesses/{slug}/subscribe", h.Subscribe)
 	// Creator (member-level) subscription — unlocks donations & campaigns.

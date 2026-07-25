@@ -6,7 +6,7 @@ import { Skeleton, SkeletonText } from "@/components/skeleton";
 import { Container, Pill } from "@/components/ui";
 import { api } from "@/lib/api";
 import { cldCover } from "@/lib/cloudinary";
-import { dayMonth, formatDate } from "@/lib/format";
+import { dayMonth, formatDateRange } from "@/lib/format";
 import { completePayment } from "@/lib/paystack";
 import type { EventView, Ticket } from "@/lib/types";
 import { useAuth } from "@/lib/auth";
@@ -101,7 +101,7 @@ function EventHero({ event }: Readonly<{ event: EventView["event"] }>) {
         </div>
 
         <dl className="mt-10 grid overflow-hidden rounded-[var(--radius-card)] border border-cream/15 bg-green-900/60 backdrop-blur-md sm:grid-cols-3">
-          <HeroFact label="When" value={details.startsAt ? formatDate(details.startsAt) : "Date to be announced"} note={time ?? undefined} />
+          <HeroFact label="When" value={details.startsAt ? formatDateRange(details.startsAt, details.endsAt) : "Date to be announced"} note={time ?? undefined} />
           <HeroFact label="Where" value={details.venue ?? "Venue to be announced"} />
           <HeroFact label="Hosted by" value={details.organiser ?? "Community organiser"} />
         </dl>
@@ -267,6 +267,8 @@ export function Component() {
 function EventInfo({ event }: Readonly<{ event: EventView["event"] }>) {
   const details = event.details;
   const tags = event.tags ?? [];
+  const pretty = (value: string) => value.split("-").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ");
+  const audiences = Array.isArray(details.audience) ? details.audience : [];
 
   return (
     <div className="min-w-0 space-y-8">
@@ -279,12 +281,28 @@ function EventInfo({ event }: Readonly<{ event: EventView["event"] }>) {
           <p className="mt-5 text-sm text-ink-muted">More information will be added by the organiser.</p>
         )}
 
+        <div className="mt-6 grid gap-3 border-t border-sand pt-5 sm:grid-cols-2 lg:grid-cols-3">
+          {details.eventFormat && <InfoTile mark="✦" label="Format" value={pretty(details.eventFormat)} />}
+          <InfoTile mark={details.admission === "paid" || (details.tiers?.length ?? 0) > 0 ? "₵" : "0"} label="Admission" value={details.admission === "paid" || (details.tiers?.length ?? 0) > 0 ? "Paid tickets" : "Free entry"} />
+          {audiences.length > 0 && <InfoTile mark="◎" label="Audience" value={audiences.map(pretty).join(" · ")} />}
+          {details.organiser && <InfoTile mark="◇" label="Organiser" value={details.organiser} />}
+          {details.ageGuidance && <InfoTile mark="18" label="Age guidance" value={details.ageGuidance} />}
+          {details.dressCode && <InfoTile mark="✦" label="Dress code" value={details.dressCode} />}
+        </div>
+
         {tags.length > 0 && (
           <div className="mt-6 flex flex-wrap gap-2 border-t border-sand pt-5">
             {tags.map((tag) => <Pill key={tag} tone="green">#{tag}</Pill>)}
           </div>
         )}
       </section>
+
+      {((details.highlights?.length ?? 0) > 0 || (details.featuredGuests?.length ?? 0) > 0) && <section className="grid gap-5 sm:grid-cols-2">
+        {(details.highlights?.length ?? 0) > 0 && <EventList title="What to look forward to" kicker="Highlights" mark="✦" items={details.highlights ?? []} />}
+        {(details.featuredGuests?.length ?? 0) > 0 && <EventList title="Featured guests & performers" kicker="Line-up" mark="♫" items={details.featuredGuests ?? []} />}
+      </section>}
+
+      {(details.accessibility || details.contactInfo || details.refundPolicy) && <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-6 shadow-[var(--shadow-card)] sm:p-8"><p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-gold-text">Practical information</p><h2 className="mt-2 text-2xl font-semibold text-ink">Plan your visit</h2><div className="mt-5 divide-y divide-sand">{details.accessibility && <DetailRow label="Accessibility & arrival" value={details.accessibility} />}{details.contactInfo && <DetailRow label="Questions" value={details.contactInfo} />}{details.refundPolicy && <DetailRow label="Refund / cancellation" value={details.refundPolicy} />}</div></section>}
 
       {details.programme && details.programme.length > 0 && (
         <section aria-labelledby="programme-heading" className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]">
@@ -328,6 +346,10 @@ function EventInfo({ event }: Readonly<{ event: EventView["event"] }>) {
     </div>
   );
 }
+
+function InfoTile({ mark, label, value }: Readonly<{ mark: string; label: string; value: string }>) { return <div className="relative min-h-24 overflow-hidden rounded-xl border border-sand bg-paper p-4"><span aria-hidden className="pointer-events-none absolute -bottom-5 right-1 text-6xl font-bold text-green opacity-[0.055]">{mark}</span><p className="relative text-[0.62rem] font-bold uppercase tracking-[0.16em] text-ink-faint">{label}</p><p className="relative mt-2 text-sm font-semibold leading-relaxed text-ink">{value}</p></div>; }
+function EventList({ title, kicker, mark, items }: Readonly<{ title: string; kicker: string; mark: string; items: string[] }>) { return <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-6 shadow-[var(--shadow-card)]"><span aria-hidden className="pointer-events-none absolute -bottom-10 -right-4 text-[10rem] font-bold text-green opacity-[0.04]">{mark}</span><p className="relative text-[0.68rem] font-bold uppercase tracking-[0.2em] text-gold-text">{kicker}</p><h2 className="relative mt-2 text-2xl font-semibold text-ink">{title}</h2><ul className="relative mt-5 space-y-3">{items.map((item) => <li key={item} className="flex gap-3 text-sm leading-relaxed text-ink-muted"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal" />{item}</li>)}</ul></div>; }
+function DetailRow({ label, value }: Readonly<{ label: string; value: string }>) { return <div className="grid gap-1 py-4 first:pt-0 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-5"><p className="text-sm font-semibold text-ink">{label}</p><p className="whitespace-pre-line text-sm leading-relaxed text-ink-muted">{value}</p></div>; }
 
 interface TicketPanelProps {
   readonly confirming: boolean;

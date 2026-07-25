@@ -11,10 +11,11 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme-context";
 import type { Listing } from "@/lib/types";
 import { D, S, ON_GREEN, initials, withAlpha, type Palette } from "@/theme";
-import { Loading, ErrorView, Thumb } from "@/ui";
+import { Loading, ErrorView, PhotoHero, Pill, Thumb } from "@/ui";
 import { ReportButton } from "@/report-button";
 import { Progress, cedis } from "./index";
 import { RevealView } from "@/components/anim";
+import { UsersIcon } from "@/components/icons";
 
 const QUICK = [20, 50, 100, 500]; // GHS
 
@@ -31,29 +32,57 @@ function Detail({ project, slug, reload }: Readonly<{ project: Listing; slug: st
   const d = project.details;
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
+  const isCampaign = Boolean(d.campaign);
 
   return (
     <>
       <Stack.Screen options={{ title: project.title }} />
       <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-        <RevealView>
-          <Thumb seed={project.slug} src={project.coverImageUrl} label={initials(project.title)} style={s.cover} labelStyle={s.coverInit} />
-        </RevealView>
-        <RevealView delay={100} style={s.body}>
-          <Text style={s.kicker}>ADOPT A PROJECT</Text>
-          <Text style={s.title}>{project.title}</Text>
-          {d.organiser ? <Text style={s.organiser}>{d.organiser}</Text> : null}
+        <PhotoHero
+          image={project.coverImageUrl}
+          tone={C.green900}
+          kicker={isCampaign ? "Creator campaign" : "Adopt a project"}
+          title={project.title}
+          lede={d.organiser ? `Led by ${d.organiser}` : "A public Oguaa funding record"}
+          icon={<UsersIcon size={24} color={C.gold} strokeWidth={1.8} />}
+        >
+          <View style={s.heroBadge}><Text style={s.heroBadgeText}>{isCampaign ? "PUBLIC CREATOR RECORD" : "COMMUNITY FOCUS"}</Text></View>
+        </PhotoHero>
 
-          <View style={{ marginTop: 16 }}>
-            <Progress raised={d.raisedPesewas} goal={d.goalPesewas} />
-            <Text style={s.meta}>{d.backers ?? 0} backers{d.deadline ? ` · closes ${d.deadline}` : ""}</Text>
+        <RevealView delay={100} style={s.body}>
+          <View style={s.snapshot}>
+            <Thumb seed={project.slug} src={project.coverImageUrl} label={initials(project.title)} style={s.snapshotCover} labelStyle={s.coverInit} />
+            <View style={s.snapshotBody}>
+              <Text style={s.kicker}>CAMPAIGN PROGRESS</Text>
+              <View style={s.progressWrap}><Progress raised={d.raisedPesewas} goal={d.goalPesewas} /></View>
+            </View>
           </View>
 
-          <Text style={s.desc}>{d.description}</Text>
+          <View style={s.facts}>
+            <Fact label="Backers" value={String(d.backers ?? 0)} styles={s} />
+            <Fact label="Target" value={d.goalPesewas ? cedis(d.goalPesewas) : "Being finalised"} styles={s} />
+            <Fact label="Funding closes" value={d.deadline ? String(d.deadline).slice(0, 10) : "Open-ended"} styles={s} />
+          </View>
+
+          <View style={s.story}>
+            <Text style={s.kicker}>THE WORK</Text>
+            <Text style={s.sectionTitle}>What this project will change.</Text>
+            <Text style={s.desc}>{d.description || "The organising team is preparing the full campaign brief."}</Text>
+            {project.tags.length > 0 ? (
+              <View style={s.tags}>{project.tags.map((tag) => <Pill key={tag} label={`#${tag}`} color={C.greenText} bg={C.cream} border={C.sand} />)}</View>
+            ) : null}
+          </View>
+
+          <View style={s.steps}>
+            <FundingStep number="01" title="Pledge" body="Choose an amount and complete payment securely." styles={s} />
+            <FundingStep number="02" title="Verify" body="Oguaa checks payment server-side before the public total moves." styles={s} />
+            <FundingStep number="03" title="Account" body="The confirmed pledge is recorded against this campaign." styles={s} />
+          </View>
 
           <View style={s.trust}>
+            <Text style={s.trustKicker}>PUBLIC ACCOUNTABILITY</Text>
             <Text style={s.trustTitle}>Where the money goes</Text>
-            <Text style={s.trustBody}>Funds are held for the named institution and released against receipts, which are published to backers. Oguaa takes nothing.</Text>
+            <Text style={s.trustPanelBody}>Each pledge is verified server-side. The configured platform fee supports Oguaa, and the net amount is credited to the named project.</Text>
           </View>
 
           <PledgeBox slug={slug} reload={reload} />
@@ -64,6 +93,27 @@ function Detail({ project, slug, reload }: Readonly<{ project: Listing; slug: st
         </RevealView>
       </ScrollView>
     </>
+  );
+}
+
+function Fact({ label, value, styles }: Readonly<{ label: string; value: string; styles: ReturnType<typeof makeStyles> }>) {
+  return (
+    <View style={styles.fact}>
+      <Text style={styles.factLabel}>{label}</Text>
+      <Text style={styles.factValue}>{value}</Text>
+    </View>
+  );
+}
+
+function FundingStep({ number, title, body, styles }: Readonly<{ number: string; title: string; body: string; styles: ReturnType<typeof makeStyles> }>) {
+  return (
+    <View style={styles.step}>
+      <Text style={styles.stepNumber}>{number}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.stepTitle}>{title}</Text>
+        <Text style={styles.stepBody}>{body}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -180,16 +230,32 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
-  cover: { width: "100%", height: 170, alignItems: "center", justifyContent: "center" },
-  coverInit: { color: C.cream, ...S(700), fontSize: 38 },
+  heroBadge: { alignSelf: "flex-start", borderWidth: 1, borderColor: C.goldBorder35, borderRadius: 999, backgroundColor: C.goldTint14, paddingHorizontal: 11, paddingVertical: 5 },
+  heroBadgeText: { color: ON_GREEN, fontSize: 9, letterSpacing: 1.3, ...S(700) },
+  coverInit: { color: ON_GREEN, ...S(700), fontSize: 28 },
   body: { padding: 20 },
-  kicker: { color: C.greenText, fontSize: 11, letterSpacing: 2, ...D(700) },
-  title: { ...D(700), fontSize: 27, color: C.ink, marginTop: 6 },
-  organiser: { color: C.goldText, fontSize: 13, marginTop: 4 },
-  meta: { color: C.inkFaint, fontSize: 12, marginTop: 6 },
-  desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 16 },
-  trust: { marginTop: 18, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
-  trustTitle: { color: C.ink, fontSize: 14, ...D(700) },
+  snapshot: { flexDirection: "row", overflow: "hidden", borderWidth: 1, borderColor: C.sand, borderRadius: 16, backgroundColor: C.cream },
+  snapshotCover: { width: 104, minHeight: 118, alignItems: "center", justifyContent: "center" },
+  snapshotBody: { flex: 1, justifyContent: "center", padding: 14 },
+  progressWrap: { marginTop: 10 },
+  kicker: { color: C.greenText, fontSize: 10, letterSpacing: 1.8, ...S(700) },
+  facts: { flexDirection: "row", overflow: "hidden", marginTop: 10, borderWidth: 1, borderColor: C.sand, borderRadius: 14, backgroundColor: C.sand },
+  fact: { flex: 1, minHeight: 74, paddingHorizontal: 10, paddingVertical: 12, backgroundColor: C.cream, borderRightWidth: 1, borderRightColor: C.sand },
+  factLabel: { color: C.inkFaint, fontSize: 8, lineHeight: 11, letterSpacing: 1, textTransform: "uppercase", ...S(600) },
+  factValue: { color: C.ink, fontSize: 12, lineHeight: 16, marginTop: 5, ...S(700) },
+  story: { marginTop: 28 },
+  sectionTitle: { ...D(700), fontSize: 29, lineHeight: 34, color: C.ink, marginTop: 7 },
+  desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.inkMuted, marginTop: 14 },
+  tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 15 },
+  steps: { marginTop: 24, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.sand },
+  step: { flexDirection: "row", gap: 14, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: C.sand },
+  stepNumber: { color: C.goldText, fontSize: 11, ...S(700) },
+  stepTitle: { color: C.ink, fontSize: 15, ...S(700) },
+  stepBody: { color: C.inkMuted, fontSize: 12.5, lineHeight: 18, marginTop: 3 },
+  trust: { marginTop: 24, backgroundColor: C.green900, borderRadius: 14, padding: 17, overflow: "hidden" },
+  trustKicker: { color: C.gold, fontSize: 9, letterSpacing: 1.6, ...S(700) },
+  trustTitle: { color: ON_GREEN, fontSize: 22, marginTop: 5, ...D(700) },
+  trustPanelBody: { color: C.onDarkText85, fontSize: 13, lineHeight: 19, marginTop: 7 },
   trustBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
   pledgeBox: { marginTop: 18, backgroundColor: C.cream, borderWidth: 1, borderColor: C.green, borderRadius: 14, padding: 16 },
   pledgeLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...S(700) },

@@ -7,7 +7,7 @@ import { useApi } from "@/lib/use-api";
 import { useRecordView } from "@/lib/use-record-view";
 import type { Listing } from "@/lib/types";
 import { useTheme } from "@/lib/theme-context";
-import { D, ON_GREEN, S, initials, withAlpha, type Palette } from "@/theme";
+import { ON_GREEN, S, initials, withAlpha, type Palette } from "@/theme";
 import { ErrorView, Loading, Pill, Thumb } from "@/ui";
 import { LocationCard } from "@/components/location-card";
 import { ReportButton } from "@/report-button";
@@ -51,13 +51,16 @@ function PropertyDetail({ listing }: Readonly<{ listing: Listing }>) {
       <Stack.Screen options={{ title: listing.title }} />
       <ScrollView style={s.page} contentContainerStyle={s.content}>
         <View style={s.media}>
-          <Thumb seed={listing.slug} src={listing.coverImageUrl} label={initials(listing.title)} style={StyleSheet.absoluteFill} labelStyle={s.initials} />
+          <Thumb seed={listing.slug} src={listing.coverImageUrl ?? d.gallery?.find((image) => image.url)?.url} label={initials(listing.title)} style={StyleSheet.absoluteFill} labelStyle={s.initials} />
           <View style={s.mediaScrim} />
           <View style={s.mediaTop}>
             <View style={s.reviewPill}><CheckIcon size={13} color={C.green900} strokeWidth={2.5} /><Text style={s.reviewText}>CURATOR REVIEWED</Text></View>
           </View>
           <View style={s.mediaBottom}>
-            <Text style={s.offer}>{d.offerType === "short-stay" ? "BOOK A STAY" : "RENT MONTHLY"}</Text>
+            <View style={s.heroBadges}>
+              <Text style={s.offer}>{d.offerType === "short-stay" ? "SHORT STAY" : "FOR RENT"}</Text>
+              <Text style={s.typeBadge}>{d.propertyType || "Property"}</Text>
+            </View>
             <Text style={s.title}>{listing.title}</Text>
             <View style={s.locationRow}><MapPinIcon size={15} color={C.gold} strokeWidth={2.1} /><Text style={s.location} numberOfLines={2}>{d.address || "Cape Coast"}</Text></View>
           </View>
@@ -81,13 +84,17 @@ function PropertyDetail({ listing }: Readonly<{ listing: Listing }>) {
             <Fact value={d.furnished ? "Yes" : "No"} label="Furnished" />
           </View>
 
-          {d.description ? <Text style={s.description}>{d.description}</Text> : null}
+          <View style={s.overview}>
+            <Text style={s.kicker}>ABOUT THIS PLACE</Text>
+            <Text style={s.sectionTitle}>What you should know</Text>
+            {d.description ? <Text style={s.description}>{d.description}</Text> : <Text style={s.description}>The manager has not added a full description yet.</Text>}
+          </View>
 
           {(d.amenities ?? []).length > 0 ? (
             <View style={s.section}>
               <Text style={s.kicker}>WHAT COMES WITH IT</Text>
               <Text style={s.sectionTitle}>Amenities</Text>
-              <View style={s.amenities}>{(d.amenities ?? []).map((amenity) => <View key={amenity} style={s.amenity}><CheckIcon size={14} color={C.tealText} strokeWidth={2.4} /><Text style={s.amenityText}>{amenity}</Text></View>)}</View>
+              <View style={s.amenities}>{(d.amenities ?? []).map((amenity) => <View key={amenity} style={s.amenity}><Text style={s.amenityWatermark}>{amenity.slice(0, 1).toUpperCase()}</Text><View style={s.amenityIcon}><CheckIcon size={14} color={C.tealText} strokeWidth={2.4} /></View><Text style={s.amenityText}>{amenity}</Text></View>)}</View>
             </View>
           ) : null}
 
@@ -120,6 +127,14 @@ function PropertyDetail({ listing }: Readonly<{ listing: Listing }>) {
             </View>
           </View>
 
+          <View style={s.safetyCard}>
+            <Text style={s.safetyKicker}>RENT SAFELY</Text>
+            <Text style={s.safetyTitle}>Pause before you pay</Text>
+            <Text style={s.safetyItem}>• View the property or verify it through someone you trust.</Text>
+            <Text style={s.safetyItem}>• Confirm who manages it and get the full terms in writing.</Text>
+            <Text style={s.safetyItem}>• Never pay because someone is rushing you.</Text>
+          </View>
+
           {listing.tags.length > 0 ? <View style={s.tags}>{listing.tags.map((tag) => <Pill key={tag} label={`#${tag}`} color={C.tealText} bg={C.cream} border={C.sand} />)}</View> : null}
           <View style={s.report}><ReportButton listingId={listing.id} /></View>
         </View>
@@ -137,42 +152,47 @@ function Fact({ value, label }: Readonly<{ value: string; label: string }>) {
 const makeStyles = (C: Palette) => StyleSheet.create({
   page: { flex: 1, backgroundColor: C.paper },
   content: { paddingBottom: 48 },
-  media: { height: 390, justifyContent: "space-between", backgroundColor: C.greenSlate },
-  initials: { color: ON_GREEN, ...D(700), fontSize: 58 },
+  media: { height: 350, justifyContent: "space-between", backgroundColor: C.greenSlate },
+  initials: { color: ON_GREEN, ...S(700), fontSize: 58 },
   mediaScrim: { position: "absolute", inset: 0, backgroundColor: withAlpha(C.green900, 0.38) },
   mediaTop: { padding: 18, alignItems: "flex-start" },
   reviewPill: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 999, backgroundColor: C.goldBrand, paddingHorizontal: 10, paddingVertical: 7 },
   reviewText: { color: C.green900, ...S(700), fontSize: 9, letterSpacing: 1 },
   mediaBottom: { padding: 20, paddingBottom: 26 },
-  offer: { color: C.gold, ...S(700), fontSize: 10, letterSpacing: 2 },
-  title: { color: ON_GREEN, ...D(700), fontSize: 38, lineHeight: 41, marginTop: 7 },
+  heroBadges: { flexDirection: "row", alignItems: "center", gap: 7 },
+  offer: { overflow: "hidden", color: C.green900, backgroundColor: C.goldBrand, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, ...S(700), fontSize: 9, letterSpacing: 1.4 },
+  typeBadge: { overflow: "hidden", color: ON_GREEN, backgroundColor: withAlpha(C.green900, 0.66), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, ...S(600), fontSize: 10, textTransform: "capitalize" },
+  title: { color: ON_GREEN, ...S(700), fontSize: 34, lineHeight: 38, marginTop: 10 },
   locationRow: { flexDirection: "row", alignItems: "flex-start", gap: 5, marginTop: 10 },
   location: { color: C.onDarkText85, flex: 1, fontSize: 14, lineHeight: 19 },
   body: { padding: 16 },
-  priceCard: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, borderWidth: 1, borderColor: C.sand, borderRadius: 18, backgroundColor: C.cream, padding: 16 },
+  priceCard: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: -34, borderWidth: 1, borderColor: C.sand, borderRadius: 20, backgroundColor: C.cream, padding: 17 },
   priceLabel: { color: C.inkFaint, ...S(700), fontSize: 9, letterSpacing: 1.3 },
   priceRow: { flexDirection: "row", alignItems: "baseline", marginTop: 4 },
-  price: { color: C.ink, ...D(700), fontSize: 28 },
+  price: { color: C.ink, ...S(700), fontSize: 28 },
   period: { color: C.inkMuted, fontSize: 12, marginLeft: 3 },
   availability: { borderRadius: 999, backgroundColor: withAlpha(C.teal, 0.1), paddingHorizontal: 10, paddingVertical: 7 },
   availabilityMuted: { backgroundColor: C.sand },
   availabilityText: { color: C.tealText, ...S(700), fontSize: 11 },
   availabilityTextMuted: { color: C.inkMuted },
-  facts: { flexDirection: "row", flexWrap: "wrap", marginTop: 12, borderWidth: 1, borderColor: C.sand, borderRadius: 18, overflow: "hidden", backgroundColor: C.cream },
-  fact: { width: "50%", minHeight: 78, justifyContent: "center", paddingHorizontal: 15, borderWidth: 0.5, borderColor: C.sand },
+  facts: { flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 14 },
+  fact: { width: "48.5%", minHeight: 86, justifyContent: "center", paddingHorizontal: 15, borderWidth: 1, borderColor: C.sand, borderRadius: 16, backgroundColor: C.cream },
   factValue: { color: C.ink, ...S(700), fontSize: 16, textTransform: "capitalize" },
   factLabel: { color: C.inkFaint, fontSize: 10, marginTop: 3 },
-  description: { color: C.ink, ...S(400), fontSize: 16, lineHeight: 25, marginTop: 22 },
+  overview: { marginTop: 30 },
+  description: { color: C.inkMuted, ...S(400), fontSize: 15, lineHeight: 24, marginTop: 8 },
   section: { marginTop: 28 },
   kicker: { color: C.tealText, ...S(700), fontSize: 9, letterSpacing: 1.6 },
-  sectionTitle: { color: C.ink, ...D(700), fontSize: 25, marginTop: 4, marginBottom: 11 },
+  sectionTitle: { color: C.ink, ...S(700), fontSize: 25, lineHeight: 29, marginTop: 4, marginBottom: 11 },
   amenities: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  amenity: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 40, borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, paddingHorizontal: 11 },
+  amenity: { position: "relative", width: "48.5%", minHeight: 100, overflow: "hidden", justifyContent: "flex-end", borderWidth: 1, borderColor: C.sand, borderRadius: 16, backgroundColor: C.cream, padding: 13 },
+  amenityIcon: { width: 30, height: 30, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: withAlpha(C.teal, 0.1), marginBottom: 10 },
+  amenityWatermark: { position: "absolute", right: -2, bottom: -20, color: withAlpha(C.teal, 0.06), ...S(700), fontSize: 76 },
   amenityText: { color: C.ink, ...S(600), fontSize: 12 },
   enquiryCard: { marginTop: 30, overflow: "hidden", borderRadius: 20, backgroundColor: C.green900, padding: 20 },
   enquiryIcon: { width: 46, height: 46, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: C.goldTint14, borderWidth: 1, borderColor: C.goldBorder35 },
   enquiryKicker: { color: C.gold, ...S(700), fontSize: 9, letterSpacing: 1.7, marginTop: 16 },
-  enquiryTitle: { color: ON_GREEN, ...D(700), fontSize: 27, lineHeight: 31, marginTop: 5 },
+  enquiryTitle: { color: ON_GREEN, ...S(700), fontSize: 27, lineHeight: 31, marginTop: 5 },
   enquiryBody: { color: C.onDarkText85, fontSize: 13, lineHeight: 20, marginTop: 9 },
   actions: { gap: 9, marginTop: 17 },
   closedNotice: { color: C.onDarkText85, fontSize: 13, lineHeight: 19, borderWidth: 1, borderColor: C.goldBorder35, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 11 },
@@ -180,6 +200,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   primaryButtonText: { color: C.green900, ...S(700), fontSize: 13 },
   secondaryButton: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: C.teal, borderRadius: 999, paddingHorizontal: 16, marginTop: 10 },
   secondaryButtonText: { color: C.tealText, ...S(700), fontSize: 13 },
+  safetyCard: { marginTop: 14, borderWidth: 1, borderColor: C.goldBorder35, borderRadius: 20, backgroundColor: C.goldTint14, padding: 18 },
+  safetyKicker: { color: C.goldText, ...S(700), fontSize: 9, letterSpacing: 1.6 },
+  safetyTitle: { color: C.ink, ...S(700), fontSize: 20, marginTop: 5, marginBottom: 10 },
+  safetyItem: { color: C.inkMuted, fontSize: 12, lineHeight: 19, marginTop: 3 },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 22 },
   report: { alignItems: "center", marginTop: 26 },
 });

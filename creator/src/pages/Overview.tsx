@@ -43,7 +43,7 @@ const TOOL_PANELS: ToolPanel[] = [
   { id: "writer", title: "Write & publish", desc: "Draft stories and news for the town.", cta: "Open the newsroom", icon: PenLine, to: "/write", show: (m) => canWriteNews(m) },
   { id: "business", title: "Your listings", desc: "Shops, services, food & drink.", cta: "Manage listings", icon: Briefcase, to: "/work", show: (m) => m.creatorTypes?.includes("business") ?? false },
   { id: "property", title: "Rent & Stay", desc: "Homes, rooms and short-stay listings.", cta: "Manage properties", icon: Building2, to: "/work", show: (m) => m.creatorTypes?.includes("property") ?? false },
-  { id: "artist", title: "Your music", desc: "Tracks, albums and your artist page.", cta: "Add a music listing", icon: Music, to: `${PORTAL}/submit`, external: true, show: (m) => m.creatorTypes?.includes("artist") ?? false },
+  { id: "artist", title: "Artist bookings", desc: "Review event requests sent from your artist page.", cta: "Open booking inbox", icon: Music, to: "/bookings", show: (m) => m.creatorTypes?.includes("artist") ?? false },
   { id: "organiser", title: "Your events", desc: "Ticketed shows and gatherings.", cta: "Add an event", icon: CalendarDays, to: `${PORTAL}/submit`, external: true, show: (m) => m.creatorTypes?.includes("organiser") ?? false },
   { id: "institution", title: "Your institutions", desc: "Schools, civic and community pages.", cta: "Manage institutions", icon: Landmark, to: "/institutions", show: (m) => m.creatorTypes?.includes("institution") ?? false },
 ];

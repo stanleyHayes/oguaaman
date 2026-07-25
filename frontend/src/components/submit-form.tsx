@@ -1,11 +1,18 @@
 import { useState, type ReactNode, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import type { ListingType, PropertyAvailability, PropertyOfferType, PropertyType } from "@/lib/types";
+import type { ArtistRelease, ListingType, PropertyAvailability, PropertyOfferType, PropertyType, SocialLink } from "@/lib/types";
 import { api } from "@/lib/api";
 import { AiWritingBar } from "@/components/ai-writing-bar";
 import { DatePicker } from "@/components/date-picker";
 import { ImageUpload } from "@/components/image-upload";
 import { LocationPicker, type LatLng } from "@/components/location-picker";
+import { ArtistSubmissionFields } from "@/components/artist-submission-fields";
+import { PropertyTypePicker } from "@/components/property-type-picker";
+import { AmenitiesPicker } from "@/components/amenities-picker";
+import { SocialLinksEditor } from "@/components/social-links-editor";
+import { GenrePicker } from "@/components/genre-picker";
+import { BusinessCategoryPicker } from "@/components/business-category-picker";
+import { EventDetailsFields, type EventAdmission, type EventTierDraft } from "@/components/event-details-fields";
 
 // Listing types that appear on the town map (GET /api/map) and so can carry an
 // optional exact pin. Other types have no coordinates.
@@ -97,25 +104,12 @@ const AI_FIELD: Record<ListingType, { name: string; label: string; rows: number;
 
 const inputCls = "w-full rounded-xl border border-sand bg-paper px-4 py-3 text-ink transition-colors placeholder:text-ink-faint focus:border-green focus:bg-cream focus:outline-none focus:ring-2 focus:ring-green/15";
 const OPPORTUNITY_KINDS = [
-  { value: "scholarship", label: "Scholarship" },
-  { value: "internship", label: "Internship" },
-  { value: "apprenticeship", label: "Apprenticeship" },
-  { value: "training", label: "Training" },
-  { value: "job", label: "Job" },
-  { value: "investment", label: "Investment" },
-  { value: "mentorship", label: "Mentorship programme" },
+  { value: "scholarship", label: "Scholarship", hint: "Funding for study", mark: "⌑" }, { value: "internship", label: "Internship", hint: "Workplace experience", mark: "▣" }, { value: "apprenticeship", label: "Apprenticeship", hint: "Learn a skilled trade", mark: "⚒" }, { value: "training", label: "Training", hint: "Build practical skills", mark: "✎" }, { value: "job", label: "Job", hint: "Paid employment", mark: "✓" }, { value: "investment", label: "Investment", hint: "Funding or partnership", mark: "₵" }, { value: "mentorship", label: "Mentorship programme", hint: "Guidance and support", mark: "◎" },
 ] as const;
 
 const PROPERTY_OFFERS: { value: PropertyOfferType; label: string; hint: string }[] = [
   { value: "long-term", label: "For rent", hint: "Long-term, priced monthly" },
   { value: "short-stay", label: "Short stay", hint: "Guest stay, priced nightly" },
-];
-const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
-  { value: "room", label: "Room" },
-  { value: "apartment", label: "Apartment" },
-  { value: "house", label: "House" },
-  { value: "guesthouse", label: "Guesthouse" },
-  { value: "hostel", label: "Hostel" },
 ];
 const PROPERTY_AVAILABILITY: { value: PropertyAvailability; label: string }[] = [
   { value: "available", label: "Available" },
@@ -150,9 +144,9 @@ function collectDetails(fd: FormData, type: ListingType, aiText: string): Record
   const aiField = AI_FIELD[type];
   if (aiField && aiText.trim()) details[aiField.name] = aiText.trim();
   // Comma-separated text inputs become string arrays.
-  for (const listKey of ["genres", "associations"]) {
+  for (const listKey of ["associations", "highlights", "featuredGuests"]) {
     if (typeof details[listKey] === "string") {
-      details[listKey] = (details[listKey] as string).split(",").map((s) => s.trim()).filter(Boolean);
+      details[listKey] = (details[listKey] as string).split(listKey === "associations" ? "," : /\r?\n/).map((s) => s.trim()).filter(Boolean);
     }
   }
   if (typeof details.bornYear === "string") {
@@ -216,6 +210,18 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
   const [propertyType, setPropertyType] = useState<PropertyType>("apartment");
   const [propertyAvailability, setPropertyAvailability] = useState<PropertyAvailability>("available");
   const [propertyFurnished, setPropertyFurnished] = useState(false);
+  const [propertyAmenities, setPropertyAmenities] = useState<string[]>([]);
+  const [artistStreamingLinks, setArtistStreamingLinks] = useState<SocialLink[]>([]);
+  const [artistGenres, setArtistGenres] = useState<string[]>([]);
+  const [artistSocials, setArtistSocials] = useState<SocialLink[]>([]);
+  const [artistBooking, setArtistBooking] = useState("");
+  const [artistReleases, setArtistReleases] = useState<ArtistRelease[]>([]);
+  const [businessSocialLinks, setBusinessSocialLinks] = useState<SocialLink[]>([]);
+  const [businessCategories, setBusinessCategories] = useState<string[]>([]);
+  const [eventFormat, setEventFormat] = useState("community");
+  const [eventAudience, setEventAudience] = useState<string[]>(["all-ages"]);
+  const [eventAdmission, setEventAdmission] = useState<EventAdmission>("free");
+  const [eventTiers, setEventTiers] = useState<EventTierDraft[]>([]);
 
   function changeType(next: ListingType) {
     setType(next);
@@ -223,7 +229,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
     if (next !== "opportunity") setOppKind("scholarship");
   }
 
-  if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); setLocation(null); }} />;
+  if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); setLocation(null); setPropertyAmenities([]); setArtistStreamingLinks([]); setArtistGenres([]); setArtistSocials([]); setArtistBooking(""); setArtistReleases([]); setBusinessSocialLinks([]); setBusinessCategories([]); setEventFormat("community"); setEventAudience(["all-ages"]); setEventAdmission("free"); setEventTiers([]); }} />;
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -231,9 +237,47 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
     const fd = new FormData(e.currentTarget);
     const s = (k: string) => { const v = fd.get(k); return typeof v === "string" ? v : ""; };
     const title = s("title").trim();
+    if (type === "event" && s("startsAt") && s("endsAt") && s("endsAt") < s("startsAt")) {
+      setError("The end date cannot be before the start date.");
+      return;
+    }
     const details = collectDetails(fd, type, aiText);
     if (type === "opportunity") details.kind = oppKind;
-    if (type === "artist") details.actName = title;
+    if (type === "artist") {
+      details.actName = title;
+      details.genres = artistGenres;
+      details.streamingLinks = artistStreamingLinks.map((link) => ({ label: link.label.trim(), url: link.url.trim() })).filter((link) => link.label && link.url);
+      details.socials = artistSocials.map((link) => ({ label: link.label.trim(), url: link.url.trim() })).filter((link) => link.label && link.url);
+      details.releases = artistReleases.map((release) => ({
+        ...release,
+        title: release.title.trim(),
+        coverImageUrl: release.coverImageUrl?.trim() || undefined,
+        description: release.description?.trim() || undefined,
+        url: release.url?.trim() || undefined,
+        tracks: (release.tracks ?? []).map((track) => ({ title: track.title.trim() })).filter((track) => track.title),
+      })).filter((release) => release.title);
+      if (artistBooking.trim()) details.booking = artistBooking.trim();
+    }
+    if (type === "business") {
+      if (!businessCategories.length) {
+        setError("Choose at least one business category.");
+        return;
+      }
+      details.category = businessCategories[0];
+      details.categories = businessCategories;
+      const existing = Array.isArray(details.contact) ? details.contact as SocialLink[] : [];
+      details.contact = [...existing, ...businessSocialLinks.map((link) => ({ label: link.label.trim(), url: link.url.trim() })).filter((link) => link.label && link.url)];
+    }
+    if (type === "event") {
+      details.eventFormat = eventFormat;
+      details.audience = eventAudience;
+      details.admission = eventAdmission;
+      if (eventAdmission === "paid") {
+        const tiers = eventTiers.map((tier) => ({ name: tier.name.trim(), pricePesewas: Math.round(Number(tier.priceGhs) * 100), capacity: Number.parseInt(tier.capacity || "0", 10) || 0 })).filter((tier) => tier.name && tier.pricePesewas > 0);
+        if (!tiers.length) { setError("Add at least one paid ticket type with a name and price."); return; }
+        details.tiers = tiers;
+      }
+    }
     if (type === "memorial") {
       details.remindersEnabled = reminders;
       details.observeBirthday = observeBday;
@@ -244,6 +288,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
       details.pricePeriod = propertyOffer === "short-stay" ? "night" : "month";
       details.availability = propertyAvailability;
       details.furnished = propertyFurnished;
+      details.amenities = propertyAmenities;
     }
     const cover = coverImageUrl.trim();
     // The optional pin only applies to mappable types; ignored otherwise.
@@ -305,12 +350,19 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
                 propertyType,
                 availability: propertyAvailability,
                 furnished: propertyFurnished,
+                amenities: propertyAmenities,
                 onOffer: setPropertyOffer,
                 onPropertyType: setPropertyType,
                 onAvailability: setPropertyAvailability,
                 onFurnished: setPropertyFurnished,
+                onAmenities: setPropertyAmenities,
               }}
+              businessCategories={businessCategories}
+              onBusinessCategories={setBusinessCategories}
+              eventOptions={{ format: eventFormat, onFormat: setEventFormat, audience: eventAudience, onAudience: setEventAudience, admission: eventAdmission, onAdmission: setEventAdmission, tiers: eventTiers, onTiers: setEventTiers }}
             />
+            {type === "artist" && <><GenrePicker value={artistGenres} onChange={setArtistGenres} /><ArtistSubmissionFields streamingLinks={artistStreamingLinks} onStreamingLinks={setArtistStreamingLinks} socials={artistSocials} onSocials={setArtistSocials} booking={artistBooking} onBooking={setArtistBooking} releases={artistReleases} onReleases={setArtistReleases} /></>}
+            {type === "business" && <SocialLinksEditor links={businessSocialLinks} onChange={setBusinessSocialLinks} />}
           </div>
 
           {MAPPABLE_TYPES.has(type) && (
@@ -419,10 +471,12 @@ type PropertyOptions = {
   propertyType: PropertyType;
   availability: PropertyAvailability;
   furnished: boolean;
+  amenities: string[];
   onOffer: (value: PropertyOfferType) => void;
   onPropertyType: (value: PropertyType) => void;
   onAvailability: (value: PropertyAvailability) => void;
   onFurnished: (value: boolean) => void;
+  onAmenities: (value: string[]) => void;
 };
 
 function OpportunityKindPicker({ value, onChange }: Readonly<{
@@ -431,9 +485,10 @@ function OpportunityKindPicker({ value, onChange }: Readonly<{
 }>) {
   return (
     <fieldset>
-      <legend className="mb-2 text-sm font-semibold text-ink">Opportunity type</legend>
+      <legend className="text-sm font-semibold text-ink">Opportunity type</legend>
+      <p className="mt-1 text-xs text-ink-faint">Choose the format that best matches what you are offering.</p>
       <input type="hidden" name="kind" value={value} />
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-label="Opportunity type">
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="Opportunity type">
         {OPPORTUNITY_KINDS.map((kind) => {
           const selected = value === kind.value;
           return (
@@ -442,10 +497,12 @@ function OpportunityKindPicker({ value, onChange }: Readonly<{
               type="button"
               aria-pressed={selected}
               onClick={() => onChange(kind.value)}
-              className={`relative min-h-12 rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors ${selected ? "border-teal bg-teal/[0.09] text-teal-text" : "border-sand bg-paper text-ink-muted hover:border-teal/40 hover:text-ink"}`}
+              className={`relative min-h-[4.5rem] rounded-xl border px-4 py-3 pr-11 text-left transition-all ${selected ? "border-teal bg-teal/[0.09] text-teal-text shadow-sm" : "border-sand bg-paper text-ink-muted hover:border-teal/40 hover:text-ink"}`}
             >
-              {kind.label}
-              {selected && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-teal" aria-hidden />}
+              <span aria-hidden className="pointer-events-none absolute -bottom-5 right-1 text-6xl font-bold opacity-[0.055]">{kind.mark}</span>
+              <span className="block text-sm font-semibold">{kind.label}</span>
+              <span className="mt-1 block text-xs font-normal opacity-75">{kind.hint}</span>
+              <span className={`absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full border text-[0.65rem] ${selected ? "border-teal bg-teal text-on-green" : "border-sand text-transparent"}`} aria-hidden>✓</span>
             </button>
           );
         })}
@@ -505,6 +562,16 @@ function ToggleSetting({ checked, onChange, title, description }: Readonly<{
   );
 }
 
+function EventDateRangeFields() {
+  const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
+  function changeStart(value: string) { setStartsAt(value); if (endsAt && endsAt < value) setEndsAt(""); }
+  return <div className="rounded-2xl border border-gold-border/35 bg-gold/[0.05] p-4 sm:p-5">
+    <div className="flex items-start justify-between gap-4"><div><p className="eyebrow text-gold-text">Event schedule</p><h3 className="mt-1 text-lg font-semibold text-ink">When does it happen?</h3><p className="mt-1 text-xs text-ink-faint">For a one-day event, leave the end date empty.</p></div>{endsAt && <span className="rounded-full bg-green px-3 py-1 text-xs font-semibold text-on-green">Multi-day</span>}</div>
+    <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Start date"><DatePicker name="startsAt" value={startsAt} onChange={changeStart} className="w-full" /></Field><Field label="End date (optional)" hint="Only use this when the event continues into another day."><DatePicker name="endsAt" value={endsAt} onChange={setEndsAt} min={startsAt || undefined} placeholder="Same day" className="w-full" /></Field></div>
+  </div>;
+}
+
 // The type-specific extra fields — uncontrolled inputs inside the shared form.
 function TypeFields({
   type,
@@ -512,28 +579,25 @@ function TypeFields({
   onOpportunityKind,
   memorialToggles,
   propertyOptions,
-}: Readonly<{ type: ListingType; opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["value"]; onOpportunityKind: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void; memorialToggles: MemorialToggles; propertyOptions: PropertyOptions }>) {
+  businessCategories,
+  onBusinessCategories,
+  eventOptions,
+}: Readonly<{ type: ListingType; opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["value"]; onOpportunityKind: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void; memorialToggles: MemorialToggles; propertyOptions: PropertyOptions; businessCategories: string[]; onBusinessCategories: (value: string[]) => void; eventOptions: { format: string; onFormat: (value: string) => void; audience: string[]; onAudience: (value: string[]) => void; admission: EventAdmission; onAdmission: (value: EventAdmission) => void; tiers: EventTierDraft[]; onTiers: (value: EventTierDraft[]) => void } }>) {
   // Local YYYY-MM-DD upper bound for the memorial picker — a date of passing can't be in the future.
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   return (
     <>
-      {type === "artist" && (
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Genre(s)" hint="Comma-separated, e.g. Highlife, Gospel"><input name="genres" className={inputCls} placeholder="Highlife, Gospel" /></Field>
-          <Field label="Streaming link" hint="We link out, we don't host audio."><input name="link" className={inputCls} placeholder="https://audiomack.com/…" /></Field>
-        </div>
-      )}
       {type === "business" && (
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Category / sector"><input name="category" className={inputCls} placeholder="Food & drink, hospitality…" /></Field>
+        <div className="space-y-5">
+          <BusinessCategoryPicker value={businessCategories} onChange={onBusinessCategories} />
           <Field label="Location / address"><input name="address" className={inputCls} placeholder="Kotokuraba, Cape Coast" /></Field>
         </div>
       )}
       {type === "property" && (
         <div className="space-y-6">
           <ChoicePicker legend="How is this place offered?" value={propertyOptions.offer} options={PROPERTY_OFFERS} onChange={propertyOptions.onOffer} columns="grid-cols-1 sm:grid-cols-2" />
-          <ChoicePicker legend="Property type" value={propertyOptions.propertyType} options={PROPERTY_TYPES} onChange={propertyOptions.onPropertyType} />
+          <PropertyTypePicker value={propertyOptions.propertyType} onChange={propertyOptions.onPropertyType} />
 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Area / neighbourhood"><input name="area" required className={inputCls} placeholder="Pedu, Abura, Cape Coast town…" /></Field>
@@ -549,7 +613,7 @@ function TypeFields({
 
           <ToggleSetting checked={propertyOptions.furnished} onChange={propertyOptions.onFurnished} title="Furnished" description="The advertised price includes the principal furniture shown in the listing." />
 
-          <Field label="Amenities" hint="Comma-separated — water, Wi-Fi, parking, air conditioning…"><input name="amenities" className={inputCls} placeholder="Water, Wi-Fi, parking" /></Field>
+          <AmenitiesPicker value={propertyOptions.amenities} onChange={propertyOptions.onAmenities} />
 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="WhatsApp number" hint="Use a number prospective tenants or guests may contact."><input name="whatsapp" inputMode="tel" className={inputCls} placeholder="024 000 0000" /></Field>
@@ -561,9 +625,10 @@ function TypeFields({
         </div>
       )}
       {type === "event" && (
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Date"><DatePicker name="startsAt" className="w-full" /></Field>
+        <div className="space-y-6">
+          <EventDateRangeFields />
           <Field label="Venue / location"><input name="venue" className={inputCls} placeholder="Victoria Park, Cape Coast" /></Field>
+          <EventDetailsFields format={eventOptions.format} onFormat={eventOptions.onFormat} audience={eventOptions.audience} onAudience={eventOptions.onAudience} admission={eventOptions.admission} onAdmission={eventOptions.onAdmission} tiers={eventOptions.tiers} onTiers={eventOptions.onTiers} />
         </div>
       )}
       {type === "memory" && (
@@ -571,7 +636,7 @@ function TypeFields({
       )}
       {type === "opportunity" && (<>
         <OpportunityKindPicker value={opportunityKind} onChange={onOpportunityKind} />
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="space-y-5">
           <Field label="Description"><textarea name="description" rows={3} className={inputCls} /></Field>
           <Field label="Provider / programme owner"><input name="provider" className={inputCls} placeholder="Institution, company or verified organisation" /></Field>
         </div>

@@ -32,3 +32,6 @@ backend/uploads/
 
 # Backed-up production env (prod Atlas URI + secrets) — never commit.
 production.env
+
+# Raven tooling session artifacts (per-app .raven/ dirs)
+.raven/

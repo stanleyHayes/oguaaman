@@ -1,0 +1,716 @@
+import { useState, type ReactNode, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import type { ArtistRelease, ListingType, SocialLink } from "@/lib/types";
+import { api } from "@/lib/api";
+import { DatePicker } from "@/components/date-picker";
+import { ImageUpload } from "@/components/image-upload";
+import { ArtistProfileEditor } from "@/components/artist-profile-editor";
+import { AiWritingBar } from "@/components/ai-writing-bar";
+import { LocationPicker, type LatLng } from "@/components/location-picker";
+import { PropertyTypePicker } from "@/components/property-type-picker";
+import { AmenitiesPicker } from "@/components/amenities-picker";
+import { SocialLinksEditor } from "@/components/social-links-editor";
+import { GenrePicker } from "@/components/genre-picker";
+import { BusinessCategoryPicker } from "@/components/business-category-picker";
+import { EventDetailsFields, type EventAdmission, type EventTierDraft } from "@/components/event-details-fields";
+
+const MAPPABLE_TYPES = new Set<ListingType>(["business", "event", "property"]);
+
+// Property option unions (the creator types keep these inline on ListingDetails).
+type PropertyOfferType = "long-term" | "short-stay";
+type PropertyType = "room" | "apartment" | "house" | "guesthouse" | "hostel";
+type PropertyAvailability = "available" | "reserved" | "let";
+
+const TYPES: { value: ListingType; label: string; hint: string }[] = [
+  { value: "artist", label: "Artist", hint: "A musician or act" },
+  { value: "business", label: "Business", hint: "A shop, service or trade" },
+  { value: "property", label: "Property", hint: "A home, room or guest stay" },
+  { value: "event", label: "Event", hint: "Something happening" },
+  { value: "memory", label: "Memory", hint: "A story of old Oguaa" },
+  { value: "opportunity", label: "Opportunity", hint: "Scholarship, job, investment, mentorship" },
+  { value: "person", label: "Person", hint: "A son or daughter of Oguaa" },
+  { value: "memorial", label: "Memorial", hint: "Honour someone who has passed" },
+];
+
+// Every listing type carries a cover image — the label and hint are tuned to the
+// kind of picture that fits it (a portrait for a person, a flyer for an event…).
+const COVER_COPY: Record<ListingType, { label: string; hint: string }> = {
+  artist: { label: "Photo (optional)", hint: "A promo shot, performance photo, or portrait of the act." },
+  business: { label: "Photo or logo (optional)", hint: "Your storefront, a product, or the business logo." },
+  property: { label: "Main property photo (optional)", hint: "A bright, honest view of the room, home or guest stay." },
+  event: { label: "Poster or photo (optional)", hint: "The event flyer, or a photo that represents it." },
+  memory: { label: "Old photo (optional)", hint: "A photograph from the time, if you have one to share." },
+  opportunity: { label: "Flyer or poster (optional)", hint: "The opportunity's flyer or poster, if there is one." },
+  person: { label: "Photo (optional)", hint: "A portrait or a representative photo of them." },
+  memorial: { label: "Portrait (optional)", hint: "A dignified portrait of the departed." },
+  // Projects aren't in the public picker (campaigns are proposed by verified
+  // institutions), but the maps stay total over ListingType.
+  project: { label: "Photo (optional)", hint: "The site, the classroom, the thing the project will fix." },
+  // Incidents report through the guided Safety form (/safety/report), not the
+  // generic submit flow — the maps stay total over ListingType.
+  incident: { label: "Photo (optional)", hint: "A photo of the scene, if it is safe to take one." },
+  // Lost & found notices post through the guided form (/lost-found/new) — the
+  // maps stay total over ListingType.
+  lostfound: { label: "Photo (optional)", hint: "A photo of the item or person, if you have one." },
+};
+
+// Per-type icon + accent, for the picker cards. Icons inherit currentColor.
+const ICONS: Record<ListingType, ReactNode> = {
+  artist: <><path d="M9 18V5l10-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="16" cy="16" r="3" /></>,
+  business: <><path d="M3 9l1.5-5h15L21 9" /><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9" /><path d="M3 9h18M9 20v-6h6v6" /></>,
+  property: <><path d="m3 11 9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></>,
+  event: <><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 2.5v4M16 2.5v4" /></>,
+  memory: <><path d="M4 5a2 2 0 0 1 2-2h12a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2Z" /><path d="M8 7h7M8 11h7M8 15h4" /></>,
+  opportunity: <path d="M12 3l2.3 4.7 5.2.8-3.7 3.6.9 5.1L12 14.8 7.3 17.3l.9-5.1L4.5 8.5l5.2-.8Z" />,
+  person: <><circle cx="12" cy="8" r="3.6" /><path d="M5 20a7 7 0 0 1 14 0" /></>,
+  memorial: <><path d="M12 3c1.6 1.4 1.6 3.2 0 4.6-1.6-1.4-1.6-3.2 0-4.6Z" /><path d="M12 7.6V13" /><rect x="7" y="13" width="10" height="7" rx="1.5" /></>,
+  project: <><path d="M3 21h18" /><path d="M5 21V8l7-5 7 5v13" /><path d="M9 21v-6h6v6" /></>,
+  incident: <><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6Z" /><path d="M12 8v4" /><path d="M12 15.5v.5" /></>,
+  lostfound: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /><path d="M11 8v3l2 2" /></>,
+};
+const ACCENT: Record<ListingType, { chip: string; icon: string }> = {
+  artist: { chip: "bg-clay/[0.12]", icon: "text-clay-text" },
+  business: { chip: "bg-teal/[0.12]", icon: "text-teal-text" },
+  property: { chip: "bg-gold/[0.16]", icon: "text-gold-text" },
+  event: { chip: "bg-gold/[0.16]", icon: "text-gold-text" },
+  memory: { chip: "bg-green/[0.1]", icon: "text-green" },
+  opportunity: { chip: "bg-teal/[0.12]", icon: "text-teal-text" },
+  person: { chip: "bg-green/[0.1]", icon: "text-green" },
+  memorial: { chip: "bg-gold/[0.16]", icon: "text-gold-text" },
+  project: { chip: "bg-green/[0.1]", icon: "text-green" },
+  incident: { chip: "bg-maroon-900/[0.08]", icon: "text-maroon-900" },
+  lostfound: { chip: "bg-teal/[0.12]", icon: "text-teal-text" },
+};
+function TypeIcon({ type, className = "" }: Readonly<{ type: ListingType; className?: string }>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      {ICONS[type]}
+    </svg>
+  );
+}
+
+// The primary free-text field of each type — wired to the AI writing bar and
+// kept in controlled state so AI output can populate it.
+const AI_FIELD: Record<ListingType, { name: string; label: string; rows: number; placeholder?: string } | null> = {
+  artist: { name: "bio", label: "Bio", rows: 4, placeholder: "Tell us about the act…" },
+  business: { name: "description", label: "Short description", rows: 3 },
+  property: { name: "description", label: "Describe the property", rows: 4, placeholder: "Describe the space, its condition and what makes the location useful…" },
+  event: { name: "description", label: "Description", rows: 3 },
+  memory: { name: "text", label: "Your memory", rows: 5, placeholder: "Share your Mfantsipim memory, your Fetu Afahye memory…" },
+  opportunity: { name: "eligibility", label: "Eligibility", rows: 2 },
+  person: { name: "whyNotable", label: "Why notable", rows: 4, placeholder: "Historical or living — why does Oguaa remember them?" },
+  memorial: { name: "lifeStory", label: "Life story", rows: 4 },
+  project: { name: "description", label: "What the project will do", rows: 4 },
+  incident: { name: "description", label: "What happened", rows: 4 },
+  lostfound: { name: "description", label: "Description", rows: 4 },
+};
+
+const inputCls = "w-full rounded-xl border border-sand bg-paper px-4 py-3 text-ink transition-colors placeholder:text-ink-faint focus:border-green focus:bg-cream focus:outline-none focus:ring-2 focus:ring-green/15";
+const OPPORTUNITY_KINDS = [
+  { value: "scholarship", label: "Scholarship", hint: "Funding for study", mark: "⌑" }, { value: "internship", label: "Internship", hint: "Workplace experience", mark: "▣" }, { value: "apprenticeship", label: "Apprenticeship", hint: "Learn a skilled trade", mark: "⚒" }, { value: "training", label: "Training", hint: "Build practical skills", mark: "✎" }, { value: "job", label: "Job", hint: "Paid employment", mark: "✓" }, { value: "investment", label: "Investment", hint: "Funding or partnership", mark: "₵" }, { value: "mentorship", label: "Mentorship programme", hint: "Guidance and support", mark: "◎" },
+] as const;
+
+const PROPERTY_OFFERS: { value: PropertyOfferType; label: string; hint: string }[] = [
+  { value: "long-term", label: "For rent", hint: "Long-term, priced monthly" },
+  { value: "short-stay", label: "Short stay", hint: "Guest stay, priced nightly" },
+];
+const PROPERTY_AVAILABILITY: { value: PropertyAvailability; label: string }[] = [
+  { value: "available", label: "Available" },
+  { value: "reserved", label: "Reserved" },
+  { value: "let", label: "Let" },
+];
+
+function whatsappUrl(value: string): string | null {
+  const raw = value.trim();
+  if (!raw) return null;
+  if (/^https?:\/\/(?:www\.)?(?:wa\.me|api\.whatsapp\.com)\//i.test(raw)) return raw;
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = `233${digits.slice(1)}`;
+  if (digits.length < 9) return null;
+  return `https://wa.me/${digits}`;
+}
+
+function outboundUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const raw = value.trim();
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
+/** Build the details payload from the form data + the AI-driven text field. */
+function collectDetails(fd: FormData, type: ListingType, aiText: string): Record<string, unknown> {
+  const details: Record<string, unknown> = {};
+  for (const [k, v] of fd.entries()) {
+    if (k === "title" || k === "coverImageUrl") continue;
+    if (typeof v === "string" && v.trim()) details[k] = v.trim();
+  }
+  // The AI-driven field is a controlled textarea (not a named form input).
+  const aiField = AI_FIELD[type];
+  if (aiField && aiText.trim()) details[aiField.name] = aiText.trim();
+  // Comma-separated text inputs become string arrays.
+  for (const listKey of ["associations", "highlights", "featuredGuests"]) {
+    if (typeof details[listKey] === "string") {
+      details[listKey] = (details[listKey] as string).split(listKey === "associations" ? "," : /\r?\n/).map((s) => s.trim()).filter(Boolean);
+    }
+  }
+  if (typeof details.bornYear === "string") {
+    const n = Number.parseInt(details.bornYear as string, 10);
+    if (Number.isFinite(n)) details.bornYear = n; else delete details.bornYear;
+  }
+  for (const listKey of ["amenities"]) {
+    if (typeof details[listKey] === "string") {
+      details[listKey] = (details[listKey] as string).split(",").map((s) => s.trim()).filter(Boolean);
+    }
+  }
+  for (const intKey of ["bedrooms", "bathrooms"]) {
+    if (typeof details[intKey] !== "string") continue;
+    const n = Number.parseInt(details[intKey] as string, 10);
+    if (Number.isFinite(n) && n >= 0) details[intKey] = n; else delete details[intKey];
+  }
+  for (const [cedisKey, pesewasKey] of [["priceGhs", "pricePesewas"], ["depositGhs", "depositPesewas"]] as const) {
+    if (typeof details[cedisKey] !== "string") continue;
+    const cedis = Number.parseFloat(details[cedisKey] as string);
+    delete details[cedisKey];
+    if (Number.isFinite(cedis) && cedis > 0) details[pesewasKey] = Math.round(cedis * 100);
+  }
+  if (typeof details.whatsapp === "string") {
+    const url = whatsappUrl(details.whatsapp as string);
+    delete details.whatsapp;
+    if (url) details.contact = [{ label: "WhatsApp", url }];
+  }
+  const bookingUrl = outboundUrl(details.bookingUrl);
+  if (bookingUrl) details.bookingUrl = bookingUrl;
+  else delete details.bookingUrl;
+  return details;
+}
+
+function Field({ label, children, hint }: Readonly<{ label: string; children: ReactNode; hint?: string }>) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-semibold text-ink">{label}</span>
+      {children}
+      {hint && <span className="mt-1.5 block text-xs leading-relaxed text-ink-faint">{hint}</span>}
+    </label>
+  );
+}
+
+export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType }>) {
+  const [type, setType] = useState<ListingType>(initialType ?? "artist");
+  const [submitted, setSubmitted] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // The primary free-text field for the current type, driven by the AI bar.
+  const [aiText, setAiText] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [location, setLocation] = useState<LatLng | null>(null);
+  // Memorial keeper controls (spec §8.11) — booleans can't ride FormData, so
+  // they're controlled state merged into the payload on submit.
+  const [reminders, setReminders] = useState(true);
+  const [observeBday, setObserveBday] = useState(false);
+  const [oppKind, setOppKind] = useState<(typeof OPPORTUNITY_KINDS)[number]["value"]>("scholarship");
+  const [propertyOffer, setPropertyOffer] = useState<PropertyOfferType>("long-term");
+  const [propertyType, setPropertyType] = useState<PropertyType>("apartment");
+  const [propertyAvailability, setPropertyAvailability] = useState<PropertyAvailability>("available");
+  const [propertyFurnished, setPropertyFurnished] = useState(false);
+  const [propertyAmenities, setPropertyAmenities] = useState<string[]>([]);
+  const [artistStreamingLinks, setArtistStreamingLinks] = useState<SocialLink[]>([]);
+  const [artistGenres, setArtistGenres] = useState<string[]>([]);
+  const [artistSocials, setArtistSocials] = useState<SocialLink[]>([]);
+  const [artistBooking, setArtistBooking] = useState("");
+  const [artistReleases, setArtistReleases] = useState<ArtistRelease[]>([]);
+  const [businessSocialLinks, setBusinessSocialLinks] = useState<SocialLink[]>([]);
+  const [businessCategories, setBusinessCategories] = useState<string[]>([]);
+  const [eventFormat, setEventFormat] = useState("community");
+  const [eventAudience, setEventAudience] = useState<string[]>(["all-ages"]);
+  const [eventAdmission, setEventAdmission] = useState<EventAdmission>("free");
+  const [eventTiers, setEventTiers] = useState<EventTierDraft[]>([]);
+
+  function changeType(next: ListingType) {
+    setType(next);
+    setAiText("");
+    if (next !== "opportunity") setOppKind("scholarship");
+  }
+
+  if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); setLocation(null); setPropertyAmenities([]); setArtistStreamingLinks([]); setArtistGenres([]); setArtistSocials([]); setArtistBooking(""); setArtistReleases([]); setBusinessSocialLinks([]); setBusinessCategories([]); setEventFormat("community"); setEventAudience(["all-ages"]); setEventAdmission("free"); setEventTiers([]); }} />;
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    const s = (k: string) => { const v = fd.get(k); return typeof v === "string" ? v : ""; };
+    const title = s("title").trim();
+    if (type === "event" && s("startsAt") && s("endsAt") && s("endsAt") < s("startsAt")) {
+      setError("The end date cannot be before the start date.");
+      return;
+    }
+    const details = collectDetails(fd, type, aiText);
+    if (type === "opportunity") details.kind = oppKind;
+    if (type === "artist") {
+      details.actName = title;
+      details.genres = artistGenres;
+      details.streamingLinks = artistStreamingLinks.map((link) => ({ label: link.label.trim(), url: link.url.trim() })).filter((link) => link.label && link.url);
+      details.socials = artistSocials.map((link) => ({ label: link.label.trim(), url: link.url.trim() })).filter((link) => link.label && link.url);
+      details.releases = artistReleases.map((release) => ({
+        ...release,
+        title: release.title.trim(),
+        coverImageUrl: release.coverImageUrl?.trim() || undefined,
+        description: release.description?.trim() || undefined,
+        url: release.url?.trim() || undefined,
+        tracks: (release.tracks ?? []).map((track) => ({ title: track.title.trim() })).filter((track) => track.title),
+      })).filter((release) => release.title);
+      if (artistBooking.trim()) details.booking = artistBooking.trim();
+    }
+    if (type === "business") {
+      if (!businessCategories.length) { setError("Choose at least one business category."); return; }
+      details.category = businessCategories[0];
+      details.categories = businessCategories;
+      const existing = Array.isArray(details.contact) ? details.contact as SocialLink[] : [];
+      details.contact = [...existing, ...businessSocialLinks.map((link) => ({ label: link.label.trim(), url: link.url.trim() })).filter((link) => link.label && link.url)];
+    }
+    if (type === "event") {
+      details.eventFormat = eventFormat; details.audience = eventAudience; details.admission = eventAdmission;
+      if (eventAdmission === "paid") { const tiers = eventTiers.map((tier) => ({ name: tier.name.trim(), pricePesewas: Math.round(Number(tier.priceGhs) * 100), capacity: Number.parseInt(tier.capacity || "0", 10) || 0 })).filter((tier) => tier.name && tier.pricePesewas > 0); if (!tiers.length) { setError("Add at least one paid ticket type with a name and price."); return; } details.tiers = tiers; }
+    }
+    if (type === "memorial") {
+      details.remindersEnabled = reminders;
+      details.observeBirthday = observeBday;
+    }
+    if (type === "property") {
+      details.offerType = propertyOffer;
+      details.propertyType = propertyType;
+      details.pricePeriod = propertyOffer === "short-stay" ? "night" : "month";
+      details.availability = propertyAvailability;
+      details.furnished = propertyFurnished;
+      details.amenities = propertyAmenities;
+    }
+    const cover = coverImageUrl.trim();
+    const pin = MAPPABLE_TYPES.has(type) ? location : null;
+    setBusy(true);
+    try {
+      await api.submitListing({
+        type,
+        title,
+        details,
+        coverImageUrl: cover || undefined,
+        latitude: pin ? pin[0] : undefined,
+        longitude: pin ? pin[1] : undefined,
+      });
+      setSubmitted(title || "Your listing");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not submit. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const aiField = AI_FIELD[type];
+  const cover = COVER_COPY[type];
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-8">
+      <TypePicker type={type} onChange={changeType} />
+
+      <section className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]" aria-labelledby="listing-details-title">
+        <div className="flex items-center justify-between gap-4 border-b border-sand bg-paper px-5 py-4 sm:px-6">
+          <div>
+            <p className="eyebrow text-green-text">Listing details</p>
+            <h2 id="listing-details-title" className="mt-1 text-2xl font-semibold text-ink">Tell us the essentials</h2>
+          </div>
+          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${ACCENT[type].chip} ${ACCENT[type].icon}`}>
+            <TypeIcon type={type} className="h-6 w-6" />
+          </span>
+        </div>
+
+        <div className="space-y-7 p-5 sm:p-6">
+          <Field label={type === "memorial" ? "Name of the departed" : "Title / name"}>
+            <input name="title" required className={inputCls} placeholder={titlePlaceholder(type)} />
+          </Field>
+
+          <div className="border-t border-sand pt-6">
+            <ImageUpload value={coverImageUrl} onChange={setCoverImageUrl} label={cover.label} hint={cover.hint} />
+          </div>
+
+          <div className="grid gap-5 border-t border-sand pt-6">
+            <TypeFields
+              type={type}
+              opportunityKind={oppKind}
+              onOpportunityKind={setOppKind}
+              memorialToggles={{ reminders, observeBday, onReminders: setReminders, onObserveBday: setObserveBday }}
+              propertyOptions={{
+                offer: propertyOffer,
+                propertyType,
+                availability: propertyAvailability,
+                furnished: propertyFurnished,
+                amenities: propertyAmenities,
+                onOffer: setPropertyOffer,
+                onPropertyType: setPropertyType,
+                onAvailability: setPropertyAvailability,
+                onFurnished: setPropertyFurnished,
+                onAmenities: setPropertyAmenities,
+              }}
+              businessCategories={businessCategories}
+              onBusinessCategories={setBusinessCategories}
+              eventOptions={{ format: eventFormat, onFormat: setEventFormat, audience: eventAudience, onAudience: setEventAudience, admission: eventAdmission, onAdmission: setEventAdmission, tiers: eventTiers, onTiers: setEventTiers }}
+            />
+            {type === "artist" && <><GenrePicker value={artistGenres} onChange={setArtistGenres} /><ArtistProfileEditor streamingLinks={artistStreamingLinks} onStreamingLinks={setArtistStreamingLinks} socials={artistSocials} onSocials={setArtistSocials} booking={artistBooking} onBooking={setArtistBooking} releases={artistReleases} onReleases={setArtistReleases} /></>}
+            {type === "business" && <SocialLinksEditor links={businessSocialLinks} onChange={setBusinessSocialLinks} />}
+          </div>
+
+          {MAPPABLE_TYPES.has(type) && <div className="border-t border-sand pt-6"><LocationPicker value={location} onChange={setLocation} hint={type === "event" ? "Optional — tap the map or drag the pin to the venue. This is what places the event on the town map." : type === "property" ? "Optional — place the pin near the property. For a private home, use the neighbourhood rather than an exact door location." : "Optional — tap the map or drag the pin to your storefront. This is what claims your spot on the town map."} /></div>}
+        </div>
+      </section>
+
+      {aiField && (
+        <section aria-labelledby="listing-story-title">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="eyebrow text-gold-text">The story</p>
+              <h2 id="listing-story-title" className="mt-1 text-2xl font-semibold text-ink">Write the part people will read</h2>
+            </div>
+            <span className="hidden text-xs text-ink-faint sm:block">Your words stay editable</span>
+          </div>
+          <AiWritingBar label={aiField.label} rows={aiField.rows} value={aiText} onChange={setAiText} />
+        </section>
+      )}
+
+      {error && <p role="alert" className="rounded-xl border border-clay/30 bg-clay/[0.08] px-4 py-3 text-sm text-clay-text">{error}</p>}
+
+      <section className="overflow-hidden rounded-[var(--radius-card)] bg-green-900 p-5 text-[#f6f1e7] shadow-[var(--shadow-card)] sm:p-6" aria-labelledby="send-review-title">
+        <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div>
+            <p className="text-[0.62rem] font-bold uppercase tracking-[0.15em] text-gold">Ready when you are</p>
+            <h2 id="send-review-title" className="mt-2 text-2xl font-semibold !text-[#f6f1e7]">Send it to a curator</h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#f6f1e7]/70">
+              Your account must be verified before submission. If it is not yet verified, visit <Link to="/account" className="font-semibold text-gold underline decoration-gold/40 underline-offset-2 hover:decoration-gold">your profile</Link> and request a code.
+            </p>
+          </div>
+          <button type="submit" disabled={busy} className="w-full rounded-full bg-gold-brand px-7 py-3 text-sm font-semibold text-green-900 transition-colors hover:bg-gold disabled:cursor-wait disabled:opacity-60 sm:w-auto">
+            {busy ? "Submitting…" : "Submit for review"}
+          </button>
+        </div>
+      </section>
+    </form>
+  );
+}
+
+function TypePicker({ type, onChange }: Readonly<{ type: ListingType; onChange: (t: ListingType) => void }>) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-medium text-ink">What are you adding?</legend>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {TYPES.map((t) => {
+          const on = type === t.value;
+          const a = ACCENT[t.value];
+          const chipCls = `${a.chip} ${a.icon}`;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => onChange(t.value)}
+              aria-pressed={on}
+              className={`group relative overflow-hidden rounded-xl border p-3.5 text-left transition-all ${on ? "border-green bg-green/[0.06] shadow-[var(--shadow-card)]" : "border-sand bg-cream hover:-translate-y-0.5 hover:border-green/40 hover:shadow-[var(--shadow-card)]"}`}
+            >
+              {/* faint oversized watermark decoration */}
+              <TypeIcon type={t.value} className={`pointer-events-none absolute -right-3 -top-3 h-16 w-16 opacity-[0.06] ${a.icon}`} />
+              <span className={`relative flex h-9 w-9 items-center justify-center rounded-lg ${on ? "bg-green text-on-green" : chipCls}`}>
+                <TypeIcon type={t.value} className="h-[18px] w-[18px]" />
+              </span>
+              <span className="relative mt-2.5 block text-sm font-semibold text-ink">{t.label}</span>
+              <span className="relative block text-xs leading-snug text-ink-faint">{t.hint}</span>
+              {on && (
+                <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-green text-on-green">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+// Keeper-controlled memorial remembrance toggles (spec §8.11) — booleans can't
+// ride FormData, so SubmitForm owns the state and merges it into the payload.
+type MemorialToggles = {
+  reminders: boolean;
+  observeBday: boolean;
+  onReminders: (v: boolean) => void;
+  onObserveBday: (v: boolean) => void;
+};
+
+type PropertyOptions = {
+  offer: PropertyOfferType;
+  propertyType: PropertyType;
+  availability: PropertyAvailability;
+  furnished: boolean;
+  amenities: string[];
+  onOffer: (value: PropertyOfferType) => void;
+  onPropertyType: (value: PropertyType) => void;
+  onAvailability: (value: PropertyAvailability) => void;
+  onFurnished: (value: boolean) => void;
+  onAmenities: (value: string[]) => void;
+};
+
+function OpportunityKindPicker({ value, onChange }: Readonly<{
+  value: (typeof OPPORTUNITY_KINDS)[number]["value"];
+  onChange: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void;
+}>) {
+  return (
+    <fieldset>
+      <legend className="text-sm font-semibold text-ink">Opportunity type</legend>
+      <p className="mt-1 text-xs text-ink-faint">Choose the format that best matches what you are offering.</p>
+      <input type="hidden" name="kind" value={value} />
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="Opportunity type">
+        {OPPORTUNITY_KINDS.map((kind) => {
+          const selected = value === kind.value;
+          return (
+            <button
+              key={kind.value}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onChange(kind.value)}
+              className={`relative min-h-[4.5rem] rounded-xl border px-4 py-3 pr-11 text-left transition-all ${selected ? "border-teal bg-teal/[0.09] text-teal-text shadow-sm" : "border-sand bg-paper text-ink-muted hover:border-teal/40 hover:text-ink"}`}
+            >
+              <span aria-hidden className="pointer-events-none absolute -bottom-5 right-1 text-6xl font-bold opacity-[0.055]">{kind.mark}</span>
+              <span className="block text-sm font-semibold">{kind.label}</span><span className="mt-1 block text-xs font-normal opacity-75">{kind.hint}</span><span className={`absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full border text-[0.65rem] ${selected ? "border-teal bg-teal text-on-green" : "border-sand text-transparent"}`} aria-hidden>✓</span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function ChoicePicker<T extends string>({ legend, value, options, onChange, columns = "grid-cols-2 sm:grid-cols-3" }: Readonly<{
+  legend: string;
+  value: T;
+  options: { value: T; label: string; hint?: string }[];
+  onChange: (value: T) => void;
+  columns?: string;
+}>) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-semibold text-ink">{legend}</legend>
+      <div className={`grid gap-2 ${columns}`}>
+        {options.map((option) => {
+          const selected = value === option.value;
+          return (
+            <button key={option.value} type="button" aria-pressed={selected} onClick={() => onChange(option.value)} className={`relative rounded-xl border px-3.5 py-3 text-left transition-colors ${selected ? "border-green bg-green/[0.07] text-green-text" : "border-sand bg-paper text-ink-muted hover:border-green/40 hover:text-ink"}`}>
+              <span className="block text-sm font-semibold">{option.label}</span>
+              {option.hint && <span className="mt-0.5 block text-xs leading-snug opacity-75">{option.hint}</span>}
+              {selected && <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-green text-[0.65rem] font-bold text-on-green" aria-hidden>✓</span>}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function ToggleSetting({ checked, onChange, title, description }: Readonly<{
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  title: string;
+  description: string;
+}>) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-start justify-between gap-4 rounded-xl border border-sand bg-paper p-4 text-left transition-colors hover:border-green/40"
+    >
+      <span>
+        <span className="block text-sm font-semibold text-ink">{title}</span>
+        <span className="mt-1 block text-xs leading-relaxed text-ink-faint">{description}</span>
+      </span>
+      <span className={`mt-0.5 flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${checked ? "bg-green" : "bg-sand"}`} aria-hidden>
+        <span className={`h-5 w-5 rounded-full bg-cream shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0"}`} />
+      </span>
+    </button>
+  );
+}
+
+function EventDateRangeFields() {
+  const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
+  function changeStart(value: string) { setStartsAt(value); if (endsAt && endsAt < value) setEndsAt(""); }
+  return <div className="rounded-2xl border border-gold-border/35 bg-gold/[0.05] p-4 sm:p-5">
+    <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-text">Event schedule</p><h3 className="mt-1 text-lg font-semibold text-ink">When does it happen?</h3><p className="mt-1 text-xs text-ink-faint">For a one-day event, leave the end date empty.</p></div>{endsAt && <span className="rounded-full bg-green px-3 py-1 text-xs font-semibold text-on-green">Multi-day</span>}</div>
+    <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Start date"><DatePicker name="startsAt" value={startsAt} onChange={changeStart} className="w-full" /></Field><Field label="End date (optional)" hint="Only use this when the event continues into another day."><DatePicker name="endsAt" value={endsAt} onChange={setEndsAt} min={startsAt || undefined} placeholder="Same day" className="w-full" /></Field></div>
+  </div>;
+}
+
+// The type-specific extra fields — uncontrolled inputs inside the shared form.
+function TypeFields({
+  type,
+  opportunityKind,
+  onOpportunityKind,
+  memorialToggles,
+  propertyOptions,
+  businessCategories,
+  onBusinessCategories,
+  eventOptions,
+}: Readonly<{ type: ListingType; opportunityKind: (typeof OPPORTUNITY_KINDS)[number]["value"]; onOpportunityKind: (kind: (typeof OPPORTUNITY_KINDS)[number]["value"]) => void; memorialToggles: MemorialToggles; propertyOptions: PropertyOptions; businessCategories: string[]; onBusinessCategories: (value: string[]) => void; eventOptions: { format: string; onFormat: (value: string) => void; audience: string[]; onAudience: (value: string[]) => void; admission: EventAdmission; onAdmission: (value: EventAdmission) => void; tiers: EventTierDraft[]; onTiers: (value: EventTierDraft[]) => void } }>) {
+  // Local YYYY-MM-DD upper bound for the memorial picker — a date of passing can't be in the future.
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return (
+    <>
+      {type === "business" && (
+        <div className="space-y-5">
+          <BusinessCategoryPicker value={businessCategories} onChange={onBusinessCategories} />
+          <Field label="Location / address"><input name="address" className={inputCls} placeholder="Kotokuraba, Cape Coast" /></Field>
+        </div>
+      )}
+      {type === "property" && (
+        <div className="space-y-6">
+          <ChoicePicker legend="How is this place offered?" value={propertyOptions.offer} options={PROPERTY_OFFERS} onChange={propertyOptions.onOffer} columns="grid-cols-1 sm:grid-cols-2" />
+          <PropertyTypePicker value={propertyOptions.propertyType} onChange={propertyOptions.onPropertyType} />
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Area / neighbourhood"><input name="area" required className={inputCls} placeholder="Pedu, Abura, Cape Coast town…" /></Field>
+            <Field label="Address" hint="For a private home, use a nearby landmark until a viewing is confirmed."><input name="address" required className={inputCls} placeholder="Near Pedu Junction, Cape Coast" /></Field>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label={`Price in GHS / ${propertyOptions.offer === "short-stay" ? "night" : "month"}`}><input name="priceGhs" required type="number" min="1" step="0.01" inputMode="decimal" className={inputCls} placeholder={propertyOptions.offer === "short-stay" ? "350" : "1200"} /></Field>
+            {propertyOptions.offer === "long-term" && <Field label="Deposit in GHS (optional)"><input name="depositGhs" type="number" min="1" step="0.01" inputMode="decimal" className={inputCls} placeholder="1200" /></Field>}
+            <Field label="Bedrooms"><input name="bedrooms" type="number" min="0" step="1" inputMode="numeric" className={inputCls} placeholder="2" /></Field>
+            <Field label="Bathrooms"><input name="bathrooms" type="number" min="0" step="1" inputMode="numeric" className={inputCls} placeholder="1" /></Field>
+          </div>
+
+          <ToggleSetting checked={propertyOptions.furnished} onChange={propertyOptions.onFurnished} title="Furnished" description="The advertised price includes the principal furniture shown in the listing." />
+
+          <AmenitiesPicker value={propertyOptions.amenities} onChange={propertyOptions.onAmenities} />
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="WhatsApp number" hint="Use a number prospective tenants or guests may contact."><input name="whatsapp" inputMode="tel" className={inputCls} placeholder="024 000 0000" /></Field>
+            <Field label="Booking or enquiry link (optional)"><input name="bookingUrl" inputMode="url" className={inputCls} placeholder="https://…" /></Field>
+          </div>
+
+          <ChoicePicker legend="Current availability" value={propertyOptions.availability} options={PROPERTY_AVAILABILITY} onChange={propertyOptions.onAvailability} />
+          <Field label="Available from (optional)"><DatePicker name="availableFrom" className="w-full" /></Field>
+        </div>
+      )}
+      {type === "event" && (
+        <div className="space-y-6">
+          <EventDateRangeFields />
+          <Field label="Venue / location"><input name="venue" className={inputCls} placeholder="Victoria Park, Cape Coast" /></Field>
+          <EventDetailsFields format={eventOptions.format} onFormat={eventOptions.onFormat} audience={eventOptions.audience} onAudience={eventOptions.onAudience} admission={eventOptions.admission} onAdmission={eventOptions.onAdmission} tiers={eventOptions.tiers} onTiers={eventOptions.onTiers} />
+        </div>
+      )}
+      {type === "memory" && (
+        <Field label="Era" hint="e.g. 1980s"><input name="era" className={inputCls} placeholder="1980s" /></Field>
+      )}
+      {type === "opportunity" && (<>
+        <OpportunityKindPicker value={opportunityKind} onChange={onOpportunityKind} />
+        <div className="space-y-5">
+          <Field label="Description"><textarea name="description" rows={3} className={inputCls} /></Field>
+          <Field label="Provider / programme owner"><input name="provider" className={inputCls} placeholder="Institution, company or verified organisation" /></Field>
+        </div>
+        {(opportunityKind === "investment" || opportunityKind === "mentorship") && (
+          <Field label="Safeguarding / policy link" hint="Required for mentorship programmes and recommended for investment calls.">
+            <input name="safeguardingPolicyUrl" className={inputCls} placeholder="https://…" />
+          </Field>
+        )}
+        {opportunityKind === "mentorship" && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Minimum age (optional)"><input name="minAge" inputMode="numeric" className={inputCls} placeholder="16" /></Field>
+            <Field label="Maximum age (optional)"><input name="maxAge" inputMode="numeric" className={inputCls} placeholder="19" /></Field>
+          </div>
+        )}
+        {opportunityKind === "mentorship" && (
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-sand bg-paper p-4 text-sm text-ink transition-colors hover:border-green/40">
+            <input type="checkbox" name="guardianConsentRequired" defaultChecked className="peer sr-only" />
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-sand text-transparent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-green/25 peer-checked:border-green peer-checked:bg-green peer-checked:text-on-green" aria-hidden>✓</span>
+            <span>
+              <span className="font-semibold">Require guardian consent for minors</span>
+              <span className="mt-0.5 block text-xs text-ink-faint">If minimum age is under 18, this must stay enabled.</span>
+            </span>
+          </label>
+        )}
+        <Field label="How to apply (link)" hint="Information and outbound links only."><input name="applyUrl" className={inputCls} placeholder="https://…" /></Field>
+      </>)}
+      {type === "person" && (
+        <Field label="Era" hint="e.g. Colonial era, 1950s, contemporary"><input name="era" className={inputCls} placeholder="Contemporary" /></Field>
+      )}
+      {type === "memorial" && (
+        <div className="overflow-hidden rounded-[var(--radius-card)] border border-gold-border/40 bg-gold/[0.06]">
+          <div className="border-b border-gold-border/25 px-5 py-4">
+            <p className="text-sm leading-relaxed text-ink-muted"><b className="text-ink">A lasting remembrance.</b> Please create a memorial only with the family's awareness. It is reviewed sensitively and kept permanently.</p>
+          </div>
+          <div className="space-y-5 p-5">
+            <Field label="Honorific (optional)" hint="e.g. Nana, Maame, Dr."><input name="honorific" className={inputCls} placeholder="Nana" /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Year of birth (optional)"><input name="bornYear" inputMode="numeric" className={inputCls} placeholder="1942" /></Field>
+              <Field label="Date of passing (optional)"><DatePicker name="diedDate" max={todayIso} className="w-full" /></Field>
+            </div>
+            <Field label="Birthday (optional)" hint="MM-DD, for yearly remembrance"><input name="birthday" className={inputCls} placeholder="03-21" /></Field>
+            <Field label="Epitaph (optional)" hint="A short line of remembrance"><input name="epitaph" className={inputCls} /></Field>
+            <Field label="Associations (optional)" hint="Comma-separated — schools, asafo companies, churches…"><input name="associations" className={inputCls} placeholder="Mfantsipim, Bentsir No.1" /></Field>
+            <div className="grid gap-3">
+              <ToggleSetting
+                checked={memorialToggles.reminders}
+                onChange={memorialToggles.onReminders}
+                title="Yearly remembrance"
+                description="A gentle reminder reaches those who remember them each year on the passing anniversary."
+              />
+              <ToggleSetting
+                checked={memorialToggles.observeBday}
+                onChange={memorialToggles.onObserveBday}
+                title="Also observe the birthday"
+                description="Remember them on their birthday too, not only the anniversary of their passing."
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function titlePlaceholder(t: ListingType): string {
+  return { artist: "Act / artist name", business: "Business name", property: "A clear property title", event: "Event title", memory: "A title for your memory", opportunity: "Opportunity title", person: "Their name", memorial: "Full name", project: "Project title", incident: "Incident title", lostfound: "Notice title" }[t];
+}
+
+function SubmittedState({ title, onReset }: Readonly<{ title: string; onReset: () => void }>) {
+  const steps = [
+    { label: "Draft", state: "Complete" },
+    { label: "Pending", state: "Now" },
+    { label: "Approved", state: "Next" },
+  ];
+  return (
+    <div className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]">
+      <div className="bg-green-900 px-6 py-9 text-center text-[#f6f1e7] sm:px-8">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gold-brand text-green-900 shadow-lg">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
+        </div>
+        <p className="mt-5 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-gold">Contribution received</p>
+        <h2 className="mt-2 text-3xl font-semibold !text-[#f6f1e7]">“{title}” is in the queue</h2>
+        <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[#f6f1e7]/70">
+          A curator will check that it is <b className="text-[#f6f1e7]">real, local, correctly categorised and appropriate</b>. You will be notified as soon as the review is complete.
+        </p>
+      </div>
+      <div className="p-6 sm:p-8">
+        <ol className="grid gap-3 sm:grid-cols-3">
+          {steps.map((step, index) => (
+            <li key={step.label} className={`rounded-xl border p-4 ${index === 1 ? "border-gold-border/50 bg-gold/[0.08]" : "border-sand bg-paper"}`}>
+              <div className="flex items-center justify-between gap-3">
+                <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${index <= 1 ? "bg-green text-on-green" : "border border-sand text-ink-faint"}`}>{index + 1}</span>
+                <span className={`text-[0.65rem] font-bold uppercase tracking-wide ${index === 1 ? "text-gold-text" : "text-ink-faint"}`}>{step.state}</span>
+              </div>
+              <p className={`mt-3 text-sm font-semibold ${index === 1 ? "text-green-text" : "text-ink"}`}>{step.label}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+          <Link to="/work" className="inline-flex items-center justify-center rounded-full bg-green px-6 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900">Back to My Work</Link>
+          <button type="button" onClick={onReset} className="rounded-full border border-green/30 px-6 py-2.5 text-sm font-semibold text-green-text transition-colors hover:border-green">Submit another</button>
+        </div>
+      </div>
+    </div>
+  );
+}

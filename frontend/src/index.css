@@ -49,7 +49,7 @@
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "Outfit", ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: 14px;
   --shadow-card: 0 12px 30px rgba(30, 28, 25, 0.06);
@@ -123,13 +123,9 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
-  /* Display titles use Fraunces; smaller headings and body copy stay in Outfit. */
   h1,
   h2 {
-    font-family: "Fraunces", Georgia, "Times New Roman", serif;
-  }
-  h1,
-  h2 {
+    font-family: var(--font-sans);
     font-weight: 600;
     letter-spacing: -0.01em;
     line-height: 1.08;

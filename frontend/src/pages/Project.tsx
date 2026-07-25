@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import { Adinkra } from "@/components/adinkra";
 import { Thumb } from "@/components/cards";
+import { Breadcrumbs, HeroIcon, HeroWatermark } from "@/components/hero-chrome";
 import { ReportButton } from "@/components/report-button";
 import { Skeleton, SkeletonText } from "@/components/skeleton";
 import { Container, Pill } from "@/components/ui";
@@ -128,8 +129,8 @@ export function Component() {
       <Container size="wide" className="grid gap-10 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_23rem] lg:gap-12">
         <div className="min-w-0">
           <section aria-labelledby="project-story">
-            <p className="eyebrow text-green-text">The work</p>
-            <h2 id="project-story" className="mt-3 max-w-3xl text-4xl font-semibold text-ink sm:text-5xl">What this project will change.</h2>
+            <p className="eyebrow text-green-text">Why it matters</p>
+            <h2 id="project-story" className="mt-3 max-w-3xl text-4xl font-semibold text-ink sm:text-5xl">{details.campaign ? "What your support makes possible." : "What this project will change."}</h2>
             {details.description ? (
               <p className="mt-7 max-w-3xl text-lg leading-8 text-ink-muted sm:text-xl sm:leading-9">{details.description}</p>
             ) : (
@@ -193,7 +194,9 @@ export function Component() {
           />
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-4 px-1">
-            <Link to="/projects" className="text-sm font-semibold text-green-text hover:underline"><span aria-hidden>←</span> All projects</Link>
+            <Link to={details.campaign ? "/campaigns" : "/projects"} className="text-sm font-semibold text-green-text hover:underline">
+              <span aria-hidden>←</span> {details.campaign ? "All campaigns" : "All projects"}
+            </Link>
             <ReportButton listingId={project.id} />
           </div>
         </aside>
@@ -204,45 +207,58 @@ export function Component() {
 
 function ProjectHero({ project }: Readonly<{ project: Listing }>) {
   const details = project.details;
+  const isCreatorCampaign = Boolean(details.campaign);
+  const backTo = isCreatorCampaign ? "/campaigns" : "/projects";
+  const backLabel = isCreatorCampaign ? "Fundraising campaigns" : "Community projects";
+
   return (
     <header className="on-dark on-dark-pin relative isolate overflow-hidden bg-green-900 text-cream">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(176,125,50,0.2),transparent_32%),linear-gradient(135deg,#0C2C1F_0%,#123F2D_58%,#081C14_100%)]" aria-hidden />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(199,162,74,0.2),transparent_34%),linear-gradient(135deg,#0C2C1F_0%,#123F2D_58%,#071A12_100%)]" aria-hidden />
       <div className="bg-dotgrid absolute inset-0 opacity-25" aria-hidden />
+      <HeroWatermark sectionId="community" onDark />
 
-      <Container size="wide" className="relative py-9 sm:py-12 lg:py-16">
-        <nav aria-label="Breadcrumb">
-          <ol className="flex flex-wrap items-center gap-2 text-sm text-cream/65">
-            <li><Link to="/" className="transition-colors hover:text-gold">Home</Link></li>
-            <li aria-hidden>/</li>
-            <li><Link to="/projects" className="transition-colors hover:text-gold">Community projects</Link></li>
-            <li aria-hidden>/</li>
-            <li className="max-w-52 truncate text-cream/90" aria-current="page">{project.title}</li>
-          </ol>
-        </nav>
+      <Container size="wide" className="relative py-10 sm:py-14 lg:py-16">
+        <Breadcrumbs crumbs={[{ label: "Home", to: "/" }, { label: backLabel, to: backTo }, { label: project.title }]} onDark />
 
-        <div className="mt-9 grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-14">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-gold/45 bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-gold">Adopt a project</span>
-              {project.featured && <span className="rounded-full border border-cream/20 bg-cream/10 px-3 py-1 text-xs text-cream/80">Community focus</span>}
+        <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_27rem] lg:gap-16">
+          <div className="min-w-0">
+            <HeroIcon sectionId="community" onDark />
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-gold/45 bg-gold/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-gold">
+                {isCreatorCampaign ? "Creator campaign" : "Community project"}
+              </span>
+              {project.featured && <span className="rounded-full border border-cream/20 bg-cream/10 px-3 py-1 text-xs font-semibold text-cream/80">Community focus</span>}
             </div>
-            <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.98] text-cream sm:text-6xl">{project.title}</h1>
-            {details.organiser && <p className="mt-5 text-sm font-semibold text-gold">Led by {details.organiser}</p>}
-
-            <div className="mt-8 max-w-2xl">
-              <ProgressBar raised={details.raisedPesewas} goal={details.goalPesewas} onDark />
+            <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] text-cream sm:text-6xl lg:text-7xl">{project.title}</h1>
+            <p className="mt-5 text-base font-medium text-gold sm:text-lg">{details.organiser ? `Led by ${details.organiser}` : "A public Oguaa funding record"}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a href="#support-project" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gold-brand px-6 text-base font-bold text-green-900 transition-colors hover:bg-gold">
+                Support this {isCreatorCampaign ? "campaign" : "project"} <span aria-hidden>→</span>
+              </a>
+              <a href="#project-story" className="inline-flex min-h-12 items-center justify-center rounded-full border border-cream/25 bg-cream/[0.07] px-5 text-sm font-semibold text-cream transition-colors hover:border-gold hover:text-gold">See the plan</a>
             </div>
-
-            <dl className="mt-8 grid max-w-2xl grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-cream/15 bg-cream/15 sm:grid-cols-3">
-              <HeroFact label="Backers" value={String(details.backers ?? 0)} />
-              <HeroFact label="Target" value={details.goalPesewas ? cedis(details.goalPesewas) : "Being finalised"} />
-              <HeroFact label="Funding closes" value={details.deadline ? formatDate(details.deadline) : "Open-ended"} wide />
-            </dl>
           </div>
 
-          <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.06] p-3 shadow-2xl shadow-black/25">
-            <Thumb seed={project.slug} label={initials(project.title)} src={project.coverImageUrl} rounded="rounded-[var(--radius-card)]" className="aspect-[4/3] min-h-[310px] w-full" coverWidth={900} />
-            <span className="absolute bottom-6 left-6 rounded-full border border-cream/20 bg-green-900/75 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-cream backdrop-blur-sm">Public campaign record</span>
+          <figure className="relative mx-auto w-full max-w-md lg:mx-0">
+            <div className="absolute -inset-3 rotate-2 rounded-[1.75rem] border border-gold/30 bg-gold/[0.08]" aria-hidden />
+            <div className="relative overflow-hidden rounded-[1.5rem] border border-cream/20 bg-green-900 p-2 shadow-2xl shadow-black/25">
+              <Thumb seed={project.slug} label={initials(project.title)} src={project.coverImageUrl} rounded="rounded-[1.1rem]" className="aspect-[4/3] min-h-[280px] w-full" coverWidth={900} />
+            </div>
+            <figcaption className="absolute bottom-5 left-5 rounded-full border border-cream/20 bg-green-900/80 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-cream backdrop-blur-sm">Verified public campaign</figcaption>
+          </figure>
+        </div>
+
+        <div className="mt-10 overflow-hidden rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.07] backdrop-blur-sm">
+          <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold">Funding progress</p>
+              <div className="mt-3"><ProgressBar raised={details.raisedPesewas} goal={details.goalPesewas} onDark /></div>
+            </div>
+            <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-cream/10 bg-cream/10">
+              <HeroFact label="Backers" value={String(details.backers ?? 0)} />
+              <HeroFact label="Target" value={details.goalPesewas ? cedis(details.goalPesewas) : "Finalising"} />
+              <HeroFact label="Closes" value={details.deadline ? formatDate(details.deadline) : "Open"} />
+            </dl>
           </div>
         </div>
       </Container>
@@ -250,11 +266,11 @@ function ProjectHero({ project }: Readonly<{ project: Listing }>) {
   );
 }
 
-function HeroFact({ label, value, wide = false }: Readonly<{ label: string; value: string; wide?: boolean }>) {
+function HeroFact({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
-    <div className={`bg-green-900/65 px-4 py-4 backdrop-blur-sm ${wide ? "col-span-2 sm:col-span-1" : ""}`}>
-      <dt className="text-[0.63rem] uppercase tracking-[0.15em] text-cream/50">{label}</dt>
-      <dd className="mt-1 text-sm font-semibold text-cream">{value}</dd>
+    <div className="bg-green-900/55 px-3 py-4 text-center">
+      <dt className="text-[0.58rem] font-semibold uppercase tracking-[0.13em] text-cream/50">{label}</dt>
+      <dd className="mt-1 text-xs font-semibold text-cream sm:text-sm">{value}</dd>
     </div>
   );
 }
@@ -294,10 +310,10 @@ interface PledgePanelProps {
 function PledgePanel({ project, amount, busy, error, confirming, confirmed, signedIn, pledgeLabel, onAmountChange, onSubmit }: PledgePanelProps) {
   const details = project.details;
   return (
-    <section aria-labelledby="pledge-heading" className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-lift)]">
+    <section id="support-project" aria-labelledby="pledge-heading" className="scroll-mt-24 overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-lift)]">
       <div className="on-dark on-dark-pin bg-green px-6 py-5 text-cream">
-        <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-gold">Fund the work</p>
-        <h2 id="pledge-heading" className="mt-1 text-2xl font-semibold text-cream">Make your pledge</h2>
+        <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-gold">Make it happen</p>
+        <h2 id="pledge-heading" className="mt-1 text-2xl font-semibold text-cream">Support this {details.campaign ? "campaign" : "project"}</h2>
       </div>
 
       <div className="p-5 sm:p-6">

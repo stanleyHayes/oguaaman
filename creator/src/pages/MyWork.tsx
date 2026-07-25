@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLoaderData, useRevalidator } from "react-router-dom";
 import { api } from "@/lib/api";
-import { publicPathFor, portalUrl, PORTAL } from "@/lib/portal";
+import { publicPathFor, portalUrl } from "@/lib/portal";
 import type { Listing, MemberView, Promotion } from "@/lib/types";
 import { Card, Empty, StatusBadge } from "@/components/ui";
 import { Pagination, usePagedList } from "@/components/pagination";
@@ -77,9 +77,9 @@ export function Component() {
             Everything you've contributed, with its review status. Promote an approved listing to feature it across the portal — GH₵ 10 per day.
           </p>
         </div>
-        <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900">
+        <Link to="/work/new" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green transition-colors hover:bg-green-900">
           Add a listing
-        </a>
+        </Link>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -102,9 +102,9 @@ export function Component() {
 
       {filtered.length === 0 ? (
         <Empty icon="pen" title={statusFilter === "all" ? "Nothing yet" : `No ${statusFilter} listings`} actions={
-          statusFilter === "all" ? <a href={`${PORTAL}/submit`} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green">Add your first listing</a> : undefined
+          statusFilter === "all" ? <Link to="/work/new" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green">Add your first listing</Link> : undefined
         }>
-          {statusFilter === "all" ? "Your businesses, events, art and projects show up here once you submit them on the portal." : `You have no listings with "${statusFilter}" status.`}
+          {statusFilter === "all" ? "Add a business, event, artist profile, opportunity and more — right here in the studio. They show up with their review status once submitted." : `You have no listings with "${statusFilter}" status.`}
         </Empty>
       ) : (
         <>

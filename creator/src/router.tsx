@@ -12,7 +12,9 @@ function buildRouter() {
       children: [
         { index: true, lazy: () => import("./pages/Overview") },
         { path: "work", lazy: () => import("./pages/MyWork") },
+        { path: "work/new", lazy: () => import("./pages/NewListing") },
         { path: "work/:id/edit", lazy: () => import("./pages/EditListing") },
+        { path: "bookings", lazy: () => import("./pages/Bookings") },
         { path: "institutions", lazy: () => import("./pages/Institutions") },
         { path: "team", lazy: () => import("./pages/Team") },
         { path: "team/:slug", lazy: () => import("./pages/Team") },

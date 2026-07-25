@@ -24,6 +24,12 @@ function fmtDate(iso?: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
+function fmtDateRange(startsAt?: string, endsAt?: string): string {
+  if (!startsAt) return "";
+  if (!endsAt || endsAt.slice(0, 10) === startsAt.slice(0, 10)) return fmtDate(startsAt);
+  return `${fmtDate(startsAt)} – ${fmtDate(endsAt)}`;
+}
+
 export default function EventDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading, reload } = useApi<EventView>(() => api.eventView(slug), `event:${slug}`);
@@ -52,10 +58,19 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
           </View>
           <Text style={s.title}>{event.title}</Text>
           <Text style={s.meta}>
-            {[fmtDate(d.startsAt), d.venue, d.organiser].filter(Boolean).join(" · ")}
+            {[fmtDateRange(d.startsAt, d.endsAt), d.venue, d.organiser].filter(Boolean).join(" · ")}
           </Text>
 
           {d.description ? <Text style={s.desc}>{d.description}</Text> : null}
+          <View style={s.infoGrid}>
+            {d.eventFormat ? <InfoCard mark="✦" label="FORMAT" value={pretty(d.eventFormat)} /> : null}
+            <InfoCard mark={(d.admission === "paid" || view.tiers.length > 0) ? "₵" : "0"} label="ADMISSION" value={(d.admission === "paid" || view.tiers.length > 0) ? "Paid tickets" : "Free entry"} />
+            {(d.audience ?? []).length ? <InfoCard mark="◎" label="AUDIENCE" value={(d.audience ?? []).map(pretty).join(" · ")} /> : null}
+            {d.organiser ? <InfoCard mark="◇" label="ORGANISER" value={d.organiser} /> : null}
+          </View>
+          {(d.highlights ?? []).length > 0 ? <EventList title="EVENT HIGHLIGHTS" mark="✦" items={d.highlights ?? []} /> : null}
+          {(d.featuredGuests ?? []).length > 0 ? <EventList title="FEATURED GUESTS & PERFORMERS" mark="♫" items={d.featuredGuests ?? []} /> : null}
+          {(d.accessibility || d.ageGuidance || d.dressCode || d.contactInfo || d.refundPolicy) ? <View style={s.practical}><Text style={s.kickerNoMargin}>KNOW BEFORE YOU GO</Text>{d.ageGuidance ? <Practical label="Age guidance" value={d.ageGuidance} /> : null}{d.dressCode ? <Practical label="Dress code" value={d.dressCode} /> : null}{d.accessibility ? <Practical label="Accessibility & arrival" value={d.accessibility} /> : null}{d.contactInfo ? <Practical label="Questions" value={d.contactInfo} /> : null}{d.refundPolicy ? <Practical label="Refund / cancellation" value={d.refundPolicy} /> : null}</View> : null}
           {d.venue ? <LocationCard address={d.venue} query={`${event.title} ${d.venue}`} /> : null}
 
           {event.tags.length > 0 && (
@@ -97,6 +112,11 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
     </>
   );
 }
+
+function pretty(value: string): string { return value.split("-").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" "); }
+function InfoCard({ mark, label, value }: Readonly<{ mark: string; label: string; value: string }>) { const s = useStyles(); return <View style={s.infoCard}><Text style={s.infoWatermark}>{mark}</Text><Text style={s.infoLabel}>{label}</Text><Text style={s.infoValue}>{value}</Text></View>; }
+function EventList({ title, mark, items }: Readonly<{ title: string; mark: string; items: string[] }>) { const s = useStyles(); return <View style={s.listCard}><Text style={s.listWatermark}>{mark}</Text><Text style={s.kickerNoMargin}>{title}</Text>{items.map((item) => <View key={item} style={s.listRow}><View style={s.bullet} /><Text style={s.listText}>{item}</Text></View>)}</View>; }
+function Practical({ label, value }: Readonly<{ label: string; value: string }>) { const s = useStyles(); return <View style={s.practicalRow}><Text style={s.practicalLabel}>{label}</Text><Text style={s.practicalValue}>{value}</Text></View>; }
 
 // Ticket purchase flow: tier pick → Paystack handoff → manual verify. Confirm
 // is idempotent server-side, so verifying twice is harmless (same as pledges).
@@ -310,6 +330,12 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   title: { ...D(700), fontSize: 27, color: C.ink, marginTop: 10 },
   meta: { color: C.goldText, fontSize: 13, marginTop: 4, lineHeight: 19 },
   desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 16 },
+  infoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 18 },
+  infoCard: { width: "48.5%", minHeight: 92, overflow: "hidden", borderWidth: 1, borderColor: C.sand, borderRadius: 12, backgroundColor: C.cream, padding: 12 },
+  infoWatermark: { position: "absolute", right: 1, bottom: -18, color: C.green, opacity: 0.05, fontSize: 60, ...S(700) },
+  infoLabel: { color: C.inkFaint, fontSize: 9, letterSpacing: 1.2, ...S(700) }, infoValue: { color: C.ink, fontSize: 13, lineHeight: 18, ...S(700), marginTop: 8 },
+  listCard: { overflow: "hidden", marginTop: 14, borderWidth: 1, borderColor: C.sand, borderRadius: 13, backgroundColor: C.cream, padding: 14 }, listWatermark: { position: "absolute", right: -6, bottom: -35, color: C.green, opacity: 0.04, fontSize: 110, ...S(700) }, kickerNoMargin: { color: C.goldText, fontSize: 10, letterSpacing: 1.5, ...S(700) }, listRow: { flexDirection: "row", gap: 9, marginTop: 11 }, bullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.teal, marginTop: 7 }, listText: { flex: 1, color: C.inkMuted, fontSize: 13, lineHeight: 20 },
+  practical: { marginTop: 14, borderWidth: 1, borderColor: C.sand, borderRadius: 13, backgroundColor: C.cream, padding: 14 }, practicalRow: { borderTopWidth: 1, borderTopColor: C.sand, paddingTop: 11, marginTop: 11 }, practicalLabel: { color: C.ink, fontSize: 12, ...S(700) }, practicalValue: { color: C.inkMuted, fontSize: 12.5, lineHeight: 19, marginTop: 4 },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 16 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginTop: 26 },
   progRow: { flexDirection: "row", gap: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 10, padding: 12 },

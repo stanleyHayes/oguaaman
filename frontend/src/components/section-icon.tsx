@@ -24,6 +24,10 @@ const PATHS: Record<string, ReactNode> = {
   better: <><path d="M11 14h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16" /><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9" /><path d="m2 15 6 6" /><path d="M19.5 8.5c.7-.7 1.5-1.6 1.5-2.7A2.73 2.73 0 0 0 16 4a2.78 2.78 0 0 0-5 1.8c0 1.2.8 2 1.5 2.8L16 12Z" /></>,
   // Oguaa Outside — a parcel/consignment: procurement, shipping, errands abroad.
   outside: <><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" /><path d="M4 7.5 12 12l8-4.5M12 12v9" /><path d="m8 5.2 8 4.6" /></>,
+  // Adopt-a-project — a heart (care for a community improvement).
+  projects: <path d="M12 20.5s-6.5-4.6-6.5-9.4A3.9 3.9 0 0 1 12 7.7a3.9 3.9 0 0 1 6.5 3.4c0 4.8-6.5 9.4-6.5 9.4Z" />,
+  // Fundraising campaigns — a heart in a giving badge.
+  campaigns: <><circle cx="12" cy="12" r="9" /><path d="M12 16.3s-3.4-2.4-3.4-5A2.1 2.1 0 0 1 12 9.4 2.1 2.1 0 0 1 15.4 11.3c0 2.6-3.4 5-3.4 5Z" /></>,
 };
 
 export function SectionIcon({ id, className = "" }: Readonly<{ id: string; className?: string }>) {

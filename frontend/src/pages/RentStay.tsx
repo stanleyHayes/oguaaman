@@ -3,13 +3,17 @@ import { Link, useLoaderData } from "react-router-dom";
 import type { Listing, PropertyOfferType, PropertyType } from "@/lib/types";
 import { api } from "@/lib/api";
 import { usePageTitle } from "@/lib/use-page-title";
+import { useClientPagination } from "@/lib/use-pagination";
 import { Container, Pill } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { EmptyGlyph, EmptyState } from "@/components/empty-state";
+import { Pagination } from "@/components/pagination";
 
 export async function loader() {
   return api.properties();
 }
+
+const PER_PAGE = 12;
 
 const PROPERTY_LABELS: Record<PropertyType, string> = {
   room: "Room",
@@ -121,6 +125,7 @@ export function Component() {
     .filter((property) => maxPrice === 0 || (property.details.pricePesewas ?? 0) <= maxPrice * 100)
     .sort((a, b) => Number(a.details.availability !== "available") - Number(b.details.availability !== "available") || (a.details.pricePesewas ?? 0) - (b.details.pricePesewas ?? 0)), [properties, offer, propertyType, area, maxPrice]);
 
+  const { pageItems, page, totalPages, goToPage, listRef } = useClientPagination(shown, PER_PAGE, `${offer}|${propertyType}|${area}|${maxPrice}`);
   const hasFilters = offer !== "all" || propertyType !== "all" || area !== "all" || maxPrice > 0;
   function clearFilters() {
     setOffer("all");
@@ -188,7 +193,10 @@ export function Component() {
           </div>
 
           {shown.length > 0 ? (
-            <div className="relative z-10 mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{shown.map((property) => <PropertyCard key={property.id} property={property} />)}</div>
+            <div ref={listRef} className="scroll-mt-24">
+              <div className="relative z-10 mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{pageItems.map((property) => <PropertyCard key={property.id} property={property} />)}</div>
+              <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+            </div>
           ) : (
             <div className="mt-6 rounded-[var(--radius-card)] border border-dashed border-sand bg-cream">
               <EmptyState

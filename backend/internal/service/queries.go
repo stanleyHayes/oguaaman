@@ -117,7 +117,22 @@ func (s *Service) Businesses(ctx context.Context) ([]domain.Listing, error) {
 	return items, nil
 }
 func (s *Service) Properties(ctx context.Context) ([]domain.Listing, error) {
-	return s.approved(ctx, domain.TypeProperty)
+	items, err := s.approved(ctx, domain.TypeProperty)
+	if err != nil {
+		return nil, err
+	}
+	// A property the owner has marked "let" (taken) drops out of the public
+	// browse so renters only see places they can actually take. Direct links and
+	// the owner's own dashboard still resolve it, and the owner can re-list it as
+	// available at any time. See SetPropertyAvailability.
+	out := items[:0]
+	for _, l := range items {
+		if asString(l.Details, "availability") == domain.PropertyAvailabilityLet {
+			continue
+		}
+		out = append(out, l)
+	}
+	return out, nil
 }
 func (s *Service) Opportunities(ctx context.Context) ([]domain.Listing, error) {
 	return s.approved(ctx, domain.TypeOpportunity)

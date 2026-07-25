@@ -1,4 +1,4 @@
-import type { CreatorEarnings, CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NewsArticle, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, SocialLink, Subscription, TeamView, Ticket } from "./types";
+import type { ArtistBooking, CreatorEarnings, CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NewsArticle, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, SocialLink, Subscription, TeamView, Ticket } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -110,6 +110,9 @@ export const api = {
   // Owner-scoped dashboard aggregation (Creator Platform plan §4).
   creatorOverview: () => get<CreatorOverview>("/api/creator/overview"),
   creatorEarnings: () => get<CreatorEarnings>("/api/creator/earnings"),
+  artistBookings: () => get<ArtistBooking[]>("/api/me/artist-bookings"),
+  updateArtistBooking: (id: string, status: ArtistBooking["status"], note = "") =>
+    post<ArtistBooking>(`/api/me/artist-bookings/${id}/status`, { status, note }),
   setCreatorTypes: (creatorTypes: string[]) => post<Member>("/api/me/creator-types", { creatorTypes }),
 
   // Profile editing — photo (Cloudinary/first-party upload, we store the URL),
@@ -129,6 +132,14 @@ export const api = {
 
   // The member's own listings arrive on the public member view (all statuses).
   member: (slug: string) => get<MemberView>(`/api/members/${slug}`),
+
+  // Create a new listing directly from the studio (business/event/artist/…).
+  // Enters the moderation queue, same as the citizen-app submit form.
+  submitListing: (body: { type: string; title: string; tags?: string[]; townId?: string; coverImageUrl?: string; latitude?: number; longitude?: number; details?: Record<string, unknown> }) =>
+    post<Listing>("/api/listings", body),
+
+  ai: (body: { action: string; text?: string; language?: string; prompt?: string }) =>
+    post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body),
 
   // Owner listing editor: full-replace title/cover/whitelisted details.
   // Approved listings stay live; non-live ones re-queue for review.

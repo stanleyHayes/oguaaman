@@ -40,6 +40,7 @@ const (
 	collAgentJobs       = "agent_jobs"
 	collAgentReviews    = "agent_reviews"
 	collReviews         = "reviews"
+	collArtistBookings  = "artist_bookings"
 )
 
 // notFound maps the driver's no-documents sentinel to a domain NotFoundError.

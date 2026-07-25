@@ -12,7 +12,7 @@ import { D, ON_GREEN, S, initials, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, HeroBand, Thumb } from "@/ui";
 import { MetricCard, cedis } from "@/components/studio-kit";
-import { ArrowUpRightIcon, CediIcon, ChevronRightIcon, ClockIcon, DiamondIcon, EyeIcon, GridIcon, StarIcon, TicketIcon, type IconProps } from "@/components/icons";
+import { ArrowUpRightIcon, CalendarIcon, CediIcon, ChevronRightIcon, ClockIcon, DiamondIcon, EyeIcon, GridIcon, StarIcon, TicketIcon, type IconProps } from "@/components/icons";
 
 /*
  * ─────────────────────────────────────────────────────────────────────────────
@@ -69,6 +69,7 @@ function StudioLoaded() {
 
   const tools: Tool[] = [
     { icon: GridIcon, label: "My work", desc: "Listings you own, with review status", href: ROUTES.studioWork },
+    { icon: CalendarIcon, label: "Artist bookings", desc: "Private event requests sent to your artist pages", href: ROUTES.studioBookings },
     { icon: ArrowUpRightIcon, label: "Grow", desc: "Promote your work and pick a plan", href: ROUTES.studioGrow },
     { icon: CediIcon, label: "Money", desc: "Tickets sold and pledges raised", href: ROUTES.studioMoney },
     { icon: DiamondIcon, label: "Team", desc: "Manage your institution roster", href: ROUTES.studioTeam },

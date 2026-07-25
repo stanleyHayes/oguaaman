@@ -2,7 +2,7 @@
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
   Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, StoreItem, Review, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams,
-  Agent, AgentInput, AgentJob, AgentReview, AgentService, JobInput, MyJobs,
+  Agent, AgentInput, AgentJob, AgentReview, AgentService, ArtistBooking, JobInput, MyJobs, PropertyAvailability,
 } from "./types";
 
 export type { Page, PageParams } from "./types";
@@ -172,6 +172,8 @@ export const api = {
 
   artists: () => get<Listing[]>("/api/artists"),
   artist: (slug: string) => get<Listing>(`/api/artists/${slug}`),
+  requestArtistBooking: (slug: string, body: { eventType: string; eventDate: string; location: string; audienceSize?: number; budgetPesewas?: number; message?: string; contactEmail?: string; contactPhone?: string }) =>
+    post<ArtistBooking>(`/api/artists/${slug}/bookings`, body),
   genres: () => get<string[]>("/api/genres"),
   musicLegacy: () => get<Listing[]>("/api/music/legacy"),
 
@@ -249,6 +251,10 @@ export const api = {
 
   properties,
   property: (slug: string) => get<Listing>(`/api/properties/${slug}`),
+  // Owner-only: flip a property's letting state. Marking it "let" (taken) drops
+  // it from the public Rent & Stay browse + search until it's freed up again.
+  setPropertyAvailability: (slug: string, availability: PropertyAvailability) =>
+    post<{ availability: PropertyAvailability }>(`/api/properties/${slug}/availability`, { availability }),
 
   // Business subscriptions (Phase 7): plans come from the staff-managed catalog.
   plans: () => get<Plan[]>("/api/plans"),

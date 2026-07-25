@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -220,6 +221,41 @@ func (h *Handler) Property(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, l)
+}
+
+// SetPropertyAvailability flips a property's letting state (available | reserved
+// | let) — the owner marking it taken so it leaves the public browse + search,
+// or freeing it up again. Owner-only (curators/stewards may override).
+func (h *Handler) SetPropertyAvailability(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	var in struct {
+		Availability string `json:"availability"`
+	}
+	if err := decodeBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+		return
+	}
+	if m == nil {
+		m = &domain.Member{ID: domain.DevDemoMemberID} // dev convenience only — never reached when AUTH_REQUIRED=true
+	}
+	l, err := h.svc.ListingBySlug(r.Context(), domain.TypeProperty, r.PathValue("slug"))
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	if err := h.svc.SetPropertyAvailability(r.Context(), l.ID, m, in.Availability); err != nil {
+		var fb *domain.ForbiddenError
+		if errors.As(err, &fb) {
+			h.handleErr(w, err)
+			return
+		}
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"availability": strings.ToLower(strings.TrimSpace(in.Availability))})
 }
 
 func (h *Handler) Memorial(w http.ResponseWriter, r *http.Request) {

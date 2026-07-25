@@ -1,4 +1,4 @@
-import type { Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs } from "./types";
+import type { ArtistBooking, Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs } from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -137,6 +137,11 @@ export const api = {
   home: () => get<HomeData>("/api/home"),
   artists: () => get<Listing[]>("/api/artists"),
   artist: (slug: string) => get<Listing>(`/api/artists/${slug}`),
+  requestArtistBooking: (slug: string, body: { eventType: string; eventDate: string; location: string; audienceSize?: number; budgetPesewas?: number; message?: string; contactEmail?: string; contactPhone?: string }) =>
+    post<ArtistBooking>(`/api/artists/${slug}/bookings`, body),
+  artistBookings: () => get<ArtistBooking[]>("/api/me/artist-bookings"),
+  updateArtistBooking: (id: string, status: ArtistBooking["status"], artistNote = "") =>
+    post<ArtistBooking>(`/api/me/artist-bookings/${id}/status`, { status, artistNote }),
   memorials: () => get<Listing[]>("/api/memorials"),
   memorial: (slug: string) => get<Listing>(`/api/memorials/${slug}`),
   lightCandle: (slug: string) => post<{ candles: number }>(`/api/memorials/${slug}/candle`),

@@ -3,7 +3,7 @@
 export type SectionId =
   | "home" | "music" | "people" | "heritage" | "culture" | "festivals"
   | "visit" | "education" | "business" | "memoriam" | "community" | "diaspora" | "youth"
-  | "news" | "events" | "safety" | "lostfound" | "map" | "better" | "outside" | "property" | "campaigns";
+  | "news" | "events" | "safety" | "lostfound" | "map" | "better" | "outside" | "property" | "campaigns" | "projects";
 
 export type LaunchDepth = "deep" | "live" | "stub";
 export type Tone = "green" | "clay" | "gold" | "maroon" | "teal";

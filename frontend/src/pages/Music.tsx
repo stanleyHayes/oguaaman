@@ -7,14 +7,18 @@ import { Adinkra } from "@/components/adinkra";
 import { Thumb } from "@/components/cards";
 import { LayoutPill, StaggerItem } from "@/components/motion";
 import { EmptyGlyph, EmptyState } from "@/components/empty-state";
+import { Pagination } from "@/components/pagination";
 import { SAMPLE_NOTICE } from "@/lib/content";
 import { initials } from "@/lib/format";
+import { useClientPagination } from "@/lib/use-pagination";
 
 interface Data {
   artists: Listing[];
   genres: string[];
   legacy: Listing[];
 }
+
+const PER_PAGE = 12;
 
 export async function loader(): Promise<Data> {
   const [artists, genres, legacy] = await Promise.all([api.artists(), api.genres(), api.musicLegacy()]);
@@ -29,6 +33,7 @@ export function Component() {
   const shown = genre ? artists.filter((artist) => (artist.details.genres ?? []).includes(genre)) : artists;
   const leadArtist = shown.find((artist) => artist.details.spotlight) ?? shown[0];
   const remainingArtists = leadArtist ? shown.filter((artist) => artist.id !== leadArtist.id) : [];
+  const { pageItems, page, totalPages, goToPage, listRef } = useClientPagination(remainingArtists, PER_PAGE, genre);
 
   return (
     <>
@@ -92,13 +97,16 @@ export function Component() {
               actions={<Link to="/submit?type=artist" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">Nominate one →</Link>}
             />
           ) : remainingArtists.length > 0 ? (
-            <div className="mt-9 grid gap-5 lg:grid-cols-2">
-              {remainingArtists.map((artist, index) => (
-                <StaggerItem key={artist.id} index={index} lift>
-                  <ArtistRow artist={artist} />
-                </StaggerItem>
-              ))}
-            </div>
+            <>
+              <div ref={listRef} className="mt-9 grid gap-5 scroll-mt-24 lg:grid-cols-2">
+                {pageItems.map((artist, index) => (
+                  <StaggerItem key={artist.id} index={index} lift>
+                    <ArtistRow artist={artist} />
+                  </StaggerItem>
+                ))}
+              </div>
+              <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+            </>
           ) : (
             <div className="mt-9 rounded-[var(--radius-card)] border border-sand bg-cream px-6 py-8 text-sm leading-relaxed text-ink-muted">
               This is the only voice in this selection for now. Know another? <Link to="/submit?type=artist" className="font-semibold text-clay-text">Nominate an artist →</Link>

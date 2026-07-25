@@ -49,7 +49,7 @@ export function Component() {
   const recent = useMemo<Activity[]>(() => {
     const rows: Activity[] = [
       ...pledges.map((p) => ({ id: p.id, stream: p.kind === "donation" ? "Donation" : "Pledge", title: p.projectTitle, amountPesewas: p.amountPesewas, status: p.status, simulated: p.simulated, at: p.confirmedAt ?? p.createdAt })),
-      ...subscriptions.map((s) => ({ id: s.id, stream: "Subscription", title: s.listingTitle, amountPesewas: s.amountPesewas, status: s.status, simulated: s.simulated, at: s.confirmedAt ?? s.createdAt })),
+      ...subscriptions.map((s) => ({ id: s.id, stream: "Subscription", title: s.listingTitle ?? (s.scope === "creator" ? "Creator plan" : "Subscription"), amountPesewas: s.amountPesewas, status: s.status, simulated: s.simulated, at: s.confirmedAt ?? s.createdAt })),
       ...promotions.map((p) => ({ id: p.id, stream: "Promotion", title: `${p.listingTitle} · ${p.days}d`, amountPesewas: p.amountPesewas, status: p.status, simulated: p.simulated, at: p.confirmedAt ?? p.createdAt })),
     ];
     rows.sort((a, b) => (a.at < b.at ? 1 : -1));

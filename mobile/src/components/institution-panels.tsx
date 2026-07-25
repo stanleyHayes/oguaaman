@@ -10,6 +10,8 @@ import { api } from "@/lib/api";
 import { useTheme } from "@/lib/theme-context";
 import { ImageField } from "@/components/image-field";
 import { DateField } from "@/components/date-field";
+import { StreamingPlatformPicker } from "@/components/streaming-platform-picker";
+import { EventDetailsFields, EMPTY_EVENT_DETAILS, type EventDetailsDraft } from "@/components/event-details-fields";
 import { D, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import type { MediaAsset, Office, Organization, ProfileSection, ProfileSectionType, SectionItem, SocialLink, SubEntity } from "@/lib/types";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, CloseIcon } from "@/components/icons";
@@ -91,7 +93,7 @@ export function ProfilePanel({ slug, org }: Readonly<{ slug: string; org: Organi
     setContact((cur) => cur.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
     setState("idle");
   }
-  function addContact() { setContact((cur) => [...cur, { label: "", url: "" }]); setState("idle"); }
+  function addContact() { setContact((cur) => [...cur, { label: "Website", url: "" }]); setState("idle"); }
   function removeContact(i: number) { setContact((cur) => cur.filter((_, idx) => idx !== i)); setState("idle"); }
 
   async function save() {
@@ -181,7 +183,7 @@ export function ProfilePanel({ slug, org }: Readonly<{ slug: string; org: Organi
           <View style={{ gap: 8 }}>
             {contact.map((c, i) => (
               <View key={i} style={s.rowItem}>
-                <TextInput style={[s.input, { flex: 1 }]} value={c.label} onChangeText={(v) => updateContact(i, { label: v })} placeholder="Label (e.g. Website)" placeholderTextColor={C.inkFaint} />
+                <View style={{ flex: 1 }}><StreamingPlatformPicker kind="social" value={c.label} onChange={(label) => updateContact(i, { label })} /></View>
                 <TextInput style={[s.input, { flex: 1 }]} value={c.url} onChangeText={(v) => updateContact(i, { url: v })} placeholder="https://…" placeholderTextColor={C.inkFaint} autoCapitalize="none" keyboardType="url" />
                 <Pressable accessibilityRole="button" onPress={() => removeContact(i)} hitSlop={6} style={s.removeBtn}><CloseIcon size={14} color={C.clayText} strokeWidth={2.5} /></Pressable>
               </View>
@@ -266,8 +268,10 @@ export function EventPanel({ slug, verified }: Readonly<{ slug: string; verified
   const s = usePanelStyles();
   const [title, setTitle] = useState("");
   const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
   const [venue, setVenue] = useState("");
   const [description, setDescription] = useState("");
+  const [eventDetails, setEventDetails] = useState<EventDetailsDraft>(EMPTY_EVENT_DETAILS);
   const [state, setState] = useState<SaveState>("idle");
   const [msg, setMsg] = useState("");
 
@@ -276,10 +280,14 @@ export function EventPanel({ slug, verified }: Readonly<{ slug: string; verified
     setState("saving");
     setMsg("");
     try {
-      await api.postOrgEvent(slug, { title: title.trim(), details: { startsAt, venue, description } });
+      const details: Record<string, unknown> = { startsAt, ...(endsAt ? { endsAt } : {}), venue, description, eventFormat: eventDetails.format, audience: eventDetails.audience, admission: eventDetails.admission };
+      for (const key of ["organiser", "contactInfo", "startTime", "endTime", "ageGuidance", "accessibility", "dressCode", "refundPolicy"] as const) if (eventDetails[key].trim()) details[key] = eventDetails[key].trim();
+      details.highlights = eventDetails.highlights.split(/\r?\n/).map((item) => item.trim()).filter(Boolean); details.featuredGuests = eventDetails.featuredGuests.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+      if (eventDetails.admission === "paid") { const tiers = eventDetails.tiers.map((tier) => ({ name: tier.name.trim(), pricePesewas: Math.round(Number(tier.priceGhs) * 100), capacity: Number.parseInt(tier.capacity || "0", 10) || 0 })).filter((tier) => tier.name && tier.pricePesewas > 0); if (!tiers.length) { setState("error"); setMsg("Add at least one paid ticket type with a name and price."); return; } details.tiers = tiers; }
+      await api.postOrgEvent(slug, { title: title.trim(), details });
       setState("saved");
       setMsg(verified ? "Published — it's live on your page." : "Submitted — it'll appear once a curator approves it.");
-      setTitle(""); setStartsAt(""); setVenue(""); setDescription("");
+      setTitle(""); setStartsAt(""); setEndsAt(""); setVenue(""); setDescription(""); setEventDetails(EMPTY_EVENT_DETAILS);
     } catch (e) {
       setState("error");
       setMsg(e instanceof Error ? e.message : "Couldn't post the event.");
@@ -294,8 +302,12 @@ export function EventPanel({ slug, verified }: Readonly<{ slug: string; verified
           <TextInput style={s.input} value={title} onChangeText={(v) => { setTitle(v); setState("idle"); }} placeholder="e.g. Speech & Prize-Giving Day" placeholderTextColor={C.inkFaint} />
         </View>
         <View>
-          <FieldLabel>Date</FieldLabel>
-          <DateField value={startsAt} onChange={setStartsAt} placeholder="Pick a date" />
+          <FieldLabel>Start date</FieldLabel>
+          <DateField value={startsAt} onChange={(value) => { setStartsAt(value); if (endsAt && endsAt < value) setEndsAt(""); }} placeholder="Pick start date" />
+        </View>
+        <View>
+          <FieldLabel>End date (optional)</FieldLabel>
+          <DateField value={endsAt} onChange={setEndsAt} minDate={startsAt || undefined} placeholder="Same day" />
         </View>
         <View>
           <FieldLabel>Venue</FieldLabel>
@@ -305,6 +317,7 @@ export function EventPanel({ slug, verified }: Readonly<{ slug: string; verified
           <FieldLabel>Details</FieldLabel>
           <TextInput style={[s.input, s.inputArea]} value={description} onChangeText={setDescription} placeholder="What's happening, who it's for" placeholderTextColor={C.inkFaint} multiline />
         </View>
+        <EventDetailsFields value={eventDetails} onChange={setEventDetails} />
         <View style={s.saveRow}>
           <Pressable accessibilityRole="button" onPress={post} disabled={state === "saving" || !title.trim()} style={[s.goldBtn, (state === "saving" || !title.trim()) && s.dim]}>
             <Text style={s.goldBtnText}>{verified ? "Publish event" : "Submit event"}</Text>

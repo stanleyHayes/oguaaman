@@ -1,10 +1,11 @@
-import { useState, type ReactNode} from "react";
+import { useRef, useState, type ReactNode} from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import type { InstitutionView, MediaAsset, Office, Organization, ProfileSection, ProfileSectionType, SectionItem, SubEntity } from "@/lib/types";
 import { api } from "@/lib/api";
 import { Container } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { DatePicker } from "@/components/date-picker";
+import { EventDetailsFields, type EventAdmission, type EventTierDraft } from "@/components/event-details-fields";
 import { LocationPicker, type LatLng } from "@/components/location-picker";
 import type { Tone } from "@/lib/sections";
 
@@ -329,10 +330,16 @@ function RosterForm({ slug, initial }: Readonly<{ slug: string; initial?: Office
 }
 
 function EventForm({ slug, verified }: Readonly<{ slug: string; verified: boolean }>) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [title, setTitle] = useState("");
   const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
   const [venue, setVenue] = useState("");
   const [description, setDescription] = useState("");
+  const [eventFormat, setEventFormat] = useState("community");
+  const [audience, setAudience] = useState<string[]>(["all-ages"]);
+  const [admission, setAdmission] = useState<EventAdmission>("free");
+  const [tiers, setTiers] = useState<EventTierDraft[]>([]);
   const [state, setState] = useState<SaveState>("idle");
   const [msg, setMsg] = useState("");
 
@@ -341,10 +348,17 @@ function EventForm({ slug, verified }: Readonly<{ slug: string; verified: boolea
     setState("saving");
     setMsg("");
     try {
-      await api.postOrgEvent(slug, { title: title.trim(), details: { startsAt, venue, description } });
+      const fd = new FormData(formRef.current ?? undefined);
+      const value = (key: string) => String(fd.get(key) ?? "").trim();
+      const details: Record<string, unknown> = { startsAt, ...(endsAt ? { endsAt } : {}), venue, description, eventFormat, audience, admission };
+      for (const key of ["startTime", "endTime", "organiser", "contactInfo", "ageGuidance", "accessibility", "dressCode", "refundPolicy"]) if (value(key)) details[key] = value(key);
+      details.highlights = value("highlights").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+      details.featuredGuests = value("featuredGuests").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+      if (admission === "paid") { const clean = tiers.map((tier) => ({ name: tier.name.trim(), pricePesewas: Math.round(Number(tier.priceGhs) * 100), capacity: Number.parseInt(tier.capacity || "0", 10) || 0 })).filter((tier) => tier.name && tier.pricePesewas > 0); if (!clean.length) { setState("error"); setMsg("Add at least one paid ticket type with a name and price."); return; } details.tiers = clean; }
+      await api.postOrgEvent(slug, { title: title.trim(), details });
       setState("saved");
       setMsg(verified ? "Published — it’s live on your page." : "Submitted — it’ll appear once a curator approves it.");
-      setTitle(""); setStartsAt(""); setVenue(""); setDescription("");
+      setTitle(""); setStartsAt(""); setEndsAt(""); setVenue(""); setDescription(""); setEventFormat("community"); setAudience(["all-ages"]); setAdmission("free"); setTiers([]); formRef.current?.reset();
     } catch (e) {
       setState("error");
       setMsg((e as Error).message || "Couldn’t post the event.");
@@ -353,15 +367,19 @@ function EventForm({ slug, verified }: Readonly<{ slug: string; verified: boolea
 
   return (
     <Panel title="Post an official event">
-      <div className="space-y-4">
+      <form ref={formRef} className="space-y-4" onSubmit={(e) => { e.preventDefault(); void post(); }}>
         <div>
           <label htmlFor="org-event-title" className={label}>Title</label>
           <input id="org-event-title" className={`mt-1.5 ${field}`} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Speech & Prize-Giving Day" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label htmlFor="org-event-date" className={label}>Date</label>
-            <DatePicker id="org-event-date" className="mt-1.5 w-full" value={startsAt} onChange={setStartsAt} />
+            <label htmlFor="org-event-date" className={label}>Start date</label>
+            <DatePicker id="org-event-date" className="mt-1.5 w-full" value={startsAt} onChange={(value) => { setStartsAt(value); if (endsAt && endsAt < value) setEndsAt(""); }} />
+          </div>
+          <div>
+            <label htmlFor="org-event-end-date" className={label}>End date <span className="text-ink-faint">(optional)</span></label>
+            <DatePicker id="org-event-end-date" className="mt-1.5 w-full" value={endsAt} onChange={setEndsAt} min={startsAt || undefined} placeholder="Same day" />
           </div>
           <div>
             <label htmlFor="org-event-venue" className={label}>Venue</label>
@@ -372,14 +390,15 @@ function EventForm({ slug, verified }: Readonly<{ slug: string; verified: boolea
           <label htmlFor="org-event-details" className={label}>Details</label>
           <textarea id="org-event-details" rows={3} className={`mt-1.5 resize-none ${field}`} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
+        <EventDetailsFields format={eventFormat} onFormat={setEventFormat} audience={audience} onAudience={setAudience} admission={admission} onAdmission={setAdmission} tiers={tiers} onTiers={setTiers} />
         <div className="flex items-center gap-3">
-          <button type="button" onClick={post} disabled={state === "saving" || !title.trim()} className="rounded-full bg-gold-brand px-5 py-2.5 text-sm font-semibold text-green-900 hover:bg-gold disabled:opacity-60">
+          <button type="submit" disabled={state === "saving" || !title.trim()} className="rounded-full bg-gold-brand px-5 py-2.5 text-sm font-semibold text-green-900 hover:bg-gold disabled:opacity-60">
             {verified ? "Publish event" : "Submit event"}
           </button>
           {msg ? <span className={`text-sm ${state === "error" ? "text-clay-text" : "text-teal-text"}`}>{msg}</span> : <Saver state={state} />}
         </div>
         {!verified && <p className="text-xs text-ink-faint">Your institution isn’t verified yet, so events go through the normal review queue.</p>}
-      </div>
+      </form>
     </Panel>
   );
 }

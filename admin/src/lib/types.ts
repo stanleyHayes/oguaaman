@@ -54,11 +54,25 @@ export interface Listing {
   featuredUntil?: string;
   coverImageUrl?: string;
   viewCount?: number;
+  // Business storefront catalog (Supporter feature), capped per plan.
+  products?: StoreItem[];
+  services?: StoreItem[];
   details: ListingDetails;
   createdAt: string;
   submittedAt?: string;
   publishedAt?: string;
   rejectionReason?: string;
+}
+
+// A product or service on a business storefront (prices in pesewas).
+export interface StoreItem {
+  id?: string;
+  name: string;
+  description?: string;
+  pricePesewas?: number;
+  unit?: string;
+  imageUrl?: string;
+  available: boolean;
 }
 
 export interface SchoolStint { schoolId: string; fromYear?: number; toYear?: number }
@@ -417,9 +431,11 @@ export interface Subscription {
   id: string;
   reference: string;
   memberId?: string;
-  listingId: string;
-  listingSlug: string;
-  listingTitle: string;
+  // "business" (attaches to a listing) or "creator" (member-level, no listing).
+  scope?: "business" | "creator";
+  listingId?: string;
+  listingSlug?: string;
+  listingTitle?: string;
   plan: string;
   amountPesewas: number;
   status: PaymentStatus;

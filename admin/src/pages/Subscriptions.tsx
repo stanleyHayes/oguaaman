@@ -52,7 +52,7 @@ export function Component() {
       </Stagger>
 
       {subs.length === 0 ? (
-        <Empty icon="money" title="No subscriptions yet">When business owners subscribe to the Supporter plan, every payment lands here.</Empty>
+        <Empty icon="money" title="No subscriptions yet">When members subscribe to a business Supporter plan or a member-level creator plan, every payment lands here.</Empty>
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-sm">
@@ -71,7 +71,13 @@ export function Component() {
               {subs.map((s, idx) => (
                 <StaggerItem as="tr" key={s.id} index={idx} className="hover:bg-paper">
                   <td className="px-4 py-3 text-ink-muted">{s.memberId || <span className="text-ink-faint">—</span>}</td>
-                  <td className="px-4 py-3 font-medium text-ink">{s.listingTitle}</td>
+                  <td className="px-4 py-3 font-medium text-ink">
+                    {s.listingTitle
+                      ? s.listingTitle
+                      : s.scope === "creator"
+                        ? <span className="inline-flex items-center rounded-full bg-clay/[0.1] px-2 py-0.5 text-[0.65rem] font-semibold text-clay-text">Creator plan</span>
+                        : <span className="text-ink-faint">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-ink-muted">{planLabel(s.plan)}</td>
                   <td className="px-4 py-3 font-semibold text-green-text">{cedis(s.amountPesewas)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-ink-faint">{s.periodEnd ? formatDate(s.periodEnd) : "—"}</td>

@@ -429,6 +429,13 @@ func (s *Service) PostOrgEvent(ctx context.Context, memberID, orgSlug, title str
 	if details == nil {
 		details = map[string]any{}
 	}
+	if err := validateEventRange(details); err != nil {
+		return nil, err
+	}
+	details, err = cleanEventDetails(details)
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	status := domain.StatusPending
 	publishedAt := ""

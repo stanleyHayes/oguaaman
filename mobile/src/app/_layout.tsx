@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { Stack } from "expo-router";
+import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from "@expo-google-fonts/outfit";
-import { Fraunces_600SemiBold, Fraunces_600SemiBold_Italic, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
 import { AuthProvider } from "@/lib/auth";
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
@@ -14,6 +14,7 @@ import { DirectivesProvider } from "@/lib/directives";
 import { MobileRingingAlert } from "@/components/ringing-alert";
 import { NavDrawerProvider } from "@/components/nav-drawer";
 import { AppStripeProvider } from "@/components/stripe-provider";
+import { ON_GREEN, S } from "@/theme";
 
 // Keep the splash screen up until the brand fonts are ready, so the first
 // frame never flashes system type.
@@ -57,9 +58,21 @@ function RootNavigator() {
       <StatusBar style="light" />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: C.green },
-          headerTintColor: C.cream,
-          headerTitleStyle: { },
+          headerStyle: { backgroundColor: C.green900 },
+          headerBackground: () => (
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: C.green900,
+                borderBottomColor: C.goldBorder,
+                borderBottomWidth: 1,
+              }}
+            />
+          ),
+          headerTintColor: ON_GREEN,
+          headerTitleStyle: { ...S(600), color: ON_GREEN, fontSize: 17 },
+          headerBackButtonDisplayMode: "minimal",
+          headerShadowVisible: false,
           contentStyle: { backgroundColor: C.paper },
           animation: "slide_from_right",
           animationDuration: 250,
@@ -109,6 +122,7 @@ function RootNavigator() {
             Overview; the other tool screens are filled in by the screens agents. */}
         <Stack.Screen name="studio/index" options={{ title: "Creator studio", headerBackTitle: "Back" }} />
         <Stack.Screen name="studio/work" options={{ title: "My work", headerBackTitle: "Studio" }} />
+        <Stack.Screen name="studio/bookings" options={{ title: "Artist bookings", headerBackTitle: "Studio" }} />
         <Stack.Screen name="studio/grow" options={{ title: "Grow", headerBackTitle: "Studio" }} />
         <Stack.Screen name="studio/money" options={{ title: "Money", headerBackTitle: "Studio" }} />
         <Stack.Screen name="studio/team" options={{ title: "Team", headerBackTitle: "Studio" }} />
@@ -125,9 +139,6 @@ export default function RootLayout() {
     Outfit_500Medium,
     Outfit_600SemiBold,
     Outfit_700Bold,
-    Fraunces_600SemiBold,
-    Fraunces_600SemiBold_Italic,
-    Fraunces_700Bold,
   });
 
   useEffect(() => {

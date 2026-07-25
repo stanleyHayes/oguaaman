@@ -150,13 +150,9 @@ export const DARK: Palette = {
  */
 export const C = LIGHT;
 
-// Brand type: Fraunces is the display voice (the h1/h2 of a screen — page
-// titles and section headings); Outfit is everything else. Both are bundled
-// via @expo-google-fonts and loaded in app/_layout.tsx. On RN each weight is
-// its own family, so use the S()/D() helpers instead of raw names — they also
-// keep fontWeight declarations honest (the family IS the weight).
-export const DISPLAY = { 600: "Fraunces_600SemiBold", 700: "Fraunces_700Bold" } as const;
-export const DISPLAY_ITALIC = "Fraunces_600SemiBold_Italic";
+// Outfit is the single brand typeface. D/DI remain as compatibility helpers
+// for existing screen-title styles, but resolve to the same bundled Outfit
+// families as body copy so no second typeface can leak into the app.
 export const SANS = {
   400: "Outfit_400Regular",
   500: "Outfit_500Medium",
@@ -165,17 +161,17 @@ export const SANS = {
 } as const;
 
 export type SansWeight = keyof typeof SANS;
-export type DisplayWeight = keyof typeof DISPLAY;
+export type DisplayWeight = 600 | 700;
 
 /** Outfit at a weight — body text. Replaces `fontWeight` on RN. */
 export const S = (w: SansWeight = 400) => ({ fontFamily: SANS[w] });
 /** Outfit italic — quotes, epitaphs, mottos in the body. The Outfit package
     ships no italic cut; iOS/web slant it, Android shows upright (graceful). */
 export const SI = (w: SansWeight = 400) => ({ fontFamily: SANS[w], fontStyle: "italic" as const });
-/** Fraunces at a weight — display titles only (screen h1, section h2). */
-export const D = (w: DisplayWeight = 700) => ({ fontFamily: DISPLAY[w] });
-/** Fraunces italic — the rare display-level italic (hero motto). */
-export const DI = () => ({ fontFamily: DISPLAY_ITALIC, fontStyle: "italic" as const });
+/** Outfit at a display weight — compatibility alias for existing title styles. */
+export const D = (w: DisplayWeight = 700) => ({ fontFamily: SANS[w] });
+/** Outfit italic — compatibility alias for existing display-level italics. */
+export const DI = () => ({ fontFamily: SANS[600], fontStyle: "italic" as const });
 
 // Deterministic warm gradient-ish fill seed (we render a flat tinted block in RN).
 export function fillFor(seed: string, palette: Palette = LIGHT): string {

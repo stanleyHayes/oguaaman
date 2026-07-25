@@ -90,7 +90,7 @@ const SeedPassword = "Oguaa-2026!"
 // Seed resets the collections and loads the fact-checked Cape Coast seed data.
 // It is idempotent: collections are dropped and reinserted. (See agent_plan.md §1.)
 func Seed(ctx context.Context, db *mongo.Database) error {
-	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents, collAgentJobs, collAgentReviews} {
+	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents, collAgentJobs, collAgentReviews, collArtistBookings} {
 		if err := db.Collection(name).Drop(ctx); err != nil {
 			return err
 		}
@@ -302,6 +302,12 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 	if _, err := db.Collection(collNotifications).Indexes().CreateOne(ctx, idx(bson.D{{Key: "memberId", Value: 1}, {Key: "read", Value: 1}})); err != nil {
 		return err
 	}
+	if _, err := db.Collection(collArtistBookings).Indexes().CreateMany(ctx, []mongo.IndexModel{
+		idx(bson.D{{Key: "artistOwnerId", Value: 1}, {Key: "createdAt", Value: -1}}),
+		idx(bson.D{{Key: "requesterId", Value: 1}, {Key: "createdAt", Value: -1}}),
+	}); err != nil {
+		return err
+	}
 	if _, err := db.Collection(collReports).Indexes().CreateOne(ctx, idx(bson.D{{Key: "status", Value: 1}, {Key: "createdAt", Value: -1}})); err != nil {
 		return err
 	}
@@ -355,10 +361,15 @@ func seedImg(name string) string { return "/uploads/seed/" + name }
 
 func streams() []domain.SocialLink {
 	return []domain.SocialLink{
+		sl("Spotify", "https://open.spotify.com"),
+		sl("Apple Music", "https://music.apple.com"),
+		sl("YouTube Music", "https://music.youtube.com"),
 		sl("Audiomack", "https://audiomack.com"),
 		sl("Boomplay", "https://www.boomplay.com"),
-		sl("YouTube", "https://youtube.com"),
-		sl("Spotify", "https://open.spotify.com"),
+		sl("SoundCloud", "https://soundcloud.com"),
+		sl("Bandcamp", "https://bandcamp.com"),
+		sl("Deezer", "https://www.deezer.com"),
+		sl("TIDAL", "https://tidal.com"),
 	}
 }
 

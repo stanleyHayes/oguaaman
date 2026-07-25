@@ -32,13 +32,13 @@ var ownerEditableTypes = validTypes
 
 // editableDetailsKeys whitelists the details vocabulary a creator may write.
 // Everything else is stripped — system keys (candles, raisedPesewas, backers,
-// subscribedUntil, tiers, incident/lostfound lifecycle, spotlight…) can never
+// subscribedUntil, incident/lostfound lifecycle, spotlight…) can never
 // arrive here because those types/keys are excluded.
 var editableDetailsKeys = map[string]map[string]bool{
-	domain.TypeArtist:      {"actName": true, "genres": true, "bio": true, "link": true, "streamingLinks": true, "socials": true, "booking": true},
-	domain.TypeBusiness:    {"category": true, "description": true, "address": true, "openingHours": true, "services": true, "contact": true},
+	domain.TypeArtist:      {"actName": true, "genres": true, "bio": true, "link": true, "streamingLinks": true, "socials": true, "booking": true, "releases": true},
+	domain.TypeBusiness:    {"category": true, "categories": true, "description": true, "address": true, "openingHours": true, "services": true, "contact": true},
 	domain.TypeProperty:    propertyEditableDetailsKeys,
-	domain.TypeEvent:       {"description": true, "startsAt": true, "venue": true, "organiser": true},
+	domain.TypeEvent:       {"description": true, "startsAt": true, "endsAt": true, "venue": true, "organiser": true, "eventFormat": true, "audience": true, "admission": true, "startTime": true, "endTime": true, "highlights": true, "featuredGuests": true, "ageGuidance": true, "accessibility": true, "dressCode": true, "contactInfo": true, "refundPolicy": true, "tiers": true},
 	domain.TypeMemory:      {"text": true, "era": true},
 	domain.TypeOpportunity: {"kind": true, "description": true, "eligibility": true, "deadline": true, "applyUrl": true, "provider": true, "safeguardingPolicyUrl": true, "minAge": true, "maxAge": true, "guardianConsentRequired": true},
 	domain.TypePerson:      {"whyNotable": true, "era": true},
@@ -57,8 +57,13 @@ var linkListKeys = map[string]bool{"streamingLinks": true, "socials": true, "con
 // Minor edits (links, opening hours, contact info, booking URL) stay live.
 var majorEditKeys = map[string]bool{
 	"bio": true, "description": true, "lifeStory": true, "epitaph": true,
-	"text": true, "whyNotable": true, "eligibility": true, "services": true,
+	"releases": true,
+	"text":     true, "whyNotable": true, "eligibility": true, "services": true,
 	"address": true, "area": true, "offerType": true, "propertyType": true,
+	"category": true, "categories": true,
+	"startsAt": true, "endsAt": true, "venue": true, "organiser": true,
+	"eventFormat": true, "audience": true, "admission": true, "tiers": true,
+	"highlights": true, "featuredGuests": true, "ageGuidance": true,
 	"pricePesewas": true, "pricePeriod": true, "depositPesewas": true,
 	"bedrooms": true, "bathrooms": true, "furnished": true, "amenities": true,
 }
@@ -101,6 +106,18 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 	}
 	if l.Type == domain.TypeProperty {
 		details, err = cleanPropertyDetails(details)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if l.Type == domain.TypeArtist {
+		details = cleanArtistDetails(details)
+	}
+	if l.Type == domain.TypeEvent {
+		if err := validateEventRange(details); err != nil {
+			return nil, err
+		}
+		details, err = cleanEventDetails(details)
 		if err != nil {
 			return nil, err
 		}
@@ -211,6 +228,76 @@ func sanitizeLinkList(v any) any {
 		}
 	}
 	return items
+}
+
+// cleanArtistDetails keeps the artist profile extensible while applying the
+// same stored-link safety guard to platform links and nested release artwork.
+// Platform labels are deliberately not whitelisted: artists may add every
+// service they use now, including new services that launch later.
+func cleanArtistDetails(details map[string]any) map[string]any {
+	for _, key := range []string{"link", "booking"} {
+		if raw, ok := details[key].(string); ok {
+			details[key] = safeURL(raw)
+		}
+	}
+	for _, key := range []string{"streamingLinks", "socials"} {
+		if raw, ok := details[key]; ok {
+			details[key] = sanitizeLinkList(raw)
+		}
+	}
+	if raw, ok := details["releases"]; ok {
+		details["releases"] = sanitizeArtistReleases(raw)
+	}
+	return details
+}
+
+func sanitizeArtistReleases(v any) []any {
+	items, ok := v.([]any)
+	if !ok {
+		return []any{}
+	}
+	out := make([]any, 0, len(items))
+	for _, item := range items {
+		m, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		title := strings.TrimSpace(asStringAny(m["title"]))
+		if title == "" {
+			continue
+		}
+		release := map[string]any{"title": title}
+		for _, key := range []string{"id", "kind", "description"} {
+			if value := strings.TrimSpace(asStringAny(m[key])); value != "" {
+				release[key] = value
+			}
+		}
+		for _, key := range []string{"coverImageUrl", "url"} {
+			if value := safeURL(asStringAny(m[key])); value != "" {
+				release[key] = value
+			}
+		}
+		if year, ok := asIntAny(m["year"]); ok && year >= 1900 && year <= 2100 {
+			release["year"] = year
+		}
+		if tracks, ok := m["tracks"].([]any); ok {
+			cleanTracks := make([]any, 0, len(tracks))
+			for _, track := range tracks {
+				trackMap, ok := track.(map[string]any)
+				if !ok {
+					continue
+				}
+				if trackTitle := strings.TrimSpace(asStringAny(trackMap["title"])); trackTitle != "" {
+					cleanTracks = append(cleanTracks, map[string]any{"title": trackTitle})
+				}
+			}
+			if len(cleanTracks) > 0 {
+				release["tracks"] = cleanTracks
+			}
+		}
+		out = append(out, release)
+	}
+	return out
 }
 
 // UnpublishDraftsByOwner pulls every listing the member owns that was never

@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
-import type { Listing, Organization, Pledge } from "@/lib/types";
+import type { ArtistRelease, Listing, Organization, Pledge, SocialLink } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { completePayment } from "@/lib/paystack";
 import { useRecordView } from "@/lib/use-record-view";
 import { Container, Pill, SampleNote } from "@/components/ui";
 import { Thumb } from "@/components/cards";
-import { cldCover } from "@/lib/cloudinary";
+import { DetailHero } from "@/components/detail-hero";
 import { ReportButton } from "@/components/report-button";
 import { initials } from "@/lib/format";
 import { SAMPLE_NOTICE } from "@/lib/content";
@@ -69,89 +69,61 @@ export function Component() {
   useRecordView(artist.id);
   const d = artist.details;
   const donate = useDonate(artist);
+  const releases = artistReleases(d.releases, d.latestRelease);
+  const latest = releases[0];
 
   return (
     <>
-      <section className="on-dark on-dark-pin relative overflow-hidden text-cream">
-        {/* Cover art washes the hero; a clay gradient + scrim keep it legible */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(140deg,#B0503C 0%,#7C2D2D 45%,#0C2C1F 100%)" }} aria-hidden />
-        {artist.coverImageUrl && (
-          <img src={cldCover(artist.coverImageUrl, 1400)} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-25" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-        )}
-        <div className="bg-dotgrid absolute inset-0 opacity-40" aria-hidden />
-        <Container size="wide" className="relative py-12 sm:py-16">
-          <Link to="/music" className="text-sm text-cream/70 hover:text-gold">← All artists</Link>
-          <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end">
-            <Thumb seed={artist.slug} label={initials(d.actName ?? artist.title)} src={artist.coverImageUrl} className="h-36 w-36 shrink-0 border-2 border-gold/50 shadow-xl sm:h-44 sm:w-44" coverWidth={400} />
-            <div className="min-w-0">
-              {d.spotlight && <span className="rounded-full bg-gold-brand px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-green-900">★ This week's spotlight</span>}
-              <h1 className="mt-2 text-4xl font-semibold leading-[1.05] sm:text-6xl">{d.actName ?? artist.title}</h1>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(d.genres ?? []).map((g) => <span key={g} className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs text-cream/90 backdrop-blur-sm">{g}</span>)}
-              </div>
-              {(d.streamingLinks ?? []).length > 0 && (
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {(d.streamingLinks ?? []).map((l) => (
-                    <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-cream/15 px-3.5 py-1.5 text-xs font-semibold text-cream backdrop-blur-sm transition-colors hover:bg-gold-brand hover:text-green-900">
-                      Listen on {l.label} <span aria-hidden>↗</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </Container>
-      </section>
+      <DetailHero
+        tone="gold"
+        sectionId="music"
+        backTo="/music"
+        backLabel="Music"
+        coverImageUrl={artist.coverImageUrl}
+        title={d.actName ?? artist.title}
+        meta={latest ? `Latest release · ${latest.title}${latest.year ? ` · ${latest.year}` : ""}` : "An artist from the Cape Coast music community"}
+      >
+        {d.spotlight && <span className="rounded-full bg-gold-brand px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-green-900">Oguaa spotlight</span>}
+        {(d.genres ?? []).map((genre) => <span key={genre} className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs text-cream/90 backdrop-blur-sm">{genre}</span>)}
+        {releases.length > 0 && <a href="#discography" className="rounded-full border border-gold/45 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{releases.length} {releases.length === 1 ? "release" : "releases"} ↓</a>}
+      </DetailHero>
 
-      <Container size="wide" className="grid gap-10 py-12 lg:grid-cols-[1.6fr_1fr]">
-        <div>
-          <h2 className="eyebrow mb-3 text-clay-text">About</h2>
-          <p className="font-serif text-lg leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-clay-text">{d.bio}</p>
-          {d.latestRelease && (
-            <div className="relative mt-8 overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)]">
-              <span className="absolute inset-y-0 left-0 w-1 bg-gold-brand" aria-hidden />
-              <p className="eyebrow text-gold-text">Latest release</p>
-              <p className="mt-2 text-2xl text-ink">
-                {d.latestRelease.title}
-                {d.latestRelease.year ? <span className="ml-2 text-base text-ink-faint">{d.latestRelease.year}</span> : null}
+      <Container size="wide" className="grid gap-10 py-12 sm:py-16 lg:grid-cols-[minmax(0,1.55fr)_22rem] lg:gap-14">
+        <div className="min-w-0">
+          <section className="grid items-start gap-7 sm:grid-cols-[15rem_minmax(0,1fr)]" aria-labelledby="artist-story">
+            <div className="relative mx-auto w-full max-w-60 sm:mx-0">
+              <div className="absolute -inset-3 rotate-2 rounded-[1.5rem] border border-gold-border/35 bg-gold/[0.08]" aria-hidden />
+              <Thumb seed={artist.slug} label={initials(d.actName ?? artist.title)} src={artist.coverImageUrl} rounded="rounded-[1.2rem]" className="relative aspect-square w-full border border-sand shadow-[var(--shadow-lift)]" coverWidth={620} />
+              <span className="absolute -bottom-3 -right-3 flex h-12 w-12 items-center justify-center rounded-full border-4 border-paper bg-clay text-cream shadow-lg" aria-hidden>
+                <Headphones className="h-5 w-5" />
+              </span>
+            </div>
+            <div>
+              <p className="eyebrow text-clay-text">Artist story</p>
+              <h2 id="artist-story" className="mt-3 text-3xl font-semibold text-ink sm:text-4xl">The voice behind the sound.</h2>
+              <div className="mt-4 h-1 w-14 rounded-full bg-clay" aria-hidden />
+              <p className="mt-6 text-lg leading-relaxed text-ink-muted first-letter:float-left first-letter:mr-2 first-letter:text-5xl first-letter:font-semibold first-letter:leading-[0.85] first-letter:text-clay-text">
+                {d.bio || "This artist is building their Oguaa profile. Check back for their story, influences and the music they are making from the coast."}
               </p>
             </div>
-          )}
+          </section>
+
+          {releases.length > 0 && <Discography releases={releases} />}
+
+          <ListeningPlatforms links={d.streamingLinks ?? []} />
+
           {artist.tags.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-2">{artist.tags.map((t) => <Pill key={t} tone="clay">#{t}</Pill>)}</div>
+            <section className="mt-10" aria-labelledby="artist-tags">
+              <h2 id="artist-tags" className="text-2xl font-semibold text-ink">Sounds &amp; influences</h2>
+              <div className="mt-4 flex flex-wrap gap-2">{artist.tags.map((t) => <Pill key={t} tone="clay">#{t}</Pill>)}</div>
+            </section>
           )}
         </div>
 
-        <aside className="space-y-6">
+        <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+          <ArtistBookingCard artistSlug={artist.slug} artistName={d.actName ?? artist.title} />
           {artist.donationsEnabled && <DonatePanel artist={artist} donate={donate} />}
-          <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5">
-            <Headphones className="pointer-events-none absolute -right-3 -top-3 h-20 w-20 text-clay-text opacity-[0.06]" />
-            <div className="relative flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-clay/[0.12] text-clay-text"><Headphones className="h-[18px] w-[18px]" /></span>
-              <div>
-                <p className="eyebrow text-clay-text">Listen</p>
-                <p className="text-xs text-ink-faint">We link out — no audio is hosted here.</p>
-              </div>
-            </div>
-            <div className="relative mt-4 grid gap-2.5">
-              {(d.streamingLinks ?? []).map((l) => {
-                const meta = STREAM[l.label] ?? { chip: "bg-sand text-ink-muted", icon: "default" as const };
-                return (
-                  <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 rounded-xl border border-sand bg-paper px-3.5 py-2.5 transition-colors hover:border-clay/40 hover:bg-clay/[0.04]">
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta.chip}`}><SvcIcon name={meta.icon} className="h-[18px] w-[18px]" /></span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-ink">{l.label}</span>
-                      <span className="block text-xs text-ink-faint">Open in {l.label}</span>
-                    </span>
-                    <span className="text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-clay-text" aria-hidden>↗</span>
-                  </a>
-                );
-              })}
-              {(!d.streamingLinks || d.streamingLinks.length === 0) && (
-                <p className="text-sm italic text-ink-faint">No streaming links yet — check back soon.</p>
-              )}
-            </div>
-          </div>
+          <ArtistContact booking={d.booking} socials={d.socials ?? []} />
           {school && (
             <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5 text-sm text-ink-muted">
               Reps <Link to={`/education/${school.slug}`} className="font-medium text-maroon-text hover:underline">{school.name}</Link>
@@ -166,6 +138,122 @@ export function Component() {
       </Container>
     </>
   );
+}
+
+function artistReleases(releases: ArtistRelease[] | undefined, latest: ArtistRelease | undefined): ArtistRelease[] {
+  if (releases && releases.length > 0) return releases;
+  return latest ? [{ ...latest, kind: "single" }] : [];
+}
+
+function Discography({ releases }: Readonly<{ releases: ArtistRelease[] }>) {
+  return (
+    <section id="discography" className="mt-14 scroll-mt-24" aria-labelledby="discography-title">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-sand pb-5">
+        <div><p className="eyebrow text-teal-text">Discography</p><h2 id="discography-title" className="mt-2 text-3xl font-semibold text-ink sm:text-4xl">Music from the artist.</h2></div>
+        <p className="max-w-sm text-sm leading-relaxed text-ink-muted">Albums, EPs and songs are catalogued here. Listening always opens on the artist’s chosen platform.</p>
+      </div>
+      <div className="mt-7 grid gap-5 sm:grid-cols-2">
+        {releases.map((release, index) => <ReleaseCard key={release.id ?? `${release.title}-${index}`} release={release} index={index} />)}
+      </div>
+    </section>
+  );
+}
+
+function ReleaseCard({ release, index }: Readonly<{ release: ArtistRelease; index: number }>) {
+  const kind = (release.kind ?? "release").toUpperCase();
+  return (
+    <article className="group overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-gold-border/45 hover:shadow-[var(--shadow-lift)]">
+      <div className="relative aspect-square overflow-hidden bg-[radial-gradient(circle_at_center,rgba(199,162,74,0.28),rgba(18,63,45,0.96)_68%)]">
+        {release.coverImageUrl ? <img src={release.coverImageUrl} alt={`${release.title} artwork`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" /> : <div className="flex h-full items-center justify-center"><span className="h-32 w-32 rounded-full border-[18px] border-gold/65 bg-green-900 shadow-[inset_0_0_0_2px_rgba(246,241,231,0.2)]"><span className="mx-auto mt-[2.55rem] block h-3 w-3 rounded-full bg-cream" /></span></div>}
+        <span className="absolute left-4 top-4 rounded-full border border-cream/25 bg-green-900/80 px-3 py-1 text-[0.62rem] font-bold tracking-[0.15em] text-cream backdrop-blur-sm">{String(index + 1).padStart(2, "0")} · {kind}</span>
+        {release.year && <span className="absolute bottom-4 right-4 rounded-full bg-gold-brand px-3 py-1 text-xs font-bold text-green-900">{release.year}</span>}
+      </div>
+      <div className="p-5 sm:p-6">
+        <h3 className="text-2xl font-semibold leading-tight text-ink">{release.title}</h3>
+        {release.description && <p className="mt-3 text-sm leading-relaxed text-ink-muted">{release.description}</p>}
+        {(release.tracks?.length ?? 0) > 0 && (
+          <ol className="mt-5 divide-y divide-sand border-y border-sand">
+            {release.tracks?.slice(0, 5).map((track, trackIndex) => <li key={`${track.title}-${trackIndex}`} className="flex gap-3 py-2.5 text-sm"><span className="w-5 shrink-0 tabular-nums text-ink-faint">{String(trackIndex + 1).padStart(2, "0")}</span><span className="font-medium text-ink">{track.title}</span></li>)}
+          </ol>
+        )}
+        {(release.tracks?.length ?? 0) > 5 && <p className="mt-2 text-xs text-ink-faint">+ {(release.tracks?.length ?? 0) - 5} more tracks</p>}
+        {release.url && <a href={release.url} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-green px-4 text-sm font-semibold text-on-green transition-colors hover:bg-gold-brand hover:text-green-900">Find this release <span aria-hidden>↗</span></a>}
+      </div>
+    </article>
+  );
+}
+
+function ListeningPlatforms({ links }: Readonly<{ links: SocialLink[] }>) {
+  return (
+    <section id="listen" className="mt-14 scroll-mt-24" aria-labelledby="listen-title">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div><p className="eyebrow text-clay-text">Listen elsewhere</p><h2 id="listen-title" className="mt-2 text-3xl font-semibold text-ink">Find the artist everywhere.</h2></div>
+        <p className="max-w-sm text-sm leading-relaxed text-ink-muted">Oguaa hosts the catalogue, not the audio. Choose the service you already use.</p>
+      </div>
+      {links.length > 0 ? <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{links.map((link, index) => {
+        const meta = STREAM[link.label] ?? { chip: "bg-sand text-ink-muted", icon: "default" as const };
+        return <a key={`${link.label}-${index}`} href={link.url} target="_blank" rel="noopener noreferrer" className="group flex min-h-16 items-center gap-3 rounded-xl border border-sand bg-cream px-4 py-3 transition-colors hover:border-clay/40 hover:bg-clay/[0.04]"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta.chip}`}><SvcIcon name={meta.icon} className="h-5 w-5" /></span><span className="min-w-0 flex-1 font-semibold text-ink">{link.label}</span><span className="text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-clay-text" aria-hidden>↗</span></a>;
+      })}</div> : <p className="mt-5 rounded-xl border border-dashed border-sand bg-cream p-5 text-sm text-ink-faint">No listening platforms have been added yet.</p>}
+    </section>
+  );
+}
+
+function ArtistContact({ booking, socials }: Readonly<{ booking?: string; socials: SocialLink[] }>) {
+  if (!booking && socials.length === 0) return null;
+  const bookingIsLink = Boolean(booking && /^(https?:\/\/|mailto:|tel:)/i.test(booking));
+  return <section className="rounded-[var(--radius-card)] border border-sand bg-cream p-5"><p className="eyebrow text-gold-text">Connect</p><h2 className="mt-1 text-xl font-semibold text-ink">Management &amp; socials</h2>{booking && (bookingIsLink ? <a href={booking} target="_blank" rel="noopener noreferrer" className="mt-4 flex min-h-11 items-center justify-between rounded-full border border-green/30 px-4 text-sm font-semibold text-green-text">External management page <span aria-hidden>↗</span></a> : <p className="mt-4 rounded-xl bg-paper p-3 text-sm text-ink-muted">{booking}</p>)}{socials.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{socials.map((link, index) => <a key={`${link.label}-${index}`} href={link.url} target="_blank" rel="noopener noreferrer" className="rounded-full border border-sand px-3 py-2 text-sm font-semibold text-ink-muted hover:border-gold-border hover:text-gold-text">{link.label} ↗</a>)}</div>}</section>;
+}
+
+function ArtistBookingCard({ artistSlug, artistName }: Readonly<{ artistSlug: string; artistName: string }>) {
+  const { member } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+  const input = "mt-1.5 w-full rounded-xl border border-sand bg-paper px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const value = (name: string) => String(data.get(name) ?? "").trim();
+    const contactEmail = value("contactEmail");
+    const contactPhone = value("contactPhone");
+    if (!contactEmail && !contactPhone) {
+      setError("Add an email address or phone number so the artist can reply.");
+      return;
+    }
+    const budget = Number(value("budgetGhs").replace(/,/g, ""));
+    const audience = Number.parseInt(value("audienceSize"), 10);
+    setBusy(true); setError("");
+    try {
+      await api.requestArtistBooking(artistSlug, {
+        eventType: value("eventType"), eventDate: value("eventDate"), location: value("location"),
+        contactEmail, contactPhone, message: value("message"),
+        ...(Number.isFinite(budget) && budget > 0 ? { budgetPesewas: Math.round(budget * 100) } : {}),
+        ...(Number.isFinite(audience) && audience > 0 ? { audienceSize: audience } : {}),
+      });
+      setSent(true);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not send the booking request.");
+    } finally { setBusy(false); }
+  }
+
+  return <section className="overflow-hidden rounded-[var(--radius-card)] border border-gold-border/45 bg-gold/[0.07] shadow-[var(--shadow-card)]">
+    <div className="p-5"><p className="eyebrow text-gold-text">Book this artist</p><h2 className="mt-1 text-xl font-semibold text-ink">Bring {artistName} to your event.</h2><p className="mt-2 text-sm leading-relaxed text-ink-muted">Send the date and event details directly to the artist’s private creator dashboard.</p>
+      {!member ? <Link to="/signin" className="mt-4 flex min-h-11 items-center justify-center rounded-full bg-green px-4 text-sm font-semibold text-on-green">Sign in to request a booking</Link> : !open && !sent ? <button type="button" onClick={() => setOpen(true)} className="mt-4 min-h-11 w-full rounded-full bg-green px-4 text-sm font-semibold text-on-green">Request a booking</button> : null}
+    </div>
+    {sent ? <div className="border-t border-gold-border/30 bg-green/[0.07] p-5"><p className="font-semibold text-green-text">Request sent</p><p className="mt-1 text-sm text-ink-muted">{artistName} can now review it in the creator dashboard and update you through Oguaa.</p></div> : open && member ? <form onSubmit={submit} className="space-y-3 border-t border-gold-border/30 bg-cream p-5">
+      <label className="block text-xs font-semibold text-ink-muted">Event type<select name="eventType" required className={input}><option value="">Choose event</option><option>Wedding</option><option>Festival</option><option>Corporate event</option><option>Church programme</option><option>Funeral or remembrance</option><option>Private celebration</option><option>Concert or live show</option><option>Other event</option></select></label>
+      <label className="block text-xs font-semibold text-ink-muted">Event date<input name="eventDate" type="date" required min={new Date().toISOString().slice(0, 10)} className={input} /></label>
+      <label className="block text-xs font-semibold text-ink-muted">Location<input name="location" required className={input} placeholder="Venue, town or region" /></label>
+      <div className="grid grid-cols-2 gap-2"><label className="block text-xs font-semibold text-ink-muted">Budget (GH₵)<input name="budgetGhs" inputMode="decimal" className={input} placeholder="Optional" /></label><label className="block text-xs font-semibold text-ink-muted">Audience<input name="audienceSize" inputMode="numeric" className={input} placeholder="Optional" /></label></div>
+      <label className="block text-xs font-semibold text-ink-muted">Email<input name="contactEmail" type="email" className={input} placeholder="you@example.com" /></label>
+      <label className="block text-xs font-semibold text-ink-muted">Phone or WhatsApp<input name="contactPhone" type="tel" className={input} placeholder="+233…" /></label>
+      <label className="block text-xs font-semibold text-ink-muted">Event notes<textarea name="message" rows={3} className={input} placeholder="Timing, set length, audience and anything the artist should know." /></label>
+      {error && <p className="text-xs font-medium text-maroon-text">{error}</p>}
+      <button type="submit" disabled={busy} className="min-h-11 w-full rounded-full bg-green px-4 text-sm font-semibold text-on-green disabled:opacity-60">{busy ? "Sending…" : "Send booking request"}</button>
+    </form> : null}
+  </section>;
 }
 
 interface DonateState {

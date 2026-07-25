@@ -139,6 +139,19 @@ func (f *fakeRepo) SetLostFoundStatus(_ context.Context, id, status string) erro
 	return &domain.NotFoundError{Entity: "listing"}
 }
 
+func (f *fakeRepo) SetPropertyAvailability(_ context.Context, id, availability string) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			if f.listings[i].Details == nil {
+				f.listings[i].Details = map[string]any{}
+			}
+			f.listings[i].Details["availability"] = availability
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
+
 func (f *fakeRepo) IncrementDonations(_ context.Context, id string, delta int64) error {
 	for i := range f.listings {
 		if f.listings[i].ID == id {
