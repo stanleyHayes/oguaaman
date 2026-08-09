@@ -132,7 +132,7 @@
   }
   h1,
   h2 {
-    font-family: "Fraunces", Georgia, "Times New Roman", serif;
+    font-family: var(--font-display);
   }
   h1,
   h2 {

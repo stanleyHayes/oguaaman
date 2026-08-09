@@ -38,7 +38,7 @@ export function Component() {
         </div>
       </Container>
 
-      <section className="bg-green-900 py-14 text-cream"><Container className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div><Eyebrow className="text-gold">Keep exploring</Eyebrow><h2 className="mt-2 text-3xl font-semibold text-cream">There is more to Oguaa</h2></div><Link to="/visit" className="w-fit border-b border-gold pb-1 font-semibold text-gold">Back to the visitor guide →</Link></Container></section>
+      <section className="on-dark on-dark-pin bg-green-900 py-14 text-cream"><Container className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div><Eyebrow className="text-gold">Keep exploring</Eyebrow><h2 className="mt-2 text-3xl font-semibold text-cream">There is more to Oguaa</h2></div><Link to="/visit" className="w-fit border-b border-gold pb-1 font-semibold text-gold">Back to the visitor guide →</Link></Container></section>
     </article>
   );
 }

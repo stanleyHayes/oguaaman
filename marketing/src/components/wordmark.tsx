@@ -32,7 +32,7 @@ export function CrabMark({ size = 24, className = "", strokeWidth = 2.6 }: Reado
   );
 }
 
-/** The Oguaa wordmark — the crab mark + Fraunces display name. */
+/** The Oguaa wordmark — the crab mark + Outfit display name. */
 export function Wordmark({
   className = "",
   tone = "text-cream",
