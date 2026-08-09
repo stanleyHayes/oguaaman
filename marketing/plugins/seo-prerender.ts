@@ -48,7 +48,9 @@ const HOME: RouteSeo = {
 function headFor(route: RouteSeo, siteUrl: string): string {
   const site = trimSlash(siteUrl);
   const url = route.path === "/" ? `${site}/` : `${site}${route.path}`;
-  const image = `${site}/og-image.svg`;
+  // PNG, not SVG: Facebook, WhatsApp, LinkedIn, X, Slack and iMessage all
+  // refuse SVG for link previews, so an .svg og:image silently never renders.
+  const image = `${site}/og-image.png`;
   const keywords = mergeKeywords(route.keywords);
 
   const tags = [
@@ -63,6 +65,7 @@ function headFor(route: RouteSeo, siteUrl: string): string {
     `<meta property="og:description" content="${esc(route.description)}" />`,
     `<meta property="og:url" content="${esc(url)}" />`,
     `<meta property="og:image" content="${esc(image)}" />`,
+    `<meta property="og:image:type" content="image/png" />`,
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
     `<meta property="og:locale" content="en_GH" />`,
