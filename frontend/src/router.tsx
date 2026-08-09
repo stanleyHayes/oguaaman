@@ -60,6 +60,7 @@ export const router = createBrowserRouter([
       { path: "heritage", lazy: () => import("./pages/Heritage") },
       { path: "culture", lazy: () => import("./pages/Culture") },
       { path: "visit", lazy: () => import("./pages/Visit") },
+      { path: "visit/:slug", lazy: () => import("./pages/VisitDetail") },
       { path: "map", lazy: () => import("./pages/ExploreMap") },
       { path: "submit", lazy: () => import("./pages/Submit") },
       { path: "me", lazy: () => import("./pages/Me") },

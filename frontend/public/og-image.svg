@@ -28,11 +28,11 @@
   <g transform="translate(84,118)">
     <g fill="none" stroke="#C7A24A" stroke-width="5"><circle cx="30" cy="30" r="28"/><circle cx="30" cy="30" r="17"/></g>
     <circle cx="30" cy="30" r="6" fill="#C7A24A"/>
-    <text x="80" y="46" font-family="Georgia, serif" font-weight="700" font-size="52" fill="#F6F1E7">Oguaaman</text>
+    <text x="80" y="46" font-family="Outfit, sans-serif" font-weight="700" font-size="52" fill="#F6F1E7">Oguaaman</text>
   </g>
-  <text x="84" y="300" font-family="Georgia, serif" font-weight="700" font-size="76" fill="#F6F1E7">The home of Cape Coast.</text>
+  <text x="84" y="300" font-family="Outfit, sans-serif" font-weight="700" font-size="76" fill="#F6F1E7">The home of Cape Coast.</text>
   <rect x="84" y="336" width="96" height="5" rx="2.5" fill="#C7A24A"/>
-  <text x="84" y="404" font-family="Georgia, serif" font-size="32" fill="#C7A24A">Its music, people, heritage, schools</text>
-  <text x="84" y="448" font-family="Georgia, serif" font-size="32" fill="#C7A24A">and the ones we remember.</text>
-  <text x="84" y="506" font-family="Georgia, serif" font-style="italic" font-size="28" fill="#F6F1E7" opacity="0.75">Made by us, for us.  ·  oguaaman.com</text>
+  <text x="84" y="404" font-family="Outfit, sans-serif" font-size="32" fill="#C7A24A">Its music, people, heritage, schools</text>
+  <text x="84" y="448" font-family="Outfit, sans-serif" font-size="32" fill="#C7A24A">and the ones we remember.</text>
+  <text x="84" y="506" font-family="Outfit, sans-serif" font-style="italic" font-size="28" fill="#F6F1E7" opacity="0.75">Made by us, for us.  ·  oguaaman.com</text>
 </svg>

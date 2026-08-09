@@ -92,7 +92,10 @@ export function Component() {
           {shown.length === 0 ? (
             <EmptyState
               icon={<EmptyGlyph name="users" />}
-              title={`No artists in “${genre}” yet`}
+              // Unfiltered, `genre` is undefined — naming it printed "No artists
+              // in “undefined” yet" on the bare /music page.
+              title={genre ? `No artists in “${genre}” yet` : "No artists on the roster yet"}
+              description={genre ? undefined : "Nobody has been added to the Oguaa sound yet. Nominate the artists carrying Cape Coast into its next verse."}
               actions={<Link to="/submit?type=artist" className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">Nominate one →</Link>}
             />
           ) : remainingArtists.length > 0 ? (
@@ -198,7 +201,7 @@ function LeadArtist({ artist, activeGenre }: Readonly<{ artist: Listing; activeG
 
 function EmptyStage() {
   return (
-    <div className="flex aspect-[5/4] min-h-[390px] items-center justify-center rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.05]">
+    <div className="flex aspect-[5/4] w-full min-h-[390px] items-center justify-center rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.05]">
       <Adinkra name="sankofa" size={110} className="text-gold/70" />
     </div>
   );

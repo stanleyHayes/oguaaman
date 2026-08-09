@@ -45,7 +45,9 @@
   --color-ai-tint: #f6f5fd;
   --color-ai-line: #e2dff4;
 
-  /* Type — families loaded via Google Fonts <link> */
+  /* Type — Outfit is the single citizen-app family. Legacy semantic aliases
+     deliberately resolve to Outfit so editorial and code-like utilities never
+     introduce a second visual voice. */
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
@@ -123,8 +125,18 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
   h1,
-  h2 {
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-sans);
     font-weight: 600;
     letter-spacing: -0.01em;

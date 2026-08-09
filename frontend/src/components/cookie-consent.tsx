@@ -17,7 +17,7 @@ export function CookieConsent() {
     <div
       role="dialog"
       aria-label="Cookie notice"
-      className="fixed inset-x-0 bottom-0 z-50 flex flex-col gap-3 border-t border-sand bg-cream px-4 py-4 shadow-lg sm:flex-row sm:items-center sm:justify-between sm:px-6"
+      className="fixed inset-x-0 bottom-0 z-[80] flex flex-col gap-3 border-t border-sand bg-cream px-4 py-4 shadow-lg sm:flex-row sm:items-center sm:justify-between sm:px-6"
     >
       <p className="text-sm text-ink-muted">
         We use essential cookies to keep you signed in and remember preferences.{" "}

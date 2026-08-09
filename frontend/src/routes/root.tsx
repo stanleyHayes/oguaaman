@@ -11,6 +11,7 @@ import { Wordmark } from "@/components/wordmark";
 import { Container, CTA as Cta } from "@/components/ui";
 import { SPLASH_LINES, randomSplashIndex } from "@/lib/splash-lines";
 import { SplashQuote } from "@/components/splash-quote";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 /** Reset scroll to the top on every route change (instant, loader-safe). */
 function ScrollToTop() {
@@ -74,7 +75,7 @@ export function HydrateFallback() {
 
 export function RootLayout() {
   return (
-    <div className="flex min-h-screen flex-col bg-paper text-ink">
+    <div className="flex min-h-screen flex-col bg-paper pb-20 text-ink lg:pb-0">
       <ScrollToTop />
       <NavigationProgress />
       <SiteHeader />
@@ -86,6 +87,7 @@ export function RootLayout() {
         </PageTransition>
       </main>
       <SiteFooter />
+      <MobileBottomNav />
       <CookieConsent />
     </div>
   );

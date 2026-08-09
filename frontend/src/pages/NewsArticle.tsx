@@ -38,7 +38,7 @@ export function HydrateFallback() {
 function StoryArtwork({ article }: Readonly<{ article: NewsArticle }>) {
   if (article.coverImageUrl) {
     return (
-      <div className="relative aspect-[4/3] min-h-72 overflow-hidden rounded-[var(--radius-card)] border border-cream/15 shadow-2xl lg:min-h-[26rem]">
+      <div className="relative aspect-[4/3] w-full min-h-72 overflow-hidden rounded-[var(--radius-card)] border border-cream/15 shadow-2xl lg:min-h-[26rem]">
         <img
           src={cldCover(article.coverImageUrl, 1200)}
           alt=""
@@ -54,7 +54,7 @@ function StoryArtwork({ article }: Readonly<{ article: NewsArticle }>) {
 
   return (
     <div
-      className="relative aspect-[4/3] min-h-72 overflow-hidden rounded-[var(--radius-card)] border border-cream/15 shadow-2xl lg:min-h-[26rem]"
+      className="relative aspect-[4/3] w-full min-h-72 overflow-hidden rounded-[var(--radius-card)] border border-cream/15 shadow-2xl lg:min-h-[26rem]"
       style={{ backgroundColor: article.coverColor ?? "#123F2D" }}
     >
       <div aria-hidden className="bg-dotgrid absolute inset-0 opacity-70" />

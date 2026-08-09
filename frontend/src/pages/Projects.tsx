@@ -215,7 +215,7 @@ function HeroProject({ project }: Readonly<{ project: Listing }>) {
 
 function EmptyHero() {
   return (
-    <div className="flex aspect-[5/4] min-h-[390px] items-center justify-center rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.05]">
+    <div className="flex aspect-[5/4] w-full min-h-[390px] items-center justify-center rounded-[var(--radius-card)] border border-cream/15 bg-cream/[0.05]">
       <Adinkra name="funtunfunefu" size={110} className="text-gold/70" />
     </div>
   );
