@@ -3,9 +3,8 @@ import type { ReactNode } from "react";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { FestivalView } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container, Pill, SampleNote } from "@/components/ui";
+import { Container, Pill } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import { cldCover } from "@/lib/cloudinary";
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -86,7 +85,6 @@ export function Component() {
             );
           })}
         </ol>
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>
     </>
   );

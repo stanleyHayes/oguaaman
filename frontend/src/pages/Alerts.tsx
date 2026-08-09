@@ -4,11 +4,10 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Directive } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, SampleNote } from "@/components/ui";
+import { Container } from "@/components/ui";
 import { StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { formatDate } from "@/lib/format";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import {
   ALERT_STYLE,
   DIRECTIVE_KIND_LABEL,
@@ -108,7 +107,6 @@ export function Component() {
             )}
           </div>
         )}
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>
     </>
   );

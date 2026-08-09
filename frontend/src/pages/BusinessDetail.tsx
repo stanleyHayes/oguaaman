@@ -6,14 +6,13 @@ import { api } from "@/lib/api";
 import { completePayment } from "@/lib/paystack";
 import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
-import { Container, Pill, SampleNote } from "@/components/ui";
+import { Container, Pill } from "@/components/ui";
 import { LocationMap } from "@/components/location-map";
 import { Storefront } from "@/components/storefront";
 import { ReportButton } from "@/components/report-button";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { Breadcrumbs, HeroIcon, HeroWatermark } from "@/components/hero-chrome";
 import { cldCover } from "@/lib/cloudinary";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import { formatDate } from "@/lib/format";
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -275,7 +274,6 @@ export function Component() {
         </aside>
       </Container>
 
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </article>
   );
 }

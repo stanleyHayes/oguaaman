@@ -4,13 +4,14 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Organization, Page } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA as Cta, SectionHeading, VerifiedBadge, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SectionHeading, VerifiedBadge } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Crest } from "@/components/crest";
 import { Reveal, StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
 import { initials } from "@/lib/format";
-import { EDUCATION_BLURB, SAMPLE_NOTICE } from "@/lib/content";
+import { EDUCATION_BLURB } from "@/lib/content";
 import { SCHOOL_PHOTOS } from "@/lib/cape-coast-photos";
 
 const SCHOOLS_PER_PAGE = 12;
@@ -58,6 +59,15 @@ export function Component() {
       <Container size="wide" className="pb-8">
         <div ref={rosterRef} className="scroll-mt-24">
         <Reveal><SectionHeading kicker="Official, verified profiles" title="The schools on the hills" accentClass="bg-maroon-900" /></Reveal>
+        {schools.length === 0 ? (
+          <EmptyState
+            icon={<EmptyGlyph name="building" />}
+            title="No school profiles yet"
+            description="The roster is still being built. If you are an Old Student or an administrator, claim your school and put it on the hill."
+            actions={<Cta to="/me" variant="gold">Rep your school</Cta>}
+          />
+        ) : (
+        <>
         <div className={`mt-8 grid gap-6 transition-opacity sm:grid-cols-2 lg:grid-cols-3 ${loading ? "opacity-50" : ""}`}>
           {schools.map((s, i) => (
             <StaggerItem key={s.id} index={i} lift className="h-full">
@@ -88,6 +98,8 @@ export function Component() {
           ))}
         </div>
         <Pagination page={page} totalPages={data.totalPages} onPageChange={goToPage} />
+        </>
+        )}
         </div>
       </Container>
 
@@ -101,7 +113,6 @@ export function Component() {
         </Container>
       </section>
 
-      <Container><SampleNote>{SAMPLE_NOTICE} School crests are generic placeholders, not the institutions' real marks.</SampleNote></Container>
     </>
   );
 }

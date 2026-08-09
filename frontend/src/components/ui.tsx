@@ -192,11 +192,3 @@ export function Card({
     </Tag>
   );
 }
-
-// Illustrative-preview notices are retired — the app shows only real,
-// community-brought content now. Kept as a no-op so existing call sites (Home,
-// listings, detail pages…) stay valid without touching each one.
-export function SampleNote(props: Readonly<{ children?: ReactNode }>) {
-  void props;
-  return null;
-}

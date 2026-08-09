@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
 import { Wordmark } from "./wordmark";
 import { Adinkra } from "./adinkra";
+import { useAuth } from "@/lib/auth";
 
 // Proof pills under the footer CTA — participation entry points, not stats,
 // so they never go stale.
@@ -35,8 +36,13 @@ const TAKE_PART: FooterLink[] = [
   { to: "/projects", label: "Adopt a project", icon: "heart" },
   { to: "/campaigns", label: "Back a campaign", icon: "hand-heart" },
   { to: "/me", label: "Your profile", icon: "user" },
-  { to: "/admin", label: "Curator dashboard", icon: "grid" },
 ];
+
+// Back-office roles that /api/admin/* actually admits. Everyone else gets a
+// 403 there, so the link is only shown to people it works for.
+const BACK_OFFICE_ROLES = ["curator", "steward"];
+
+const CURATOR_LINK: FooterLink = { to: "/admin", label: "Curator dashboard", icon: "grid" };
 
 const TOWN_BOARD: FooterLink[] = [
   { to: "/news", label: "Newsroom", icon: "newspaper" },
@@ -197,6 +203,8 @@ function SocialRow() {
 }
 
 export function SiteFooter() {
+  const { member } = useAuth();
+  const takePart = member && BACK_OFFICE_ROLES.includes(member.role) ? [...TAKE_PART, CURATOR_LINK] : TAKE_PART;
   return (
     <footer className="on-dark on-dark-pin relative mt-20 overflow-hidden bg-green-900 text-cream/80">
       {/* gold glow */}
@@ -245,7 +253,7 @@ export function SiteFooter() {
             </div>
 
             <FooterColumn title="Explore" icon="compass" links={EXPLORE} />
-            <FooterColumn title="Take part" icon="hand-heart" links={TAKE_PART} />
+            <FooterColumn title="Take part" icon="hand-heart" links={takePart} />
             <FooterColumn title="Town board" icon="clipboard" links={TOWN_BOARD} />
           </div>
 

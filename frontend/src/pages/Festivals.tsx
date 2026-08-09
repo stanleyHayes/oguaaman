@@ -3,11 +3,11 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { FestivalSummary } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { formatDate } from "@/lib/format";
-import { SAMPLE_NOTICE } from "@/lib/content";
 
 export async function loader() {
   return api.festivals();
@@ -22,6 +22,14 @@ export function Component() {
       <PageHero tone="gold" kicker="The living archive" title="Festivals of the coast" symbol="sankofa" image="/uploads/seed/bakatue.jpg" lede="Every edition of every festival — Fetu Afahye, Edina Bakatue, PANAFEST and the rest — kept year by year: recaps of the ones behind us, programmes for the ones ahead.">
       </PageHero>
       <Container size="wide" className="py-12">
+        {festivals.length === 0 ? (
+          <EmptyState
+            icon={<EmptyGlyph name="calendar" />}
+            title="The archive is still being built"
+            description="No festival has been added yet. Fetu Afahye, Edina Bakatue and PANAFEST all belong here — help us start the record."
+            actions={<Cta to="/submit?type=festival" variant="gold">Add a festival</Cta>}
+          />
+        ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {festivals.map((f, i) => (
             <StaggerItem key={f.slug} index={i} className="h-full">
@@ -44,7 +52,7 @@ export function Component() {
             </StaggerItem>
           ))}
         </div>
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
+        )}
       </Container>
     </>
   );

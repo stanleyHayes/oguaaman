@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { InstitutionView, Organization } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container, VerifiedBadge, Avatar, SampleNote } from "@/components/ui";
+import { Container, VerifiedBadge, Avatar } from "@/components/ui";
 import { LocationMap } from "@/components/location-map";
 import { Crest } from "@/components/crest";
 import { EventCard } from "@/components/cards";
@@ -318,7 +318,6 @@ export function Component() {
         {org.verifiedOn && " · Verified " + formatDate(org.verifiedOn)}
       </div>
 
-      {!org.crestUrl && <Container><SampleNote>Sample content — the crest is a generic placeholder, not the institution's real mark.</SampleNote></Container>}
     </article>
   );
 }

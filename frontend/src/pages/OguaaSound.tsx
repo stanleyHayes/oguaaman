@@ -2,11 +2,11 @@ import { useLoaderData } from "react-router-dom";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA as Cta, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { PersonCard } from "@/components/cards";
 import { Reveal, StaggerItem } from "@/components/motion";
-import { OGUAA_SOUND, SAMPLE_NOTICE } from "@/lib/content";
+import { OGUAA_SOUND } from "@/lib/content";
 
 export async function loader() {
   return api.musicLegacy();
@@ -31,7 +31,6 @@ export function Component() {
           <Cta to="/music" variant="primary">Browse the artists →</Cta>
           <Cta to="/submit?type=artist" variant="outline">Nominate an artist</Cta>
         </div>
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>
     </>
   );

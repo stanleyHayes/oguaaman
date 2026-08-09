@@ -6,14 +6,13 @@ import type { LostFound, LostFoundStatus, Place } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
-import { Container, Pill, SampleNote } from "@/components/ui";
+import { Container, Pill } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { LocationMap } from "@/components/location-map";
 import { DetailHero } from "@/components/detail-hero";
 import { SectionIcon } from "@/components/section-icon";
 import { ReportButton } from "@/components/report-button";
 import { formatDate, initials } from "@/lib/format";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import { KIND_LABEL, LF_STATUS_LABEL } from "@/lib/lostfound";
 
 interface Data {
@@ -200,7 +199,6 @@ export function Component() {
             <Link to="/lost-found" className="text-sm font-semibold text-green-text hover:underline"><span aria-hidden>←</span> All notices</Link>
           </div>
         </div>
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>
     </>
   );

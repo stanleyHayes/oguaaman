@@ -4,12 +4,11 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA as Cta, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { BusinessCard } from "@/components/cards";
 import { LayoutPill, StaggerItem } from "@/components/motion";
 import { Pagination } from "@/components/pagination";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
-import { SAMPLE_NOTICE } from "@/lib/content";
 
 const PER_PAGE = 12;
 
@@ -92,7 +91,6 @@ export function Component() {
         </Container>
       </section>
 
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </>
   );
 }

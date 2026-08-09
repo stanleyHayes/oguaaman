@@ -2,13 +2,12 @@ import { Link, useLoaderData, useSearchParams } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container, CTA as Cta, Pill, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, Pill } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Thumb } from "@/components/cards";
 import { LayoutPill, StaggerItem } from "@/components/motion";
 import { EmptyGlyph, EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import { initials } from "@/lib/format";
 import { useClientPagination } from "@/lib/use-pagination";
 
@@ -156,7 +155,6 @@ export function Component() {
         </Container>
       </section>
 
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </>
   );
 }

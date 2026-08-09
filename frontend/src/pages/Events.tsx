@@ -4,7 +4,8 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA as Cta, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { Adinkra } from "@/components/adinkra";
 import { Thumb } from "@/components/cards";
 import { EventCalendar } from "@/components/event-calendar";
@@ -12,7 +13,6 @@ import { LocationMap } from "@/components/location-map";
 import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
 import { LoadMore } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
-import { SAMPLE_NOTICE } from "@/lib/content";
 
 const NOW = new Date();
 const TODAY = `${NOW.getFullYear()}-${String(NOW.getMonth() + 1).padStart(2, "0")}-${String(NOW.getDate()).padStart(2, "0")}`;
@@ -412,7 +412,10 @@ export function Component() {
   const anchor = upcoming.find((event) => event.details.anchorFestival) ?? all.find((event) => event.details.anchorFestival) ?? null;
   const onDeck = upcoming.filter((event) => event.id !== next?.id && event.id !== anchor?.id).slice(0, 3);
   const scoped = scopeEvents(all, scope);
-  const highlighted = new Set(scope === "upcoming" ? [next?.id, anchor?.id].filter(Boolean) : []);
+  // Everything already surfaced above the fold — the next date, the anchor
+  // festival AND the on-deck three. Leaving on-deck out listed those three
+  // twice: once in the panel, again in the agenda below it.
+  const highlighted = new Set(scope === "upcoming" ? [next?.id, anchor?.id, ...onDeck.map((e) => e.id)].filter(Boolean) : []);
   const agenda = scoped.filter((event) => !highlighted.has(event.id));
   const venueEvents = scoped.filter((event) => Boolean(event.details.venue));
   const activeVenueId = venueEvents.some((event) => event.id === selectedVenueId) ? selectedVenueId : (venueEvents[0]?.id ?? "");
@@ -459,6 +462,18 @@ export function Component() {
       <Container size="wide" className="relative z-10 -mt-7 pb-14">
         <CalendarPulse upcoming={upcoming} all={all} />
 
+        {all.length === 0 ? (
+          // Nothing in the calendar at all. One empty state for the page —
+          // the pulse panel and the agenda panel below would otherwise both
+          // fire, stacking two near-identical "nothing here" cards.
+          <EmptyState
+            icon={<EmptyGlyph name="calendar" />}
+            title="The calendar is waiting for its first date"
+            description="No events have been posted yet. Put the first gathering, homecoming or performance on Oguaa's calendar."
+            actions={<Cta to="/submit?type=event" variant="gold">Post an event</Cta>}
+          />
+        ) : (
+        <>
         <section aria-labelledby="pulse-headline" className="mt-8">
           <h2 id="pulse-headline" className="sr-only">The next dates in Oguaa</h2>
           <div className={`grid gap-5 ${onDeck.length > 0 ? "lg:grid-cols-[1.45fr_0.72fr]" : ""}`}>
@@ -510,8 +525,8 @@ export function Component() {
             )}
           </div>
         </section>
-
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
+        </>
+        )}
       </Container>
     </>
   );

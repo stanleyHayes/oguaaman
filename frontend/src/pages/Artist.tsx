@@ -6,12 +6,11 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { completePayment } from "@/lib/paystack";
 import { useRecordView } from "@/lib/use-record-view";
-import { Container, Pill, SampleNote } from "@/components/ui";
+import { Container, Pill } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { DetailHero } from "@/components/detail-hero";
 import { ReportButton } from "@/components/report-button";
 import { initials } from "@/lib/format";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import { cedis } from "./Projects";
 
 const DONATION_AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
@@ -133,7 +132,6 @@ export function Component() {
       </Container>
 
       <Container className="flex items-center justify-between gap-4">
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
         <ReportButton listingId={artist.id} />
       </Container>
     </>

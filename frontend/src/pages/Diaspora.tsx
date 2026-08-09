@@ -5,11 +5,10 @@ import type { Member } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHero } from "@/components/page-hero";
-import { Avatar, Container, CTA as Cta, SampleNote } from "@/components/ui";
+import { Avatar, Container, CTA as Cta } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { LoadMore } from "@/components/pagination";
-import { SAMPLE_NOTICE } from "@/lib/content";
 
 const DIASPORA_PAGE = 12;
 const ALL_COUNTRIES = "all";
@@ -291,7 +290,6 @@ export function Component() {
         </Container>
       </section>
 
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </article>
   );
 }

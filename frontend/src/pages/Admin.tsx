@@ -1,7 +1,8 @@
 import { Link, useLoaderData } from "react-router-dom";
 import type { Listing, Member, Stats } from "@/lib/types";
 import { api } from "@/lib/api";
-import { Container } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { ModerationQueue, type QueueItem } from "@/components/moderation-queue";
 import { formatDate } from "@/lib/format";
 
@@ -9,11 +10,50 @@ interface Data {
   queue: Listing[];
   members: Member[];
   stats: Stats;
+  /** Set when the back office refused us — render the access notice, not the queue. */
+  denied?: "signed-out" | "not-a-curator";
 }
 
+/**
+ * The dashboard is linked from the public footer, so anyone can land here.
+ * /api/admin/queue answers 401 to a signed-out visitor and 403 to a signed-in
+ * member without the role — both are expected outcomes, not failures, so we
+ * resolve with a `denied` marker. Letting them throw put every ordinary visitor
+ * on the generic "We hit a snag" error page.
+ */
 export async function loader(): Promise<Data> {
-  const [queue, members, stats] = await Promise.all([api.queue(), api.members(), api.stats()]);
-  return { queue, members, stats };
+  const empty = { queue: [], members: [], stats: {} as Stats };
+  try {
+    const [queue, members, stats] = await Promise.all([api.queue(), api.members(), api.stats()]);
+    return { queue, members, stats };
+  } catch (e) {
+    const status = (e as { status?: number }).status;
+    if (status === 401) return { ...empty, denied: "signed-out" };
+    if (status === 403) return { ...empty, denied: "not-a-curator" };
+    throw e;
+  }
+}
+
+function AccessNotice({ reason }: Readonly<{ reason: NonNullable<Data["denied"]> }>) {
+  const signedOut = reason === "signed-out";
+  return (
+    <Container className="py-20">
+      <EmptyState
+        icon={<EmptyGlyph name="shield" />}
+        title={signedOut ? "Sign in to reach the back office" : "Curators and stewards only"}
+        description={
+          signedOut
+            ? "The curator dashboard holds the moderation queue and member records, so it needs a signed-in account with back-office access."
+            : "Your account does not carry curator or steward access. If you moderate for Oguaa and this looks wrong, contact the stewards and we will put it right."
+        }
+        actions={
+          signedOut
+            ? <Cta to="/signin?next=/admin" variant="gold">Sign in</Cta>
+            : <Cta to="/" variant="outline">Back to Oguaa</Cta>
+        }
+      />
+    </Container>
+  );
 }
 
 function snippetOf(l: Listing): string {
@@ -22,7 +62,8 @@ function snippetOf(l: Listing): string {
 }
 
 export function Component() {
-  const { queue, members, stats } = useLoaderData() as Data;
+  const { queue, members, stats, denied } = useLoaderData() as Data;
+  if (denied) return <AccessNotice reason={denied} />;
   const nameOf = (id: string) => members.find((m) => m.id === id)?.displayName ?? "A member";
   const items: QueueItem[] = queue.map((l) => ({
     id: l.id,

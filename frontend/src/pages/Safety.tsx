@@ -4,12 +4,11 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Incident, IncidentCategory } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA as Cta, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { SectionIcon } from "@/components/section-icon";
 import { formatDate } from "@/lib/format";
 import { LayoutPill, StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import { INCIDENT_CATEGORIES, CATEGORY_LABEL, SEVERITY_CLASS, STATUS_LABEL } from "@/lib/incidents";
 
 export async function loader() {
@@ -103,7 +102,6 @@ export function Component() {
             )}
           </div>
         )}
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>
     </>
   );

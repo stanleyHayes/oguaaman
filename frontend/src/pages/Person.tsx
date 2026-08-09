@@ -3,12 +3,11 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing, Organization } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
-import { Container, Pill, SampleNote } from "@/components/ui";
+import { Container, Pill } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { ReportButton } from "@/components/report-button";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { initials } from "@/lib/format";
-import { SAMPLE_NOTICE } from "@/lib/content";
 
 interface PersonData {
   person: Listing;
@@ -191,7 +190,6 @@ export function Component() {
         </aside>
       </Container>
 
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </article>
   );
 }

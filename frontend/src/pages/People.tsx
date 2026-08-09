@@ -3,13 +3,13 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SectionHeading } from "@/components/ui";
 import { SymbolDivider } from "@/components/adinkra";
 import { PersonCard } from "@/components/cards";
 import { Reveal, StaggerItem } from "@/components/motion";
+import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
 import { useClientPagination } from "@/lib/use-pagination";
-import { SAMPLE_NOTICE } from "@/lib/content";
 
 const PER_PAGE = 12;
 
@@ -29,6 +29,17 @@ export function Component() {
       <PageHero tone="gold" kicker="The sons & daughters wall" title="People of Oguaa" symbol="dwennimmen" image="/uploads/seed/fetu-queenmother.jpg" lede="The icons, the personalities, the quietly remarkable — historical and living. A wall of pride for the people this town has given the world.">
         <Cta to="/submit?type=person" variant="gold">Nominate someone</Cta>
       </PageHero>
+
+      {people.length === 0 && (
+        <Container size="wide" className="py-14">
+          <EmptyState
+            icon={<EmptyGlyph name="users" />}
+            title="The wall is empty — for now"
+            description="Nobody has been added to the sons & daughters wall yet. Nominate the people this town has given the world and we will start it together."
+            actions={<Cta to="/submit?type=person" variant="gold">Nominate someone</Cta>}
+          />
+        </Container>
+      )}
 
       {living.length > 0 && (
         <Container size="wide" className="py-14">
@@ -65,7 +76,6 @@ export function Component() {
         </section>
       )}
 
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </>
   );
 }

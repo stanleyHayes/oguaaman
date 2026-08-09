@@ -4,12 +4,11 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing, Organization, Place } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SectionHeading } from "@/components/ui";
 import { Adinkra } from "@/components/adinkra";
 import { OpportunityCard, MemoryCard, EventCard } from "@/components/cards";
 import { Reveal, StaggerItem } from "@/components/motion";
 import { LoadMore } from "@/components/pagination";
-import { SAMPLE_NOTICE } from "@/lib/content";
 
 const MEMORY_PAGE = 9;
 
@@ -151,7 +150,6 @@ export function Component() {
         </Container>
       </section>
 
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </>
   );
 }

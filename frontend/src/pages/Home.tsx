@@ -4,13 +4,13 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { HomeData, NewsArticle, Listing, CivicData, CivicBehaviour, Goal } from "@/lib/types";
 import { api } from "@/lib/api";
 import { GoalBanner } from "@/components/goals";
-import { Container, CTA as Cta, Eyebrow, SectionHeading, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, Eyebrow, SectionHeading } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { Thumb, EventCard, SectionCard, MemorialCard, NewsCard, FeaturedCard } from "@/components/cards";
 import { CircularReveal, Magnetic, Parallax, Reveal, Reveal3D, Stagger, StaggerItem, WordReveal } from "@/components/motion";
 import { CastleMark } from "@/components/castle-mark";
 import { SHOWCASE_SECTIONS } from "@/lib/sections";
-import { ABOUT_OGUAA, SAMPLE_NOTICE } from "@/lib/content";
+import { ABOUT_OGUAA } from "@/lib/content";
 import { cldCover, mediaUrl } from "@/lib/cloudinary";
 import { initials } from "@/lib/format";
 
@@ -476,7 +476,6 @@ export function Component() {
         </Container>
       </section>
 
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </>
   );
 }

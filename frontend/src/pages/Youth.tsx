@@ -4,13 +4,12 @@ import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
-import { Container, CTA as Cta, SectionHeading, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta, SectionHeading } from "@/components/ui";
 import { OpportunityCard, PersonCard } from "@/components/cards";
 import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
 import { useClientPagination } from "@/lib/use-pagination";
-import { SAMPLE_NOTICE } from "@/lib/content";
 
 const PER_PAGE = 12;
 
@@ -62,7 +61,6 @@ export function Component() {
       </PageHero>
       <Spotlight talents={talents} />
       <Board opps={opps} />
-      <Container><SampleNote>{SAMPLE_NOTICE}</SampleNote></Container>
     </>
   );
 }
@@ -105,9 +103,21 @@ function Board({ opps }: Readonly<{ opps: Listing[] }>) {
             accentClass="bg-teal"
           />
         </Reveal>
-        <FilterBar opps={opps} filter={filter} onChange={setFilter} />
+        {/* The filter chips are only worth showing once there is something to
+            filter — an all-zero chip row above an empty board reads as broken. */}
+        {opps.length > 0 && <FilterBar opps={opps} filter={filter} onChange={setFilter} />}
         {shown.length === 0 ? (
-          <EmptyState icon={<EmptyGlyph name="sparkle" />} title="Nothing open right now" description="Nothing in this category at the moment — check back soon." />
+          <EmptyState
+            icon={<EmptyGlyph name="sparkle" />}
+            title={opps.length === 0 ? "The board is open for its first posting" : "Nothing open right now"}
+            description={
+              opps.length === 0
+                ? "No opportunities have been posted yet. Scholarships, internships, apprenticeships and training all belong here."
+                : "Nothing in this category at the moment — check back soon."
+            }
+            actions={opps.length === 0 ? <Cta to="/submit?type=opportunity" variant="gold">Post an opportunity</Cta> : undefined}
+            className={opps.length === 0 ? "mt-8" : ""}
+          />
         ) : (
           <div ref={oppsPage.listRef} className="scroll-mt-24">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

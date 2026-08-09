@@ -5,12 +5,11 @@ import type { LostFound, LostFoundKind } from "@/lib/types";
 import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
 import { Thumb } from "@/components/cards";
-import { Container, CTA as Cta, SampleNote } from "@/components/ui";
+import { Container, CTA as Cta } from "@/components/ui";
 import { SectionIcon } from "@/components/section-icon";
 import { formatDate, initials } from "@/lib/format";
 import { LayoutPill, StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import { LOST_FOUND_KINDS, KIND_LABEL, LF_STATUS_CLASS, LF_STATUS_LABEL } from "@/lib/lostfound";
 
 export async function loader() {
@@ -76,7 +75,16 @@ export function Component() {
 
           <div id="lost-found-results" className="pt-8">
             {shown.length === 0 ? (
-              <EmptyState icon={<EmptyGlyph name="search" />} title="Nothing posted here" description="There are no notices of this type right now." />
+              <EmptyState
+                icon={<EmptyGlyph name="search" />}
+                title={all.length === 0 ? "The board is clear" : "Nothing posted here"}
+                description={
+                  all.length === 0
+                    ? "No notices are open right now — nothing lost, nothing found, nobody missing. Post the first one if you need the town's help."
+                    : "There are no notices of this type right now."
+                }
+                actions={all.length === 0 ? <Cta to="/lost-found/new" variant="primary">Post a notice</Cta> : undefined}
+              />
             ) : (
               <div className="grid items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {shown.map((notice, index) => (
@@ -88,7 +96,6 @@ export function Component() {
             )}
           </div>
         </section>
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>
     </>
   );

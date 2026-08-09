@@ -4,13 +4,12 @@ import type { ReactNode } from "react";
 import type { Incident, IncidentStatusEntry, Place } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
-import { Container, Pill, SampleNote } from "@/components/ui";
+import { Container, Pill } from "@/components/ui";
 import { LocationMap } from "@/components/location-map";
 import { DetailHero } from "@/components/detail-hero";
 import { SectionIcon } from "@/components/section-icon";
 import { ReportButton } from "@/components/report-button";
 import { formatDate } from "@/lib/format";
-import { SAMPLE_NOTICE } from "@/lib/content";
 import { CATEGORY_LABEL, STATUS_LABEL } from "@/lib/incidents";
 
 interface Data {
@@ -145,7 +144,6 @@ export function Component() {
 
       <Container size="wide" className="pb-12">
         <p className="border-t border-sand pt-5 text-sm text-ink-faint">Curators verify this report and record each response milestone as it happens.</p>
-        <SampleNote>{SAMPLE_NOTICE}</SampleNote>
       </Container>
     </>
   );
