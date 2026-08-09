@@ -42,8 +42,8 @@ function BrandPanel({ mode }: Readonly<{ mode: Mode }>) {
         <h1 className="mt-3 text-4xl font-semibold leading-tight text-cream">Welcome home to Oguaa.</h1>
         <p className="mt-3 max-w-sm text-sm leading-relaxed text-cream/75">
           {isJoin
-            ? "Create your account with a phone or email and a password — one account for the whole of Oguaa, on web and mobile."
-            : "Sign in with your phone or email and your password — one account across web & mobile, built for Oguaa."}
+            ? "Create your account with your email and a password — one account for the whole of Oguaa, on web and mobile."
+            : "Sign in with your email and your password — one account across web & mobile, built for Oguaa."}
         </p>
         <ul className="mt-8 space-y-3">
           {trust.map((t) => (
@@ -231,11 +231,11 @@ function SignInForm({
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
         <h2 className="text-2xl font-semibold text-ink">Sign in</h2>
-        <p className="mt-1 text-sm text-ink-muted">Enter your phone or email and your password.</p>
+        <p className="mt-1 text-sm text-ink-muted">Enter your email and your password.</p>
       </div>
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
-        <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="username" placeholder="+233… or you@email" className={inputCls} />
+        <span className="mb-1.5 block text-sm font-medium text-ink">Email</span>
+        <input type="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="email" placeholder="you@example.com" className={inputCls} />
       </label>
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
@@ -609,8 +609,8 @@ function JoinForm({
             ) : contactStep ? (
               <>
                 <label className="block">
-                  <span className="mb-1.5 block text-sm font-medium text-ink">Phone or email</span>
-                  <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="+233… or you@email" className={inputCls} />
+                  <span className="mb-1.5 block text-sm font-medium text-ink">Email</span>
+                  <input type="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="email" placeholder="you@example.com" className={inputCls} />
                 </label>
                 <div className="block">
                   <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth</span>
@@ -805,7 +805,7 @@ export function Component() {
       }
     } else if (joinStep === (asCreator ? 3 : 2)) {
       if (!identifier.trim()) {
-        setErr("Please enter your phone or email.");
+        setErr("Please enter your email.");
         return;
       }
       if (!dob) {

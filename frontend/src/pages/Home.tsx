@@ -8,7 +8,7 @@ import { Container, CTA as Cta, Eyebrow, SectionHeading, SampleNote } from "@/co
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { Thumb, EventCard, SectionCard, MemorialCard, NewsCard, FeaturedCard } from "@/components/cards";
 import { CircularReveal, Magnetic, Parallax, Reveal, Reveal3D, Stagger, StaggerItem, WordReveal } from "@/components/motion";
-import { HeroWireframe } from "@/components/hero-wireframe";
+import { CastleMark } from "@/components/castle-mark";
 import { SHOWCASE_SECTIONS } from "@/lib/sections";
 import { ABOUT_OGUAA, SAMPLE_NOTICE } from "@/lib/content";
 import { cldCover, mediaUrl } from "@/lib/cloudinary";
@@ -194,7 +194,7 @@ export function Component() {
     <>
       <section className="on-dark on-dark-pin relative overflow-hidden bg-green text-cream">
         <Parallax strength={28} className="absolute -inset-y-8 inset-x-0">
-          <img src={mediaUrl("/uploads/seed/castle-exterior.jpg")} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" aria-hidden />
+          <img src={mediaUrl("/uploads/seed/castle-courtyard.jpg")} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" aria-hidden />
           <div className="bg-dotgrid absolute inset-0 opacity-60" aria-hidden />
           <div className="absolute inset-0" style={{ background: "radial-gradient(120% 120% at 80% -10%, rgba(27,90,63,0.88) 0%, rgba(18,63,45,0.92) 45%, rgba(12,44,31,0.97) 100%)" }} aria-hidden />
           <div className="aurora-bg absolute inset-0" aria-hidden />
@@ -225,7 +225,9 @@ export function Component() {
                 </div>
               </StaggerItem>
             </Stagger>
-            <HeroWireframe />
+            <div className="ml-auto hidden w-full max-w-[36rem] lg:block">
+              <CastleMark className="h-auto w-full text-cream/90" />
+            </div>
           </div>
         </Container>
         <div className="relative border-t border-cream/10 bg-green-900/60">

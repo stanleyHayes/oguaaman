@@ -20,7 +20,7 @@ export interface RouteSeo {
   priority: number;
 }
 
-const SUFFIX = "Oguaa";
+const SUFFIX = "Oguaaman";
 
 export const ROUTE_SEO: RouteSeo[] = [
   {

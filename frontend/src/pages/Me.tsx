@@ -16,6 +16,7 @@ import { StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph, type EmptyIconName } from "@/components/empty-state";
 import { SecuritySettings, ChangePasswordSettings, DataRightsSettings } from "@/components/security-panels";
 import { ProfileSkeleton } from "@/components/skeleton";
+import { OtpInput } from "@/components/otp-input";
 
 const TYPE_LABELS: Record<string, string> = {
   business: "Business", property: "Property", artist: "Artist", person: "Person", memory: "Memory", event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
@@ -114,9 +115,13 @@ function QuickAction({ to, label, desc, icon }: Readonly<{ to: string; label: st
 }
 
 function Metric({ value, label }: Readonly<{ value: ReactNode; label: string }>) {
+  // Counts are short and want the display size; word values like "Verified"
+  // do not fit at 2xl in a quarter-width column, and truncating clipped them
+  // to "Verifi…". Size the word down instead of cutting it off.
+  const isWord = typeof value === "string";
   return (
     <div className="min-w-0 px-4 py-3 sm:px-5">
-      <p className="truncate text-xl font-semibold leading-none text-cream sm:text-2xl">{value}</p>
+      <p className={`font-semibold leading-none text-cream ${isWord ? "text-base sm:text-lg" : "text-xl sm:text-2xl"}`}>{value}</p>
       <p className="mt-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-cream/50">{label}</p>
     </div>
   );
@@ -738,31 +743,41 @@ export function Component() {
                   <button type="button" onClick={startVerification} disabled={verifyState === "saving"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
                     {verifyState === "saving" ? "Sending…" : "Send code"}
                   </button>
-                  {verifySentCode && (
+                  {/* Gate on "a code was sent", not on holding the code. Once
+                      the code is delivered by email the response no longer
+                      carries it, and gating on the code hid the input entirely. */}
+                  {verifyExpiresAt && (
                     <div className="rounded-2xl border border-green/15 bg-paper p-4">
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-                        <label className="block flex-1">
-                          <span className="mb-1.5 block text-sm font-medium text-ink">Enter the 6-digit code</span>
-                          <input
-                            value={verifyCode}
-                            onChange={(e) => setVerifyCode(e.target.value)}
-                            inputMode="numeric"
-                            autoComplete="one-time-code"
-                            placeholder="123456"
-                            className="w-full rounded-xl border border-sand bg-cream px-4 py-3 text-center text-lg tracking-[0.3em] text-ink focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15"
-                          />
-                        </label>
-                        <button type="button" onClick={confirmVerification} disabled={verifyState === "saving" || verifyCode.trim() === ""} className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-on-green hover:bg-clay/90 disabled:opacity-60">
+                      <p className="text-sm font-medium text-ink">Enter the 6-digit code</p>
+                      {/* The member payload deliberately omits email (it is never
+                          exposed publicly), so address the channel, not the value. */}
+                      <p className="mt-1 text-sm text-ink-muted">
+                        We've sent a code to your email address. It expires in 10 minutes — check your spam folder if it hasn't arrived.
+                      </p>
+                      <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center">
+                        <OtpInput
+                          value={verifyCode}
+                          onChange={setVerifyCode}
+                          onComplete={confirmVerification}
+                          ariaLabel="Verification code"
+                          autoFocus
+                        />
+                        <button type="button" onClick={confirmVerification} disabled={verifyState === "saving" || verifyCode.trim().length < 6} className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-on-green hover:bg-clay/90 disabled:opacity-60">
                           {verifyState === "saving" ? "Checking…" : "Confirm code"}
                         </button>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
-                        {verifyExpiresAt && <span>Expires: {verifyExpiresAt}</span>}
-                        <span className="rounded-full bg-green/[0.06] px-2.5 py-1 text-green-text">Dev mode shows the code below.</span>
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-ink-faint">
+                        <button type="button" onClick={startVerification} disabled={verifyState === "saving"} className="font-medium text-green-text underline underline-offset-4 hover:text-green disabled:opacity-60">
+                          Didn't get it? Send again
+                        </button>
                       </div>
+                      {/* Only reachable when no delivery channel is configured —
+                          the server says so loudly in its logs. Never expected
+                          in production, so it is labelled as a fault, not a feature. */}
                       {verifySentCode && (
-                        <p className="mt-3 rounded-lg border border-dashed border-green/20 bg-green/[0.04] px-3 py-2 text-sm text-ink">
-                          Code: <span className="font-mono font-semibold tracking-[0.18em] text-green-text">{verifySentCode}</span>
+                        <p className="mt-3 rounded-lg border border-dashed border-clay/40 bg-clay/[0.05] px-3 py-2 text-sm text-ink">
+                          <span className="font-semibold text-clay-text">Email delivery is not configured</span> — showing the code here so local testing still works:{" "}
+                          <span className="font-mono font-semibold tracking-[0.18em] text-clay-text">{verifySentCode}</span>
                         </p>
                       )}
                       {verifyError && <p className="mt-3 text-sm text-clay-text">{verifyError}</p>}

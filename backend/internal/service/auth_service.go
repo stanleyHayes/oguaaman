@@ -423,18 +423,31 @@ func (a *AuthService) StartPhoneVerification(ctx context.Context, memberID strin
 	m.PhoneVerificationExpiresAt = expiresAt
 	m.PhoneVerified = false
 
-	// Deliver OTP via WhatsApp when a sender is configured.
-	// In dev/sim mode (no sender) the code is returned in the response.
-	if a.otp != nil && m.Phone != "" {
-		if serr := a.otp.SendOTP(ctx, m.Phone, code); serr == nil {
-			// Code delivered out-of-band — suppress it from the response.
+	// Deliver the code out-of-band. Email is tried first: it is the channel
+	// that is actually provisioned (Resend), while WhatsApp/SMS is not live
+	// yet. Whichever succeeds, the code is suppressed from the response — a
+	// code echoed back to the caller is not a second factor, it is just a
+	// number the client already had.
+	if a.email != nil && strings.TrimSpace(m.Email) != "" {
+		body := fmt.Sprintf("Your Oguaa verification code is %s. It expires in 10 minutes. Do not share it with anyone.", code)
+		htmlBody := "<p>" + html.EscapeString(body) + "</p>"
+		if e := a.email.Send(ctx, m.Email, "Your Oguaa verification code", htmlBody); e == nil {
 			return m, "", expiresAt, nil
 		} else {
-			// Delivery failed; fall through so the caller still gets a code.
-			// This is a degraded-mode fallback — log so ops can investigate.
-			a.log.Warn("WhatsApp OTP delivery failed; falling back to in-response code", "err", serr)
+			a.log.Warn("verification email failed", "memberId", m.ID, "err", e)
 		}
 	}
+	if a.otp != nil && m.Phone != "" {
+		if serr := a.otp.SendOTP(ctx, m.Phone, code); serr == nil {
+			return m, "", expiresAt, nil
+		} else {
+			a.log.Warn("WhatsApp OTP delivery failed", "err", serr)
+		}
+	}
+	// No channel delivered it. Returning the code keeps local development
+	// testable, but it must never happen in production — so say so loudly
+	// rather than letting a misconfigured deploy quietly hand out codes.
+	a.log.Error("verification code returned in API response — NO delivery channel succeeded; configure RESEND_API_KEY", "memberId", m.ID)
 	return m, code, expiresAt, nil
 }
 

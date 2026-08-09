@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-const SITE = "Oguaa";
+const SITE = "Oguaaman";
 
 /**
  * Sets `document.title` for the current page and resets it on unmount.
