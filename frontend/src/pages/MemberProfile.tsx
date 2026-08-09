@@ -77,9 +77,87 @@ function FollowButton({ slug }: Readonly<{ slug: string }>) {
   );
 }
 
+/**
+ * Block / unblock, required of user-generated-content apps by App Store Review
+ * Guideline 1.2. Destructive, so it confirms first; the server applies it in
+ * both directions immediately.
+ */
+function BlockButton({ slug, name }: Readonly<{ slug: string; name: string }>) {
+  const { member } = useAuth();
+  const [blocked, setBlocked] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!member) return;
+    let alive = true;
+    api.memberBlockState(slug).then((r) => { if (alive) setBlocked(r.blocked); }).catch(() => {});
+    return () => { alive = false; };
+  }, [member, slug]);
+
+  if (!member || member.slug === slug) return null;
+
+  async function toggle() {
+    if (!blocked && !window.confirm(`Block ${name}? You will not see each other's posts, reviews or profile, and any follow between you is removed. You can undo this from your profile.`)) return;
+    setBusy(true);
+    try {
+      const r = blocked ? await api.unblockMember(slug) : await api.blockMember(slug);
+      setBlocked(r.blocked);
+      if (r.blocked) window.location.reload(); // the profile is withheld once blocked
+    } catch {
+      /* leave the button as it was */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={busy}
+      className="min-h-11 rounded-full border border-cream/25 px-4 text-sm font-medium text-cream/80 transition-colors hover:border-maroon-900 hover:text-cream disabled:opacity-60"
+    >
+      {blocked ? "Unblock" : "Block"}
+    </button>
+  );
+}
+
+/** Shown instead of the profile when a block exists in either direction. */
+function BlockedNotice({ name, slug }: Readonly<{ name: string; slug: string }>) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Container className="py-20">
+      <EmptyState
+        icon={<EmptyGlyph name="shield" />}
+        title={`You blocked ${name}`}
+        description="Neither of you can see the other's profile, posts or reviews. Unblocking restores both."
+        actions={
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await api.unblockMember(slug);
+                window.location.reload();
+              } catch {
+                setBusy(false);
+              }
+            }}
+            className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green disabled:opacity-60"
+          >
+            Unblock
+          </button>
+        }
+      />
+    </Container>
+  );
+}
+
 export function Component() {
-  const { member: me, listings, places, schools } = useLoaderData() as MemberView;
+  const { member: me, listings, places, schools, blocked } = useLoaderData() as MemberView;
   usePageTitle(me.displayName);
+  if (blocked) return <BlockedNotice name={me.displayName} slug={me.slug} />;
   const quarter = places.find((p) => p.id === me.townId && p.kind !== "asafo");
   const asafo = places.find((p) => p.id === me.asafoId);
   const published = listings.filter((l) => l.status === "approved");
@@ -119,7 +197,10 @@ export function Component() {
               </div>
             </div>
           </div>
-          <FollowButton slug={me.slug} />
+          <div className="flex flex-wrap items-center gap-2">
+            <FollowButton slug={me.slug} />
+            <BlockButton slug={me.slug} name={me.displayName} />
+          </div>
         </Container>
       </section>
 

@@ -247,6 +247,11 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/members/{slug}/follow", h.MemberFollowState)
 	mux.HandleFunc("POST /api/members/{slug}/follow", h.FollowMember)
 	mux.HandleFunc("DELETE /api/members/{slug}/follow", h.UnfollowMember)
+	// Blocking — App Store Review Guideline 1.2 requires UGC apps to let a
+	// member block an abusive user, and to be able to undo it.
+	mux.HandleFunc("GET /api/members/{slug}/block", h.BlockState)
+	mux.HandleFunc("POST /api/members/{slug}/block", h.BlockMember)
+	mux.HandleFunc("DELETE /api/members/{slug}/block", h.UnblockMember)
 	mux.HandleFunc("POST /api/me/profile", h.SetMyProfile)
 	mux.HandleFunc("POST /api/me/birthday", h.SetMyBirthday)
 	mux.HandleFunc("POST /api/me/photo", h.SetMyPhoto)
@@ -255,6 +260,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/me/schooling", h.SetMySchooling)
 	mux.HandleFunc("POST /api/me/diaspora", h.SetMyDiaspora)
 	mux.HandleFunc("GET /api/me/connections", h.MyConnections)
+	mux.HandleFunc("GET /api/me/blocked", h.MyBlocked)
 	mux.HandleFunc("GET /api/stats", h.Stats)
 
 	mux.HandleFunc("GET /api/admin/queue", h.Queue)

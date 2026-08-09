@@ -705,6 +705,18 @@ export interface MemberView {
   listings: Listing[];
   places: Place[];
   schools: Organization[];
+  /** Set when a block exists in either direction — the profile is withheld. */
+  blocked?: boolean;
+}
+
+/** A member you have blocked, for the unblock list (App Store Guideline 1.2). */
+export interface BlockedMember {
+  memberId: string;
+  slug: string;
+  displayName: string;
+  photoUrl?: string;
+  createdAt: string;
+  reason?: string;
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { ArtistBooking, Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs } from "./types";
+import type { ArtistBooking, Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs, BlockedMember,} from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -306,6 +306,14 @@ export const api = {
   memberFollowState: (slug: string) => get<{ following: boolean }>(`/api/members/${slug}/follow`),
   followMember: (slug: string) => post<{ following: boolean; followers: number }>(`/api/members/${slug}/follow`),
   unfollowMember: (slug: string) => del<{ following: boolean; followers: number }>(`/api/members/${slug}/follow`),
+
+  // Blocking — App Store Review Guideline 1.2 requires UGC apps to let a member
+  // block an abusive user, and to undo it. Symmetric on the server.
+  memberBlockState: (slug: string) => get<{ blocked: boolean }>(`/api/members/${slug}/block`),
+  blockMember: (slug: string, reason?: string) =>
+    post<{ blocked: boolean }>(`/api/members/${slug}/block`, reason ? { reason } : {}),
+  unblockMember: (slug: string) => del<{ blocked: boolean }>(`/api/members/${slug}/block`),
+  myBlocked: () => get<BlockedMember[]>("/api/me/blocked"),
 
   // Profile connections — "people you may know" (spec §8.6).
   connections: () => get<Connection[]>("/api/me/connections"),

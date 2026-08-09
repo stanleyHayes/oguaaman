@@ -19,6 +19,14 @@ func (h *Handler) BusinessReviews(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
+	// Reviews are the most-read UGC on the site, so a blocked author's words must
+	// not reach the member who blocked them (App Store Guideline 1.2). The
+	// aggregate rating is deliberately left alone: it is a property of the
+	// business, and recomputing it per-viewer would make the same shop show a
+	// different score to different people.
+	if m := currentMember(r); m != nil {
+		reviews = h.svc.FilterBlockedReviews(r.Context(), m.ID, reviews)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"reviews":     reviews,
 		"ratingAvg":   avg,

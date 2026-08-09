@@ -102,6 +102,23 @@ func (h *Handler) Member(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.svc.EnrichMemberBadge(ctx, m) // verified/verifiedAs badge next to their name
+
+	// A block hides the profile from BOTH sides (App Store Guideline 1.2). We
+	// answer 200 with a `blocked` marker rather than 404 so the client can say
+	// "you blocked this member" and offer to undo it — a 404 would look like the
+	// account had vanished and leave no way back.
+	if viewer := currentMember(r); viewer != nil {
+		blocked, bErr := h.svc.IsBlockedMember(ctx, viewer.ID, m.Slug)
+		if bErr == nil && blocked {
+			writeJSON(w, http.StatusOK, map[string]any{
+				"member":   map[string]any{"slug": m.Slug, "displayName": m.DisplayName},
+				"blocked":  true,
+				"listings": []any{}, "places": []any{}, "schools": []any{},
+			})
+			return
+		}
+	}
+
 	listings, err := h.svc.ListingsByOwner(ctx, m.ID)
 	if err != nil {
 		h.handleErr(w, err)

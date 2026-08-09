@@ -31,6 +31,7 @@ type Service struct {
 	mod             domain.ModerationRepository
 	notifs          domain.NotificationRepository
 	follows         domain.FollowRepository
+	blocks          domain.BlockRepository
 	claims          domain.OrgClaimRepository
 	news            domain.NewsRepository
 	reports         domain.ReportRepository
@@ -57,6 +58,7 @@ type Deps struct {
 	Mod             domain.ModerationRepository
 	Notifs          domain.NotificationRepository
 	Follows         domain.FollowRepository
+	Blocks          domain.BlockRepository
 	Claims          domain.OrgClaimRepository
 	News            domain.NewsRepository
 	Reports         domain.ReportRepository
@@ -81,7 +83,7 @@ func New(d Deps) *Service {
 	}
 	return &Service{
 		listings: d.Listings, members: d.Members, orgs: d.Orgs, places: d.Places,
-		mod: d.Mod, notifs: d.Notifs, follows: d.Follows, claims: d.Claims,
+		mod: d.Mod, notifs: d.Notifs, follows: d.Follows, blocks: d.Blocks, claims: d.Claims,
 		news: d.News, reports: d.Reports, timeline: d.Timeline, plans: d.Plans,
 		directives:      d.Directives,
 		civicBehaviours: d.CivicBehaviours, civicLessons: d.CivicLessons,

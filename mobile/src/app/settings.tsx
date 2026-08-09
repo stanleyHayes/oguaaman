@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ROUTES } from "@/lib/routes";
 import { push, replace } from "@/lib/router";
 import { Alert, Image, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from "react-native";
@@ -8,7 +8,7 @@ import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
-import type { Member } from "@/lib/types";
+import type { BlockedMember, Member } from "@/lib/types";
 import { D, initials, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import { SettingsIcon, ShieldIcon, UserIcon } from "@/components/icons";
 import { Loading, Thumb, VerifiedBadge } from "@/ui";
@@ -85,6 +85,10 @@ export default function Settings() {
         <MfaManage member={member} onMember={setMember} />
       </Section>
 
+      <Section icon={<ShieldIcon size={18} color={C.tealText} strokeWidth={2} />} title="Blocked accounts" description="People you have blocked. Neither of you sees the other's posts, reviews or profile.">
+        <BlockedAccounts />
+      </Section>
+
       <Section icon={<ShieldIcon size={18} color={C.clayText} strokeWidth={2} />} title="Your data" description="Take a copy, or close your account for good.">
         <Text style={s.subLabel}>EXPORT MY DATA</Text>
         <ExportMyData />
@@ -128,6 +132,73 @@ function Section({ icon, title, description, children }: Readonly<{ icon: ReactN
         </View>
       </View>
       <View style={s.sectionBody}>{children}</View>
+    </View>
+  );
+}
+
+// ── App Store Review Guideline 1.2 — blocking ───────────────────────────────
+
+/**
+ * The unblock list. Guideline 1.2 requires a UGC app to let members block
+ * abusive users; a block a member cannot find and undo is not a real control,
+ * so it lives in Settings where a reviewer will look for it. Blocking itself
+ * happens on the other member's profile.
+ */
+function BlockedAccounts() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const [rows, setRows] = useState<BlockedMember[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setRows(await api.myBlocked());
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't load your blocked accounts.");
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function unblock(row: BlockedMember) {
+    setBusy(row.slug);
+    try {
+      await api.unblockMember(row.slug);
+      setRows((prev) => (prev ?? []).filter((r) => r.slug !== row.slug));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't unblock. Try again.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (err) return <Text style={s.errNote}>{err}</Text>;
+  if (rows === null) return <Text style={s.hint}>Loading…</Text>;
+  if (rows.length === 0) {
+    return <Text style={s.hint}>You have not blocked anyone. You can block someone from their profile.</Text>;
+  }
+
+  return (
+    <View>
+      {rows.map((row, i) => (
+        <View key={row.memberId} style={[s.toggleRow, i < rows.length - 1 && s.toggleRowBorder]}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={s.accountName}>{row.displayName}</Text>
+            <Text style={s.hint}>Blocked {row.createdAt.slice(0, 10)}</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => unblock(row)}
+            disabled={busy === row.slug}
+            style={[s.secondaryBtn, busy === row.slug && { opacity: 0.6 }]}
+          >
+            <Text style={s.secondaryBtnText}>{busy === row.slug ? "…" : "Unblock"}</Text>
+          </Pressable>
+        </View>
+      ))}
     </View>
   );
 }

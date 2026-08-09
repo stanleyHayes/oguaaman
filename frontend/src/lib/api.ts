@@ -357,6 +357,17 @@ export const api = {
   memberFollowState: (slug: string) => get<{ following: boolean }>(`/api/members/${slug}/follow`),
   followMember: (slug: string) => post<{ following: boolean; followers: number }>(`/api/members/${slug}/follow`, {}),
   unfollowMember: (slug: string) => del<{ following: boolean; followers: number }>(`/api/members/${slug}/follow`),
+
+  // Blocking (App Store Review Guideline 1.2). Symmetric: once blocked, neither
+  // member sees the other's content.
+  memberBlockState: (slug: string) => get<{ blocked: boolean }>(`/api/members/${slug}/block`),
+  blockMember: (slug: string, reason?: string) =>
+    post<{ blocked: boolean }>(`/api/members/${slug}/block`, reason ? { reason } : {}),
+  unblockMember: (slug: string) => del<{ blocked: boolean }>(`/api/members/${slug}/block`),
+  myBlocked: () =>
+    get<{ memberId: string; slug: string; displayName: string; photoUrl?: string; createdAt: string; reason?: string }[]>(
+      "/api/me/blocked",
+    ),
   setBirthday: (body: { birthday: string; broadcast: boolean }) =>
     post<{ birthday: string; broadcastBirthday: boolean }>("/api/me/birthday", body),
   // Profile photo — uploaded to Cloudinary in the browser; we store only the URL.

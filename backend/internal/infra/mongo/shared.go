@@ -18,6 +18,7 @@ const (
 	collNotifications = "notifications"
 	collFollows       = "follows"
 	collMemberFollows = "member_follows"
+	collMemberBlocks  = "member_blocks"
 	collOrgClaims     = "org_claims"
 	collNews          = "news"
 	collReports       = "reports"

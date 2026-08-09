@@ -1,0 +1,218 @@
+.bar {
+  position: fixed;
+  right: 0.65rem;
+  bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+  left: 0.65rem;
+  z-index: 70;
+  filter: drop-shadow(0 0.7rem 1.4rem rgba(12, 44, 31, 0.22));
+  transition:
+    right 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    bottom 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    left 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 240ms ease;
+}
+
+.bar[data-docked="true"] {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  filter: none;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  list-style: none;
+  border: 1px solid color-mix(in srgb, var(--color-sand) 82%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-paper) 90%, transparent);
+  backdrop-filter: saturate(150%) blur(18px);
+  transition:
+    border-radius 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 240ms ease,
+    border-color 240ms ease;
+}
+
+.bar[data-docked="true"] .list {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--color-paper) 96%, transparent);
+}
+
+.item,
+.actionItem {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+/* A raised shoulder interrupts the straight top rule and makes the border
+   physically follow the contribution control beyond the bar's boundary. */
+.actionItem::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: -1.25rem;
+  left: 50%;
+  width: 5.8rem;
+  height: 2.7rem;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--color-sand) 82%, transparent);
+  border-bottom: 0;
+  border-radius: 999px 999px 0 0;
+  background: color-mix(in srgb, var(--color-paper) 96%, transparent);
+  transition:
+    background-color 240ms ease,
+    border-color 240ms ease;
+}
+
+.link,
+.action {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 3.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  padding: 0.55rem 0.2rem 0.6rem;
+  color: var(--color-ink-faint);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 120ms ease-out;
+}
+
+.link:active {
+  transform: scale(0.96);
+  background: color-mix(in srgb, var(--color-sand) 60%, transparent);
+}
+
+.link:focus-visible,
+.action:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: -3px;
+}
+
+.link[data-active="true"] {
+  color: var(--color-green);
+}
+
+.link[data-active="true"] .icon {
+  color: var(--color-teal-text);
+}
+
+.link[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 1.75rem;
+  height: 2px;
+  transform: translateX(-50%);
+  border-radius: 0 0 2px 2px;
+  background: var(--color-teal);
+}
+
+.action {
+  z-index: 1;
+  align-self: center;
+  min-height: 3.75rem;
+  margin: -1rem 0.2rem -0.25rem;
+  padding: 0.55rem 0.25rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold-border) 75%, white);
+  border-radius: 999px;
+  color: #123f2d;
+  background: linear-gradient(145deg, #ffdb67, #f2bd35);
+  box-shadow:
+    0 0.55rem 1.2rem rgba(112, 76, 17, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  transform: translateY(-0.2rem);
+  transform-origin: center bottom;
+  transition:
+    transform 120ms ease-out,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.action:hover {
+  background: linear-gradient(145deg, #ffe27b, #f5c33c);
+  box-shadow:
+    0 0.7rem 1.45rem rgba(112, 76, 17, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.action:active {
+  transform: translateY(-0.1rem) scale(0.95);
+}
+
+.action[data-active="true"] {
+  background: linear-gradient(145deg, #ffe98f, #f6c33a);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-gold-brand) 24%, transparent),
+    0 0.7rem 1.5rem rgba(112, 76, 17, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  flex-shrink: 0;
+}
+
+.action .icon {
+  width: 1.45rem;
+  height: 1.45rem;
+}
+
+.label {
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 64rem) {
+  .bar { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar,
+  .list,
+  .link,
+  .action,
+  .actionItem::before {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .list,
+  .actionItem::before {
+    background: var(--color-paper);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .list,
+  .actionItem::before {
+    border-color: var(--color-ink-muted);
+    background: var(--color-paper);
+  }
+}

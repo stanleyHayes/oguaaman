@@ -53,6 +53,7 @@ func main() {
 		Mod:             mongox.NewModerationRepo(db),
 		Notifs:          mongox.NewNotificationRepo(db),
 		Follows:         mongox.NewFollowRepo(db),
+		Blocks:          mongox.NewBlockRepo(db),
 		Claims:          mongox.NewOrgClaimRepo(db),
 		News:            mongox.NewNewsRepo(db),
 		Reports:         mongox.NewReportRepo(db),

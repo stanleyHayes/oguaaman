@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
 import { T as Text } from "@/components/typography";
@@ -71,14 +71,88 @@ function FollowButton({ slug }: Readonly<{ slug: string }>) {
   );
 }
 
+/**
+ * Block / unblock — App Store Review Guideline 1.2. Confirms first because it is
+ * destructive (it also drops any follow between the two members), and it is a
+ * native Alert so the destructive styling is the platform's own.
+ */
+function BlockButton({ slug, name, onBlocked }: Readonly<{ slug: string; name: string; onBlocked: () => void }>) {
+  const { member } = useAuth();
+  const [blocked, setBlocked] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+
+  useEffect(() => {
+    if (!member) return;
+    let alive = true;
+    api.memberBlockState(slug).then((r) => { if (alive) setBlocked(r.blocked); }).catch(() => {});
+    return () => { alive = false; };
+  }, [member, slug]);
+
+  if (!member || member.slug === slug) return null;
+
+  async function apply(next: boolean) {
+    setBusy(true);
+    try {
+      const r = next ? await api.blockMember(slug) : await api.unblockMember(slug);
+      setBlocked(r.blocked);
+      if (r.blocked) onBlocked();
+    } catch {
+      /* leave the control as it was */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function press() {
+    if (busy) return;
+    if (blocked) {
+      void apply(false);
+      return;
+    }
+    Alert.alert(
+      `Block ${name}?`,
+      "You will not see each other's posts, reviews or profile, and any follow between you is removed. You can undo this in Settings.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Block", style: "destructive", onPress: () => void apply(true) },
+      ],
+    );
+  }
+
+  return (
+    <Pressable accessibilityRole="button" onPress={press} disabled={busy} style={s.blockBtn}>
+      <Text style={s.blockBtnText}>{blocked ? "Unblock" : "Block"}</Text>
+    </Pressable>
+  );
+}
+
 export default function MemberProfile() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, error, loading } = useApi<MemberView>(() => api.member(slug), `member:${slug}`);
   const { scrollY, onScroll } = useHeroParallax();
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
+  // Set the moment a block succeeds, so the profile is withheld without
+  // waiting for a refetch.
+  const [justBlocked, setJustBlocked] = useState(false);
   if (loading) return <Loading />;
   if (error || !data) return <ErrorView message={error ?? "Not found"} />;
+
+  if (data.blocked || justBlocked) {
+    return (
+      <>
+        <Stack.Screen options={{ title: data.member.displayName }} />
+        <View style={{ flex: 1, backgroundColor: C.paper, justifyContent: "center" }}>
+          <EmptyState
+            title={`You blocked ${data.member.displayName}`}
+            body="Neither of you can see the other's profile, posts or reviews. Unblock from Settings › Blocked accounts."
+          />
+        </View>
+      </>
+    );
+  }
 
   const { member: m, listings } = data;
   const published = listings.filter((l) => l.status === "approved");
@@ -121,7 +195,10 @@ export default function MemberProfile() {
                 ))}
               </View>
             )}
-            <FollowButton slug={m.slug} />
+            <View style={s.actionRow}>
+              <FollowButton slug={m.slug} />
+              <BlockButton slug={m.slug} name={m.displayName} onBlocked={() => setJustBlocked(true)} />
+            </View>
           </HeroParallax>
         </View>
 
@@ -168,7 +245,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, justifyContent: "center" },
   chip: { borderWidth: 1, borderColor: C.onDarkText30, backgroundColor: C.onDarkText10, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   chipText: { color: ON_GREEN, fontSize: 12, ...S(600) },
-  follow: { marginTop: 16, borderWidth: 1, borderColor: C.onDarkText50, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 26 },
+  actionRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
+  blockBtn: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, borderRadius: 999, borderWidth: 1, borderColor: C.onDarkText50 },
+  blockBtnText: { color: ON_GREEN, ...S(600), fontSize: 14 },
+  follow: { borderWidth: 1, borderColor: C.onDarkText50, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 26 },
   followOn: { backgroundColor: C.gold, borderColor: C.gold },
   followText: { color: ON_GREEN, ...S(700) },
   followTextOn: { color: C.green900 },

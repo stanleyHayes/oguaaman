@@ -115,5 +115,12 @@ func (h *Handler) DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
 	if err := h.svc.UnregisterAllPush(r.Context(), m.ID); err != nil {
 		h.log.Error("unregister push on account delete", "member", m.ID, "err", err)
 	}
+	// Drop every block naming this member. The rows hold member IDs on both
+	// sides, so leaving them would keep an erased account referenced — and once
+	// the member document is anonymised, the block could never be undone by
+	// either party.
+	if err := h.svc.ForgetBlocks(r.Context(), m.ID); err != nil {
+		h.log.Error("clear blocks on account delete", "member", m.ID, "err", err)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
