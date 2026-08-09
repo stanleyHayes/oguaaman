@@ -32,6 +32,7 @@ type Handler struct {
 	subs           *service.SubscriptionsService
 	promotions     *service.PromotionsService
 	stripe         *service.StripeService
+	iap            *service.IAPService
 	revenue        *service.RevenueService
 	creator        *service.CreatorService
 	agentJobs      *service.AgentJobsService
@@ -54,6 +55,7 @@ type HandlerDeps struct {
 	Subs           *service.SubscriptionsService
 	Promotions     *service.PromotionsService
 	Stripe         *service.StripeService
+	IAP            *service.IAPService
 	Revenue        *service.RevenueService
 	Creator        *service.CreatorService
 	AgentJobs      *service.AgentJobsService
@@ -67,7 +69,7 @@ type HandlerDeps struct {
 
 func NewHandler(d HandlerDeps) *Handler {
 	return &Handler{
-		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, stripe: d.Stripe, revenue: d.Revenue, creator: d.Creator, agentJobs: d.AgentJobs, artistBookings: d.ArtistBookings, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
+		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, stripe: d.Stripe, iap: d.IAP, revenue: d.Revenue, creator: d.Creator, agentJobs: d.AgentJobs, artistBookings: d.ArtistBookings, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
 		uploadDir: d.UploadDir, uploadBase: d.UploadBase, log: d.Log, limiter: newRateLimiter(),
 	}
 }

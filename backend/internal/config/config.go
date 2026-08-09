@@ -28,9 +28,11 @@ type Config struct {
 	KimiBaseURL string
 
 	// Auth (spec §8.1, §9). Password-based sign-in → JWT sessions.
-	JWTSecret    string
-	AuthRequired bool   // when false (dev default), unauthenticated writes fall back to a demo identity
-	MFAEncKey    string // optional; when set, TOTP secrets are AES-GCM encrypted at rest
+	JWTSecret         string
+	AuthRequired      bool   // when false (dev default), unauthenticated writes fall back to a demo identity
+	MFAEncKey         string // optional; when set, TOTP secrets are AES-GCM encrypted at rest
+	AppleBundleID     string // iOS bundle id an IAP receipt must name
+	AppleAllowSandbox bool   // accept StoreKit sandbox receipts (never in production)
 
 	// Image uploads (first-party). Files are written to UploadDir and served at
 	// /uploads/*. PublicBaseURL is prefixed onto returned URLs; empty = derive the
@@ -116,6 +118,11 @@ func load() Config {
 		JWTSecret:     env("JWT_SECRET", "oguaa-dev-secret-change-me"),
 		AuthRequired:  os.Getenv("AUTH_REQUIRED") == "true",
 		MFAEncKey:     os.Getenv("MFA_ENC_KEY"),
+		// Apple IAP. Sandbox receipts are signed by the same Apple chain as
+		// production ones, so accepting them on a live server would let any
+		// sandbox tester mint free subscriptions — hence opt-in, off by default.
+		AppleBundleID:     os.Getenv("APPLE_BUNDLE_ID"),
+		AppleAllowSandbox: os.Getenv("APPLE_ALLOW_SANDBOX") == "true",
 
 		UploadDir:     env("UPLOAD_DIR", "./uploads"),
 		PublicBaseURL: os.Getenv("PUBLIC_API_URL"),

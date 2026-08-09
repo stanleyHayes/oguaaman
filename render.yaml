@@ -25,6 +25,12 @@ services:
         sync: false
       - key: MONGODB_DB
         value: oguaa
+      # Apple In-App Purchase (Guideline 3.1.1). IAP is disabled until the
+      # bundle id is set; sandbox receipts are never accepted in production.
+      - key: APPLE_BUNDLE_ID
+        sync: false
+      - key: APPLE_ALLOW_SANDBOX
+        value: "false"
       # Render generates a strong secret on first deploy.
       - key: JWT_SECRET
         generateValue: true

@@ -299,6 +299,9 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 	}); err != nil {
 		return err
 	}
+	if _, err := db.Collection(collAppleTransactions).Indexes().CreateOne(ctx, idx(bson.D{{Key: "memberId", Value: 1}})); err != nil {
+		return err
+	}
 	// Blocks are consulted on every authenticated read path (HiddenFor), so both
 	// directions need to be indexed.
 	if _, err := db.Collection(collMemberBlocks).Indexes().CreateMany(ctx, []mongo.IndexModel{

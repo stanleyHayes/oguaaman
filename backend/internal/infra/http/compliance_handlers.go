@@ -122,5 +122,12 @@ func (h *Handler) DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
 	if err := h.svc.ForgetBlocks(r.Context(), m.ID); err != nil {
 		h.log.Error("clear blocks on account delete", "member", m.ID, "err", err)
 	}
+	// Redeemed-purchase records name the member. Apple keeps its own copy for
+	// refunds and receipts, but ours must go with the account.
+	if h.iap != nil {
+		if err := h.iap.ForgetAppleTransactions(r.Context(), m.ID); err != nil {
+			h.log.Error("clear apple transactions on account delete", "member", m.ID, "err", err)
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

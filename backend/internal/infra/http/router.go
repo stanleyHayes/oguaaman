@@ -73,6 +73,11 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/campaigns", h.CreateCampaign)
 	mux.HandleFunc("GET /api/me/campaigns", h.MyCampaigns)
 	mux.HandleFunc("POST /api/payments/paystack/webhook", h.PaystackWebhook)
+	// Apple In-App Purchase — Guideline 3.1.1 requires digital plans sold in the
+	// iOS app to go through IAP. The server verifies Apple's signed transaction
+	// before granting anything.
+	mux.HandleFunc("GET /api/iap/apple/products", h.AppleProducts)
+	mux.HandleFunc("POST /api/iap/apple/redeem", h.RedeemApplePurchase)
 	mux.HandleFunc("POST /api/payments/stripe/intent", h.StripeIntent)
 	mux.HandleFunc("POST /api/payments/stripe/confirm", h.StripeConfirm)
 

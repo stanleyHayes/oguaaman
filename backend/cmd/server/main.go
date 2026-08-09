@@ -78,8 +78,21 @@ func main() {
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
 	artistBookings := service.NewArtistBookingService(mongox.NewListingRepo(db), mongox.NewArtistBookingRepo(db), mongox.NewNotificationRepo(db))
 
+	// Apple In-App Purchase (Guideline 3.1.1). Off unless APPLE_BUNDLE_ID is set:
+	// without a bundle id there is nothing to pin a receipt to, and a verifier
+	// that accepts any bundle is worse than no verifier at all.
+	var iap *service.IAPService
+	if cfg.AppleBundleID == "" {
+		log.Info("Apple IAP DISABLED — set APPLE_BUNDLE_ID to enable in-app purchases")
+	} else if verifier, vErr := service.NewAppleVerifier(cfg.AppleBundleID, cfg.AppleAllowSandbox); vErr != nil {
+		log.Error("Apple IAP disabled — could not build the receipt verifier", "err", vErr)
+	} else {
+		iap = service.NewIAPService(verifier, mongox.NewAppleTxRepo(db), subs, log)
+		log.Info("Apple IAP enabled", "bundleId", cfg.AppleBundleID, "sandboxAccepted", cfg.AppleAllowSandbox)
+	}
+
 	handler := httpx.NewHandler(httpx.HandlerDeps{
-		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Stripe: stripeSvc, Revenue: revenue, Creator: creator, AgentJobs: agentJobs, ArtistBookings: artistBookings,
+		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Stripe: stripeSvc, IAP: iap, Revenue: revenue, Creator: creator, AgentJobs: agentJobs, ArtistBookings: artistBookings,
 		PaystackSecret: cfg.PaystackSecretKey, AuthRequired: cfg.AuthRequired, UploadDir: cfg.UploadDir, UploadBase: cfg.PublicBaseURL, Log: log,
 	})
 	router := newRouter(log, cfg, svc, handler)
