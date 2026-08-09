@@ -7,6 +7,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 import { useRecordView } from "@/lib/use-record-view";
 import { cldCover } from "@/lib/cloudinary";
 import { formatDate } from "@/lib/format";
+import { CREATOR_URL } from "@/lib/app-urls";
 import { Container, Pill } from "@/components/ui";
 import { LocationMap } from "@/components/location-map";
 import { ReportButton } from "@/components/report-button";
@@ -15,7 +16,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return api.property(params.slug!);
 }
 
-const CREATOR = (import.meta.env.VITE_CREATOR_URL as string | undefined) ?? "http://localhost:3004";
 
 const PROPERTY_LABELS: Record<PropertyType, string> = {
   room: "Room",
@@ -308,7 +308,7 @@ export function Component() {
                 slug={property.slug}
                 availability={availabilityValue}
                 onAvailability={setAvailabilityValue}
-                editHref={`${CREATOR}/work/${property.id}/edit`}
+                editHref={`${CREATOR_URL}/work/${property.id}/edit`}
               />
             )}
 

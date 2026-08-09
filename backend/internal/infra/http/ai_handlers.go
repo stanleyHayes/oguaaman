@@ -24,6 +24,14 @@ func (h *Handler) AI(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	// A decline is a decision, not a failure — 422 with the model's own framing,
+	// so the member isn't told to retry something that will be declined again.
+	if errors.Is(err, service.ErrAIRefused) {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+			"error": "refused", "message": "The assistant declined that request. Your text is unchanged.",
+		})
+		return
+	}
 	if err != nil {
 		h.log.Error("ai error", "err", err)
 		fail(w, http.StatusBadGateway, "Something went wrong generating that. Your text is unchanged.")
@@ -41,6 +49,14 @@ func (h *Handler) AIStream(w http.ResponseWriter, r *http.Request) {
 	if errors.Is(err, service.ErrAILimit) {
 		writeJSON(w, http.StatusTooManyRequests, map[string]any{
 			"error": "limit", "message": "You've reached today's AI limit. It resets at midnight.",
+		})
+		return
+	}
+	// A decline is a decision, not a failure — 422 with the model's own framing,
+	// so the member isn't told to retry something that will be declined again.
+	if errors.Is(err, service.ErrAIRefused) {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+			"error": "refused", "message": "The assistant declined that request. Your text is unchanged.",
 		})
 		return
 	}

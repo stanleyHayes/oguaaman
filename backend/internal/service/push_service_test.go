@@ -25,6 +25,14 @@ func (f *fakePushRepo) DeleteByID(_ context.Context, memberID, id string) error 
 	}
 	return nil
 }
+func (f *fakePushRepo) DeleteByMember(_ context.Context, memberID string) error {
+	for id, s := range f.subs {
+		if s.MemberID == memberID {
+			delete(f.subs, id)
+		}
+	}
+	return nil
+}
 func (f *fakePushRepo) All(_ context.Context) ([]domain.PushSubscription, error) {
 	out := make([]domain.PushSubscription, 0, len(f.subs))
 	for _, s := range f.subs {

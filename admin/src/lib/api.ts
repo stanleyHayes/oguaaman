@@ -55,6 +55,9 @@ export interface PlanPayload {
   active: boolean; sortOrder: number;
 }
 
+// "" is meaningful here: same-origin /api behind the nginx proxy. On Vercel
+// there is no such proxy, so VITE_API_URL must be set in the project env —
+// the .env.production file is gitignored and never reaches the Vercel build.
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.admin.token";
 

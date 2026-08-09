@@ -71,7 +71,7 @@ These are static Vite builds. The only setting is which API to call.
 | `VITE_CLOUDINARY_CLOUD_NAME` | `frontend/`, `admin/` | _(unset)_ | Your Cloudinary cloud name. **Until set, image fields show a "paste a URL" box instead of an uploader.** |
 | `VITE_CLOUDINARY_UPLOAD_PRESET` | `frontend/`, `admin/` | _(unset)_ | An **unsigned** upload preset (Cloudinary → Settings → Upload). Both vars together turn on drag-and-drop upload; delivery is auto-transformed (`f_auto,q_auto`, smart crops) by `lib/cloudinary.ts`. |
 
-Set these as build-time env (e.g. `VITE_API_URL=https://api.oguaa.gh pnpm build`) or in a
+Set these as build-time env (e.g. `VITE_API_URL=https://api.oguaaman.com pnpm build`) or in a
 `.env` file in each app folder. To enable image uploads locally, create `frontend/.env`
 (and `admin/.env`) from `.env.example` with your two `VITE_CLOUDINARY_*` values, then
 restart the dev server.

@@ -6,9 +6,9 @@
 // a wildcard domain (*.oguaaman.com → this app, rewriting /<host-sub> to
 // /s/<handle>) is configured.
 //
-// UNTIL THEN we're on *.vercel.app, which can't host per-business subdomains,
-// so it falls back to the path form  https://<citizen-app>/s/<handle> . The
-// same /s/:handle route serves both, so the future switch is one env var.
+// UNTIL THEN (the wildcard DNS record is not live yet) it falls back to the
+// path form  https://citizen.oguaaman.com/s/<handle> . The same /s/:handle
+// route serves both, so the future switch is one env var.
 const DOMAIN = (import.meta.env.VITE_STOREFRONT_DOMAIN as string | undefined)?.trim();
 
 /** True once a custom storefront domain is configured (subdomain links live). */
@@ -30,7 +30,7 @@ export function storefrontUrlLabel(handle: string): string {
 
 /** The fixed part shown around the editable handle field, so the owner sees the
  *  exact link shape. e.g. { prefix: "https://", suffix: ".oguaaman.com" } for a
- *  subdomain, or { prefix: "oguaa-citizen.vercel.app/s/", suffix: "" } for now. */
+ *  subdomain, or { prefix: "citizen.oguaaman.com/s/", suffix: "" } for now. */
 export function storefrontUrlParts(): { prefix: string; suffix: string } {
   if (DOMAIN) return { prefix: "https://", suffix: `.${DOMAIN}` };
   const origin = typeof window !== "undefined" ? window.location.origin.replace(/^https?:\/\//, "") : "";

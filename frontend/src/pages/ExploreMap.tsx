@@ -30,8 +30,12 @@ const LEGACY_MAP_CACHE_KEYS = ["oguaa.map.cache.v1"];
 
 // OSRM-compatible routing base; override with VITE_ROUTING_URL to drop in a
 // paid provider/token later. Public demo server: router.project-osrm.org.
+// `||`, not `??`: a var declared with an empty value (a blank line in .env, or
+// a hosting dashboard that stores "" rather than omitting the key) yields "",
+// which `??` would happily accept — leaving the base empty and every routing
+// request pointed at this app's own origin instead of a router.
 const ROUTING_BASE =
-  ((import.meta.env.VITE_ROUTING_URL as string | undefined) ?? "https://router.project-osrm.org").replace(/\/+$/, "");
+  ((import.meta.env.VITE_ROUTING_URL as string | undefined) || "https://router.project-osrm.org").replace(/\/+$/, "");
 
 type Mode = "explore" | "heritage" | "festival" | "safety" | "quarter";
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -17,6 +18,12 @@ import (
 // ErrAILimit is returned when the daily AI budget is exhausted (→ HTTP 429).
 var ErrAILimit = errors.New("ai daily limit reached")
 
+// ErrAIRefused is returned when the model declines the request on policy
+// grounds. It is deliberately NOT treated as a provider failure: retrying a
+// refused request on the backup provider would be shopping for a second
+// opinion on a safety decision, so the refusal is surfaced as-is.
+var ErrAIRefused = errors.New("the assistant declined this request")
+
 // AIService powers the admin writing assistant (spec §8.12). It calls Anthropic
 // server-side (key never leaves the server), meters usage against both a global
 // daily budget and a per-member (per-admin) daily cap, and degrades gracefully
@@ -27,7 +34,7 @@ type AIService struct {
 	budget    int // global daily cap
 	perMember int // per-member daily cap
 
-	// Kimi (Moonshot) fallback — used when Anthropic is absent or errors.
+	// Kimi (Moonshot) backup — used only when Anthropic is absent or errors.
 	kimiKey   string
 	kimiModel string
 	kimiBase  string // OpenAI-compatible base, e.g. https://api.moonshot.ai/v1
@@ -53,10 +60,10 @@ func NewAIService(apiKey, model string, budget, perMember int, usage domain.AIUs
 	}
 }
 
-// WithFallback configures the Kimi (Moonshot AI) provider. Kimi is now the
-// PRIMARY provider (see Generate); the Anthropic key given to NewAIService is
-// the backup, tried only when Kimi is absent or errors. Returns the service so
-// it can be chained off NewAIService. An empty Kimi key falls back to Anthropic.
+// WithFallback configures Kimi (Moonshot AI) as the BACKUP provider. Anthropic
+// — the key given to NewAIService — is primary (see Generate); Kimi is tried
+// only when Anthropic is unconfigured or the call fails. Returns the service so
+// it can be chained off NewAIService. An empty Kimi key simply means no backup.
 func (s *AIService) WithFallback(kimiKey, kimiModel, kimiBase string) *AIService {
 	s.kimiKey = kimiKey
 	s.kimiModel = kimiModel
@@ -82,6 +89,9 @@ type AIResult struct {
 	Result    string `json:"result"`
 	Remaining int    `json:"remaining"`
 	Simulated bool   `json:"simulated,omitempty"`
+	// Truncated marks a reply cut short by the token cap, so the UI can say so
+	// rather than presenting a half-finished rewrite as the finished article.
+	Truncated bool `json:"truncated,omitempty"`
 }
 
 // take reserves one unit against both the global budget and the member's daily
@@ -182,38 +192,53 @@ func (s *AIService) Generate(ctx context.Context, memberID, action, text, langua
 		return AIResult{Result: simulate(action, text, language, prompt), Remaining: remaining, Simulated: true}, nil
 	}
 
-	// Kimi (Moonshot) is the primary provider; Anthropic is the backup. If Kimi
-	// is absent, Anthropic becomes primary. If Kimi errors and Anthropic is
-	// configured, retry on Anthropic.
+	// Anthropic is the primary provider — the writing assistant is a Claude
+	// feature and its output is what the prompts in systemByAction are tuned
+	// for. Kimi is the resilience backup, tried only when Anthropic is absent
+	// or errors, so an Anthropic outage degrades quality rather than the
+	// feature disappearing.
 	var out string
+	var truncated bool
 	var err error
 	switch {
-	case s.kimiKey != "":
-		out, err = s.callKimi(ctx, sys, user)
-		if err != nil && s.apiKey != "" {
-			out, err = s.callAnthropic(ctx, sys, user)
+	case s.apiKey != "":
+		out, truncated, err = s.callAnthropic(ctx, sys, user)
+		// A refusal is an answer, not an outage — don't re-ask the backup.
+		if err != nil && !errors.Is(err, ErrAIRefused) && s.kimiKey != "" {
+			out, truncated, err = s.callKimi(ctx, sys, user)
 		}
 	default:
-		out, err = s.callAnthropic(ctx, sys, user)
+		out, truncated, err = s.callKimi(ctx, sys, user)
 	}
 	if err != nil {
 		return AIResult{}, err
 	}
-	return AIResult{Result: out, Remaining: remaining}, nil
+	return AIResult{Result: out, Remaining: remaining, Truncated: truncated}, nil
 }
 
-// callAnthropic calls Claude's Messages API and returns the joined text.
-func (s *AIService) callAnthropic(ctx context.Context, sys, user string) (string, error) {
+// aiMaxTokens caps a single assistant reply. The writing actions are
+// short-form (rewrite, summarise, retitle), but "expand" legitimately runs
+// long, and the old 1024 truncated those mid-sentence. 4096 clears every
+// action with room to spare while staying well inside the 30s client timeout.
+//
+// Note for a future model change: on Claude Opus 5 and Sonnet 5 thinking is on
+// by default and max_tokens caps thinking PLUS the reply, so this figure would
+// need raising again to leave the answer room.
+const aiMaxTokens = 4096
+
+// callAnthropic calls Claude's Messages API and returns the joined text plus
+// whether the reply was cut short by the token cap.
+func (s *AIService) callAnthropic(ctx context.Context, sys, user string) (string, bool, error) {
 	payload := map[string]any{
 		"model":      s.model,
-		"max_tokens": 1024,
+		"max_tokens": aiMaxTokens,
 		"system":     sys,
 		"messages":   []map[string]any{{"role": "user", "content": user}},
 	}
 	buf, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.anthropic.com/v1/messages", bytes.NewReader(buf))
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	req.Header.Set("x-api-key", s.apiKey)
 	req.Header.Set("anthropic-version", "2023-06-01")
@@ -221,20 +246,30 @@ func (s *AIService) callAnthropic(ctx context.Context, sys, user string) (string
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("anthropic upstream status %d", resp.StatusCode)
+		// Carry a slice of the body: the status alone can't tell an invalid
+		// model id from a revoked key from a rate limit.
+		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return "", false, fmt.Errorf("anthropic upstream status %d: %s", resp.StatusCode, strings.TrimSpace(string(snippet)))
 	}
 	var parsed struct {
 		Content []struct {
 			Type string `json:"type"`
 			Text string `json:"text"`
 		} `json:"content"`
+		StopReason string `json:"stop_reason"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return "", err
+		return "", false, err
+	}
+	// Check the stop reason before trusting the content: a refusal returns a
+	// successful 200 with empty or partial content, so reading the blocks
+	// blindly would hand the member a silently empty result.
+	if parsed.StopReason == "refusal" {
+		return "", false, ErrAIRefused
 	}
 	var b strings.Builder
 	for _, c := range parsed.Content {
@@ -242,15 +277,16 @@ func (s *AIService) callAnthropic(ctx context.Context, sys, user string) (string
 			b.WriteString(c.Text)
 		}
 	}
-	return strings.TrimSpace(b.String()), nil
+	return strings.TrimSpace(b.String()), parsed.StopReason == "max_tokens", nil
 }
 
 // callKimi calls Kimi (Moonshot AI) via its OpenAI-compatible chat/completions
-// endpoint and returns the first choice's text — the Anthropic backup.
-func (s *AIService) callKimi(ctx context.Context, sys, user string) (string, error) {
+// endpoint and returns the first choice's text plus whether it was cut short —
+// the backup path when Anthropic is unavailable.
+func (s *AIService) callKimi(ctx context.Context, sys, user string) (string, bool, error) {
 	payload := map[string]any{
 		"model":      s.kimiModel,
-		"max_tokens": 1024,
+		"max_tokens": aiMaxTokens,
 		"messages": []map[string]any{
 			{"role": "system", "content": sys},
 			{"role": "user", "content": user},
@@ -259,33 +295,37 @@ func (s *AIService) callKimi(ctx context.Context, sys, user string) (string, err
 	buf, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.kimiBase+"/chat/completions", bytes.NewReader(buf))
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	req.Header.Set("Authorization", "Bearer "+s.kimiKey)
 	req.Header.Set("content-type", "application/json")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("kimi upstream status %d", resp.StatusCode)
+		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return "", false, fmt.Errorf("kimi upstream status %d: %s", resp.StatusCode, strings.TrimSpace(string(snippet)))
 	}
 	var parsed struct {
 		Choices []struct {
 			Message struct {
 				Content string `json:"content"`
 			} `json:"message"`
+			FinishReason string `json:"finish_reason"`
 		} `json:"choices"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return "", err
+		return "", false, err
 	}
 	if len(parsed.Choices) == 0 {
-		return "", fmt.Errorf("kimi returned no choices")
+		return "", false, fmt.Errorf("kimi returned no choices")
 	}
-	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
+	choice := parsed.Choices[0]
+	// OpenAI-compatible spelling of "hit the token cap".
+	return strings.TrimSpace(choice.Message.Content), choice.FinishReason == "length", nil
 }
 
 // simulate is the no-key fallback — clearly labelled so it's never mistaken for live output.

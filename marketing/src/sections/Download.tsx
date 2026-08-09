@@ -58,29 +58,18 @@ const STORES: StoreBadge[] = [
   },
 ];
 
-// A small fixed bitmap (1 = filled cell) that reads as a QR code without being one.
-// Decorative only; the whole panel is aria-hidden.
-const QR_GRID: number[][] = [
-  [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1],
-  [1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1],
-  [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1],
-  [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-  [1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1],
-  [0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0],
-  [1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1],
-  [0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1],
-  [1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
-  [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
-];
-
-const QR_CELLS = QR_GRID.flat().map((cell, i) => ({ id: `cell-${i}`, cell }));
+/**
+ * A real, scannable QR encoding PORTAL_APP_URL — public/qr-open-app.svg.
+ *
+ * This used to be a hand-drawn 17×17 bitmap that only *looked* like a QR code,
+ * sitting under copy telling people to point a camera at it. It never resolved
+ * to anything, because there was nothing encoded in it.
+ *
+ * The SVG encodes https://citizen.oguaaman.com literally, so it does NOT track
+ * VITE_PORTAL_URL — regenerate the file if that env var ever changes, with any
+ * QR generator at error-correction level M, dark #0C2C1F on #F6F1E7.
+ */
+const QR_SRC = "/qr-open-app.svg";
 
 export function Download() {
   return (
@@ -196,21 +185,19 @@ function ScanPanel() {
           Scan to open
         </p>
 
-        <div
-          aria-hidden="true"
-          className="mx-auto mt-5 grid aspect-square w-44 max-w-full gap-[2px] rounded-xl bg-cream p-3 shadow-[var(--shadow-card)]"
-          style={{ gridTemplateColumns: `repeat(${QR_GRID[0].length}, minmax(0, 1fr))` }}
+        {/* A tap target too: on the phone that is already holding the page,
+            scanning yourself is impossible — so the code is also a link. */}
+        <a
+          href={PORTAL_APP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-auto mt-5 block aspect-square w-44 max-w-full rounded-xl bg-cream p-3 shadow-[var(--shadow-card)] transition-transform hover:scale-[1.02]"
         >
-          {QR_CELLS.map(({ id, cell }) => (
-            <span
-              key={id}
-              className={`aspect-square rounded-[1px] ${cell ? "bg-green-900" : "bg-transparent"}`}
-            />
-          ))}
-        </div>
+          <img src={QR_SRC} alt="QR code — opens the Oguaa web app" className="h-full w-full" />
+        </a>
 
         <p className="mt-5 text-sm leading-relaxed text-cream/70">
-          Point your camera at the code to open Oguaa on your phone.
+          Point your camera at the code to open Oguaa on your phone — or tap it.
         </p>
         <p className="mt-2 font-serif text-sm italic text-gold/85">Akwaaba — welcome home.</p>
       </div>

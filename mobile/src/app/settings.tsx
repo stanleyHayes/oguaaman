@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ROUTES } from "@/lib/routes";
 import { push, replace } from "@/lib/router";
-import { Image, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from "react-native";
+import { Alert, Image, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -84,9 +84,35 @@ export default function Settings() {
         <Text style={s.subLabel}>TWO-FACTOR SIGN-IN (TOTP)</Text>
         <MfaManage member={member} onMember={setMember} />
       </Section>
+
+      <Section icon={<ShieldIcon size={18} color={C.clayText} strokeWidth={2} />} title="Your data" description="Take a copy, or close your account for good.">
+        <Text style={s.subLabel}>EXPORT MY DATA</Text>
+        <ExportMyData />
+        <View style={s.hr} />
+        <Text style={s.subLabel}>DELETE MY ACCOUNT</Text>
+        <DeleteAccount />
+        <View style={s.hr} />
+        <Text style={s.subLabel}>POLICIES</Text>
+        <View style={s.policyRow}>
+          {LEGAL_LINKS.map((l) => (
+            <Pressable accessibilityRole="link" key={l.route} onPress={() => push(l.route)} style={s.policyChip}>
+              <Text style={s.policyChipText}>{l.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </Section>
     </ScrollView>
   );
 }
+
+// Apple 5.1.1(v) also expects the privacy policy to be reachable inside the app,
+// not only from the store listing.
+const LEGAL_LINKS = [
+  { label: "Privacy", route: ROUTES.legalPrivacy },
+  { label: "Terms", route: ROUTES.legalTerms },
+  { label: "Acceptable use", route: ROUTES.legalAcceptableUse },
+  { label: "Safeguarding", route: ROUTES.legalSafeguarding },
+] as const;
 
 // A titled card mirroring the web Section (icon-led header, gold accent).
 function Section({ icon, title, description, children }: Readonly<{ icon: ReactNode; title: string; description?: string; children: ReactNode }>) {
@@ -102,6 +128,149 @@ function Section({ icon, title, description, children }: Readonly<{ icon: ReactN
         </View>
       </View>
       <View style={s.sectionBody}>{children}</View>
+    </View>
+  );
+}
+
+// ── Act 843 data rights / store compliance ──────────────────────────────────
+
+/** Right of access: hand the member their own file, via the OS share sheet. */
+function ExportMyData() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const [state, setState] = useState<SaveState>("idle");
+  const [err, setErr] = useState<string | null>(null);
+
+  async function run() {
+    setErr(null);
+    setState("saving");
+    try {
+      const json = await api.exportData();
+      // Share rather than write to disk: no extra native module, and it lets the
+      // member put the file wherever they actually keep things (Files, Drive,
+      // mail to themselves). The server sets the download filename for web.
+      await Share.share({ message: json, title: "My Oguaa data" });
+      setState("saved");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't export your data.");
+      setState("error");
+    }
+  }
+
+  return (
+    <View>
+      <Text style={s.hint}>
+        Everything Oguaa holds about you — profile, listings, tickets, pledges and promotions — as a JSON file.
+      </Text>
+      {err ? <Text style={s.errNote}>{err}</Text> : null}
+      <View style={s.saveRow}>
+        <Pressable accessibilityRole="button" onPress={run} disabled={state === "saving"} style={[s.secondaryBtn, state === "saving" && { opacity: 0.6 }]}>
+          <Text style={s.secondaryBtnText}>{state === "saving" ? "Preparing…" : "Export my data"}</Text>
+        </Pressable>
+        {state === "saved" ? <Text style={s.savedNote}>Ready ✓</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Right to erasure — and the in-app account deletion both stores require
+ * (Apple guideline 5.1.1(v), Google Play's data-deletion policy).
+ *
+ * This is a SOFT delete and the copy says so in as many words. The server
+ * anonymises the member record in place: identifiers unset, profile wiped,
+ * account permanently suspended. Approved community content stays up under
+ * "Former member" — a memorial or a tribute is other people's memory too, and
+ * hard-deleting the row would tear a hole in it. Nothing that survives can be
+ * traced back to a person, which is what erasure actually requires.
+ *
+ * Reviewers check that this path is reachable without contacting support, so it
+ * lives in Settings under a plain "Delete my account" label — no email form, no
+ * dark pattern.
+ */
+function DeleteAccount() {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const { signOut } = useAuth();
+  const [confirming, setConfirming] = useState(false);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function run() {
+    setErr(null);
+    setBusy(true);
+    try {
+      await api.deleteAccount(password);
+      // Drop the session before navigating: the token still parses, but the
+      // account behind it is suspended, so every later call would 401.
+      signOut();
+      replace(ROUTES.home);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't delete your account.");
+      setBusy(false);
+    }
+  }
+
+  function confirm() {
+    Alert.alert(
+      "Delete your account?",
+      "Your personal details are erased and the account is closed for good. This can't be undone.",
+      [
+        { text: "Keep my account", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: run },
+      ],
+    );
+  }
+
+  if (!confirming) {
+    return (
+      <View>
+        <Text style={s.hint}>
+          Erase your personal data and close your account. Published community content stays, under “Former member”.
+        </Text>
+        <View style={s.saveRow}>
+          <Pressable accessibilityRole="button" onPress={() => setConfirming(true)} style={s.dangerBtnOutline}>
+            <Text style={s.dangerBtnOutlineText}>Delete my account</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={s.dangerPanel}>
+      <Text style={s.dangerTitle}>This can’t be undone.</Text>
+      <Text style={s.dangerBody}>
+        Your name, photo, bio, contact details, schooling, date of birth and settings are wiped, and the account is
+        closed permanently.
+      </Text>
+      <Text style={s.dangerBody}>
+        Listings and tributes you already had approved stay published under “Former member”, so the town’s memory keeps
+        its shape. Anything still in draft or awaiting review is unpublished.
+      </Text>
+      <View style={{ height: 6 }} />
+      <PasswordField
+        label="Confirm with your password"
+        value={password}
+        onChange={(v) => { setPassword(v); setErr(null); }}
+        autoComplete="current-password"
+        placeholder="Your password"
+      />
+      {err ? <Text style={s.errNote}>{err}</Text> : null}
+      <View style={s.saveRow}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={confirm}
+          disabled={busy || password.length === 0}
+          style={[s.dangerBtn, (busy || password.length === 0) && { opacity: 0.6 }]}
+        >
+          <Text style={s.dangerBtnText}>{busy ? "Deleting…" : "Delete my account"}</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => { setConfirming(false); setPassword(""); setErr(null); }} disabled={busy}>
+          <Text style={s.cancelText}>Cancel</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -616,6 +785,20 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   cancelText: { color: C.inkMuted, fontSize: 13, ...S(600) },
   savedNote: { color: C.tealText, fontSize: 13, ...S(600) },
   errNote: { color: C.clayText, fontSize: 13, marginBottom: 10, lineHeight: 18 },
+
+  // Data rights / account closure. Destructive actions are clay-bordered rather
+  // than clay-filled until the member has committed, so the section reads as
+  // serious without shouting at everyone who opens Settings.
+  // The opening button is outlined; the committed one reuses the solid
+  // `dangerBtn` already defined below for the MFA-disable flow.
+  dangerBtnOutline: { borderWidth: 1, borderColor: withAlpha(C.clay, 0.45), borderRadius: 999, paddingVertical: 10, paddingHorizontal: 18 },
+  dangerBtnOutlineText: { color: C.clayText, ...S(700), fontSize: 13 },
+  dangerPanel: { borderWidth: 1, borderColor: withAlpha(C.clay, 0.3), backgroundColor: withAlpha(C.clay, 0.05), borderRadius: 14, padding: 13, gap: 6 },
+  dangerTitle: { color: C.clayText, ...S(700), fontSize: 14 },
+  dangerBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19 },
+  policyRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  policyChip: { borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
+  policyChipText: { color: C.greenText, fontSize: 13, ...S(600) },
 
   mfaStatusRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
   mfaOnPill: { backgroundColor: withAlpha(C.green, 0.1), color: C.greenText, fontSize: 12, ...S(700), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, overflow: "hidden" },

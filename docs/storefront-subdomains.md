@@ -5,13 +5,13 @@ link is a single source of truth (`frontend/src/lib/storefront-url.ts`):
 
 | State | `VITE_STOREFRONT_DOMAIN` | Link for handle `neurodynecorp` |
 |---|---|---|
-| **Now** (on `*.vercel.app`) | *(blank)* | `https://oguaa-citizen.vercel.app/s/neurodynecorp` |
+| **Now** (wildcard DNS not yet live) | *(blank)* | `https://citizen.oguaaman.com/s/neurodynecorp` |
 | **Final** (domain owned) | `oguaaman.com` | `https://neurodynecorp.oguaaman.com` |
 
 The owner's builder (`/business/:slug/manage`) shows exactly this link, and it
 flips automatically when the env var is set — no code change.
 
-## Flipping to subdomains (once oguaaman.com is owned)
+## Flipping to subdomains (oguaaman.com is owned — this is the remaining work)
 
 Both sides point at the **same** `/s/:handle` route, so only routing + config
 change:

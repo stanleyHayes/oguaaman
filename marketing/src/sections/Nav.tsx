@@ -30,22 +30,29 @@ const TONE: Record<Tone, { text: string; soft: string }> = {
   teal: { text: "text-teal-text", soft: "bg-teal/[0.09]" },
 };
 
-interface NavItem { to: string; label: string; note: string; icon: string; tone: Tone }
+/** Where a link appears: the bar itself, or one of the two dropdowns. */
+type NavGroup = "main" | "explore" | "community";
+
+interface NavItem { to: string; label: string; note: string; icon: string; tone: Tone; group: NavGroup }
 
 const NAV_LINKS: NavItem[] = [
-  { to: "/history", label: "History", note: "From a crab market to a place of return.", icon: "history", tone: "green" },
-  { to: "/culture", label: "Culture", note: "The companies, the shrines, the flags.", icon: "culture", tone: "gold" },
-  { to: "/festivals", label: "Festivals", note: "Fetu Afahye and the great durbar.", icon: "festivals", tone: "gold" },
-  { to: "/education", label: "Education", note: "The citadel that taught a country.", icon: "education", tone: "maroon" },
-  { to: "/outside", label: "Oguaa Outside", note: "Trusted agents who act for you, elsewhere.", icon: "outside", tone: "teal" },
-  { to: "/visit", label: "Visit", note: "Castle, Kakum, the lagoon, the shore.", icon: "visit", tone: "teal" },
-  { to: "/leadership", label: "Leadership", note: "The stool and the civic assembly.", icon: "leadership", tone: "green" },
-  { to: "/news", label: "News", note: "Notices and stories from the town.", icon: "news", tone: "gold" },
+  { to: "/history", label: "History", note: "From a crab market to a place of return.", icon: "history", tone: "green", group: "main" },
+  { to: "/culture", label: "Culture", note: "The companies, the shrines, the flags.", icon: "culture", tone: "gold", group: "main" },
+  { to: "/festivals", label: "Festivals", note: "Fetu Afahye and the great durbar.", icon: "festivals", tone: "gold", group: "main" },
+  { to: "/education", label: "Education", note: "The citadel that taught a country.", icon: "education", tone: "maroon", group: "main" },
+  { to: "/names", label: "The names", note: "Oguaa, Oguaaman, Obama City — one town.", icon: "history", tone: "gold", group: "explore" },
+  { to: "/outside", label: "Oguaa Outside", note: "Trusted agents who act for you, elsewhere.", icon: "outside", tone: "teal", group: "explore" },
+  { to: "/visit", label: "Visit", note: "Castle, Kakum, the lagoon, the shore.", icon: "visit", tone: "teal", group: "explore" },
+  { to: "/leadership", label: "Leadership", note: "The stool and the civic assembly.", icon: "leadership", tone: "green", group: "community" },
+  { to: "/news", label: "News", note: "Notices and stories from the town.", icon: "news", tone: "gold", group: "community" },
 ];
 
-const MAIN_LINKS = NAV_LINKS.slice(0, 4);
-const EXPLORE_LINKS = NAV_LINKS.slice(4, 6);
-const COMMUNITY_LINKS = NAV_LINKS.slice(6);
+// Grouped by the explicit `group` field rather than by index: adding or
+// reordering a link used to silently move it between the bar and a dropdown.
+const inGroup = (group: NavGroup) => NAV_LINKS.filter((item) => item.group === group);
+const MAIN_LINKS = inGroup("main");
+const EXPLORE_LINKS = inGroup("explore");
+const COMMUNITY_LINKS = inGroup("community");
 
 interface UtilityLink {
   label: string;

@@ -108,5 +108,12 @@ func (h *Handler) DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
 		// The account is already anonymised; log and still report success.
 		h.log.Error("unpublish drafts on account delete", "member", m.ID, "err", err)
 	}
+	// Drop the member's registered devices. Anonymising the member document
+	// leaves push subscriptions pointing at a real handset with a real token —
+	// an identifier that outlives the erasure, and a device that would keep
+	// receiving this member's alerts.
+	if err := h.svc.UnregisterAllPush(r.Context(), m.ID); err != nil {
+		h.log.Error("unregister push on account delete", "member", m.ID, "err", err)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

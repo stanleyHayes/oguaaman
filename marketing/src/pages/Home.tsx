@@ -1,4 +1,5 @@
 import { Hero } from "@/sections/Hero";
+import { FestivalAnnouncement } from "@/sections/FestivalAnnouncement";
 import { Marquee } from "@/sections/Marquee";
 import { Discover } from "@/components/discover";
 import { HappeningNow } from "@/sections/HappeningNow";
@@ -14,6 +15,8 @@ export function Component() {
   return (
     <>
       <Hero />
+      {/* Time-boxed: self-removes after the festival — see FestivalAnnouncement. */}
+      <FestivalAnnouncement />
       <Marquee />
       <Discover />
       <HappeningNow />

@@ -32,6 +32,11 @@ type PushRepository interface {
 	// used on unsubscribe and to prune dead endpoints (410/404 from the push
 	// service). memberID scopes the delete to the owner.
 	DeleteByID(ctx context.Context, memberID, id string) error
+	// DeleteByMember removes every subscription belonging to a member — used on
+	// account erasure. A push endpoint/expo token is a device identifier, so it
+	// has to go with the rest of the personal data; leaving it would also keep
+	// the device receiving notices for an account that no longer exists.
+	DeleteByMember(ctx context.Context, memberID string) error
 	// All returns every subscription (broadcast fan-out; town-scale volumes).
 	All(ctx context.Context) ([]PushSubscription, error)
 	// ByMembers returns subscriptions for the given member ids (targeted alerts).

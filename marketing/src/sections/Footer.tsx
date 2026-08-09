@@ -57,6 +57,7 @@ const COLUMNS: FooterColumn[] = [
     icon: "compass",
     links: [
       { label: "History", to: "/history", icon: "scroll" },
+      { label: "The names of Cape Coast", to: "/names", icon: "scroll" },
       { label: "Culture", to: "/culture", icon: "palette" },
       { label: "Festivals", to: "/festivals", icon: "sparkles" },
       { label: "Education", to: "/education", icon: "graduation" },

@@ -5,15 +5,15 @@ import { Footer } from "@/sections/Footer";
 import { PageTransition } from "@/components/page-transition";
 import { setMeta, setLink, DEFAULT_OG_IMAGE } from "@/lib/meta";
 import { SITE_URL } from "@/config";
+import { DEFAULT_TITLE, DEFAULT_DESCRIPTION, mergeKeywords } from "@/seo/site";
 
 /** Absolute share image (social scrapers need an absolute URL, not a path). */
 const OG_IMAGE_ABS = `${SITE_URL}${DEFAULT_OG_IMAGE}`;
 
-const DEFAULT_TITLE = "Oguaa — the home of Cape Coast";
-
 interface RouteMeta {
   title?: string;
   description?: string;
+  keywords?: string[];
 }
 
 /** Update <title> and the description/OG/Twitter tags from the active route's handle. */
@@ -30,11 +30,17 @@ function useRouteMeta() {
     setMeta("property", "og:title", title);
     setMeta("name", "twitter:title", title);
 
-    if (handle?.description) {
-      setMeta("name", "description", handle.description);
-      setMeta("property", "og:description", handle.description);
-      setMeta("name", "twitter:description", handle.description);
-    }
+    // Always write a description: falling through to the previous page's copy
+    // on navigation is worse than the sitewide default.
+    const description = handle?.description ?? DEFAULT_DESCRIPTION;
+    setMeta("name", "description", description);
+    setMeta("property", "og:description", description);
+    setMeta("name", "twitter:description", description);
+
+    // Route terms first (Cape Coast answers to many names — see seo/site.ts),
+    // then the sitewide set, de-duplicated.
+    setMeta("name", "keywords", mergeKeywords(handle?.keywords));
+
     // Reset the share image to the site default; per-place pages (/visit/:slug)
     // override it with their own photo, so it must reset on navigation away.
     setMeta("property", "og:image", OG_IMAGE_ABS);

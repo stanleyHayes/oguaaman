@@ -10,6 +10,7 @@ import { Container, CTA as Cta, Avatar } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { SchoolingEditor, PeopleYouMayKnow } from "@/components/connections";
 import { formatDate, initials } from "@/lib/format";
+import { CREATOR_URL } from "@/lib/app-urls";
 import { Thumb } from "@/components/cards";
 import { StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph, type EmptyIconName } from "@/components/empty-state";
@@ -20,8 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
   business: "Business", property: "Property", artist: "Artist", person: "Person", memory: "Memory", event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
 };
 
-// The creator studio (separate SPA) hosts the owner listing editor.
-const CREATOR = (import.meta.env.VITE_CREATOR_URL as string | undefined) ?? "http://localhost:3004";
+
 // The editor covers the member-submittable types (incidents/lost-found have
 // their own flows; projects belong to institutions).
 const EDITABLE = new Set(["artist", "business", "property", "event", "memory", "opportunity", "person", "memorial"]);
@@ -589,7 +589,7 @@ export function Component() {
                     </p>
                   </div>
                   <a
-                    href={`${CREATOR}/account`}
+                    href={`${CREATOR_URL}/account`}
                     className="shrink-0 rounded-full bg-teal px-5 py-2.5 text-sm font-semibold text-on-green transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
                   >
                     Become a creator →
@@ -635,7 +635,7 @@ export function Component() {
                             <span className="rounded-full bg-gold/[0.14] px-2.5 py-1 text-xs font-semibold text-gold-text">★ Featured until {formatDate(featuredUntil)}</span>
                           )}
                           {EDITABLE.has(l.type) && (
-                            <a href={`${CREATOR}/work/${l.id}/edit`}
+                            <a href={`${CREATOR_URL}/work/${l.id}/edit`}
                               className="rounded-full border border-sand px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:border-gold-border/60 hover:text-gold-text">Edit</a>
                           )}
                           {l.status === "approved" && (promoFor === l.id ? (

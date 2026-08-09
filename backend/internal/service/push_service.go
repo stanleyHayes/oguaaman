@@ -104,6 +104,15 @@ func (p *PushSender) Unregister(ctx context.Context, memberID, id string) error 
 	return p.repo.DeleteByID(ctx, memberID, id)
 }
 
+// UnregisterAll drops every device a member registered — part of account
+// erasure, so an anonymised account can't keep pushing to a real handset.
+func (p *PushSender) UnregisterAll(ctx context.Context, memberID string) error {
+	if p == nil || p.repo == nil {
+		return nil
+	}
+	return p.repo.DeleteByMember(ctx, memberID)
+}
+
 // BroadcastAll sends to every registered subscription. Runs the sends in the
 // caller's goroutine budget; callers invoke it in a goroutine.
 func (p *PushSender) BroadcastAll(ctx context.Context, payload PushPayload) {

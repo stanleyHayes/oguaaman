@@ -87,10 +87,10 @@ eas submit -p android --profile production
 
 Use the live portal legal pages for both App Store Connect and Google Play:
 
-- Privacy Policy: `https://oguaa.vercel.app/privacy`
-- Terms of Use: `https://oguaa.vercel.app/terms`
-- Acceptable Use: `https://oguaa.vercel.app/acceptable-use`
-- Safeguarding Policy (youth/mentorship): `https://oguaa.vercel.app/safeguarding`
+- Privacy Policy: `https://citizen.oguaaman.com/privacy`
+- Terms of Use: `https://citizen.oguaaman.com/terms`
+- Acceptable Use: `https://citizen.oguaaman.com/acceptable-use`
+- Safeguarding Policy (youth/mentorship): `https://citizen.oguaaman.com/safeguarding`
 
 These routes are mirrored in-app under **More → Legal**.
 

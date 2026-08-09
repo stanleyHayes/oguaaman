@@ -43,30 +43,49 @@ services:
         value: "true"
       # Every Vercel frontend that calls the API, comma-separated (CORS). Add a
       # custom domain here later. Keep in sync with the deployed Vercel URLs:
-      #   marketing https://oguaa.vercel.app · citizen/portal https://oguaa-citizen.vercel.app
-      #   admin/steward https://oguaa-steward.vercel.app · creator https://oguaa-creator.vercel.app
+      #   marketing https://oguaaman.com · citizen/portal https://citizen.oguaaman.com
+      #   admin/steward https://admin.oguaaman.com · creator https://creator.oguaaman.com
       - key: ALLOWED_ORIGIN
-        value: https://oguaa.vercel.app,https://oguaa-citizen.vercel.app,https://oguaa-steward.vercel.app,https://oguaa-creator.vercel.app
+        value: https://oguaaman.com,https://www.oguaaman.com,https://citizen.oguaaman.com,https://creator.oguaaman.com,https://admin.oguaaman.com
       # The citizen web app (portal) — where payers return after Paystack checkout.
       - key: PUBLIC_PORTAL_URL
-        value: https://oguaa-citizen.vercel.app
+        value: https://citizen.oguaaman.com
+      # The creator studio. Without this, creator-facing links fall back to
+      # PUBLIC_PORTAL_URL and send creators to the citizen portal instead.
+      - key: PUBLIC_CREATOR_URL
+        value: https://creator.oguaaman.com
       # Absolute base for returned image URLs.
       - key: PUBLIC_API_URL
-        value: https://oguaa-api.onrender.com
+        value: https://api.oguaaman.com
       - key: UPLOAD_DIR
         value: /app/uploads
       - key: PLATFORM_FEE_PERCENT
         value: "5"
-      # ── AI: Kimi (Moonshot) is the PRIMARY provider; Anthropic is the backup ──
+      # ── AI writing assistant: Anthropic is PRIMARY; Kimi is the backup ──
+      # Set ANTHROPIC_API_KEY in the Render dashboard. If it is blank the
+      # assistant silently falls through to Kimi, and then to a labelled
+      # simulation — it never errors, so a missing key is easy to miss.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Claude model for the assistant. Haiku 4.5 is the cheapest tier and is
+      # plenty for rewrite/summarise/retitle; swap to claude-sonnet-5 or
+      # claude-opus-5 if writing quality matters more than cost. Set here (not
+      # only in code) so the model can change without a redeploy.
+      - key: OGUAA_AI_MODEL
+        value: claude-haiku-4-5-20251001
+      # Spend guards: global calls/day, and per-member calls/day.
+      - key: OGUAA_AI_DAILY_BUDGET
+        value: "60"
+      - key: OGUAA_AI_PER_MEMBER
+        value: "20"
+      # Kimi (Moonshot) — resilience backup, used only if Anthropic is absent
+      # or errors. Leave KIMI_API_KEY blank to run Anthropic-only.
       - key: KIMI_API_KEY
         sync: false
       - key: KIMI_MODEL
         value: k3 # Kimi K3
       - key: KIMI_BASE_URL
         value: https://api.moonshot.ai/v1
-      # Anthropic — optional backup; blank => Kimi only, then labelled simulation.
-      - key: ANTHROPIC_API_KEY
-        sync: false
 
       # ── Payments — blank => pledge/escrow runs a labelled simulation ──
       - key: PAYSTACK_SECRET_KEY
@@ -80,7 +99,7 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
-        value: Oguaa <noreply@oguaa.gh> # use a Resend-verified sender
+        value: Oguaa <noreply@oguaaman.com> # must be a Resend-verified domain
 
       # ── WhatsApp OTP (Meta WhatsApp Business Cloud API) — optional ──
       # Blank => phone-verification OTP is returned in the API response (dev only).
@@ -97,4 +116,4 @@ services:
       - key: VAPID_PRIVATE_KEY
         sync: false
       - key: VAPID_SUBJECT
-        value: mailto:hello@oguaa.gh
+        value: mailto:hello@oguaaman.com

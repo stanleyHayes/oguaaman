@@ -19,33 +19,13 @@
       })();
     </script>
 
-    <title>Oguaa — the home of Cape Coast</title>
-    <meta
-      name="description"
-      content="Oguaa is the community home of Cape Coast, Ghana — its music, people, heritage, schools, businesses and the ones we remember. Made by us, for us. Join the app."
-    />
-    <link rel="canonical" href="%VITE_SITE_URL%/" />
-
-    <!-- Open Graph -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Oguaa" />
-    <meta property="og:title" content="Oguaa — the home of Cape Coast" />
-    <meta
-      property="og:description"
-      content="The community home of Cape Coast: its music, people, heritage, institutions and the ones we remember. Made by us, for us."
-    />
-    <meta property="og:url" content="%VITE_SITE_URL%/" />
-    <meta property="og:image" content="%VITE_SITE_URL%/og-image.svg" />
-    <meta property="og:locale" content="en_GH" />
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Oguaa — the home of Cape Coast" />
-    <meta
-      name="twitter:description"
-      content="The community home of Cape Coast: music, people, heritage, institutions and remembrance. Made by us, for us."
-    />
-    <meta name="twitter:image" content="%VITE_SITE_URL%/og-image.svg" />
+    <!-- Everything between these markers is generated per route at build time
+         from src/seo/routes.ts + src/seo/site.ts — title, description,
+         keywords, canonical, Open Graph, Twitter and the JSON-LD entity graph
+         that tells search engines Oguaa, Oguaaman, Obama City and Cape Coast
+         are one place. Do not hand-edit; see plugins/seo-prerender.ts. -->
+    <!--seo:start-->
+    <!--seo:end-->
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -53,21 +33,10 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=JetBrains+Mono:wght@500&family=Outfit:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
-    <!-- Structured data: the organisation behind the platform. -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Oguaa",
-        "description": "The community home of Cape Coast, Ghana — its music, people, heritage, institutions and remembrance.",
-        "url": "%VITE_SITE_URL%/",
-        "areaServed": "Cape Coast, Central Region, Ghana"
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>
+    <!--seo:shell-start--><!--seo:shell-end-->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

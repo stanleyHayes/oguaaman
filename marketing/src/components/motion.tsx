@@ -1,4 +1,4 @@
-import { useRef, type ReactNode, type Ref } from "react";
+import { Fragment, useRef, type ReactNode, type Ref } from "react";
 import {
   motion,
   useInView,
@@ -241,18 +241,20 @@ export function WordReveal({
         initial="hidden"
         animate={animate}
       >
+        {/* The separator is a real space, not a right margin. A margin looks
+            identical but leaves the DOM text as "TheHomeOfCapeCoast" — and the
+            h1 is the strongest on-page signal any crawler reads. */}
         {words.map((word, i) => (
-          <motion.span
-            key={`${word}-${i}`}
-            variants={WORD_ITEM}
-            className="mr-[0.25em] inline-block"
-          >
-            {isAccent(word) ? (
-              <span className={accentClassName}>{word}</span>
-            ) : (
-              word
-            )}
-          </motion.span>
+          <Fragment key={`${word}-${i}`}>
+            <motion.span variants={WORD_ITEM} className="inline-block">
+              {isAccent(word) ? (
+                <span className={accentClassName}>{word}</span>
+              ) : (
+                word
+              )}
+            </motion.span>
+            {i < words.length - 1 ? " " : null}
+          </Fragment>
         ))}
       </motion.span>
     </Tag>

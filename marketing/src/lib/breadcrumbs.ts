@@ -13,6 +13,7 @@ export interface Crumb {
 // to "home" / a title-cased slug.
 const SECTIONS: Record<string, { icon: string; label: string }> = {
   history: { icon: "history", label: "History" },
+  names: { icon: "history", label: "The names of Cape Coast" },
   culture: { icon: "culture", label: "Culture" },
   festivals: { icon: "festivals", label: "Festivals" },
   education: { icon: "education", label: "Education" },

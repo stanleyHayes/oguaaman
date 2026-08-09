@@ -28,6 +28,15 @@ func (r *PushRepo) DeleteByID(ctx context.Context, memberID, id string) error {
 	return err
 }
 
+// DeleteByMember removes every subscription a member registered (account
+// erasure). Unlike the member document itself — which is anonymised in place so
+// community content keeps an owner — a device token carries no community value
+// and is itself an identifier, so it is genuinely removed.
+func (r *PushRepo) DeleteByMember(ctx context.Context, memberID string) error {
+	_, err := r.c.DeleteMany(ctx, bson.M{"memberId": memberID})
+	return err
+}
+
 func (r *PushRepo) All(ctx context.Context) ([]domain.PushSubscription, error) {
 	return r.find(ctx, bson.M{})
 }

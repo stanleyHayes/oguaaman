@@ -106,6 +106,14 @@ func (s *Service) UnregisterPush(ctx context.Context, memberID, id string) error
 	return s.push.Unregister(ctx, memberID, id)
 }
 
+// UnregisterAllPush removes every device a member registered (account erasure).
+func (s *Service) UnregisterAllPush(ctx context.Context, memberID string) error {
+	if s.push == nil {
+		return nil
+	}
+	return s.push.UnregisterAll(ctx, memberID)
+}
+
 // PushPublicKey returns the VAPID public key for browser subscription ("" when
 // web push is not configured).
 func (s *Service) PushPublicKey() string {

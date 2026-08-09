@@ -46,8 +46,14 @@ async function post<T>(path: string, body: unknown = {}): Promise<T> {
   return data as T;
 }
 
-async function del<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { method: "DELETE", headers: authHeaders() });
+async function del<T>(path: string, body?: unknown): Promise<T> {
+  // A body is optional because most DELETEs are identified entirely by their
+  // path; account erasure is the exception — it re-verifies the password.
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "DELETE",
+    headers: authHeaders(body !== undefined),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = (data as { error?: string }).error ?? `DELETE ${path} failed (${res.status})`;
@@ -425,6 +431,28 @@ export const api = {
   mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup"),
   mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
   mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
+
+  // ── Act 843 data rights (spec §14.2) — also what the app stores require ──
+  // Apple guideline 5.1.1(v) and Google Play's data-deletion policy both demand
+  // that an account created in-app can be closed from inside the app.
+  //
+  // Erasure here is deliberately a SOFT delete: the server anonymises the member
+  // document in place (identifiers unset, profile wiped, account suspended) and
+  // leaves approved community content standing under "Former member". Memorials,
+  // tributes and school histories are other people's memories as much as the
+  // author's — hard-deleting the row would tear holes in them. That still
+  // satisfies erasure, because nothing personally identifying survives.
+  //
+  // Returned as raw text rather than a parsed object: it is the member's own
+  // copy of their file, and it is handed to the OS share sheet verbatim.
+  exportData: async (): Promise<string> => {
+    const res = await fetch(`${API_BASE}/api/me/export`, { headers: authHeaders() });
+    if (!res.ok) {
+      throw Object.assign(new Error("Couldn't export your data — try again."), { status: res.status });
+    }
+    return res.text();
+  },
+  deleteAccount: (password: string) => del<{ ok: boolean }>("/api/me", { password }),
 
   me: () => get<Member>("/api/auth/me"),
 };

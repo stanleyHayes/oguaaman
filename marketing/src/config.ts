@@ -6,7 +6,7 @@
 // link: localhost auto-detection in dev, the deployed citizen app otherwise.
 
 /** Deployed default when no VITE_PORTAL_URL is set (updated per environment). */
-const DEFAULT_PORTAL_URL = "https://oguaa-citizen.vercel.app";
+const DEFAULT_PORTAL_URL = "https://citizen.oguaaman.com";
 
 function resolvePortalUrl(): string {
   const configured = import.meta.env.VITE_PORTAL_URL?.trim();
@@ -31,7 +31,7 @@ export const PORTAL_URL = resolvePortalUrl();
  *  tracks localhost / Vercel / the live domain; see index.html %VITE_SITE_URL%. */
 export const SITE_URL = (
   import.meta.env.VITE_SITE_URL?.trim() ||
-  (typeof window !== "undefined" ? window.location.origin : "https://oguaa.vercel.app")
+  (typeof window !== "undefined" ? window.location.origin : "https://oguaaman.com")
 ).replace(/\/+$/, "");
 
 /** "Open the web app" — the portal home. */
