@@ -35,10 +35,12 @@ export const BRAND_ALIASES = ["Oguaa", "Oguaaman", "Oguaa Cape Coast", "oguaaman
  * the copy on the page.
  */
 export const KEYWORDS = [
+  // ── the town, by every name it answers to ────────────────────────────────
   "Oguaa",
   "Oguaaman",
   "Cape Coast",
   "Cape Coast Ghana",
+  "Cape Coast Central Region",
   "Obama City",
   "Obama City Ghana",
   "Ancient Capital",
@@ -47,14 +49,120 @@ export const KEYWORDS = [
   "Cabo Corso",
   "Citadel of Education",
   "Central Region Ghana",
-  "Fetu Afahye",
-  "Cape Coast Castle",
-  "Asafo",
+  "Oguaa Traditional Area",
+
+  // ── Fante language, people and identity ──────────────────────────────────
   "Fante",
-  "Kakum National Park",
+  "Fanti",
+  "Mfantse",
+  "Fante people",
+  "Fante language",
+  "Fante Ghana",
+  "Fante names",
+  "Fante proverbs",
+  "Fante tribe",
+  "Mfantsefo",
+  "Akan",
+  "Akan Ghana",
+  "Fante states",
+  "Fante Confederacy",
+  "Borbor Fante",
+  "Fante music",
+  "Fante food",
+  "Fante wedding",
+  "Fante funeral",
+  "learn Fante",
+
+  // ── chieftaincy, Asafo and the sacred calendar ───────────────────────────
+  "Asafo",
+  "Asafo company",
+  "Asafo companies Cape Coast",
+  "posuban",
+  "posuban shrine",
+  "frankaa",
+  "Asafo flags",
+  "Oguaa Omanhene",
+  "Omanhene of Oguaa",
+  "Oguaa Traditional Council",
+  "Ohemaa",
+  "queen mother Ghana",
+  "okyeame",
+  "the 77 gods of Oguaa",
+  "Nana Kodwo",
+
+  // ── festivals ────────────────────────────────────────────────────────────
+  "Fetu Afahye",
+  "Oguaa Fetu Afahye",
+  "Fetu Afahye 2026",
+  "Fetu Afahye date",
+  "Fetu Afahye grand durbar",
+  "Cape Coast festival",
+  "Ghana festivals",
+  "durbar of chiefs",
+  "Edina Bakatue",
+  "Bakatue festival",
+  "PANAFEST",
+  "Emancipation Day Ghana",
+
+  // ── heritage, the castle and the return ──────────────────────────────────
+  "Cape Coast Castle",
+  "Cape Coast Castle tour",
+  "Door of No Return",
   "Elmina",
+  "Elmina Castle",
+  "Assin Manso",
+  "slave river Assin Manso",
+  "UNESCO World Heritage Ghana",
+  "Gold Coast",
+  "Gold Coast capital",
+  "transatlantic slave trade Ghana",
   "Ghana diaspora",
   "Year of Return",
+  "Beyond the Return",
+  "African American roots trip Ghana",
+  "homecoming Ghana",
+
+  // ── the Citadel of Education ─────────────────────────────────────────────
+  "Mfantsipim",
+  "Mfantsipim School",
+  "Adisadel College",
+  "Wesley Girls",
+  "Wesley Girls High School",
+  "St. Augustine's College Cape Coast",
+  "Holy Child School",
+  "Ghana National College",
+  "Aggrey Memorial",
+  "University of Cape Coast",
+  "UCC Ghana",
+  "Cape Coast Technical University",
+  "Cape Coast schools",
+  "best senior high schools Ghana",
+  "old students association Ghana",
+
+  // ── visiting ─────────────────────────────────────────────────────────────
+  "Kakum National Park",
+  "Kakum canopy walk",
+  "things to do in Cape Coast",
+  "visit Cape Coast",
+  "Cape Coast tourism",
+  "Cape Coast beaches",
+  "Cape Coast hotels",
+  "Cape Coast restaurants",
+  "travel to Cape Coast Ghana",
+
+  // ── everyday town life, and what people actually search for ──────────────
+  "Kotokuraba market",
+  "Cape Coast market",
+  "Cape Coast news",
+  "Cape Coast events",
+  "Cape Coast business directory",
+  "Cape Coast jobs",
+  "rent in Cape Coast",
+  "Cape Coast community",
+  "Cape Coast obituaries",
+  "Oguaa music",
+  "Cape Coast artists",
+  "highlife Cape Coast",
 ] as const;
 
 /**
@@ -80,11 +188,11 @@ export const CITY_SAME_AS = [
   "https://en.wikipedia.org/wiki/Cape_Coast",
 ] as const;
 
-export const SITE_NAME = "Oguaa";
+export const SITE_NAME = "Oguaaman";
 export const SITE_TAGLINE = "the home of Cape Coast";
-export const DEFAULT_TITLE = "Oguaa (Oguaaman) — the home of Cape Coast, Ghana";
+export const DEFAULT_TITLE = "Oguaaman (Oguaa) — the home of Cape Coast, Ghana";
 export const DEFAULT_DESCRIPTION =
-  "Oguaa is the community home of Cape Coast, Ghana — the town also known as Oguaaman, Kotokuraba, Obama City and the ancient capital of the Gold Coast. Its history, culture, festivals, schools, businesses, people and the ones we remember. Made by us, for us.";
+  "Oguaaman is the community home of Cape Coast, Ghana — the town also known as Oguaa, Kotokuraba, Obama City and the ancient capital of the Gold Coast. Its history, culture, festivals, schools, businesses, people and the ones we remember. Made by us, for us.";
 
 const trimSlash = (s: string) => s.replace(/\/+$/, "");
 

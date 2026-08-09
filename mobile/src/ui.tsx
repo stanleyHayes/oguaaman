@@ -110,7 +110,7 @@ export function Loading() {
           <View style={s.skeletonTile} />
         </View>
       </View>
-      <Text style={s.splashTag}>Loading Oguaa</Text>
+      <Text style={s.splashTag}>Loading Oguaaman</Text>
       <SplashQuote line={SPLASH_LINES[i]} cycle={i} />
     </View>
   );

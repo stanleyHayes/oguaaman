@@ -32,7 +32,7 @@ export function CrabMark({ size = 24, className = "", strokeWidth = 2.6 }: Reado
   );
 }
 
-/** The Oguaa wordmark — the crab mark + Outfit display name. */
+/** The Oguaaman wordmark — the crab mark + Outfit display name. */
 export function Wordmark({
   className = "",
   tone = "text-cream",
@@ -48,7 +48,7 @@ export function Wordmark({
     <span className={`inline-flex items-center gap-2 ${className}`}>
       <CrabMark size={26} className={markTone} />
       <span className={`${size} font-semibold leading-none tracking-tight ${tone}`}>
-        Oguaa
+        Oguaaman
       </span>
     </span>
   );

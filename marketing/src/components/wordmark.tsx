@@ -48,7 +48,7 @@ export function Wordmark({
     <span className={`inline-flex items-center gap-2 ${className}`}>
       <CrabMark size={26} className={markTone} />
       <span className={`${size} font-semibold leading-none tracking-tight ${tone}`}>
-        Oguaa
+        Oguaaman
       </span>
     </span>
   );

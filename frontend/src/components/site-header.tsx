@@ -491,7 +491,7 @@ export function SiteHeader() {
       <div className="hidden border-b border-cream/10 bg-[#0c2c1f] shadow-[inset_0_2px_0_rgba(199,162,74,0.55)] xl:block">
         <div className="mx-auto flex h-10 w-full max-w-7xl items-center justify-between px-4">
           <nav aria-label="Culture highlights" className="flex h-10 items-center">
-            <span className="mr-2 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-gold/75">Oguaa life</span>
+            <span className="mr-2 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-gold/75">Oguaaman life</span>
             <span className="h-3.5 w-px bg-cream/15" aria-hidden />
             <UtilityNavLink to="/music" active={musicActive}>{sectionLabel(byId.music, lang)}</UtilityNavLink>
             <UtilityNavLink to="/festivals" active={festivalsActive}>{sectionLabel(byId.festivals, lang)}</UtilityNavLink>

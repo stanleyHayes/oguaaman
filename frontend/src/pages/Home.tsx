@@ -13,6 +13,7 @@ import { SHOWCASE_SECTIONS } from "@/lib/sections";
 import { ABOUT_OGUAA } from "@/lib/content";
 import { cldCover, mediaUrl } from "@/lib/cloudinary";
 import { initials } from "@/lib/format";
+import { SectionIcon } from "@/components/section-icon";
 
 type HomeLoaderData = HomeData & { news: NewsArticle[]; businesses: Listing[]; featured: Listing[]; civic: CivicData; goals: Goal[] };
 
@@ -189,6 +190,12 @@ export function Component() {
   const tradeBiz = businesses
     .filter((b) => !tradeCategory || (b.details.category ?? "").toLowerCase().includes(tradeCategory.toLowerCase()))
     .slice(0, 4);
+  const communityStats = [
+    { label: "Members", value: stats.members, note: "people connected", to: "/people", icon: "people" },
+    { label: "Listings", value: stats.listings, note: "stories and places", to: "/search", icon: "community" },
+    { label: "Schools", value: stats.schools, note: "institutions recorded", to: "/education", icon: "education" },
+    { label: "Artists", value: stats.artists, note: "sounds represented", to: "/music", icon: "music" },
+  ] as const;
 
   return (
     <>
@@ -230,18 +237,35 @@ export function Component() {
             </div>
           </div>
         </Container>
-        <div className="relative border-t border-cream/10 bg-green-900/60">
-          <Container size="wide">
-            <Parallax strength={12}>
-            <dl className="grid grid-cols-2 divide-cream/10 sm:grid-cols-4 sm:divide-x">
-              {([["Members", stats.members], ["Listings", stats.listings], ["Schools", stats.schools], ["Artists", stats.artists]] as const).map(([label, n]) => (
-                <div key={label} className="px-2 py-5 text-center">
-                  <dd className="text-3xl font-semibold text-gold">{n}</dd>
-                  <dt className="mt-1 text-xs uppercase tracking-wide text-cream/60">{label}</dt>
+        <div className="relative border-t border-cream/10 bg-green-900/75">
+          <Container size="wide" className="py-5 sm:py-6">
+            <div className="grid gap-4 lg:grid-cols-[13rem_1fr] lg:items-center">
+              <div className="flex items-end justify-between gap-4 lg:block">
+                <div>
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-gold">The living record</p>
+                  <p className="mt-1 text-lg font-semibold text-cream">Oguaa in numbers</p>
                 </div>
-              ))}
-            </dl>
-            </Parallax>
+                <Link to="/community" className="shrink-0 text-xs font-semibold text-cream/60 transition-colors hover:text-gold lg:mt-3 lg:inline-flex">See the community <span className="ml-1" aria-hidden>→</span></Link>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {communityStats.map((item) => (
+                  <div key={item.label} className="min-w-0">
+                    <Link to={item.to} className="group flex min-h-[5.5rem] items-center gap-3 rounded-2xl border border-cream/10 bg-cream/[0.055] px-3 py-3 text-left transition-[background-color,border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-gold/35 hover:bg-cream/[0.09] active:translate-y-0 sm:px-4">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/[0.11] text-gold transition-colors group-hover:bg-gold group-hover:text-green-900" aria-hidden>
+                        <SectionIcon id={item.icon} className="h-[1.1rem] w-[1.1rem]" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="flex items-baseline gap-2">
+                          <span className="text-3xl font-semibold leading-none text-gold tabular-nums">{item.value}</span>
+                          <span className="truncate text-xs font-semibold text-cream">{item.label}</span>
+                        </span>
+                        <span className="mt-1 block truncate text-[0.66rem] leading-tight text-cream/50">{item.note}</span>
+                      </span>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
           </Container>
         </div>
       </section>

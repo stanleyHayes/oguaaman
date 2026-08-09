@@ -61,11 +61,10 @@ export const ROUTE_SEO: RouteSeo[] = [
       "A Fante market that became a castle, the capital of the British Gold Coast from 1821 to 1877, the nation's Citadel of Education, and a place of return for the African diaspora.",
     h1: "The history of Cape Coast",
     keywords: [
-      "Cape Coast history",
-      "ancient capital of Ghana",
-      "Gold Coast capital",
-      "Cape Coast Castle history",
-      "Door of No Return",
+      "Cape Coast history", "ancient capital of Ghana", "Gold Coast capital",
+      "Cape Coast Castle history", "Door of No Return", "Elmina Castle", "Assin Manso",
+      "Fante Confederacy", "Aborigines Rights Protection Society", "Carolusborg",
+      "transatlantic slave trade Ghana", "Year of Return", "Beyond the Return", "Ghana diaspora roots",
     ],
     changefreq: "weekly",
     priority: 0.9,
@@ -76,7 +75,12 @@ export const ROUTE_SEO: RouteSeo[] = [
     description:
       "Fetu Afahye, the seven Asafo companies, the posuban shrines and frankaa flags, the 77 gods and the durbar — the living culture of Oguaa, Cape Coast.",
     h1: "The living culture of Oguaa",
-    keywords: ["Asafo companies", "posuban shrine", "Fante culture", "Oguaa culture", "frankaa"],
+    keywords: [
+      "Asafo companies", "Asafo company Cape Coast", "posuban shrine", "frankaa", "Asafo flags",
+      "Fante culture", "Fante people", "Fante language", "Mfantse", "Borbor Fante", "Akan",
+      "Oguaa culture", "the 77 gods of Oguaa", "Oguaa Omanhene", "Oguaa Traditional Council",
+      "Fante proverbs", "Fante names", "durbar of chiefs",
+    ],
     changefreq: "weekly",
     priority: 0.8,
   },
@@ -86,7 +90,11 @@ export const ROUTE_SEO: RouteSeo[] = [
     description:
       "Fetu Afahye and the grand durbar, the diaspora's homecoming, and the wider coastal calendar — when Cape Coast stops to remember.",
     h1: "Festivals of Oguaa",
-    keywords: ["Fetu Afahye", "Cape Coast festival", "Oguaa Fetu Afahye", "Ghana festivals", "durbar"],
+    keywords: [
+      "Fetu Afahye", "Oguaa Fetu Afahye", "Fetu Afahye 2026", "Fetu Afahye date", "when is Fetu Afahye",
+      "Fetu Afahye grand durbar", "Cape Coast festival", "Ghana festivals", "durbar of chiefs",
+      "Edina Bakatue", "Bakatue festival", "PANAFEST", "Emancipation Day Ghana", "Fante festival",
+    ],
     changefreq: "weekly",
     priority: 0.8,
   },

@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import type { Plugin } from "vite";
 import { ROUTE_SEO, type RouteSeo } from "../src/seo/routes";
-import { DEFAULT_TITLE, DEFAULT_DESCRIPTION, mergeKeywords, siteGraph, breadcrumbGraph } from "../src/seo/site";
+import { DEFAULT_TITLE, DEFAULT_DESCRIPTION, SITE_NAME, mergeKeywords, siteGraph, breadcrumbGraph } from "../src/seo/site";
 
 /**
  * Build-time SEO for a client-rendered SPA.
@@ -60,7 +60,7 @@ function headFor(route: RouteSeo, siteUrl: string): string {
     `<link rel="canonical" href="${esc(url)}" />`,
     `<meta name="robots" content="index, follow, max-image-preview:large" />`,
     `<meta property="og:type" content="website" />`,
-    `<meta property="og:site_name" content="Oguaa" />`,
+    `<meta property="og:site_name" content="${esc(SITE_NAME)}" />`,
     `<meta property="og:title" content="${esc(route.title)}" />`,
     `<meta property="og:description" content="${esc(route.description)}" />`,
     `<meta property="og:url" content="${esc(url)}" />`,
