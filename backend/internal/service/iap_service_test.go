@@ -104,7 +104,7 @@ func TestRedeemRefusesWhenNotConfigured(t *testing.T) {
 
 // A receipt that fails verification must never reach the claim store.
 func TestRedeemRejectsUnverifiableReceipt(t *testing.T) {
-	v, err := NewAppleVerifier("com.oguaa.app", false)
+	v, err := NewAppleVerifier("gh.oguaa.app", false)
 	if err != nil {
 		t.Fatalf("verifier: %v", err)
 	}

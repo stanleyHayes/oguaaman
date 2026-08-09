@@ -10,10 +10,10 @@ import "context"
 // closed map: a receipt for a product we do not sell must never grant a plan,
 // even if the receipt itself is genuine.
 var AppleProductForPlan = map[string]string{
-	"creator-supporter": "com.oguaa.app.creator.supporter.monthly",
-	"creator-pro":       "com.oguaa.app.creator.pro.monthly",
-	"supporter":         "com.oguaa.app.business.supporter.monthly",
-	"featured":          "com.oguaa.app.business.featured.monthly",
+	"creator-supporter": "gh.oguaa.app.creator.supporter.monthly",
+	"creator-pro":       "gh.oguaa.app.creator.pro.monthly",
+	"supporter":         "gh.oguaa.app.business.supporter.monthly",
+	"featured":          "gh.oguaa.app.business.featured.monthly",
 }
 
 // PlanForAppleProduct inverts AppleProductForPlan.

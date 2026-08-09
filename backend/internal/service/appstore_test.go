@@ -93,7 +93,7 @@ func (c *fakeCA) signJWS(t *testing.T, payload AppleTransaction) string {
 
 func verifier(t *testing.T, sandbox bool) *AppleVerifier {
 	t.Helper()
-	v, err := NewAppleVerifier("com.oguaa.app", sandbox)
+	v, err := NewAppleVerifier("gh.oguaa.app", sandbox)
 	if err != nil {
 		t.Fatalf("NewAppleVerifier: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestForgedChainIsRejected(t *testing.T) {
 	ca := newFakeCA(t)
 	jws := ca.signJWS(t, AppleTransaction{
 		TransactionID: "1", ProductID: "creator_pro_month",
-		BundleID: "com.oguaa.app", Environment: "Production",
+		BundleID: "gh.oguaa.app", Environment: "Production",
 	})
 	if _, err := verifier(t, false).Verify(jws); err == nil {
 		t.Fatal("a receipt signed by a non-Apple CA was accepted — anyone could mint subscriptions")
@@ -142,7 +142,7 @@ func TestMalformedReceiptsAreRejected(t *testing.T) {
 // "alg": "none" is the oldest JWT forgery there is.
 func TestAlgNoneIsRejected(t *testing.T) {
 	hb, _ := json.Marshal(map[string]any{"alg": "none", "x5c": []string{"x"}})
-	pb, _ := json.Marshal(AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "com.oguaa.app"})
+	pb, _ := json.Marshal(AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app"})
 	jws := base64.RawURLEncoding.EncodeToString(hb) + "." + base64.RawURLEncoding.EncodeToString(pb) + "."
 	if _, err := verifier(t, false).Verify(jws); err == nil {
 		t.Fatal(`"alg":"none" was accepted`)
@@ -151,7 +151,7 @@ func TestAlgNoneIsRejected(t *testing.T) {
 
 func TestHeaderWithoutCertChainIsRejected(t *testing.T) {
 	hb, _ := json.Marshal(map[string]any{"alg": "ES256", "x5c": []string{}})
-	pb, _ := json.Marshal(AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "com.oguaa.app"})
+	pb, _ := json.Marshal(AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app"})
 	jws := base64.RawURLEncoding.EncodeToString(hb) + "." + base64.RawURLEncoding.EncodeToString(pb) + ".AAAA"
 	if _, err := verifier(t, false).Verify(jws); err == nil {
 		t.Fatal("a header with no x5c chain was accepted")
@@ -162,9 +162,9 @@ func TestHeaderWithoutCertChainIsRejected(t *testing.T) {
 // against our own CA so we isolate the signature check from the chain check.
 func TestTamperedPayloadBreaksSignature(t *testing.T) {
 	ca := newFakeCA(t)
-	jws := ca.signJWS(t, AppleTransaction{TransactionID: "1", ProductID: "cheap", BundleID: "com.oguaa.app"})
+	jws := ca.signJWS(t, AppleTransaction{TransactionID: "1", ProductID: "cheap", BundleID: "gh.oguaa.app"})
 	parts := strings.Split(jws, ".")
-	swapped, _ := json.Marshal(AppleTransaction{TransactionID: "1", ProductID: "expensive", BundleID: "com.oguaa.app"})
+	swapped, _ := json.Marshal(AppleTransaction{TransactionID: "1", ProductID: "expensive", BundleID: "gh.oguaa.app"})
 	parts[1] = base64.RawURLEncoding.EncodeToString(swapped)
 
 	// Verify against the fake CA's own root: the chain would pass, so only the
@@ -199,7 +199,7 @@ func TestReceiptForAnotherAppIsRejected(t *testing.T) {
 
 func TestSandboxRejectedInProductionAcceptedWhenAllowed(t *testing.T) {
 	ca := newFakeCA(t)
-	tx := AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "com.oguaa.app", Environment: "Sandbox"}
+	tx := AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app", Environment: "Sandbox"}
 	jws := ca.signJWS(t, tx)
 
 	if _, err := policyVerifier(t, ca, false).Verify(jws); err == nil {
@@ -213,7 +213,7 @@ func TestSandboxRejectedInProductionAcceptedWhenAllowed(t *testing.T) {
 func TestRevokedReceiptIsRejected(t *testing.T) {
 	ca := newFakeCA(t)
 	jws := ca.signJWS(t, AppleTransaction{
-		TransactionID: "1", ProductID: "p", BundleID: "com.oguaa.app", Environment: "Production",
+		TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app", Environment: "Production",
 		RevocationDate: time.Now().UnixMilli(),
 	})
 	if _, err := policyVerifier(t, ca, false).Verify(jws); err == nil {
@@ -226,7 +226,7 @@ func TestValidReceiptIsAcceptedAndParsed(t *testing.T) {
 	expires := time.Now().Add(30 * 24 * time.Hour).UnixMilli()
 	jws := ca.signJWS(t, AppleTransaction{
 		TransactionID: "tx-9", OriginalTransactionID: "tx-1", ProductID: "creator_pro_month",
-		BundleID: "com.oguaa.app", Environment: "Production", Type: "Auto-Renewable Subscription",
+		BundleID: "gh.oguaa.app", Environment: "Production", Type: "Auto-Renewable Subscription",
 		ExpiresDate: expires, Quantity: 1,
 	})
 	got, err := policyVerifier(t, ca, false).Verify(jws)
