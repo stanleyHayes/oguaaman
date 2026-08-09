@@ -213,7 +213,7 @@ function SectionMenuItem({ s, lang, onClick }: Readonly<{ s: NavSection; lang: R
   const { pathname } = useLocation();
   const active = pathname.startsWith(s.href);
   return (
-    <Link to={s.href} onClick={onClick} role="menuitem" aria-current={active ? "page" : undefined} className={`group relative flex items-start gap-3 overflow-hidden rounded-lg px-3 py-2.5 transition-colors ${active ? "bg-paper" : "hover:bg-paper"}`}>
+    <Link to={s.href} onClick={onClick} role="menuitem" aria-current={active ? "page" : undefined} className={`group relative flex items-start gap-3 overflow-hidden rounded-lg px-3 py-2.5 transition-colors ${active ? "bg-sand/75" : "hover:bg-sand/55"}`}>
       <SectionIcon id={s.id} className={`pointer-events-none absolute -bottom-3 -right-2 h-14 w-14 opacity-[0.06] transition-opacity group-hover:opacity-[0.11] ${t.text}`} />
       <span className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${t.soft} ${t.text}`}>
         <SectionIcon id={s.id} className="h-[18px] w-[18px]" />

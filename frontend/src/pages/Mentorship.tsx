@@ -37,7 +37,7 @@ export function Component() {
       <section className="border-b border-sand bg-paper py-16 sm:py-24">
         <Container className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr]">
           <Reveal><Eyebrow className="text-teal-text">Safeguarding first</Eyebrow><p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-faint">Under-18 participation requires guardian consent and a published safeguarding policy. Private adult-to-minor matching does not happen here.</p></Reveal>
-          <Reveal delay={0.08}><p className="max-w-[43rem] text-2xl font-medium leading-[1.35] tracking-[-0.015em] text-ink sm:text-3xl">Mentorship works best when the programme is structured, the boundaries are visible and the young person knows exactly who is responsible.</p><Link to="/safeguarding" className="mt-7 inline-flex border-b border-teal pb-1 text-sm font-semibold text-teal-text">How Oguaa protects young people →</Link></Reveal>
+          <Reveal delay={0.08}><p className="max-w-[43rem] text-lg font-medium leading-[1.65] text-ink sm:text-xl">Mentorship works best when the programme is structured, the boundaries are visible and the young person knows exactly who is responsible.</p><Link to="/safeguarding" className="mt-7 inline-flex border-b border-teal pb-1 text-sm font-semibold text-teal-text">How Oguaa protects young people →</Link></Reveal>
         </Container>
       </section>
 
@@ -57,7 +57,7 @@ export function Component() {
         </Container>
       </section>
 
-      <section className="bg-teal py-14 text-cream"><Container className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center"><Reveal><Eyebrow className="text-cream/70">For programme organisers</Eyebrow><h2 className="mt-3 text-3xl font-semibold text-cream">Make the structure visible before asking for trust</h2><p className="mt-3 max-w-2xl text-cream/75">Publish the responsible organisation, participant ages, contact route, consent process and safeguarding policy.</p></Reveal><Cta to="/submit?type=opportunity" variant="gold">List a programme</Cta></Container></section>
+      <section className="on-dark on-dark-pin bg-teal py-14 text-cream"><Container className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center"><Reveal><Eyebrow className="text-cream/70">For programme organisers</Eyebrow><h2 className="mt-3 text-3xl font-semibold text-cream">Make the structure visible before asking for trust</h2><p className="mt-3 max-w-2xl text-cream/75">Publish the responsible organisation, participant ages, contact route, consent process and safeguarding policy.</p></Reveal><Cta to="/submit?type=opportunity" variant="gold">List a programme</Cta></Container></section>
     </>
   );
 }

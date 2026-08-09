@@ -29,13 +29,13 @@ function PlaceCard({ place, featured = false }: Readonly<{ place: Organization; 
   return (
     <Link
       to={`/education/${place.slug}`}
-      className={`group relative isolate block overflow-hidden bg-green-900 ${featured ? "min-h-[30rem] rounded-[1.75rem] sm:min-h-[38rem]" : "min-h-72 rounded-[1.25rem]"}`}
+      className={`on-dark on-dark-pin group relative isolate block overflow-hidden bg-green-900 ${featured ? "min-h-[30rem] rounded-[1.75rem] sm:min-h-[38rem]" : "min-h-72 rounded-[1.25rem]"}`}
     >
       <Thumb seed={place.slug} src={photo} rounded="rounded-none" className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-[1.035]" coverWidth={featured ? 900 : 560} />
       <div className="absolute inset-0 bg-gradient-to-t from-green-900 via-green-900/30 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-6 text-cream sm:p-8">
         {place.classification && <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold">{place.classification}</p>}
-        <h3 className={`${featured ? "max-w-xl text-3xl sm:text-4xl" : "text-2xl"} font-semibold leading-tight text-cream`}>{place.name}</h3>
+        <h3 className={`${featured ? "max-w-xl text-2xl sm:text-3xl" : "text-xl"} font-semibold leading-tight text-cream`}>{place.name}</h3>
         <p className={`mt-3 max-w-xl leading-relaxed text-cream/75 ${featured ? "text-base" : "text-sm"}`}>{excerpt(place.history || place.summary, featured ? 230 : 130)}</p>
         <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-gold transition-[gap] duration-300 group-hover:gap-3">Read its story <span aria-hidden>→</span></span>
       </div>
@@ -73,7 +73,7 @@ export function Component() {
             <p className="mt-4 text-sm leading-relaxed text-ink-faint">History here is not held behind glass. It lives in family names, school songs, festival drums and the routes people still walk.</p>
           </Reveal>
           <Reveal delay={0.08}>
-            <p className="max-w-[43rem] text-2xl font-medium leading-[1.35] tracking-[-0.015em] text-ink sm:text-3xl">{HERITAGE_BLURB}</p>
+            <p className="max-w-[43rem] text-lg font-medium leading-[1.65] text-ink sm:text-xl">{HERITAGE_BLURB}</p>
             <div className="mt-8 grid grid-cols-3 gap-4 border-t border-sand pt-6 text-sm text-ink-muted">
               <p><strong className="block text-2xl font-semibold text-green tabular-nums">{timeline.length}</strong> turning points</p>
               <p><strong className="block text-2xl font-semibold text-green tabular-nums">{heritage.length}</strong> places recorded</p>
@@ -127,7 +127,7 @@ export function Component() {
         </Container>
       </section>
 
-      <section id="people" className="scroll-mt-24 bg-green-900 py-16 text-cream sm:py-24">
+      <section id="people" className="on-dark on-dark-pin scroll-mt-24 bg-green-900 py-16 text-cream sm:py-24">
         <Container>
           <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
             <Reveal>

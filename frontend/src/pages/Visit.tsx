@@ -10,12 +10,12 @@ import { VISIT_STOPS, type VisitStop } from "@/lib/visit-data";
 function StopCard({ stop, index }: Readonly<{ stop: VisitStop; index: number }>) {
   const featured = index === 0;
   return (
-    <Link to={`/visit/${stop.slug}`} className={`group relative isolate block overflow-hidden bg-green-900 ${featured ? "min-h-[32rem] rounded-[1.75rem] lg:row-span-2" : "min-h-72 rounded-[1.25rem]"}`}>
+    <Link to={`/visit/${stop.slug}`} className={`on-dark on-dark-pin group relative isolate block overflow-hidden bg-green-900 ${featured ? "min-h-[32rem] rounded-[1.75rem] lg:row-span-2" : "min-h-72 rounded-[1.25rem]"}`}>
       <img src={cldCover(stop.image, featured ? 900 : 600)} alt={stop.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
       <div className="absolute inset-0 bg-gradient-to-t from-green-900 via-green-900/30 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-6 text-cream sm:p-8">
         <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold">{stop.category}</p>
-        <h2 className={`mt-3 font-semibold leading-tight text-cream ${featured ? "text-4xl" : "text-2xl"}`}>{stop.name}</h2>
+        <h2 className={`mt-3 font-semibold leading-tight text-cream ${featured ? "text-3xl" : "text-xl"}`}>{stop.name}</h2>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-cream/75">{stop.summary}</p>
         <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-gold transition-[gap] group-hover:gap-3">Plan this stop <span aria-hidden>→</span></span>
       </div>
@@ -34,7 +34,7 @@ export function Component() {
       <section className="border-b border-sand bg-paper py-16 sm:py-24">
         <Container className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
           <Reveal><Eyebrow className="text-teal-text">Travel with context</Eyebrow><p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-faint">Oguaa is a living city, not a collection of attractions. Move slowly, ask before photographing people and leave space for what the history asks of you.</p></Reveal>
-          <Reveal delay={0.08}><p className="max-w-[44rem] text-2xl font-medium leading-[1.35] tracking-[-0.015em] text-ink sm:text-3xl">{VISIT_BLURB}</p></Reveal>
+          <Reveal delay={0.08}><p className="max-w-[44rem] text-lg font-medium leading-[1.65] text-ink sm:text-xl">{VISIT_BLURB}</p></Reveal>
         </Container>
       </section>
 
@@ -47,7 +47,7 @@ export function Component() {
         </Container>
       </section>
 
-      <section className="bg-teal py-14 text-cream">
+      <section className="on-dark on-dark-pin bg-teal py-14 text-cream">
         <Container className="grid gap-7 sm:grid-cols-[1fr_auto] sm:items-center">
           <Reveal><Eyebrow className="text-cream/70">Time the journey</Eyebrow><h2 className="mt-3 text-3xl font-semibold text-cream">September belongs to Fetu Afahye</h2><p className="mt-3 max-w-2xl text-cream/75">The city shifts into festival rhythm: processions, regalia, Asafo companies and the grand durbar.</p></Reveal>
           <Link to="/culture" className="w-fit border-b border-gold pb-1 font-semibold text-gold">Understand the festival →</Link>

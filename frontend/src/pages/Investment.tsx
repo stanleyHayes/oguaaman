@@ -35,7 +35,7 @@ export function Component() {
         <Adinkra name="funtunfunefu" size={250} labelled={false} className="pointer-events-none absolute -right-16 top-1/2 -translate-y-1/2 text-teal opacity-[0.045]" />
         <Container className="relative grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
           <Reveal><Eyebrow className="text-teal-text">Local growth capital</Eyebrow><p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-faint">This is a public noticeboard, not financial advice or an investment intermediary.</p></Reveal>
-          <Reveal delay={0.08}><p className="max-w-[43rem] text-2xl font-medium leading-[1.35] tracking-[-0.015em] text-ink sm:text-3xl">Good capital does more than arrive. It understands the place, names the risk plainly and leaves local businesses stronger than it found them.</p><div className="mt-8 flex items-center gap-3 border-t border-sand pt-6"><strong className="text-3xl font-semibold text-green tabular-nums">{investments.length}</strong><span className="text-sm text-ink-muted">open {investments.length === 1 ? "call" : "calls"} currently listed</span></div></Reveal>
+          <Reveal delay={0.08}><p className="max-w-[43rem] text-lg font-medium leading-[1.65] text-ink sm:text-xl">Good capital does more than arrive. It understands the place, names the risk plainly and leaves local businesses stronger than it found them.</p><div className="mt-8 flex items-center gap-3 border-t border-sand pt-6"><strong className="text-3xl font-semibold text-green tabular-nums">{investments.length}</strong><span className="text-sm text-ink-muted">open {investments.length === 1 ? "call" : "calls"} currently listed</span></div></Reveal>
         </Container>
       </section>
 
