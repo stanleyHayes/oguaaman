@@ -122,6 +122,15 @@ func Seed(ctx context.Context, db *mongo.Database) error {
 	}
 	allListings := append(append(append(seedListings(), seedExtraListings()...), seedIncidents()...), seedLostFound()...)
 	applyListingCoords(allListings) // stamp map pins (seedMap) onto listings
+	// Stamp the illustrative records. Seed() is the local reset, so it DOES load
+	// them — but they must still be excluded from sitemaps and structured data,
+	// and carry noindex. Without this the flag is never set anywhere and every
+	// consumer of it is silently inert.
+	for i := range allListings {
+		if domain.IsFabricatedListing(allListings[i].ID, allListings[i].Type) {
+			allListings[i].Demo = true
+		}
+	}
 	if err := insertAll(ctx, db.Collection(collListings), allListings); err != nil {
 		return err
 	}

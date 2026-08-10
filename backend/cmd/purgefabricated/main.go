@@ -69,9 +69,14 @@ func main() {
 	fmt.Printf("source      %s\ndestination %s\nmode        %s\n\n",
 		cfg.MongoDB, devDB, map[bool]string{true: "APPLY", false: "dry run"}[*apply])
 
+	// Match EXACT seeded ids, never the listing type. "business", "incident" and
+	// "lostfound" are also what real members create; a type filter here would
+	// delete a genuine trader's shop or a citizen's safety report from the live
+	// database. Anything explicitly flagged demo is caught too.
+	seededListings, seededAgents := mongox.FabricatedSeedIDs()
 	filter := bson.M{"$or": []bson.M{
-		{"type": bson.M{"$in": domain.FabricatedListingTypes}},
-		{"_id": bson.M{"$in": domain.FabricatedListingIDs}},
+		{"_id": bson.M{"$in": seededListings}},
+		{"demo": true},
 	}}
 
 	moved, deleted := run(ctx, src, dev, "listings", filter, *apply)
@@ -81,8 +86,10 @@ func main() {
 	memberFilter := bson.M{"email": bson.M{"$regex": regexp.QuoteMeta(domain.DemoMemberEmailSuffix) + "$"}}
 	mMoved, mDeleted := run(ctx, src, dev, "members", memberFilter, *apply)
 
-	// Outside agents are invented people offering escrow-backed services.
-	aMoved, aDeleted := run(ctx, src, dev, "agents", bson.M{}, *apply)
+	// Outside agents are invented people offering escrow-backed services. Scoped
+	// to the seeded ids: a real agent who applied through /api/agents/apply must
+	// not be swept up with them.
+	aMoved, aDeleted := run(ctx, src, dev, "agents", bson.M{"_id": bson.M{"$in": seededAgents}}, *apply)
 
 	fmt.Printf("\nlistings  copied=%d deleted=%d\nmembers   copied=%d deleted=%d\nagents    copied=%d deleted=%d\n",
 		moved, deleted, mMoved, mDeleted, aMoved, aDeleted)

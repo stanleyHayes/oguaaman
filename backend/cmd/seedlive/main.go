@@ -8,7 +8,15 @@
 // inserted only when absent, so a real account that happens to share a seed id
 // keeps its own password, email and role. Safe to re-run.
 //
-//	go run ./cmd/seedlive              # uses MONGO_URI / MONGO_DB from the env
+//	go run ./cmd/seedlive              # uses MONGODB_URI / MONGODB_DB from the env
+//
+// It creates NO member accounts. Every seeded identity carries an @oguaa.test
+// address and the shared password documented in this repository, so none of them
+// belong in a live database. That means a fresh deployment has no curator or
+// steward, and therefore nobody who can approve a submission — sign up through
+// the app, then promote yourself once:
+//
+//	go run ./cmd/grantrole -email you@example.com -role steward
 package main
 
 import (

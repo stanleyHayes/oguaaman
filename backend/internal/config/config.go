@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -159,4 +160,24 @@ func envInt(key string, fallback int) int {
 		}
 	}
 	return fallback
+}
+
+// RedactedMongoURI returns the connection string with its credentials removed,
+// safe to log.
+//
+// The raw URI must never reach a log line. Render retains stdout, so a single
+// connect failure would publish the database username and password into a log
+// stream that outlives the incident — and connect failures are exactly when
+// somebody pastes the log into a chat to ask for help.
+func RedactedMongoURI(uri string) string {
+	scheme := strings.Index(uri, "://")
+	if scheme < 0 {
+		return "(malformed uri)"
+	}
+	rest := uri[scheme+3:]
+	at := strings.LastIndex(rest, "@")
+	if at < 0 {
+		return uri // no credentials embedded
+	}
+	return uri[:scheme+3] + "<redacted>@" + rest[at+1:]
 }

@@ -125,7 +125,7 @@ func main() {
 func connectMongo(ctx context.Context, log *slog.Logger, cfg config.Config) (*mongo.Client, *mongo.Database) {
 	client, db, err := mongox.Connect(ctx, cfg.MongoURI, cfg.MongoDB)
 	if err != nil {
-		log.Error("mongo connect failed", "err", err, "uri", cfg.MongoURI)
+		log.Error("mongo connect failed", "err", err, "uri", config.RedactedMongoURI(cfg.MongoURI))
 		os.Exit(1)
 	}
 	log.Info("connected to mongodb", "db", cfg.MongoDB)

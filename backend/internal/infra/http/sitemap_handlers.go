@@ -56,7 +56,8 @@ var listingSitemapSpec = []struct {
 // SitemapListings — GET /sitemap-listings.xml.
 func (h *Handler) SitemapListings(w http.ResponseWriter, r *http.Request) {
 	base := strings.TrimRight(h.portalURL, "/")
-	if base == "" {
+	if !publishableBase(base) {
+		h.log.Error("sitemap refused: PUBLIC_PORTAL_URL is unset or local", "portalURL", base)
 		fail(w, http.StatusServiceUnavailable, "The public portal URL is not configured.")
 		return
 	}
@@ -121,4 +122,23 @@ func lastModOf(l domain.Listing, fallback string) string {
 		}
 	}
 	return fallback
+}
+
+// publishableBase reports whether a base URL is safe to advertise to a search
+// engine.
+//
+// An empty check alone can never fire: config defaults PortalURL to
+// http://localhost:5173. Without the local checks, a production deploy missing
+// PUBLIC_PORTAL_URL would serve a perfectly valid 200 sitemap full of localhost
+// URLs — and every automated check, including smoke.sh, would pass.
+func publishableBase(base string) bool {
+	if base == "" || !strings.HasPrefix(base, "http") {
+		return false
+	}
+	for _, local := range []string{"localhost", "127.0.0.1", "0.0.0.0", "://[::1]"} {
+		if strings.Contains(base, local) {
+			return false
+		}
+	}
+	return true
 }

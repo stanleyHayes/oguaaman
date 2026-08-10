@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { Listing, StoreItem } from "@/lib/types";
 import { CITIZEN_URL } from "@/lib/app-urls";
+import { mediaUrl } from "@/lib/cloudinary";
 
 /**
  * Schema.org structured data for shops and their products.
@@ -22,7 +23,20 @@ import { CITIZEN_URL } from "@/lib/app-urls";
  */
 
 const CURRENCY = "GHS";
-const abs = (path: string) => (path.startsWith("http") ? path : `${CITIZEN_URL}${path}`);
+/** Absolute page URL — pages are served by this app. */
+const pageUrl = (path: string) => (path.startsWith("http") ? path : `${CITIZEN_URL}${path}`);
+
+/**
+ * Absolute media URL. Uploads live on the API origin ("/uploads/..."), not on
+ * the SPA, so resolving them against CITIZEN_URL would hand Google the app
+ * shell as HTML instead of an image and the rich result would be dropped.
+ * mediaUrl() already encodes that rule; reuse it rather than restate it.
+ */
+const imageUrl = (src?: string) => {
+  const resolved = mediaUrl(src);
+  if (!resolved) return undefined;
+  return resolved.startsWith("http") ? resolved : `${CITIZEN_URL}${resolved}`;
+};
 
 function JsonLd({ data }: Readonly<{ data: unknown }>) {
   // A string child rather than dangerouslySetInnerHTML: React escapes it as
@@ -56,7 +70,7 @@ function offerFor(item: StoreItem, url: string) {
 export function BusinessStructuredData({ business: b }: Readonly<{ business: Listing }>) {
   if (b.demo || b.status !== "approved") return null;
 
-  const url = abs(`/business/${b.slug}`);
+  const url = pageUrl(`/business/${b.slug}`);
   const d = b.details ?? {};
   const ratingCount = Number(d.ratingCount ?? 0);
   const ratingAvg = Number(d.ratingAvg ?? 0);
@@ -67,7 +81,7 @@ export function BusinessStructuredData({ business: b }: Readonly<{ business: Lis
     "@id": `${url}#business`,
     name: b.title,
     url,
-    ...(b.coverImageUrl ? { image: abs(b.coverImageUrl) } : {}),
+    ...(imageUrl(b.coverImageUrl) ? { image: imageUrl(b.coverImageUrl) } : {}),
     ...(d.description ? { description: String(d.description) } : {}),
     // Only claim an address when the trader actually gave one. An invented or
     // guessed address is worse than none: it is a structured-data violation and
@@ -122,7 +136,7 @@ export function ProductStructuredData({
 }: Readonly<{ business: Listing; item: StoreItem }>) {
   if (b.demo || b.status !== "approved") return null;
 
-  const businessUrl = abs(`/business/${b.slug}`);
+  const businessUrl = pageUrl(`/business/${b.slug}`);
   const url = `${businessUrl}/p/${item.id}`;
   const data = {
     "@context": "https://schema.org",
@@ -131,7 +145,7 @@ export function ProductStructuredData({
     name: item.name,
     url,
     ...(item.description ? { description: item.description } : {}),
-    ...(b.coverImageUrl ? { image: abs(b.coverImageUrl) } : {}),
+    ...(imageUrl(b.coverImageUrl) ? { image: imageUrl(b.coverImageUrl) } : {}),
     brand: { "@type": "Brand", name: b.title },
     offers: {
       ...offerFor(item, url),
