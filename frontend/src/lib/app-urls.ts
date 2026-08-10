@@ -48,6 +48,21 @@ export const MARKETING_URL = resolve(
   "https://oguaaman.com",
 );
 
+/**
+ * This app's own public origin.
+ *
+ * Structured data has to carry absolute URLs — a Schema.org @id is a global
+ * identifier, and a relative one would collide across the four hosts. On
+ * localhost this resolves to the serving origin so JSON-LD stays inspectable in
+ * dev without pointing at production.
+ */
+export const CITIZEN_URL = ((): string => {
+  const explicit = (import.meta.env.VITE_CITIZEN_URL as string | undefined)?.trim();
+  if (explicit) return explicit.replace(/\/+$/, "");
+  if (typeof window !== "undefined" && isLocalhost()) return window.location.origin;
+  return "https://citizen.oguaaman.com";
+})();
+
 /** Build a link into the creator studio. */
 export function creatorUrl(path = ""): string {
   return `${CREATOR_URL}${path}`;

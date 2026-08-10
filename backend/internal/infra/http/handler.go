@@ -43,6 +43,7 @@ type Handler struct {
 	limiter        *rateLimiter
 	uploadDir      string // where uploaded images are written
 	uploadBase     string // public base URL for uploaded files ("" → derive from request)
+	portalURL      string // citizen-app origin; the host the dynamic sitemap's URLs live on
 }
 
 // HandlerDeps are the application services and settings NewHandler wires into a Handler.
@@ -64,13 +65,14 @@ type HandlerDeps struct {
 	AuthRequired   bool
 	UploadDir      string // where uploaded images are written
 	UploadBase     string // public base URL for uploaded files ("" → derive from request)
+	PortalURL      string // citizen-app origin, for the dynamic sitemap
 	Log            *slog.Logger
 }
 
 func NewHandler(d HandlerDeps) *Handler {
 	return &Handler{
 		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, stripe: d.Stripe, iap: d.IAP, revenue: d.Revenue, creator: d.Creator, agentJobs: d.AgentJobs, artistBookings: d.ArtistBookings, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
-		uploadDir: d.UploadDir, uploadBase: d.UploadBase, log: d.Log, limiter: newRateLimiter(),
+		uploadDir: d.UploadDir, uploadBase: d.UploadBase, portalURL: d.PortalURL, log: d.Log, limiter: newRateLimiter(),
 	}
 }
 

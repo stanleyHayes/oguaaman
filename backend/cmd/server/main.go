@@ -93,7 +93,7 @@ func main() {
 
 	handler := httpx.NewHandler(httpx.HandlerDeps{
 		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Stripe: stripeSvc, IAP: iap, Revenue: revenue, Creator: creator, AgentJobs: agentJobs, ArtistBookings: artistBookings,
-		PaystackSecret: cfg.PaystackSecretKey, AuthRequired: cfg.AuthRequired, UploadDir: cfg.UploadDir, UploadBase: cfg.PublicBaseURL, Log: log,
+		PaystackSecret: cfg.PaystackSecretKey, AuthRequired: cfg.AuthRequired, UploadDir: cfg.UploadDir, UploadBase: cfg.PublicBaseURL, PortalURL: cfg.PortalURL, Log: log,
 	})
 	router := newRouter(log, cfg, svc, handler)
 

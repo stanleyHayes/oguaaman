@@ -198,46 +198,54 @@ Ordered by what actually stops you.
 
 ---
 
-## 8 · Making shop products indexable
+## 8 · Shop and product indexing — built
 
-This is what Search Console was suggesting, and it is currently impossible —
-not partially working. Three separate things are missing, and they must be
-fixed in this order, because each is useless without the one before it.
+All three blockers are now cleared. The machinery works; it is waiting on real
+traders, not on more code.
 
-**8.1 Google cannot discover shops at all.** The citizen sitemap contains
-**25 static URLs and zero business, storefront or product URLs**. Business
-pages are database-driven, so a build-time sitemap cannot know them. Until
-those URLs are in a sitemap or linked from a crawlable page, nothing else here
-matters.
-→ *Serve a dynamic sitemap from the Go API listing every approved business and
-storefront, and reference it from `citizen.oguaaman.com/robots.txt`.*
+**8.1 Discovery.** `GET /sitemap-listings.xml` is generated from the database and
+covers businesses, storefront handles, individual products, artists, people,
+events, rentals, memorials and projects. It is proxied onto the citizen host by
+`frontend/vercel.json`, because Google ignores a sitemap served from a different
+origin unless both are verified. `robots.txt` advertises it.
 
-**8.2 Products have no URL.** They are embedded inside the business document
-(`Products []StoreItem`) and are not addressable. A thing with no URL cannot be
-a search result.
-→ *Add a per-product route (`/business/:slug/p/:productId`) and include those
-URLs in the dynamic sitemap.*
+**8.2 Products have URLs.** `/business/:slug/p/:productId`. A thing with no URL
+cannot be a search result, however good its structured data. Unavailable items
+are excluded from the sitemap.
 
-**8.3 There is no Product structured data.** Merchant listings need
-`Product` + `Offer` (name, image, description, price, currency, availability).
-Business pages likewise need `LocalBusiness` with address and opening hours.
-→ *Emit both as JSON-LD on those pages.*
+**8.3 Structured data.** `LocalBusiness` (with catalogue, address, geo, opening
+hours and aggregate rating) on shop pages; `Product` + `Offer` naming the shop as
+seller on product pages. Illustrative listings emit **no** structured data and
+carry `noindex` instead.
 
-**Also worth knowing:** the crawler shim at `/api/og/page/*` assumes nginx maps
-bot user-agents onto it. The citizen app runs on Vercel with no such mapping,
-so **it is dead code in production** — which is just as well: serving different
-HTML to bots by user-agent is cloaking, and Google disallows it. Client-rendered
-JSON-LD is fine (Google renders JavaScript); a bot-only shim is not.
+| Check | Expected |
+|---|---|
+| `curl https://citizen.oguaaman.com/sitemap-listings.xml` | 200, `application/xml`, one `<loc>` per real listing |
+| A demo listing's page | `robots: noindex, nofollow`, no JSON-LD |
+| Navigate demo → real listing | robots restored to `index, follow` — **not** left noindex |
+| A real product page | `Product` JSON-LD, price in GHS, `availability: InStock` |
+| [Rich Results Test](https://search.google.com/test/rich-results) on a product URL | Product detected |
 
-**Caveat on timing:** Google renders JavaScript, but SPA pages are queued for a
-second rendering pass and index more slowly than server-rendered ones. If shop
-visibility is a selling point you intend to advertise, server-rendering those
-pages is worth the work.
+Verified in dev against a real shop with products: business, storefront and
+product URLs all appear in the sitemap; unavailable products do not; the demo
+flag suppresses structured data and applies noindex, and navigating away
+restores it.
 
-**No product data exists yet.** All 7 seeded businesses have `products: 0`, so
-even once this is built there is nothing to index until real shops list stock.
+**Two honest caveats.**
 
----
+The filter keys off the per-document `demo` flag, not the listing type. That
+matters: every *seeded* business was invented, but `business` is exactly what a
+real trader creates — filtering by type would have meant no genuine shop was
+ever indexed. There is a test pinning this.
+
+And SPA pages queue for Google's second rendering pass, so they index more
+slowly than server-rendered ones. If shop visibility becomes a headline selling
+point, server-rendering those pages is the next step. Serving crawlers different
+markup by user-agent is not — that is cloaking.
+
+**Nothing to index yet.** Production has zero businesses; the fabricated ones
+were moved to dev. The sitemap currently returns the 21 real people and 12 real
+events, and will pick up shops automatically as they are created.
 
 ## 9 · Before you announce
 

@@ -220,6 +220,9 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	// Open Graph (spec §11): crawler-facing meta shim + 1200×630 card renderer.
 	// The portal's nginx maps bot user-agents onto /api/og/page/*.
+	// Dynamic sitemap for database-driven pages. Proxied onto the citizen host
+	// by frontend/vercel.json so the sitemap shares an origin with its URLs.
+	mux.HandleFunc("GET /sitemap-listings.xml", h.SitemapListings)
 	mux.HandleFunc("GET /api/og/page/{path...}", h.OGPage)
 	mux.HandleFunc("GET /api/og/image/{path...}", h.OGImage)
 

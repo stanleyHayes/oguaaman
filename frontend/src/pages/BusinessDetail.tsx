@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { completePayment } from "@/lib/paystack";
 import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
+import { BusinessStructuredData, NoIndex } from "@/components/structured-data";
 import { Container, Pill } from "@/components/ui";
 import { LocationMap } from "@/components/location-map";
 import { Storefront } from "@/components/storefront";
@@ -100,6 +101,10 @@ export function Component() {
 
   return (
     <article>
+      {/* LocalBusiness + catalogue for search engines. Illustrative shops emit
+          noindex instead: an invented address and price must never be
+          published as structured fact. */}
+      {b.demo ? <NoIndex /> : <BusinessStructuredData business={b} />}
       <section className="on-dark on-dark-pin relative isolate overflow-hidden bg-green-900 text-cream">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(199,162,74,0.18),transparent_32%),linear-gradient(135deg,#0C2C1F_0%,#123F2D_60%,#071A12_100%)]" aria-hidden />
         <div className="bg-dotgrid absolute inset-0 opacity-25" aria-hidden />

@@ -11,3 +11,6 @@ Disallow: /safety/report
 Disallow: /lost-found/new
 
 Sitemap: https://citizen.oguaaman.com/sitemap.xml
+# Businesses, storefronts, products, artists, people and events — generated
+# from the database, because those URLs cannot be known at build time.
+Sitemap: https://citizen.oguaaman.com/sitemap-listings.xml

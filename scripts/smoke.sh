@@ -95,10 +95,25 @@ print(f"  \033[32m✓\033[0m {len(blocks)} JSON-LD block(s) parse")
 PY
 [[ $? -eq 0 ]] && pass=$((pass+1)) || fail=$((fail+1))
 
+head_ "5b · Dynamic sitemap (shops, products, people, events)"
+expect_code "$CITIZEN/sitemap-listings.xml" 200 "dynamic sitemap reachable on the citizen host"
+expect_type "$CITIZEN/sitemap-listings.xml" "xml" "dynamic sitemap is XML"
+n=$("${CURL[@]}" "$CITIZEN/sitemap-listings.xml" | grep -c "<loc>"); n=${n:-0}
+[[ "$n" -gt 0 ]] && ok "dynamic sitemap lists $n URLs" || bad "dynamic sitemap is empty or not deployed yet"
+expect_body "$CITIZEN/robots.txt" "sitemap-listings.xml" "robots.txt advertises the dynamic sitemap"
+
 head_ "6 · Content is actually served (an empty DB looks like a broken site)"
-for ep in festivals people events businesses artists; do
-  n=$("${CURL[@]}" "$API/api/$ep" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(len(d) if isinstance(d,list) else len(d.get("items",[])))' 2>/dev/null || echo 0)
+count_ep() { "${CURL[@]}" "$API/api/$1" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(len(d) if isinstance(d,list) else len(d.get("items",[])))' 2>/dev/null || echo 0; }
+# The factual Cape Coast archive. If any of these empties, something is wrong.
+for ep in festivals people events; do
+  n=$(count_ep "$ep")
   [[ "${n:-0}" -gt 0 ]] && ok "/api/$ep returns $n" || bad "/api/$ep is EMPTY"
+done
+# Member-contributed listings. Empty is CORRECT until real traders sign up — the
+# fabricated examples were removed deliberately, so this is a note, not a failure.
+for ep in businesses artists; do
+  n=$(count_ep "$ep")
+  [[ "${n:-0}" -gt 0 ]] && ok "/api/$ep returns $n" || note "/api/$ep is empty — awaiting real contributions"
 done
 
 head_ "7 · Store compliance endpoints (App Store 1.2 / 5.1.1(v) / 3.1.1)"

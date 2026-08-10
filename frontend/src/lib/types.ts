@@ -619,6 +619,8 @@ export interface Listing {
   photos?: MediaAsset[];
   videos?: MediaAsset[];
   // Storefront catalog (Supporter feature): capped per subscription plan.
+  /** Illustrative seed content: never indexed, never given structured data. */
+  demo?: boolean;
   products?: StoreItem[];
   services?: StoreItem[];
   handle?: string;
