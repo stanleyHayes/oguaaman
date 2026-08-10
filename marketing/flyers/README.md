@@ -54,9 +54,35 @@ from one set, because the three formats are read at very different distances.
 
 ## Before you post
 
-The copy describes features that are **live**, but the site currently has no
-businesses, artists or rentals listed — the fabricated seed examples were
-removed. `business`, `storefront` and `rent` are therefore recruiting posts, not
-showcases: they invite the first traders rather than pointing at existing ones.
-Hold `music` back until a few real artists are on the roster, or it will send
-people to an empty page.
+Every flyer sells a **capability**, not a stock list, so the whole set is safe
+to publish now. Ten of them were rewritten for exactly this reason — the
+platform is new, and a flyer that implies a full directory sends people to an
+empty page and burns the click.
+
+Those ten each name what you can do and ask for the first contribution:
+
+| Flyer | The ask |
+|---|---|
+| `music` | Are you an artist? Create a free profile |
+| `business` | Every Cape Coast business can list here, free |
+| `storefront` | Open one in minutes |
+| `rent` | Letting a room or a house? List it free |
+| `lostfound` | Post a notice — it goes live immediately |
+| `safety` | Report an incident |
+| `memoriam` | Create a lasting page for someone you have lost |
+| `youth` | Running a scholarship or apprenticeship? Post it |
+| `projects` | Propose a costed improvement |
+| `outside` | Register what you need, or apply to become an agent |
+
+The remaining twelve are backed by real content already live: 21 historical
+figures, 12 events, 6 festivals, 7 newsroom pieces, 94 institutions, plus the
+editorial pages (heritage, culture, visit, map, the civic code, diaspora) and
+the general `brand` flyer.
+
+**Suggested order.** Open with `brand`, then alternate a **pride** post
+(festivals, people, heritage, education) with a **recruiting** post (business,
+storefront, music, rent). Pride earns the follow; recruiting fills the platform.
+
+Put any paid promotion behind `business` and `storefront` — traders are what
+the site most needs, and every product a shop lists now gets its own page and
+its own Google entry.
