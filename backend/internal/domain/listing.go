@@ -109,14 +109,26 @@ type Listing struct {
 	// Optional map pin. Only set when the listing has a real, known coordinate
 	// (no server-side geocoding); businesses/properties/events/incidents/lostfound carry it
 	// so the town map can drop an accurate pin. Both must be set to be usable.
-	Latitude      *float64       `json:"latitude,omitempty" bson:"latitude,omitempty"`
-	Longitude     *float64       `json:"longitude,omitempty" bson:"longitude,omitempty"`
-	PostedByOrgID string         `json:"postedByOrgId,omitempty" bson:"postedByOrgId,omitempty"`
-	CoverImageURL string         `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
-	Featured      bool           `json:"featured" bson:"featured"`                               // surfaced on front pages (paid placement, spec §8.14)
-	FeaturedUntil string         `json:"featuredUntil,omitempty" bson:"featuredUntil,omitempty"` // RFC3339; empty = no expiry. Past = lapsed.
-	ViewCount     int            `json:"viewCount" bson:"viewCount"`
-	Details       map[string]any `json:"details" bson:"details"`
+	Latitude      *float64 `json:"latitude,omitempty" bson:"latitude,omitempty"`
+	Longitude     *float64 `json:"longitude,omitempty" bson:"longitude,omitempty"`
+	PostedByOrgID string   `json:"postedByOrgId,omitempty" bson:"postedByOrgId,omitempty"`
+	CoverImageURL string   `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
+	Featured      bool     `json:"featured" bson:"featured"`                               // surfaced on front pages (paid placement, spec §8.14)
+	FeaturedUntil string   `json:"featuredUntil,omitempty" bson:"featuredUntil,omitempty"` // RFC3339; empty = no expiry. Past = lapsed.
+	ViewCount     int      `json:"viewCount" bson:"viewCount"`
+	// Demo marks illustrative content written by the seeder rather than
+	// contributed by a real member.
+	//
+	// It exists for one reason: search engines must never index a fabricated
+	// business. A LocalBusiness or Product entry with an invented name, address
+	// and price violates Google's structured-data guidelines and would damage
+	// the domain's standing before a single real trader has joined. The seeder
+	// stamps every document it writes; anything a member submits is, by
+	// definition, not demo. Indexing surfaces (sitemap, JSON-LD, robots) key off
+	// this flag, so real content starts being indexed the moment it exists,
+	// with no further change.
+	Demo    bool           `json:"demo,omitempty" bson:"demo,omitempty"`
+	Details map[string]any `json:"details" bson:"details"`
 	// Storefront (business Supporter feature) — an owner-composed profile that
 	// renders on the listing's public page. Sections reuse the institution
 	// section engine (ProfileSection); Photos/Videos are a device-uploaded media

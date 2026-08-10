@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -31,6 +32,10 @@ import (
 // It returns the number of documents written and the number of members skipped
 // because a real account already held that id.
 func SeedUpsert(ctx context.Context, db *mongo.Database) (written int, membersSkipped int, err error) {
+	skipped := 0
+	defer func() {
+		slog.Info("seedlive: illustration withheld from the live database", "listingsSkipped", skipped)
+	}()
 	up := func(coll string, id string, doc any) error {
 		if id == "" {
 			return nil
@@ -52,6 +57,12 @@ func SeedUpsert(ctx context.Context, db *mongo.Database) (written int, membersSk
 		}
 	}
 	for _, m := range members {
+		// The demo identities own the invented content and share one password
+		// that is documented in this repository. They must never exist in a live
+		// database — see domain/seedclass.go.
+		if strings.HasSuffix(m.Email, domain.DemoMemberEmailSuffix) {
+			continue
+		}
 		n, cErr := db.Collection(collMembers).CountDocuments(ctx, bson.M{"_id": m.ID})
 		if cErr != nil {
 			return written, membersSkipped, cErr
@@ -87,6 +98,13 @@ func SeedUpsert(ctx context.Context, db *mongo.Database) (written int, membersSk
 	allListings := append(append(append(seedListings(), seedExtraListings()...), seedIncidents()...), seedLostFound()...)
 	applyListingCoords(allListings)
 	for _, l := range allListings {
+		// Illustration never reaches a live database. Shops that do not exist,
+		// fabricated emergencies, memorials for the living — see
+		// domain/seedclass.go for the full reasoning.
+		if domain.IsFabricatedListing(l.ID, l.Type) {
+			skipped++
+			continue
+		}
 		if err = up(collListings, l.ID, l); err != nil {
 			return
 		}
@@ -138,16 +156,14 @@ func SeedUpsert(ctx context.Context, db *mongo.Database) (written int, membersSk
 			return
 		}
 	}
-	for _, a := range seedAgents {
-		if err = up(collAgents, a.ID, a); err != nil {
-			return
-		}
-	}
+	// Outside agents are invented people offering escrow-backed errand services.
+	// A fabricated agent is a fabricated trust signal — somebody could try to
+	// hire one — so they are illustration, and withheld like the rest.
+	skipped += len(seedAgents)
 
-	// Fills only collections that are still empty — never overwrites activity.
-	if _, err = SeedEmptyCollections(ctx, db); err != nil {
-		return
-	}
+	// SeedEmptyCollections fills empty activity collections with representative
+	// pledges, tickets and subscriptions. That is invented transaction history;
+	// a live database's activity must be its own.
 
 	err = createIndexes(ctx, db)
 	return
