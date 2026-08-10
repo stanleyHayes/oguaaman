@@ -82,6 +82,7 @@ export function FestivalAnnouncement() {
           eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
           description:
             "Oguaa Fetu Afahye — Cape Coast's annual festival of purification and thanksgiving. A week of Asafo processions, drumming and rites, climaxing in the grand durbar of chiefs on the first Saturday of September.",
+          image: [`${SITE_URL}/og-image.png`],
           location: {
             "@type": "Place",
             name: FESTIVAL.place,
@@ -92,7 +93,33 @@ export function FestivalAnnouncement() {
               addressCountry: "GH",
             },
           },
-          organizer: { "@type": "Organization", name: "Oguaa Traditional Council" },
+          // `url` on the organiser and the performer is what lets a search engine
+          // resolve them as entities rather than bare strings. Neither the Council
+          // nor the companies keep an official site, so each points at the page
+          // here that actually describes it.
+          organizer: {
+            "@type": "Organization",
+            name: "Oguaa Traditional Council",
+            url: `${SITE_URL}/leadership`,
+          },
+          performer: {
+            "@type": "PerformingGroup",
+            name: "The seven Asafo companies of Oguaa",
+            url: `${SITE_URL}/culture`,
+          },
+          // The durbar is free to walk into and always has been. Google still
+          // wants that said as an Offer — `isAccessibleForFree` alone doesn't
+          // qualify the page for the event result. No tickets are sold, so the
+          // free-entry offer simply stands for the whole festival year.
+          offers: {
+            "@type": "Offer",
+            name: "Free public attendance",
+            price: 0,
+            priceCurrency: "GHS",
+            availability: "https://schema.org/InStock",
+            validFrom: `${FESTIVAL.starts.slice(0, 4)}-01-01`,
+            url: `${SITE_URL}/festivals`,
+          },
           url: `${SITE_URL}/festivals`,
           isAccessibleForFree: true,
         }}
