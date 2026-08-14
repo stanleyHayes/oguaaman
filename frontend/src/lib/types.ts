@@ -276,8 +276,8 @@ export interface BusinessCoupon {
   maximumDiscountPesewas?: number; redemptionLimit?: number; redemptions?: number;
   startsAt?: string; endsAt?: string; active: boolean; createdAt?: string; updatedAt?: string;
 }
-export interface AffiliateProgramme { id?: string; listingId?: string; ownerType?: "business"|"platform"; name: string; commissionBps: number; fundingSource?: "business"|"platform"; holdDays: number; active: boolean }
-export interface Affiliate { id?: string; programmeId: string; listingId?: string; code: string; name: string; email: string; payoutPhone?: string; active: boolean }
+export interface AffiliateProgramme { id?: string; listingId?: string; ownerType?: "business"|"platform"; name: string; description?: string; commissionBps: number; fundingSource?: "business"|"platform"; cookieWindowDays?: number; holdDays: number; minimumPayoutPesewas?: number; payoutMode?: "mobile_money"|"bank"|"manual"; active: boolean }
+export interface Affiliate { id?: string; programmeId: string; listingId?: string; code: string; name: string; email: string; payoutPhone?: string; promotionChannels?: string[]; audienceSummary?: string; status?: "pending"|"approved"|"paused"|"rejected"; active: boolean }
 export interface AffiliateConversion { id: string; orderReference: string; affiliateCode: string; grossPesewas: number; commissionPesewas: number; status: "reserved"|"converted"|"payable"|"paid"|"void"; holdUntil?: string }
 
 /** One row in a list-style section (stat, team member, timeline, FAQ, doc). */

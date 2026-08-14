@@ -8,6 +8,7 @@ import { Thumb } from "@/components/cards";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { ProductStructuredData, NoIndex } from "@/components/structured-data";
 import { completePayment } from "@/lib/paystack";
+import { affiliateCodeFromLocation } from "@/lib/affiliate-attribution";
 
 /**
  * One product from a shop's catalogue, at its own URL.
@@ -58,7 +59,7 @@ function ProductPage({ business, item, priceless, commerceEnabled }: Readonly<{ 
   const [fulfilment, setFulfilment] = useState<"pickup" | "delivery">("pickup");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [couponCode, setCouponCode] = useState("");
-  const [affiliateCode] = useState(() => new URLSearchParams(window.location.search).get("aff")?.toUpperCase() ?? "");
+  const [affiliateCode] = useState(() => affiliateCodeFromLocation());
   const [busy, setBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   async function buy() {

@@ -104,7 +104,7 @@ function SignIn() {
   // completed reset back on the sign-in form.
   const [mode, setMode] = useState<"signin" | "reset">("signin");
   const [banner, setBanner] = useState<string | null>(null);
-  const codeFormRef = useRef<HTMLFormElement | null>(null);
+  const verifyingRef = useRef(false);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setErr(null);
@@ -114,12 +114,25 @@ function SignIn() {
     } catch (e) { setErr(e instanceof Error ? e.message : "Sign in failed."); } finally { setBusy(false); }
   }
 
+  async function verifyCode(value: string) {
+    if (!challenge || verifyingRef.current) return;
+    const completedCode = value.trim();
+    if (!recovery && completedCode.length !== 6) return;
+    verifyingRef.current = true;
+    setBusy(true); setErr(null);
+    try {
+      await completeMfa(challenge, completedCode);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "That code didn't work.");
+    } finally {
+      verifyingRef.current = false;
+      setBusy(false);
+    }
+  }
+
   async function submitCode(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!challenge) return;
-    setBusy(true); setErr(null);
-    try { await completeMfa(challenge, code.trim()); }
-    catch (e) { setErr(e instanceof Error ? e.message : "That code didn't work."); } finally { setBusy(false); }
+    await verifyCode(code);
   }
 
   if (mode === "reset") {
@@ -136,7 +149,7 @@ function SignIn() {
     return (
       <Backdrop>
         <Shell>
-          <form ref={codeFormRef} onSubmit={submitCode} className="space-y-5">
+          <form onSubmit={submitCode} className="space-y-5">
             <div>
               <h2 className="text-2xl font-semibold text-ink">Two-factor check</h2>
               <p className="mt-1 text-sm text-ink-muted">Enter the 6-digit code from your authenticator app, or a recovery code.</p>
@@ -150,7 +163,7 @@ function SignIn() {
             ) : (
               <div className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
-                <OtpInput value={code} onChange={setCode} onComplete={() => codeFormRef.current?.requestSubmit()} autoFocus ariaLabel="Authenticator code" />
+                <OtpInput value={code} onChange={setCode} onComplete={(completedCode) => void verifyCode(completedCode)} autoFocus ariaLabel="Authenticator code" />
                 <button type="button" onClick={() => { setRecovery(true); setCode(""); }} className="mt-2 text-xs font-medium text-ink-muted underline hover:text-ink">Use a recovery code instead</button>
               </div>
             )}

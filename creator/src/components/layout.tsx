@@ -397,7 +397,7 @@ export function CreatorLayout() {
 
       <aside
         aria-label="Primary"
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col overflow-y-auto border-r border-navy-soft bg-navy text-aura-cream transition-[transform,width] duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col overflow-x-hidden overflow-y-auto overscroll-x-none border-r border-navy-soft bg-navy text-aura-cream transition-[transform,width] duration-200 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "lg:w-16" : "lg:w-60"}`}
       >

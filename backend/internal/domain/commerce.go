@@ -155,29 +155,36 @@ type BusinessCouponRepository interface {
 // AffiliateProgramme is either owned by Oguaa (platform-wide) or by one
 // verified business. CommissionBps uses basis points (1000 = 10%).
 type AffiliateProgramme struct {
-	ID            string `json:"id" bson:"_id"`
-	ListingID     string `json:"listingId,omitempty" bson:"listingId,omitempty"`
-	OwnerType     string `json:"ownerType" bson:"ownerType"`
-	Name          string `json:"name" bson:"name"`
-	CommissionBps int64  `json:"commissionBps" bson:"commissionBps"`
-	FundingSource string `json:"fundingSource" bson:"fundingSource"`
-	HoldDays      int    `json:"holdDays" bson:"holdDays"`
-	Active        bool   `json:"active" bson:"active"`
-	CreatedAt     string `json:"createdAt" bson:"createdAt"`
-	UpdatedAt     string `json:"updatedAt" bson:"updatedAt"`
+	ID                   string `json:"id" bson:"_id"`
+	ListingID            string `json:"listingId,omitempty" bson:"listingId,omitempty"`
+	OwnerType            string `json:"ownerType" bson:"ownerType"`
+	Name                 string `json:"name" bson:"name"`
+	Description          string `json:"description,omitempty" bson:"description,omitempty"`
+	CommissionBps        int64  `json:"commissionBps" bson:"commissionBps"`
+	FundingSource        string `json:"fundingSource" bson:"fundingSource"`
+	CookieWindowDays     int    `json:"cookieWindowDays" bson:"cookieWindowDays"`
+	HoldDays             int    `json:"holdDays" bson:"holdDays"`
+	MinimumPayoutPesewas int64  `json:"minimumPayoutPesewas" bson:"minimumPayoutPesewas"`
+	PayoutMode           string `json:"payoutMode" bson:"payoutMode"`
+	Active               bool   `json:"active" bson:"active"`
+	CreatedAt            string `json:"createdAt" bson:"createdAt"`
+	UpdatedAt            string `json:"updatedAt" bson:"updatedAt"`
 }
 
 type Affiliate struct {
-	ID          string `json:"id" bson:"_id"`
-	ProgrammeID string `json:"programmeId" bson:"programmeId"`
-	ListingID   string `json:"listingId,omitempty" bson:"listingId,omitempty"`
-	Code        string `json:"code" bson:"code"`
-	Name        string `json:"name" bson:"name"`
-	Email       string `json:"email" bson:"email"`
-	PayoutPhone string `json:"payoutPhone,omitempty" bson:"payoutPhone,omitempty"`
-	Active      bool   `json:"active" bson:"active"`
-	CreatedAt   string `json:"createdAt" bson:"createdAt"`
-	UpdatedAt   string `json:"updatedAt" bson:"updatedAt"`
+	ID                string   `json:"id" bson:"_id"`
+	ProgrammeID       string   `json:"programmeId" bson:"programmeId"`
+	ListingID         string   `json:"listingId,omitempty" bson:"listingId,omitempty"`
+	Code              string   `json:"code" bson:"code"`
+	Name              string   `json:"name" bson:"name"`
+	Email             string   `json:"email" bson:"email"`
+	PayoutPhone       string   `json:"payoutPhone,omitempty" bson:"payoutPhone,omitempty"`
+	PromotionChannels []string `json:"promotionChannels,omitempty" bson:"promotionChannels,omitempty"`
+	AudienceSummary   string   `json:"audienceSummary,omitempty" bson:"audienceSummary,omitempty"`
+	Status            string   `json:"status,omitempty" bson:"status,omitempty"`
+	Active            bool     `json:"active" bson:"active"`
+	CreatedAt         string   `json:"createdAt" bson:"createdAt"`
+	UpdatedAt         string   `json:"updatedAt" bson:"updatedAt"`
 }
 
 type AffiliateConversion struct {

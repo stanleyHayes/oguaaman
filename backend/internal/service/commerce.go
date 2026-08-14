@@ -426,11 +426,27 @@ func (s *CommerceService) SaveAffiliateProgramme(ctx context.Context, actor *dom
 		return nil, err
 	}
 	p.Name = strings.TrimSpace(p.Name)
+	p.Description = strings.TrimSpace(p.Description)
 	if p.Name == "" || p.CommissionBps < 1 || p.CommissionBps > 5000 {
 		return nil, fmt.Errorf("name and commission between 0.01%% and 50%% are required")
 	}
 	if p.HoldDays < 0 || p.HoldDays > 180 {
 		return nil, fmt.Errorf("hold days must be between 0 and 180")
+	}
+	if p.CookieWindowDays == 0 {
+		p.CookieWindowDays = 30
+	}
+	if p.CookieWindowDays < 1 || p.CookieWindowDays > 365 {
+		return nil, fmt.Errorf("cookie window must be between 1 and 365 days")
+	}
+	if p.MinimumPayoutPesewas < 0 {
+		return nil, fmt.Errorf("minimum payout cannot be negative")
+	}
+	if p.PayoutMode == "" {
+		p.PayoutMode = "mobile_money"
+	}
+	if p.PayoutMode != "mobile_money" && p.PayoutMode != "bank" && p.PayoutMode != "manual" {
+		return nil, fmt.Errorf("invalid payout mode")
 	}
 	if p.FundingSource != "" && p.FundingSource != domain.PromotionFundingBusiness && p.FundingSource != domain.PromotionFundingPlatform {
 		return nil, fmt.Errorf("invalid funding source")
@@ -482,8 +498,18 @@ func (s *CommerceService) SaveAffiliate(ctx context.Context, actor *domain.Membe
 	a.Code = strings.ToUpper(strings.TrimSpace(a.Code))
 	a.Name = strings.TrimSpace(a.Name)
 	a.Email = strings.ToLower(strings.TrimSpace(a.Email))
+	a.AudienceSummary = strings.TrimSpace(a.AudienceSummary)
 	if !couponCodePattern.MatchString(a.Code) || a.Name == "" || !strings.Contains(a.Email, "@") {
 		return nil, fmt.Errorf("valid affiliate code, name and email are required")
+	}
+	if len(a.PromotionChannels) > 8 {
+		return nil, fmt.Errorf("up to eight promotion channels are allowed")
+	}
+	if a.Status == "" {
+		a.Status = "approved"
+	}
+	if a.Status != "pending" && a.Status != "approved" && a.Status != "paused" && a.Status != "rejected" {
+		return nil, fmt.Errorf("invalid affiliate status")
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	if a.ID == "" {
