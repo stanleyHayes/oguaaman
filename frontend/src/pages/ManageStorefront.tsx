@@ -294,6 +294,7 @@ export function Component() {
           {state === "saving" ? "Saving…" : "Save storefront"}
         </button>
       </div>
+      <Link to={`/business/${initial.slug}/commerce`} className="mb-6 inline-flex min-h-11 items-center rounded-full border border-gold-border/50 px-4 text-sm font-semibold text-gold-text hover:bg-gold/[0.08]">Verification, orders &amp; coupons →</Link>
     </Container>
   );
 }

@@ -69,6 +69,13 @@ type Config struct {
 	VAPIDPublic  string
 	VAPIDPrivate string
 	VAPIDSubject string
+
+	// Trusted RSS/Atom feeds for the automated research desk. News entries are
+	// name|url. Alert entries are name|url|orgId|orgSlug|orgName and must point
+	// to an official authority feed. Separate entries with semicolons.
+	AutoNewsFeeds               string
+	AutoAlertFeeds              string
+	AutoResearchIntervalMinutes int
 }
 
 // Load reads configuration from a local .env (if present) and the environment,
@@ -140,9 +147,12 @@ func load() Config {
 		WhatsAppToken:   os.Getenv("WHATSAPP_TOKEN"),
 		WhatsAppPhoneID: os.Getenv("WHATSAPP_PHONE_ID"),
 
-		VAPIDPublic:  os.Getenv("VAPID_PUBLIC_KEY"),
-		VAPIDPrivate: os.Getenv("VAPID_PRIVATE_KEY"),
-		VAPIDSubject: env("VAPID_SUBJECT", "mailto:hello@oguaa.gh"),
+		VAPIDPublic:                 os.Getenv("VAPID_PUBLIC_KEY"),
+		VAPIDPrivate:                os.Getenv("VAPID_PRIVATE_KEY"),
+		VAPIDSubject:                env("VAPID_SUBJECT", "mailto:hello@oguaa.gh"),
+		AutoNewsFeeds:               os.Getenv("AUTO_NEWS_FEEDS"),
+		AutoAlertFeeds:              os.Getenv("AUTO_ALERT_FEEDS"),
+		AutoResearchIntervalMinutes: envInt("AUTO_RESEARCH_INTERVAL_MINUTES", 30),
 	}
 }
 

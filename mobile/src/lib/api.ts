@@ -1,4 +1,4 @@
-import type { ArtistBooking, Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs, BlockedMember,} from "./types";
+import type { ArtistBooking, Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs, BlockedMember, CommerceOrder, BusinessCoupon, AffiliateProgramme, Affiliate, AffiliateConversion,} from "./types";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
@@ -234,6 +234,21 @@ export const api = {
   // still returns the plain array; `api.businesses({ page, pageSize })` the Page.
   businesses: listBusinesses,
   business: (slug: string) => get<Listing>(`/api/businesses/${slug}`),
+  startOrder: (slug: string, body: { buyerName: string; buyerEmail: string; buyerPhone: string; fulfilment: "pickup" | "delivery"; deliveryAddress?: string; couponCode?: string; affiliateCode?: string; lines: { productId: string; quantity: number }[] }) =>
+    post<{ order: CommerceOrder; authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/orders`, body),
+  businessCommerceStatus: (slug: string) => get<{ enabled: boolean }>(`/api/businesses/${slug}/commerce-status`),
+  confirmOrder: (reference: string) => get<CommerceOrder>(`/api/orders/confirm?reference=${encodeURIComponent(reference)}`),
+  businessOrders: (id:string) => get<CommerceOrder[]>(`/api/listings/${id}/orders`),
+  businessCoupons: (id:string) => get<BusinessCoupon[]>(`/api/listings/${id}/coupons`),
+  saveBusinessCoupon: (id:string,body:BusinessCoupon) => post<BusinessCoupon>(`/api/listings/${id}/coupons`,body),
+  deleteBusinessCoupon: (id:string,couponId:string) => del<void>(`/api/listings/${id}/coupons/${couponId}`),
+  affiliateProgrammes: (id:string) => get<AffiliateProgramme[]>(`/api/listings/${id}/affiliate-programmes`),
+  saveAffiliateProgramme: (id:string,body:AffiliateProgramme) => post<AffiliateProgramme>(`/api/listings/${id}/affiliate-programmes`,body),
+  affiliates: (id:string,programmeId:string) => get<Affiliate[]>(`/api/listings/${id}/affiliates?programmeId=${encodeURIComponent(programmeId)}`),
+  saveAffiliate: (id:string,body:Affiliate) => post<Affiliate>(`/api/listings/${id}/affiliates`,body),
+  affiliateConversions: (id:string) => get<AffiliateConversion[]>(`/api/listings/${id}/affiliate-conversions`),
+  platformPromotions: () => get<BusinessCoupon[]>("/api/admin/commerce-promotions"),
+  savePlatformPromotion: (body:BusinessCoupon) => post<BusinessCoupon>("/api/admin/commerce-promotions",body),
   properties: () => get<Listing[]>("/api/properties"),
   property: (slug: string) => get<Listing>(`/api/properties/${slug}`),
   events: listEvents,

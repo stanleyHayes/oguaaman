@@ -90,7 +90,7 @@ const SeedPassword = "Oguaa-2026!"
 // Seed resets the collections and loads the fact-checked Cape Coast seed data.
 // It is idempotent: collections are dropped and reinserted. (See agent_plan.md §1.)
 func Seed(ctx context.Context, db *mongo.Database) error {
-	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collMemberBlocks, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents, collAgentJobs, collAgentReviews, collArtistBookings} {
+	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collMemberBlocks, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collBusinessVerifications, collCommerceOrders, collBusinessCoupons, collAffiliateProgrammes, collAffiliates, collAffiliateConversions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents, collAgentJobs, collAgentReviews, collArtistBookings} {
 		if err := db.Collection(name).Drop(ctx); err != nil {
 			return err
 		}
@@ -266,6 +266,12 @@ func insertAll[T any](ctx context.Context, coll *mongo.Collection, items []T) er
 
 func createIndexes(ctx context.Context, db *mongo.Database) error {
 	idx := func(keys bson.D) mongo.IndexModel { return mongo.IndexModel{Keys: keys} }
+	if _, err := db.Collection(collNews).Indexes().CreateMany(ctx, []mongo.IndexModel{
+		idx(bson.D{{Key: "slug", Value: 1}}),
+		{Keys: bson.D{{Key: "sourceUrl", Value: 1}}, Options: options.Index().SetUnique(true).SetSparse(true)},
+	}); err != nil {
+		return err
+	}
 	if _, err := db.Collection(collListings).Indexes().CreateMany(ctx, []mongo.IndexModel{
 		idx(bson.D{{Key: "type", Value: 1}, {Key: "status", Value: 1}}),
 		idx(bson.D{{Key: "slug", Value: 1}}),
@@ -360,6 +366,26 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 		idx(bson.D{{Key: "memberId", Value: 1}}),
 		idx(bson.D{{Key: "listingId", Value: 1}}),
 	}); err != nil {
+		return err
+	}
+	if _, err := db.Collection(collBusinessVerifications).Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "listingId", Value: 1}}, Options: options.Index().SetUnique(true)}); err != nil {
+		return err
+	}
+	if _, err := db.Collection(collCommerceOrders).Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{Keys: bson.D{{Key: "reference", Value: 1}}, Options: options.Index().SetUnique(true)}, idx(bson.D{{Key: "listingId", Value: 1}}), idx(bson.D{{Key: "buyerId", Value: 1}}),
+	}); err != nil {
+		return err
+	}
+	if _, err := db.Collection(collBusinessCoupons).Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "listingId", Value: 1}, {Key: "code", Value: 1}}, Options: options.Index().SetUnique(true)}); err != nil {
+		return err
+	}
+	if _, err := db.Collection(collAffiliates).Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "listingId", Value: 1}, {Key: "code", Value: 1}}, Options: options.Index().SetUnique(true)}); err != nil {
+		return err
+	}
+	if _, err := db.Collection(collAffiliateProgrammes).Indexes().CreateOne(ctx, idx(bson.D{{Key: "listingId", Value: 1}})); err != nil {
+		return err
+	}
+	if _, err := db.Collection(collAffiliateConversions).Indexes().CreateMany(ctx, []mongo.IndexModel{{Keys: bson.D{{Key: "orderReference", Value: 1}}, Options: options.Index().SetUnique(true)}, idx(bson.D{{Key: "listingId", Value: 1}}), idx(bson.D{{Key: "affiliateId", Value: 1}})}); err != nil {
 		return err
 	}
 	// Plan slugs are the stable key subscriptions reference.

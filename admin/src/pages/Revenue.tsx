@@ -5,7 +5,7 @@ import type { Pledge, Subscription, Promotion, RevenueOverview } from "@/lib/typ
 import { PageHeader, Card, Empty } from "@/components/ui";
 import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
-import { HandCoins, Ticket, Repeat, Megaphone } from "lucide-react";
+import { HandCoins, Ticket, Repeat, Megaphone, Banknote } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
@@ -109,6 +109,7 @@ export function Component() {
         <StaggerItem index={1}><MetricCard label="Tickets (gross)" value={cedis(overview.tickets.grossPesewas)} tone="teal" icon={<Ticket size={18} />} /></StaggerItem>
         <StaggerItem index={2}><MetricCard label="Subscriptions (gross)" value={cedis(overview.subscriptions.grossPesewas)} tone="teal" icon={<Repeat size={18} />} /></StaggerItem>
         <StaggerItem index={3}><MetricCard label="Promotions (gross)" value={cedis(overview.promotions.grossPesewas)} tone="teal" icon={<Megaphone size={18} />} /></StaggerItem>
+        <StaggerItem index={4}><MetricCard label="Commerce fees" value={cedis(overview.commerce.feePesewas)} tone="green" icon={<Banknote size={18} />} /></StaggerItem>
       </Stagger>
 
       {/* recent activity across streams */}

@@ -22,6 +22,8 @@ func (r *NewsRepo) Update(ctx context.Context, a domain.NewsArticle) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": a.ID}, bson.M{"$set": bson.M{
 		"slug": a.Slug, "title": a.Title, "summary": a.Summary, "body": a.Body,
 		"coverColor": a.CoverColor, "coverImageUrl": a.CoverImageURL, "tags": a.Tags, "updatedAt": a.UpdatedAt,
+		"automated": a.Automated, "automationLabel": a.AutomationLabel, "sourceName": a.SourceName,
+		"sourceUrl": a.SourceURL, "sourcePublishedAt": a.SourcePublishedAt,
 	}})
 	return err
 }

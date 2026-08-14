@@ -1,4 +1,4 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged, Agent, AgentStatus, AgentJob, DisputeResolution } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged, Agent, AgentStatus, AgentJob, DisputeResolution, BusinessVerification, CommerceOrder, CommercePromotion, AffiliateProgramme, Affiliate, AffiliateConversion } from "./types";
 
 /** Optional server-side pagination for the heavy list endpoints. Passing this
  *  switches the response to the { items, total, page, pageSize, totalPages }
@@ -113,6 +113,17 @@ export interface LoginResult {
 }
 
 export const api = {
+	businessVerifications: () => get<BusinessVerification[]>("/api/admin/business-verifications"),
+	reviewBusinessVerification: (listingId: string, status: "verified" | "rejected" | "revoked", note: string) => post<BusinessVerification>(`/api/admin/business-verifications/${listingId}/review`, { status, note }),
+	commerceOrders: () => get<CommerceOrder[]>("/api/admin/orders"),
+	commercePromotions: () => get<CommercePromotion[]>("/api/admin/commerce-promotions"),
+	saveCommercePromotion: (body:CommercePromotion) => post<CommercePromotion>("/api/admin/commerce-promotions",body),
+	affiliateProgrammes: () => get<AffiliateProgramme[]>("/api/admin/affiliate-programmes"),
+	saveAffiliateProgramme: (body:AffiliateProgramme) => post<AffiliateProgramme>("/api/admin/affiliate-programmes",body),
+	affiliates: (programmeId:string) => get<Affiliate[]>(`/api/admin/affiliates?programmeId=${encodeURIComponent(programmeId)}`),
+	saveAffiliate: (body:Affiliate) => post<Affiliate>("/api/admin/affiliates",body),
+	affiliateConversions: () => get<AffiliateConversion[]>("/api/admin/affiliate-conversions"),
+	setAffiliateConversionStatus: (id:string,status:string) => post<void>(`/api/admin/affiliate-conversions/${id}/status`,{status}),
   stats: () => get<Stats>("/api/stats"),
   queue: (type?: string) => get<Listing[]>(`/api/admin/queue${type ? `?type=${encodeURIComponent(type)}` : ""}`),
   listings: () => get<Listing[]>("/api/admin/listings"),

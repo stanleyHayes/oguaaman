@@ -229,3 +229,21 @@
 ::view-transition-old(root) {
   z-index: 0;
 }
+
+/* Branded dropdowns with a 16px caret inset and a non-native picker where supported. */
+select:not([multiple]) {
+  -webkit-appearance: none; appearance: none; padding-inline-end: 3rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23B07D32' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.1rem;
+}
+select:not([multiple]):focus { border-color: var(--color-gold-border); box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-gold) 22%, transparent); outline: none; }
+@supports (appearance: base-select) {
+  select:not([multiple]), ::picker(select) { appearance: base-select; }
+  select:not([multiple]) { background-image: none; cursor: pointer; }
+  select:not([multiple])::picker-icon { margin-inline-end: .75rem; color: var(--color-gold-brand); transition: rotate 160ms ease; }
+  select:not([multiple]):open::picker-icon { rotate: 180deg; }
+  ::picker(select) { margin-block: .4rem; border: 1px solid var(--color-sand); border-radius: 1rem; background: var(--color-cream); color: var(--color-ink); box-shadow: 0 22px 60px -18px rgba(12,44,31,.38); }
+  select:not([multiple]) option { margin: .3rem; border-radius: .75rem; padding: .7rem .85rem; background: transparent; color: var(--color-ink); cursor: pointer; }
+  select:not([multiple]) option:hover, select:not([multiple]) option:focus, select:not([multiple]) option:checked { background: var(--color-green); color: var(--color-on-green); }
+  select:not([multiple]) option::checkmark { color: var(--color-gold); }
+}

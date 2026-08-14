@@ -93,6 +93,23 @@ services:
       - key: KIMI_BASE_URL
         value: https://api.moonshot.ai/v1
 
+      # ── Automated research desk — trusted RSS/Atom sources only ──
+      # Semicolon-separated `name|https-url` entries. Edit this Blueprint value
+      # and sync Render whenever the trusted publisher list changes.
+      - key: AUTO_NEWS_FEEDS
+        # Defaults cover two Ghana newsrooms plus a Cape Coast-specific Google
+        # News discovery feed. The backend still applies its local relevance
+        # filter and deduplicates the same story across sources.
+        value: 'MyJoyOnline|https://www.myjoyonline.com/feed/;3News Ghana|https://3news.com/feed.xml;Google News Cape Coast|https://news.google.com/rss/search?q=%22Cape%20Coast%22&hl=en-GH&gl=GH&ceid=GH:en'
+      # Official alert feeds additionally require the verified authority:
+      # name|https-url|orgId|orgSlug|orgName. Keep blank until that authority
+      # exists and is verified in Oguaa. Example after GMet is created:
+      # Ghana Meteorological Agency|https://www.meteo.gov.gh/api/cap/rss.xml|inst-gmet|ghana-meteorological-agency|Ghana Meteorological Agency
+      - key: AUTO_ALERT_FEEDS
+        value: ""
+      - key: AUTO_RESEARCH_INTERVAL_MINUTES
+        value: "30"
+
       # ── Payments — blank => pledge/escrow runs a labelled simulation ──
       - key: PAYSTACK_SECRET_KEY
         sync: false

@@ -261,6 +261,7 @@ export function Component() {
                         </span>
                         <Pill tone="neutral">{d.kind}</Pill>
                         <Pill tone={win.tone}>{win.text}</Pill>
+                        {d.automated && <Pill tone="gold">Automated</Pill>}
                         {d.area && <Pill tone="gold">{d.area}</Pill>}
                       </div>
                       <h3 className="mt-2 text-lg font-semibold text-ink">{d.title}</h3>

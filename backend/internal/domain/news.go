@@ -11,20 +11,25 @@ const (
 // NewsArticle — an editorial post (spec §8.12 editorial). Body is Markdown,
 // rendered on the client. Authored and published by curators/stewards.
 type NewsArticle struct {
-	ID            string   `json:"id" bson:"_id"`
-	Slug          string   `json:"slug" bson:"slug"`
-	Title         string   `json:"title" bson:"title"`
-	Summary       string   `json:"summary,omitempty" bson:"summary,omitempty"`
-	Body          string   `json:"body" bson:"body"` // Markdown
-	CoverColor    string   `json:"coverColor,omitempty" bson:"coverColor,omitempty"`
-	CoverImageURL string   `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
-	Tags          []string `json:"tags,omitempty" bson:"tags,omitempty"`
-	AuthorID      string   `json:"authorId" bson:"authorId"`
-	AuthorName    string   `json:"authorName" bson:"authorName"`
-	Status        string   `json:"status" bson:"status"`
-	CreatedAt     string   `json:"createdAt" bson:"createdAt"`
-	UpdatedAt     string   `json:"updatedAt" bson:"updatedAt"`
-	PublishedAt   string   `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
+	ID                string   `json:"id" bson:"_id"`
+	Slug              string   `json:"slug" bson:"slug"`
+	Title             string   `json:"title" bson:"title"`
+	Summary           string   `json:"summary,omitempty" bson:"summary,omitempty"`
+	Body              string   `json:"body" bson:"body"` // Markdown
+	CoverColor        string   `json:"coverColor,omitempty" bson:"coverColor,omitempty"`
+	CoverImageURL     string   `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
+	Tags              []string `json:"tags,omitempty" bson:"tags,omitempty"`
+	AuthorID          string   `json:"authorId" bson:"authorId"`
+	AuthorName        string   `json:"authorName" bson:"authorName"`
+	Status            string   `json:"status" bson:"status"`
+	CreatedAt         string   `json:"createdAt" bson:"createdAt"`
+	UpdatedAt         string   `json:"updatedAt" bson:"updatedAt"`
+	PublishedAt       string   `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
+	Automated         bool     `json:"automated,omitempty" bson:"automated,omitempty"`
+	AutomationLabel   string   `json:"automationLabel,omitempty" bson:"automationLabel,omitempty"`
+	SourceName        string   `json:"sourceName,omitempty" bson:"sourceName,omitempty"`
+	SourceURL         string   `json:"sourceUrl,omitempty" bson:"sourceUrl,omitempty"`
+	SourcePublishedAt string   `json:"sourcePublishedAt,omitempty" bson:"sourcePublishedAt,omitempty"`
 }
 
 // NewsRepository persists editorial articles (spec §8.12).

@@ -30,9 +30,11 @@ export const router = createBrowserRouter([
       { path: "business", lazy: () => import("./pages/Business") },
       { path: "business/:slug", lazy: () => import("./pages/BusinessDetail") },
       { path: "business/:slug/manage", lazy: () => import("./pages/ManageStorefront") },
+      { path: "business/:slug/commerce", lazy: () => import("./pages/BusinessCommerce") },
       // One product from a shop's catalogue, at its own URL — without this a
       // product cannot be a search result at all.
       { path: "business/:slug/p/:productId", lazy: () => import("./pages/ProductDetail") },
+      { path: "business/:slug/order", lazy: () => import("./pages/OrderReturn") },
       { path: "s/:handle", lazy: () => import("./pages/StorefrontByHandle") },
       { path: "rent-stay", lazy: () => import("./pages/RentStay") },
       { path: "rent-stay/:slug", lazy: () => import("./pages/PropertyDetail") },

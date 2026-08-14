@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -240,8 +241,15 @@ func (h *Handler) PaystackWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if event.Event == "charge.success" && event.Data.Reference != "" {
-		if _, err := h.payments.ConfirmPledge(r.Context(), event.Data.Reference); err != nil {
-			h.log.Error("webhook confirm failed", "ref", event.Data.Reference, "err", err)
+		var confirmErr error
+		switch {
+		case strings.HasPrefix(event.Data.Reference, "ord-") && h.commerce != nil:
+			_, confirmErr = h.commerce.ConfirmOrder(r.Context(), event.Data.Reference)
+		default:
+			_, confirmErr = h.payments.ConfirmPledge(r.Context(), event.Data.Reference)
+		}
+		if confirmErr != nil {
+			h.log.Error("webhook confirm failed", "ref", event.Data.Reference, "err", confirmErr)
 		}
 	}
 	w.WriteHeader(http.StatusOK)

@@ -67,6 +67,7 @@ export default function News() {
                 <Cover article={featured} height={190} />
                 <View style={s.featuredBody}>
                   <Text style={s.featuredKicker}>Featured story</Text>
+                  {featured.automated ? <Text style={s.automated}>AUTOMATED · SOURCE-LINKED</Text> : null}
                   <Text style={s.featuredTitle}>{featured.title}</Text>
                   {featured.summary ? <Text style={s.summary} numberOfLines={3}>{featured.summary}</Text> : null}
                   <View style={s.bylineRow}>
@@ -109,6 +110,7 @@ export default function News() {
                 <Cover article={a} height={132} compact />
                 <View style={s.cardBody}>
                   <Text style={s.cardKicker} numberOfLines={1}>{a.tags?.[0] || "Oguaa newsroom"}</Text>
+                  {a.automated ? <Text style={s.automated}>AUTOMATED</Text> : null}
                   <Text style={s.title} numberOfLines={2}>{a.title}</Text>
                   {a.summary ? <Text style={s.summary} numberOfLines={1}>{a.summary}</Text> : null}
                   <View style={s.bylineRow}>
@@ -151,6 +153,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   featured: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   featuredBody: { padding: 14 },
   featuredKicker: { color: C.goldText, fontSize: 10, letterSpacing: 2, ...S(700), textTransform: "uppercase" },
+  automated: { alignSelf: "flex-start", color: C.goldText, fontSize: 9, letterSpacing: 1, ...S(700), marginTop: 5 },
   featuredTitle: { ...S(700), fontSize: 24, color: C.ink, lineHeight: 30, marginTop: 6 },
   card: { flexDirection: "row", alignItems: "stretch", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18, overflow: "hidden", minHeight: 132, shadowColor: "#000", shadowOpacity: 0.035, shadowRadius: 7, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
   cardBody: { flex: 1, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 },

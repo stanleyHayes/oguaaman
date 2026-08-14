@@ -46,6 +46,14 @@ type PaystackClient interface {
 	Simulated() bool
 }
 
+// CommercePaystack extends the existing transaction seam with the two
+// marketplace operations that ordinary pledges/tickets do not need.
+type CommercePaystack interface {
+	PaystackClient
+	CreateSubaccount(ctx context.Context, businessName, bankCode, accountNumber string) (string, error)
+	InitializeSplit(ctx context.Context, email string, amountPesewas int64, currency, reference, callbackURL, subaccount string, platformFeePesewas int64) (authorizationURL, accessCode string, err error)
+}
+
 // ── real Paystack client ──────────────────────────────────────────────────────
 
 type paystackHTTP struct {
@@ -55,20 +63,28 @@ type paystackHTTP struct {
 }
 
 // NewPaystackClient talks to the live Paystack API with the given secret key.
-func NewPaystackClient(secretKey string) PaystackClient {
+func NewPaystackClient(secretKey string) *paystackHTTP {
 	return &paystackHTTP{secret: secretKey, base: "https://api.paystack.co", http: &http.Client{Timeout: 20 * time.Second}}
 }
 
 func (p *paystackHTTP) Simulated() bool { return false }
 
 func (p *paystackHTTP) Initialize(ctx context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (string, string, error) {
-	body, _ := json.Marshal(map[string]any{
+	return p.initialize(ctx, map[string]any{
 		"email":        email,
 		"amount":       amountPesewas, // subunits (pesewas for GHS)
 		"currency":     currency,
 		"reference":    reference,
 		"callback_url": callbackURL,
 	})
+}
+
+func (p *paystackHTTP) InitializeSplit(ctx context.Context, email string, amountPesewas int64, currency, reference, callbackURL, subaccount string, platformFeePesewas int64) (string, string, error) {
+	return p.initialize(ctx, map[string]any{"email": email, "amount": amountPesewas, "currency": currency, "reference": reference, "callback_url": callbackURL, "subaccount": subaccount, "transaction_charge": platformFeePesewas, "bearer": "subaccount"})
+}
+
+func (p *paystackHTTP) initialize(ctx context.Context, payload map[string]any) (string, string, error) {
+	body, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.base+"/transaction/initialize", bytes.NewReader(body))
 	if err != nil {
 		return "", "", err
@@ -95,6 +111,35 @@ func (p *paystackHTTP) Initialize(ctx context.Context, email string, amountPesew
 		return "", "", fmt.Errorf("paystack initialize rejected: %s", parsed.Message)
 	}
 	return parsed.Data.AuthorizationURL, parsed.Data.AccessCode, nil
+}
+
+func (p *paystackHTTP) CreateSubaccount(ctx context.Context, businessName, bankCode, accountNumber string) (string, error) {
+	body, _ := json.Marshal(map[string]any{"business_name": businessName, "settlement_bank": bankCode, "account_number": accountNumber, "percentage_charge": 0})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.base+"/subaccount", bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+p.secret)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := p.http.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("paystack subaccount failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var parsed struct {
+		Status  bool   `json:"status"`
+		Message string `json:"message"`
+		Data    struct {
+			SubaccountCode string `json:"subaccount_code"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&parsed); err != nil {
+		return "", err
+	}
+	if !parsed.Status || parsed.Data.SubaccountCode == "" {
+		return "", fmt.Errorf("paystack subaccount rejected: %s", parsed.Message)
+	}
+	return parsed.Data.SubaccountCode, nil
 }
 
 func (p *paystackHTTP) Verify(ctx context.Context, reference string) (bool, int64, error) {
@@ -141,6 +186,12 @@ func (s SimulatedPaystack) Initialize(_ context.Context, email string, amountPes
 
 func (s SimulatedPaystack) Verify(context.Context, string) (bool, int64, error) {
 	return true, 0, nil // 0 = amount unknown; the pledge's own amount is used
+}
+func (s SimulatedPaystack) CreateSubaccount(_ context.Context, businessName, _, _ string) (string, error) {
+	return "ACCT_SIM_" + slugify(businessName), nil
+}
+func (s SimulatedPaystack) InitializeSplit(ctx context.Context, email string, amount int64, currency, reference, callbackURL, subaccount string, fee int64) (string, string, error) {
+	return s.Initialize(ctx, email, amount, currency, reference, callbackURL)
 }
 
 // ── the payments service ──────────────────────────────────────────────────────

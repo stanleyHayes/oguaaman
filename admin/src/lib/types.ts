@@ -136,6 +136,10 @@ export interface Directive {
   status: DirectiveStatus;
   createdAt: string;
   createdById: string;
+  automated?: boolean;
+  automationLabel?: string;
+  sourceName?: string;
+  sourceUrl?: string;
 }
 
 /** Town goals — collective civic commitments set for a period, then judged
@@ -369,6 +373,11 @@ export interface NewsArticle {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  automated?: boolean;
+  automationLabel?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourcePublishedAt?: string;
 }
 
 // Shared Paystack-style payment lifecycle used by pledges, tickets, subscriptions and promotions.
@@ -489,6 +498,7 @@ export interface RevenueOverview {
   tickets: { grossPesewas: number; count: number };
   subscriptions: { grossPesewas: number; count: number; active: number };
   promotions: { grossPesewas: number; count: number };
+  commerce: { grossPesewas: number; feePesewas: number; businessNetPesewas: number; count: number };
   totalPesewas: number;
 }
 
@@ -611,3 +621,10 @@ export interface DisputeResolution {
   note: string;
   forfeitBond: boolean;
 }
+
+export interface BusinessVerification { id: string; listingId: string; listingSlug: string; ownerId: string; legalName: string; registrationNumber: string; taxIdentificationNo?: string; ghanaCardNumber: string; businessPhone: string; ghanaPostGPS: string; documents: string[]; settlementBankCode: string; settlementAccountNo: string; settlementName: string; paystackSubaccount?: string; status: "pending" | "verified" | "rejected" | "revoked"; reviewNote?: string; submittedAt?: string; reviewedAt?: string }
+export interface CommerceOrder { id: string; reference: string; listingId: string; listingSlug: string; businessName: string; buyerName: string; buyerEmail: string; buyerPhone: string; fulfilment: string; amountPesewas: number; platformFeePesewas: number; businessNetPesewas: number; status: string; createdAt: string; paidAt?: string }
+export interface CommercePromotion { id?: string; code: string; title?: string; discountType:"percent"|"fixed"; discountValue:number; redemptionLimit?:number; redemptions?:number; active:boolean; fundingSource?:"platform"|"business"; ownerType?:"platform"|"business" }
+export interface AffiliateProgramme { id?:string; name:string; commissionBps:number; fundingSource:"platform"|"business"; holdDays:number; active:boolean }
+export interface Affiliate { id?:string; programmeId:string; code:string; name:string; email:string; payoutPhone?:string; active:boolean }
+export interface AffiliateConversion { id:string; orderReference:string; affiliateCode:string; commissionPesewas:number; status:string; holdUntil?:string }

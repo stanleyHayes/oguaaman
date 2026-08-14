@@ -1,7 +1,7 @@
 // Thin client for the Go API. In dev, calls go to relative /api (Vite proxies to
 // :8080). In production set VITE_API_URL to the API origin.
 import type {
-  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, StoreItem, Review, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams,
+  Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, StoreItem, Review, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams, CommerceOrder, BusinessVerification, BusinessCoupon, AffiliateProgramme, Affiliate, AffiliateConversion,
   Agent, AgentInput, AgentJob, AgentReview, AgentService, ArtistBooking, JobInput, MyJobs, PropertyAvailability,
 } from "./types";
 
@@ -403,6 +403,24 @@ export const api = {
   // a clean shareable handle, saved atomically.
   setStorefront: (id: string, body: { handle?: string; sections?: ProfileSection[]; photos?: MediaAsset[]; videos?: MediaAsset[]; products?: StoreItem[]; services?: StoreItem[] }) =>
     post<Listing>(`/api/listings/${id}/storefront`, body),
+  startOrder: (slug: string, body: { buyerName: string; buyerEmail: string; buyerPhone: string; fulfilment: "pickup" | "delivery"; deliveryAddress?: string; note?: string; couponCode?: string; affiliateCode?: string; lines: { productId: string; quantity: number }[] }) =>
+    post<{ order: CommerceOrder; authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/orders`, body),
+  businessCommerceStatus: (slug: string) => get<{ enabled: boolean }>(`/api/businesses/${slug}/commerce-status`),
+  confirmOrder: (reference: string) => get<CommerceOrder>(`/api/orders/confirm?reference=${encodeURIComponent(reference)}`),
+  myOrders: () => get<CommerceOrder[]>("/api/me/orders"),
+  businessVerification: (id: string) => get<BusinessVerification>(`/api/listings/${id}/business-verification`),
+  submitBusinessVerification: (id: string, body: Omit<BusinessVerification, "id" | "listingId" | "listingSlug" | "ownerId" | "paystackSubaccount" | "status" | "reviewNote" | "submittedAt" | "reviewedAt" | "createdAt" | "updatedAt">) =>
+    post<BusinessVerification>(`/api/listings/${id}/business-verification`, body),
+  businessOrders: (id: string) => get<CommerceOrder[]>(`/api/listings/${id}/orders`),
+  setBusinessOrderStatus: (id: string, orderId: string, status: CommerceOrder["status"]) => post<void>(`/api/listings/${id}/orders/${orderId}/status`, { status }),
+  businessCoupons: (id: string) => get<BusinessCoupon[]>(`/api/listings/${id}/coupons`),
+  saveBusinessCoupon: (id: string, coupon: BusinessCoupon) => post<BusinessCoupon>(`/api/listings/${id}/coupons`, coupon),
+  deleteBusinessCoupon: (id: string, couponId: string) => del<void>(`/api/listings/${id}/coupons/${couponId}`),
+  affiliateProgrammes: (id: string) => get<AffiliateProgramme[]>(`/api/listings/${id}/affiliate-programmes`),
+  saveAffiliateProgramme: (id: string, body: AffiliateProgramme) => post<AffiliateProgramme>(`/api/listings/${id}/affiliate-programmes`, body),
+  affiliates: (id: string, programmeId: string) => get<Affiliate[]>(`/api/listings/${id}/affiliates?programmeId=${encodeURIComponent(programmeId)}`),
+  saveAffiliate: (id: string, body: Affiliate) => post<Affiliate>(`/api/listings/${id}/affiliates`, body),
+  affiliateConversions: (id: string) => get<AffiliateConversion[]>(`/api/listings/${id}/affiliate-conversions`),
   postOrgEvent: (slug: string, body: { title: string; details?: Record<string, unknown> }) =>
     post<Listing>(`/api/institutions/${slug}/events`, body),
 

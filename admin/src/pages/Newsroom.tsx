@@ -91,6 +91,7 @@ export function Component() {
                   <div className="flex items-center gap-2">
                     <h3 className="truncate text-lg font-semibold text-ink">{a.title || "Untitled"}</h3>
                     <StatusChip status={a.status} />
+                    {a.automated && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold-text">Automated</span>}
                   </div>
                   {a.summary && <p className="mt-0.5 line-clamp-1 text-sm text-ink-muted">{a.summary}</p>}
                   <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.7rem] text-ink-faint">

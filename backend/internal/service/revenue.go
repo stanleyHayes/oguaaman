@@ -21,6 +21,13 @@ type PledgeRevenue struct {
 	NetPesewas   int64 `json:"netPesewas"` // credited to projects
 }
 
+type CommerceRevenue struct {
+	GrossPesewas       int64 `json:"grossPesewas"`
+	FeePesewas         int64 `json:"feePesewas"`
+	BusinessNetPesewas int64 `json:"businessNetPesewas"`
+	Count              int   `json:"count"`
+}
+
 // StreamRevenue is one money stream's confirmed gross and transaction count.
 type StreamRevenue struct {
 	GrossPesewas int64 `json:"grossPesewas"`
@@ -41,6 +48,7 @@ type RevenueOverview struct {
 	Tickets       StreamRevenue       `json:"tickets"`
 	Subscriptions SubscriptionRevenue `json:"subscriptions"`
 	Promotions    StreamRevenue       `json:"promotions"`
+	Commerce      CommerceRevenue     `json:"commerce"`
 	// TotalPesewas is platform income: pledge + donation fees + the gross of
 	// every direct-sale stream (tickets, subscriptions, promotions).
 	TotalPesewas int64 `json:"totalPesewas"`
@@ -52,10 +60,11 @@ type RevenueService struct {
 	tickets    domain.TicketRepository
 	subs       domain.SubscriptionRepository
 	promotions domain.PromotionRepository
+	orders     domain.CommerceOrderRepository
 }
 
-func NewRevenueService(p domain.PledgeRepository, t domain.TicketRepository, s domain.SubscriptionRepository, pr domain.PromotionRepository) *RevenueService {
-	return &RevenueService{pledges: p, tickets: t, subs: s, promotions: pr}
+func NewRevenueService(p domain.PledgeRepository, t domain.TicketRepository, s domain.SubscriptionRepository, pr domain.PromotionRepository, orders domain.CommerceOrderRepository) *RevenueService {
+	return &RevenueService{pledges: p, tickets: t, subs: s, promotions: pr, orders: orders}
 }
 
 // Overview sums every confirmed stream into the revenue dashboard payload.
@@ -73,8 +82,31 @@ func (s *RevenueService) Overview(ctx context.Context) (*RevenueOverview, error)
 	if err := s.sumPromotions(ctx, out); err != nil {
 		return nil, err
 	}
-	out.TotalPesewas = out.Pledges.FeePesewas + out.Donations.FeePesewas + out.Tickets.GrossPesewas + out.Subscriptions.GrossPesewas + out.Promotions.GrossPesewas
+	if err := s.sumCommerce(ctx, out); err != nil {
+		return nil, err
+	}
+	out.TotalPesewas = out.Pledges.FeePesewas + out.Donations.FeePesewas + out.Tickets.GrossPesewas + out.Subscriptions.GrossPesewas + out.Promotions.GrossPesewas + out.Commerce.FeePesewas
 	return out, nil
+}
+
+func (s *RevenueService) sumCommerce(ctx context.Context, out *RevenueOverview) error {
+	if s.orders == nil {
+		return nil
+	}
+	orders, err := s.orders.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, o := range orders {
+		if o.Status == domain.OrderPending || o.Status == domain.OrderCancelled || o.Status == domain.OrderRefunded {
+			continue
+		}
+		out.Commerce.GrossPesewas += o.AmountPesewas
+		out.Commerce.FeePesewas += o.PlatformFeePesewas
+		out.Commerce.BusinessNetPesewas += o.BusinessNetPesewas
+		out.Commerce.Count++
+	}
+	return nil
 }
 
 // sumPledges aggregates the platform-fee split across successful pledges,

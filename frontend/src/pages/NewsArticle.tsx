@@ -114,6 +114,7 @@ function StoryMeta({ article }: Readonly<{ article: NewsArticle }>) {
             <dt className="text-xs text-ink-faint">Filed by</dt>
             <dd className="mt-1 flex items-center gap-2 font-semibold text-ink">
               {article.authorName}
+              {article.automated && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold-text">Automated</span>}
               {article.authorVerified && <VerifiedBadge iconOnly verifiedAs={article.authorVerifiedAs} />}
             </dd>
           </div>
@@ -128,6 +129,13 @@ function StoryMeta({ article }: Readonly<{ article: NewsArticle }>) {
             </div>
           )}
         </dl>
+
+        {article.automated && article.sourceUrl && (
+          <div className="mt-5 rounded-xl border border-gold/30 bg-gold/[0.07] p-3 text-xs leading-relaxed text-ink-muted">
+            <strong className="block text-ink">{article.automationLabel ?? "Automated report"}</strong>
+            This summary was assembled from a trusted public source. <a className="font-semibold text-green-text underline" href={article.sourceUrl} target="_blank" rel="noreferrer">Check {article.sourceName ?? "the original source"}</a> for the primary report.
+          </div>
+        )}
 
         {tags.length > 0 && (
           <div className="mt-5">
@@ -175,6 +183,7 @@ export function Component() {
                 {article.authorName.trim().charAt(0).toUpperCase()}
               </span>
               <span className="font-semibold text-cream">{article.authorName}</span>
+              {article.automated && <span className="rounded-full border border-gold/45 bg-gold/15 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold">Automated</span>}
               {article.authorVerified && <VerifiedBadge iconOnly onDark verifiedAs={article.authorVerifiedAs} />}
               <span aria-hidden className="text-gold/60">•</span>
               <time dateTime={article.publishedAt ?? article.createdAt}>{formatDate(article.publishedAt ?? article.createdAt)}</time>

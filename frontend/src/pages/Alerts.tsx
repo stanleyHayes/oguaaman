@@ -135,6 +135,7 @@ function DirectiveCard({
         <span className="rounded-full border border-sand bg-paper px-3 py-1 text-xs text-ink-muted">
           {DIRECTIVE_KIND_LABEL[d.kind]}
         </span>
+        {d.automated && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-3 py-1 text-xs font-bold uppercase tracking-wide text-gold-text">Automated</span>}
         {cd ? (
           <span className={`ml-auto rounded-full border border-sand bg-paper px-3 py-1 text-xs font-semibold tabular-nums ${s.accent}`}>
             {cd}
@@ -152,6 +153,7 @@ function DirectiveCard({
         Issued by {d.issuedByName}
       </p>
       {d.body && <p className={`mt-2 whitespace-pre-line text-sm text-ink-muted ${expired ? "" : "pl-2"}`}>{d.body}</p>}
+      {d.automated && d.sourceUrl && <a href={d.sourceUrl} target="_blank" rel="noreferrer" className={`mt-2 text-xs font-semibold text-green-text underline ${expired ? "" : "pl-2"}`}>Verify at {d.sourceName ?? "the official source"} ↗</a>}
       {d.action && (
         <p className={`mt-3 rounded-lg border px-3 py-2 text-sm font-medium ${s.badge} ${expired ? "" : "ml-2"}`}>
           {d.action}

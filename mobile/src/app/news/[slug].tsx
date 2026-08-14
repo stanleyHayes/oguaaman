@@ -39,6 +39,7 @@ export default function Article() {
         <View style={s.heroInner}>
           <Text style={s.kicker}>The Oguaa Newsroom</Text>
           <Text style={s.title}>{data.title}</Text>
+          {data.automated ? <Text style={s.automated}>{data.automationLabel ?? "AUTOMATED REPORT"}</Text> : null}
           <View style={s.bylineRow}>
             <View style={s.bylineDot} />
             <Text style={s.byline}>By {data.authorName} · {newsDate(data)}</Text>
@@ -48,6 +49,7 @@ export default function Article() {
       </RevealView>
 
       <RevealView delay={100} style={s.body}>
+        {data.automated && data.sourceUrl ? <Text style={s.source}>Automated summary from {data.sourceName ?? "a trusted public source"}. Verify important details at the original source: {data.sourceUrl}</Text> : null}
         {data.summary ? <Text style={s.summary}>{data.summary}</Text> : null}
         <View style={s.divider} />
         <Markdown>{data.body}</Markdown>
@@ -64,7 +66,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   bylineRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
   bylineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.gold },
   byline: { color: C.onDarkText85, fontSize: 13 },
+  automated: { color: C.gold, fontSize: 10, letterSpacing: 1.2, marginTop: 10, ...D(700), textTransform: "uppercase" },
   body: { padding: 20 },
+  source: { color: C.goldText, backgroundColor: withAlpha(C.gold, 0.1), borderRadius: 12, padding: 12, marginBottom: 16, fontSize: 12, lineHeight: 18 },
   summary: { ...SI(), fontSize: 18, lineHeight: 27, color: C.inkMuted },
   divider: { height: 1, backgroundColor: C.sand, marginVertical: 20 },
 });

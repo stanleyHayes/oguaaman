@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLoaderData, useParams, type LoaderFunctionArgs } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing, StoreItem } from "@/lib/types";
@@ -6,6 +7,7 @@ import { Container, CTA as Cta, Pill } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { ProductStructuredData, NoIndex } from "@/components/structured-data";
+import { completePayment } from "@/lib/paystack";
 
 /**
  * One product from a shop's catalogue, at its own URL.
@@ -17,14 +19,15 @@ import { ProductStructuredData, NoIndex } from "@/components/structured-data";
  * JSON-LD naming the shop as seller.
  */
 export async function loader({ params }: LoaderFunctionArgs) {
-  return api.business(params.slug!);
+  const [business, commerce] = await Promise.all([api.business(params.slug!), api.businessCommerceStatus(params.slug!).catch(() => ({ enabled: false }))]);
+  return { business, commerceEnabled: commerce.enabled };
 }
 
 const cedis = (pesewas: number) =>
   "GH₵ " + (pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 });
 
 export function Component() {
-  const business = useLoaderData() as Listing;
+  const { business, commerceEnabled } = useLoaderData() as { business: Listing; commerceEnabled: boolean };
   const { productId } = useParams();
   const item: StoreItem | undefined = (business.products ?? []).find((p) => p.id === productId);
 
@@ -44,6 +47,28 @@ export function Component() {
   }
 
   const priceless = !item.pricePesewas || item.pricePesewas <= 0;
+  return <ProductPage business={business} item={item} priceless={priceless} commerceEnabled={commerceEnabled} />;
+}
+
+function ProductPage({ business, item, priceless, commerceEnabled }: Readonly<{ business: Listing; item: StoreItem; priceless: boolean; commerceEnabled: boolean }>) {
+  const [quantity, setQuantity] = useState(1);
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [fulfilment, setFulfilment] = useState<"pickup" | "delivery">("pickup");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [affiliateCode] = useState(() => new URLSearchParams(window.location.search).get("aff")?.toUpperCase() ?? "");
+  const [busy, setBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  async function buy() {
+    setBusy(true); setCheckoutError("");
+    try {
+      const payment = await api.startOrder(business.slug, { buyerName, buyerEmail, buyerPhone, fulfilment, deliveryAddress, couponCode, affiliateCode, lines: [{ productId: item.id!, quantity }] });
+      await completePayment(payment, { onSuccess: async () => { window.location.assign(`/business/${business.slug}/order?reference=${encodeURIComponent(payment.reference)}`); } });
+    } catch (error) { setCheckoutError(error instanceof Error ? error.message : "Could not start checkout."); }
+    finally { setBusy(false); }
+  }
 
   return (
     <>
@@ -107,9 +132,27 @@ export function Component() {
               ))}
             </div>
             <p className="mt-4 text-xs leading-relaxed text-ink-faint">
-              Oguaaman lists this item for the shop. Arrange payment and collection with {business.title} directly.
+              Payments are verified by Oguaa and split automatically through Paystack. The shop receives its proceeds directly, less the disclosed platform fee.
             </p>
           </div>
+          {!priceless && item.available && commerceEnabled && <div className="mt-6 rounded-[var(--radius-card)] border border-gold-border/35 bg-paper p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-text">Buy securely</p>
+            <h2 className="mt-2 text-2xl font-semibold text-ink">Order from {business.title}</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <input aria-label="Your name" placeholder="Your name" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} className="rounded-lg border border-sand bg-cream px-3 py-2.5" />
+              <input aria-label="Email receipt" type="email" placeholder="Email for receipt" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} className="rounded-lg border border-sand bg-cream px-3 py-2.5" />
+              <input aria-label="Phone number" placeholder="Phone number" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} className="rounded-lg border border-sand bg-cream px-3 py-2.5" />
+              <input aria-label="Quantity" type="number" min={1} max={20} value={quantity} onChange={(e) => setQuantity(Math.max(1, Math.min(20, Number(e.target.value))))} className="rounded-lg border border-sand bg-cream px-3 py-2.5" />
+              <select aria-label="Fulfilment" value={fulfilment} onChange={(e) => setFulfilment(e.target.value as "pickup" | "delivery")} className="rounded-lg border border-sand bg-cream px-3 py-2.5"><option value="pickup">Pickup</option><option value="delivery">Delivery</option></select>
+              <input aria-label="Coupon code" placeholder="Coupon code (optional)" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="rounded-lg border border-sand bg-cream px-3 py-2.5 uppercase" />
+              {affiliateCode && <p className="self-center text-sm text-teal-text">Affiliate referral: {affiliateCode}</p>}
+              {fulfilment === "delivery" && <textarea aria-label="Delivery address" placeholder="Delivery address" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="sm:col-span-2 rounded-lg border border-sand bg-cream px-3 py-2.5" />}
+            </div>
+            {checkoutError && <p role="alert" className="mt-3 text-sm text-clay-text">{checkoutError}</p>}
+            <button type="button" disabled={busy || !buyerName || !buyerEmail || !buyerPhone || (fulfilment === "delivery" && !deliveryAddress)} onClick={buy} className="mt-5 min-h-11 rounded-full bg-green px-6 font-semibold text-on-green disabled:opacity-50">{busy ? "Opening Paystack…" : `Pay ${cedis(item.pricePesewas! * quantity)}`}</button>
+            <p className="mt-3 text-xs text-ink-faint">Final discount and fee allocation are calculated securely by the server before Paystack opens.</p>
+          </div>}
+          {!commerceEnabled && <p className="mt-5 rounded-lg border border-sand bg-cream p-4 text-sm text-ink-muted">Online checkout will appear after this business completes Oguaa verification. You can still contact the shop directly.</p>}
         </div>
       </Container>
     </>

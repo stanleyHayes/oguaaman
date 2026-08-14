@@ -74,7 +74,7 @@ func main() {
 		WithFallback(cfg.KimiAPIKey, cfg.KimiModel, cfg.KimiBaseURL)
 	auth := newAuthService(memberRepo, planRepo, cfg, email, wa)
 	ensureUploadDir(log, cfg)
-	payments, tickets, subs, promotions, revenue, stripeSvc, agentJobs := moneyServices(db, cfg, log)
+	payments, tickets, subs, promotions, commerce, revenue, stripeSvc, agentJobs := moneyServices(db, cfg, log)
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
 	artistBookings := service.NewArtistBookingService(mongox.NewListingRepo(db), mongox.NewArtistBookingRepo(db), mongox.NewNotificationRepo(db))
 
@@ -92,7 +92,7 @@ func main() {
 	}
 
 	handler := httpx.NewHandler(httpx.HandlerDeps{
-		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Stripe: stripeSvc, IAP: iap, Revenue: revenue, Creator: creator, AgentJobs: agentJobs, ArtistBookings: artistBookings,
+		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Commerce: commerce, Stripe: stripeSvc, IAP: iap, Revenue: revenue, Creator: creator, AgentJobs: agentJobs, ArtistBookings: artistBookings,
 		PaystackSecret: cfg.PaystackSecretKey, AuthRequired: cfg.AuthRequired, UploadDir: cfg.UploadDir, UploadBase: cfg.PublicBaseURL, PortalURL: cfg.PortalURL, Log: log,
 	})
 	router := newRouter(log, cfg, svc, handler)
@@ -108,6 +108,8 @@ func main() {
 	serveHTTP(log, cfg, srv)
 	grpcSrv := serveGRPC(log, cfg, svc)
 	go runRemembranceScheduler(log, svc)
+	automatedResearch := service.NewAutomatedResearchService(mongox.NewNewsRepo(db), mongox.NewDirectiveRepo(db), researchSources(cfg)).WithAI(ai)
+	go runAutomatedResearchScheduler(log, automatedResearch, cfg.AutoResearchIntervalMinutes)
 
 	// Graceful shutdown.
 	stop := make(chan os.Signal, 1)
@@ -119,6 +121,48 @@ func main() {
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("shutdown error", "err", err)
+	}
+}
+
+func researchSources(cfg config.Config) []service.ResearchSource {
+	var out []service.ResearchSource
+	for _, raw := range strings.Split(cfg.AutoNewsFeeds, ";") {
+		parts := strings.Split(raw, "|")
+		if len(parts) == 2 && strings.TrimSpace(parts[1]) != "" {
+			out = append(out, service.ResearchSource{Name: strings.TrimSpace(parts[0]), URL: strings.TrimSpace(parts[1])})
+		}
+	}
+	for _, raw := range strings.Split(cfg.AutoAlertFeeds, ";") {
+		parts := strings.Split(raw, "|")
+		if len(parts) == 5 && strings.TrimSpace(parts[1]) != "" {
+			out = append(out, service.ResearchSource{Name: strings.TrimSpace(parts[0]), URL: strings.TrimSpace(parts[1]), Alert: true, OrgID: strings.TrimSpace(parts[2]), OrgSlug: strings.TrimSpace(parts[3]), OrgName: strings.TrimSpace(parts[4])})
+		}
+	}
+	return out
+}
+
+func runAutomatedResearchScheduler(log *slog.Logger, worker *service.AutomatedResearchService, intervalMinutes int) {
+	if intervalMinutes < 5 {
+		intervalMinutes = 5
+	}
+	interval := time.Duration(intervalMinutes) * time.Minute
+	run := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		result, err := worker.Run(ctx)
+		if err != nil {
+			log.Warn("automated research completed with source errors", "err", err, "news", result.PublishedNews, "alerts", result.PublishedAlerts)
+			return
+		}
+		if result.Sources > 0 {
+			log.Info("automated research complete", "sources", result.Sources, "seen", result.Seen, "news", result.PublishedNews, "alerts", result.PublishedAlerts, "skipped", result.Skipped)
+		}
+	}
+	run()
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for range ticker.C {
+		run()
 	}
 }
 
@@ -149,8 +193,8 @@ func ensureUploadDir(log *slog.Logger, cfg config.Config) {
 // moneyServices wires the payment-backed services: live Paystack when a secret
 // key is set, else a labelled simulation. Stripe is optional and only enabled
 // when STRIPE_SECRET_KEY is set.
-func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*service.PaymentsService, *service.TicketsService, *service.SubscriptionsService, *service.PromotionsService, *service.RevenueService, *service.StripeService, *service.AgentJobsService) {
-	var paystack service.PaystackClient = service.SimulatedPaystack{Log: log}
+func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*service.PaymentsService, *service.TicketsService, *service.SubscriptionsService, *service.PromotionsService, *service.CommerceService, *service.RevenueService, *service.StripeService, *service.AgentJobsService) {
+	var paystack service.CommercePaystack = service.SimulatedPaystack{Log: log}
 	if cfg.PaystackSecretKey != "" {
 		paystack = service.NewPaystackClient(cfg.PaystackSecretKey)
 		log.Info("payments via live Paystack")
@@ -165,7 +209,8 @@ func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*se
 	tickets := service.NewTicketsService(mongox.NewListingRepo(db), mongox.NewTicketRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL)
 	subs := service.NewSubscriptionsService(mongox.NewListingRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPlanRepo(db), mongox.NewMemberRepo(db), paystack, cfg.PortalURL, creatorURL)
 	promotions := service.NewPromotionsService(mongox.NewListingRepo(db), mongox.NewPromotionRepo(db), paystack, cfg.PortalURL)
-	revenue := service.NewRevenueService(mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
+	commerce := service.NewCommerceService(mongox.NewListingRepo(db), mongox.NewBusinessVerificationRepo(db), mongox.NewCommerceOrderRepo(db), mongox.NewBusinessCouponRepo(db), mongox.NewAffiliateRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)
+	revenue := service.NewRevenueService(mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db), mongox.NewCommerceOrderRepo(db))
 	agentJobs := service.NewAgentJobsService(mongox.NewAgentJobRepo(db), mongox.NewAgentRepo(db), mongox.NewAgentReviewRepo(db), mongox.NewNotificationRepo(db), paystack, cfg.PortalURL, cfg.PlatformFeePercent)
 
 	var stripeSvc *service.StripeService
@@ -174,7 +219,7 @@ func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*se
 		stripeSvc = service.NewStripeService(stripeClient, mongox.NewStripeIntentRepo(db), payments, tickets, subs, promotions)
 		log.Info("Stripe mobile checkouts enabled")
 	}
-	return payments, tickets, subs, promotions, revenue, stripeSvc, agentJobs
+	return payments, tickets, subs, promotions, commerce, revenue, stripeSvc, agentJobs
 }
 
 func newRouter(log *slog.Logger, cfg config.Config, svc *service.Service, handler *httpx.Handler) http.Handler {

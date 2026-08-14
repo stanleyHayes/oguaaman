@@ -39,6 +39,7 @@ function Meta({ a }: Readonly<{ a: NewsArticle }>) {
   return (
     <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-ink-faint">
       <span>{a.authorName}</span>
+      {a.automated && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-2 py-0.5 font-semibold uppercase tracking-wide text-gold-text">Automated</span>}
       {a.authorVerified && <VerifiedBadge iconOnly verifiedAs={a.authorVerifiedAs} />}
       <span>· {formatDate(a.publishedAt ?? a.createdAt)}</span>
     </p>

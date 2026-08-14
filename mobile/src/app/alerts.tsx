@@ -38,6 +38,7 @@ function DirectiveCard({ d, now, past }: Readonly<{ d: Directive; now: number; p
           <View style={s.chip}>
             <Text style={s.chipText}>{DIRECTIVE_KIND_LABEL[d.kind]}</Text>
           </View>
+          {d.automated ? <View style={s.chip}><Text style={s.chipText}>AUTOMATED</Text></View> : null}
           {d.area ? <Text style={s.area} numberOfLines={1}>{d.area}</Text> : null}
         </View>
 

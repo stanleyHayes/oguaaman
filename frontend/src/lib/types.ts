@@ -250,6 +250,36 @@ export interface StoreItem {
   available: boolean;
 }
 
+export interface CommerceOrderLine { productId: string; name: string; quantity: number; unitPesewas: number; subtotalPesewas: number }
+export interface CommerceOrder {
+  id: string; reference: string; listingId: string; listingSlug: string; businessName: string;
+  buyerId?: string; buyerName: string; buyerEmail: string; buyerPhone: string;
+  fulfilment: "pickup" | "delivery"; deliveryAddress?: string; note?: string;
+  lines: CommerceOrderLine[]; couponCode?: string; subtotalPesewas: number;
+  discountPesewas: number; amountPesewas: number; platformFeePesewas: number;
+  businessNetPesewas: number; status: "pending" | "paid" | "processing" | "ready" | "fulfilled" | "cancelled" | "refunded";
+  simulated?: boolean; createdAt: string; paidAt?: string; updatedAt: string;
+}
+
+export interface BusinessVerification {
+  id: string; listingId: string; listingSlug: string; ownerId: string; legalName: string;
+  registrationNumber: string; taxIdentificationNo?: string; ghanaCardNumber: string;
+  businessPhone: string; ghanaPostGPS: string; documents: string[];
+  settlementBankCode: string; settlementAccountNo: string; settlementName: string;
+  paystackSubaccount?: string; status: "draft" | "pending" | "verified" | "rejected" | "revoked";
+  reviewNote?: string; submittedAt?: string; reviewedAt?: string; createdAt: string; updatedAt: string;
+}
+
+export interface BusinessCoupon {
+  id?: string; listingId?: string; ownerType?: "business" | "platform"; fundingSource?: "business" | "platform"; title?: string; code: string; description?: string;
+  discountType: "percent" | "fixed"; discountValue: number; minimumPesewas?: number;
+  maximumDiscountPesewas?: number; redemptionLimit?: number; redemptions?: number;
+  startsAt?: string; endsAt?: string; active: boolean; createdAt?: string; updatedAt?: string;
+}
+export interface AffiliateProgramme { id?: string; listingId?: string; ownerType?: "business"|"platform"; name: string; commissionBps: number; fundingSource?: "business"|"platform"; holdDays: number; active: boolean }
+export interface Affiliate { id?: string; programmeId: string; listingId?: string; code: string; name: string; email: string; payoutPhone?: string; active: boolean }
+export interface AffiliateConversion { id: string; orderReference: string; affiliateCode: string; grossPesewas: number; commissionPesewas: number; status: "reserved"|"converted"|"payable"|"paid"|"void"; holdUntil?: string }
+
 /** One row in a list-style section (stat, team member, timeline, FAQ, doc). */
 export interface SectionItem {
   id?: string;
@@ -356,6 +386,11 @@ export interface NewsArticle {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  automated?: boolean;
+  automationLabel?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourcePublishedAt?: string;
 }
 
 export interface Notification {
@@ -748,6 +783,10 @@ export interface Directive {
   status: DirectiveStatus;
   createdAt: string;       // RFC3339
   createdById: string;
+  automated?: boolean;
+  automationLabel?: string;
+  sourceName?: string;
+  sourceUrl?: string;
 }
 
 /**

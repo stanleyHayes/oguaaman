@@ -420,7 +420,7 @@ export function Select({
         onClick={() => open ? closeMenu() : openMenu()}
         onKeyDown={handleTriggerKeyDown}
         className={`flex w-full min-w-0 items-center gap-2.5 border border-sand bg-cream text-left text-ink shadow-sm transition-[border-color,box-shadow,background-color] hover:border-gold-border/60 focus:border-ai focus:outline-none focus:ring-2 focus:ring-ai/20 disabled:cursor-not-allowed disabled:opacity-50 ${
-          size === "compact" ? "min-h-8 rounded-lg py-1 pl-2.5 pr-1.5 text-xs" : "min-h-10 rounded-xl py-2 pl-3 pr-2 text-sm"
+          size === "compact" ? "min-h-8 rounded-lg py-1 pl-2.5 pr-2.5 text-xs" : "min-h-10 rounded-xl py-2 pl-3 pr-3 text-sm"
         } ${triggerClassName}`}
       >
         {icon ? <span className="shrink-0 text-ink-faint">{icon}</span> : null}

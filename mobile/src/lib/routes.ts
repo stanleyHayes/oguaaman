@@ -65,6 +65,7 @@ export const route = {
   person: (slug: string) => dyn(`/people/${slug}`),
   member: (slug: string) => dyn(`/members/${slug}`),
   business: (slug: string) => dyn(`/business/${slug}`),
+  businessCommerce: (slug: string) => dyn(`/business/${slug}/commerce`),
   property: (slug: string) => dyn(`/rent-stay/${slug}`),
   outsideAgent: (slug: string) => dyn(`/outside/agents/${slug}`),
   project: (slug: string) => dyn(`/projects/${slug}`),

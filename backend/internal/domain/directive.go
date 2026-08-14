@@ -39,9 +39,13 @@ type Directive struct {
 	EffectiveFrom  string `json:"effectiveFrom" bson:"effectiveFrom"`
 	EffectiveUntil string `json:"effectiveUntil,omitempty" bson:"effectiveUntil,omitempty"`
 
-	Status      string `json:"status" bson:"status"` // active | cancelled | expired
-	CreatedAt   string `json:"createdAt" bson:"createdAt"`
-	CreatedByID string `json:"createdById" bson:"createdById"`
+	Status          string `json:"status" bson:"status"` // active | cancelled | expired
+	CreatedAt       string `json:"createdAt" bson:"createdAt"`
+	CreatedByID     string `json:"createdById" bson:"createdById"`
+	Automated       bool   `json:"automated,omitempty" bson:"automated,omitempty"`
+	AutomationLabel string `json:"automationLabel,omitempty" bson:"automationLabel,omitempty"`
+	SourceName      string `json:"sourceName,omitempty" bson:"sourceName,omitempty"`
+	SourceURL       string `json:"sourceUrl,omitempty" bson:"sourceUrl,omitempty"`
 }
 
 // Directive severities — the same four-point scale incidents use.

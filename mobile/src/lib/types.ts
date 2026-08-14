@@ -135,7 +135,16 @@ export interface Listing {
   viewCount?: number;
   details: ListingDetails;
   tributes?: Tribute[];
+  products?: StoreItem[];
+  services?: StoreItem[];
 }
+
+export interface StoreItem { id?: string; name: string; description?: string; pricePesewas?: number; unit?: string; imageUrl?: string; available: boolean }
+export interface CommerceOrder { id: string; reference: string; listingId?:string; listingSlug: string; businessName: string; buyerName?:string; amountPesewas: number; businessNetPesewas?:number; status: string; simulated?: boolean }
+export interface BusinessCoupon { id?:string; listingId?:string; ownerType?:"business"|"platform"; code:string; title?:string; discountType:"percent"|"fixed"; discountValue:number; redemptionLimit?:number; redemptions?:number; active:boolean }
+export interface AffiliateProgramme { id?:string; listingId?:string; name:string; commissionBps:number; fundingSource?:"business"|"platform"; holdDays:number; active:boolean }
+export interface Affiliate { id?:string; programmeId:string; code:string; name:string; email:string; payoutPhone?:string; active:boolean }
+export interface AffiliateConversion { id:string; orderReference:string; affiliateCode:string; commissionPesewas:number; status:"reserved"|"converted"|"payable"|"paid"|"void"; holdUntil?:string }
 
 export interface Stats {
   members: number;
@@ -331,6 +340,11 @@ export interface NewsArticle {
   createdAt: string;
   updatedAt?: string;
   publishedAt?: string;
+  automated?: boolean;
+  automationLabel?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourcePublishedAt?: string;
 }
 
 export interface Notification {
@@ -372,6 +386,10 @@ export interface Directive {
   status: DirectiveStatus;
   createdAt: string;          // RFC3339
   createdById: string;
+  automated?: boolean;
+  automationLabel?: string;
+  sourceName?: string;
+  sourceUrl?: string;
 }
 
 /** Community safety — rescue & early recovery (auto-published on submit). */
