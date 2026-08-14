@@ -2,6 +2,7 @@ import { Section, SectionHeading } from "@/components/ui";
 import { Seal } from "@/components/scenes";
 import { Adinkra } from "@/components/adinkra";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
+import { mediaUrl } from "@/lib/media";
 
 /**
  * The custodians of Oguaa, shown as two parallel TOP-DOWN HIERARCHIES — the
@@ -315,7 +316,7 @@ function ContextFigure({ image, className = "" }: Readonly<{ image: ContextImage
   return (
     <figure className={`group relative min-h-0 overflow-hidden bg-green-900 ${className}`}>
       <img
-        src={image.src}
+        src={mediaUrl(image.src)}
         alt={image.alt}
         loading="lazy"
         decoding="async"

@@ -95,6 +95,21 @@ print(f"  \033[32m✓\033[0m {len(blocks)} JSON-LD block(s) parse")
 PY
 [[ $? -eq 0 ]] && pass=$((pass+1)) || fail=$((fail+1))
 
+head_ "5a · Broken images"
+# /uploads/* is served by the API, not the SPA. A page that resolves an upload
+# against its own origin gets the app shell back with a 200 and text/html, so the
+# image silently renders nothing — no 404 anywhere to notice. Assert the content
+# type directly rather than the status.
+for host in "$SITE" "$CITIZEN"; do
+  ct=$("${CURL[@]}" -o /dev/null -w '%{content_type}' "$host/uploads/seed/posuban.jpg")
+  case "$ct" in
+    image/*) bad "$host serves /uploads itself — media should come from the API" ;;
+    *)       ok "$host does not serve /uploads (correct: $ct)" ;;
+  esac
+done
+ct=$("${CURL[@]}" -o /dev/null -w '%{content_type}' "$API/uploads/seed/posuban.jpg")
+[[ "$ct" == image/* ]] && ok "API serves upload media ($ct)" || bad "API upload media returned '$ct'"
+
 head_ "5b · Dynamic sitemap (shops, products, people, events)"
 expect_code "$CITIZEN/sitemap-listings.xml" 200 "dynamic sitemap reachable on the citizen host"
 expect_type "$CITIZEN/sitemap-listings.xml" "xml" "dynamic sitemap is XML"

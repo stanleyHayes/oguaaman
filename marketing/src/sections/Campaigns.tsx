@@ -2,6 +2,7 @@ import { Section, SectionHeading, CTA as Cta } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { useListings, type Listing } from "@/lib/listings";
 import { PORTAL_APP_URL } from "@/config";
+import { mediaUrl } from "@/lib/media";
 
 // "Fund a Cape Coast dream" — a living strip of community fundraising campaigns
 // started by verified creators, pulled straight from the app. Each card links
@@ -65,7 +66,7 @@ function CampaignCard({ campaign }: Readonly<{ campaign: Listing }>) {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-white/12 bg-white/[0.06] backdrop-blur-sm">
       {campaign.coverImageUrl && (
-        <img src={campaign.coverImageUrl} alt="" className="aspect-[16/10] w-full object-cover" loading="lazy" />
+        <img src={mediaUrl(campaign.coverImageUrl)} alt="" className="aspect-[16/10] w-full object-cover" loading="lazy" />
       )}
       <div className="flex flex-1 flex-col p-5">
         {typeof d.category === "string" && d.category && (

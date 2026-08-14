@@ -1,5 +1,6 @@
 import { Section, SectionHeading } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
+import { mediaUrl } from "@/lib/media";
 
 /**
  * "Sons & daughters of Oguaa" — appended to the Leadership page. The town is
@@ -131,7 +132,7 @@ function FigureCard({
     >
       <figure className={`group relative min-h-64 overflow-hidden ${isWide ? "md:min-h-[24rem]" : "aspect-[4/3]"}`}>
         <img
-          src={figure.image}
+          src={mediaUrl(figure.image)}
           alt={figure.imageAlt}
           loading="lazy"
           decoding="async"

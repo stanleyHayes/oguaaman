@@ -12,6 +12,7 @@ import { DetailHero } from "@/components/detail-hero";
 import { ReportButton } from "@/components/report-button";
 import { initials } from "@/lib/format";
 import { cedis } from "./Projects";
+import { mediaUrl } from "@/lib/cloudinary";
 
 const DONATION_AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
 const MAX_DONATION_CEDIS = 100_000;
@@ -162,7 +163,7 @@ function ReleaseCard({ release, index }: Readonly<{ release: ArtistRelease; inde
   return (
     <article className="group overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-gold-border/45 hover:shadow-[var(--shadow-lift)]">
       <div className="relative aspect-square overflow-hidden bg-[radial-gradient(circle_at_center,rgba(199,162,74,0.28),rgba(18,63,45,0.96)_68%)]">
-        {release.coverImageUrl ? <img src={release.coverImageUrl} alt={`${release.title} artwork`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" /> : <div className="flex h-full items-center justify-center"><span className="h-32 w-32 rounded-full border-[18px] border-gold/65 bg-green-900 shadow-[inset_0_0_0_2px_rgba(246,241,231,0.2)]"><span className="mx-auto mt-[2.55rem] block h-3 w-3 rounded-full bg-cream" /></span></div>}
+        {release.coverImageUrl ? <img src={mediaUrl(release.coverImageUrl)} alt={`${release.title} artwork`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" /> : <div className="flex h-full items-center justify-center"><span className="h-32 w-32 rounded-full border-[18px] border-gold/65 bg-green-900 shadow-[inset_0_0_0_2px_rgba(246,241,231,0.2)]"><span className="mx-auto mt-[2.55rem] block h-3 w-3 rounded-full bg-cream" /></span></div>}
         <span className="absolute left-4 top-4 rounded-full border border-cream/25 bg-green-900/80 px-3 py-1 text-[0.62rem] font-bold tracking-[0.15em] text-cream backdrop-blur-sm">{String(index + 1).padStart(2, "0")} · {kind}</span>
         {release.year && <span className="absolute bottom-4 right-4 rounded-full bg-gold-brand px-3 py-1 text-xs font-bold text-green-900">{release.year}</span>}
       </div>
