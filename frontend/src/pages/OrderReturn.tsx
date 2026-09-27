@@ -8,9 +8,11 @@ import { usePageTitle } from "@/lib/use-page-title";
 export function Component() {
   usePageTitle("Order confirmation");
   const [params] = useSearchParams();
+  const reference = params.get("reference");
   const [order, setOrder] = useState<CommerceOrder | null>(null);
-  const [error, setError] = useState("");
-  useEffect(() => { const reference = params.get("reference"); if (!reference) { setError("The payment reference is missing."); return; } api.confirmOrder(reference).then(setOrder).catch((e: unknown) => setError(e instanceof Error ? e.message : "We could not confirm the payment.")); }, [params]);
+  const [confirmError, setConfirmError] = useState("");
+  useEffect(() => { if (!reference) return; api.confirmOrder(reference).then(setOrder).catch((e: unknown) => setConfirmError(e instanceof Error ? e.message : "We could not confirm the payment.")); }, [reference]);
+  const error = reference ? confirmError : "The payment reference is missing.";
   return <Container className="py-20"><div className="mx-auto max-w-xl rounded-[var(--radius-card)] border border-sand bg-cream p-8 text-center">
     <p className="eyebrow text-gold-text">Secure checkout</p>
     <h1 className="mt-3 text-4xl font-semibold">{order ? "Order confirmed" : error ? "Confirmation needs attention" : "Confirming your payment…"}</h1>

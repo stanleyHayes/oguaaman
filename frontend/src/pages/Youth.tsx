@@ -66,7 +66,7 @@ export function Component() {
 }
 
 function Spotlight({ talents }: Readonly<{ talents: Listing[] }>) {
-  const talentsPage = useClientPagination(talents, PER_PAGE);
+  const { pageItems: talentsItems, page: talentsPageNo, totalPages: talentsPages, goToPage: goToTalentsPage, listRef: talentsListRef } = useClientPagination(talents, PER_PAGE);
   if (talents.length === 0) return null;
   return (
     <Container size="wide" className="py-12">
@@ -78,11 +78,11 @@ function Spotlight({ talents }: Readonly<{ talents: Listing[] }>) {
           accentClass="bg-teal"
         />
       </Reveal>
-      <div ref={talentsPage.listRef} className="mt-8 scroll-mt-24">
+      <div ref={talentsListRef} className="mt-8 scroll-mt-24">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {talentsPage.pageItems.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}
+          {talentsItems.map((p, i) => <StaggerItem key={p.id} index={i} lift><PersonCard person={p} /></StaggerItem>)}
         </div>
-        <Pagination page={talentsPage.page} totalPages={talentsPage.totalPages} onPageChange={talentsPage.goToPage} />
+        <Pagination page={talentsPageNo} totalPages={talentsPages} onPageChange={goToTalentsPage} />
       </div>
     </Container>
   );
@@ -91,7 +91,7 @@ function Spotlight({ talents }: Readonly<{ talents: Listing[] }>) {
 function Board({ opps }: Readonly<{ opps: Listing[] }>) {
   const [filter, setFilter] = useState<KindFilter>("all");
   const shown = filter === "all" ? opps : opps.filter((o) => o.tags.includes(filter));
-  const oppsPage = useClientPagination(shown, PER_PAGE, filter);
+  const { pageItems: oppsItems, page: oppsPageNo, totalPages: oppsPages, goToPage: goToOppsPage, listRef: oppsListRef } = useClientPagination(shown, PER_PAGE, filter);
   return (
     <section className="bg-cream py-12">
       <Container size="wide">
@@ -119,11 +119,11 @@ function Board({ opps }: Readonly<{ opps: Listing[] }>) {
             className={opps.length === 0 ? "mt-8" : ""}
           />
         ) : (
-          <div ref={oppsPage.listRef} className="scroll-mt-24">
+          <div ref={oppsListRef} className="scroll-mt-24">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {oppsPage.pageItems.map((o, i) => <StaggerItem key={o.id} index={i} lift><OpportunityCard opp={o} /></StaggerItem>)}
+              {oppsItems.map((o, i) => <StaggerItem key={o.id} index={i} lift><OpportunityCard opp={o} /></StaggerItem>)}
             </div>
-            <Pagination page={oppsPage.page} totalPages={oppsPage.totalPages} onPageChange={oppsPage.goToPage} />
+            <Pagination page={oppsPageNo} totalPages={oppsPages} onPageChange={goToOppsPage} />
           </div>
         )}
       </Container>

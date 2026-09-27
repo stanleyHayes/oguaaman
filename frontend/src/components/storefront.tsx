@@ -72,7 +72,6 @@ export function Storefront({ business: b }: Readonly<{ business: Listing }>) {
             <div className="mt-7 grid gap-4 sm:grid-cols-2">
               {videos.map((video) => (
                 <figure key={video.id} className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-green-900 shadow-[var(--shadow-card)]">
-                  {/* eslint-disable-next-line jsx-a11y/media-has-caption -- user media; caption optional */}
                   <video src={video.url} controls preload="metadata" playsInline className="aspect-video w-full bg-black" />
                   {video.caption && <figcaption className="bg-cream px-4 py-3 text-xs text-ink-muted">{video.caption}</figcaption>}
                 </figure>
@@ -84,7 +83,6 @@ export function Storefront({ business: b }: Readonly<{ business: Listing }>) {
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
               {videos.map((video) => (
                 <figure key={video.id} className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-green-900 shadow-[var(--shadow-card)]">
-                  {/* eslint-disable-next-line jsx-a11y/media-has-caption -- user media; caption optional */}
                   <video src={video.url} controls preload="metadata" playsInline className="aspect-video w-full bg-black" />
                   {video.caption && <figcaption className="bg-cream px-4 py-3 text-xs text-ink-muted">{video.caption}</figcaption>}
                 </figure>
