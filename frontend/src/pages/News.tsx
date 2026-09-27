@@ -35,14 +35,21 @@ function Cover({ a, sizes }: Readonly<{ a: NewsArticle; sizes: "lg" | "sm" }>) {
   );
 }
 
+// Byline on one line, date + badge on the next — a single wrapping row left
+// the "· date" orphaned on its own line in narrow cards.
 function Meta({ a }: Readonly<{ a: NewsArticle }>) {
+  const when = a.publishedAt ?? a.createdAt;
   return (
-    <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-ink-faint">
-      <span>{a.authorName}</span>
-      {a.automated && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-2 py-0.5 font-semibold uppercase tracking-wide text-gold-text">Automated</span>}
-      {a.authorVerified && <VerifiedBadge iconOnly verifiedAs={a.authorVerifiedAs} />}
-      <span>· {formatDate(a.publishedAt ?? a.createdAt)}</span>
-    </p>
+    <div className="min-w-0 space-y-1.5 text-xs text-ink-faint">
+      <p className="flex items-center gap-1.5">
+        <span className="truncate">{a.authorName}</span>
+        {a.authorVerified && <VerifiedBadge iconOnly verifiedAs={a.authorVerifiedAs} />}
+      </p>
+      <p className="flex flex-wrap items-center gap-2">
+        <time dateTime={when}>{formatDate(when)}</time>
+        {a.automated && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-2 py-0.5 text-[0.62rem] font-bold uppercase leading-none tracking-wide text-gold-text">Automated</span>}
+      </p>
+    </div>
   );
 }
 
@@ -60,7 +67,7 @@ function FeaturedStory({ a }: Readonly<{ a: NewsArticle }>) {
         {a.summary && <p className="mt-4 text-ink-muted">{a.summary}</p>}
         <div className="mt-auto flex items-center justify-between gap-4 border-t border-sand pt-5 text-sm">
           <Meta a={a} />
-          <span className="font-semibold text-green-text transition-transform group-hover:translate-x-0.5">Read story →</span>
+          <span className="shrink-0 whitespace-nowrap font-semibold text-green-text transition-transform group-hover:translate-x-0.5">Read story →</span>
         </div>
       </div>
     </Link>
@@ -76,7 +83,7 @@ function CoverageCard({ a }: Readonly<{ a: NewsArticle }>) {
         {a.summary && <p className="mt-2 line-clamp-3 text-sm text-ink-muted">{a.summary}</p>}
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-sand pt-4 text-xs">
           <Meta a={a} />
-          <span className="font-semibold text-green-text">Read →</span>
+          <span className="shrink-0 whitespace-nowrap font-semibold text-green-text">Read →</span>
         </div>
       </div>
     </Link>
