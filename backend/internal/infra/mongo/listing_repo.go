@@ -306,7 +306,7 @@ func (r *ListingRepo) AvgApprovalHours(ctx context.Context) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	type row struct {
 		SubmittedAt string `bson:"submittedAt"`

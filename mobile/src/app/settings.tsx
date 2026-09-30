@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ROUTES } from "@/lib/routes";
 import { push, replace } from "@/lib/router";
 import { Alert, Image, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from "react-native";
@@ -6,6 +6,7 @@ import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
+import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 import type { BlockedMember, Member } from "@/lib/types";
@@ -147,29 +148,22 @@ function Section({ icon, title, description, children }: Readonly<{ icon: ReactN
 function BlockedAccounts() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const [rows, setRows] = useState<BlockedMember[] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  // useApi loads on mount without a synchronous setState in an effect; rows the
+  // member unblocks here are hidden locally rather than re-fetching the list.
+  const blocked = useApi(() => api.myBlocked(), "blocked-accounts");
+  const [unblocked, setUnblocked] = useState<string[]>([]);
+  const [actionErr, setActionErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      setRows(await api.myBlocked());
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't load your blocked accounts.");
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const rows = blocked.data ? blocked.data.filter((r) => !unblocked.includes(r.slug)) : null;
+  const err = actionErr ?? (blocked.error ? "Couldn't load your blocked accounts." : null);
 
   async function unblock(row: BlockedMember) {
     setBusy(row.slug);
     try {
       await api.unblockMember(row.slug);
-      setRows((prev) => (prev ?? []).filter((r) => r.slug !== row.slug));
+      setUnblocked((prev) => [...prev, row.slug]);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't unblock. Try again.");
+      setActionErr(e instanceof Error ? e.message : "Couldn't unblock. Try again.");
     } finally {
       setBusy(null);
     }

@@ -79,7 +79,7 @@ func (c *Client) SendMessage(ctx context.Context, phone, message string) error {
 		c.log.Error("whatsapp send failed", "phone", phone, "err", err)
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 300 {
 		c.log.Error("whatsapp non-2xx", "phone", phone, "status", resp.StatusCode)
 		return fmt.Errorf("whatsapp API returned %d", resp.StatusCode)

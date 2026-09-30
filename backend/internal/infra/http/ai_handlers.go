@@ -77,17 +77,19 @@ func (h *Handler) AIStream(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	for _, chunk := range chunkText(res.Result, 120) {
-		fmt.Fprintf(w, "event: chunk\ndata: %s\n\n", strings.ReplaceAll(chunk, "\n", "\\n"))
+		if _, err := fmt.Fprintf(w, "event: chunk\ndata: %s\n\n", strings.ReplaceAll(chunk, "\n", "\\n")); err != nil {
+			return // client went away; nothing left to stream to
+		}
 		fl.Flush()
 	}
 	done, err := json.Marshal(map[string]any{"remaining": res.Remaining, "simulated": res.Simulated})
 	if err != nil {
 		h.log.Error("ai stream marshal done payload", "err", err)
-		fmt.Fprintf(w, "event: done\ndata: {\"remaining\":%d,\"simulated\":%t}\n\n", res.Remaining, res.Simulated)
+		_, _ = fmt.Fprintf(w, "event: done\ndata: {\"remaining\":%d,\"simulated\":%t}\n\n", res.Remaining, res.Simulated)
 		fl.Flush()
 		return
 	}
-	fmt.Fprintf(w, "event: done\ndata: %s\n\n", string(done))
+	_, _ = fmt.Fprintf(w, "event: done\ndata: %s\n\n", string(done))
 	fl.Flush()
 }
 

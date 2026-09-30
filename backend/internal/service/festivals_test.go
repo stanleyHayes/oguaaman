@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/oguaa/backend/internal/domain"
 )
@@ -16,9 +18,14 @@ func ev(slug, festival, year, startsAt string) domain.Listing {
 
 func TestFestivals_groupsByFestivalSlug(t *testing.T) {
 	ctx := context.Background()
+	// "Next edition" is judged against today, so the fixture years move with the
+	// clock — a hard-coded year starts failing once that edition's date passes.
+	year := time.Now().UTC().Year()
+	lastFetu := fmt.Sprintf("fetu-%d", year-1)
+	nextFetu := fmt.Sprintf("fetu-%d", year+1)
 	f := &fakeRepo{listings: []domain.Listing{
-		ev("fetu-2025", "fetu-afahye", "2025", "2025-09-06"),
-		ev("fetu-2026", "fetu-afahye", "2026", "2026-09-05"),
+		ev(lastFetu, "fetu-afahye", fmt.Sprint(year-1), fmt.Sprintf("%d-09-06", year-1)),
+		ev(nextFetu, "fetu-afahye", fmt.Sprint(year+1), fmt.Sprintf("%d-09-05", year+1)),
 		ev("bakatue-2026", "edina-bakatue", "2026", "2026-07-07"),
 		{Slug: "plain-gig", Type: domain.TypeEvent, Status: domain.StatusApproved, Title: "A gig", Details: map[string]any{"startsAt": "2026-08-01"}},
 		{Slug: "pending-fetu", Type: domain.TypeEvent, Status: domain.StatusPending, Title: "Pending", Details: map[string]any{"festival": "fetu-afahye", "edition": "2026"}},
@@ -43,8 +50,8 @@ func TestFestivals_groupsByFestivalSlug(t *testing.T) {
 	if fetu.Editions != 2 {
 		t.Errorf("expected 2 fetu editions, got %d", fetu.Editions)
 	}
-	if fetu.NextEdition == nil || fetu.NextEdition.Slug != "fetu-2026" {
-		t.Errorf("expected next edition fetu-2026, got %+v", fetu.NextEdition)
+	if fetu.NextEdition == nil || fetu.NextEdition.Slug != nextFetu {
+		t.Errorf("expected next edition %s, got %+v", nextFetu, fetu.NextEdition)
 	}
 }
 
