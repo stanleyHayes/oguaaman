@@ -7,6 +7,19 @@ import { Adinkra } from "./adinkra";
 import { SectionIcon } from "./section-icon";
 import { dayMonth, formatDate, lifeDates, tagLabel, initials } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
+import { isPromotedNow } from "@/lib/featured";
+
+/** "Sponsored" marker for paid placements (P070 / G136). */
+export function SponsoredLabel({ onDark = false }: Readonly<{ onDark?: boolean }>) {
+  return (
+    <span
+      title="Paid placement — businesses and creators can pay to be featured."
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide ${onDark ? "border-cream/60 bg-black/30 text-cream" : "border-ink-faint/50 text-ink-muted"}`}
+    >
+      Sponsored
+    </span>
+  );
+}
 
 // ── Gradient placeholder (no hosted images) ──────────────────────────────────
 const GRADIENTS: [string, string][] = [
@@ -67,6 +80,7 @@ export function ArtistCard({ artist }: Readonly<{ artist: Listing }>) {
         <div className="p-4">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-xl font-semibold text-ink group-hover:text-clay-text">{d.actName ?? artist.title}</h3>
+            {isPromotedNow(artist) && <SponsoredLabel />}
             {d.spotlight && (
               <span className="rounded-full bg-clay px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-cream">Spotlight</span>
             )}
@@ -102,6 +116,7 @@ export function EventCard({ event }: Readonly<{ event: Listing }>) {
         <h3 className="flex min-w-0 items-center gap-2 font-medium text-ink">
           <span className="min-w-0 flex-1 truncate">{event.title}</span>
           {event.details.anchorFestival && <Adinkra name="sankofa" size={15} className="shrink-0 text-gold-text" />}
+          {isPromotedNow(event) && <SponsoredLabel />}
         </h3>
         <p className="truncate text-sm text-ink-faint">
           {event.details.venue}
@@ -179,6 +194,7 @@ export function BusinessCard({ business }: Readonly<{ business: Listing }>) {
           <div className="flex flex-wrap items-center gap-2">
             <Pill tone="teal">{d.category}</Pill>
             {business.supporter && <Pill tone="gold">★ Supporter</Pill>}
+            {isPromotedNow(business) && <SponsoredLabel />}
           </div>
           <h3 className="mt-3 text-xl font-semibold text-ink group-hover:text-teal-text">{business.title}</h3>
           <p className="mt-2 line-clamp-2 text-sm text-ink-muted">{d.description}</p>
@@ -206,6 +222,11 @@ export function OpportunityCard({ opp }: Readonly<{ opp: Listing }>) {
       <p className="mt-3 text-xs text-ink-faint"><span className="font-medium text-ink-muted">Eligibility:</span> {d.eligibility}</p>
       {d.guardianConsentRequired === true && (
         <p className="mt-2 text-xs text-maroon-900">Guardian consent required for under-18 participants.</p>
+      )}
+      {d.kind === "investment" && (
+        <p className="mt-2 rounded-lg border border-gold-border/40 bg-gold/[0.07] px-3 py-2 text-xs leading-relaxed text-ink-muted">
+          Information only. Oguaa is not a broker, custodian, lender or investment adviser — do your own due diligence before committing money.
+        </p>
       )}
       <div className="mt-auto pt-4">
         <span className="text-xs text-ink-faint">{d.provider}</span>
@@ -346,7 +367,9 @@ export function FeaturedCard({ listing, hero = false, index = 0 }: Readonly<{ li
       <div className="absolute inset-x-0 bottom-0 top-1/4 bg-gradient-to-t from-black/75 via-black/35 to-transparent" aria-hidden />
       <div className={`relative ${hero ? "p-7 sm:p-9" : "p-5"}`}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-gold-brand px-2.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-green-900 shadow-[var(--shadow-card)]">★ Featured</span>
+          {isPromotedNow(listing)
+            ? <SponsoredLabel onDark />
+            : <span className="inline-flex items-center gap-1 rounded-full bg-gold-brand px-2.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-green-900 shadow-[var(--shadow-card)]">★ Featured</span>}
           <span className="rounded-full bg-cream/20 px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-cream backdrop-blur-sm">{FEATURED_LABEL[listing.type] ?? listing.type}</span>
         </div>
         <h3 className={`mt-3 font-semibold leading-[1.05] text-cream ${hero ? "text-4xl sm:text-5xl" : "text-2xl"}`}>{title}</h3>

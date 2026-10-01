@@ -1,10 +1,10 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type SubmitEvent, type ReactNode } from "react";
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta } from "@/components/ui";
 import { ProfileSkeleton } from "@/components/skeleton";
-import { ImageUpload } from "@/components/image-upload";
-import { OutsideChoiceMenu, OutsideDisclaimer, ghs, serviceLabeller } from "@/components/outside";
+import { PrivateDocumentUpload } from "@/components/private-document-upload";
+import { OutsideChoiceMenu, OutsideDisclaimer, serviceLabeller } from "@/components/outside";
 import { api, getToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
@@ -14,8 +14,8 @@ import { usePageTitle } from "@/lib/use-page-title";
 // ── Oguaa Outside · become an agent (apply / edit) ────────────────────────────
 // Members apply to join the vetted-agent directory; if they already have a
 // profile the page shows its vetting status and an edit form instead. The
-// government-ID upload reuses the app's ImageUpload (POST /api/uploads), whose
-// returned URL rides along as idDocUrl.
+// government ID goes through the private document store (POST
+// /api/uploads/private, K8); its opaque `private:` ref rides along as idDocUrl.
 
 interface BecomeAgentData {
   agent: Agent | null;
@@ -52,10 +52,10 @@ function Field({ label, children, hint, required }: Readonly<{ label: string; ch
 }
 
 const STATUS_META: Record<AgentStatus, { label: string; cls: string; note: string }> = {
-  pending: { label: "Pending review", cls: "border-gold-border/40 bg-gold/[0.12] text-gold-text", note: "Your application is with the Oguaa team. We check identity, guarantor and bond before you go live." },
+  pending: { label: "Pending review", cls: "border-gold-border/40 bg-gold/[0.12] text-gold-text", note: "Your application is with the Oguaa team. We check your identity and guarantor before you go live." },
   verified: { label: "Verified", cls: "border-green/40 bg-green/[0.1] text-green-text", note: "You're live in the directory. Clients can find you and send requests." },
   suspended: { label: "Suspended", cls: "border-clay/30 bg-clay/[0.08] text-clay-text", note: "Your profile is temporarily hidden. Contact the Oguaa team to resolve it." },
-  rejected: { label: "Not approved", cls: "border-maroon-900/30 bg-maroon-900/[0.07] text-maroon-text", note: "This application wasn't approved. You can update your details and resubmit." },
+  rejected: { label: "Not approved", cls: "border-maroon-900/30 bg-maroon-900/[0.07] text-maroon-text", note: "This application wasn't approved. Saving changes here does not send it back for review — contact the Oguaa team if you'd like it reconsidered." },
 };
 
 export function Component() {
@@ -84,7 +84,7 @@ export function Component() {
     });
   }
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setSaved(null);
@@ -195,7 +195,7 @@ export function Component() {
               <dl className="mt-4 grid grid-cols-3 overflow-hidden rounded-xl border border-sand bg-paper">
                 <div className="border-r border-sand px-3 py-3">
                   <dt className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink-faint">Bond</dt>
-                  <dd className="mt-1 truncate text-sm font-semibold text-ink" title={`${ghs(agent.bond.amountPesewas)} · ${agent.bond.status || "pending"}`}>{ghs(agent.bond.amountPesewas)}</dd>
+                  <dd className="mt-1 truncate text-sm font-semibold text-ink">Not required yet</dd>
                 </div>
                 <div className="border-r border-sand px-3 py-3">
                   <dt className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink-faint">Reputation</dt>
@@ -276,11 +276,13 @@ export function Component() {
             {/* Verification */}
             <fieldset className="space-y-4 rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)] sm:p-6">
               <legend className="px-1 text-sm font-bold uppercase tracking-wide text-ink-faint"><span className="mr-2 text-gold-text">03</span>Verification</legend>
-              <ImageUpload
+              <PrivateDocumentUpload
                 value={idDocUrl}
                 onChange={setIdDocUrl}
-                label="Government-issued ID *"
-                hint="Ghana Card, passport or driver's licence. Held privately for vetting — never shown publicly."
+                purpose="agent_id"
+                required
+                label="Government-issued ID"
+                hint="Ghana Card, passport or driver's licence — JPG, PNG, WebP or PDF, up to 5 MB. Stored encrypted and seen only by you and Oguaa's vetting officers; never shown publicly."
               />
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Guarantor name" required>
@@ -323,7 +325,7 @@ export function Component() {
           </form>
         </div>
 
-        {/* Sidebar — vetting + bond explainer + disclaimer. */}
+        {/* Sidebar — vetting explainer + disclaimer. No bond is collected today (P31). */}
         <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
           <div className="on-dark on-dark-pin rounded-[var(--radius-card)] border border-green bg-green-900 p-5 shadow-[var(--shadow-lift)]">
             <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-gold">Trust, step by step</p>
@@ -332,7 +334,7 @@ export function Component() {
               {[
                 ["Apply", "Submit your details, ID and a guarantor."],
                 ["Vetting", "Oguaa checks identity and the guarantor."],
-                ["Bond", "Post a refundable good-faith bond."],
+                ["Decision", "A vetting officer approves you, or tells you why not."],
                 ["Go live", "Verified agents appear in the directory."],
               ].map(([k, v], i) => (
                 <li key={k} className="flex gap-3">
@@ -343,9 +345,9 @@ export function Component() {
             </ol>
           </div>
           <div className="rounded-[var(--radius-card)] border border-gold-border/30 bg-gold/[0.08] p-5">
-            <h3 className="text-sm font-bold text-gold-text">The refundable bond</h3>
+            <h3 className="text-sm font-bold text-gold-text">About the bond</h3>
             <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-              Agents post a good-faith bond that Oguaa holds. It's fully refundable when you leave in good standing, and it's what lets clients trust the directory. It can be drawn on to settle a proven dispute.
+              Oguaa does not collect a bond from agents today. Agents are vetted on their identity and a guarantor. A refundable good-conduct bond will be introduced later.
             </p>
           </div>
           <OutsideDisclaimer variant="compact" />

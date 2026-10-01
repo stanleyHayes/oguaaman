@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
-import type { Listing, Plan, Review, Subscription } from "@/lib/types";
+import type { Listing, Plan, Subscription } from "@/lib/types";
 import { api } from "@/lib/api";
-import { completePayment } from "@/lib/paystack";
+import { LEGAL } from "@/lib/legal";
+import { usePaymentConfirm } from "@/lib/use-payment-confirm";
+import { PaymentNotice } from "@/components/payment-notice";
 import { useRecordView } from "@/lib/use-record-view";
 import { useAuth } from "@/lib/auth";
 import { BusinessStructuredData, NoIndex } from "@/components/structured-data";
@@ -14,13 +16,17 @@ import { ReportButton } from "@/components/report-button";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { Breadcrumbs, HeroIcon, HeroWatermark } from "@/components/hero-chrome";
 import { cldCover } from "@/lib/cloudinary";
+import { isPromotedNow } from "@/lib/featured";
 import { formatDate } from "@/lib/format";
+import { paymentErrorMessage } from "@/lib/payments";
+import { affiliateCodeFromLocation } from "@/lib/affiliate-attribution";
+import { NO_REVIEWS, loadBusinessReviews, type ReviewSummary } from "@/lib/business-reviews";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const [business, plans, reviews] = await Promise.all([
     api.business(params.slug!),
     api.plans().catch(() => [] as Plan[]),
-    api.businessReviews(params.slug!).catch(() => ({ reviews: [] as Review[], ratingAvg: 0, ratingCount: 0 })),
+    loadBusinessReviews(params.slug!),
   ]);
   return { business, plans, reviews };
 }
@@ -29,13 +35,15 @@ const cedis = (pesewas: number) =>
   "GH₵ " + (pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 });
 
 export function Component() {
-  const { business: b, plans, reviews: initialReviews } = useLoaderData() as { business: Listing; plans: Plan[]; reviews: { reviews: Review[]; ratingAvg: number; ratingCount: number } };
+  // /s/:handle reuses this Component with its own loader; default the reviews
+  // so a loader that omits them can never crash the page.
+  const { business: b, plans, reviews: initialReviews = NO_REVIEWS } = useLoaderData() as { business: Listing; plans: Plan[]; reviews?: ReviewSummary };
   usePageTitle(b.title);
   useRecordView(b.id);
   const { member } = useAuth();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const d = b.details;
   const isOwner = member?.id === b.ownerId;
   const productCount = (b.products ?? []).filter((item) => item.available).length;
@@ -43,25 +51,15 @@ export function Component() {
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<Subscription | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  const confirmedRef = useRef(false);
+  const payment = usePaymentConfirm<Subscription>(api.confirmSubscription, { returnParam: "sub_ref", onConfirmed: () => revalidator.revalidate() });
+  const { confirmed, confirming } = payment;
 
+  // Partners share /business/:slug?aff=CODE; remember the code for the
+  // attribution window so a later checkout on a product page credits them.
+  const affiliateParam = params.get("aff");
   useEffect(() => {
-    const ref = params.get("sub_ref");
-    if (!ref || confirmedRef.current) return;
-    confirmedRef.current = true;
-    setConfirming(true);
-    api.confirmSubscription(ref)
-      .then((subscription) => {
-        setConfirmed(subscription);
-        setParams({}, { replace: true });
-        revalidator.revalidate();
-      })
-      .catch(() => setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly."))
-      .finally(() => setConfirming(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (affiliateParam) affiliateCodeFromLocation(`?aff=${encodeURIComponent(affiliateParam)}`);
+  }, [affiliateParam]);
 
   const plan = plans.filter((candidate) => candidate.interval === "month").sort((x, y) => x.sortOrder - y.sortOrder)[0];
   const price = plan ? (plan.prices.business ?? plan.prices.default ?? 0) : 0;
@@ -75,21 +73,9 @@ export function Component() {
     setBusy(true);
     try {
       const response = await api.subscribe(b.slug, plan?.slug);
-      await completePayment(response, {
-        onSuccess: async () => {
-          setConfirming(true);
-          try {
-            setConfirmed(await api.confirmSubscription(response.reference));
-            revalidator.revalidate();
-          } catch {
-            setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly.");
-          } finally {
-            setConfirming(false);
-          }
-        },
-      });
+      await payment.complete(response);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not start the payment.");
+      setError(paymentErrorMessage(caught, "Could not start the payment."));
     } finally {
       setBusy(false);
     }
@@ -118,7 +104,9 @@ export function Component() {
               <Reveal delay={0.08} className="mt-5 flex flex-wrap items-center gap-2">
                 {d.category && <span className="rounded-full border border-cream/20 bg-cream/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cream backdrop-blur-sm">{d.category}</span>}
                 {b.supporter && <span className="rounded-full bg-gold-brand px-3 py-1 text-xs font-bold text-green-900">★ Oguaa Supporter</span>}
-                {b.featured && <span className="rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">Featured locally</span>}
+                {isPromotedNow(b)
+                  ? <span className="rounded-full border border-cream/60 bg-black/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cream" title="Paid placement">Sponsored</span>
+                  : b.featured && <span className="rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">Featured locally</span>}
               </Reveal>
               <Reveal as="h1" delay={0.12} className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] text-cream sm:text-6xl lg:text-7xl">{b.title}</Reveal>
               {d.description && <Reveal delay={0.16} className="mt-6 max-w-2xl text-lg leading-relaxed text-cream/82">{d.description}</Reveal>}
@@ -265,10 +253,14 @@ export function Component() {
                 ) : (
                   <div className="mt-4">
                     {error && <p className="mb-2 text-sm text-clay-text">{error}</p>}
+                    <PaymentNotice notice={payment.notice} confirming={confirming} onRecheck={payment.recheck} className="mb-3" />
                     <button type="button" onClick={subscribe} disabled={busy} className="w-full rounded-full bg-gold-brand py-3 text-sm font-semibold text-green-900 transition-colors hover:bg-gold disabled:opacity-60">
                       {subscribeLabel}
                     </button>
-                    <p className="mt-2 text-center text-xs text-ink-faint">Mobile money &amp; cards via Paystack.</p>
+                    <p className="mt-2 text-center text-xs text-ink-faint">
+                      Mobile money &amp; cards via Paystack. See the{" "}
+                      <Link to={LEGAL.termsOfSale} className="underline">Terms of Sale</Link>.
+                    </p>
                   </div>
                 )}
               </div>
@@ -305,7 +297,8 @@ function Stars({ value, size = "text-base" }: Readonly<{ value: number; size?: s
   );
 }
 
-function BusinessReviews({ slug, initial, canReview }: Readonly<{ slug: string; initial: { reviews: Review[]; ratingAvg: number; ratingCount: number }; canReview: boolean }>) {
+function BusinessReviews({ slug, initial, canReview }: Readonly<{ slug: string; initial: ReviewSummary; canReview: boolean }>) {
+  const { member } = useAuth();
   const [data, setData] = useState(initial);
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState("");
@@ -372,7 +365,10 @@ function BusinessReviews({ slug, initial, canReview }: Readonly<{ slug: string; 
                 <Stars value={r.rating} size="text-sm" />
               </div>
               {r.body && <p className="mt-2 text-sm leading-relaxed text-ink-muted">{r.body}</p>}
-              <p className="mt-2 text-xs text-ink-faint">{formatDate(r.createdAt)}</p>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <p className="text-xs text-ink-faint">{formatDate(r.createdAt)}</p>
+                {r.memberId !== member?.id && <ReportButton compact target={{ type: "review", id: r.id }} />}
+              </div>
             </div>
           ))}
         </div>

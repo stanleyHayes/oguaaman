@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLoaderData, useNavigate, type LoaderFunctionArgs } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { api } from "@/lib/api";
-import type { Listing, ListingStatus } from "@/lib/types";
+import type { Listing, ListingStatus, Member } from "@/lib/types";
 import { BackLink, Card, StatusBadge, Pill, KeyVal } from "@/components/ui";
 import { AiWritingBar } from "@/components/ai-writing-bar";
 import { formatDate, titleCase } from "@/lib/format";
@@ -12,7 +12,7 @@ import { BusyLabel } from "@/components/skeleton";
 interface Data { listing: Listing; ownerName: string }
 
 export async function loader({ params }: LoaderFunctionArgs): Promise<Data> {
-  const [listings, queue, members] = await Promise.all([api.listings(), api.queue(), api.members()]);
+  const [listings, queue, members] = await Promise.all([api.listings(), api.queue(), api.members().catch(() => [] as Member[])]);
   const byId = new Map<string, Listing>();
   for (const l of [...listings, ...queue]) byId.set(l.id, l);
   const listing = byId.get(params.id!);

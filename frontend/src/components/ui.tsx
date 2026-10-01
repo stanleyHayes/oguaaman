@@ -174,6 +174,11 @@ export function CTA({
   if (external) {
     return <a href={to} target="_blank" rel="noopener noreferrer" className={cls}>{children}</a>;
   }
+  // An in-page anchor: a router <Link> only pushes the hash and never scrolls,
+  // so let the browser handle the fragment natively.
+  if (to.startsWith("#")) {
+    return <a href={to} className={cls}>{children}</a>;
+  }
   return <Link to={to} className={cls}>{children}</Link>;
 }
 

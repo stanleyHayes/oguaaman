@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useLoaderData, useRevalidator } from "react-router-dom";
-import { api } from "@/lib/api";
+import { api, isForbidden } from "@/lib/api";
 import type { Agent, AgentBondStatus, AgentStatus, AgentType } from "@/lib/types";
 import { PageHeader, Card, Empty, Pill } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { formatDate } from "@/lib/format";
 import { BusyLabel } from "@/components/skeleton";
 import { useAuth } from "@/lib/auth";
+import { PrivateDocument } from "@/components/private-document";
 
 /** A non-vetting staff member who reaches the page directly gets a friendly wall
  *  instead of the route error boundary — the loader detects the 403 and returns
@@ -18,7 +19,7 @@ export async function loader(): Promise<AgentsData> {
   try {
     return await api.adminAgents();
   } catch (e) {
-    if ((e as { status?: number }).status === 403) return FORBIDDEN;
+    if (isForbidden(e)) return FORBIDDEN;
     throw e;
   }
 }
@@ -45,8 +46,9 @@ const STATUS_ORDER: AgentStatus[] = ["pending", "verified", "suspended", "reject
 const TYPE_LABEL: Record<AgentType, string> = { individual: "Individual", office: "Office" };
 
 const BOND_META: Record<AgentBondStatus, { label: string; badge: string }> = {
-  pending: { label: "Bond pending", badge: "bg-gold/[0.18] text-gold-text" },
-  held: { label: "Bond held", badge: "bg-green/[0.1] text-green-text" },
+  // No bond is charged yet (P31): "held" is only set on approval, no money moved.
+  pending: { label: "Not collected", badge: "bg-sand text-ink-muted" },
+  held: { label: "Not collected", badge: "bg-sand text-ink-muted" },
   refunded: { label: "Bond refunded", badge: "bg-sand text-ink-muted" },
   forfeited: { label: "Bond forfeited", badge: "bg-maroon-900/[0.1] text-maroon-text" },
 };
@@ -91,8 +93,8 @@ export function Component() {
 
       <p className="mb-5 max-w-2xl text-sm text-ink-muted">
         Local agents who run paid, escrow-backed errands for diaspora clients. A vetting officer approves an applicant
-        only after a background check — verifying the ID document, calling the guarantor, and confirming the good-conduct
-        bond is posted. Verified agents can be suspended if trust breaks down.
+        only after a background check — verifying the ID document and calling the guarantor. No good-conduct bond is
+        collected yet; it will be introduced later. Verified agents can be suspended if trust breaks down.
       </p>
 
       {agents.length === 0 ? (
@@ -211,12 +213,12 @@ function AgentCard({ agent, canVet, onChanged }: Readonly<AgentCardProps>) {
             <dt className="text-xs text-ink-faint">ID document</dt>
             <dd className="text-sm text-ink">
               {agent.idDocUrl
-                ? <a href={agent.idDocUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-ai underline hover:text-green-text">View ID document</a>
+                ? <PrivateDocument docRef={agent.idDocUrl} label="ID document" />
                 : <span className="text-ink-faint">Not provided</span>}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-ink-faint">Good-conduct bond</dt>
+            <dt className="text-xs text-ink-faint">Good-conduct bond (not charged yet)</dt>
             <dd className="mt-0.5 flex items-center gap-2 text-sm text-ink">
               {cedis(agent.bond.amountPesewas)}
               <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-semibold ${bond.badge}`}>{bond.label}</span>

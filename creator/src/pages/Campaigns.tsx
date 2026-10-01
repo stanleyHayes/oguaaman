@@ -40,6 +40,17 @@ interface Draft {
   deadline: string;
 }
 
+/**
+ * A typed cedi amount in pesewas: thousands separators and spaces are allowed
+ * ("5,000" = GH₵5,000), anything else that isn't a plain decimal is rejected
+ * (0) so the Goal step stays blocked rather than silently parsing "5,000" as 5.
+ */
+function parseCedis(input: string): number {
+  const plain = input.replace(/[\s,]/g, "").replace(/^GH₵|^GHS/i, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(plain)) return 0;
+  return Math.round(Number(plain) * 100);
+}
+
 const EMPTY_DRAFT: Draft = { title: "", category: "", coverImageUrl: "", description: "", goalCedis: "", deadline: "" };
 
 export function Component() {
@@ -54,7 +65,7 @@ export function Component() {
   const [err, setErr] = useState<string | null>(null);
   const set = (k: keyof Draft, v: string) => setDraft((d) => ({ ...d, [k]: v }));
 
-  const goalPesewas = Math.round(Number.parseFloat(draft.goalCedis || "0") * 100);
+  const goalPesewas = parseCedis(draft.goalCedis);
   const stepValid = [
     draft.title.trim().length >= 2,
     draft.description.trim().length >= 20,
@@ -185,7 +196,10 @@ export function Component() {
               {step === 2 && (
                 <>
                   <Field label="Funding goal (GH₵)">
-                    <input value={draft.goalCedis} onChange={(e) => set("goalCedis", e.target.value)} inputMode="decimal" className={inputCls} placeholder="5000" />
+                    <input value={draft.goalCedis} onChange={(e) => set("goalCedis", e.target.value)} inputMode="decimal" className={inputCls} placeholder="5000" aria-describedby="goal-hint" />
+                    <span id="goal-hint" className={`mt-1 block text-xs ${draft.goalCedis.trim() && goalPesewas < 500 ? "text-clay-text" : "text-ink-faint"}`}>
+                      {draft.goalCedis.trim() && goalPesewas === 0 ? "Enter the amount in cedis, e.g. 5000 or 5,000." : goalPesewas > 0 ? `Goal: GH₵ ${(goalPesewas / 100).toLocaleString("en-GH")} (at least GH₵ 5).` : "At least GH₵ 5."}
+                    </span>
                   </Field>
                   <Field label="Deadline (optional)">
                     <input type="date" value={draft.deadline} onChange={(e) => set("deadline", e.target.value)} className={inputCls} />

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { SymbolDivider } from "@/components/adinkra";
 import { Reveal } from "@/components/motion";
 import { Section, SectionHeading } from "@/components/ui";
@@ -237,12 +238,12 @@ export function History() {
                     {crossing.title}
                   </h3>
                   <p className="mt-6 max-w-xl text-lg leading-relaxed text-cream/85">{crossing.text}</p>
-                  <a
-                    href="/visit/cape-coast-castle"
+                  <Link
+                    to="/visit/cape-coast-castle"
                     className="mt-8 inline-flex min-h-11 items-center gap-2 border-b border-cream/55 pb-1 text-sm font-semibold text-cream transition-colors hover:border-cream"
                   >
                     Approach the Castle with care <span aria-hidden="true">→</span>
-                  </a>
+                  </Link>
                 </Reveal>
                 <Reveal className="min-w-0" delay={0.08}>
                   <ArchivePhoto

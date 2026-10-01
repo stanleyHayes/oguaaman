@@ -1,5 +1,5 @@
 import { Link, useLoaderData } from "react-router-dom";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing, Organization, Place } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -24,7 +24,10 @@ export async function loader(): Promise<Data> {
   const [opps, memories, events, schools, places] = await Promise.all([
     api.opportunities(), api.memories(), api.events(), api.schools(), api.places(),
   ]);
-  return { opps, memories, events: events.filter((event) => (event.details.startsAt ?? "") >= "2026-06-03").slice(0, 2), schools, places };
+  // Upcoming = not yet over (its last day is today or later).
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = events.filter((event) => (event.details.endsAt || event.details.startsAt || "").slice(0, 10) >= today);
+  return { opps, memories, events: upcoming.slice(0, 2), schools, places };
 }
 
 const FILTER_CLS = "min-w-0 rounded-lg border border-sand bg-paper px-3 py-2.5 text-sm text-ink transition-colors focus:border-gold-border focus:outline-none focus:ring-2 focus:ring-gold/15";
@@ -40,18 +43,23 @@ function MemoryWall({ initial, schools, places }: Readonly<{ initial: Listing[];
   const [visibleCount, setVisibleCount] = useState(MEMORY_PAGE);
   const quarters = places.filter((place) => place.kind === "quarter");
   const activeFilters = [school, town, era].filter(Boolean).length;
+  // Only the latest filter request may update the wall; slower earlier
+  // responses are ignored.
+  const latestRequest = useRef(0);
 
   async function applyFilter(next: { school: string; town: string; era: string }) {
+    const request = ++latestRequest.current;
     setLoading(true);
     setFilterError(false);
     try {
       const result = await api.memories({ school: next.school || undefined, town: next.town || undefined, era: next.era || undefined });
+      if (request !== latestRequest.current) return;
       setMemories(result);
       setVisibleCount(MEMORY_PAGE);
     } catch {
-      setFilterError(true);
+      if (request === latestRequest.current) setFilterError(true);
     } finally {
-      setLoading(false);
+      if (request === latestRequest.current) setLoading(false);
     }
   }
 

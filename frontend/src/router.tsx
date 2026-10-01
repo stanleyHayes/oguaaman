@@ -70,11 +70,17 @@ export const router = createBrowserRouter([
       { path: "submit", lazy: () => import("./pages/Submit") },
       { path: "me", lazy: () => import("./pages/Me") },
       { path: "admin", lazy: () => import("./pages/Admin") },
+      // Public data-rights pages: Google Play's web deletion URL (K6) and the
+      // Act 843 request form (K10).
+      { path: "account/delete", lazy: () => import("./pages/DeleteAccount") },
+      { path: "privacy/request", lazy: () => import("./pages/PrivacyRequest") },
       { path: "admin/compose", lazy: () => import("./pages/Compose") },
       { path: "privacy", lazy: () => import("./pages/Legal") },
       { path: "terms", lazy: () => import("./pages/Legal") },
       { path: "acceptable-use", lazy: () => import("./pages/Legal") },
       { path: "safeguarding", lazy: () => import("./pages/Legal") },
+      { path: "terms-of-sale", lazy: () => import("./pages/Legal") },
+      { path: "child-safety", lazy: () => import("./pages/Legal") },
     ],
   },
 ]);

@@ -9,6 +9,7 @@ import { LocationMap } from "@/components/location-map";
 import { DetailHero } from "@/components/detail-hero";
 import { SectionIcon } from "@/components/section-icon";
 import { ReportButton } from "@/components/report-button";
+import { EmergencyCallout } from "@/components/emergency-callout";
 import { formatDate } from "@/lib/format";
 import { CATEGORY_LABEL, STATUS_LABEL } from "@/lib/incidents";
 
@@ -63,6 +64,14 @@ export function Component() {
         {town && <span className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs font-medium text-cream backdrop-blur-sm">{town.name}</span>}
       </DetailHero>
 
+      <Container size="wide" className="pt-8">
+        <EmergencyCallout />
+        {(incident.held || incident.status === "pending") && (
+          <p role="status" className="mt-4 rounded-[var(--radius-card)] border border-gold-border/50 bg-gold/[0.08] px-5 py-3 text-sm text-gold-text">
+            <strong className="font-semibold">Sent to curators for review.</strong> Only you and Oguaa&rsquo;s safety curators can see this report until a curator publishes it.
+          </p>
+        )}
+      </Container>
       <Container size="wide" className="grid gap-8 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.85fr)] lg:gap-10">
         <div>
           <section className="overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]">
@@ -122,7 +131,8 @@ export function Component() {
               <KeyVal label="Severity"><span className="capitalize">{details.severity}</span></KeyVal>
               <KeyVal label="Location">{details.location}</KeyVal>
               {town && <KeyVal label="Area">{town.name}</KeyVal>}
-              {details.contact && <KeyVal label="Reporter contact">{details.contact}</KeyVal>}
+              {/* The reporter's phone reaches only the reporter and safety staff (D3); label it as private. */}
+              {details.contact && <KeyVal label="Reporter phone (private)">{details.contact}</KeyVal>}
               <KeyVal label="Reported">{formatDate(incident.createdAt)}</KeyVal>
             </dl>
             <div className="mt-5 grid gap-2">
@@ -159,7 +169,8 @@ function TimelineEntry({ entry, latest, index }: Readonly<{ entry: IncidentStatu
           {latest && <span className="rounded-full bg-gold/[0.18] px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold-text">Latest</span>}
         </div>
         {entry.note && <p className="mt-1 text-sm leading-relaxed text-ink-muted">{entry.note}</p>}
-        <p className="mt-2 text-xs text-ink-faint">Updated by {entry.by}</p>
+        {/* `by` is an internal member id (and absent for the public), so show the role instead. */}
+        <p className="mt-2 text-xs text-ink-faint">{entry.status === "reported" ? "Reported by a community member" : "Updated by Oguaa safety curators"}</p>
       </div>
       <time dateTime={entry.at} className="text-xs text-ink-faint sm:text-right">
         {formatDate(entry.at)}{entry.at.includes("T") ? <span className="block">{entry.at.slice(11, 16)} GMT</span> : null}

@@ -7,6 +7,9 @@ import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 // A controlled photo/video gallery editor for the business storefront: add from
 // device (multiple), delete, replace one, caption, and reorder. Enforces the
 // per-kind cap (10 photos / 5 videos). The parent owns the array and persists it.
+// Changes are sent as updaters over the parent's latest list, so edits made
+// while an upload is running (captions, order, deletes) are not overwritten
+// when the upload finishes.
 export function StorefrontMediaEditor({
   kind,
   items,
@@ -16,7 +19,7 @@ export function StorefrontMediaEditor({
   kind: "photo" | "video";
   items: MediaAsset[];
   max: number;
-  onChange: (next: MediaAsset[]) => void;
+  onChange: (update: (prev: MediaAsset[]) => MediaAsset[]) => void;
 }>) {
   const addRef = useRef<HTMLInputElement>(null);
   const replaceRef = useRef<HTMLInputElement>(null);
@@ -52,16 +55,17 @@ export function StorefrontMediaEditor({
     setError(null);
     setBusy(true);
     setProgress(0);
+    const added: MediaAsset[] = [];
     try {
-      const added: MediaAsset[] = [];
       for (const f of files) {
         const asset = await uploadOne(f);
         if (asset) added.push(asset);
       }
-      if (added.length) onChange([...items, ...added]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
+      // Keep whatever uploaded before a later file failed.
+      if (added.length) onChange((prev) => [...prev, ...added].slice(0, max));
       setBusy(false);
       if (addRef.current) addRef.current.value = "";
     }
@@ -71,12 +75,13 @@ export function StorefrontMediaEditor({
     const file = e.target.files?.[0];
     const idx = replaceIndex.current;
     if (!file || idx == null) return;
+    const targetId = items[idx]?.id;
     setError(null);
     setBusy(true);
     setProgress(0);
     try {
       const asset = await uploadOne(file);
-      if (asset) onChange(items.map((m, i) => (i === idx ? { ...asset, id: m.id, caption: m.caption } : m)));
+      if (asset) onChange((prev) => prev.map((m) => (m.id === targetId ? { ...asset, id: m.id, caption: m.caption } : m)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -87,17 +92,19 @@ export function StorefrontMediaEditor({
   }
 
   function remove(i: number) {
-    onChange(items.filter((_, idx) => idx !== i));
+    onChange((prev) => prev.filter((_, idx) => idx !== i));
   }
   function move(i: number, dir: -1 | 1) {
-    const j = i + dir;
-    if (j < 0 || j >= items.length) return;
-    const next = [...items];
-    [next[i], next[j]] = [next[j], next[i]];
-    onChange(next);
+    onChange((prev) => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
   }
   function caption(i: number, value: string) {
-    onChange(items.map((m, idx) => (idx === i ? { ...m, caption: value } : m)));
+    onChange((prev) => prev.map((m, idx) => (idx === i ? { ...m, caption: value } : m)));
   }
 
   return (

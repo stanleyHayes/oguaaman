@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate, useNavigation } from "react-router-dom";
+import { LegalLinks } from "./legal-links";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ContextualHelp } from "@/components/contextual-help";
 import { PageTransition } from "@/components/page-transition";
@@ -577,6 +578,9 @@ export function CreatorLayout() {
             </PageTransition>
           </div>
         </main>
+        <footer className="px-4 pb-6 pt-2 sm:px-6 lg:px-8">
+          <LegalLinks className="text-ink-faint" />
+        </footer>
       </div>
 
       {tour && <Tour steps={CREATOR_TOUR} onDone={closeTour} />}

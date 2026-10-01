@@ -1,21 +1,23 @@
-import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate, useNavigation } from "react-router-dom";
+import { Link, NavLink, Outlet, isRouteErrorResponse, useRouteError, useLocation, useNavigate, useNavigation, useRevalidator } from "react-router-dom";
+import { ApiError, isForbidden, isMfaRequired } from "@/lib/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PageTransition } from "@/components/page-transition";
 import { ContextHelp } from "@/components/context-help";
 import { useAuth } from "@/lib/auth";
 import { getAdminHelpTopic } from "@/lib/help-content";
+import { canAccess } from "@/lib/roles";
 import {
   Gauge, LayoutDashboard, ShieldCheck, Inbox, List, Flag, ShieldAlert, History,
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
   Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
   LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, Target, HeartHandshake,
-  Handshake, UserCheck, Scale, CircleHelp, type LucideIcon,
+  Handshake, UserCheck, Scale, CircleHelp, FileLock, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PageSkeleton } from "@/components/skeleton";
 
-interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number; roles?: string[] }
+interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
 interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -35,17 +37,17 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Alerts",
     icon: Siren,
     items: [
-      { to: "/directives", label: "Directives", icon: Megaphone, roles: ["curator", "steward"] },
-      { to: "/goals", label: "Town goals", icon: Target, roles: ["curator", "steward", "accountability"] },
-      { to: "/civic", label: "Civic pledges", icon: HeartHandshake, roles: ["curator", "steward"] },
+      { to: "/directives", label: "Directives", icon: Megaphone },
+      { to: "/goals", label: "Town goals", icon: Target },
+      { to: "/civic", label: "Civic pledges", icon: HeartHandshake },
     ],
   },
   {
     title: "Oguaa Outside",
     icon: Handshake,
     items: [
-      { to: "/outside-agents", label: "Vetting queue", icon: UserCheck, roles: ["vetting", "steward"] },
-      { to: "/outside-disputes", label: "Disputes", icon: Scale, roles: ["vetting", "steward"] },
+      { to: "/outside-agents", label: "Vetting queue", icon: UserCheck },
+      { to: "/outside-disputes", label: "Disputes", icon: Scale },
     ],
   },
   {
@@ -56,6 +58,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/institutions", label: "Institutions", icon: Landmark },
       { to: "/places", label: "Places", icon: MapPin },
       { to: "/claims", label: "Claims", icon: BadgeCheck },
+      { to: "/privacy-requests", label: "Privacy requests", icon: FileLock },
       { to: "/projects", label: "Projects", icon: HandCoins },
       { to: "/tickets", label: "Tickets", icon: Ticket },
     ],
@@ -96,10 +99,10 @@ const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 const MODERATOR_PATHS = new Set(["/moderation", "/listings", "/reports", "/incidents", "/help"]);
 
 function visibleGroups(role: string | undefined): NavGroup[] {
-  // Items may declare a `roles` allowlist (e.g. directives authoring is
-  // curator/steward, matching the backend's requireRole gate).
+  // Each page's role allowlist lives in ROUTE_ROLES, matching the backend's
+  // requireRole gate on the endpoints its loader calls.
   const byRole = NAV_GROUPS
-    .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || (role != null && i.roles.includes(role))) }))
+    .map((g) => ({ ...g, items: g.items.filter((i) => canAccess(role, i.to)) }))
     .filter((g) => g.items.length > 0);
   if (role !== "moderator") return byRole;
   // Moderators are further limited to the triage-focused routes.
@@ -664,15 +667,53 @@ export function AdminLayout() {
   );
 }
 
+/** A human line for a route error: role refusals and the 2FA gate are not
+ *  outages, so they must not read "the API may be offline". */
+function describeRouteError(err: unknown): { title: string; detail: string; retry: boolean } {
+  if (isMfaRequired(err)) {
+    return { title: "Two-factor needed", detail: "Turn on two-factor authentication to use staff tools.", retry: false };
+  }
+  if (isForbidden(err)) {
+    return { title: "Not available for your role", detail: "This page belongs to another staff role. Ask a steward if you need access.", retry: false };
+  }
+  if (isRouteErrorResponse(err)) {
+    return { title: "Something went wrong", detail: `${err.status} ${err.statusText}`, retry: true };
+  }
+  if (err instanceof ApiError) {
+    return { title: "Couldn't load this page", detail: err.message, retry: true };
+  }
+  return { title: "Couldn't load this page", detail: "The API may be offline or unreachable. Try again in a moment.", retry: true };
+}
+
+/** Page-level error boundary: renders inside the shell so navigation stays. */
+export function PageError() {
+  const err = useRouteError();
+  const { revalidate, state } = useRevalidator();
+  const { title, detail, retry } = describeRouteError(err);
+  return (
+    <div className="mx-auto max-w-lg py-16 text-center">
+      <h1 className="text-2xl font-semibold text-ink">{title}</h1>
+      <p className="mt-3 text-sm text-ink-muted">{detail}</p>
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        {retry && (
+          <button type="button" onClick={() => revalidate()} disabled={state === "loading"} className="rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green disabled:opacity-60">
+            Try again
+          </button>
+        )}
+        <Link to="/" className="rounded-full border border-sand px-5 py-2.5 text-sm font-semibold text-ink-muted hover:text-ink">Go to overview</Link>
+      </div>
+    </div>
+  );
+}
+
 export function AdminError() {
   const err = useRouteError();
-  const msg = isRouteErrorResponse(err) ? `${err.status} ${err.statusText}` : "The API may be offline.";
+  const { title, detail } = describeRouteError(err);
   return (
     <div className="flex min-h-screen items-center justify-center p-8 text-center">
       <div>
-        <h1 className="text-4xl font-semibold">Something went wrong</h1>
-        <p className="mt-3 text-ink-muted">{msg}</p>
-        <p className="mt-2 text-sm text-ink-faint">Is the Go API running on :8080?</p>
+        <h1 className="text-4xl font-semibold">{title}</h1>
+        <p className="mt-3 text-ink-muted">{detail}</p>
         <a href="/" className="mt-6 inline-block rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green">Reload</a>
       </div>
     </div>

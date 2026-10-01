@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject, type SubmitEvent } from "react";
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
@@ -8,6 +8,7 @@ import { Adinkra } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
 import { DatePicker } from "@/components/date-picker";
 import { OtpInput } from "@/components/otp-input";
+import { LEGAL } from "@/lib/legal";
 
 const inputCls =
   "w-full rounded-xl border border-sand bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
@@ -19,7 +20,7 @@ const TRUST_COMMON = [
 
 const TRUST_JOIN = [
   ...TRUST_COMMON,
-  "Your date of birth stays private — it's an age check only",
+  "Your date of birth is an age check only — we don't keep it",
 ];
 
 type Mode = "signin" | "join";
@@ -214,6 +215,7 @@ function SignInForm({
   err,
   onSubmit,
   onSwitchMode,
+  onForgot,
 }: Readonly<{
   identifier: string;
   setIdentifier: (v: string) => void;
@@ -221,36 +223,29 @@ function SignInForm({
   setPassword: (v: string) => void;
   busy: boolean;
   err: string | null;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   onSwitchMode: (m: Mode) => void;
+  onForgot: () => void;
 }>) {
-  // The backend's specific 401 when the account exists but was never given a
-  // password — it must be claimed through Join.
-  const claimable = err != null && /no password yet/i.test(err);
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
         <h2 className="text-2xl font-semibold text-ink">Sign in</h2>
-        <p className="mt-1 text-sm text-ink-muted">Enter your email and your password.</p>
+        <p className="mt-1 text-sm text-ink-muted">Enter the email or phone number on your account, and your password.</p>
       </div>
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Email</span>
-        <input type="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="email" placeholder="you@example.com" className={inputCls} />
+        <span className="mb-1.5 block text-sm font-medium text-ink">Email or phone</span>
+        {/* Accounts made in the mobile app or by invite may use a phone number. */}
+        <input type="text" inputMode="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="you@example.com or +233…" className={inputCls} />
       </label>
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
         <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" placeholder="Your password" />
+        <button type="button" onClick={onForgot} className="mt-2 text-xs font-medium text-ink-muted underline hover:text-ink">
+          Forgot password, or invited and never set one?
+        </button>
       </label>
-      {err && (
-        <div className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">
-          <p>{err}</p>
-          {claimable && (
-            <button type="button" onClick={() => onSwitchMode("join")} className="mt-1 font-medium underline hover:text-clay">
-              Join to claim it →
-            </button>
-          )}
-        </div>
-      )}
+      {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
       <button type="submit" disabled={busy} className={submitBtnCls}>
         {busy ? "Signing in…" : "Sign in"}
       </button>
@@ -264,21 +259,100 @@ function SignInForm({
   );
 }
 
-function MfaForm({ code, setCode, busy, err, onSubmit, onCancel }: Readonly<{
+/**
+ * "Forgot password" (K3): a code goes to the account's email or phone, then the
+ * member sets a new password. Invited accounts set their first password here.
+ */
+function ForgotPasswordForm({ initialIdentifier, onDone, onCancel }: Readonly<{
+  initialIdentifier: string;
+  onDone: (identifier: string) => void;
+  onCancel: () => void;
+}>) {
+  const [identifier, setIdentifier] = useState(initialIdentifier);
+  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const start = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setBusy(true); setErr(null);
+    try {
+      await api.startPasswordReset(identifier.trim());
+      setSent(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "We couldn't send a code right now. Try again later.");
+    } finally { setBusy(false); }
+  };
+
+  const confirm = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (password.length < 8) { setErr("Your new password must be at least 8 characters."); return; }
+    setBusy(true); setErr(null);
+    try {
+      await api.confirmPasswordReset(identifier.trim(), code.trim(), password);
+      onDone(identifier.trim());
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "That code is incorrect or has expired.");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <form onSubmit={sent ? confirm : start} className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-semibold text-ink">Set a new password</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          {sent
+            ? "If an account uses that email or phone, we've sent it a 6-digit code. Enter it with your new password."
+            : "Enter the email or phone on your account. We'll send a code so you can choose a new password. If someone invited you to Oguaa, this is how you set your first one."}
+        </p>
+      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink">Email or phone</span>
+        <input type="text" inputMode="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required disabled={sent} autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="you@example.com or +233…" className={inputCls} />
+      </label>
+      {sent && (
+        <>
+          <div className="block">
+            <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
+            <OtpInput value={code} onChange={setCode} ariaLabel="Reset code" autoFocus />
+          </div>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-ink">New password</span>
+            <PasswordInput value={password} onChange={setPassword} minLength={8} autoComplete="new-password" placeholder="At least 8 characters" />
+          </label>
+        </>
+      )}
+      {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
+      <button type="submit" disabled={busy} className={submitBtnCls}>
+        {busy ? "Please wait…" : sent ? "Save new password" : "Send me a code"}
+      </button>
+      <p className="text-center text-xs text-ink-faint">
+        <button type="button" onClick={onCancel} className="font-medium text-ink-muted underline hover:text-ink">
+          ← Back to sign in
+        </button>
+      </p>
+    </form>
+  );
+}
+
+function MfaForm({ code, setCode, busy, err, onSubmit, onComplete, onCancel }: Readonly<{
   code: string;
   setCode: (v: string) => void;
   busy: boolean;
   err: string | null;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
+  /** Called with the full code the moment the last digit lands. */
+  onComplete: (code: string) => void;
   onCancel: () => void;
 }>) {
   // The verify step accepts either a 6-digit authenticator code (the OtpInput)
   // or a longer alphanumeric recovery code — a single free-text field the user
   // can switch to. Both bind to the same `code` state so submit logic is unchanged.
   const [recovery, setRecovery] = useState(false);
-  const formRef = useRef<HTMLFormElement | null>(null);
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-5">
       <div>
         <h2 className="text-2xl font-semibold text-ink">Two-factor check</h2>
         <p className="mt-1 text-sm text-ink-muted">Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
@@ -305,7 +379,9 @@ function MfaForm({ code, setCode, busy, err, onSubmit, onCancel }: Readonly<{
           <OtpInput
             value={code}
             onChange={setCode}
-            onComplete={() => formRef.current?.requestSubmit()}
+            // Submit the value OtpInput hands over: state set in the same
+            // event has not re-rendered yet, so reading it would be stale.
+            onComplete={(value) => { if (!busy) onComplete(value); }}
             autoFocus
             ariaLabel="Authenticator code"
           />
@@ -519,7 +595,7 @@ function JoinForm({
   err: string | null;
   onNext: () => void;
   onBack: () => void;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   onSwitchMode: (m: Mode) => void;
 }>) {
   const stepTitles = asCreator ? CREATOR_STEP_TITLES : CITIZEN_STEP_TITLES;
@@ -611,11 +687,12 @@ function JoinForm({
                 <label className="block">
                   <span className="mb-1.5 block text-sm font-medium text-ink">Email</span>
                   <input type="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required autoComplete="email" placeholder="you@example.com" className={inputCls} />
+                  <span className="mt-1.5 block text-xs text-ink-faint">Required. We use it to sign you in and to send account and safety messages. It is never shown publicly.</span>
                 </label>
                 <div className="block">
                   <span className="mb-1.5 block text-sm font-medium text-ink">Date of birth</span>
                   <DatePicker value={dob} onChange={setDob} max={adultCutoffIso()} placeholder="dd/mm/yyyy" aria-label="Date of birth" className="w-full" />
-                  <span className="mt-1.5 block text-xs text-ink-faint">Oguaa is for ages 18 and over.</span>
+                  <span className="mt-1.5 block text-xs text-ink-faint">Required. Oguaa is for ages 18 and over. We use the date only to check that, then keep a yes/no — not the date.</span>
                 </div>
               </>
             ) : (
@@ -626,10 +703,13 @@ function JoinForm({
                   <span className="mt-1.5 block text-xs text-ink-faint">At least 8 characters</span>
                 </label>
                 <label className="flex items-start gap-2.5 rounded-xl border border-sand bg-cream px-3.5 py-3">
-                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-green" />
+                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-0.5 h-4 w-4 accent-green" />
                   <span className="text-xs leading-relaxed text-ink-muted">
-                    I agree to the <a href="/terms" className="font-semibold text-green-text underline">Terms of Use</a> and the{" "}
-                    <a href="/privacy" className="font-semibold text-green-text underline">Privacy Policy</a>, and I consent to Oguaa storing the details above so my account can work.
+                    I agree to the{" "}
+                    <a href={LEGAL.terms} target="_blank" rel="noopener" className="font-semibold text-green-text underline">Terms of Use</a> and the{" "}
+                    <a href={LEGAL.privacy} target="_blank" rel="noopener" className="font-semibold text-green-text underline">Privacy Policy</a>, including the{" "}
+                    <a href={LEGAL.acceptableUse} target="_blank" rel="noopener" className="font-semibold text-green-text underline">Acceptable Use rules</a>.
+                    Oguaa has zero tolerance for objectionable content and abusive users.
                   </span>
                 </label>
               </>
@@ -640,7 +720,7 @@ function JoinForm({
       {err && (
         <div className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">
           <p>{err}</p>
-          {/already exists/i.test(err) && (
+          {/already (exists|have one)/i.test(err) && (
             <button type="button" onClick={() => onSwitchMode("signin")} className="mt-1 font-medium underline hover:text-clay">
               Sign in instead →
             </button>
@@ -672,7 +752,10 @@ export function Component() {
   const nav = useNavigate();
   const loc = useLocation();
   const [params, setParams] = useSearchParams();
-  const from = (loc.state as { from?: string } | null)?.from ?? "/me";
+  // Where to go after signing in: router state, else a same-site ?next= path.
+  const nextParam = params.get("next");
+  const safeNext = nextParam?.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
+  const from = (loc.state as { from?: string } | null)?.from ?? safeNext ?? "/me";
 
   const mode = params.get("mode") === "join" ? "join" : "signin";
   const setMode = (m: Mode) => {
@@ -694,6 +777,8 @@ export function Component() {
   const [consent, setConsent] = useState(false);
   const [joinStep, setJoinStep] = useState<JoinStep>(1);
   const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -752,10 +837,12 @@ export function Component() {
     setErr(null);
     setPassword("");
     setMfaChallenge(null);
+    setResetting(false);
+    setResetDone(false);
     setJoinStep(1);
   };
 
-  const submitSignIn = async (e: FormEvent<HTMLFormElement>) => {
+  const submitSignIn = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
@@ -771,16 +858,19 @@ export function Component() {
     } finally { setBusy(false); }
   };
 
-  const submitMfa = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const verifyMfa = async (code: string) => {
     if (!mfaChallenge) return;
     setBusy(true); setErr(null);
     try {
-      await completeMfa(mfaChallenge, mfaCode.trim());
+      await completeMfa(mfaChallenge, code.trim());
       nav(from, { replace: true });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "That code didn't work.");
     } finally { setBusy(false); }
+  };
+  const submitMfa = (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    void verifyMfa(mfaCode);
   };
 
   // Validates the current wizard step; only a clean step advances.
@@ -822,7 +912,7 @@ export function Component() {
     setJoinStep((step) => Math.max(step - 1, 1) as JoinStep);
   };
 
-  const submitJoin = async (e: FormEvent<HTMLFormElement>) => {
+  const submitJoin = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Enter inside a step-1/2 field submits the form — treat it as Next.
     if (joinStep < totalJoinSteps) {
@@ -846,6 +936,7 @@ export function Component() {
         displayName: name.trim(),
         dateOfBirth: dob,
         password,
+        acceptTerms: consent,
         ...(asCreator ? {
           creatorTypes,
           creatorPlanIntent: selectedCreatorPlan.slug,
@@ -870,9 +961,22 @@ export function Component() {
               busy={busy}
               err={err}
               onSubmit={submitMfa}
+              onComplete={(code) => void verifyMfa(code)}
               onCancel={() => { setMfaChallenge(null); setErr(null); setPassword(""); }}
             />
+          ) : mode === "signin" && resetting ? (
+            <ForgotPasswordForm
+              initialIdentifier={identifier}
+              onDone={(id) => { setIdentifier(id); setPassword(""); setResetting(false); setResetDone(true); setErr(null); }}
+              onCancel={() => { setResetting(false); setErr(null); }}
+            />
           ) : mode === "signin" ? (
+            <>
+            {resetDone && (
+              <p className="mb-4 rounded-lg border border-green/30 bg-green/[0.06] px-3 py-2 text-sm text-green-text">
+                Your password is set. Sign in with it now.
+              </p>
+            )}
             <SignInForm
               identifier={identifier}
               setIdentifier={setIdentifier}
@@ -882,7 +986,9 @@ export function Component() {
               err={err}
               onSubmit={submitSignIn}
               onSwitchMode={switchMode}
+              onForgot={() => { setResetting(true); setResetDone(false); setErr(null); }}
             />
+            </>
           ) : (
             <JoinForm
               step={joinStep}

@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type SubmitEvent, type ReactNode } from "react";
 import { Link, useLoaderData, useNavigate, type LoaderFunctionArgs } from "react-router-dom";
 import { Adinkra } from "@/components/adinkra";
 import { DatePicker } from "@/components/date-picker";
@@ -11,6 +11,9 @@ import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import type { Agent, AgentReview, AgentService, JobInput } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
+import { ReportButton } from "@/components/report-button";
+
+const REQUEST_BUTTON_CLS = "min-h-12 w-full rounded-[var(--radius-card)] bg-green px-5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:cursor-not-allowed disabled:opacity-60";
 
 // ── Oguaa Outside · agent detail + request form ───────────────────────────────
 // Public profile of one vetted agent (reputation, services, coverage, reviews)
@@ -82,7 +85,7 @@ export function Component() {
   const verified = agent.status === "verified";
   const serviceOptions = agent.services.map((slug) => ({ value: slug, label: labelFor(slug) }));
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     // Not signed in → send to sign-in and come back to this agent.
@@ -182,6 +185,9 @@ export function Component() {
         {/* Left column — profile, services, coverage, reviews. */}
         <div className="min-w-0">
           <OutsideDisclaimer />
+          <div className="mt-3 flex justify-end">
+            <ReportButton target={{ type: "agent", id: agent.id }} />
+          </div>
 
           {agent.bio && (
             <section className="mt-8" aria-labelledby="agent-about">
@@ -235,7 +241,10 @@ export function Component() {
                       <Stars value={r.rating} />
                     </div>
                     {r.body && <p className="mt-2.5 text-sm leading-relaxed text-ink-muted">{r.body}</p>}
-                    <p className="mt-2 text-xs text-ink-faint">{formatDate(r.createdAt)}</p>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <p className="text-xs text-ink-faint">{formatDate(r.createdAt)}</p>
+                      {r.clientMemberId !== member?.id && <ReportButton compact target={{ type: "agent_review", id: r.id }} />}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -298,9 +307,17 @@ export function Component() {
 
                 {error && <p role="alert" className="rounded-lg border border-clay/25 bg-clay/[0.06] p-3 text-sm text-clay-text">{error}</p>}
 
-                <button type="submit" disabled={busy || serviceOptions.length === 0} className="min-h-12 w-full rounded-[var(--radius-card)] bg-green px-5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:cursor-not-allowed disabled:opacity-60">
-                  {busy ? "Sending request…" : serviceOptions.length === 0 ? "No services available" : member ? "Send request" : "Sign in to request"}
-                </button>
+                {member || serviceOptions.length === 0 ? (
+                  <button type="submit" disabled={busy || serviceOptions.length === 0} className={REQUEST_BUTTON_CLS}>
+                    {busy ? "Sending request…" : serviceOptions.length === 0 ? "No services available" : "Send request"}
+                  </button>
+                ) : (
+                  // Signed out: go straight to sign-in; the required fields
+                  // would otherwise block the submit before it could redirect.
+                  <button type="button" onClick={() => navigate("/signin", { state: { from: `/outside/agents/${agent.slug}` } })} className={REQUEST_BUTTON_CLS}>
+                    Sign in to request
+                  </button>
+                )}
                 <p className="text-center text-xs leading-relaxed text-ink-faint">
                   No money moves yet. You fund the escrow only after the agent quotes, on the requests page.
                 </p>

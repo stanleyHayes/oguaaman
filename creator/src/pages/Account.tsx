@@ -73,7 +73,10 @@ export function Component() {
   async function saveProfile() {
     setProfileState("saving"); setProfileErr(null);
     try {
-      const updated = await api.setProfile({ displayName: name.trim(), bio: bio.trim() });
+      await api.setProfile({ displayName: name.trim(), bio: bio.trim() });
+      // The save returns the bare stored member (no email/phone, no verified
+      // badge), so refetch the enriched self view before replacing the session.
+      const updated = await api.me();
       setMember(updated);
       setName(updated.displayName);
       setBio(updated.bio ?? "");
@@ -122,7 +125,8 @@ export function Component() {
   async function saveTypes() {
     setTypesBusy(true); setTypesErr(null); setTypesSaved(false);
     try {
-      const updated = await api.setCreatorTypes(types);
+      await api.setCreatorTypes(types);
+      const updated = await api.me(); // enriched self view, as above
       setMember(updated);
       setTypes(updated.creatorTypes ?? []);
       setTypesSaved(true);

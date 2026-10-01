@@ -15,6 +15,8 @@ interface PaystackPopInstance {
       onCancel?: () => void;
       onError?: (e: { message?: string }) => void;
       onLoad?: () => void;
+      /** Bank transfer chosen: Paystack closes the modal while it waits for the transfer. */
+      onBankTransferConfirmationPending?: () => void;
     },
   ): void;
 }
@@ -39,7 +41,12 @@ function loadInline(): Promise<void> {
   return scriptPromise;
 }
 
-export type PayOutcome = "success" | "cancelled";
+/**
+ * How the inline checkout ended. "pending" means Paystack closed the modal
+ * while it waits for the money (a bank transfer still on its way) — the
+ * server confirm then reports payment_pending until it lands.
+ */
+export type PayOutcome = "success" | "cancelled" | "pending";
 
 async function openInline(accessCode: string): Promise<PayOutcome> {
   await loadInline();
@@ -50,6 +57,7 @@ async function openInline(accessCode: string): Promise<PayOutcome> {
     popup.resumeTransaction(accessCode, {
       onSuccess: () => resolve("success"),
       onCancel: () => resolve("cancelled"),
+      onBankTransferConfirmationPending: () => resolve("pending"),
       onError: (e) => reject(new Error(e?.message || "The payment could not be completed.")),
     });
   });
@@ -64,11 +72,21 @@ export interface PaymentStart {
 }
 
 /**
+ * What to tell a payer who closed the checkout without finishing. A Mobile
+ * Money approval can still land after the modal closes; the webhook (or a
+ * re-check) settles it then.
+ */
+export const PAYMENT_NOT_COMPLETED =
+  "Payment not completed. If you approved a Mobile Money prompt, it will be confirmed automatically — check again in a minute.";
+
+/**
  * Complete a payment the backend already initialized. Opens the in-app Paystack
  * modal and calls `onSuccess` once the payer completes (the caller then confirms
- * the reference and updates the UI in place — no navigation). `onCancel` fires
- * if they dismiss the modal. When the modal can't run, it redirects to the
- * hosted page instead (this call then navigates away).
+ * the reference and updates the UI in place — no navigation). A bank transfer
+ * that is still on its way also calls `onSuccess`: the confirm answers
+ * payment_pending and the page offers a re-check. `onCancel` fires if they
+ * dismiss the modal. When the modal can't run, it redirects to the hosted page
+ * instead (this call then navigates away).
  */
 export async function completePayment(
   res: PaymentStart,
@@ -86,6 +104,6 @@ export async function completePayment(
     window.location.assign(res.authorizationUrl); // inline blocked → redirect
     return;
   }
-  if (outcome === "success") await handlers.onSuccess();
-  else handlers.onCancel?.();
+  if (outcome === "cancelled") handlers.onCancel?.();
+  else await handlers.onSuccess();
 }

@@ -1,4 +1,4 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, TeamMember, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged, Agent, AgentStatus, AgentJob, DisputeResolution, BusinessVerification, CommerceOrder, CommercePromotion, AffiliateProgramme, Affiliate, AffiliateConversion } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged, Agent, AgentStatus, AgentJob, DisputeResolution, BusinessVerification, CommerceOrder, CommercePromotion, AffiliateProgramme, Affiliate, AffiliateConversion, TeamView, ReportAction, PrivacyRequest, PrivacyRequestStatus, CloudinarySignature } from "./types";
 
 /** Optional server-side pagination for the heavy list endpoints. Passing this
  *  switches the response to the { items, total, page, pageSize, totalPages }
@@ -77,30 +77,86 @@ function headers(json = false): HeadersInit {
   return h;
 }
 
+/** Machine-readable `error` codes the admin reacts to (API_CHANGES §14). */
+export const ERR_MFA_REQUIRED = "mfa_required";
+export const ERR_AI_CONSENT_REQUIRED = "ai_consent_required";
+
+/** Window events the API layer raises for session-wide conditions. */
+export const EVT_MFA_REQUIRED = "oguaa:mfa-required";
+export const EVT_SESSION_EXPIRED = "oguaa:session-expired";
+
+/** An API failure: HTTP status, the server's `error` code/message and body. */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly data: unknown;
+  constructor(message: string, status: number, code?: string, data?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.data = data;
+  }
+}
+
+/** True when a thrown error is the staff two-factor gate (403 mfa_required). */
+export function isMfaRequired(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 403 && err.code === ERR_MFA_REQUIRED;
+}
+
+/** True when a thrown error is a plain role refusal (403 that isn't the 2FA gate). */
+export function isForbidden(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 403 && err.code !== ERR_MFA_REQUIRED;
+}
+
+function emit(name: string) {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(name));
+}
+
+/** Turns a non-2xx response into an ApiError, raising the session-wide events:
+ *  403 mfa_required routes the staffer to enrolment (K4); a 401 on a request
+ *  that carried a token means the session was revoked (password/2FA change,
+ *  suspension), so the console signs out. */
+async function failure(res: Response, fallback: string, sentToken: boolean): Promise<ApiError> {
+  const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+  const code = typeof data.error === "string" ? data.error : undefined;
+  const message = data.message ?? code ?? fallback;
+  if (res.status === 403 && code === ERR_MFA_REQUIRED) emit(EVT_MFA_REQUIRED);
+  if (res.status === 401 && sentToken) emit(EVT_SESSION_EXPIRED);
+  return new ApiError(message, res.status, code, data);
+}
+
+async function request(path: string, init: RequestInit, fallback: string): Promise<Response> {
+  const sentToken = getToken() != null;
+  const res = await fetch(`${BASE}${path}`, init);
+  if (!res.ok) throw await failure(res, fallback, sentToken);
+  return res;
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { headers: headers() });
-  // Attach the HTTP status (like post/del) so loaders can tell a 403 apart from
-  // a genuine outage and degrade gracefully instead of hitting the error boundary.
-  if (!res.ok) throw Object.assign(new Error(`GET ${path} failed (${res.status})`), { status: res.status });
+  // The status rides on the ApiError so loaders can tell a 403 apart from a
+  // genuine outage and degrade gracefully instead of hitting the error boundary.
+  const res = await request(path, { headers: headers() }, `GET ${path} failed`);
   return res.json() as Promise<T>;
 }
 
 async function post<T>(path: string, body: unknown = {}): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: headers(true),
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error((data as { error?: string }).error ?? "Request failed"), { status: res.status, data });
-  return data as T;
+  const res = await request(path, { method: "POST", headers: headers(true), body: JSON.stringify(body) }, "Request failed");
+  return (await res.json().catch(() => ({}))) as T;
 }
 
 async function del<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { method: "DELETE", headers: headers() });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error((data as { error?: string }).error ?? "Request failed"), { status: res.status, data });
-  return data as T;
+  const res = await request(path, { method: "DELETE", headers: headers() }, "Request failed");
+  return (await res.json().catch(() => ({}))) as T;
+}
+
+/** Fetches a file with the staff Authorization header and returns an object
+ *  URL for it (K8: private documents are never public URLs). The caller must
+ *  URL.revokeObjectURL it when done. */
+async function getBlobUrl(path: string): Promise<{ url: string; type: string }> {
+  const res = await request(path, { headers: headers(), cache: "no-store" }, "Couldn't open that document");
+  const blob = await res.blob();
+  return { url: URL.createObjectURL(blob), type: blob.type };
 }
 
 // LoginResult — password sign-in either completes (token+member) or, for
@@ -110,6 +166,42 @@ export interface LoginResult {
   member?: Member;
   mfaRequired?: boolean;
   challenge?: string;
+}
+
+/** Strips the "data:" field name and at most one following space (SSE), so
+ *  real spaces at chunk boundaries survive. */
+function sseData(line: string): string {
+  const v = line.slice(5);
+  return v.startsWith(" ") ? v.slice(1) : v;
+}
+
+/** Reads the writing assistant's SSE stream: `chunk` events carry text with
+ *  newlines escaped as "\\n"; `done` carries {remaining, simulated}. */
+async function readAiEvents(stream: ReadableStream<Uint8Array>, onChunk: (chunk: string) => void) {
+  const reader = stream.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  let remaining = 0;
+  let simulated = false;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const frames = buf.split("\n\n");
+    buf = frames.pop() ?? "";
+    for (const frame of frames) {
+      const lines = frame.split("\n");
+      const event = lines.find((l) => l.startsWith("event:"))?.slice(6).trim();
+      const data = lines.filter((l) => l.startsWith("data:")).map(sseData).join("\n");
+      if (event === "chunk") onChunk(data.replaceAll("\\n", "\n"));
+      if (event === "done") {
+        const meta = JSON.parse(data) as { remaining?: number; simulated?: boolean };
+        remaining = typeof meta.remaining === "number" ? meta.remaining : remaining;
+        simulated = Boolean(meta.simulated);
+      }
+    }
+  }
+  return { remaining, simulated };
 }
 
 export const api = {
@@ -128,7 +220,9 @@ export const api = {
   queue: (type?: string) => get<Listing[]>(`/api/admin/queue${type ? `?type=${encodeURIComponent(type)}` : ""}`),
   listings: () => get<Listing[]>("/api/admin/listings"),
   audit: () => get<ModerationRecord[]>("/api/admin/audit"),
-  members: () => get<Member[]>("/api/members"),
+  // Staff view of the directory: full stored records (suspension, 2FA, plans).
+  // The public /api/members carries only the public projection (K5).
+  members: () => get<Member[]>("/api/admin/members"),
   // Steward view: the unfiltered directory (verification queue). The public
   // /api/institutions hides unverified/revoked institutions on purpose.
   institutions: (kind?: string) => {
@@ -146,7 +240,7 @@ export const api = {
   auditPaged: (args?: PageArgs) =>
     get<Paged<ModerationRecord>>(`/api/admin/audit?${pageQuery(args)}`),
   membersPaged: (args?: PageArgs) =>
-    get<Paged<Member>>(`/api/members?${pageQuery(args)}`),
+    get<Paged<Member>>(`/api/admin/members?${pageQuery(args)}`),
   reportsPaged: (args?: PageArgs) =>
     get<Paged<Report>>(`/api/admin/reports?${pageQuery(args)}`),
   institutionsPaged: (args?: PageArgs & { kind?: string }) =>
@@ -158,8 +252,10 @@ export const api = {
     return get<Organization[]>(`/api/institutions${q}`);
   },
 
-  // Detail views reuse the public read endpoints (rich, ready-made views).
-  member: (slug: string) => get<MemberView>(`/api/members/${slug}`),
+  // Staff member detail: the full record and every listing, ignoring blocks
+  // between the staffer and the member (a member can't hide by blocking staff).
+  member: (slug: string) => get<MemberView>(`/api/admin/members/${encodeURIComponent(slug)}`),
+  // Institution detail reuses the public read endpoint (rich, ready-made view).
   institution: (slug: string) => get<InstitutionView>(`/api/institutions/${slug}`),
   // No single-listing admin endpoint; the detail loader finds it in queue+listings.
 
@@ -181,7 +277,8 @@ export const api = {
 
   // Event ticketing (Phase 6): per-event sales ledger + gate check-in.
   eventTickets: (slug: string) => get<Ticket[]>(`/api/admin/events/${slug}/tickets`),
-  checkIn: (code: string) => post<Ticket>(`/api/admin/tickets/${encodeURIComponent(code)}/checkin`),
+  checkIn: (eventSlug: string, code: string) =>
+    post<Ticket>(`/api/admin/events/${encodeURIComponent(eventSlug)}/tickets/${encodeURIComponent(code)}/checkin`),
 
   // Business subscriptions (Phase 7): the Supporter ledger.
   subscriptions: () => get<Subscription[]>("/api/admin/subscriptions"),
@@ -197,8 +294,10 @@ export const api = {
   planDelete: (id: string) => del<{ status: string }>(`/api/admin/plans/${id}`),
 
   reports: () => get<Report[]>("/api/admin/reports"),
-  resolveReport: (id: string, status: "actioned" | "dismissed", resolution?: string) =>
-    post<{ status: string }>(`/api/admin/reports/${id}/resolve`, { status, resolution }),
+  // action "remove" takes the content down; "remove_and_suspend" also suspends
+  // its author. Both force status "actioned" and need a resolution note.
+  resolveReport: (id: string, body: { status: "actioned" | "dismissed"; resolution: string; action?: ReportAction }) =>
+    post<{ status: string }>(`/api/admin/reports/${id}/resolve`, body),
   grantKeeperRole: (listingId: string, keeperMemberId: string, reportId?: string) =>
     post<{ status: string }>(`/api/admin/memorials/${listingId}/grant-keeper`, { keeperMemberId, reportId }),
 
@@ -251,8 +350,9 @@ export const api = {
   adminDisputes: () => get<AgentJob[]>("/api/admin/disputes"),
   resolveDispute: (id: string, body: DisputeResolution) => post<AgentJob>(`/api/admin/jobs/${id}/resolve`, body),
 
-  // Community safety triage (auto-published; curators transition the lifecycle).
-  incidents: () => get<Incident[]>("/api/incidents"),
+  // Community safety triage: live incidents plus held reports waiting for a
+  // curator (held first). Verifying a held report publishes it and alerts the town.
+  incidents: () => get<Incident[]>("/api/admin/incidents"),
   transitionIncident: (id: string, status: string, note?: string) =>
     post<{ status: string }>(`/api/admin/incidents/${id}/status`, { status, note }),
   suspend: (id: string, suspended: boolean) => post<{ suspended: boolean }>(`/api/admin/members/${id}/suspend`, { suspended }),
@@ -268,7 +368,7 @@ export const api = {
   // manager endpoints (full-replace for gallery/sections). See Institution-Pages-Spec.
   updateOrgProfile: (slug: string, body: { summary?: string; history?: string; motto?: string; crestUrl?: string; contact?: { label: string; url: string }[]; gesCategory?: string; boardingType?: string; genderPolicy?: string; nhisAccredited?: boolean | null; ghanaPostGPS?: string; momoNumber?: string; latitude?: number | null; longitude?: number | null; quarterTag?: string; asafoTag?: string; verificationArtifacts?: { label: string; url: string }[] }) =>
     post<Organization>(`/api/institutions/${slug}/profile`, body),
-  institutionTeam: (slug: string) => get<TeamMember[]>(`/api/institutions/${slug}/team`),
+  institutionTeam: (slug: string) => get<TeamView>(`/api/institutions/${slug}/team`),
   revokeTeamMember: (slug: string, memberId: string) =>
     del<{ status: string }>(`/api/institutions/${slug}/team/${memberId}`),
   setOrgGallery: (slug: string, gallery: MediaAsset[]) =>
@@ -303,42 +403,16 @@ export const api = {
     onChunk: (chunk: string) => void,
     signal?: AbortSignal,
   ) => {
-    const res = await fetch(`${BASE}/api/ai/stream`, {
-      method: "POST",
-      headers: headers(true),
-      body: JSON.stringify(body),
-      signal,
-    });
-    if (!res.ok) throw Object.assign(new Error(`POST /api/ai/stream failed (${res.status})`), { status: res.status });
-    if (!res.body) {
-      const once = await post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body);
+    const res = await request("/api/ai/stream", { method: "POST", headers: headers(true), body: JSON.stringify(body), signal }, "The writing assistant couldn't respond");
+    // The server answers plain JSON when it can't stream (no flusher in the
+    // chain) — a browser response always has a body, so branch on the type.
+    const type = res.headers.get("content-type") ?? "";
+    if (!type.includes("text/event-stream") || !res.body) {
+      const once = (await res.json()) as { result: string; remaining: number; simulated?: boolean };
       onChunk(once.result);
-      return { remaining: once.remaining, simulated: once.simulated };
+      return { remaining: once.remaining, simulated: Boolean(once.simulated) };
     }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    let remaining = 0;
-    let simulated = false;
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const frames = buf.split("\n\n");
-      buf = frames.pop() ?? "";
-      for (const frame of frames) {
-        const lines = frame.split("\n");
-        const event = lines.find((l) => l.startsWith("event:"))?.slice(6).trim();
-        const data = lines.filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("\n");
-        if (event === "chunk") onChunk(data.replaceAll("\\n", "\n"));
-        if (event === "done") {
-          const meta = JSON.parse(data) as { remaining?: number; simulated?: boolean };
-          remaining = typeof meta.remaining === "number" ? meta.remaining : remaining;
-          simulated = Boolean(meta.simulated);
-        }
-      }
-    }
-    return { remaining, simulated };
+    return readAiEvents(res.body, onChunk);
   },
 
   login: (identifier: string, password: string) =>
@@ -353,11 +427,27 @@ export const api = {
     post<{ ok: boolean }>("/api/auth/password/reset/confirm", { identifier, code, newPassword }),
   // MFA enrolment (TOTP) — required for staff roles (spec §14).
   mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup"),
-  mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
-  mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
+  // Enrolment revokes every earlier session, this one included: store `token`.
+  mfaConfirm: (code: string) => post<{ recoveryCodes: string[]; token?: string }>("/api/me/mfa/confirm", { code }),
   me: () => get<Member>("/api/auth/me"),
 
   // Your own account.
   updateProfile: (body: { displayName: string; bio?: string }) => post<Member>("/api/me/profile", body),
   setPhoto: (photoUrl: string) => post<{ photoUrl: string }>("/api/me/photo", { photoUrl }),
+  // Writing-assistant consent (K15): stored server-side, withdrawable.
+  setAiConsent: (consent: boolean) => post<{ aiConsent: boolean }>("/api/me/ai-consent", { consent }),
+
+  // Private documents (K8): ID and KYC files are fetched with the staff token
+  // into a blob URL, never linked publicly. Accepts "private:<id>" or "<id>".
+  privateDocument: (ref: string) =>
+    getBlobUrl(`/api/admin/private-uploads/${encodeURIComponent(ref.replace(/^private:/, ""))}`),
+
+  // Data-rights requests (K10, steward): the queue and status transitions.
+  privacyRequests: () => get<PrivacyRequest[]>("/api/admin/privacy-requests"),
+  updatePrivacyRequest: (id: string, status: PrivacyRequestStatus, note: string) =>
+    post<PrivacyRequest>(`/api/admin/privacy-requests/${encodeURIComponent(id)}`, { status, note }),
+
+  // Signed Cloudinary upload parameters (K9); 503 signed_uploads_unavailable
+  // means fall back to POST /api/uploads.
+  cloudinarySignature: () => post<CloudinarySignature>("/api/uploads/cloudinary-signature", { resourceType: "image" }),
 };

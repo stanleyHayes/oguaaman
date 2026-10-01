@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { formatDate, initials, tagLabel } from "@/lib/format";
 import type { Listing } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
+import { pickFeatured } from "@/lib/featured";
 
 export async function loader() {
   return api.projects();
@@ -88,7 +89,7 @@ export function Component() {
   const projects = useLoaderData() as Listing[];
   usePageTitle("Community Projects");
 
-  const lead = projects.find((project) => project.featured) ?? projects[0];
+  const lead = pickFeatured(projects);
   const remaining = lead ? projects.filter((project) => project.id !== lead.id) : [];
   const target = projects.reduce((sum, project) => sum + (project.details.goalPesewas ?? 0), 0);
   const raised = projects.reduce((sum, project) => sum + (project.details.raisedPesewas ?? 0), 0);

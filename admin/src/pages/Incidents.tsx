@@ -44,8 +44,10 @@ export function Component() {
     setBusy(i.id);
     try {
       await api.transitionIncident(i.id, cur.status, cur.note || undefined);
+      const published = cur.status === "verified" && i.held;
       setRows((prev) => prev.map((x) => x.id === i.id ? {
         ...x,
+        ...(published ? { held: false, status: "approved" as const } : {}),
         details: {
           ...x.details,
           incidentStatus: cur.status as IncidentStatus,
@@ -62,9 +64,10 @@ export function Component() {
     <>
       <PageHeader kicker="Safety · rescue & early recovery" title="Incidents" />
       <p className="mb-5 max-w-2xl text-sm text-ink-muted">
-        Safety reports auto-publish on submission — time matters. Verify them here, move them through
-        the lifecycle, and leave a note for the timeline shown to the community. Resolved and recovered
-        incidents notify the reporter.
+        Most safety reports auto-publish on submission — time matters. Crime and medical reports, and any
+        the content screen flags, are held here until you set them to Verified, which publishes them and
+        alerts the town. Move incidents through the lifecycle and leave a note for the timeline shown to
+        the community. Resolved and recovered incidents notify the reporter.
       </p>
 
       {rows.length === 0 ? (
@@ -85,6 +88,7 @@ export function Component() {
                       </span>
                       <Pill tone="neutral">{i.details.category}</Pill>
                       <Pill tone="gold">{i.details.incidentStatus}</Pill>
+                      {i.held && <Pill tone="clay">Held for review</Pill>}
                     </div>
                     <h3 className="mt-2 text-lg font-semibold text-ink">{i.title}</h3>
                     <p className="mt-1 text-sm text-ink-muted">{i.details.location}</p>

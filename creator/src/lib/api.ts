@@ -1,4 +1,5 @@
-import type { ArtistBooking, CreatorEarnings, CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NewsArticle, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, SocialLink, Subscription, TeamView, Ticket } from "./types";
+import type { ArtistBooking, CloudinarySignature, NotificationPreferences, CreatorEarnings, CreatorOverview, InstitutionKind, InstitutionRequest, InstitutionView, Invitation, Listing, MediaAsset, Member, MemberView, NewsArticle, NotificationItem, Office, Organization, Plan, ProfileSection, Promotion, SocialLink, Subscription, TeamView, Ticket } from "./types";
+import type { PaymentStart } from "./paystack";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "oguaa.creator.token";
@@ -19,29 +20,59 @@ function headers(json = false): HeadersInit {
   return h;
 }
 
+/** An API failure: `message` is the server's human text, `status` the HTTP code, `code` its machine `error` code. */
+export interface ApiError extends Error {
+  status?: number;
+  code?: string;
+  data?: unknown;
+}
+
+// Machine-readable error codes the server sends in `error` (with a human
+// `message` beside them). Anything else in `error` is already human text.
+const MACHINE_CODES = new Set(["limit", "refused", "payments_unavailable", "payment_pending", "payment_check_unavailable", "ai_consent_required", "ai_unavailable", "signed_uploads_unavailable", "private_uploads_unavailable", "mfa_required", "mfa_code_required"]);
+
+function apiError(res: Response, data: unknown, fallback: string): ApiError {
+  const body = (data ?? {}) as { error?: unknown; message?: unknown };
+  const code = typeof body.error === "string" ? body.error : undefined;
+  const message = typeof body.message === "string" && body.message
+    ? body.message
+    : code && !MACHINE_CODES.has(code) ? code : fallback;
+  return Object.assign(new Error(message), { status: res.status, code, data });
+}
+
+/** The HTTP status of a failed request (undefined for a network error). */
+export function errorStatus(e: unknown): number | undefined {
+  return (e as ApiError | null)?.status;
+}
+
+/** The server's machine error code (e.g. "payments_unavailable"), if any. */
+export function errorCode(e: unknown): string | undefined {
+  return (e as ApiError | null)?.code;
+}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { headers: headers() });
-  if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw apiError(res, data, `GET ${path} failed (${res.status})`);
+  }
   return res.json() as Promise<T>;
 }
 
-async function post<T>(path: string, body: unknown = {}): Promise<T> {
+async function send<T>(method: "POST" | "PUT" | "DELETE", path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: headers(true),
-    body: JSON.stringify(body),
+    method,
+    headers: headers(body !== undefined),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error((data as { error?: string }).error ?? "Request failed"), { status: res.status, data });
+  if (!res.ok) throw apiError(res, data, "Request failed");
   return data as T;
 }
 
-async function del<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { method: "DELETE", headers: headers() });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error((data as { error?: string }).error ?? "Request failed"), { status: res.status, data });
-  return data as T;
-}
+const post = <T>(path: string, body: unknown = {}) => send<T>("POST", path, body);
+const put = <T>(path: string, body: unknown) => send<T>("PUT", path, body);
+const del = <T>(path: string, body?: unknown) => send<T>("DELETE", path, body);
 
 // ── pagination (optional, non-breaking) ──
 // The heavy list endpoints accept optional ?page/?pageSize. With ?page present
@@ -95,17 +126,30 @@ export const api = {
   mfaLogin: (challenge: string, code: string) =>
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
   me: () => get<Member>("/api/auth/me"),
+  // Terms/Privacy (re-)consent for accounts the server flags consentRequired.
+  // confirmAdult is required when the account's age was never verified.
+  acceptConsent: (confirmAdult: boolean) =>
+    post<Member>("/api/me/consent", { acceptTerms: true, confirmAdult, platform: "creator" }),
+  // Writing-assistant consent (sending text to Anthropic). false withdraws it.
+  setAiConsent: (consent: boolean) => post<{ aiConsent: boolean }>("/api/me/ai-consent", { consent }),
+  notificationPreferences: () => get<NotificationPreferences>("/api/me/notification-preferences"),
+  setNotificationPreferences: (prefs: Partial<{ categories: Partial<NotificationPreferences["categories"]>; channels: Partial<NotificationPreferences["channels"]> }>) =>
+    put<NotificationPreferences>("/api/me/notification-preferences", prefs),
+  // Signed direct upload to Cloudinary; 503 signed_uploads_unavailable → use /api/uploads.
+  cloudinarySignature: () => post<CloudinarySignature>("/api/uploads/cloudinary-signature", { resourceType: "image" }),
 
   // ── Settings: security (spec §14) ──
   // Authenticated password change — the server re-verifies the current password
-  // (bcrypt) and enforces the 8-char floor; the existing session stays valid.
+  // (bcrypt) and enforces the 8-char floor. Every earlier session is revoked, so
+  // the caller must store the returned token.
   changePassword: (currentPassword: string, newPassword: string) =>
-    post<{ ok: boolean }>("/api/me/password", { currentPassword, newPassword }),
+    post<{ ok: boolean; token?: string }>("/api/me/password", { currentPassword, newPassword }),
   // Two-factor (TOTP) self-enrolment — mirrors the admin console. The secret and
   // recovery-code hashes never leave the server; enrolment returns the QR + codes.
   mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup"),
-  mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
-  mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
+  // Enrolment revokes every earlier session — store the returned token.
+  mfaConfirm: (code: string) => post<{ recoveryCodes: string[]; token?: string }>("/api/me/mfa/confirm", { code }),
+  mfaDisable: (code: string) => post<{ ok: boolean; token?: string }>("/api/me/mfa/disable", { code }),
 
   // Owner-scoped dashboard aggregation (Creator Platform plan §4).
   creatorOverview: () => get<CreatorOverview>("/api/creator/overview"),
@@ -183,19 +227,22 @@ export const api = {
   myInstitutionRequests: () => get<InstitutionRequest[]>("/api/me/institution-requests"),
 
   // Paid promotions: self-serve featured placements via Paystack (GH₵10/day).
+  // returnTo "creator" sends a hosted-checkout return back to /work?promo_ref=
+  // in the studio instead of the portal (contract C3).
   promoteListing: (id: string, days: number) =>
-    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/listings/${id}/promote`, { days }),
+    post<PaymentStart>(`/api/listings/${id}/promote`, { days, returnTo: "creator" }),
   confirmPromotion: (reference: string) => get<Promotion>(`/api/promotions/confirm?reference=${encodeURIComponent(reference)}`),
 
   // Business Supporter subscription (GH₵50/mo, stacking renewals).
   plans: () => get<Plan[]>("/api/plans"),
+  // returnTo "creator": a hosted-checkout return lands on /grow?sub_ref= (C3).
   subscribe: (slug: string, plan?: string) =>
-    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/subscribe`, plan ? { plan } : {}),
+    post<PaymentStart>(`/api/businesses/${slug}/subscribe`, plan ? { plan, returnTo: "creator" } : { returnTo: "creator" }),
   confirmSubscription: (reference: string) => get<Subscription>(`/api/subscriptions/confirm?reference=${encodeURIComponent(reference)}`),
   mySubscriptions: () => get<Subscription[]>("/api/me/subscriptions"),
   // Member-level creator subscription — unlocks donations & fundraising campaigns.
   subscribeCreator: (plan?: string) =>
-    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>("/api/me/subscribe", plan ? { plan } : {}),
+    post<PaymentStart>("/api/me/subscribe", plan ? { plan } : {}),
 
   // Fundraising campaigns (Creator Monetization).
   myCampaigns: () => get<Listing[]>("/api/me/campaigns"),

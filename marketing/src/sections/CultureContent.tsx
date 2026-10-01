@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Adinkra, type AdinkraName } from "@/components/adinkra";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { Section, SectionHeading } from "@/components/ui";
@@ -93,10 +94,11 @@ function CulturePhoto({
   );
 }
 
+/** An in-app route: a router <Link>, so the new entry scrolls to its #hash. */
 function ChapterLink({ href, children, dark = false }: Readonly<{ href: string; children: string; dark?: boolean }>) {
   return (
-    <a
-      href={href}
+    <Link
+      to={href}
       className={`group mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border px-5 text-sm font-semibold transition-colors focus-visible:outline-offset-4 ${
         dark
           ? "border-gold/45 text-gold hover:bg-gold hover:text-green-900"
@@ -105,7 +107,7 @@ function ChapterLink({ href, children, dark = false }: Readonly<{ href: string; 
     >
       {children}
       <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
-    </a>
+    </Link>
   );
 }
 

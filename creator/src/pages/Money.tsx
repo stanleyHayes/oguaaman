@@ -69,7 +69,7 @@ export function Component() {
               {subscriptions.map((s) => (
                 <li key={s.id} className="flex items-center gap-3 px-5 py-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink">{s.listingTitle}</p>
+                    <p className="truncate text-sm font-medium text-ink">{s.scope === "creator" || !s.listingId ? "Creator plan" : s.listingTitle}</p>
                     <p className="text-xs text-ink-faint">{formatDate(s.createdAt)}{s.periodEnd ? ` · until ${formatDate(s.periodEnd)}` : ""}</p>
                   </div>
                   <span className="text-sm font-semibold text-ink">{cedis(s.amountPesewas)}</span>

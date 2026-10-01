@@ -1,12 +1,9 @@
-import { useRef, useState, type FormEvent } from "react";
-import { api } from "@/lib/api";
+import { useRef, useState, type SubmitEvent } from "react";
+import { api, setToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "@/components/layout";
 import { OtpInput } from "@/components/otp-input";
 import { BusyLabel } from "@/components/skeleton";
-
-const inputCls =
-  "w-full rounded-xl border border-sand auth-theme-cream bg-cream px-4 py-3 text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
 
 const primaryBtn =
   "rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green shadow-sm transition-colors hover:bg-green-900 disabled:opacity-60";
@@ -49,11 +46,13 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
     } finally { setBusy(false); }
   };
 
-  const confirm = async (e: FormEvent<HTMLFormElement>) => {
+  const confirm = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
       const res = await api.mfaConfirm(code.trim());
+      // Enrolment revokes every earlier session, this one included.
+      if (res.token) setToken(res.token);
       setStage({ step: "recovery", codes: res.recoveryCodes });
       // NB: don't refresh the member yet — the caller may unmount on
       // mfaEnabled=true, and the recovery codes must stay on screen.
@@ -137,60 +136,6 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
   );
 }
 
-/** Disable flow with a current code — for the Settings page. */
-export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
-  const { setMember } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [code, setCode] = useState("");
-  const [recovery, setRecovery] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const confirm = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setBusy(true); setErr(null);
-    try {
-      await api.mfaDisable(code.trim());
-      setMember(await api.me());
-      setOpen(false);
-      onDone?.();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "That code didn't work.");
-    } finally { setBusy(false); }
-  };
-
-  if (!open) {
-    return (
-      <button type="button" onClick={() => { setOpen(true); setCode(""); setErr(null); setRecovery(false); }} className="text-sm font-medium text-clay-text hover:underline">
-        Turn off
-      </button>
-    );
-  }
-  return (
-    <form onSubmit={confirm} className="space-y-3">
-      <p className="text-sm text-ink-muted">Enter a current authenticator or recovery code to turn two-factor off.</p>
-      {recovery ? (
-        <div>
-          <input value={code} onChange={(e) => setCode(e.target.value)} required autoFocus autoComplete="one-time-code" placeholder="xxxx-xxxx-xxxx" className={`${inputCls} max-w-[12rem]`} />
-          <button type="button" onClick={() => { setRecovery(false); setCode(""); }} className="mt-2 block text-xs font-medium text-ink-muted underline hover:text-ink">Use authenticator code</button>
-        </div>
-      ) : (
-        <div>
-          <OtpInput value={code} onChange={setCode} ariaLabel="Authenticator code" />
-          <button type="button" onClick={() => { setRecovery(true); setCode(""); }} className="mt-2 block text-xs font-medium text-ink-muted underline hover:text-ink">Use a recovery code instead</button>
-        </div>
-      )}
-      {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
-      <div className="flex items-center gap-3">
-        <button type="submit" disabled={busy} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-on-green hover:bg-clay-text disabled:opacity-60">
-          {busy ? <BusyLabel label="Turning off two-factor" className="justify-center" /> : "Turn off two-factor"}
-        </button>
-        <button type="button" onClick={() => setOpen(false)} className="text-sm font-medium text-ink-muted hover:text-ink">Keep it on</button>
-      </div>
-    </form>
-  );
-}
-
 /** Status + manage row for the Settings security card. */
 export function MfaManage() {
   const { member } = useAuth();
@@ -198,11 +143,11 @@ export function MfaManage() {
   if (member.mfaEnabled) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-ink-muted">Two-factor is on — sign-ins need your authenticator app.</p>
-        <span className="inline-flex items-center gap-3">
-          <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green-text">On</span>
-          <MfaDisable />
-        </span>
+        <p className="text-sm text-ink-muted">
+          Two-factor is on — sign-ins need your authenticator app. Staff accounts can't turn it off:
+          staff tools stop working without it. Lost your phone? Sign in with a recovery code.
+        </p>
+        <span className="rounded-full bg-green/[0.1] px-2.5 py-0.5 text-xs font-semibold text-green-text">On</span>
       </div>
     );
   }

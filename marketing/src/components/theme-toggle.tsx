@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
-import { type Theme, getInitialTheme, setTheme } from "@/lib/theme";
+import { useSyncExternalStore } from "react";
+import { type Theme, currentTheme, setTheme, subscribeTheme } from "@/lib/theme";
+
+const serverTheme = (): Theme => "light";
 
 function Moon({ size = 18 }: Readonly<{ size?: number }>) {
   return (
@@ -26,15 +28,9 @@ function Sun({ size = 18 }: Readonly<{ size?: number }>) {
  * transparent-over-hero nav and the solid scrolled bar.
  */
 export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>) {
-  const [theme, set] = useState<Theme>(getInitialTheme);
-
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "oguaa.theme") set((e.newValue as Theme) ?? getInitialTheme());
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  // Read the live `data-theme` rather than per-instance state, so every toggle
+  // (desktop + mobile nav, other tabs) always agrees with the page.
+  const theme = useSyncExternalStore(subscribeTheme, currentTheme, serverTheme);
 
   const isDark = theme === "dark";
   const label = isDark ? "Switch to light mode" : "Switch to dark mode";
@@ -44,10 +40,7 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
       type="button"
       onClick={(event) => {
         const next = isDark ? "light" : "dark";
-        const applyNext = () => {
-          set(next);
-          setTheme(next);
-        };
+        const applyNext = () => setTheme(next);
         // Circular reveal from the toggle's centre via the View Transitions API.
         const rect = event.currentTarget.getBoundingClientRect();
         const x = rect.left + rect.width / 2;

@@ -15,12 +15,17 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 const field = "w-full rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-brand focus:outline-none";
 const labelCls = "block text-xs font-semibold uppercase tracking-wide text-ink-faint";
 
-export function InstitutionEditor({ slug, org }: Readonly<{ slug: string; org: Organization }>) {
+/** Each form reports the saved institution through `onSaved`, so the page
+ *  keeps the current data and a reopened editor never reloads pre-save state
+ *  (the gallery and sections endpoints replace the whole list). */
+type OnSaved = (org: Organization) => void;
+
+export function InstitutionEditor({ slug, org, onSaved }: Readonly<{ slug: string; org: Organization; onSaved: OnSaved }>) {
   return (
     <div className="space-y-5">
-      <ProfileForm slug={slug} org={org} />
-      <SectionBuilderForm slug={slug} initial={org.sections} />
-      <GalleryForm slug={slug} initial={org.gallery} />
+      <ProfileForm slug={slug} org={org} onSaved={onSaved} />
+      <SectionBuilderForm slug={slug} initial={org.sections} onSaved={onSaved} />
+      <GalleryForm slug={slug} initial={org.gallery} onSaved={onSaved} />
     </div>
   );
 }
@@ -42,7 +47,7 @@ function Saver({ state }: Readonly<{ state: SaveState }>) {
   return null;
 }
 
-function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }>) {
+function ProfileForm({ slug, org, onSaved }: Readonly<{ slug: string; org: Organization; onSaved: OnSaved }>) {
   const [summary, setSummary] = useState(org.summary ?? "");
   const [motto, setMotto] = useState(org.motto ?? "");
   const [history, setHistory] = useState(org.history ?? "");
@@ -52,7 +57,10 @@ function ProfileForm({ slug, org }: Readonly<{ slug: string; org: Organization }
   async function save() {
     setState("saving");
     try {
-      await api.updateOrgProfile(slug, { summary, motto, history, crestUrl, contact: org.contact ?? [] });
+      // Send only the fields this form edits: the save is a partial update, so
+      // GPS, MoMo, school facts and verification links stay as stored.
+      const updated = await api.updateOrgProfile(slug, { summary, motto, history, crestUrl });
+      onSaved(updated);
       setState("saved");
     } catch {
       setState("error");
@@ -200,7 +208,7 @@ function sectionForSave(s: ProfileSection): ProfileSection {
   };
 }
 
-function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; initial?: ProfileSection[] }>) {
+function SectionBuilderForm({ slug, initial, onSaved }: Readonly<{ slug: string; initial?: ProfileSection[]; onSaved: OnSaved }>) {
   const [sections, setSections] = useState<ProfileSection[]>(initial ?? []);
   const [state, setState] = useState<SaveState>("idle");
 
@@ -232,6 +240,7 @@ function SectionBuilderForm({ slug, initial }: Readonly<{ slug: string; initial?
       const payload = sections.map(sectionForSave);
       const updated = await api.setOrgSections(slug, payload);
       setSections(updated.sections ?? []);
+      onSaved(updated);
       setState("saved");
     } catch {
       setState("error");
@@ -432,7 +441,7 @@ function AttrsEditor({ attrs, onChange }: Readonly<{ attrs: SectionItem[]; onCha
   );
 }
 
-function GalleryForm({ slug, initial }: Readonly<{ slug: string; initial?: MediaAsset[] }>) {
+function GalleryForm({ slug, initial, onSaved }: Readonly<{ slug: string; initial?: MediaAsset[]; onSaved: OnSaved }>) {
   const [items, setItems] = useState<MediaAsset[]>(initial ?? []);
   const [state, setState] = useState<SaveState>("idle");
 
@@ -448,6 +457,7 @@ function GalleryForm({ slug, initial }: Readonly<{ slug: string; initial?: Media
       const cleaned = items.filter((m) => m.url.trim() !== "").map((m) => ({ ...m, id: stripTmp(m.id) }));
       const updated = await api.setOrgGallery(slug, cleaned);
       setItems(updated.gallery ?? []);
+      onSaved(updated);
       setState("saved");
     } catch {
       setState("error");

@@ -1,4 +1,5 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { openStorageSettings } from "@/lib/storage-consent";
 import type { ReactNode } from "react";
 import { Wordmark } from "./wordmark";
 import { Adinkra } from "./adinkra";
@@ -258,10 +259,15 @@ export function SiteFooter() {
           </div>
 
           <nav aria-label="Legal" className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-gold-brand/25 pt-6 text-xs text-cream/60 sm:justify-start">
-            <NavLink to="/privacy" className={legalLinkClass}>Privacy Policy</NavLink>
+            <NavLink to="/privacy" end className={legalLinkClass}>Privacy Policy</NavLink>
             <NavLink to="/terms" className={legalLinkClass}>Terms of Use</NavLink>
             <NavLink to="/acceptable-use" className={legalLinkClass}>Acceptable Use</NavLink>
+            <NavLink to="/terms-of-sale" className={legalLinkClass}>Terms of Sale</NavLink>
+            <NavLink to="/child-safety" className={legalLinkClass}>Child Safety</NavLink>
             <NavLink to="/safeguarding" className={legalLinkClass}>Safeguarding Policy</NavLink>
+            <NavLink to="/privacy/request" className={legalLinkClass}>Privacy requests</NavLink>
+            <NavLink to="/account/delete" className={legalLinkClass}>Delete your account</NavLink>
+            <button type="button" onClick={openStorageSettings} className={legalLinkClass({ isActive: false })}>Storage &amp; cookies</button>
             <NavLink to="/search" className={legalLinkClass}>Search</NavLink>
           </nav>
 

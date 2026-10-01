@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { PORTAL } from "@/lib/portal";
 import type { NotificationItem } from "@/lib/types";
@@ -17,8 +17,18 @@ const KIND_DOT: Record<string, string> = {
   remembrance: "bg-gold", birthday: "bg-clay", "org-claim": "bg-ai", report: "bg-maroon-900", welcome: "bg-teal",
 };
 
+// Notification links that point at the creator studio's own pages (e.g. the
+// artist-booking inbox) open in-app; everything else is a portal path.
+const STUDIO_ROUTES = ["/bookings", "/campaigns", "/grow", "/money", "/team", "/work", "/institutions", "/write"];
+
+function isStudioLink(link: string): boolean {
+  const path = link.split(/[?#]/)[0];
+  return STUDIO_ROUTES.some((r) => path === r || path.startsWith(`${r}/`));
+}
+
 export function Component() {
   const initial = useLoaderData() as NotificationItem[];
+  const navigate = useNavigate();
   const [items, setItems] = useState(initial);
   const unread = items.filter((n) => !n.read).length;
   const paged = usePagedList(items, 12);
@@ -33,8 +43,9 @@ export function Component() {
       setItems((cur) => cur.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
       try { await api.markNotificationRead(n.id); } catch { /* optimistic */ }
     }
-    // Notification links are portal paths — open them there.
-    if (n.link) window.open(`${PORTAL}${n.link}`, "_blank", "noopener");
+    if (!n.link) return;
+    if (isStudioLink(n.link)) navigate(n.link);
+    else window.open(`${PORTAL}${n.link}`, "_blank", "noopener");
   }
 
   return (

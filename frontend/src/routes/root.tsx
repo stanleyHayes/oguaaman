@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
-import { Outlet, isRouteErrorResponse, useLocation, useNavigation, useRouteError } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Outlet, isRouteErrorResponse, useLocation, useNavigation, useNavigationType, useRouteError } from "react-router-dom";
+import { CITIZEN_URL } from "@/lib/app-urls";
 import { motion } from "motion/react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AlertBanner } from "@/components/alert-banner";
 import { AlertListener } from "@/components/alert-listener";
 import { CookieConsent } from "@/components/cookie-consent";
+import { ConsentGate } from "@/components/consent-gate";
 import { PageTransition } from "@/components/page-transition";
 import { Wordmark } from "@/components/wordmark";
 import { Container, CTA as Cta } from "@/components/ui";
@@ -13,11 +15,62 @@ import { SPLASH_LINES, randomSplashIndex } from "@/lib/splash-lines";
 import { SplashQuote } from "@/components/splash-quote";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
-/** Reset scroll to the top on every route change (instant, loader-safe). */
+/** How many animation frames to wait for a #hash target to render. */
+const HASH_SEEK_FRAMES = 30;
+
+/**
+ * Reset scroll to the top when the page changes (instant, loader-safe), except
+ * on back/forward, where the browser restores the previous position. A URL
+ * with a #hash scrolls to that element instead (e.g. /better#goals).
+ */
 function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  const navigationType = useNavigationType();
+  const lastPath = useRef<string | null>(null);
+  useEffect(() => {
+    const pathChanged = lastPath.current !== pathname;
+    lastPath.current = pathname;
+    if (hash) {
+      const id = decodeURIComponent(hash.slice(1));
+      let frame = 0;
+      let tries = 0;
+      // The target can render a few frames late (lazy sections, reveals).
+      const seek = () => {
+        const target = document.getElementById(id);
+        if (target) target.scrollIntoView();
+        else if (tries++ < HASH_SEEK_FRAMES) frame = window.requestAnimationFrame(seek);
+      };
+      seek();
+      return () => window.cancelAnimationFrame(frame);
+    }
+    if (pathChanged && navigationType !== "POP") window.scrollTo(0, 0);
+  }, [pathname, hash, navigationType]);
+  return null;
+}
+
+/**
+ * Keep <link rel="canonical"> and og:url on the current route. index.html is
+ * the same shell for every path, so a static canonical would point every page
+ * at the homepage.
+ */
+function CanonicalUrl() {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
+    const url = `${CITIZEN_URL}${pathname}`;
+    let link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "canonical";
+      document.head.appendChild(link);
+    }
+    link.href = url;
+    let og = document.head.querySelector<HTMLMetaElement>('meta[property="og:url"]');
+    if (!og) {
+      og = document.createElement("meta");
+      og.setAttribute("property", "og:url");
+      document.head.appendChild(og);
+    }
+    og.content = url;
   }, [pathname]);
   return null;
 }
@@ -77,6 +130,7 @@ export function RootLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-paper pb-20 text-ink lg:pb-0">
       <ScrollToTop />
+      <CanonicalUrl />
       <NavigationProgress />
       <SiteHeader />
       <AlertBanner />
@@ -89,6 +143,7 @@ export function RootLayout() {
       <SiteFooter />
       <MobileBottomNav />
       <CookieConsent />
+      <ConsentGate />
     </div>
   );
 }

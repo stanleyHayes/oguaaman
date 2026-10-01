@@ -81,11 +81,11 @@ export const ADMIN_HELP_TOPICS: readonly HelpTopic[] = [
     category: "Moderation",
     summary: "Investigate concerns submitted about public content and close the loop with an auditable outcome.",
     steps: [
-      "Open an unresolved report and read the reason in context.",
-      "Inspect the reported listing before deciding what action is proportionate.",
-      "Resolve the report after the content decision has been completed.",
+      "Open an unresolved report and read the reason, the target and the content as reported.",
+      "Decide what is proportionate: dismiss, keep the content, remove it, or remove it and suspend the author.",
+      "Write a short decision note and resolve — every report should be handled within 24 hours.",
     ],
-    tips: ["Prioritise immediate safety, impersonation and harmful-content reports.", "Do not resolve a report until any related listing action is complete."],
+    tips: ["Reports over 24 hours old are flagged in red; the most urgent reasons are listed first.", "Child-safety and intimate-image reports hide the content on arrival; dismissing puts it back."],
     keywords: ["flag", "abuse", "safeguarding", "resolve"],
   },
   {
@@ -172,7 +172,7 @@ export const ADMIN_HELP_TOPICS: readonly HelpTopic[] = [
     summary: "Review local agent applications before they can accept paid, escrow-backed work for clients outside Cape Coast.",
     steps: [
       "Confirm the applicant's identity document and stated services.",
-      "Call the guarantor and verify that the good-conduct bond has been posted.",
+      "Call the guarantor and record what they confirm. No good-conduct bond is collected yet, so do not ask for one.",
       "Verify, reject or suspend the agent with an accurate record of the decision.",
     ],
     tips: ["Only vetting officers and stewards can make a decision.", "Never approve an agent from profile copy alone; complete the background check."],
@@ -188,7 +188,7 @@ export const ADMIN_HELP_TOPICS: readonly HelpTopic[] = [
     steps: [
       "Read the job, dispute reason, parties and escrow figures together.",
       "Review the available evidence and decide whether to release or refund.",
-      "Record a clear ruling note and forfeit a bond only when the agent is at fault.",
+      "Record a clear ruling note. Mark a bond forfeit only when the agent is at fault; no bond money is held yet, so it is a record only.",
     ],
     tips: ["Only vetting officers and stewards can resolve a dispute.", "The ruling is a financial action; confirm the amount and outcome before submitting."],
     keywords: ["outside", "escrow", "release", "refund", "bond", "ruling"],
@@ -252,6 +252,21 @@ export const ADMIN_HELP_TOPICS: readonly HelpTopic[] = [
     ],
     tips: ["When evidence is uncertain, verify out of band before granting access.", "A claim grants management access; it does not automatically verify the institution."],
     keywords: ["ownership", "manage", "verification", "request"],
+  },
+  {
+    id: "privacy-requests",
+    path: "/privacy-requests",
+    title: "Privacy requests",
+    kicker: "Data-rights requests",
+    category: "Community",
+    summary: "Handle access, correction, deletion and objection requests made through the public privacy-request form, before their due dates.",
+    steps: [
+      "Work the open requests from the earliest due date.",
+      "Confirm who is asking before sharing or changing any data.",
+      "Move the request to in progress, then completed or refused, with a note of what was done.",
+    ],
+    tips: ["Overdue requests are flagged in red.", "Refusing a request needs a note giving the reason."],
+    keywords: ["privacy", "data protection", "access", "deletion", "correction", "objection"],
   },
   {
     id: "projects",
@@ -400,7 +415,7 @@ export const ADMIN_HELP_TOPICS: readonly HelpTopic[] = [
       "Use steward-only operations carefully and confirm the requested date or scope.",
       "Read configuration cards to understand how this environment is connected.",
     ],
-    tips: ["Staff accounts should keep two-factor authentication enabled.", "Store recovery codes somewhere private and separate from your password."],
+    tips: ["Every staff account must keep two-factor authentication on; staff tools stop working without it.", "Store recovery codes somewhere private and separate from your password."],
     keywords: ["security", "2fa", "totp", "configuration", "recovery"],
   },
   {

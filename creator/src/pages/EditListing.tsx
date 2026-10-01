@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type FormEvent } from "react";
+import { useState, type ReactNode, type SubmitEvent } from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { ArtistRelease, Listing, SocialLink } from "@/lib/types";
@@ -147,6 +147,11 @@ function str(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
+/** A stored number (or legacy numeric string) as input text. */
+function numStr(v: unknown): string {
+  return typeof v === "number" && Number.isFinite(v) ? String(v) : str(v);
+}
+
 function strList(v: unknown): string {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").join(", ") : "";
 }
@@ -244,6 +249,8 @@ export function ListingForm({ type, listing }: Readonly<{ type: string; listing?
   const [businessContactLinks, setBusinessContactLinks] = useState<SocialLink[]>(socialLinks(d.contact));
   const [businessCategories, setBusinessCategories] = useState<string[]>(stringList(d.categories).length ? stringList(d.categories) : (str(d.category) ? [str(d.category)] : []));
   const [opportunityKind, setOpportunityKind] = useState(str(d.kind) || "scholarship");
+  // Sent as a real boolean (FormData would send the string "on" or omit it).
+  const [guardianConsent, setGuardianConsent] = useState(d.guardianConsentRequired !== false);
   const [eventFormat, setEventFormat] = useState(str(d.eventFormat) || "community");
   const [eventAudience, setEventAudience] = useState<string[]>(stringList(d.audience).length ? stringList(d.audience) : ["all-ages"]);
   const [eventAdmission, setEventAdmission] = useState<EventAdmission>(str(d.admission) === "paid" || Array.isArray(d.tiers) ? "paid" : "free");
@@ -263,7 +270,7 @@ export function ListingForm({ type, listing }: Readonly<{ type: string; listing?
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setErr(null);
     const fd = new FormData(e.currentTarget);
@@ -283,7 +290,7 @@ export function ListingForm({ type, listing }: Readonly<{ type: string; listing?
       const n = Number.parseInt(details.bornYear as string, 10);
       if (Number.isFinite(n)) details.bornYear = n; else delete details.bornYear;
     }
-    for (const numberKey of ["bedrooms", "bathrooms"]) {
+    for (const numberKey of ["bedrooms", "bathrooms", "minAge", "maxAge"]) {
       if (typeof details[numberKey] === "string") {
         const n = Number.parseInt(details[numberKey] as string, 10);
         if (Number.isFinite(n)) details[numberKey] = n; else delete details[numberKey];
@@ -310,7 +317,10 @@ export function ListingForm({ type, listing }: Readonly<{ type: string; listing?
       details.categories = businessCategories;
       details.contact = businessContactLinks.map((link) => ({ label: link.label.trim(), url: link.url.trim() })).filter((link) => link.label && link.url);
     }
-    if (type === "opportunity") details.kind = opportunityKind;
+    if (type === "opportunity") {
+      details.kind = opportunityKind;
+      details.guardianConsentRequired = guardianConsent;
+    }
     if (type === "memorial") {
       details.remindersEnabled = reminders;
       details.observeBirthday = observeBday;
@@ -486,11 +496,11 @@ export function ListingForm({ type, listing }: Readonly<{ type: string; listing?
             <Field label="Provider / programme owner"><input name="provider" defaultValue={str(d.provider)} className={inputCls} /></Field>
             <Field label="Safeguarding / policy link (required for mentorship)"><input name="safeguardingPolicyUrl" defaultValue={str(d.safeguardingPolicyUrl)} className={inputCls} /></Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Minimum age (optional)"><input name="minAge" inputMode="numeric" defaultValue={str(d.minAge)} className={inputCls} /></Field>
-              <Field label="Maximum age (optional)"><input name="maxAge" inputMode="numeric" defaultValue={str(d.maxAge)} className={inputCls} /></Field>
+              <Field label="Minimum age (optional)"><input name="minAge" inputMode="numeric" defaultValue={numStr(d.minAge)} className={inputCls} /></Field>
+              <Field label="Maximum age (optional)"><input name="maxAge" inputMode="numeric" defaultValue={numStr(d.maxAge)} className={inputCls} /></Field>
             </div>
             <label className="flex items-start gap-2.5 rounded-lg border border-sand bg-paper p-3.5 text-sm text-ink">
-              <input type="checkbox" name="guardianConsentRequired" defaultChecked={d.guardianConsentRequired !== false} className="mt-0.5 accent-green" />
+              <input type="checkbox" checked={guardianConsent} onChange={(e) => setGuardianConsent(e.target.checked)} className="mt-0.5 accent-green" />
               <span>Require guardian consent for minors<span className="block text-xs text-ink-faint">Mandatory when mentorship includes under-18s.</span></span>
             </label>
             <Field label="How to apply (link)" hint="Information and outbound links only."><input name="applyUrl" defaultValue={str(d.applyUrl)} className={inputCls} /></Field>

@@ -35,7 +35,7 @@ function toneClass(tone: Log["tone"]): string {
 }
 
 export async function loader(): Promise<Data> {
-  const [queue, members] = await Promise.all([api.queuePaged({ page: 1 }), api.members()]);
+  const [queue, members] = await Promise.all([api.queuePaged({ page: 1 }), api.members().catch(() => [] as Member[])]);
   return { queue, members };
 }
 
@@ -47,9 +47,8 @@ function snippet(l: Listing): string {
 export function Component() {
   const { queue, members } = useLoaderData() as Data;
   const [items, setItems] = useState(queue.items);
-  const [page, setPage] = useState(queue.page);
   const [total, setTotal] = useState(queue.total);
-  const [totalPages, setTotalPages] = useState(queue.totalPages);
+  const pageSize = queue.pageSize > 0 ? queue.pageSize : 24;
   const [typeFilter, setTypeFilter] = useState("");
   const [log, setLog] = useState<Log[]>([]);
   const [rejecting, setRejecting] = useState<{ id: string; mode: "reject" | "changes" } | null>(null);
@@ -63,11 +62,9 @@ export function Component() {
     setTypeFilter(type);
     setLoadingFilter(true);
     try {
-      const res = await api.queuePaged({ page: 1, type: type || undefined });
+      const res = await api.queuePaged({ page: 1, pageSize, type: type || undefined });
       setItems(res.items);
-      setPage(res.page);
       setTotal(res.total);
-      setTotalPages(res.totalPages);
     } catch {
       // fall back to client-side filter over the loaded page if the request fails
       setItems((cur) => (type ? cur.filter((i) => i.type === type) : cur));
@@ -76,15 +73,22 @@ export function Component() {
     }
   }
 
+  // The server pages by offset over the live pending list, and decided items
+  // have already left it — so the next unseen item sits at offset
+  // items.length, not at the start of the next page number.
   async function loadMore() {
-    if (page >= totalPages || loadingMore) return;
+    if (items.length >= total || loadingMore) return;
     setLoadingMore(true);
     try {
-      const res = await api.queuePaged({ page: page + 1, type: typeFilter || undefined });
-      setItems((cur) => [...cur, ...res.items]);
-      setPage(res.page);
+      const offset = items.length;
+      const pageNo = Math.floor(offset / pageSize) + 1;
+      const res = await api.queuePaged({ page: pageNo, pageSize, type: typeFilter || undefined });
+      const fresh = res.items.slice(offset - (pageNo - 1) * pageSize);
+      setItems((cur) => {
+        const seen = new Set(cur.map((i) => i.id));
+        return [...cur, ...fresh.filter((i) => !seen.has(i.id))];
+      });
       setTotal(res.total);
-      setTotalPages(res.totalPages);
     } finally {
       setLoadingMore(false);
     }
@@ -125,9 +129,13 @@ export function Component() {
 
       <div>
         <div>
-          {items.length === 0 ? (
+          {items.length === 0 && total === 0 && (
             <Empty icon="check" title="Queue clear">Nothing waiting. New submissions land here for review.</Empty>
-          ) : (
+          )}
+          {items.length === 0 && total > 0 && (
+            <Empty icon="check" title="Loaded items decided">{total} more waiting. Load the next batch to keep going.</Empty>
+          )}
+          {items.length > 0 && (
             <Stagger className="space-y-4">
               {items.map((l, idx) => (
                 <StaggerItem key={l.id} index={idx}>
@@ -197,8 +205,8 @@ export function Component() {
               ))}
             </Stagger>
           )}
-          {items.length > 0 && (
-            <LoadMore onClick={loadMore} loading={loadingMore} hasMore={page < totalPages} loaded={items.length} total={total} />
+          {total > 0 && (
+            <LoadMore onClick={loadMore} loading={loadingMore} hasMore={items.length < total} loaded={items.length} total={total} />
           )}
         </div>
 

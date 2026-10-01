@@ -29,8 +29,12 @@ export function Component() {
   usePageTitle(org.name);
   const primary = org.houseColors?.[0] ?? "#123F2D";
   const accent = org.houseColors?.[1] ?? "#C7A24A";
-  const announcement = officialEvents[0];
   const today = new Date().toISOString().slice(0, 10);
+  // The latest official notice that is not already over (the API returns
+  // them oldest first).
+  const announcement = officialEvents
+    .filter((event) => (event.details.endsAt || event.details.startsAt || today).slice(0, 10) >= today)
+    .sort((a, b) => (b.publishedAt ?? b.createdAt ?? "").localeCompare(a.publishedAt ?? a.createdAt ?? ""))[0];
   const upcoming = events.filter((event) => (event.details.startsAt ?? "") >= today);
   const heroPhoto = SCHOOL_PHOTOS[org.slug] ?? org.gallery?.find((asset) => asset.url)?.url;
 

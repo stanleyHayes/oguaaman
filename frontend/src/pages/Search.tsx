@@ -17,7 +17,9 @@ function hrefFor(h: SearchHit): string {
     case "memorial": return `/memoriam/${h.slug}`;
     case "person": return `/people/${h.slug}`;
     case "project": return `/projects/${h.slug}`;
-    case "event": return "/events";
+    case "event": return `/events/${h.slug}`;
+    case "incident": return `/safety/${h.slug}`;
+    case "lostfound": return `/lost-found/${h.slug}`;
     default: return "/community";
   }
 }
@@ -26,6 +28,7 @@ const KIND_LABEL: Record<string, string> = {
   member: "Person", institution: "Institution",
   artist: "Artist", business: "Business", property: "Rent & Stay", memorial: "In memoriam",
   person: "Son / daughter", event: "Event", memory: "Memory", opportunity: "Opportunity", project: "Project",
+  incident: "Safety report", lostfound: "Lost & found",
 };
 function kindLabel(h: SearchHit): string {
   return KIND_LABEL[h.kind === "listing" ? (h.type ?? "") : h.kind] ?? "Result";

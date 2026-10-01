@@ -8,6 +8,7 @@ import { useRecordView } from "@/lib/use-record-view";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { CandleRemember, Tributes } from "@/components/memorial-actions";
 import { ReportButton } from "@/components/report-button";
+import { SubjectLink } from "@/components/subject-link";
 import { lifeDates, formatDayMonth, initials } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
 
@@ -32,6 +33,14 @@ const GALLERY_GRADIENTS = [
   "linear-gradient(135deg,#D3CBBE,#B0A48F)", "linear-gradient(135deg,#D8C6A2,#BBA06F)",
 ];
 
+/** The yearly-remembrance sentence; null when the family gave no usable date. */
+function remembranceLine(passing: string, birthday: string): string | null {
+  if (passing && birthday) return `Remembered each year on ${passing} and the birthday, ${birthday} — the dates the family chose.`;
+  if (passing) return `Remembered each year on ${passing} — the date the family chose.`;
+  if (birthday) return `Remembered each year on the birthday, ${birthday} — the date the family chose.`;
+  return null;
+}
+
 export function Component() {
   const { memorial: m, places, schools } = useLoaderData() as Data;
   usePageTitle(m.title);
@@ -45,10 +54,7 @@ export function Component() {
   const shown = new Set<string>([place?.name, ...memSchools.map((s) => s.name)].filter(Boolean) as string[]);
   const extraAssociations = (d.associations ?? []).filter((a) => !shown.has(a));
 
-  const birthdayNote = d.observeBirthday && d.birthday ? ` and the birthday, ${formatDayMonth(d.birthday)}` : "";
-  const remembrance = d.remindersEnabled
-    ? `Remembered each year on ${formatDayMonth(d.diedDate!)}${birthdayNote} — the dates the family chose.`
-    : null;
+  const remembrance = d.remindersEnabled ? remembranceLine(formatDayMonth(d.diedDate), d.observeBirthday ? formatDayMonth(d.birthday) : "") : null;
 
   // Keeper-claim state
   const isKeeper = !!(member && d.keeperId === member.id);
@@ -192,7 +198,10 @@ export function Component() {
           )}
 
           <div className="mt-8 border-t border-sand pt-5">
-            <ReportButton listingId={m.id} memorial />
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <ReportButton listingId={m.id} memorial />
+              <SubjectLink />
+            </div>
             <p className="mt-1.5 text-xs text-ink-faint">Is something here wrong, or does the family wish to make a change? Let a steward know.</p>
           </div>
         </div>

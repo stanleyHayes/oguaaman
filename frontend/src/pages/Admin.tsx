@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from "react-router-dom";
 import type { Listing, Member, Stats } from "@/lib/types";
-import { api } from "@/lib/api";
+import { api, getToken } from "@/lib/api";
 import { Container, CTA as Cta } from "@/components/ui";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
 import { ModerationQueue, type QueueItem } from "@/components/moderation-queue";
@@ -16,20 +16,26 @@ interface Data {
 
 /**
  * The dashboard is linked from the public footer, so anyone can land here.
- * /api/admin/queue answers 401 to a signed-out visitor and 403 to a signed-in
+ * /api/admin/queue answers 403 both to a signed-out visitor and to a signed-in
  * member without the role — both are expected outcomes, not failures, so we
  * resolve with a `denied` marker. Letting them throw put every ordinary visitor
  * on the generic "We hit a snag" error page.
  */
 export async function loader(): Promise<Data> {
   const empty = { queue: [], members: [], stats: {} as Stats };
+  // The role guard answers 403 whether or not anyone is signed in, so decide
+  // "signed out" on the client: no token, or a token the API no longer accepts.
+  if (!getToken()) return { ...empty, denied: "signed-out" };
   try {
     const [queue, members, stats] = await Promise.all([api.queue(), api.members(), api.stats()]);
     return { queue, members, stats };
   } catch (e) {
     const status = (e as { status?: number }).status;
     if (status === 401) return { ...empty, denied: "signed-out" };
-    if (status === 403) return { ...empty, denied: "not-a-curator" };
+    if (status === 403) {
+      const signedIn = await api.me().then(() => true, () => false);
+      return { ...empty, denied: signedIn ? "not-a-curator" : "signed-out" };
+    }
     throw e;
   }
 }

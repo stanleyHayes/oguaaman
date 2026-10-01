@@ -1,5 +1,5 @@
-import { useRef, useState, type FormEvent } from "react";
-import { api } from "@/lib/api";
+import { useRef, useState, type SubmitEvent } from "react";
+import { api, setToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "./layout";
 import { OtpInput } from "./otp-input";
@@ -39,7 +39,8 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const formRef = useRef<HTMLFormElement | null>(null);
+  // Re-entrancy guard so the OTP auto-submit and the button can't both confirm.
+  const confirming = useRef(false);
 
   const begin = async () => {
     setBusy(true); setErr(null);
@@ -52,17 +53,27 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
     } finally { setBusy(false); }
   };
 
-  const confirm = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Takes the code as an argument: onComplete fires before React re-renders
+  // with the sixth digit, so the `code` state would still be stale there.
+  const confirmCode = async (value: string) => {
+    if (confirming.current) return;
+    confirming.current = true;
     setBusy(true); setErr(null);
     try {
-      const res = await api.mfaConfirm(code.trim());
+      const res = await api.mfaConfirm(value.trim());
+      // Enrolment revokes every earlier session, this one included.
+      if (res.token) setToken(res.token);
       setStage({ step: "recovery", codes: res.recoveryCodes });
       // NB: don't refresh the member yet — the caller may unmount on
       // mfaEnabled=true, and the recovery codes must stay on screen.
     } catch (e) {
       setErr(e instanceof Error ? e.message : "That code didn't work.");
-    } finally { setBusy(false); }
+    } finally { confirming.current = false; setBusy(false); }
+  };
+
+  const confirm = (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    void confirmCode(code);
   };
 
   const finish = async () => {
@@ -96,7 +107,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
 
   if (stage?.step === "qr") {
     return (
-      <form ref={formRef} onSubmit={confirm} className="space-y-4">
+      <form onSubmit={confirm} className="space-y-4">
         <ol className="list-decimal space-y-1.5 pl-5 text-sm text-ink-muted">
           <li>Scan this QR with your authenticator app (Google Authenticator, 1Password, Aegis…).</li>
           <li>Enter the 6-digit code it shows.</li>
@@ -119,7 +130,7 @@ export function MfaEnroll({ onDone, doneLabel = "Done" }: Readonly<{ onDone?: ()
         </div>
         <div>
           <p className="mb-1.5 text-sm font-medium text-ink">Enter the 6-digit code</p>
-          <OtpInput value={code} onChange={setCode} onComplete={() => formRef.current?.requestSubmit()} ariaLabel="Authenticator code" />
+          <OtpInput value={code} onChange={setCode} onComplete={(completed) => void confirmCode(completed)} ariaLabel="Authenticator code" />
         </div>
         {err && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{err}</p>}
         <div className="flex items-center gap-3">
@@ -151,11 +162,13 @@ export function MfaDisable({ onDone }: Readonly<{ onDone?: () => void }>) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const confirm = async (e: FormEvent<HTMLFormElement>) => {
+  const confirm = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
-      await api.mfaDisable(code.trim());
+      const res = await api.mfaDisable(code.trim());
+      // Turning 2FA off revokes every earlier session, this one included.
+      if (res.token) setToken(res.token);
       setMember(await api.me());
       setOpen(false);
       onDone?.();

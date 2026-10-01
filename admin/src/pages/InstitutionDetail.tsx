@@ -19,7 +19,8 @@ interface PageData extends InstitutionView { team: TeamMember[] }
 export async function loader({ params }: LoaderFunctionArgs): Promise<PageData> {
   const [view, team] = await Promise.all([
     api.institution(params.slug!),
-    api.institutionTeam(params.slug!).catch(() => [] as TeamMember[]),
+    // GET /team answers {viewerScope, team}; a failure just shows no roster.
+    api.institutionTeam(params.slug!).then((v) => v.team).catch(() => [] as TeamMember[]),
   ]);
   // Coerce every list to an array: a 200 with a null/error-shaped body (e.g. an
   // endpoint that lost its data) would otherwise slip past the .catch above and
@@ -223,7 +224,7 @@ export function Component() {
             {editing ? "Close editor" : "Configure page"}
           </button>
         </div>
-        {editing && <div className="mt-5"><InstitutionEditor slug={o.slug} org={o} /></div>}
+        {editing && <div className="mt-5"><InstitutionEditor slug={o.slug} org={o} onSaved={(updated) => setO((cur) => ({ ...cur, ...updated }))} /></div>}
       </section>
     </>
   );

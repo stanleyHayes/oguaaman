@@ -4,7 +4,10 @@
 // cache-first; /uploads images stale-while-revalidate; /api network-only
 // (stale data is worse than an honest error).
 
-const VERSION = "oguaa-shell-v2";
+// The page registers /sw.js?v=<build id>, so every deploy is a new worker
+// version: install re-caches the shell and activate prunes the old caches.
+const BUILD = new URL(self.location.href).searchParams.get("v") || "dev";
+const VERSION = `oguaa-shell-v3-${BUILD}`;
 const SHELL_CACHE = `${VERSION}:shell`;
 const RUNTIME_CACHE = `${VERSION}:runtime`;
 const SHELL = ["/", "/manifest.webmanifest", "/icon.svg", "/icon-192.png"];
@@ -25,7 +28,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((k) => k.startsWith("oguaa-shell-") && !k.startsWith(VERSION))
+            .filter((k) => k.startsWith("oguaa-shell-") && !k.startsWith(`${VERSION}:`))
             .map((k) => caches.delete(k)),
         ),
       )
@@ -59,7 +62,14 @@ const staleWhileRevalidate = async (request) => {
 
 const networkFirstShell = async (request) => {
   try {
-    return await fetch(request);
+    const res = await fetch(request);
+    // Every SPA path serves the same index.html; keep the offline copy current
+    // so it references this deploy's asset hashes.
+    if (res.ok && res.type === "basic") {
+      const copy = res.clone();
+      caches.open(SHELL_CACHE).then((cache) => cache.put("/", copy)).catch(() => {});
+    }
+    return res;
   } catch {
     const shell = await caches.match("/", { ignoreSearch: true });
     return shell || Response.error();
@@ -105,6 +115,8 @@ self.addEventListener("notificationclick", (event) => {
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       for (const client of clients) {
         if ("focus" in client) {
+          // The open app routes to the alert in place (AlertListener handles
+          // this message), then the tab is brought forward.
           client.postMessage({ type: "oguaa-alert-open", url });
           return client.focus();
         }

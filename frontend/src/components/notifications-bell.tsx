@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Notification } from "@/lib/types";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
+import { resolveNotificationLink } from "@/lib/app-urls";
 
 /** Small relative-time formatter for notification timestamps (ISO → "3d ago"). */
 function ago(iso: string): string {
@@ -94,7 +95,9 @@ export function NotificationsBell() {
       try { await api.markNotificationRead(n.id); } catch { /* optimistic */ }
     }
     setOpen(false);
-    if (n.link) navigate(n.link);
+    const target = n.link ? resolveNotificationLink(n.link) : null;
+    if (target && "external" in target) window.location.assign(target.external);
+    else if (target) navigate(target.internal);
   }
 
   const inbox = items.length === 0 ? (

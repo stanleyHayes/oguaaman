@@ -15,7 +15,7 @@ const STATUSES = ["all", "approved", "pending", "rejected", "unpublished", "draf
 const PAGE_SIZE = 24;
 
 export async function loader(): Promise<Data> {
-  const [listings, members] = await Promise.all([api.listings(), api.members()]);
+  const [listings, members] = await Promise.all([api.listings(), api.members().catch(() => [] as Member[])]);
   return { listings, members };
 }
 

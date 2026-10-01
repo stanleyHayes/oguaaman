@@ -70,6 +70,8 @@ export const TYPE_LABEL: Record<string, string> = {
   person: "Person",
   opportunity: "Opportunity",
   memory: "Memory",
+  property: "Place to stay",
+  project: "Project",
 };
 
 export const TYPE_TONE: Record<string, NonNullable<PillTone>> = {
@@ -80,37 +82,55 @@ export const TYPE_TONE: Record<string, NonNullable<PillTone>> = {
   person: "gold",
   opportunity: "teal",
   memory: "neutral",
+  property: "green",
+  project: "clay",
 };
 
-// Types with their own detail page in the portal app, vs. types that only have
-// a list page. Linking an event to /events/:slug would 404 — the portal has no
-// per-event route — so those resolve to the list instead.
+// Where each listing type opens in the portal web app (frontend/src/router.tsx).
+// Types with a per-item page link to it; opportunities have no detail page and
+// are listed on the Youth board, memories on the Community page.
 const DETAIL_PATH: Record<string, string> = {
   artist: "music",
   memorial: "memoriam",
   business: "business",
   person: "people",
+  event: "events",
+  property: "rent-stay",
+  project: "projects",
 };
 const LIST_PATH: Record<string, string> = {
-  event: "events",
-  opportunity: "events",
+  opportunity: "youth",
   memory: "community",
 };
 
+/** The portal page that lists every open opportunity. */
+export const PORTAL_OPPORTUNITIES_URL = `${PORTAL_APP_URL}/${LIST_PATH.opportunity}`;
+
 /** Where a listing opens in the portal web app. */
 export function portalHref(l: Pick<Listing, "type" | "slug">): string {
-  if (DETAIL_PATH[l.type]) return `${PORTAL_APP_URL}/${DETAIL_PATH[l.type]}/${l.slug}`;
+  if (DETAIL_PATH[l.type] && l.slug) return `${PORTAL_APP_URL}/${DETAIL_PATH[l.type]}/${encodeURIComponent(l.slug)}`;
   if (LIST_PATH[l.type]) return `${PORTAL_APP_URL}/${LIST_PATH[l.type]}`;
   return PORTAL_APP_URL;
 }
 
-/** "2026-09-05" → "5 Sep 2026"; leaves anything unparseable untouched. */
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DATE_FORMAT: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+
+/**
+ * "2026-09-05" → "5 Sep 2026"; leaves anything unparseable untouched.
+ *
+ * A date-only value is a calendar day, not an instant, so it is formatted in
+ * UTC (where ECMAScript parses it) and never shifts in the viewer's zone. A
+ * timestamp (a deadline such as "2026-12-31T23:59:59Z") is shown on the town's
+ * calendar — Cape Coast keeps Africa/Accra time (UTC+0) — so a visitor abroad
+ * sees the same closing day the poster meant.
+ */
 function prettyDate(iso: string): string {
   if (!iso) return "";
   const t = Date.parse(iso);
-  return Number.isNaN(t)
-    ? iso
-    : new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  if (Number.isNaN(t)) return iso;
+  const timeZone = DATE_ONLY.test(iso.trim()) ? "UTC" : "Africa/Accra";
+  return new Date(t).toLocaleDateString("en-GB", { ...DATE_FORMAT, timeZone });
 }
 
 /** A friendly one-line subtitle from a listing's details, by type. */

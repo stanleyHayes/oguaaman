@@ -148,7 +148,8 @@ export function Component() {
               </div>
             </div>
           )}
-          {member ? <SubmitForm initialType={initialType} /> : <SignInGate />}
+          {/* Keyed so /submit?type=… opened from /submit starts the form on that type. */}
+          {member ? <SubmitForm key={initialType ?? "default"} initialType={initialType} /> : <SignInGate />}
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-24">

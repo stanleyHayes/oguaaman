@@ -13,10 +13,15 @@ import { DEFAULT_TITLE, DEFAULT_DESCRIPTION, SITE_NAME, mergeKeywords, siteGraph
  * every shared link previews identically no matter what was shared.
  *
  * This plugin emits a real HTML file per static route — dist/history/index.html
- * and so on — each with its own head and a no-JS shell. Vercel's filesystem
- * handler serves those directly (see vercel.json), and the SPA fallback still
- * catches dynamic routes like /news/:slug. It also emits sitemap.xml and
- * robots.txt from the same route table, so they cannot drift from the router.
+ * and so on — each with its own head and a no-JS shell. Vercel serves those
+ * straight from the filesystem (see vercel.json). Every other path — dynamic
+ * routes like /news/:slug and /visit/:slug — is rewritten to a separate
+ * fallback shell (FALLBACK_FILE) whose head carries the sitewide title and
+ * description but NO canonical or og:url: baking the home page's into it told
+ * scrapers and search engines that every article and place WAS the home page.
+ * The page sets its own title, canonical and og tags once it renders.
+ * It also emits sitemap.xml and robots.txt from the same route table, so they
+ * cannot drift from the router.
  *
  * The body is NOT server-rendered: React still hydrates on the client. What a
  * crawler gets up front is the head — titles, canonicals, structured data —
@@ -35,6 +40,12 @@ const ld = (data: unknown) =>
 
 const trimSlash = (s: string) => s.replace(/\/+$/, "");
 
+/**
+ * The SPA fallback shell for paths with no prerendered file. vercel.json and
+ * nginx.conf rewrite unknown paths to it — keep the three in step.
+ */
+export const FALLBACK_FILE = "app-shell.html";
+
 const HOME: RouteSeo = {
   path: "/",
   title: DEFAULT_TITLE,
@@ -44,9 +55,17 @@ const HOME: RouteSeo = {
   priority: 1,
 };
 
-/** The full <head> SEO block for one route. */
+/**
+ * The head for paths that have no prerendered file (/news/:slug, /visit/:slug):
+ * sitewide copy, no canonical/og:url, no breadcrumb. An empty path keeps every
+ * section in the no-JS shell's link list.
+ */
+const FALLBACK: RouteSeo = { ...HOME, path: "" };
+
+/** The full <head> SEO block for one route (FALLBACK: no page-specific URL). */
 function headFor(route: RouteSeo, siteUrl: string): string {
   const site = trimSlash(siteUrl);
+  const isFallback = route === FALLBACK;
   const url = route.path === "/" ? `${site}/` : `${site}${route.path}`;
   // PNG, not SVG: Facebook, WhatsApp, LinkedIn, X, Slack and iMessage all
   // refuse SVG for link previews, so an .svg og:image silently never renders.
@@ -57,13 +76,11 @@ function headFor(route: RouteSeo, siteUrl: string): string {
     `<title>${esc(route.title)}</title>`,
     `<meta name="description" content="${esc(route.description)}" />`,
     `<meta name="keywords" content="${esc(keywords)}" />`,
-    `<link rel="canonical" href="${esc(url)}" />`,
     `<meta name="robots" content="index, follow, max-image-preview:large" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:site_name" content="${esc(SITE_NAME)}" />`,
     `<meta property="og:title" content="${esc(route.title)}" />`,
     `<meta property="og:description" content="${esc(route.description)}" />`,
-    `<meta property="og:url" content="${esc(url)}" />`,
     `<meta property="og:image" content="${esc(image)}" />`,
     `<meta property="og:image:type" content="image/png" />`,
     `<meta property="og:image:width" content="1200" />`,
@@ -75,7 +92,13 @@ function headFor(route: RouteSeo, siteUrl: string): string {
     `<meta name="twitter:image" content="${esc(image)}" />`,
     ld(siteGraph(site)),
   ];
-  if (route.path !== "/") tags.push(ld(breadcrumbGraph(site, route.path, route.h1)));
+  if (!isFallback) {
+    // Only a page that IS this URL may claim it; the fallback serves many.
+    const ogImage = tags.findIndex((t) => t.startsWith(`<meta property="og:image"`));
+    tags.splice(ogImage, 0, `<meta property="og:url" content="${esc(url)}" />`);
+    tags.splice(3, 0, `<link rel="canonical" href="${esc(url)}" />`);
+  }
+  if (!isFallback && route.path !== "/") tags.push(ld(breadcrumbGraph(site, route.path, route.h1)));
   return tags.join("\n    ");
 }
 
@@ -177,10 +200,11 @@ export function seoPrerender(siteUrl: string): Plugin {
         }
       }
 
+      await writeFile(join(dist, FALLBACK_FILE), applyRoute(template, FALLBACK, siteUrl), "utf8");
       await writeFile(join(dist, "sitemap.xml"), sitemap(siteUrl, lastmod), "utf8");
       await writeFile(join(dist, "robots.txt"), robots(siteUrl), "utf8");
 
-      this.info?.(`SEO: prerendered ${ROUTE_SEO.length} routes + sitemap.xml + robots.txt for ${siteUrl}`);
+      this.info?.(`SEO: prerendered ${ROUTE_SEO.length} routes + ${FALLBACK_FILE} + sitemap.xml + robots.txt for ${siteUrl}`);
     },
   };
 }

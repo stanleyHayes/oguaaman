@@ -1,10 +1,11 @@
-import { useEffect, useState, type ReactNode, type FormEvent, type MouseEvent } from "react";
+import { useEffect, useState, type ReactNode, type SubmitEvent, type MouseEvent } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Bell, CalendarDays, Check, CircleCheck, Eye, EyeOff, Lock, Mail, Monitor, Moon, Phone, ShieldCheck, SlidersHorizontal, Sun } from "lucide-react";
-import { api } from "@/lib/api";
+import { ArrowUpRight, Bell, CalendarDays, Check, CircleCheck, Eye, EyeOff, Fingerprint, Lock, Mail, Monitor, Moon, Phone, ShieldCheck, SlidersHorizontal, Sun } from "lucide-react";
+import { api, setToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { RoleBadge, VerifiedBadge } from "@/components/ui";
 import { MfaManage } from "@/components/mfa";
+import { AiConsentSetting, NotificationPrefs, PrivacyLinks } from "@/components/privacy-settings";
 import { BusyLabel } from "@/components/skeleton";
 import { formatDate } from "@/lib/format";
 import { type Theme, type ThemeMode, getThemeMode, onThemeChange, resolveThemeMode, setThemeMode } from "@/lib/theme";
@@ -99,7 +100,7 @@ function ChangePassword() {
 
   const canSubmit = current.length > 0 && next.length > 0 && confirm.length > 0 && state !== "saving";
 
-  async function submit(e: FormEvent<HTMLFormElement>) {
+  async function submit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setErr(null);
     if (next.length < 8) { setState("error"); setErr("Your new password must be at least 8 characters."); return; }
@@ -107,7 +108,9 @@ function ChangePassword() {
     if (next === current) { setState("error"); setErr("Choose a new password that's different from your current one."); return; }
     setState("saving");
     try {
-      await api.changePassword(current, next);
+      const res = await api.changePassword(current, next);
+      // The change signs out every earlier session — keep this one on the new token.
+      if (res.token) setToken(res.token);
       setCurrent(""); setNext(""); setConfirm("");
       setState("saved");
     } catch (e) {
@@ -224,77 +227,6 @@ function ThemeSegment() {
         {mode === "system"
           ? `Follows your device — currently ${resolved === "dark" ? "dark" : "light"}.`
           : `Always ${mode} on this device.`}
-      </p>
-    </div>
-  );
-}
-
-/** A row toggle switch (device-local preference). */
-function Toggle({ checked, onChange, label, description }: Readonly<{ checked: boolean; onChange: (v: boolean) => void; label: string; description?: string }>) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-sand px-1 py-4 last:border-0">
-      <div className="min-w-0 pr-2">
-        <p className="text-sm font-medium text-ink">{label}</p>
-        {description && <p className="mt-1 max-w-xl text-xs leading-relaxed text-ink-faint">{description}</p>}
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className="relative h-11 w-14 shrink-0 rounded-full"
-      >
-        <span className={`absolute inset-x-0 top-1/2 h-7 -translate-y-1/2 rounded-full transition-colors ${checked ? "bg-green" : "bg-sand"}`} aria-hidden />
-        <span className={`absolute left-1 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-paper shadow ring-1 ring-black/5 transition-transform ${checked ? "translate-x-6" : ""}`} aria-hidden />
-      </button>
-    </div>
-  );
-}
-
-const NOTIFY_KEY = "oguaa.creator.notifications";
-const NOTIFY_ITEMS: { id: string; label: string; description: string }[] = [
-  { id: "listings", label: "Listing reviews", description: "When a listing is approved, needs changes, or goes live." },
-  { id: "earnings", label: "Supporters & earnings", description: "Ticket sales, subscriptions, promotions, and pledges." },
-  { id: "team", label: "Team & institutions", description: "Invitations and changes to institutions you manage." },
-  { id: "product", label: "Product news", description: "Occasional tips and new studio features." },
-];
-
-/**
- * Notification preferences. The member model carries no server-side delivery
- * preferences yet, so — per the brief's "documented placeholder" — these persist
- * on this device (localStorage) and are clearly labelled as such. When a
- * /api/me/notification-prefs endpoint lands, swap the read/write for the API.
- */
-function NotificationPrefs() {
-  const [prefs, setPrefs] = useState<Record<string, boolean>>(() => {
-    const defaults = Object.fromEntries(NOTIFY_ITEMS.map((i) => [i.id, true]));
-    try {
-      const saved = JSON.parse(localStorage.getItem(NOTIFY_KEY) ?? "{}") as Record<string, boolean>;
-      return { ...defaults, ...saved };
-    } catch {
-      return defaults;
-    }
-  });
-
-  function set(id: string, value: boolean) {
-    setPrefs((cur) => {
-      const nextPrefs = { ...cur, [id]: value };
-      try { localStorage.setItem(NOTIFY_KEY, JSON.stringify(nextPrefs)); } catch { /* ignore */ }
-      return nextPrefs;
-    });
-  }
-
-  return (
-    <div>
-      <div className="rounded-2xl border border-sand bg-paper px-4 sm:px-5">
-        {NOTIFY_ITEMS.map((item) => (
-          <Toggle key={item.id} label={item.label} description={item.description} checked={prefs[item.id] ?? true} onChange={(v) => set(item.id, v)} />
-        ))}
-      </div>
-      <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-ink-faint">
-        <Monitor size={14} className="mt-0.5 shrink-0" aria-hidden />
-        Saved on this device for now. Account-wide delivery preferences are on the way.
       </p>
     </div>
   );
@@ -472,6 +404,21 @@ export function Component() {
                 </div>
                 <MfaManage />
               </div>
+            </div>
+          </section>
+
+          <section className="overflow-hidden rounded-[1.5rem] border border-sand bg-cream px-5 py-5 sm:px-7 sm:py-7" aria-labelledby="privacy-title">
+            <SectionHeading
+              id="privacy-title"
+              number="04"
+              icon={<Fingerprint size={18} aria-hidden />}
+              kicker="Privacy & data"
+              title="Your data, your call"
+              description="Choose whether the writing assistant may see your text, and find where to download your data or close your account."
+            />
+            <div className="mt-6 space-y-5 sm:ml-[4.25rem]">
+              <AiConsentSetting />
+              <PrivacyLinks />
             </div>
           </section>
         </div>

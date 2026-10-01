@@ -8,6 +8,8 @@ import { cldCover } from "@/lib/cloudinary";
 import { formatDate } from "@/lib/format";
 import type { NewsArticle } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
+import { ReportButton } from "@/components/report-button";
+import { SubjectLink } from "@/components/subject-link";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   return api.newsArticle(params.slug!);
@@ -130,10 +132,14 @@ function StoryMeta({ article }: Readonly<{ article: NewsArticle }>) {
           )}
         </dl>
 
-        {article.automated && article.sourceUrl && (
+        {article.sourceUrl?.startsWith("https://") && (
           <div className="mt-5 rounded-xl border border-gold/30 bg-gold/[0.07] p-3 text-xs leading-relaxed text-ink-muted">
-            <strong className="block text-ink">{article.automationLabel ?? "Automated report"}</strong>
-            This summary was assembled from a trusted public source. <a className="font-semibold text-green-text underline" href={article.sourceUrl} target="_blank" rel="noreferrer">Check {article.sourceName ?? "the original source"}</a> for the primary report.
+            {article.automated && <strong className="block text-ink">{article.automationLabel ?? "Automated report"}</strong>}
+            {article.automated && "This summary was assembled from a public source. "}
+            {article.sourceAuthor && <>Original story by {article.sourceAuthor}. </>}
+            <a className="font-semibold text-green-text underline" href={article.sourceUrl} target="_blank" rel="noreferrer">
+              Read the original at {article.sourceName ?? "the source"} <span aria-hidden>↗</span>
+            </a>
           </div>
         )}
 
@@ -149,6 +155,11 @@ function StoryMeta({ article }: Readonly<{ article: NewsArticle }>) {
             </div>
           </div>
         )}
+
+        <div className="mt-5 flex flex-col items-start gap-2 border-t border-sand pt-5">
+          <ReportButton target={{ type: "news", id: article.id }} />
+          <SubjectLink />
+        </div>
 
         <div className="mt-5 border-t border-sand pt-5">
           <ShareStory title={article.title} />

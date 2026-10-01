@@ -30,15 +30,18 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
   const [flash, setFlash] = useState<Flash>(null);
   const paged = usePagedList(view.team, 12);
 
-  async function run(action: () => Promise<unknown>, ok: string, actionKey: string) {
+  /** Runs an action with a flash message; resolves true only when it succeeded. */
+  async function run(action: () => Promise<unknown>, ok: string, actionKey: string): Promise<boolean> {
     setBusyAction(actionKey);
     setFlash(null);
     try {
       await action();
       setFlash({ kind: "ok", text: ok });
       onChanged();
+      return true;
     } catch (e) {
       setFlash({ kind: "err", text: (e as Error).message || "Something went wrong." });
+      return false;
     } finally {
       setBusyAction(null);
     }
@@ -46,12 +49,13 @@ export function TeamPanel({ slug, view, meId, onChanged }: Readonly<{ slug: stri
 
   async function invite() {
     if (!identifier.trim() || !role.trim()) return;
-    await run(
+    const sent = await run(
       () => api.inviteToTeam(slug, { identifier: identifier.trim(), role: role.trim(), scope }),
       "Invitation sent — they’ll see it in their creator app.",
       "invite",
     );
-    setIdentifier(""); setRole(""); setScope("officer");
+    // Keep what was typed on failure so a typo can be corrected.
+    if (sent) { setIdentifier(""); setRole(""); setScope("officer"); }
   }
 
   return (

@@ -10,6 +10,7 @@ import { Pagination } from "@/components/pagination";
 import { useClientPagination } from "@/lib/use-pagination";
 import { YENKAE_DESCRIPTION } from "@/lib/content";
 import { initials, lifeDates } from "@/lib/format";
+import { pickFeatured } from "@/lib/featured";
 
 const PER_PAGE = 12;
 
@@ -25,7 +26,7 @@ export function Component() {
   const memorials = useLoaderData() as Listing[];
   usePageTitle("In Memoriam");
 
-  const featured = memorials.find((memorial) => memorial.featured) ?? memorials[0];
+  const featured = pickFeatured(memorials);
   const remaining = featured ? memorials.filter((memorial) => memorial.id !== featured.id) : [];
   const candles = memorials.reduce((total, memorial) => total + (memorial.details.candles ?? 0), 0);
   const remembering = memorials.reduce((total, memorial) => total + (memorial.details.rememberedByCount ?? 0), 0);

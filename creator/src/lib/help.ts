@@ -135,6 +135,42 @@ const GROW: CreatorHelpTopic = {
   routeLabel: "Open promotion tools",
 };
 
+const BOOKINGS: CreatorHelpTopic = {
+  id: "bookings",
+  title: "Booking inbox",
+  kicker: "Requests for your act",
+  overview: "Read the event requests people send from your public artist page and move each one through reviewing, accepted or declined.",
+  steps: [
+    "Filter by status to focus on new requests first.",
+    "Read the event type, date, location, audience and budget in each request.",
+    "Move the request to reviewing, accepted or declined so the requester knows where it stands.",
+  ],
+  tips: [
+    "Requesters' contact details are private to this inbox. Use them only to reply about the booking.",
+    "Agree fees and arrangements directly with the requester before you accept.",
+  ],
+  route: "/bookings",
+  routeLabel: "Open booking inbox",
+};
+
+const CAMPAIGNS: CreatorHelpTopic = {
+  id: "campaigns",
+  title: "Your campaigns",
+  kicker: "Fundraise for a cause",
+  overview: "Start and follow fundraising campaigns. Campaigns need an active creator plan, set on the Promote & plan page.",
+  steps: [
+    "Choose Start a campaign and give it a clear title and story.",
+    "Set a funding goal in cedis (at least GH₵ 5) and, if you like, a deadline.",
+    "Check the summary and submit. Your first campaign is reviewed before it goes live.",
+  ],
+  tips: [
+    "The goal can't be changed after you submit, so double-check the amount on the review step.",
+    "Explain exactly what the money will pay for. Backers give more when they can see the outcome.",
+  ],
+  route: "/campaigns",
+  routeLabel: "Open campaigns",
+};
+
 const MONEY: CreatorHelpTopic = {
   id: "money",
   title: "Money",
@@ -193,11 +229,11 @@ const SETTINGS: CreatorHelpTopic = {
   id: "settings",
   title: "Settings",
   kicker: "Security and preferences",
-  overview: "Control your working theme, notifications, password, two-factor authentication, privacy tools, and account access.",
+  overview: "Control your working theme, account-wide notifications, password, two-factor authentication, and whether the writing assistant may see your text.",
   steps: [
-    "Choose the appearance and notification preferences that suit your work.",
+    "Choose the appearance and notification preferences that suit your work. Safety, account and payment messages always stay on.",
     "Use a strong password and enable two-factor authentication for better protection.",
-    "Use the privacy tools when you need an export or want to manage your account data.",
+    "To download a copy of your data or delete your account, open Privacy & data and follow the link to your account page on the community portal.",
   ],
   tips: [
     "Store recovery codes somewhere private and separate from this device.",
@@ -232,6 +268,8 @@ export const CREATOR_HELP_TOPICS = [
   TEAM,
   WRITE,
   GROW,
+  CAMPAIGNS,
+  BOOKINGS,
   MONEY,
   NOTIFICATIONS,
   ACCOUNT,
@@ -245,6 +283,8 @@ export function creatorHelpTopic(pathname: string): CreatorHelpTopic {
   if (pathname === "/team" || pathname.startsWith("/team/")) return TEAM;
   if (pathname === "/write" || pathname.startsWith("/write/")) return WRITE;
   if (pathname === "/grow" || pathname.startsWith("/grow/")) return GROW;
+  if (pathname === "/campaigns" || pathname.startsWith("/campaigns/")) return CAMPAIGNS;
+  if (pathname === "/bookings" || pathname.startsWith("/bookings/")) return BOOKINGS;
   if (pathname === "/money" || pathname.startsWith("/money/")) return MONEY;
   if (pathname === "/notifications" || pathname.startsWith("/notifications/")) return NOTIFICATIONS;
   if (pathname === "/account" || pathname.startsWith("/account/")) return ACCOUNT;

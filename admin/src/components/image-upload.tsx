@@ -1,17 +1,27 @@
-import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
-import { getToken } from "@/lib/api";
+import { useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode } from "react";
+import { ApiError, api, getToken } from "@/lib/api";
+import type { CloudinarySignature } from "@/lib/types";
 import { BusyLabel } from "@/components/skeleton";
 
-// Image upload. Prefers Cloudinary (unsigned preset) when configured; otherwise
-// uploads to the first-party Go endpoint (POST /api/uploads) so uploads work out
-// of the box. URL paste is the last resort. The value is always a URL.
+// Image upload. Prefers a signed Cloudinary upload (K9: the API signs the
+// request into the staffer's own folder); when the API answers 503
+// signed_uploads_unavailable it falls back to the first-party Go endpoint
+// (POST /api/uploads). URL paste is the last resort. The value is always a URL.
 const BASE = import.meta.env.VITE_API_URL ?? "";
-const CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
-const PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
-const cloudinaryConfigured = Boolean(CLOUD && PRESET);
+const MAX_BYTES = 8 * 1024 * 1024;
+const UPLOAD_FAILED = "Upload failed.";
 
 const inputCls =
   "w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green-text focus:outline-none focus:ring-2 focus:ring-green/15";
+
+function uploadError(res: Record<string, unknown>, status: number): Error {
+  const err = res.error;
+  if (typeof err === "string") return new Error(typeof res.message === "string" ? res.message : err);
+  if (err && typeof err === "object" && typeof (err as { message?: unknown }).message === "string") {
+    return new Error((err as { message: string }).message);
+  }
+  return new Error(`Upload failed (${status})`);
+}
 
 function xhrUpload(url: string, fd: FormData, auth: boolean, pick: (r: Record<string, unknown>) => string | undefined, onProgress: (pct: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -24,7 +34,7 @@ function xhrUpload(url: string, fd: FormData, auth: boolean, pick: (r: Record<st
         const res = JSON.parse(xhr.responseText) as Record<string, unknown>;
         const got = pick(res);
         if (xhr.status >= 200 && xhr.status < 300 && got) resolve(got);
-        else reject(new Error((res.error as string) ?? ((res.error as { message?: string })?.message) ?? `Upload failed (${xhr.status})`));
+        else reject(uploadError(res, xhr.status));
       } catch { reject(new Error("Upload failed — unexpected response.")); }
     };
     xhr.onerror = () => reject(new Error("Network error during upload."));
@@ -32,16 +42,40 @@ function xhrUpload(url: string, fd: FormData, auth: boolean, pick: (r: Record<st
   });
 }
 
-function upload(file: File, onProgress: (pct: number) => void): Promise<string> {
-  if (cloudinaryConfigured) {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("upload_preset", PRESET as string);
-    return xhrUpload(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, fd, false, (r) => r.secure_url as string | undefined, onProgress);
+/** Asks the API for signed upload parameters; null means "use the fallback". */
+async function signature(): Promise<CloudinarySignature | null> {
+  try {
+    return await api.cloudinarySignature();
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 503) return null;
+    throw err;
   }
+}
+
+async function upload(file: File, onProgress: (pct: number) => void): Promise<string> {
+  const sig = await signature();
   const fd = new FormData();
   fd.append("file", file);
-  return xhrUpload(`${BASE}/api/uploads`, fd, true, (r) => r.url as string | undefined, onProgress);
+  if (!sig) return xhrUpload(`${BASE}/api/uploads`, fd, true, (r) => r.url as string | undefined, onProgress);
+  if (file.size > sig.maxFileSize) throw new Error("That image is too large to upload.");
+  // Post exactly the signed parameters (K9).
+  fd.append("api_key", sig.apiKey);
+  fd.append("timestamp", String(sig.timestamp));
+  fd.append("signature", sig.signature);
+  fd.append("folder", sig.folder);
+  fd.append("allowed_formats", sig.allowedFormats);
+  const url = sig.uploadUrl ?? `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`;
+  return xhrUpload(url, fd, false, (r) => r.secure_url as string | undefined, onProgress);
+}
+
+/** Pasted image URLs must be absolute http(s) links. */
+function validImageUrl(v: string): boolean {
+  try {
+    const u = new URL(v);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
 }
 
 /** A cover/photo picker (Cloudinary or first-party upload, or paste a URL). */
@@ -61,17 +95,34 @@ export function ImageUpload({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
+  // The pasted URL is a local draft, committed on blur/Enter — never per
+  // keystroke (on Profile every onChange saves the photo).
+  const [draft, setDraft] = useState("");
+
+  function commitDraft() {
+    const v = draft.trim();
+    if (!v) return;
+    if (!validImageUrl(v)) { setError("Paste a full image link starting with https://"); return; }
+    setError(null);
+    setManual(false);
+    setDraft("");
+    onChange(v);
+  }
+
+  function onDraftKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") { e.preventDefault(); commitDraft(); }
+  }
 
   async function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Please choose an image file."); return; }
-    if (file.size > 8 * 1024 * 1024) { setError("Image must be under 8 MB."); return; }
+    if (file.size > MAX_BYTES) { setError("Image must be under 8 MB."); return; }
     setError(null); setBusy(true); setProgress(0);
     try {
       onChange(await upload(file, setProgress));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : UPLOAD_FAILED);
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -79,7 +130,11 @@ export function ImageUpload({
   }
 
   let picker: ReactNode;
-  if (value) {
+  if (manual) {
+    picker = (
+        <input type="url" value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={commitDraft} onKeyDown={onDraftKey} placeholder="https://…" aria-label="Image URL" className={inputCls} />
+    );
+  } else if (value) {
     picker = (
         <div className="flex items-center gap-3">
           <img src={value} alt="" className="h-20 w-28 shrink-0 rounded-lg border border-sand object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
@@ -92,10 +147,6 @@ export function ImageUpload({
             </button>
           </div>
         </div>
-    );
-  } else if (manual) {
-    picker = (
-        <input type="url" value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://…" className={inputCls} />
     );
   } else {
     picker = (
@@ -144,8 +195,8 @@ export function ImageUpload({
       {error && <p className="mt-1.5 text-xs text-clay-text">{error}</p>}
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-faint">
         <span>{hint}</span>
-        {!value && (
-          <button type="button" onClick={() => setManual((m) => !m)} className="font-medium text-green-text underline">
+        {(!value || manual) && (
+          <button type="button" onClick={() => { setManual(!manual); setDraft(""); setError(null); }} className="font-medium text-green-text underline">
             {manual ? "upload a file instead" : "or paste an image URL"}
           </button>
         )}

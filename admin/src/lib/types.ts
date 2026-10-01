@@ -110,6 +110,10 @@ export interface Incident {
   createdAt: string;
   submittedAt?: string;
   publishedAt?: string;
+  /** Held for curator review (crime, medical, or screened text): not public
+   *  until verified. */
+  held?: boolean;
+  screenFlags?: string[];
 }
 
 /** Authority directives / advisories — official notices broadcast townwide. */
@@ -227,6 +231,11 @@ export interface Member {
   /** Own contact identifiers — only present on self-auth payloads. */
   email?: string;
   phone?: string;
+  /** Self view (/api/auth/me): a staff role that is withheld until two-factor
+   *  is on (production, K4). */
+  staffMfaRequired?: boolean;
+  /** Self view: consent to send text to the writing assistant (K15). */
+  aiConsent?: boolean;
 }
 
 export interface Office { id: string; role: string; holderId?: string; holderName?: string; verified: boolean }
@@ -319,6 +328,9 @@ export interface Place { id: string; slug: string; name: string; kind?: "quarter
 /** Rich views from the public API, reused for admin detail pages. */
 export interface MemberView { member: Member; listings: Listing[]; places: Place[]; schools: Organization[] }
 export interface InstitutionView { institution: Organization; events: Listing[]; officialEvents: Listing[] }
+
+/** GET /api/institutions/{slug}/team: the roster plus the viewer's own scope. */
+export interface TeamView { viewerScope: string; team: TeamMember[] }
 
 export interface TeamMember {
   claimId: string;
@@ -502,9 +514,28 @@ export interface RevenueOverview {
   totalPesewas: number;
 }
 
-// A member-filed report against a listing, for steward triage (spec §14.3/§14.4/§14.7).
+/** What resolving a report does to the reported content (K11). */
+export type ReportAction = "none" | "remove" | "remove_and_suspend";
+
+/** Kinds of content a report can target (K11). */
+export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output";
+
+// A member-filed report, for steward triage (spec §14.3/§14.4/§14.7, K11).
 export interface Report {
   id: string;
+  targetType?: ReportTargetType;
+  targetId?: string;
+  targetTitle?: string;
+  targetOwnerId?: string;
+  /** 0 is most urgent (child safety, intimate images). */
+  priority?: number;
+  evidence?: string;
+  /** The report withdrew the content from public view on arrival. */
+  autoHidden?: boolean;
+  action?: ReportAction;
+  /** Age in minutes and whether an open report is past the 24-hour SLA. */
+  ageMinutes?: number;
+  slaBreached?: boolean;
   listingId: string;
   listingSlug: string;
   listingType: string;
@@ -628,3 +659,43 @@ export interface CommercePromotion { id?: string; code: string; title?: string; 
 export interface AffiliateProgramme { id?:string; name:string; description?:string; commissionBps:number; fundingSource:"platform"|"business"; cookieWindowDays?:number; holdDays:number; minimumPayoutPesewas?:number; payoutMode?:"mobile_money"|"bank"|"manual"; active:boolean }
 export interface Affiliate { id?:string; programmeId:string; code:string; name:string; email:string; payoutPhone?:string; promotionChannels?:string[]; audienceSummary?:string; status?:"pending"|"approved"|"paused"|"rejected"; active:boolean }
 export interface AffiliateConversion { id:string; orderReference:string; affiliateCode:string; commissionPesewas:number; status:string; holdUntil?:string }
+
+/** Data-rights request lifecycle (K10). */
+export type PrivacyRequestStatus = "received" | "in_progress" | "completed" | "refused";
+export type PrivacyRequestType = "access" | "correction" | "deletion" | "objection" | "other";
+
+export interface PrivacyRequestEvent { status: string; note?: string; actorId?: string; at: string }
+
+/** A data-rights request in the steward queue (GET /api/admin/privacy-requests). */
+export interface PrivacyRequest {
+  id: string;
+  reference: string;
+  type: PrivacyRequestType;
+  status: PrivacyRequestStatus;
+  name: string;
+  contact: string;
+  details: string;
+  targetUrl?: string;
+  memberId?: string;
+  identityCheck: string;
+  receivedAt: string;
+  dueAt: string;
+  updatedAt: string;
+  closedAt?: string;
+  history: PrivacyRequestEvent[];
+  overdue: boolean;
+  dueInDays: number;
+}
+
+/** Signed Cloudinary upload parameters (K9). */
+export interface CloudinarySignature {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  signature: string;
+  folder: string;
+  allowedFormats: string;
+  maxFileSize: number;
+  resourceType?: string;
+  uploadUrl?: string;
+}

@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
+import { useState, type SubmitEvent } from "react";
+import { Link, useLoaderData, useNavigate, useRevalidator, type LoaderFunctionArgs } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { ArtistRelease, Listing, Organization, Pledge, SocialLink } from "@/lib/types";
 import { api } from "@/lib/api";
+import { LEGAL } from "@/lib/legal";
 import { useAuth } from "@/lib/auth";
-import { completePayment } from "@/lib/paystack";
+import { paymentErrorMessage } from "@/lib/payments";
+import { usePaymentConfirm, type PaymentConfirm } from "@/lib/use-payment-confirm";
+import { PaymentNotice } from "@/components/payment-notice";
 import { useRecordView } from "@/lib/use-record-view";
 import { Container, Pill } from "@/components/ui";
 import { Thumb } from "@/components/cards";
@@ -211,7 +214,7 @@ function ArtistBookingCard({ artistSlug, artistName }: Readonly<{ artistSlug: st
   const [sent, setSent] = useState(false);
   const input = "mt-1.5 w-full rounded-xl border border-sand bg-paper px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const value = (name: string) => String(data.get(name) ?? "").trim();
@@ -266,6 +269,7 @@ interface DonateState {
   confirming: boolean;
   error: string | null;
   confirmed: Pledge | null;
+  payment: PaymentConfirm<Pledge>;
   signedIn: boolean;
   start: () => Promise<void>;
 }
@@ -276,31 +280,13 @@ function useDonate(artist: Listing): DonateState {
   const { member } = useAuth();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
-  const [params, setParams] = useSearchParams();
   const [amount, setAmount] = useState("20");
   const [message, setMessage] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<Pledge | null>(null);
-  const confirmedRef = useRef(false);
-
-  useEffect(() => {
-    const ref = params.get("donation_ref");
-    if (!ref || confirmedRef.current) return;
-    confirmedRef.current = true;
-    setConfirming(true);
-    api.confirmDonation(ref)
-      .then((pledge) => {
-        setConfirmed(pledge);
-        setParams({}, { replace: true });
-        revalidator.revalidate();
-      })
-      .catch(() => setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly."))
-      .finally(() => setConfirming(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const payment = usePaymentConfirm(api.confirmDonation, { returnParam: "donation_ref", onConfirmed: () => revalidator.revalidate() });
+  const { confirmed, confirming } = payment;
 
   async function start() {
     setError(null);
@@ -325,27 +311,15 @@ function useDonate(artist: Listing): DonateState {
         message: message.trim() || undefined,
         anonymous,
       });
-      await completePayment(response, {
-        onSuccess: async () => {
-          setConfirming(true);
-          try {
-            setConfirmed(await api.confirmDonation(response.reference));
-            revalidator.revalidate();
-          } catch {
-            setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly.");
-          } finally {
-            setConfirming(false);
-          }
-        },
-      });
+      await payment.complete(response);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not start the payment.");
+      setError(paymentErrorMessage(caught, "Could not start the payment."));
     } finally {
       setBusy(false);
     }
   }
 
-  return { amount, setAmount, message, setMessage, anonymous, setAnonymous, busy, confirming, error, confirmed, signedIn: Boolean(member), start };
+  return { amount, setAmount, message, setMessage, anonymous, setAnonymous, busy, confirming, error, confirmed, payment, signedIn: Boolean(member), start };
 }
 
 function DonatePanel({ artist, donate }: Readonly<{ artist: Listing; donate: DonateState }>) {
@@ -414,6 +388,7 @@ function DonatePanel({ artist, donate }: Readonly<{ artist: Listing; donate: Don
           Donate anonymously
         </label>
         {donate.error && <p id="donate-error" role="alert" className="mt-3 rounded-lg border border-clay/25 bg-clay/[0.06] p-3 text-sm text-clay-text">{donate.error}</p>}
+        <PaymentNotice notice={donate.payment.notice} confirming={donate.confirming} onRecheck={donate.payment.recheck} className="mt-3" />
         <button
           type="button"
           onClick={donate.start}
@@ -422,7 +397,10 @@ function DonatePanel({ artist, donate }: Readonly<{ artist: Listing; donate: Don
         >
           {label}
         </button>
-        <p className="mt-2 text-center text-xs text-ink-faint">Secured by Paystack. A small platform fee applies.</p>
+        <p className="mt-2 text-center text-xs text-ink-faint">
+          Secured by Paystack. A small platform fee applies. See the{" "}
+          <Link to={LEGAL.termsOfSale} className="underline">Terms of Sale</Link>.
+        </p>
       </div>
     </section>
   );

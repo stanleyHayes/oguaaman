@@ -1,6 +1,7 @@
 import { type LoaderFunctionArgs } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { Plan } from "@/lib/types";
+import { loadBusinessReviews } from "@/lib/business-reviews";
 
 // The shareable custom URL /s/:handle. It resolves a business by its clean
 // storefront handle and renders the exact same page as /business/:slug (Component
@@ -12,5 +13,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     api.storefront(params.handle as string),
     api.plans().catch(() => [] as Plan[]),
   ]);
-  return { business, plans };
+  // Same shape as BusinessDetail's loader, which the re-exported Component reads.
+  const reviews = await loadBusinessReviews(business.slug);
+  return { business, plans, reviews };
 }

@@ -1,10 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Member } from "./types";
-import { api, getToken, setToken } from "./api";
+import { api, errorStatus, getToken, setToken } from "./api";
 
 interface AuthState {
   member: Member | null;
   loading: boolean;
+  /** Set when the stored session couldn't be checked (network or server error) — the token is kept. */
+  loadError: string | null;
+  /** Re-check the stored session after a loadError. */
+  retry: () => void;
   signIn: (identifier: string, password: string) => Promise<SignInResult>;
   completeMfa: (challenge: string, code: string) => Promise<void>;
   signOut: () => void;
@@ -23,10 +27,30 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   // never has to setState synchronously (which would trigger a cascading render).
   const [loading, setLoading] = useState(() => getToken() != null);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Only a 401/403 means the stored token is no good. A network error or a 5xx
+  // (e.g. the API cold-starting) keeps the token and offers a retry instead.
+  const check = useCallback(() => {
+    api.me()
+      .then((m) => { setMember(m); setLoadError(null); })
+      .catch((e: unknown) => {
+        const status = errorStatus(e);
+        if (status === 401 || status === 403) { setToken(null); setLoadError(null); }
+        else setLoadError("We couldn't reach Oguaa just now. Check your connection and try again.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   useEffect(() => {
     if (!getToken()) return;
-    api.me().then(setMember).catch(() => setToken(null)).finally(() => setLoading(false));
-  }, []);
+    check();
+  }, [check]);
+
+  const retry = useCallback(() => {
+    setLoading(true);
+    check();
+  }, [check]);
 
   const signIn = useCallback(async (identifier: string, password: string): Promise<SignInResult> => {
     const res = await api.login(identifier, password);
@@ -48,9 +72,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const signOut = useCallback(() => {
     setToken(null);
     setMember(null);
+    setLoadError(null);
   }, []);
 
-  const value = useMemo(() => ({ member, loading, signIn, completeMfa, signOut, setMember }), [member, loading, signIn, completeMfa, signOut]);
+  const value = useMemo(() => ({ member, loading, loadError, retry, signIn, completeMfa, signOut, setMember }), [member, loading, loadError, retry, signIn, completeMfa, signOut]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

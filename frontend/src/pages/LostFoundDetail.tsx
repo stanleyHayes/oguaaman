@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type SubmitEvent } from "react";
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { ReactNode } from "react";
@@ -12,6 +12,7 @@ import { LocationMap } from "@/components/location-map";
 import { DetailHero } from "@/components/detail-hero";
 import { SectionIcon } from "@/components/section-icon";
 import { ReportButton } from "@/components/report-button";
+import { EmergencyCallout } from "@/components/emergency-callout";
 import { formatDate, initials } from "@/lib/format";
 import { KIND_LABEL, LF_STATUS_LABEL } from "@/lib/lostfound";
 
@@ -41,7 +42,6 @@ export function Component() {
   const town = places.find((place) => place.id === notice.townId);
   const isOwner = member?.id === notice.ownerId;
   const canResolve = isOwner || member?.role === "curator" || member?.role === "steward";
-  const contactLink = contactHref(details.contact);
   let seenLabel = "Found at";
   if (missing) seenLabel = "Last seen at";
   else if (details.kind === "lost_item") seenLabel = "Lost at";
@@ -84,6 +84,16 @@ export function Component() {
         {town && <span className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-xs font-medium text-cream backdrop-blur-sm">{town.name}</span>}
       </DetailHero>
 
+      {(missing || notice.held || notice.status === "pending") && (
+        <Container size="wide" className="space-y-4 pt-8">
+          {missing && <EmergencyCallout />}
+          {(notice.held || notice.status === "pending") && (
+            <p role="status" className="rounded-[var(--radius-card)] border border-gold-border/50 bg-gold/[0.08] px-5 py-3 text-sm text-gold-text">
+              <strong className="font-semibold">Sent to curators for review.</strong> Only you and Oguaa&rsquo;s safety curators can see this notice until a curator publishes it.
+            </p>
+          )}
+        </Container>
+      )}
       <Container size="wide" className="grid gap-8 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.85fr)] lg:gap-10">
         <div>
           <div className={`overflow-hidden rounded-[var(--radius-card)] border bg-cream shadow-[var(--shadow-card)] ${missing ? "border-maroon-900/30" : "border-sand"}`}>
@@ -152,15 +162,16 @@ export function Component() {
             </dl>
 
             <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Have useful information?</p>
-              {contactLink ? (
-                <a href={contactLink} className={`mt-2 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-colors ${missing ? "bg-maroon-900 text-on-green hover:bg-clay" : "bg-teal text-cream hover:bg-teal-text"}`}>
-                  Contact the poster <span className="ml-2" aria-hidden>↗</span>
-                </a>
+              {details.contact ? (
+                // Only the poster and safety staff receive the contact (D3).
+                <>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Contact on this notice (private)</p>
+                  <p className="mt-2 break-all rounded-xl border border-sand bg-paper px-4 py-3 text-sm text-ink">{details.contact}</p>
+                  <p className="mt-1.5 text-xs text-ink-faint">Never shown publicly. People with information message you through Oguaa.</p>
+                </>
               ) : (
-                <p className={`mt-2 rounded-xl border px-4 py-3 text-sm font-semibold ${missing ? "border-maroon-900/25 bg-maroon-900/[0.05] text-maroon-text" : "border-teal/25 bg-teal/[0.06] text-teal-text"}`}>{details.contact}</p>
+                <ContactPoster slug={notice.slug} missing={missing} open={lfStatus === "open"} signedIn={member != null} />
               )}
-              {contactLink && <p className="mt-2 break-all text-center text-xs text-ink-faint">{details.contact}</p>}
             </div>
 
             {canResolve && lfStatus === "open" && (
@@ -213,11 +224,60 @@ function KeyVal({ label, children }: Readonly<{ label: string; children: ReactNo
   );
 }
 
-function contactHref(contact: string) {
-  const value = contact.trim();
-  const email = value.match(/[^\s@]+@[^\s@]+\.[^\s@]+/)?.[0];
-  if (email) return `mailto:${email}`;
-  const phone = value.match(/\+?\d[\d()\s-]{5,}\d/)?.[0];
-  if (phone) return `tel:${phone.replace(/[^+\d]/g, "")}`;
-  return null;
+/**
+ * Message the poster through Oguaa (POST /api/lost-found/{slug}/contact). The
+ * poster's own number is never shown to the public.
+ */
+function ContactPoster({ slug, missing, open, signedIn }: Readonly<{ slug: string; missing: boolean; open: boolean; signedIn: boolean }>) {
+  const [message, setMessage] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const btnCls = `inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-colors disabled:opacity-60 ${missing ? "bg-maroon-900 text-on-green hover:bg-clay" : "bg-teal text-cream hover:bg-teal-text"}`;
+
+  if (!open) return null;
+  if (!signedIn) {
+    return (
+      <>
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Have useful information?</p>
+        <Link to={`/signin?next=${encodeURIComponent(`/lost-found/${slug}`)}`} className={`mt-2 ${btnCls}`}>Sign in to message the poster</Link>
+      </>
+    );
+  }
+  if (state === "sent") {
+    return <p role="status" className="rounded-xl border border-green/30 bg-green/[0.06] px-4 py-3 text-sm text-green-text">Message sent. The poster will see it in their Oguaa notifications. They can only reach you using any contact details you included.</p>;
+  }
+
+  async function send(e: SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setState("sending");
+    setError(null);
+    try {
+      await api.contactLostFound(slug, message.trim());
+      setState("sent");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send your message — please try again.");
+      setState("idle");
+    }
+  }
+
+  return (
+    <form onSubmit={send} className="space-y-2">
+      <label htmlFor="lf-message" className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Have useful information?</label>
+      <textarea
+        id="lf-message"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        required
+        maxLength={1000}
+        rows={3}
+        placeholder="Tell the poster what you know."
+        className="w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-green focus:outline-none"
+      />
+      <p className="text-xs text-ink-faint">Sent to the poster through Oguaa with your name. They can&rsquo;t reply through Oguaa, so add how to reach you if you want them to get back to you.</p>
+      {error && <p role="alert" className="text-sm text-maroon-text">{error}</p>}
+      <button type="submit" disabled={state === "sending" || !message.trim()} className={btnCls}>
+        {state === "sending" ? "Sending…" : "Message the poster"}
+      </button>
+    </form>
+  );
 }

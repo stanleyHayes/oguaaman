@@ -3,6 +3,7 @@
 import type {
   Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, StoreItem, Review, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams, CommerceOrder, BusinessVerification, BusinessCoupon, AffiliateProgramme, Affiliate, AffiliateConversion,
   Agent, AgentInput, AgentJob, AgentReview, AgentService, ArtistBooking, JobInput, MyJobs, PropertyAvailability,
+  NotificationPreferences, AccountDeletionResult, PledgeQuote, SellerIdentity, ReportTargetType, PaymentBank, PaymentBankType,
 } from "./types";
 
 export type { Page, PageParams } from "./types";
@@ -33,44 +34,136 @@ function headers(json = false): HeadersInit {
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { headers: headers() });
   if (!res.ok) {
-    // Throw a plain Error (with .status) so catch handlers can read .message
-    // consistently. React Router loaders that want to trigger an error boundary
-    // can check err.status and re-throw a Response if needed.
-    throw Object.assign(new Error(`Request failed: ${path}`), { status: res.status });
+    // Throw a plain Error (with .status and the JSON body) so catch handlers
+    // read the server's own human message, the same as POST failures. React
+    // Router loaders that want an error boundary can check err.status.
+    const data = await res.json().catch(() => ({}));
+    throw failure(res.status, data, "Something went wrong. Please try again.");
   }
   return res.json() as Promise<T>;
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: headers(true),
-    body: JSON.stringify(body),
-  });
+/** An API failure: the server's message plus its HTTP status and JSON body. */
+export type ApiError = Error & { status?: number; data?: { error?: string; message?: string; blockers?: string[] } };
+
+/**
+ * The machine-readable `error` code of a failed call (e.g. "payments_unavailable",
+ * "ai_consent_required"), or undefined.
+ */
+export function apiErrorCode(err: unknown): string | undefined {
+  return (err as ApiError | undefined)?.data?.error;
+}
+
+// Machine-readable codes the server sends in `error` beside a human `message`.
+// When a body carries one of these without a message, the fallback text is
+// shown instead of the bare code.
+const MACHINE_CODES = new Set([
+  "payments_unavailable", "payment_pending", "payment_check_unavailable",
+  "ai_consent_required", "ai_unavailable", "mfa_required", "mfa_code_required",
+]);
+
+/** An Error carrying the server's human message, HTTP status and JSON body. */
+function failure(status: number, data: unknown, fallback: string): ApiError {
+  const body = (data ?? {}) as { message?: unknown; error?: unknown };
+  let msg = fallback;
+  if (typeof body.message === "string" && body.message) msg = body.message;
+  else if (typeof body.error === "string" && body.error && !MACHINE_CODES.has(body.error)) msg = body.error;
+  return Object.assign(new Error(msg), { status, data: data as ApiError["data"] });
+}
+
+async function readJSON<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = (data as { message?: string; error?: string }).message
-      ?? (data as { error?: string }).error
-      ?? "Request failed";
-    throw Object.assign(new Error(msg), { status: res.status, data });
-  }
+  if (!res.ok) throw failure(res.status, data, "Request failed");
   return data as T;
 }
 
-async function del<T>(path: string, body?: unknown): Promise<T> {
+async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    method: "DELETE",
+    method,
     headers: headers(body !== undefined),
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = (data as { message?: string; error?: string }).message
-      ?? (data as { error?: string }).error
-      ?? "Request failed";
-    throw Object.assign(new Error(msg), { status: res.status, data });
+  return readJSON<T>(res);
+}
+
+function post<T>(path: string, body: unknown): Promise<T> {
+  return send<T>("POST", path, body);
+}
+
+function put<T>(path: string, body: unknown): Promise<T> {
+  return send<T>("PUT", path, body);
+}
+
+function del<T>(path: string, body?: unknown): Promise<T> {
+  return send<T>("DELETE", path, body);
+}
+
+/** A multipart upload of one file (field `file`) plus optional text fields. */
+async function upload<T>(path: string, file: File, fields: Record<string, string> = {}): Promise<T> {
+  const fd = new FormData();
+  fd.append("file", file);
+  for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+  const res = await fetch(`${BASE}${path}`, { method: "POST", headers: headers(), body: fd });
+  return readJSON<T>(res);
+}
+
+/** The signed-upload parameters from POST /api/uploads/cloudinary-signature. */
+export interface CloudinarySignature {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number | string;
+  signature: string;
+  folder: string;
+  allowedFormats: string;
+  maxFileSize: number;
+  resourceType?: "image" | "video";
+  uploadUrl?: string;
+}
+
+type AIBody = { action: string; text?: string; language?: string; prompt?: string };
+type AIResult = { result: string; remaining: number; simulated?: boolean; truncated?: boolean };
+
+/**
+ * Read /api/ai/stream: Server-Sent Events when the server can flush, otherwise
+ * the plain JSON reply. Only the one optional space after "data:" is removed so
+ * chunk-boundary spaces survive (F170).
+ */
+async function readAIStream(res: Response, onChunk: (chunk: string) => void): Promise<{ remaining: number; simulated: boolean }> {
+  const type = res.headers.get("content-type") ?? "";
+  if (!res.body || !type.includes("text/event-stream")) {
+    const once = await readJSON<AIResult>(res);
+    onChunk(once.result);
+    return { remaining: once.remaining, simulated: Boolean(once.simulated) };
   }
-  return data as T;
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  let remaining = 0;
+  let simulated = false;
+  const handle = (frame: string) => {
+    const lines = frame.split("\n");
+    const event = lines.find((l) => l.startsWith("event:"))?.slice(6).trim();
+    const data = lines
+      .filter((l) => l.startsWith("data:"))
+      .map((l) => (l.startsWith("data: ") ? l.slice(6) : l.slice(5)))
+      .join("\n");
+    if (event === "chunk") onChunk(data.replaceAll("\\n", "\n"));
+    if (event === "done") {
+      const meta = JSON.parse(data) as { remaining?: number; simulated?: boolean };
+      remaining = typeof meta.remaining === "number" ? meta.remaining : remaining;
+      simulated = Boolean(meta.simulated);
+    }
+  };
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const frames = buf.split("\n\n");
+    buf = frames.pop() ?? "";
+    frames.forEach(handle);
+  }
+  if (buf.trim()) handle(buf);
+  return { remaining, simulated };
 }
 
 // ── Optional pagination (spec: non-breaking envelope) ───────────────────────
@@ -153,6 +246,15 @@ export interface LoginResult {
   challenge?: string;
 }
 
+/** Block state in both directions (K5); `blocked` is either direction. */
+export interface BlockState {
+  blocked: boolean;
+  blockedByMe?: boolean;
+  blockedMe?: boolean;
+}
+
+export type PrivacyRequestType = "access" | "correction" | "deletion" | "objection" | "other";
+
 export interface PhoneVerificationResult {
   member: Member;
   code?: string;
@@ -188,6 +290,8 @@ export const api = {
   project: (slug: string) => get<Listing>(`/api/projects/${slug}`),
   pledge: (slug: string, body: { amountPesewas: number; email?: string }) =>
     post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/projects/${slug}/pledge`, body),
+  pledgeQuote: (slug: string, amountPesewas: number) =>
+    get<PledgeQuote>(`/api/projects/${slug}/pledge-quote?amountPesewas=${amountPesewas}`),
   confirmPledge: (reference: string) => get<Pledge>(`/api/pledges/confirm?reference=${encodeURIComponent(reference)}`),
   myPledges: () => get<Pledge[]>("/api/me/pledges"),
 
@@ -210,22 +314,27 @@ export const api = {
 
   // Notice-and-takedown: any visitor can report a listing (spec §14.3/§14.4/§14.7).
   reportListing: (id: string, body: { reason: string; detail?: string }) =>
-    post<{ reported: boolean; id: string }>(`/api/listings/${id}/report`, body),
+    post<{ reported: boolean; id: string; hidden?: boolean }>(`/api/listings/${id}/report`, body),
+  // Report any piece of content (K11; sign-in required). `listingId` names the
+  // business a reported product belongs to.
+  report: (body: { targetType: ReportTargetType; targetId: string; reason: string; detail?: string; listingId?: string }) =>
+    post<{ reported: boolean; id: string; hidden?: boolean }>("/api/reports", body),
 
   // First-party image upload — returns the stored asset's URL.
-  uploadImage: async (file: File): Promise<{ url: string }> => {
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch(`${BASE}/api/uploads`, { method: "POST", headers: headers(), body: fd });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error((data as { error?: string }).error ?? "Upload failed"), { status: res.status });
-    return data as { url: string };
-  },
+  uploadImage: (file: File) => upload<{ url: string }>("/api/uploads", file),
+  // Private documents (ID, KYC): stored encrypted, never at a public URL (K8).
+  uploadPrivate: (file: File, purpose: "agent_id" | "business_kyc") =>
+    upload<{ ref: string; id: string; contentType: string; size: number }>("/api/uploads/private", file, { purpose }),
+  // Parameters for a signed Cloudinary upload (K9); 503 signed_uploads_unavailable
+  // means "use uploadImage instead".
+  cloudinarySignature: (resourceType: "image" | "video" = "image") =>
+    post<CloudinarySignature>("/api/uploads/cloudinary-signature", { resourceType }),
 
   memorials: () => get<Listing[]>("/api/memorials"),
   memorial: (slug: string) => get<Listing>(`/api/memorials/${slug}`),
   lightCandle: (slug: string) => post<{ candles: number }>(`/api/memorials/${slug}/candle`, {}),
-  addTribute: (slug: string, body: { authorName: string; message: string }) =>
+  // Signed-in only; the author is the member (any authorName is ignored server-side).
+  addTribute: (slug: string, body: { message: string; relation?: string }) =>
     post<Tribute>(`/api/memorials/${slug}/tributes`, body),
 
   // Remembrance follow (spec §8.11) — enrols a member in yearly anniversary notices.
@@ -277,8 +386,9 @@ export const api = {
   // View counter (spec §4 / Creator §7.5): daily-deduped, fire-and-forget.
   recordView: (id: string) => post<{ new: boolean }>(`/api/listings/${id}/view`, {}),
 
-  // Community safety — rescue & early recovery. Auto-published on submit;
-  // curators verify and transition the lifecycle afterwards.
+  // Community safety — rescue & early recovery. Most categories publish on
+  // submit; crime and medical come back pending with held:true until a curator
+  // verifies them (D3). The reporter's contact is never in public responses.
   incidents: (f?: { status?: string; category?: string; town?: string }) => {
     const q = new URLSearchParams();
     if (f?.status) q.set("status", f.status);
@@ -306,8 +416,9 @@ export const api = {
   },
   directive: (slug: string) => get<Directive>(`/api/directives/${slug}`),
 
-  // Lost & found — lost items, found items, missing people. Auto-published on
-  // submit; the owner or a curator resolves the notice (reunited / closed).
+  // Lost & found — lost items, found items, missing people. Missing people and
+  // posts from unverified phones are held for a curator; the owner or a curator
+  // resolves the notice (reunited / closed). Contact goes through the relay.
   lostFoundList: (f?: { kind?: string; status?: string }) => {
     const q = new URLSearchParams();
     if (f?.kind) q.set("kind", f.kind);
@@ -317,8 +428,11 @@ export const api = {
     return get<LostFound[]>(`/api/lost-found${suffix}`);
   },
   lostFound: (slug: string) => get<LostFound>(`/api/lost-found/${slug}`),
-  createLostFound: (body: { title: string; kind: LostFoundKind; description: string; lastSeenLocation?: string; lastSeenDate?: string; contact: string }) =>
+  createLostFound: (body: { title: string; kind: LostFoundKind; description: string; lastSeenLocation?: string; lastSeenDate?: string; contact: string; subjectIsMinor?: boolean; guardianAttestation?: boolean; guardianRelation?: string; policeReference?: string }) =>
     post<LostFound>("/api/lost-found", body),
+  // Message a notice's poster through Oguaa; their contact is never shown.
+  contactLostFound: (slug: string, message: string) =>
+    post<{ sent: boolean }>(`/api/lost-found/${slug}/contact`, { message }),
   resolveLostFound: (slug: string, status: LostFoundStatus) =>
     post<{ status: string }>(`/api/lost-found/${slug}/resolve`, { status }),
 
@@ -360,10 +474,10 @@ export const api = {
 
   // Blocking (App Store Review Guideline 1.2). Symmetric: once blocked, neither
   // member sees the other's content.
-  memberBlockState: (slug: string) => get<{ blocked: boolean }>(`/api/members/${slug}/block`),
+  memberBlockState: (slug: string) => get<BlockState>(`/api/members/${slug}/block`),
   blockMember: (slug: string, reason?: string) =>
-    post<{ blocked: boolean }>(`/api/members/${slug}/block`, reason ? { reason } : {}),
-  unblockMember: (slug: string) => del<{ blocked: boolean }>(`/api/members/${slug}/block`),
+    post<BlockState>(`/api/members/${slug}/block`, reason ? { reason } : {}),
+  unblockMember: (slug: string) => del<BlockState>(`/api/members/${slug}/block`),
   myBlocked: () =>
     get<{ memberId: string; slug: string; displayName: string; photoUrl?: string; createdAt: string; reason?: string }[]>(
       "/api/me/blocked",
@@ -405,9 +519,11 @@ export const api = {
     post<Listing>(`/api/listings/${id}/storefront`, body),
   startOrder: (slug: string, body: { buyerName: string; buyerEmail: string; buyerPhone: string; fulfilment: "pickup" | "delivery"; deliveryAddress?: string; note?: string; couponCode?: string; affiliateCode?: string; lines: { productId: string; quantity: number }[] }) =>
     post<{ order: CommerceOrder; authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/businesses/${slug}/orders`, body),
-  businessCommerceStatus: (slug: string) => get<{ enabled: boolean }>(`/api/businesses/${slug}/commerce-status`),
+  businessCommerceStatus: (slug: string) => get<{ enabled: boolean; seller?: SellerIdentity }>(`/api/businesses/${slug}/commerce-status`),
   confirmOrder: (reference: string) => get<CommerceOrder>(`/api/orders/confirm?reference=${encodeURIComponent(reference)}`),
   myOrders: () => get<CommerceOrder[]>("/api/me/orders"),
+  // Paystack's Ghana settlement banks or Mobile Money networks (contract C2).
+  paymentBanks: (type: PaymentBankType) => get<PaymentBank[]>(`/api/payments/banks?type=${type}`),
   businessVerification: (id: string) => get<BusinessVerification>(`/api/listings/${id}/business-verification`),
   submitBusinessVerification: (id: string, body: Omit<BusinessVerification, "id" | "listingId" | "listingSlug" | "ownerId" | "paystackSubaccount" | "status" | "reviewNote" | "submittedAt" | "reviewedAt" | "createdAt" | "updatedAt">) =>
     post<BusinessVerification>(`/api/listings/${id}/business-verification`, body),
@@ -429,24 +545,49 @@ export const api = {
     post<LoginResult>("/api/auth/login", { identifier, password }),
   mfaLogin: (challenge: string, code: string) =>
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
-  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[]; creatorPlanIntent?: string }) =>
+  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[]; creatorPlanIntent?: string; acceptTerms: boolean; termsVersion: string; platform: "web" }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
+  // Consent gate (K2): agree to the current Terms/Privacy, and confirm 18+ when
+  // the account's age was never verified. Returns the own member.
+  recordConsent: (confirmAdult: boolean) =>
+    post<Member>("/api/me/consent", { acceptTerms: true, confirmAdult, platform: "web" }),
+  // Writing-assistant data-use consent (K15); false withdraws it.
+  setAIConsent: (consent: boolean) => post<{ aiConsent: boolean }>("/api/me/ai-consent", { consent }),
+  // Server-side notification preferences (K14). PUT is a partial update.
+  notificationPreferences: () => get<NotificationPreferences>("/api/me/notification-preferences"),
+  setNotificationPreferences: (prefs: { categories?: Partial<NotificationPreferences["categories"]>; channels?: Partial<NotificationPreferences["channels"]> }) =>
+    put<NotificationPreferences>("/api/me/notification-preferences", prefs),
+  // "Forgot password" — also how invited accounts set their first password (K3).
+  startPasswordReset: (identifier: string) =>
+    post<{ ok: boolean; devCode?: string }>("/api/auth/password/reset/start", { identifier }),
+  confirmPasswordReset: (identifier: string, code: string, newPassword: string) =>
+    post<{ ok: boolean }>("/api/auth/password/reset/confirm", { identifier, code, newPassword }),
   startPhoneVerification: () => post<PhoneVerificationResult>("/api/me/phone/verify/start", {}),
   confirmPhoneVerification: (code: string) =>
     post<PhoneVerificationResult>("/api/me/phone/verify/confirm", { code }),
   // MFA enrolment + account data rights (Act 843, spec §14).
   // Authenticated password change — the server re-verifies the current password.
   changePassword: (currentPassword: string, newPassword: string) =>
-    post<{ ok: boolean }>("/api/me/password", { currentPassword, newPassword }),
+    post<{ ok: boolean; token?: string }>("/api/me/password", { currentPassword, newPassword }),
   mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup", {}),
-  mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
-  mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
+  // Confirming 2FA signs out every earlier session; store the returned token.
+  mfaConfirm: (code: string) => post<{ recoveryCodes: string[]; token?: string }>("/api/me/mfa/confirm", { code }),
+  mfaDisable: (code: string) => post<{ ok: boolean; token?: string }>("/api/me/mfa/disable", { code }),
   exportData: async (): Promise<Blob> => {
     const res = await fetch(`${BASE}/api/me/export`, { headers: headers() });
     if (!res.ok) throw Object.assign(new Error("Couldn't export your data — try again."), { status: res.status });
     return res.blob();
   },
-  deleteAccount: (password: string) => del<{ ok: boolean }>("/api/me", { password }),
+  deleteAccount: (password: string) => del<AccountDeletionResult>("/api/me", { password }),
+  // Public deletion for people who cannot sign in (K6): a code goes to the
+  // account's email/phone when it exists; the reply is the same either way.
+  startAccountDeletion: (identifier: string) =>
+    post<{ ok: boolean; devCode?: string }>("/api/account/deletion-requests", { identifier }),
+  confirmAccountDeletion: (identifier: string, code: string) =>
+    post<AccountDeletionResult>("/api/account/deletion-requests/confirm", { identifier, code }),
+  // Data-rights requests (K10) — public, sign-in optional.
+  privacyRequest: (body: { type: PrivacyRequestType; name: string; contact: string; details: string; targetUrl?: string }) =>
+    post<{ reference: string; dueAt?: string }>("/api/privacy/requests", body),
   me: () => get<Member>("/api/auth/me"),
 
   // ── Oguaa Outside — vetted agents, escrowed errand jobs, reviews ──────────
@@ -476,7 +617,7 @@ export const api = {
   quoteJob: (id: string, body: { amountPesewas: number; note: string }) =>
     post<AgentJob>(`/api/jobs/${id}/quote`, body),
   // Client funds the escrow — mirrors the pledge/ticket Start* payment shape.
-  acceptJob: (id: string, body: { email: string }) =>
+  acceptJob: (id: string, body: { email?: string }) =>
     post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/jobs/${id}/accept`, body),
   confirmJob: (reference: string) => get<AgentJob>(`/api/jobs/confirm?reference=${encodeURIComponent(reference)}`),
   deliverJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/deliver`, {}),
@@ -504,48 +645,15 @@ export const api = {
     post<NewsArticle>("/api/admin/news", body),
   publishNews: (id: string) => post<{ published: boolean }>(`/api/admin/news/${id}/publish`, { publish: true }),
 
-  ai: (body: { action: string; text?: string; language?: string; prompt?: string }) =>
-    post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body),
-  aiStream: async (
-    body: { action: string; text?: string; language?: string; prompt?: string },
-    onChunk: (chunk: string) => void,
-    signal?: AbortSignal,
-  ) => {
+  ai: (body: AIBody) => post<AIResult>("/api/ai", body),
+  aiStream: async (body: AIBody, onChunk: (chunk: string) => void, signal?: AbortSignal) => {
     const res = await fetch(`${BASE}/api/ai/stream`, {
       method: "POST",
       headers: headers(true),
       body: JSON.stringify(body),
       signal,
     });
-    if (!res.ok) throw Object.assign(new Error(`POST /api/ai/stream failed (${res.status})`), { status: res.status });
-    if (!res.body) {
-      const once = await post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body);
-      onChunk(once.result);
-      return { remaining: once.remaining, simulated: once.simulated };
-    }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    let remaining = 0;
-    let simulated = false;
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const frames = buf.split("\n\n");
-      buf = frames.pop() ?? "";
-      for (const frame of frames) {
-        const lines = frame.split("\n");
-        const event = lines.find((l) => l.startsWith("event:"))?.slice(6).trim();
-        const data = lines.filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("\n");
-        if (event === "chunk") onChunk(data.replaceAll("\\n", "\n"));
-        if (event === "done") {
-          const meta = JSON.parse(data) as { remaining?: number; simulated?: boolean };
-          remaining = typeof meta.remaining === "number" ? meta.remaining : remaining;
-          simulated = Boolean(meta.simulated);
-        }
-      }
-    }
-    return { remaining, simulated };
+    if (!res.ok) return readJSON<never>(res);
+    return readAIStream(res, onChunk);
   },
 };

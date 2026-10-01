@@ -27,7 +27,7 @@ export function Component() {
             icon={<EmptyGlyph name="calendar" />}
             title="The archive is still being built"
             description="No festival has been added yet. Fetu Afahye, Edina Bakatue and PANAFEST all belong here — help us start the record."
-            actions={<Cta to="/submit?type=festival" variant="gold">Add a festival</Cta>}
+            actions={<Cta to="/submit?type=event" variant="gold">Add a festival</Cta>}
           />
         ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

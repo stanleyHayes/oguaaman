@@ -39,13 +39,24 @@ function toDraft(item: StoreItem): ItemDraft {
   };
 }
 
+/**
+ * Price text → pesewas. Accepts "1500", "1,500", "GH₵ 1,500.50"; "" or "0"
+ * means no price (undefined); anything else is invalid (null).
+ */
+function parsePricePesewas(text: string): number | undefined | null {
+  const cleaned = text.replace(/GH[S₵]?|₵/gi, "").replace(/[\s,]/g, "");
+  if (cleaned === "") return undefined;
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+  const pesewas = Math.round(Number(cleaned) * 100);
+  return pesewas > 0 ? pesewas : undefined;
+}
+
 function toStoreItem(d: ItemDraft): StoreItem {
-  const cedisNum = Number(d.priceText);
   return {
     id: stripTmp(d.id),
     name: d.name.trim(),
     description: d.description.trim() || undefined,
-    pricePesewas: Number.isFinite(cedisNum) && cedisNum > 0 ? Math.round(cedisNum * 100) : undefined,
+    pricePesewas: parsePricePesewas(d.priceText) ?? undefined,
     unit: d.unit.trim() || undefined,
     imageUrl: d.imageUrl,
     available: d.available,
@@ -155,6 +166,12 @@ export function Component() {
   }
 
   async function save() {
+    const badPrice = [...products, ...services].find((it) => it.name.trim() && parsePricePesewas(it.priceText) === null);
+    if (badPrice) {
+      setState("error");
+      setError(`Check the price for "${badPrice.name.trim()}" — use numbers only, like 1500 or 12.50.`);
+      return;
+    }
     setState("saving");
     setError(null);
     try {

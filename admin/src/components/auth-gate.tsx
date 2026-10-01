@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type SubmitEvent, type ReactNode } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -18,20 +18,21 @@ export function isStaffRole(role: string): boolean {
 
 /** Locks the whole back-office behind a curator/steward/moderator session (spec §9). */
 export function AuthGate({ children }: Readonly<{ children: ReactNode }>) {
-  const { member, loading } = useAuth();
+  const { member, loading, mfaRequired } = useAuth();
   if (loading) return <AuthSkeleton />;
   if (!member) return <SignIn />;
   if (!isStaffRole(member.role)) return <NotAuthorized name={member.displayName} />;
-  // Moderators don't get MFA enforcement (read: triage-only access is lower risk);
-  // curators and stewards must enrol before the console unlocks (spec §14).
-  if (member.role !== "moderator" && !member.mfaEnabled) return <ForcedMfa name={member.displayName} />;
+  // Every staff role must enrol before the console unlocks (D9). The API
+  // enforces it too: in production staff routes answer 403 mfa_required, which
+  // the API layer turns into `mfaRequired` so the staffer lands here (K4).
+  if (!member.mfaEnabled || member.staffMfaRequired || mfaRequired) return <ForcedMfa name={member.displayName} />;
   return <>{children}</>;
 }
 
 const TRUST = [
-  "Curators, stewards, and moderators only",
-  "Two-factor sign-in on curator and steward accounts",
-  "Every back-office action is audited",
+  "Staff accounts only",
+  "Two-factor sign-in on every staff account",
+  "Sensitive back-office actions are audited",
 ];
 
 /** Full-screen branded green field with a faint gold glow + dotted texture. */
@@ -106,7 +107,7 @@ function SignIn() {
   const [banner, setBanner] = useState<string | null>(null);
   const verifyingRef = useRef(false);
 
-  async function submit(e: FormEvent<HTMLFormElement>) {
+  async function submit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setErr(null);
     try {
       const res = await signIn(identifier.trim(), password);
@@ -130,7 +131,7 @@ function SignIn() {
     }
   }
 
-  async function submitCode(e: FormEvent<HTMLFormElement>) {
+  async function submitCode(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     await verifyCode(code);
   }
@@ -230,7 +231,7 @@ function ResetPassword({ initialIdentifier, onBack, onDone }: Readonly<{ initial
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function sendCode(e: FormEvent<HTMLFormElement>) {
+  async function sendCode(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setErr(null);
     try {
       const res = await api.startPasswordReset(identifier.trim());
@@ -240,7 +241,7 @@ function ResetPassword({ initialIdentifier, onBack, onDone }: Readonly<{ initial
     } catch (e) { setErr(e instanceof Error ? e.message : "Couldn't send a reset code."); } finally { setBusy(false); }
   }
 
-  async function resetPassword(e: FormEvent<HTMLFormElement>) {
+  async function resetPassword(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setErr(null);
     try {
       await api.confirmPasswordReset(identifier.trim(), code.trim(), newPassword);

@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { Outlet, ScrollRestoration, isRouteErrorResponse, useRouteError, useMatches, Link } from "react-router-dom";
+import { ScrollRestoration, isRouteErrorResponse, useRouteError, useMatches, Link } from "react-router-dom";
 import { Nav } from "@/sections/Nav";
 import { Footer } from "@/sections/Footer";
 import { PageTransition } from "@/components/page-transition";
-import { setMeta, setLink, DEFAULT_OG_IMAGE } from "@/lib/meta";
+import { setMeta, setLink, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_META } from "@/lib/meta";
+import { useSettledScroll } from "@/lib/scroll-settle";
 import { SITE_URL } from "@/config";
 import { DEFAULT_TITLE, DEFAULT_DESCRIPTION, mergeKeywords } from "@/seo/site";
 
@@ -45,6 +46,7 @@ function useRouteMeta() {
     // override it with their own photo, so it must reset on navigation away.
     setMeta("property", "og:image", OG_IMAGE_ABS);
     setMeta("name", "twitter:image", OG_IMAGE_ABS);
+    for (const [key, value] of Object.entries(DEFAULT_OG_IMAGE_META)) setMeta("property", key, value);
     // Canonical + og:url track the current page. Base is the configured
     // SITE_URL (VITE_SITE_URL) so it stays correct across localhost / Vercel /
     // the live domain; falls back to the actual serving origin.
@@ -56,13 +58,12 @@ function useRouteMeta() {
 
 export function RootLayout() {
   useRouteMeta();
+  useSettledScroll();
   return (
     <>
       <Nav />
       <main>
-        <PageTransition>
-          <Outlet />
-        </PageTransition>
+        <PageTransition />
       </main>
       <Footer />
       <ScrollRestoration />

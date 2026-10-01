@@ -62,8 +62,8 @@ export function Component() {
 
       <p className="mb-5 max-w-2xl text-sm text-ink-muted">
         Jobs a client has escalated. The vetting desk rules on the held escrow — <b>release</b> it to the agent (minus
-        the platform fee) or <b>refund</b> the client — with a note for the record. On a refund you may also forfeit the
-        agent's good-conduct bond when they are at fault.
+        the platform fee) or <b>refund</b> the client — with a note for the record. On a refund you may also record a
+        bond forfeit when the agent is at fault; no bond money is collected yet, so this is a record only.
       </p>
 
       {jobs.length === 0 ? (
@@ -204,7 +204,7 @@ function DisputeCard({ job, canResolve, onChanged }: Readonly<DisputeCardProps>)
 
           <label className={`mt-2 flex items-center gap-2 text-sm ${resolution === "refund" ? "text-ink" : "text-ink-faint"}`}>
             <input type="checkbox" checked={forfeitBond} disabled={resolution !== "refund"} onChange={(e) => setForfeitBond(e.target.checked)} className="accent-clay disabled:opacity-40" />
-            Forfeit the agent's good-conduct bond {resolution !== "refund" && <span className="text-xs">(refund only)</span>}
+            Record a forfeit of the agent's good-conduct bond (none is collected yet) {resolution !== "refund" && <span className="text-xs">(refund only)</span>}
           </label>
 
           {error && <p className="mt-2 text-sm text-clay-text">{error}</p>}

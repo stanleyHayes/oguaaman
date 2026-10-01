@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { Link, useLoaderData, useRevalidator } from "react-router-dom";
+import { Link, useLoaderData, useRevalidator, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
+import { paymentError } from "@/lib/payments";
+import { useStudioPayment } from "@/lib/use-studio-payment";
+import { PaymentNotice } from "@/components/payment-notice";
 import { publicPathFor, portalUrl } from "@/lib/portal";
 import type { Listing, MemberView, Promotion } from "@/lib/types";
 import { Card, Empty, StatusBadge } from "@/components/ui";
@@ -33,11 +36,27 @@ export function Component() {
   const [promoFor, setPromoFor] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState<number | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
-  const [promoConfirmed, setPromoConfirmed] = useState<Promotion | null>(null);
+  // Promotions pay in the inline Paystack modal and confirm in place; the
+  // hosted-page fallback returns to /work?promo_ref= (contract C3).
+  const promoPayment = useStudioPayment<Promotion>(api.confirmPromotion, "promo_ref", () => {
+    setPromoFor(null);
+    void revalidator.revalidate();
+  });
+  const promoConfirmed = promoPayment.confirmed;
 
-  const filtered = statusFilter === "all" ? listings : listings.filter((l) => l.status === statusFilter);
-  // Reset to page 1 whenever the status filter changes.
-  const paged = usePagedList(filtered, 10, statusFilter);
+  // The header search and the "/" shortcut land here as /work?q=… .
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = (searchParams.get("q") ?? "").trim();
+  const needle = query.toLowerCase();
+  const matching = needle ? listings.filter((l) => l.title.toLowerCase().includes(needle)) : listings;
+  const filtered = statusFilter === "all" ? matching : matching.filter((l) => l.status === statusFilter);
+  // Reset to page 1 whenever the search or the status filter changes.
+  const paged = usePagedList(filtered, 10, `${statusFilter}|${needle}`);
+  const clearSearch = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("q");
+    setSearchParams(next);
+  };
   const counts = {
     all: listings.length,
     draft: listings.filter((l) => l.status === "draft").length,
@@ -50,19 +69,10 @@ export function Component() {
     setPromoError(null);
     setPromoBusy(days);
     try {
-      const r = await api.promoteListing(l.id, days);
-      if (r.simulated) {
-        // Dev mode has no Paystack checkout to return from — settle in place.
-        const p = await api.confirmPromotion(r.reference);
-        setPromoConfirmed(p);
-        setPromoFor(null);
-        setPromoBusy(null);
-        revalidator.revalidate();
-      } else {
-        window.location.assign(r.authorizationUrl); // off to Paystack
-      }
+      await promoPayment.pay(await api.promoteListing(l.id, days));
     } catch (e) {
-      setPromoError(e instanceof Error ? e.message : "Could not start the payment.");
+      setPromoError(paymentError(e));
+    } finally {
       setPromoBusy(null);
     }
   }
@@ -91,6 +101,13 @@ export function Component() {
         ))}
       </div>
 
+      {query && (
+        <p className="mb-4 flex flex-wrap items-center gap-2 text-sm text-ink-muted" role="status">
+          Showing {matching.length} {matching.length === 1 ? "listing" : "listings"} matching &ldquo;<span className="font-semibold text-ink">{query}</span>&rdquo;
+          <button type="button" onClick={clearSearch} className="font-medium text-green-text underline hover:no-underline">Clear search</button>
+        </p>
+      )}
+
       {promoConfirmed && (
         <p className="mb-4 rounded-lg bg-teal/[0.12] px-4 py-3 text-sm font-medium text-teal-text">
           Payment confirmed — &ldquo;{promoConfirmed.listingTitle}&rdquo; is now featured for {promoConfirmed.days} days. ✓
@@ -99,12 +116,13 @@ export function Component() {
       {promoError && (
         <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-text">{promoError}</p>
       )}
+      <PaymentNotice notice={promoPayment.notice} checking={promoPayment.checking} onRecheck={promoPayment.recheck} className="mb-4" />
 
       {filtered.length === 0 ? (
-        <Empty icon="pen" title={statusFilter === "all" ? "Nothing yet" : `No ${statusFilter} listings`} actions={
-          statusFilter === "all" ? <Link to="/work/new" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green">Add your first listing</Link> : undefined
+        <Empty icon="pen" title={query ? "No matching listings" : statusFilter === "all" ? "Nothing yet" : `No ${statusFilter} listings`} actions={
+          statusFilter === "all" && !query ? <Link to="/work/new" className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green">Add your first listing</Link> : undefined
         }>
-          {statusFilter === "all" ? "Add a business, event, artist profile, opportunity and more — right here in the studio. They show up with their review status once submitted." : `You have no listings with "${statusFilter}" status.`}
+          {query ? `None of your ${statusFilter === "all" ? "" : `${statusFilter} `}listings have "${query}" in the title.` : statusFilter === "all" ? "Add a business, event, artist profile, opportunity and more — right here in the studio. They show up with their review status once submitted." : `You have no listings with "${statusFilter}" status.`}
         </Empty>
       ) : (
         <>

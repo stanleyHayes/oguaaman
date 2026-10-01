@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Member } from "./types";
 import { api, getToken, setToken } from "./api";
+import { TERMS_VERSION } from "./legal";
 
 export interface JoinInput {
   identifier: string;
@@ -9,6 +10,8 @@ export interface JoinInput {
   password: string;
   creatorTypes?: string[];
   creatorPlanIntent?: string;
+  /** The Terms of Use / Privacy Notice box was ticked (K1). */
+  acceptTerms: boolean;
 }
 
 interface AuthState {
@@ -34,10 +37,28 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   useEffect(() => {
     if (!getToken()) return;
-    api.me()
-      .then(setMember)
-      .catch(() => setToken(null))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    const restore = () => {
+      api.me()
+        .then((m) => {
+          if (!cancelled) setMember(m);
+        })
+        .catch((err: { status?: number }) => {
+          // Only a definitive "not signed in" answer ends the session. A
+          // network blip or a 5xx while the API restarts keeps the stored
+          // token and tries again once the browser is back online.
+          if (err?.status === 401) setToken(null);
+          else if (!cancelled) window.addEventListener("online", restore, { once: true });
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    };
+    restore();
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", restore);
+    };
   }, []);
 
   const signIn = useCallback(async (identifier: string, password: string): Promise<SignInResult> => {
@@ -60,7 +81,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setMember(member);
   }, []);
   const join = useCallback(async (input: JoinInput) => {
-    const { token, member } = await api.register(input);
+    const { token, member } = await api.register({ ...input, termsVersion: TERMS_VERSION, platform: "web" });
     setToken(token);
     setMember(member);
   }, []);

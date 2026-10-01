@@ -1,7 +1,9 @@
-import { useRef, useState, type ReactNode, type FormEvent } from "react";
+import { useRef, useState, type ReactNode, type SubmitEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { PORTAL } from "@/lib/portal";
+import { ConsentGate } from "./consent-gate";
+import { LegalLinks } from "./legal-links";
 import { Mark } from "./layout";
 import { OtpInput } from "./otp-input";
 import { AuthSkeleton, BusyLabel } from "./skeleton";
@@ -12,10 +14,31 @@ import { AuthSkeleton, BusyLabel } from "./skeleton";
  * call-to-action on the Account page.
  */
 export function AuthGate({ children }: Readonly<{ children: ReactNode }>) {
-  const { member, loading } = useAuth();
+  const { member, loading, loadError } = useAuth();
   if (loading) return <Backdrop><AuthSkeleton tag="Creator" /></Backdrop>;
+  if (!member && loadError) return <SessionRetry message={loadError} />;
   if (!member) return <SignIn />;
+  if (member.consentRequired) return <ConsentGate member={member} />;
   return <>{children}</>;
+}
+
+/** The stored session couldn't be checked (offline / API restarting) — keep it and offer a retry. */
+function SessionRetry({ message }: Readonly<{ message: string }>) {
+  const { retry, signOut } = useAuth();
+  return (
+    <Backdrop>
+      <Shell>
+        <div className="space-y-5" role="alert">
+          <h2 className="text-2xl font-semibold text-ink">Can't reach Oguaa</h2>
+          <p className="text-sm text-ink-muted">{message}</p>
+          <button type="button" onClick={retry} className={primaryBtn}>Try again</button>
+          <p className="text-center text-xs text-ink-faint">
+            <button type="button" onClick={signOut} className="font-medium text-ink-muted underline hover:text-ink">Sign out instead</button>
+          </p>
+        </div>
+      </Shell>
+    </Backdrop>
+  );
 }
 
 const TRUST = [
@@ -90,9 +113,10 @@ function SignIn() {
   const [recovery, setRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const codeFormRef = useRef<HTMLFormElement | null>(null);
+  // Re-entrancy guard: the OTP auto-submit and the button must not both verify.
+  const verifying = useRef(false);
 
-  async function submit(e: FormEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault(); setBusy(true); setErr(null);
     try {
       const res = await signIn(identifier.trim(), password);
@@ -100,19 +124,27 @@ function SignIn() {
     } catch (e) { setErr(e instanceof Error ? e.message : "Sign in failed."); } finally { setBusy(false); }
   }
 
-  async function submitCode(e: FormEvent) {
-    e.preventDefault();
-    if (!challenge) return;
+  // Takes the code as an argument: the OTP input's onComplete fires before React
+  // re-renders with the last digit, so reading `code` state there is stale.
+  async function verifyCode(value: string) {
+    if (!challenge || verifying.current) return;
+    verifying.current = true;
     setBusy(true); setErr(null);
-    try { await completeMfa(challenge, code.trim()); }
-    catch (e) { setErr(e instanceof Error ? e.message : "That code didn't work."); } finally { setBusy(false); }
+    try { await completeMfa(challenge, value.trim()); }
+    catch (e) { setErr(e instanceof Error ? e.message : "That code didn't work."); }
+    finally { verifying.current = false; setBusy(false); }
+  }
+
+  function submitCode(e: SubmitEvent) {
+    e.preventDefault();
+    void verifyCode(code);
   }
 
   if (challenge) {
     return (
       <Backdrop>
         <Shell>
-          <form ref={codeFormRef} onSubmit={submitCode} className="space-y-5">
+          <form onSubmit={submitCode} className="space-y-5">
             <div>
               <h2 className="text-2xl font-semibold text-ink">Two-factor check</h2>
               <p className="mt-1 text-sm text-ink-muted">Enter the 6-digit code from your authenticator app, or a recovery code.</p>
@@ -126,7 +158,7 @@ function SignIn() {
             ) : (
               <div className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">Code</span>
-                <OtpInput value={code} onChange={setCode} onComplete={() => codeFormRef.current?.requestSubmit()} autoFocus ariaLabel="Authenticator code" />
+                <OtpInput value={code} onChange={setCode} onComplete={(completed) => void verifyCode(completed)} autoFocus ariaLabel="Authenticator code" />
                 <button type="button" onClick={() => { setRecovery(true); setCode(""); }} className="mt-2 text-xs font-medium text-ink-muted underline hover:text-ink">Use a recovery code instead</button>
               </div>
             )}
@@ -175,6 +207,7 @@ function SignIn() {
             {busy ? <BusyLabel label="Signing in" width="w-16" /> : "Sign in"}
           </button>
           <p className="text-center text-xs text-ink-faint">New here? Join as a creator on the <a href={`${PORTAL}/signin?mode=join&as=creator`} className="font-semibold text-gold-text hover:underline">community portal</a>.</p>
+          <LegalLinks className="text-ink-faint" />
         </form>
       </Shell>
     </Backdrop>

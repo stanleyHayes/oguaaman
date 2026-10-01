@@ -1,5 +1,27 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { api } from "@/lib/api";
+import { Link, useLocation } from "react-router-dom";
+import { api, apiErrorCode, type ApiError } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+
+/** K15 disclosure: shown before a member agrees to the assistant's data use. */
+const AI_DISCLOSURE =
+  "The writing assistant sends the text you select to Anthropic (Claude), a US company, to write a suggestion. Don't include phone numbers, ID numbers or other private details.";
+
+type AIFailure = { kind: "limit" } | { kind: "consent" } | { kind: "signin" } | { kind: "error"; message: string };
+
+/** Maps an /api/ai failure to what the panel shows. */
+function classifyAIError(err: unknown): AIFailure {
+  const e = err as ApiError;
+  const code = apiErrorCode(err);
+  if (e.status === 401) return { kind: "signin" };
+  if (code === "ai_consent_required") return { kind: "consent" };
+  if (code === "limit") return { kind: "limit" };
+  if (code === "ai_unavailable") return { kind: "error", message: "The writing assistant is temporarily unavailable. Your text is unchanged." };
+  if (e.status === 429 || e.status === 400 || e.status === 422) {
+    return { kind: "error", message: e.message || "The assistant couldn't do that. Your text is unchanged." };
+  }
+  return { kind: "error", message: "Something went wrong generating that. Your text is unchanged." };
+}
 
 /**
  * Admin AI writing assistant bar (spec §8.12). Works on the SELECTION or the
@@ -76,6 +98,14 @@ export function AiWritingBar({
   const [toast, setToast] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const titleId = useId();
+  const { member, setMember } = useAuth();
+  const { pathname } = useLocation();
+  // The server's word wins: a 403 ai_consent_required re-opens the disclosure
+  // even when the cached member says consent was given.
+  const [consentNeeded, setConsentNeeded] = useState(false);
+  const [consentTicked, setConsentTicked] = useState(false);
+  const [consentBusy, setConsentBusy] = useState(false);
+  const showConsent = member != null && (!member.aiConsent || consentNeeded);
 
   useEffect(() => {
     return () => {
@@ -127,12 +157,27 @@ export function AiWritingBar({
       if (typeof data.remaining === "number") setRemaining(data.remaining);
     } catch (err) {
       if (ctrl.signal.aborted) return;
-      if ((err as { status?: number }).status === 429) setLimit(true);
-      else setError("Something went wrong generating that. Your text is unchanged.");
+      const failure = classifyAIError(err);
+      if (failure.kind === "limit") setLimit(true);
+      else if (failure.kind === "consent") setConsentNeeded(true);
+      else if (failure.kind === "signin") setError("Sign in to use the writing assistant.");
+      else setError(failure.message);
     } finally {
       setLoading(false);
       abortRef.current = null;
     }
+  }
+
+  async function agreeToAI() {
+    if (!member || !consentTicked) return;
+    setConsentBusy(true); setError(null);
+    try {
+      const res = await api.setAIConsent(true);
+      setMember({ ...member, aiConsent: res.aiConsent });
+      setConsentNeeded(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't save that. Please try again.");
+    } finally { setConsentBusy(false); }
   }
 
   function applyReplace() {
@@ -192,7 +237,30 @@ export function AiWritingBar({
             </div>
           </div>
 
-          {mode === "actions" && !loading && !result && !limit && (
+          {!member && (
+            <div className="p-4 text-sm text-ink-muted">
+              <Link to={`/signin?next=${encodeURIComponent(pathname)}`} className="font-semibold text-ai underline">Sign in</Link> to use the writing assistant.
+            </div>
+          )}
+
+          {showConsent && (
+            <div className="space-y-3 p-4 text-sm">
+              <p className="font-semibold text-ink">Before you use the writing assistant</p>
+              <p className="leading-relaxed text-ink-muted">{AI_DISCLOSURE} The suggestion is used only to help you write; you decide what is kept. You can use Oguaa without it, and turn it off any time under Me › Privacy &amp; data.</p>
+              <label className="flex items-start gap-2 text-ink-muted">
+                <input type="checkbox" checked={consentTicked} onChange={(e) => setConsentTicked(e.target.checked)} className="mt-0.5 h-4 w-4 accent-green" />
+                I agree to send the text I choose to Anthropic for suggestions.
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => void agreeToAI()} disabled={!consentTicked || consentBusy} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                  {consentBusy ? "Saving…" : "Agree and continue"}
+                </button>
+                <button type="button" onClick={() => setOpen(false)} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold text-ink">Not now</button>
+              </div>
+            </div>
+          )}
+
+          {member && !showConsent && mode === "actions" && !loading && !result && !limit && (
             <div className="p-4">
               <Group label="Rewrite">{REWRITE.map((b) => <ActBtn key={b.a} onClick={() => run(b.a)} ic={b.ic} label={b.label} />)}</Group>
               <Group label="Generate">{GENERATE.map((b) => <ActBtn key={b.a} onClick={() => run(b.a)} ic={b.ic} label={b.label} />)}</Group>
@@ -252,7 +320,7 @@ export function AiWritingBar({
           {result != null && (
             <div className="border-t border-ai-line">
               <div className="flex items-center justify-between px-4 pt-3">
-                <span className="text-sm font-semibold text-ink">Preview</span>
+                <span className="text-sm font-semibold text-ink">AI-suggested text</span>
                 <span className="text-xs text-ink-faint">
                   {sel.active ? "from your selection" : "from the whole field"}{lastAction ? ` · ${LABELS[lastAction]}` : ""}{simulated ? " · simulated" : ""}
                 </span>
@@ -269,7 +337,7 @@ export function AiWritingBar({
         </div>
       )}
 
-      <p className="mt-3 text-center text-xs text-ink-faint">The bar calls the model server-side — keys never reach the browser. Every output is a draft; you always decide what is kept.</p>
+      <p className="mt-3 text-center text-xs text-ink-faint">{AI_DISCLOSURE} Every suggestion is a draft; you decide what is kept.</p>
 
       {confirmOpen && (
         <dialog

@@ -1,18 +1,59 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useLoaderData } from "react-router-dom";
 import { BadgeCheck, Banknote, HandCoins, Percent, ReceiptText, ShoppingBag, Store, Tags, UsersRound } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, isForbidden } from "@/lib/api";
+import { PrivateDocument } from "@/components/private-document";
+import { maskIdentifier } from "@/lib/format";
 import type { Affiliate, AffiliateConversion, AffiliateProgramme, BusinessVerification, CommerceOrder, CommercePromotion } from "@/lib/types";
 import { Empty, PageHeader, Pill, Select } from "@/components/ui";
 import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
 
-type Data = { verifications: BusinessVerification[]; orders: CommerceOrder[]; promotions: CommercePromotion[]; programmes: AffiliateProgramme[]; affiliates: Affiliate[]; conversions: AffiliateConversion[] };
+type Data = { verifications: BusinessVerification[]; orders: CommerceOrder[]; promotions: CommercePromotion[]; programmes: AffiliateProgramme[]; affiliates: Affiliate[]; conversions: AffiliateConversion[]; stewardTools: boolean };
+
+const STEWARD_ONLY = Symbol("steward-only");
+
+/** Order states that mean the buyer's payment went through (refunds and cancellations are not sales). */
+const PAID_ORDER_STATES = new Set(["paid", "processing", "ready", "fulfilled"]);
+
+/** A seller's Paystack subaccount as staff need to see it: missing, simulated, or live/test code. */
+function subaccountLabel(code?: string): string {
+  if (!code) return "Not provisioned";
+  if (code.startsWith("ACCT_SIM")) return `${code} · simulated, re-verify under the live key`;
+  return code;
+}
+
+/** Promotions and the affiliate programme are steward-only; a curator (who
+ *  reviews verifications and orders) sees the page without them. */
+function stewardOnly<T>(p: Promise<T>): Promise<T | typeof STEWARD_ONLY> {
+  return p.catch((err: unknown) => {
+    if (isForbidden(err)) return STEWARD_ONLY;
+    throw err;
+  });
+}
 
 export async function loader(): Promise<Data> {
-  const [verifications, orders, promotions, programmes, conversions] = await Promise.all([api.businessVerifications(), api.commerceOrders(), api.commercePromotions(), api.affiliateProgrammes(), api.affiliateConversions()]);
-  const affiliates = (await Promise.all(programmes.map((programme) => api.affiliates(programme.id!).catch(() => [])))).flat();
-  return { verifications, orders, promotions, programmes, affiliates, conversions };
+  const [verifications, orders, promotions, programmes, conversions] = await Promise.all([
+    api.businessVerifications(), api.commerceOrders(),
+    stewardOnly(api.commercePromotions()), stewardOnly(api.affiliateProgrammes()), stewardOnly(api.affiliateConversions()),
+  ]);
+  const stewardTools = promotions !== STEWARD_ONLY && programmes !== STEWARD_ONLY && conversions !== STEWARD_ONLY;
+  const programmeList = programmes === STEWARD_ONLY ? [] : programmes;
+  const affiliates = (await Promise.all(programmeList.map((programme) => api.affiliates(programme.id!).catch(() => [])))).flat();
+  return {
+    verifications, orders, affiliates, stewardTools,
+    promotions: promotions === STEWARD_ONLY ? [] : promotions,
+    programmes: programmeList,
+    conversions: conversions === STEWARD_ONLY ? [] : conversions,
+  };
+}
+
+const DEFAULT_PROGRAMME: AffiliateProgramme = { name: "Oguaa ambassadors", commissionBps: 500, fundingSource: "platform", holdDays: 14, active: true };
+
+/** A commission percent from the form → integer basis points (1.1 → 110). */
+function percentToBps(value: string): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
 }
 
 const cedis = (n = 0) => `GH₵ ${(n / 100).toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -29,9 +70,14 @@ export function Component() {
   const [promotions, setPromotions] = useState(initial.promotions);
   const [promo, setPromo] = useState<CommercePromotion>({ code: "", title: "", discountType: "percent", discountValue: 5, active: true });
   const [programmes, setProgrammes] = useState(initial.programmes);
-  const [programme, setProgramme] = useState<AffiliateProgramme>({ name: "Oguaa ambassadors", commissionBps: 500, fundingSource: "platform", holdDays: 14, active: true });
+  // Edit the existing programme (saving again updates it, never duplicates).
+  const [programme, setProgramme] = useState<AffiliateProgramme>(initial.programmes[0] ?? DEFAULT_PROGRAMME);
+  const [programmeMsg, setProgrammeMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [conversions, setConversions] = useState(initial.conversions);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
 
-  const confirmed = useMemo(() => initial.orders.filter((order) => order.status !== "pending"), [initial.orders]);
+  const confirmed = useMemo(() => initial.orders.filter((order) => PAID_ORDER_STATES.has(order.status)), [initial.orders]);
   const gross = confirmed.reduce((sum, order) => sum + order.amountPesewas, 0);
   const fees = confirmed.reduce((sum, order) => sum + order.platformFeePesewas, 0);
   const businessNet = confirmed.reduce((sum, order) => sum + order.businessNetPesewas, 0);
@@ -50,15 +96,37 @@ export function Component() {
 
   async function launchPromotion() {
     if (!promo.title?.trim() || !promo.code.trim()) return;
-    const saved = await api.saveCommercePromotion(promo);
-    setPromotions((rows) => [saved, ...rows]);
-    setPromo((current) => ({ ...current, code: "", title: "" }));
+    setPromoError(null);
+    try {
+      const saved = await api.saveCommercePromotion(promo);
+      setPromotions((rows) => [saved, ...rows]);
+      setPromo((current) => ({ ...current, code: "", title: "" }));
+    } catch (e) {
+      setPromoError(e instanceof Error ? e.message : "Couldn't launch the promotion.");
+    }
   }
 
   async function saveProgramme() {
     if (!programme.name.trim()) return;
-    const saved = await api.saveAffiliateProgramme(programme);
-    setProgrammes((rows) => [saved, ...rows]);
+    setProgrammeMsg(null);
+    try {
+      const saved = await api.saveAffiliateProgramme(programme);
+      setProgramme(saved);
+      setProgrammes((rows) => [saved, ...rows.filter((row) => row.id !== saved.id)]);
+      setProgrammeMsg({ ok: true, text: "Programme saved." });
+    } catch (e) {
+      setProgrammeMsg({ ok: false, text: e instanceof Error ? e.message : "Couldn't save the programme." });
+    }
+  }
+
+  async function release(conversion: AffiliateConversion) {
+    setBusy(conversion.id); setReleaseError(null);
+    try {
+      await api.setAffiliateConversionStatus(conversion.id, "payable");
+      setConversions((rows) => rows.map((row) => (row.id === conversion.id ? { ...row, status: "payable" } : row)));
+    } catch (e) {
+      setReleaseError(e instanceof Error ? e.message : "Couldn't release that commission.");
+    } finally { setBusy(""); }
   }
 
   return <>
@@ -84,11 +152,11 @@ export function Component() {
     <Stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <StaggerItem index={0}><MetricCard label="Confirmed GMV" value={cedis(gross)} sub={`${confirmed.length} settled orders`} tone="green" icon={<Banknote size={18} />} /></StaggerItem>
       <StaggerItem index={1}><MetricCard label="Oguaa commerce fees" value={cedis(fees)} sub="Confirmed platform income" tone="gold" icon={<HandCoins size={18} />} /></StaggerItem>
-      <StaggerItem index={2}><MetricCard label="Business settlement" value={cedis(businessNet)} sub="Net routed to merchants" tone="teal" icon={<Store size={18} />} /></StaggerItem>
+      <StaggerItem index={2}><MetricCard label="Business settlement" value={cedis(businessNet)} sub="Net routed to merchants, before Paystack's fee" tone="teal" icon={<Store size={18} />} /></StaggerItem>
       <StaggerItem index={3}><MetricCard label="Verification queue" value={pendingChecks} sub={`${verifications.length} total applications`} tone={pendingChecks ? "clay" : "ink"} icon={<BadgeCheck size={18} />} /></StaggerItem>
     </Stagger>
 
-    <section className="mt-8 grid gap-6 xl:grid-cols-2">
+    {initial.stewardTools && <section className="mt-8 grid gap-6 xl:grid-cols-2">
       <Panel watermark={<Percent size={126} strokeWidth={0.9} />} watermarkClass="-right-7 top-2 text-gold" heading={<SectionHeading icon={<Tags size={18} />} kicker="Platform-funded" title="Oguaa promotions">Discounts come from Oguaa’s fee, never the business settlement.</SectionHeading>}>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Campaign name"><input aria-label="Promotion title" placeholder="Cape Coast weekend" value={promo.title} onChange={(e) => setPromo({ ...promo, title: e.target.value })} className={field} /></Field>
@@ -96,28 +164,28 @@ export function Component() {
           <Field label="Discount type"><Select aria-label="Discount type" value={promo.discountType} onValueChange={(discountType) => setPromo({ ...promo, discountType: discountType as "percent" | "fixed" })} className="mt-1.5 w-full"><option value="percent">Percentage</option><option value="fixed">Fixed pesewas</option></Select></Field>
           <Field label="Discount value"><input aria-label="Discount value" type="number" min={1} value={promo.discountValue} onChange={(e) => setPromo({ ...promo, discountValue: Number(e.target.value) })} className={field} /></Field>
         </div>
-        <button type="button" onClick={launchPromotion} disabled={!promo.title?.trim() || !promo.code.trim()} className="mt-4 rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:cursor-not-allowed disabled:opacity-45">Launch promotion</button>
+        <button type="button" onClick={launchPromotion} disabled={!promo.title?.trim() || !promo.code.trim()} className="mt-4 rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:cursor-not-allowed disabled:opacity-45">Launch promotion</button>{promoError && <p className="mt-2 text-xs text-clay-text" role="alert">{promoError}</p>}
         <div className="mt-5 border-t border-sand pt-4">{platformPromotions.length === 0 ? <Empty compact icon="megaphone" title="No Oguaa promotions yet">Launch an offer above; usage and funding remain visible here.</Empty> : <div className="space-y-2">{platformPromotions.map((row) => <div key={row.id} className="flex items-center justify-between gap-3 rounded-xl border border-sand bg-paper px-3.5 py-3 text-sm"><div><p className="font-semibold text-ink">{row.title || row.code}</p><p className="mt-0.5 text-xs text-ink-faint">{row.code} · {row.redemptions ?? 0} uses</p></div><Pill tone={row.active ? "green" : "neutral"}>{row.discountValue}{row.discountType === "percent" ? "%" : "p"}</Pill></div>)}</div>}</div>
       </Panel>
 
       <Panel watermark={<UsersRound size={148} strokeWidth={0.85} />} watermarkClass="-bottom-10 -right-8 text-teal" heading={<SectionHeading icon={<UsersRound size={18} />} kicker="Partner sales" title="Affiliate programme">Set the commission held by Oguaa until each return window closes.</SectionHeading>}>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Programme name"><input aria-label="Programme name" value={programme.name} onChange={(e) => setProgramme({ ...programme, name: e.target.value })} className={field} /></Field>
-          <Field label="Commission percent"><input aria-label="Commission percent" type="number" min={0} max={100} value={programme.commissionBps / 100} onChange={(e) => setProgramme({ ...programme, commissionBps: Number(e.target.value) * 100 })} className={field} /></Field>
+          <Field label="Commission percent"><input aria-label="Commission percent" type="number" min={0} max={100} step="0.01" value={programme.commissionBps / 100} onChange={(e) => setProgramme({ ...programme, commissionBps: percentToBps(e.target.value) })} className={field} /></Field>
         </div>
-        <button type="button" onClick={saveProgramme} disabled={!programme.name.trim()} className="mt-4 rounded-full bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal/90 disabled:opacity-45">Save programme</button>
-        <div className="mt-5 border-t border-sand pt-4">{initial.affiliates.length === 0 ? <Empty compact icon="users" title="No approved affiliates yet">Approved platform partners and their payout readiness appear here.</Empty> : <div className="grid gap-2 sm:grid-cols-2">{initial.affiliates.map((row) => <div key={row.id} className="rounded-xl border border-sand bg-paper px-3.5 py-3 text-sm"><div className="flex justify-between gap-2"><p className="font-semibold text-ink">{row.name}</p><Pill tone={row.active ? "green" : "neutral"}>{row.status ?? (row.active ? "approved" : "paused")}</Pill></div><p className="mt-1 text-xs text-ink-faint">{row.code} · {row.email}</p><p className="mt-1 text-xs text-ink-muted">{row.payoutPhone || "Payout profile incomplete"}</p></div>)}</div>}<p className="mt-3 text-xs text-ink-faint">{programmes.length} configured {programmes.length === 1 ? "programme" : "programmes"}</p><div className="mt-4 space-y-2">{initial.conversions.map((conversion) => <div key={conversion.id} className="flex items-center justify-between gap-3 rounded-xl border border-sand bg-paper px-3.5 py-3 text-sm"><div><p className="font-semibold text-ink">{conversion.affiliateCode}</p><p className="text-xs text-ink-faint">{cedis(conversion.commissionPesewas)} · {conversion.status}</p></div>{conversion.status === "converted" && <button type="button" onClick={() => api.setAffiliateConversionStatus(conversion.id, "payable")} className="rounded-full border border-teal/30 px-3 py-1.5 text-xs font-semibold text-teal-text">Release</button>}</div>)}</div></div>
+        <button type="button" onClick={saveProgramme} disabled={!programme.name.trim()} className="mt-4 rounded-full bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal/90 disabled:opacity-45">Save programme</button>{programmeMsg && <p className={`mt-2 text-xs ${programmeMsg.ok ? "text-teal-text" : "text-clay-text"}`} role="status">{programmeMsg.text}</p>}
+        <div className="mt-5 border-t border-sand pt-4">{initial.affiliates.length === 0 ? <Empty compact icon="users" title="No approved affiliates yet">Approved platform partners and their payout readiness appear here.</Empty> : <div className="grid gap-2 sm:grid-cols-2">{initial.affiliates.map((row) => <div key={row.id} className="rounded-xl border border-sand bg-paper px-3.5 py-3 text-sm"><div className="flex justify-between gap-2"><p className="font-semibold text-ink">{row.name}</p><Pill tone={row.active ? "green" : "neutral"}>{row.status ?? (row.active ? "approved" : "paused")}</Pill></div><p className="mt-1 text-xs text-ink-faint">{row.code} · {row.email}</p><p className="mt-1 text-xs text-ink-muted">{row.payoutPhone || "Payout profile incomplete"}</p></div>)}</div>}<p className="mt-3 text-xs text-ink-faint">{programmes.length} configured {programmes.length === 1 ? "programme" : "programmes"}</p>{releaseError && <p className="mt-3 text-xs text-clay-text" role="alert">{releaseError}</p>}<div className="mt-4 space-y-2">{conversions.map((conversion) => <div key={conversion.id} className="flex items-center justify-between gap-3 rounded-xl border border-sand bg-paper px-3.5 py-3 text-sm"><div><p className="font-semibold text-ink">{conversion.affiliateCode}</p><p className="text-xs text-ink-faint">{cedis(conversion.commissionPesewas)} · {conversion.status}</p></div>{conversion.status === "converted" && <button type="button" disabled={busy === conversion.id} onClick={() => release(conversion)} className="rounded-full border border-teal/30 px-3 py-1.5 text-xs font-semibold text-teal-text disabled:opacity-50">{busy === conversion.id ? "Releasing…" : "Release"}</button>}</div>)}</div></div>
       </Panel>
-    </section>
+    </section>}
 
     <section className="mt-10">
       <SectionBar heading={<SectionHeading icon={<BadgeCheck size={18} />} kicker="Trust gate" title="Verification queue">Only approved businesses receive a Paystack subaccount and checkout access.</SectionHeading>} meta={`${pendingChecks} awaiting review`} />
-      {verifications.length === 0 ? <Empty icon="shield" title="No verification applications">When a business submits registration, identity documents and settlement details, the review pack will appear here.</Empty> : <Stagger className="grid gap-4 xl:grid-cols-2">{verifications.map((verification, index) => <StaggerItem as="article" index={index} key={verification.id} className="relative overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)]"><Watermark className="-bottom-7 -right-5 text-green"><BadgeCheck size={104} strokeWidth={0.9} /></Watermark><div className="relative"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-xl font-semibold text-ink">{verification.legalName}</h3><p className="mt-1 text-sm text-ink-muted">{verification.registrationNumber} · {verification.ghanaPostGPS}</p></div><Pill tone={verification.status === "verified" ? "green" : "neutral"}>{verification.status}</Pill></div><dl className="mt-5 grid gap-3 rounded-xl border border-sand bg-paper p-4 text-sm sm:grid-cols-2"><Key label="Ghana Card" value={verification.ghanaCardNumber} /><Key label="Settlement account" value={`${verification.settlementName} · •••${verification.settlementAccountNo.slice(-4)}`} /><Key label="Business phone" value={verification.businessPhone} /><Key label="Evidence" value={`${verification.documents.length} documents`} /></dl><div className="mt-4 flex flex-wrap gap-3">{verification.documents.map((document, i) => <a key={document} href={document} target="_blank" rel="noreferrer" className="text-xs font-semibold text-teal-text underline underline-offset-4">Document {i + 1} ↗</a>)}</div><div className="mt-5 flex flex-wrap gap-2"><button type="button" disabled={busy === verification.listingId} onClick={() => decide(verification, "verified")} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green disabled:opacity-50">Verify &amp; provision</button><button type="button" disabled={busy === verification.listingId} onClick={() => decide(verification, "rejected")} className="rounded-full border border-clay/50 px-4 py-2 text-sm font-semibold text-clay-text disabled:opacity-50">Reject</button>{verification.status === "verified" && <button type="button" onClick={() => decide(verification, "revoked")} className="rounded-full border border-maroon-text/40 px-4 py-2 text-sm font-semibold text-maroon-text">Revoke</button>}</div></div></StaggerItem>)}</Stagger>}
+      {verifications.length === 0 ? <Empty icon="shield" title="No verification applications">When a business submits registration, identity documents and settlement details, the review pack will appear here.</Empty> : <Stagger className="grid gap-4 xl:grid-cols-2">{verifications.map((verification, index) => <StaggerItem as="article" index={index} key={verification.id} className="relative overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)]"><Watermark className="-bottom-7 -right-5 text-green"><BadgeCheck size={104} strokeWidth={0.9} /></Watermark><div className="relative"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-xl font-semibold text-ink">{verification.legalName}</h3><p className="mt-1 text-sm text-ink-muted">{verification.registrationNumber} · {verification.ghanaPostGPS}</p></div><Pill tone={verification.status === "verified" ? "green" : "neutral"}>{verification.status}</Pill></div><dl className="mt-5 grid gap-3 rounded-xl border border-sand bg-paper p-4 text-sm sm:grid-cols-2"><Key label="Ghana Card" value={maskIdentifier(verification.ghanaCardNumber)} /><Key label="Settlement account" value={`${verification.settlementName} · •••${verification.settlementAccountNo.slice(-4)}`} /><Key label="Settlement bank / network code" value={verification.settlementBankCode} /><Key label="Paystack subaccount" value={subaccountLabel(verification.paystackSubaccount)} /><Key label="Business phone" value={verification.businessPhone} /><Key label="Evidence" value={`${verification.documents.length} documents`} /></dl><div className="mt-4 flex flex-wrap items-start gap-4">{verification.documents.map((document, i) => <PrivateDocument key={document} docRef={document} label={`document ${i + 1}`} />)}</div><div className="mt-5 flex flex-wrap gap-2"><button type="button" disabled={busy === verification.listingId} onClick={() => decide(verification, "verified")} className="rounded-full bg-green px-4 py-2 text-sm font-semibold text-on-green disabled:opacity-50">Verify &amp; provision</button><button type="button" disabled={busy === verification.listingId} onClick={() => decide(verification, "rejected")} className="rounded-full border border-clay/50 px-4 py-2 text-sm font-semibold text-clay-text disabled:opacity-50">Reject</button>{verification.status === "verified" && <button type="button" onClick={() => decide(verification, "revoked")} className="rounded-full border border-maroon-text/40 px-4 py-2 text-sm font-semibold text-maroon-text">Revoke</button>}</div></div></StaggerItem>)}</Stagger>}
     </section>
 
     <section className="mt-10">
       <SectionBar heading={<SectionHeading icon={<ReceiptText size={18} />} kicker="Settlement ledger" title="Recent orders">Every customer charge, Oguaa fee and business net amount stays visible.</SectionHeading>} />
-      {initial.orders.length === 0 ? <Empty icon="money" title="No marketplace orders yet">Verified storefront checkouts will land here after Paystack confirmation, with the split recorded in pesewas.</Empty> : <div className="overflow-x-auto rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]"><table className="w-full min-w-[54rem] text-left text-sm"><thead><tr className="border-b border-sand bg-paper text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint"><th className="px-4 py-3">Reference</th><th className="px-4 py-3">Business</th><th className="px-4 py-3">Buyer</th><th className="px-4 py-3">Gross</th><th className="px-4 py-3">Oguaa fee</th><th className="px-4 py-3">Business net</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-sand">{initial.orders.map((order) => <tr key={order.id} className="hover:bg-paper"><td className="px-4 py-3 font-medium">{order.reference}</td><td className="px-4 py-3">{order.businessName}</td><td className="px-4 py-3 text-ink-muted">{order.buyerName}</td><td className="px-4 py-3 font-semibold">{cedis(order.amountPesewas)}</td><td className="px-4 py-3 font-semibold text-gold-text">{cedis(order.platformFeePesewas)}</td><td className="px-4 py-3 font-semibold text-teal-text">{cedis(order.businessNetPesewas)}</td><td className="px-4 py-3"><Pill tone={order.status === "success" ? "green" : "neutral"}>{order.status}</Pill></td></tr>)}</tbody></table></div>}
+      {initial.orders.length === 0 ? <Empty icon="money" title="No marketplace orders yet">Verified storefront checkouts will land here after Paystack confirmation, with the split recorded in pesewas.</Empty> : <div className="overflow-x-auto rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)]"><table className="w-full min-w-[54rem] text-left text-sm"><thead><tr className="border-b border-sand bg-paper text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint"><th className="px-4 py-3">Reference</th><th className="px-4 py-3">Business</th><th className="px-4 py-3">Buyer</th><th className="px-4 py-3">Gross</th><th className="px-4 py-3">Oguaa fee</th><th className="px-4 py-3">Business net <span className="normal-case tracking-normal">(before Paystack fee)</span></th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-sand">{initial.orders.map((order) => <tr key={order.id} className="hover:bg-paper"><td className="px-4 py-3 font-medium">{order.reference}</td><td className="px-4 py-3">{order.businessName}</td><td className="px-4 py-3 text-ink-muted">{order.buyerName}</td><td className="px-4 py-3 font-semibold">{cedis(order.amountPesewas)}</td><td className="px-4 py-3 font-semibold text-gold-text">{cedis(order.platformFeePesewas)}</td><td className="px-4 py-3 font-semibold text-teal-text">{cedis(order.businessNetPesewas)}</td><td className="px-4 py-3"><Pill tone={PAID_ORDER_STATES.has(order.status) ? "green" : "neutral"}>{order.status}</Pill></td></tr>)}</tbody></table></div>}
     </section>
   </>;
 }

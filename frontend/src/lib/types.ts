@@ -102,6 +102,8 @@ export interface Subscription {
   id: string;
   reference: string;
   memberId?: string;
+  /** "business" (a Supporter plan on a listing) or "creator" (member-level; no listing fields). */
+  scope?: "business" | "creator";
   listingId: string;
   listingSlug: string;
   listingTitle: string;
@@ -192,7 +194,64 @@ export interface Member {
   verified?: boolean;
   /** What the member is verified as — "Curator" | "Steward" | "<authority org name>" (present when verified). */
   verifiedAs?: string;
+  // ── Self-view only (GET /api/auth/me and the sign-in payloads) ──────────
+  /** True when the member has not agreed to the current Terms/Privacy versions. */
+  consentRequired?: boolean;
+  /** True once the member has confirmed (or proved at sign-up) they are 18+. */
+  adultVerified?: boolean;
+  /** True once the member has agreed to the writing assistant's data use. */
+  aiConsent?: boolean;
+  /** True in production when a staff account must turn on two-factor first. */
+  staffMfaRequired?: boolean;
+  consent?: MemberConsent;
 }
+
+/** The Terms/Privacy versions a member agreed to, and when. */
+export interface MemberConsent {
+  termsVersion: string;
+  privacyVersion: string;
+  acceptedAt: string;
+  platform: string;
+}
+
+/** Server-side notification preferences (GET/PUT /api/me/notification-preferences). */
+export interface NotificationPreferences {
+  categories: { safety: boolean; community: boolean; remembrances: boolean; product: boolean };
+  channels: { push: boolean; email: boolean; whatsapp: boolean };
+}
+
+/** What an account erasure removed and what is kept (DELETE /api/me and the code flow). */
+export interface AccountDeletionResult {
+  ok?: boolean;
+  deleted: boolean;
+  retained: string[];
+}
+
+/** The fee split shown before a pledge (GET /api/projects/{slug}/pledge-quote). */
+export interface PledgeQuote {
+  amountPesewas: number;
+  feePercent: number;
+  feePesewas: number;
+  netPesewas: number;
+  projectTitle: string;
+  beneficiary?: string;
+  fundingClosed: boolean;
+  refundPolicy: string;
+}
+
+/** A shop's verified seller identity (public-safe KYC fields). */
+export interface SellerIdentity {
+  legalName: string;
+  /** GhanaPost GPS code of the registered business address. */
+  location?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  registrationNumber?: string;
+  verifiedAt?: string;
+}
+
+/** What can be reported through POST /api/reports. */
+export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output";
 
 export interface SchoolStint {
   schoolId: string;
@@ -261,10 +320,22 @@ export interface CommerceOrder {
   simulated?: boolean; createdAt: string; paidAt?: string; updatedAt: string;
 }
 
+/** A settlement destination type Paystack pays sellers to in Ghana. */
+export type PaymentBankType = "bank" | "mobile_money";
+
+/** One bank or Mobile Money network from GET /api/payments/banks. */
+export interface PaymentBank {
+  code: string;
+  name: string;
+  type: PaymentBankType;
+}
+
 export interface BusinessVerification {
   id: string; listingId: string; listingSlug: string; ownerId: string; legalName: string;
   registrationNumber: string; taxIdentificationNo?: string; ghanaCardNumber: string;
   businessPhone: string; ghanaPostGPS: string; documents: string[];
+  /** Public seller contact shown on product pages (K19). */
+  businessEmail?: string;
   settlementBankCode: string; settlementAccountNo: string; settlementName: string;
   paystackSubaccount?: string; status: "draft" | "pending" | "verified" | "rejected" | "revoked";
   reviewNote?: string; submittedAt?: string; reviewedAt?: string; createdAt: string; updatedAt: string;
@@ -390,6 +461,8 @@ export interface NewsArticle {
   automationLabel?: string;
   sourceName?: string;
   sourceUrl?: string;
+  /** Byline of the original story on automated articles. */
+  sourceAuthor?: string;
   sourcePublishedAt?: string;
 }
 
@@ -417,6 +490,8 @@ export interface SearchHit {
 export interface Tribute {
   id: string;
   authorName: string;
+  /** The author's member slug (tributes need sign-in), for Block and profile links. */
+  memberSlug?: string;
   relation?: string;
   message: string;
   createdAt: string;
@@ -429,7 +504,8 @@ export type IncidentStatus = "reported" | "verified" | "responding" | "resolved"
 
 export interface IncidentStatusEntry {
   status: IncidentStatus;
-  by: string;
+  /** Internal member id; only sent to the reporter and safety staff. Never display it. */
+  by?: string;
   note?: string;
   at: string;
 }
@@ -452,6 +528,8 @@ export interface Incident {
     incidentStatus: IncidentStatus;
     statusHistory?: IncidentStatusEntry[];
   };
+  /** Crime and medical reports (and screened posts) wait for a curator. */
+  held?: boolean;
   createdAt: string;
   submittedAt?: string;
   publishedAt?: string;
@@ -476,9 +554,13 @@ export interface LostFound {
     description: string;
     lastSeenLocation?: string;
     lastSeenDate?: string; // YYYY-MM-DD
-    contact: string;
+    /** Only sent to the poster and safety staff; others use the contact relay. */
+    contact?: string;
     lfStatus: LostFoundStatus;
+    subjectIsMinor?: boolean;
   };
+  /** Held for curator review before it is published. */
+  held?: boolean;
   createdAt: string;
   submittedAt?: string;
   publishedAt?: string;
@@ -490,6 +572,8 @@ export interface LostFound {
  * casts, matching the Go `details` document.
  */
 export interface ListingDetails {
+  /** Credit and licence for the cover photo, e.g. "Photo: <author>, CC BY-SA 4.0, via Wikimedia Commons". */
+  imageCredit?: string;
   // artist
   actName?: string;
   genres?: string[];
@@ -662,6 +746,10 @@ export interface Listing {
   // Artist detail only: whether the artist is accepting donations (owner holds
   // an active creator subscription).
   donationsEnabled?: boolean;
+  /** Paid placement (promotion or plan boost) ends at this time; show "Sponsored" until then. */
+  promotedUntil?: string;
+  /** Held for curator review (safety posts, urgent reports). */
+  held?: boolean;
   details: ListingDetails;
   tributes?: Tribute[];
   createdAt: string;
@@ -744,6 +832,10 @@ export interface MemberView {
   schools: Organization[];
   /** Set when a block exists in either direction — the profile is withheld. */
   blocked?: boolean;
+  /** The viewer blocked this member (only then can the viewer unblock). */
+  blockedByMe?: boolean;
+  /** This member blocked the viewer. */
+  blockedMe?: boolean;
 }
 
 /** A member you have blocked, for the unblock list (App Store Guideline 1.2). */

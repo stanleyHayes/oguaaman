@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useLoaderData, useSearchParams } from "react-router-dom";
+import { useMemo, useState, type SubmitEvent, type ReactNode } from "react";
+import { Link, useLoaderData } from "react-router-dom";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta } from "@/components/ui";
 import { EmptyGlyph, EmptyState } from "@/components/empty-state";
@@ -7,7 +7,9 @@ import { ProfileSkeleton } from "@/components/skeleton";
 import { EscrowChip, JobStatusChip, OutsideDisclaimer, ghs } from "@/components/outside";
 import { api, getToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { completePayment } from "@/lib/paystack";
+import { paymentErrorMessage } from "@/lib/payments";
+import { usePaymentConfirm } from "@/lib/use-payment-confirm";
+import { PaymentNotice } from "@/components/payment-notice";
 import { formatDate, tagLabel } from "@/lib/format";
 import type { AgentJob, MyJobs } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -107,26 +109,26 @@ function ClientJobCard({ job, memberEmail, onRefresh }: Readonly<{ job: AgentJob
     finally { setBusy(false); }
   }
 
+  // Confirms the escrow payment in place; a still-processing or closed-early
+  // payment keeps a re-check (contract C1).
+  const payment = usePaymentConfirm(api.confirmJob, {
+    onConfirmed: () => { setMode(null); void onRefresh(); },
+  });
+
   // Fund the escrow — spec flow: simulated → confirm immediately; else Paystack.
-  async function fund(e: FormEvent) {
+  // The receipt email is optional: the server falls back to the account's own
+  // address (contract C4).
+  async function fund(e: SubmitEvent) {
     e.preventDefault();
     const addr = email.trim();
-    if (!/.+@.+\..+/.test(addr)) { setError("Enter a valid email for your payment receipt."); return; }
+    if (addr && !/.+@.+\..+/.test(addr)) { setError("Enter a valid email for your payment receipt, or leave it blank."); return; }
     setBusy(true); setError(null);
     try {
-      const res = await api.acceptJob(job.id, { email: addr });
-      if (res.simulated) {
-        await api.confirmJob(res.reference);
-        await onRefresh();
-        setMode(null);
-      } else {
-        await completePayment(res, {
-          onSuccess: async () => { await api.confirmJob(res.reference); await onRefresh(); setMode(null); },
-          onCancel: () => setError("Payment cancelled — the escrow was not funded."),
-        });
-      }
+      const res = await api.acceptJob(job.id, addr ? { email: addr } : {});
+      if (res.simulated) await payment.confirm(res.reference);
+      else await payment.complete(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start the payment.");
+      setError(paymentErrorMessage(err, "Could not start the payment."));
     } finally {
       setBusy(false);
     }
@@ -151,8 +153,8 @@ function ClientJobCard({ job, memberEmail, onRefresh }: Readonly<{ job: AgentJob
           {mode === "fund" ? (
             <form onSubmit={fund} className="space-y-3">
               <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-ink">Email for your payment receipt</span>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputCls} placeholder="you@example.com" />
+                <span className="mb-1.5 block text-sm font-medium text-ink">Email for your payment receipt <span className="font-normal text-ink-faint">(optional)</span></span>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="you@example.com" />
               </label>
               <p className="text-xs text-ink-faint">You&apos;ll fund <b className="text-ink">{ghs(job.quotePesewas)}</b> into escrow. It&apos;s released to the agent only when you mark the job complete.</p>
               <ActionError msg={error} />
@@ -170,6 +172,7 @@ function ClientJobCard({ job, memberEmail, onRefresh }: Readonly<{ job: AgentJob
               </div>
             </div>
           )}
+          <PaymentNotice notice={payment.notice} confirming={payment.confirming} onRecheck={payment.recheck} className="mt-3" />
         </div>
       )}
 
@@ -287,7 +290,7 @@ function AgentJobCard({ job, onRefresh }: Readonly<{ job: AgentJob; onRefresh: (
     finally { setBusy(false); }
   }
 
-  async function submitQuote(e: FormEvent) {
+  async function submitQuote(e: SubmitEvent) {
     e.preventDefault();
     const normalized = amount.trim();
     if (!QUOTE_PATTERN.test(normalized)) { setError("Enter a quote in cedis (up to two decimals)."); return; }
@@ -360,28 +363,13 @@ export function Component() {
   const [tab, setTab] = useState<"client" | "agent">(
     initial.asClient?.length ? "client" : initial.asAgent?.length ? "agent" : "client",
   );
-  const [params, setParams] = useSearchParams();
-  const [confirming, setConfirming] = useState(false);
-  const [confirmed, setConfirmed] = useState<AgentJob | null>(null);
-  const [confirmError, setConfirmError] = useState<string | null>(null);
-  const confirmedRef = useRef(false);
-
   const refresh = useMemo(() => async () => {
     try { setJobs(await api.myJobs()); } catch { /* keep the last good view */ }
   }, []);
 
-  // Confirm a hosted-checkout return (?job_ref=) exactly once on load.
-  useEffect(() => {
-    const ref = params.get("job_ref");
-    if (!ref || confirmedRef.current) return;
-    confirmedRef.current = true;
-    setConfirming(true);
-    api.confirmJob(ref)
-      .then((job) => { setConfirmed(job); setParams({}, { replace: true }); return refresh(); })
-      .catch(() => setConfirmError("We couldn't confirm that payment. If you were charged, it will reconcile shortly."))
-      .finally(() => setConfirming(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Confirm a hosted-checkout return (?job_ref=) once on load, with a re-check.
+  const returned = usePaymentConfirm(api.confirmJob, { returnParam: "job_ref", onConfirmed: () => void refresh() });
+  const { confirming, confirmed } = returned;
 
   if (loading) {
     return <Container size="wide" className="py-12"><ProfileSkeleton /></Container>;
@@ -432,7 +420,7 @@ export function Component() {
             Escrow funded for <b>{confirmed.title}</b> ({ghs(confirmed.escrow.heldPesewas || confirmed.quotePesewas)}).{confirmed.escrow.simulated ? " Simulated — dev mode, no real money moved." : ""}
           </div>
         )}
-        {confirmError && <div className="mb-6 rounded-[var(--radius-card)] border border-clay/25 bg-clay/[0.06] p-4 text-sm text-clay-text" role="alert">{confirmError}</div>}
+        <PaymentNotice notice={returned.notice} confirming={confirming} onRecheck={returned.recheck} className="mb-6" />
 
         <OutsideDisclaimer />
 

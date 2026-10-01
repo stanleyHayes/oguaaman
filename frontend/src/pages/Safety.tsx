@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta } from "@/components/ui";
 import { SectionIcon } from "@/components/section-icon";
+import { EmergencyCallout } from "@/components/emergency-callout";
 import { formatDate } from "@/lib/format";
 import { LayoutPill, StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
@@ -37,12 +38,13 @@ export function Component() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <Cta to="/safety/report" variant="primary">Report an incident <span aria-hidden>→</span></Cta>
           <p className="max-w-md text-sm leading-relaxed text-ink-muted">
-            In immediate danger? Contact the emergency services first, then alert the community here.
+            In immediate danger? Call 112 first, then alert the community here.
           </p>
         </div>
       </PageHero>
 
       <Container size="wide" className="py-10 sm:py-12">
+        <EmergencyCallout className="mb-8" />
         <section aria-label="Incident overview" className="grid overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] sm:grid-cols-3">
           <Metric value={all.filter((incident) => !isClosed(incident)).length} label="Active reports" accent="bg-maroon-900" />
           <Metric value={responding} label="Response underway" accent="bg-gold-brand" />

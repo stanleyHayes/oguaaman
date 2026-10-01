@@ -7,6 +7,7 @@ import { MetricCard } from "@/components/metric-card";
 import { BarsH, Histogram, AreaLine, Donut, CHART_COLORS, type Datum } from "@/components/charts";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { useAuth } from "@/lib/auth";
+import { canAccess } from "@/lib/roles";
 import { BusyLabel } from "@/components/skeleton";
 import {
   ArrowUpRight, BadgeCheck, Camera, CheckCircle2, Clock, Eye, GraduationCap, Heart,
@@ -25,7 +26,10 @@ interface Data {
 export async function loader(): Promise<Data> {
   const [stats, queue, listings, members, institutions] = await Promise.all([
     api.stats(),
-    api.queue(),
+    // Every loader call degrades on its own: editors, accountability and
+    // vetting officers can't read the moderation queue (403), and one failing
+    // figure must not take the whole dashboard down.
+    api.queue().catch(() => [] as Listing[]),
     api.listings().catch(() => [] as Listing[]),
     api.members().catch(() => [] as Member[]),
     api.institutions().catch(() => [] as Organization[]),
@@ -125,6 +129,9 @@ export function Component() {
   const { stats, queue, listings, members, institutions } = useLoaderData() as Data;
   const { member } = useAuth();
   const revalidator = useRevalidator();
+  // Only link to pages this role can open (a steward-only page would 403).
+  const link = (to: string) => (canAccess(member?.role, to) ? to : undefined);
+  const quick = QUICK.filter((q) => canAccess(member?.role, q.to));
 
   // Live dashboard: silently re-run the loader on an interval so the figures and
   // graphs stay current while the tab is open.
@@ -209,14 +216,14 @@ export function Component() {
 
       {/* Metrics: 10 cards → always a regular grid (2×5 or 5×2) */}
       <Stagger className="grid grid-cols-2 gap-3 xl:grid-cols-5">
-        <StaggerItem index={0}><MetricCard label="Pending" value={stats.pending} to="/moderation" tone="gold" icon={<Inbox size={18} />} /></StaggerItem>
-        <StaggerItem index={1}><MetricCard label="Live listings" value={stats.listings} to="/listings" tone="green" icon={<ListChecks size={18} />} /></StaggerItem>
-        <StaggerItem index={2}><MetricCard label="Members" value={stats.members} to="/members" tone="teal" icon={<Users size={18} />} /></StaggerItem>
-        <StaggerItem index={3}><MetricCard label="Institutions" value={stats.institutions} to="/institutions" tone="ink" icon={<Landmark size={18} />} /></StaggerItem>
-        <StaggerItem index={4}><MetricCard label="Artists" value={stats.artists} to="/listings" tone="clay" icon={<Palette size={18} />} /></StaggerItem>
-        <StaggerItem index={5}><MetricCard label="Memorials" value={stats.memorials} to="/listings" tone="gold" icon={<Heart size={18} />} /></StaggerItem>
-        <StaggerItem index={6}><MetricCard label="Memories" value={stats.memories} to="/listings" tone="ink" icon={<Camera size={18} />} /></StaggerItem>
-        <StaggerItem index={7}><MetricCard label="Schools" value={stats.schools} to="/institutions" tone="maroon" icon={<GraduationCap size={18} />} /></StaggerItem>
+        <StaggerItem index={0}><MetricCard label="Pending" value={stats.pending} to={link("/moderation")} tone="gold" icon={<Inbox size={18} />} /></StaggerItem>
+        <StaggerItem index={1}><MetricCard label="Live listings" value={stats.listings} to={link("/listings")} tone="green" icon={<ListChecks size={18} />} /></StaggerItem>
+        <StaggerItem index={2}><MetricCard label="Members" value={stats.members} to={link("/members")} tone="teal" icon={<Users size={18} />} /></StaggerItem>
+        <StaggerItem index={3}><MetricCard label="Institutions" value={stats.institutions} to={link("/institutions")} tone="ink" icon={<Landmark size={18} />} /></StaggerItem>
+        <StaggerItem index={4}><MetricCard label="Artists" value={stats.artists} to={link("/listings")} tone="clay" icon={<Palette size={18} />} /></StaggerItem>
+        <StaggerItem index={5}><MetricCard label="Memorials" value={stats.memorials} to={link("/listings")} tone="gold" icon={<Heart size={18} />} /></StaggerItem>
+        <StaggerItem index={6}><MetricCard label="Memories" value={stats.memories} to={link("/listings")} tone="ink" icon={<Camera size={18} />} /></StaggerItem>
+        <StaggerItem index={7}><MetricCard label="Schools" value={stats.schools} to={link("/institutions")} tone="maroon" icon={<GraduationCap size={18} />} /></StaggerItem>
         <StaggerItem index={8}><MetricCard label="Views this month" value={stats.viewsThisMonth} tone="teal" icon={<Eye size={18} />} sub="Unique daily views" /></StaggerItem>
         <StaggerItem index={9}><MetricCard label="Avg approval" value={stats.avgApprovalHrs > 0 ? `${stats.avgApprovalHrs.toFixed(1)}h` : "—"} tone="gold" icon={<Clock size={18} />} sub="Submission → decision (90d)" /></StaggerItem>
       </Stagger>
@@ -308,7 +315,7 @@ export function Component() {
 
         <StaggerItem index={6} className="min-w-0 lg:col-span-5">
           <ChartCard title="Quick actions" hint="Common tasks" bodyClassName="grid grid-cols-2 gap-3">
-              {QUICK.map((q) => (
+              {quick.map((q) => (
                 <Link key={q.to} to={q.to} className="group flex min-h-28 flex-col justify-between rounded-2xl border border-sand bg-paper p-3.5 transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-gold-border/50 hover:shadow-sm">
                   <span className="flex items-start justify-between gap-2">
                     <span className={`grid h-9 w-9 place-items-center rounded-xl ${q.tone}`}><q.icon size={17} aria-hidden /></span>

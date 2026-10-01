@@ -1,7 +1,10 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { api } from "@/lib/api";
+import { useState, type SubmitEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { api, setToken, type ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { LEGAL } from "@/lib/legal";
+import { DeletionBlockers } from "@/components/account-deletion";
+import { BEFORE_YOU_DELETE, DELETED_ITEMS, RETAINED_ITEMS } from "@/lib/account-deletion";
 
 const inputCls =
   "w-full rounded-xl border border-sand bg-cream px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint transition-colors focus:border-gold-border focus:bg-paper focus:outline-none focus:ring-2 focus:ring-gold/20";
@@ -34,11 +37,13 @@ export function SecuritySettings() {
     } finally { setBusy(false); }
   };
 
-  const confirmEnroll = async (e: FormEvent<HTMLFormElement>) => {
+  const confirmEnroll = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
       const res = await api.mfaConfirm(code.trim());
+      // Turning on 2FA revokes every earlier session, this one included.
+      if (res.token) setToken(res.token);
       setStage({ step: "recovery", codes: res.recoveryCodes });
       await refresh();
     } catch (e) {
@@ -46,11 +51,13 @@ export function SecuritySettings() {
     } finally { setBusy(false); }
   };
 
-  const confirmDisable = async (e: FormEvent<HTMLFormElement>) => {
+  const confirmDisable = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setErr(null);
     try {
-      await api.mfaDisable(code.trim());
+      const res = await api.mfaDisable(code.trim());
+      // Turning 2FA off revokes every earlier session, this one included.
+      if (res.token) setToken(res.token);
       await refresh();
       setStage({ step: "idle" });
       setCode("");
@@ -176,7 +183,7 @@ export function ChangePasswordSettings() {
 
   const clearStatus = () => { setErr(null); setDone(false); };
 
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
+  const submit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     clearStatus();
     if (next.length < 8) { setErr("Your new password must be at least 8 characters."); return; }
@@ -184,7 +191,9 @@ export function ChangePasswordSettings() {
     if (next === current) { setErr("Choose a new password that's different from your current one."); return; }
     setBusy(true);
     try {
-      await api.changePassword(current, next);
+      const res = await api.changePassword(current, next);
+      // A password change revokes every earlier session; keep this one.
+      if (res.token) setToken(res.token);
       setDone(true);
       setCurrent(""); setNext(""); setConfirm("");
     } catch (e) {
@@ -233,6 +242,7 @@ export function DataRightsSettings() {
   const [showPassword, setShowPassword] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
+  const [blockers, setBlockers] = useState<string[]>([]);
 
   const doExport = async () => {
     setExportBusy(true); setExportErr(null);
@@ -249,15 +259,18 @@ export function DataRightsSettings() {
     } finally { setExportBusy(false); }
   };
 
-  const doDelete = async (e: FormEvent<HTMLFormElement>) => {
+  const doDelete = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setDeleteBusy(true); setDeleteErr(null);
+    setDeleteBusy(true); setDeleteErr(null); setBlockers([]);
     try {
-      await api.deleteAccount(password);
+      const res = await api.deleteAccount(password);
       signOut();
-      nav("/", { replace: true });
+      // The deletion page shows the server's list of what was kept, and why.
+      nav(LEGAL.deleteAccount, { replace: true, state: { retained: res.retained ?? [] } });
     } catch (e) {
-      setDeleteErr(e instanceof Error ? e.message : "Couldn't delete your account.");
+      const apiErr = e as ApiError;
+      if (apiErr.status === 409 && apiErr.data?.blockers?.length) setBlockers(apiErr.data.blockers);
+      else setDeleteErr(apiErr.message || "Couldn't delete your account.");
       setDeleteBusy(false);
     }
   };
@@ -275,7 +288,7 @@ export function DataRightsSettings() {
       <div className="border-t border-sand pt-4">
         {!confirming ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-ink-muted">Erase your personal data and close your account. Published community content stays, under “Former member”.</p>
+            <p className="text-sm text-ink-muted">Erase your personal data and close your account. Some records are kept without your name — see what and why below.</p>
             <button type="button" onClick={() => setConfirming(true)} className="rounded-full border border-clay/40 px-4 py-2 text-sm font-semibold text-clay-text hover:bg-clay/5">
               Delete my account
             </button>
@@ -283,7 +296,11 @@ export function DataRightsSettings() {
         ) : (
           <form onSubmit={doDelete} className="space-y-3 rounded-xl border border-clay/30 bg-clay/[0.04] p-4">
             <p className="text-sm font-semibold text-clay-text">This can't be undone.</p>
-            <p className="text-sm text-ink-muted">Your profile, contact details, schooling and settings are wiped and the account is closed. Enter your password to confirm.</p>
+            <DeletionFacts />
+            <p className="text-sm text-ink-muted">
+              Enter your password to confirm. No password, or forgotten it?{" "}
+              <Link to={LEGAL.deleteAccount} className="font-semibold text-green-text underline">Delete with a code sent to your email or phone</Link>.
+            </p>
             <div className="relative max-w-xs">
               <input
                 type={showPassword ? "text" : "password"}
@@ -304,18 +321,40 @@ export function DataRightsSettings() {
                 {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </button>
             </div>
+            {blockers.length > 0 && <DeletionBlockers blockers={blockers} />}
             {deleteErr && <p className="rounded-lg border border-clay/30 bg-clay/5 px-3 py-2 text-sm text-clay-text">{deleteErr}</p>}
             <div className="flex items-center gap-3">
               <button type="submit" disabled={deleteBusy} className="rounded-full bg-clay px-5 py-2 text-sm font-semibold text-cream hover:bg-clay-text disabled:opacity-60">
                 {deleteBusy ? "Deleting…" : "Yes — delete everything"}
               </button>
-              <button type="button" onClick={() => { setConfirming(false); setPassword(""); setShowPassword(false); setDeleteErr(null); }} className="text-sm font-medium text-ink-muted hover:text-ink">
+              <button type="button" onClick={() => { setConfirming(false); setPassword(""); setShowPassword(false); setDeleteErr(null); setBlockers([]); }} className="text-sm font-medium text-ink-muted hover:text-ink">
                 Cancel
               </button>
             </div>
           </form>
         )}
       </div>
+    </div>
+  );
+}
+
+/** What deletion removes, keeps and needs first — shown before the member confirms (P057). */
+function DeletionFacts() {
+  const groups: [string, string[]][] = [
+    ["We delete", DELETED_ITEMS],
+    ["We keep, without your name or contact details", RETAINED_ITEMS],
+    ["Before you delete", BEFORE_YOU_DELETE],
+  ];
+  return (
+    <div className="space-y-3 text-sm text-ink-muted">
+      {groups.map(([title, items]) => (
+        <div key={title}>
+          <p className="font-semibold text-ink">{title}</p>
+          <ul className="mt-1 list-disc space-y-1 pl-5">
+            {items.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }

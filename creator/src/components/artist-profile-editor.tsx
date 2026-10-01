@@ -24,6 +24,9 @@ export function ArtistProfileEditor({
   releases: ArtistRelease[];
   onReleases: (releases: ArtistRelease[]) => void;
 }>) {
+  // Tracklist lines are kept raw while typing (spaces, blank trailing lines) so
+  // the controlled textarea round-trips exactly; the forms trim and drop empty
+  // titles on save.
   function updateRelease(index: number, patch: Partial<ArtistRelease>) {
     onReleases(releases.map((release, i) => i === index ? { ...release, ...patch } : release));
   }
@@ -82,7 +85,7 @@ export function ArtistProfileEditor({
                     <label className="block"><span className="mb-1.5 block text-sm font-medium text-ink">Type</span><select value={release.kind ?? "single"} onChange={(event) => updateRelease(index, { kind: event.target.value as ArtistRelease["kind"] })} className={input}><option value="album">Album</option><option value="ep">EP</option><option value="single">Single</option><option value="mixtape">Mixtape</option><option value="live">Live release</option><option value="compilation">Compilation</option></select></label>
                     <label className="block"><span className="mb-1.5 block text-sm font-medium text-ink">Year</span><input type="number" min="1900" max="2100" value={release.year ?? ""} onChange={(event) => updateRelease(index, { year: event.target.value ? Number(event.target.value) : undefined })} className={input} /></label>
                     <label className="block sm:col-span-2"><span className="mb-1.5 block text-sm font-medium text-ink">About this release</span><textarea rows={2} value={release.description ?? ""} onChange={(event) => updateRelease(index, { description: event.target.value })} className={input} placeholder="The story, collaborators or sound behind it." /></label>
-                    <label className="block sm:col-span-2"><span className="mb-1.5 block text-sm font-medium text-ink">Tracklist</span><textarea rows={5} value={(release.tracks ?? []).map((track) => track.title).join("\n")} onChange={(event) => updateRelease(index, { tracks: event.target.value.split("\n").map((title) => ({ title: title.trim() })).filter((track) => track.title) })} className={input} placeholder={"One track per line\nTrack one\nTrack two"} /><span className="mt-1 block text-xs text-ink-faint">One title per line. Singles can have one track.</span></label>
+                    <label className="block sm:col-span-2"><span className="mb-1.5 block text-sm font-medium text-ink">Tracklist</span><textarea rows={5} value={(release.tracks ?? []).map((track) => track.title).join("\n")} onChange={(event) => updateRelease(index, { tracks: event.target.value.split("\n").map((title) => ({ title })) })} className={input} placeholder={"One track per line\nTrack one\nTrack two"} /><span className="mt-1 block text-xs text-ink-faint">One title per line. Singles can have one track.</span></label>
                     <label className="block sm:col-span-2"><span className="mb-1.5 block text-sm font-medium text-ink">Primary release link (optional)</span><input type="url" value={release.url ?? ""} onChange={(event) => updateRelease(index, { url: event.target.value })} className={input} placeholder="https://…" /></label>
                   </div>
                 </div>

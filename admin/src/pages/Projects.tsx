@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
-import type { Listing, Pledge, PledgeTotals } from "@/lib/types";
+import type { Listing, Pledge } from "@/lib/types";
 import { PageHeader, Card, Empty, Pill } from "@/components/ui";
 import { MetricCard } from "@/components/metric-card";
 import { HandCoins, CheckCircle2, Clock, FlaskConical, Banknote, Percent, TrendingUp } from "lucide-react";
@@ -10,8 +10,10 @@ import { motion } from "motion/react";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
-  const [projects, pledges, pledgeTotals] = await Promise.all([api.projects(), api.pledges(), api.pledgeTotals()]);
-  return { projects, pledges, pledgeTotals };
+  const [projects, pledges] = await Promise.all([api.projects(), api.pledges()]);
+  // /api/admin/pledges also returns artist tips (kind "donation"); this page
+  // covers campaign pledges only, so every figure and the ledger leave them out.
+  return { projects, pledges: pledges.filter((p) => p.kind !== "donation") };
 }
 
 const cedis = (pesewas?: number) =>
@@ -24,13 +26,17 @@ const STATUS_TONE: Record<Pledge["status"], string> = {
 };
 
 export function Component() {
-  const { projects, pledges, pledgeTotals } = useLoaderData() as { projects: Listing[]; pledges: Pledge[]; pledgeTotals: PledgeTotals };
+  const { projects, pledges } = useLoaderData() as { projects: Listing[]; pledges: Pledge[] };
   const [filter, setFilter] = useState<"all" | Pledge["status"]>("all");
 
   const totals = useMemo(() => {
     const confirmed = pledges.filter((p) => p.status === "success");
+    const fee = confirmed.reduce((sum, p) => sum + (p.feePesewas ?? 0), 0);
+    const raised = confirmed.reduce((sum, p) => sum + p.amountPesewas, 0);
     return {
-      raised: confirmed.reduce((sum, p) => sum + p.amountPesewas, 0),
+      raised,
+      fee,
+      net: confirmed.reduce((sum, p) => sum + (p.netPesewas ?? p.amountPesewas - (p.feePesewas ?? 0)), 0),
       confirmed: confirmed.length,
       pending: pledges.filter((p) => p.status === "pending").length,
       simulated: confirmed.filter((p) => p.simulated).length,
@@ -103,9 +109,9 @@ export function Component() {
 
       {/* platform-fee split over successful pledges */}
       <Stagger className="mb-4 grid grid-cols-3 gap-4">
-        <StaggerItem index={0}><MetricCard label="Gross charged" value={cedis(pledgeTotals.grossPesewas)} tone="green" icon={<Banknote size={18} />} /></StaggerItem>
-        <StaggerItem index={1}><MetricCard label="Platform fee" value={cedis(pledgeTotals.feePesewas)} tone="gold" icon={<Percent size={18} />} /></StaggerItem>
-        <StaggerItem index={2}><MetricCard label="Net to projects" value={cedis(pledgeTotals.netPesewas)} tone="teal" icon={<TrendingUp size={18} />} /></StaggerItem>
+        <StaggerItem index={0}><MetricCard label="Gross charged" value={cedis(totals.raised)} tone="green" icon={<Banknote size={18} />} /></StaggerItem>
+        <StaggerItem index={1}><MetricCard label="Platform fee" value={cedis(totals.fee)} tone="gold" icon={<Percent size={18} />} /></StaggerItem>
+        <StaggerItem index={2}><MetricCard label="Net to projects" value={cedis(totals.net)} tone="teal" icon={<TrendingUp size={18} />} /></StaggerItem>
       </Stagger>
 
       {shown.length === 0 ? (

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, useLoaderData, useNavigate, useRevalidator, type LoaderFunctionArgs } from "react-router-dom";
 import { Adinkra } from "@/components/adinkra";
 import { Thumb } from "@/components/cards";
 import { Breadcrumbs, HeroIcon, HeroWatermark } from "@/components/hero-chrome";
@@ -9,11 +9,19 @@ import { Container, Pill } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDate, initials, tagLabel } from "@/lib/format";
-import { completePayment } from "@/lib/paystack";
-import type { Listing, Pledge } from "@/lib/types";
+import type { Listing, Pledge, PledgeQuote } from "@/lib/types";
+import { LEGAL } from "@/lib/legal";
+import { paymentErrorMessage } from "@/lib/payments";
+import { usePaymentConfirm } from "@/lib/use-payment-confirm";
+import { PaymentNotice } from "@/components/payment-notice";
 import { usePageTitle } from "@/lib/use-page-title";
 import { useRecordView } from "@/lib/use-record-view";
 import { ProgressBar, cedis } from "./Projects";
+import { isFeaturedNow } from "@/lib/featured";
+
+/** An exact paid amount (pledges accept pesewas), unlike the rounded progress figures. */
+const exactCedis = (pesewas: number) =>
+  `GH₵ ${(pesewas / 100).toLocaleString("en-GH", { minimumFractionDigits: pesewas % 100 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
 
 export async function loader({ params }: LoaderFunctionArgs) {
   return api.project(params.slug!);
@@ -22,6 +30,53 @@ export async function loader({ params }: LoaderFunctionArgs) {
 const QUICK_AMOUNTS = [20, 50, 100, 500];
 const MAX_PLEDGE_CEDIS = 100_000;
 const PLEDGE_AMOUNT_PATTERN = /^(?:\d+|\d+\.\d{1,2})$/;
+
+/** The typed amount in pesewas, or null when it isn't a valid pledge. */
+function pledgePesewas(amount: string): number | null {
+  const t = amount.trim();
+  if (!PLEDGE_AMOUNT_PATTERN.test(t)) return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 1 && n <= MAX_PLEDGE_CEDIS ? Math.round(n * 100) : null;
+}
+
+/**
+ * The fee split for the typed amount (K17 / P063): what Oguaa keeps, what
+ * reaches the project, and the refund terms — shown before paying.
+ */
+function usePledgeQuote(slug: string, amountPesewas: number | null): PledgeQuote | null {
+  const [quote, setQuote] = useState<PledgeQuote | null>(null);
+  useEffect(() => {
+    if (amountPesewas == null) return;
+    let current = true;
+    const t = window.setTimeout(() => {
+      api.pledgeQuote(slug, amountPesewas).then((q) => { if (current) setQuote(q); }).catch(() => {});
+    }, 300);
+    return () => { current = false; window.clearTimeout(t); };
+  }, [slug, amountPesewas]);
+  return quote && quote.amountPesewas === amountPesewas ? quote : null;
+}
+
+function PledgeBreakdown({ quote }: Readonly<{ quote: PledgeQuote | null }>) {
+  if (!quote) return null;
+  return (
+    <div className="mt-4 rounded-lg border border-sand bg-paper p-3 text-xs leading-relaxed text-ink-muted" aria-live="polite">
+      {quote.fundingClosed ? (
+        <p className="font-semibold text-clay-text">Funding for this campaign has closed.</p>
+      ) : (
+        <p>
+          Oguaa keeps <b className="text-ink">{quote.feePercent}%</b> ({exactCedis(quote.feePesewas)}).{" "}
+          <b className="text-ink">{exactCedis(quote.netPesewas)}</b> goes to &ldquo;{quote.projectTitle}&rdquo;
+          {quote.beneficiary ? <>, organised by {quote.beneficiary}</> : null}.
+        </p>
+      )}
+      {quote.refundPolicy && <p className="mt-1.5">{quote.refundPolicy}</p>}
+      <p className="mt-1.5">
+        See the <Link to={LEGAL.terms} className="font-semibold text-green-text underline">Terms of Use</Link> and{" "}
+        <Link to={LEGAL.termsOfSale} className="font-semibold text-green-text underline">Terms of Sale</Link>.
+      </p>
+    </div>
+  );
+}
 
 export function HydrateFallback() {
   return (
@@ -52,31 +107,13 @@ export function Component() {
   const { member } = useAuth();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
-  const [params, setParams] = useSearchParams();
   const details = project.details;
 
   const [amount, setAmount] = useState("50");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<Pledge | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  const confirmedRef = useRef(false);
-
-  useEffect(() => {
-    const ref = params.get("pledge_ref");
-    if (!ref || confirmedRef.current) return;
-    confirmedRef.current = true;
-    setConfirming(true);
-    api.confirmPledge(ref)
-      .then((pledge) => {
-        setConfirmed(pledge);
-        setParams({}, { replace: true });
-        revalidator.revalidate();
-      })
-      .catch(() => setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly."))
-      .finally(() => setConfirming(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const payment = usePaymentConfirm(api.confirmPledge, { returnParam: "pledge_ref", onConfirmed: () => revalidator.revalidate() });
+  const { confirmed, confirming } = payment;
 
   async function startPledge() {
     setError(null);
@@ -97,21 +134,9 @@ export function Component() {
     setBusy(true);
     try {
       const response = await api.pledge(project.slug, { amountPesewas: Math.round(cedisNum * 100) });
-      await completePayment(response, {
-        onSuccess: async () => {
-          setConfirming(true);
-          try {
-            setConfirmed(await api.confirmPledge(response.reference));
-            revalidator.revalidate();
-          } catch {
-            setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly.");
-          } finally {
-            setConfirming(false);
-          }
-        },
-      });
+      await payment.complete(response);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not start the payment.");
+      setError(paymentErrorMessage(caught, "Could not start the payment."));
     } finally {
       setBusy(false);
     }
@@ -187,6 +212,7 @@ export function Component() {
             error={error}
             confirming={confirming}
             confirmed={confirmed}
+            notice={<PaymentNotice notice={payment.notice} confirming={confirming} onRecheck={payment.recheck} className="mt-5" />}
             signedIn={Boolean(member)}
             pledgeLabel={pledgeLabel}
             onAmountChange={setAmount}
@@ -227,7 +253,7 @@ function ProjectHero({ project }: Readonly<{ project: Listing }>) {
               <span className="rounded-full border border-gold/45 bg-gold/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-gold">
                 {isCreatorCampaign ? "Creator campaign" : "Community project"}
               </span>
-              {project.featured && <span className="rounded-full border border-cream/20 bg-cream/10 px-3 py-1 text-xs font-semibold text-cream/80">Community focus</span>}
+              {isFeaturedNow(project) && <span className="rounded-full border border-cream/20 bg-cream/10 px-3 py-1 text-xs font-semibold text-cream/80">Community focus</span>}
             </div>
             <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] text-cream sm:text-6xl lg:text-7xl">{project.title}</h1>
             <p className="mt-5 text-base font-medium text-gold sm:text-lg">{details.organiser ? `Led by ${details.organiser}` : "A public Oguaa funding record"}</p>
@@ -301,14 +327,16 @@ interface PledgePanelProps {
   readonly error: string | null;
   readonly confirming: boolean;
   readonly confirmed: Pledge | null;
+  readonly notice: ReactNode;
   readonly signedIn: boolean;
   readonly pledgeLabel: string;
   readonly onAmountChange: (amount: string) => void;
   readonly onSubmit: () => Promise<void>;
 }
 
-function PledgePanel({ project, amount, busy, error, confirming, confirmed, signedIn, pledgeLabel, onAmountChange, onSubmit }: PledgePanelProps) {
+function PledgePanel({ project, amount, busy, error, confirming, confirmed, notice, signedIn, pledgeLabel, onAmountChange, onSubmit }: PledgePanelProps) {
   const details = project.details;
+  const quote = usePledgeQuote(project.slug, pledgePesewas(amount));
   return (
     <section id="support-project" aria-labelledby="pledge-heading" className="scroll-mt-24 overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-lift)]">
       <div className="on-dark on-dark-pin bg-green px-6 py-5 text-cream">
@@ -326,13 +354,14 @@ function PledgePanel({ project, amount, busy, error, confirming, confirmed, sign
             Confirming your payment…
           </div>
         )}
+        {!confirmed && notice}
 
         {confirmed ? (
           <div className="mt-5 rounded-[var(--radius-card)] border border-green/30 bg-green/[0.06] p-5 text-center">
             <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-green text-xl text-on-green" aria-hidden>✓</span>
             <p className="mt-3 text-lg font-semibold text-green-text">Medaase. Your pledge is confirmed.</p>
             <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-              Your pledge of <b>{cedis(confirmed.amountPesewas)}</b> to {confirmed.projectTitle} is confirmed.
+              Your pledge of <b>{exactCedis(confirmed.amountPesewas)}</b> to {confirmed.projectTitle} is confirmed.
               {confirmed.simulated && <span className="mt-1 block text-xs text-gold-text">Simulated — dev mode, no real money moved.</span>}
             </p>
           </div>
@@ -378,8 +407,9 @@ function PledgePanel({ project, amount, busy, error, confirming, confirmed, sign
               />
             </div>
             {error && <p id="pledge-error" role="alert" className="mt-2 rounded-lg border border-clay/25 bg-clay/[0.06] p-3 text-sm text-clay-text">{error}</p>}
+            <PledgeBreakdown quote={quote} />
 
-            <button type="submit" disabled={busy || confirming} className="mt-4 min-h-12 w-full rounded-[var(--radius-card)] bg-green px-5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={busy || confirming || Boolean(quote?.fundingClosed)} className="mt-4 min-h-12 w-full rounded-[var(--radius-card)] bg-green px-5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:cursor-not-allowed disabled:opacity-60">
               {pledgeLabel}
             </button>
             <p id="pledge-help" className="mt-3 text-center text-xs leading-relaxed text-ink-faint">

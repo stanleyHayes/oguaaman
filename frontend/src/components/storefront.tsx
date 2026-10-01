@@ -1,7 +1,24 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { SectionRenderer } from "@/components/profile-sections";
 import { Reveal } from "@/components/motion";
+import { SellerDetails } from "@/components/seller-details";
+import { ReportButton } from "@/components/report-button";
+import { api } from "@/lib/api";
 import { cldCover } from "@/lib/cloudinary";
-import type { Listing, StoreItem } from "@/lib/types";
+import type { Listing, SellerIdentity, StoreItem } from "@/lib/types";
+
+/** The shop's verified seller identity (K19), fetched once it sells anything. */
+function useSeller(slug: string, sells: boolean): SellerIdentity | undefined {
+  const [seller, setSeller] = useState<SellerIdentity | undefined>();
+  useEffect(() => {
+    if (!sells) return;
+    let current = true;
+    api.businessCommerceStatus(slug).then((r) => { if (current) setSeller(r.seller); }).catch(() => {});
+    return () => { current = false; };
+  }, [slug, sells]);
+  return seller;
+}
 
 // price renders integer pesewas as GH₵ with two decimals, or an empty string.
 function price(pesewas?: number): string {
@@ -18,6 +35,7 @@ export function Storefront({ business: b }: Readonly<{ business: Listing }>) {
   const products = (b.products ?? []).filter((item) => item.available);
   const services = (b.services ?? []).filter((item) => item.available);
   const primaryContact = b.details.contact?.[0];
+  const seller = useSeller(b.slug, products.length > 0 || services.length > 0);
   if (photos.length === 0 && videos.length === 0 && sections.length === 0 && products.length === 0 && services.length === 0) return null;
 
   const [leadPhoto, ...otherPhotos] = photos;
@@ -98,13 +116,14 @@ export function Storefront({ business: b }: Readonly<{ business: Listing }>) {
         </Reveal>
       )}
 
-      {products.length > 0 && <ProductCatalog items={products} contact={primaryContact} />}
+      {products.length > 0 && <ProductCatalog items={products} contact={primaryContact} businessSlug={b.slug} businessId={b.id} />}
       {services.length > 0 && <ServiceCatalog items={services} contact={primaryContact} />}
+      {(products.length > 0 || services.length > 0) && <SellerDetails seller={seller} shopName={b.title} />}
     </section>
   );
 }
 
-function ProductCatalog({ items, contact }: Readonly<{ items: StoreItem[]; contact?: { label: string; url: string } }>) {
+function ProductCatalog({ items, contact, businessSlug, businessId }: Readonly<{ items: StoreItem[]; contact?: { label: string; url: string }; businessSlug: string; businessId: string }>) {
   return (
     <section id="products" className="scroll-mt-28">
       <Reveal>
@@ -112,6 +131,8 @@ function ProductCatalog({ items, contact }: Readonly<{ items: StoreItem[]; conta
         <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((item, index) => {
           const tag = price(item.pricePesewas);
+          // The product page carries checkout ("Buy securely") when the shop sells online.
+          const productUrl = item.id ? `/business/${businessSlug}/p/${encodeURIComponent(item.id)}` : null;
           return (
             <article key={item.id ?? item.name} className="group flex min-h-[23rem] flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-gold-border/50 hover:shadow-[var(--shadow-lift)]">
               <div className="relative aspect-[4/3] overflow-hidden bg-[linear-gradient(145deg,rgba(176,125,50,0.2),rgba(176,80,60,0.1)_48%,rgba(18,63,45,0.14))]">
@@ -126,11 +147,15 @@ function ProductCatalog({ items, contact }: Readonly<{ items: StoreItem[]; conta
                 {tag && <span className="absolute bottom-3 right-3 rounded-full bg-gold-brand px-3 py-1.5 text-sm font-bold text-green-900 shadow-lg">{tag}</span>}
               </div>
               <div className="flex flex-1 flex-col p-5">
-                <p className="text-[0.63rem] font-bold uppercase tracking-[0.17em] text-clay-text">Available from this business</p>
-                <h3 className="mt-2 text-xl font-semibold leading-tight text-ink">{item.name}</h3>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[0.63rem] font-bold uppercase tracking-[0.17em] text-clay-text">Available from this business</p>
+                  {item.id && <ReportButton compact target={{ type: "product", id: item.id, listingId: businessId }} />}
+                </div>
+                <h3 className="mt-2 text-xl font-semibold leading-tight text-ink">{productUrl ? <Link to={productUrl} className="hover:text-green-text">{item.name}</Link> : item.name}</h3>
                 {item.description && <p className="mt-3 text-sm leading-relaxed text-ink-muted">{item.description}</p>}
-                <div className="mt-auto flex items-end justify-between gap-3 border-t border-sand pt-4">
+                <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-sand pt-4">
                   <p className="text-xs text-ink-faint">{item.unit || "Ask about availability"}</p>
+                  {productUrl && <Link to={productUrl} className="shrink-0 rounded-full bg-green px-3 py-1.5 text-xs font-bold text-on-green transition-colors hover:bg-gold-brand hover:text-green-900">View &amp; order</Link>}
                   {contact ? <a href={contact.url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs font-bold text-green-text transition-colors hover:text-gold-text">Ask to order <span aria-hidden>↗</span></a> : <span className="text-xs font-semibold text-green-text">Enquire directly</span>}
                 </div>
               </div>

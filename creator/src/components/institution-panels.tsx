@@ -179,7 +179,7 @@ export function RosterForm({ slug, initial }: Readonly<{ slug: string; initial?:
             <input
               className={`${field} min-w-[8rem] flex-1`}
               value={o.holderName ?? ""}
-              onChange={(e) => update(i, { holderName: e.target.value })}
+              onChange={(e) => update(i, { holderName: e.target.value, verified: false, holderId: undefined })}
               placeholder="Holder’s name"
             />
             <button type="button" onClick={() => remove(i)} aria-label="Remove office" className="rounded-full border border-sand px-3 py-2 text-sm text-ink-muted transition-colors hover:border-clay hover:text-clay-text">
@@ -577,6 +577,22 @@ function MediaItemsEditor({ media, onChange }: Readonly<{ media: MediaAsset[]; o
   );
 }
 
+// Colour list typed as comma-separated text. The raw text lives in local state
+// so a trailing comma or space survives while typing; the parsed list is sent
+// up on every change.
+function ColorsInput({ colors, onChange }: Readonly<{ colors: string[]; onChange: (colors: string[]) => void }>) {
+  const [text, setText] = useState(() => colors.join(", "));
+  return (
+    <input
+      className={`${field} mt-2`}
+      value={text}
+      onChange={(e) => { setText(e.target.value); onChange(e.target.value.split(",").map((c) => c.trim()).filter(Boolean)); }}
+      onBlur={() => setText(colors.join(", "))}
+      placeholder="Colours — comma-separated hex (e.g. #A4161A, #161616)"
+    />
+  );
+}
+
 // Sub-entity cards (houses, departments, Asafo companies, year groups, lineage):
 // name + subtitle + colours + crest + summary + key/value facts.
 function GroupsEditor({ groups, onChange }: Readonly<{ groups: SubEntity[]; onChange: (groups: SubEntity[]) => void }>) {
@@ -593,7 +609,7 @@ function GroupsEditor({ groups, onChange }: Readonly<{ groups: SubEntity[]; onCh
             <input className={field} value={g.name} onChange={(e) => update(i, { name: e.target.value })} placeholder="Name (e.g. Pickup)" />
             <input className={field} value={g.subtitle ?? ""} onChange={(e) => update(i, { subtitle: e.target.value })} placeholder="Subtitle (e.g. Boarding house)" />
           </div>
-          <input className={`${field} mt-2`} value={(g.colors ?? []).join(", ")} onChange={(e) => update(i, { colors: e.target.value.split(",").map((c) => c.trim()).filter(Boolean) })} placeholder="Colours — comma-separated hex (e.g. #A4161A, #161616)" />
+          <ColorsInput colors={g.colors ?? []} onChange={(colors) => update(i, { colors })} />
           <textarea rows={2} className={`${field} mt-2 resize-none`} value={g.summary ?? ""} onChange={(e) => update(i, { summary: e.target.value })} placeholder="Short description (optional)" />
           <div className="mt-2">
             <ImageUpload value={g.crestUrl ?? ""} onChange={(url) => update(i, { crestUrl: url })} label="Crest / photo (optional)" hint="Shown on the card." />

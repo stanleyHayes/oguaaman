@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useLoaderData, useNavigate, useRevalidator, useSearchParams, type LoaderFunctionArgs } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLoaderData, useNavigate, useRevalidator, type LoaderFunctionArgs } from "react-router-dom";
 import { LocationMap } from "@/components/location-map";
 import { ReportButton } from "@/components/report-button";
 import { Skeleton, SkeletonText } from "@/components/skeleton";
 import { Container, Pill } from "@/components/ui";
 import { api } from "@/lib/api";
+import { paymentErrorMessage } from "@/lib/payments";
+import { LEGAL } from "@/lib/legal";
 import { cldCover } from "@/lib/cloudinary";
 import { dayMonth, formatDateRange } from "@/lib/format";
-import { completePayment } from "@/lib/paystack";
+import { usePaymentConfirm } from "@/lib/use-payment-confirm";
+import { PaymentNotice } from "@/components/payment-notice";
 import type { EventView, Ticket } from "@/lib/types";
 import { useAuth } from "@/lib/auth";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -35,6 +38,20 @@ export function HydrateFallback() {
       </Container>
     </div>
   );
+}
+
+/**
+ * True once the event is over: after its end time when one is given, otherwise
+ * after its (last) day. Cape Coast runs on GMT, so UTC dates are local dates.
+ */
+function eventHasEnded(details: { startsAt?: string; endsAt?: string }, now = new Date()): boolean {
+  const last = details.endsAt || details.startsAt;
+  if (!last) return false;
+  if (details.endsAt?.includes("T")) {
+    const end = new Date(details.endsAt);
+    if (!Number.isNaN(end.getTime())) return end.getTime() < now.getTime();
+  }
+  return last.slice(0, 10) < now.toISOString().slice(0, 10);
 }
 
 function eventTime(iso?: string): string | null {
@@ -154,36 +171,18 @@ export function Component() {
   const { member } = useAuth();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
-  const [params, setParams] = useSearchParams();
 
   const [selected, setSelected] = useState(0);
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<Ticket | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  const confirmedRef = useRef(false);
-
-  useEffect(() => {
-    const ref = params.get("ticket_ref");
-    if (!ref || confirmedRef.current) return;
-    confirmedRef.current = true;
-    setConfirming(true);
-    api.confirmTicket(ref)
-      .then((ticket) => {
-        setConfirmed(ticket);
-        setParams({}, { replace: true });
-        revalidator.revalidate();
-      })
-      .catch(() => setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly."))
-      .finally(() => setConfirming(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const payment = usePaymentConfirm(api.confirmTicket, { returnParam: "ticket_ref", onConfirmed: () => revalidator.revalidate() });
+  const { confirmed, confirming } = payment;
 
   async function buy() {
     setError(null);
     const tier = tiers[selected];
-    if (!tier) return;
+    if (!tier || eventHasEnded(event.details)) return;
     if (!member) {
       navigate("/signin", { state: { from: `/events/${event.slug}` } });
       return;
@@ -191,21 +190,9 @@ export function Component() {
     setBusy(true);
     try {
       const result = await api.buyTicket(event.slug, { tier: tier.name, qty });
-      await completePayment(result, {
-        onSuccess: async () => {
-          setConfirming(true);
-          try {
-            setConfirmed(await api.confirmTicket(result.reference));
-            revalidator.revalidate();
-          } catch {
-            setError("We couldn't confirm that payment. If you were charged, it will reconcile shortly.");
-          } finally {
-            setConfirming(false);
-          }
-        },
-      });
+      await payment.complete(result);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not start the payment.");
+      setError(paymentErrorMessage(caught, "Could not start the payment."));
     } finally {
       setBusy(false);
     }
@@ -230,6 +217,7 @@ export function Component() {
               </div>
             </div>
             <div className="p-5 sm:p-6">
+              {!confirmed && <PaymentNotice notice={payment.notice} confirming={confirming} onRecheck={payment.recheck} className="mb-4" />}
               <TicketPanel
                 confirming={confirming}
                 confirmed={confirmed}
@@ -239,6 +227,7 @@ export function Component() {
                 busy={busy}
                 error={error}
                 signedIn={!!member}
+                ended={eventHasEnded(details)}
                 onSelectTier={(index) => { setSelected(index); setQty(1); }}
                 onQtyChange={setQty}
                 onBuy={buy}
@@ -360,12 +349,13 @@ interface TicketPanelProps {
   readonly busy: boolean;
   readonly error: string | null;
   readonly signedIn: boolean;
+  readonly ended: boolean;
   readonly onSelectTier: (index: number) => void;
   readonly onQtyChange: (fn: (qty: number) => number) => void;
   readonly onBuy: () => void;
 }
 
-function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error, signedIn, onSelectTier, onQtyChange, onBuy }: TicketPanelProps) {
+function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error, signedIn, ended, onSelectTier, onQtyChange, onBuy }: TicketPanelProps) {
   const tier = tiers[selected];
   const soldOut = tier && tier.remaining !== null && tier.remaining < qty;
   const maxQty = tier && tier.remaining !== null ? Math.max(1, Math.min(10, tier.remaining)) : 10;
@@ -387,6 +377,16 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
         <p className="mt-3 text-xs text-ink-faint">Show this check-in code at the gate.</p>
         {confirmed.simulated && <p className="mt-2 text-xs text-gold-text">Simulated — dev mode, no real money moved.</p>}
         <Link to="/me" className="mt-4 inline-flex min-h-10 items-center text-sm font-semibold text-teal-text hover:underline">See all my tickets →</Link>
+      </div>
+    );
+  }
+
+  if (ended && !confirming) {
+    return (
+      <div className="rounded-xl border border-sand bg-paper p-5">
+        <p className="font-semibold text-ink">This event has ended</p>
+        <p className="mt-1 text-sm leading-relaxed text-ink-muted">Tickets are no longer on sale. Browse what's coming up next in Oguaa.</p>
+        <Link to="/events" className="mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-teal-text hover:underline">See upcoming events →</Link>
       </div>
     );
   }
@@ -457,7 +457,10 @@ function TicketPanel({ confirming, confirmed, tiers, selected, qty, busy, error,
           <button type="button" onClick={onBuy} disabled={busy || !tier || !!soldOut} className="min-h-12 w-full rounded-xl bg-green px-5 text-sm font-semibold text-on-green transition-colors hover:bg-green-900 disabled:cursor-not-allowed disabled:opacity-60">
             {buyLabel}
           </button>
-          <p className="mt-3 text-center text-[0.7rem] leading-relaxed text-ink-faint">Mobile money and cards via Paystack. Your check-in code appears here and arrives by email.</p>
+          <p className="mt-3 text-center text-[0.7rem] leading-relaxed text-ink-faint">
+            Mobile money and cards via Paystack. Your check-in code appears here and arrives by email. The organiser, not Oguaa, runs the event;
+            see the <Link to={LEGAL.termsOfSale} className="underline">Terms of Sale</Link> for refunds if it is cancelled.
+          </p>
         </div>
       )}
     </>

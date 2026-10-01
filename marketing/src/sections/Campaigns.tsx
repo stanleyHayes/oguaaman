@@ -38,8 +38,21 @@ export function Campaigns() {
   );
 }
 
-const cedis = (pesewas: number) =>
-  "GH₵ " + (pesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 0 });
+/** Exact amount: whole cedis when it is whole, else to the pesewa — never rounded up. */
+const cedis = (pesewas: number) => {
+  const whole = pesewas % 100 === 0;
+  return (
+    "GH₵ " +
+    (pesewas / 100).toLocaleString("en-GH", { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 })
+  );
+};
+
+/** Percent funded, floored — a campaign reads 100% only once the goal is met. */
+function fundedPercent(raised: number, goal: number): number {
+  if (goal <= 0) return 0;
+  if (raised >= goal) return 100;
+  return Math.max(0, Math.min(99, Math.floor((raised / goal) * 100)));
+}
 
 function num(v: unknown): number {
   return typeof v === "number" ? v : 0;
@@ -50,7 +63,7 @@ function CampaignCard({ campaign }: Readonly<{ campaign: Listing }>) {
   const raised = num(d.raisedPesewas);
   const goal = num(d.goalPesewas);
   const backers = num(d.backers);
-  const pct = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
+  const pct = fundedPercent(raised, goal);
   const url = `${PORTAL_APP_URL}/projects/${campaign.slug}`;
   const shareText = `Back "${campaign.title}" on Oguaa`;
 

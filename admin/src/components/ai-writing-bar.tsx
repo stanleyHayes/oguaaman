@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { api } from "@/lib/api";
+import { ApiError, ERR_AI_CONSENT_REQUIRED, api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { Select } from "@/components/ui";
 import { BusyLabel } from "@/components/skeleton";
 
@@ -14,7 +15,57 @@ const GENERATE: { a: Action; label: string }[] = [
 ];
 const LANGS = ["Fante", "Twi", "Ga", "Ewe", "French"];
 
+/** Disclosure shown before consent (K15). */
+export const AI_DISCLOSURE =
+  "The writing assistant sends the text you select to Anthropic (Claude), a US company, to write a suggestion. Don't include phone numbers, ID numbers or other private details.";
+
+/** Maps a failed assistant call to what the bar shows. */
+function aiFailure(err: unknown): "limit" | "consent" | string {
+  if (err instanceof ApiError) {
+    if (err.status === 429) return "limit";
+    if (err.status === 403 && err.code === ERR_AI_CONSENT_REQUIRED) return "consent";
+    if (err.status === 503 || err.status === 422 || err.status === 400) return err.message;
+  }
+  return "Something went wrong. Your text is unchanged.";
+}
+
+/** Explicit, stored consent before any text leaves for the AI provider. */
+function AiConsentPanel() {
+  const { member, setMember } = useAuth();
+  const [agreed, setAgreed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function enable() {
+    if (!member || !agreed) return;
+    setBusy(true); setErr(null);
+    try {
+      const { aiConsent } = await api.setAiConsent(true);
+      setMember({ ...member, aiConsent });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't save your choice.");
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="mt-3 rounded-[var(--radius-card)] border border-ai-line bg-ai-tint p-4">
+      <p className="text-sm font-semibold text-ink">Before you use the writing assistant</p>
+      <p className="mt-1.5 text-sm text-ink-muted">{AI_DISCLOSURE}</p>
+      <label className="mt-3 flex items-start gap-2 text-sm text-ink">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5" />
+        <span>I agree to send the text I choose to Anthropic for suggestions.</span>
+      </label>
+      {err && <p className="mt-2 text-xs text-clay-text" role="alert">{err}</p>}
+      <button type="button" onClick={enable} disabled={!agreed || busy} className="mt-3 rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+        {busy ? <BusyLabel label="Saving your choice" /> : "Turn on the writing assistant"}
+      </button>
+    </div>
+  );
+}
+
 export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{ initialTitle?: string; initialBody?: string }>) {
+  const { member, setMember } = useAuth();
+  const consented = Boolean(member?.aiConsent);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState(initialBody);
@@ -69,9 +120,22 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
       if (typeof data.remaining === "number") setRemaining(data.remaining);
     } catch (err) {
       if (ctrl.signal.aborted) return;
-      if ((err as { status?: number }).status === 429) setLimit(true);
-      else setError("Something went wrong. Your text is unchanged.");
+      const failure = aiFailure(err);
+      if (failure === "limit") setLimit(true);
+      else if (failure === "consent" && member) setMember({ ...member, aiConsent: false });
+      else setError(failure);
     } finally { setLoading(false); abortRef.current = null; }
+  }
+
+  async function withdraw() {
+    if (!member) return;
+    try {
+      const { aiConsent } = await api.setAiConsent(false);
+      setMember({ ...member, aiConsent });
+      setResult(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save your choice.");
+    }
   }
 
   const scopeWord = sel.words === 1 ? "word" : "words";
@@ -97,7 +161,9 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
         </div>
       </div>
 
-      <div className="mt-3 rounded-[var(--radius-card)] border border-ai-line bg-ai-tint p-4">
+      {!consented && <AiConsentPanel />}
+      {consented && <div className="mt-3 rounded-[var(--radius-card)] border border-ai-line bg-ai-tint p-4">
+        <p className="mb-2 text-xs text-ink-muted">{AI_DISCLOSURE}</p>
         <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-ink-faint">Rewrite</p>
         <div className="flex flex-wrap gap-2">{REWRITE.map((b) => <Btn key={b.a} onClick={() => run(b.a)}>{b.label}</Btn>)}</div>
         <p className="mb-2 mt-4 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-ink-faint">Generate</p>
@@ -122,7 +188,7 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
 
         {result != null && (
           <div className="mt-4 border-t border-ai-line pt-3">
-            <div className="flex items-center justify-between"><span className="text-sm font-semibold">Preview</span><span className="text-xs text-ink-faint">{lastAction}{simulated ? " · simulated" : ""}</span></div>
+            <div className="flex items-center justify-between"><span className="text-sm font-semibold">AI-suggested text</span><span className="text-xs text-ink-faint">{lastAction}{simulated ? " · simulated" : ""}</span></div>
             <div className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-paper p-4 text-sm leading-relaxed text-ink">{result}</div>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={() => setConfirmOpen(true)} className="rounded-lg bg-green px-4 py-2 text-sm font-semibold text-on-green">Replace</button>
@@ -132,7 +198,8 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
             </div>
           </div>
         )}
-      </div>
+        <button type="button" onClick={withdraw} className="mt-4 text-xs font-medium text-ink-muted underline hover:text-ink">Stop using the writing assistant</button>
+      </div>}
       <p className="mt-3 text-xs text-ink-faint">Calls the model server-side in the Go API — the key never reaches the browser. Every output is a draft.</p>
       {confirmOpen && (
         <dialog

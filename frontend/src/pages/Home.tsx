@@ -273,7 +273,7 @@ export function Component() {
       {featuredSpots.length > 0 && (
         <section className="bg-cream py-14 sm:py-16">
           <Container size="wide">
-            <Reveal><SectionHeading kicker="Featured in Oguaa · paid placements" title="In the spotlight" lede="Businesses, artists, events and more — placed front and centre by the people behind them." accentClass="bg-gold-brand" /></Reveal>
+            <Reveal><SectionHeading kicker="Featured and sponsored" title="In the spotlight" lede="Businesses, artists, events and more. Places marked Sponsored are paid for by the people behind them; the rest are chosen by Oguaa's editors." accentClass="bg-gold-brand" /></Reveal>
             <Stagger className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredSpots.map((l, i) => <StaggerItem key={l.id}><FeaturedCard listing={l} index={i} /></StaggerItem>)}
             </Stagger>

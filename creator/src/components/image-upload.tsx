@@ -1,18 +1,34 @@
 import { useRef, useState, type ReactNode, type ChangeEvent } from "react";
-import { getToken } from "@/lib/api";
+import { api, errorCode, getToken } from "@/lib/api";
 import { BusyLabel, Skeleton } from "@/components/skeleton";
 import { mediaUrl } from "@/lib/media";
+import type { CloudinarySignature } from "@/lib/types";
 
-// Image upload. Prefers Cloudinary (unsigned preset) when configured; otherwise
-// uploads to the first-party Go endpoint (POST /api/uploads) so uploads work out
-// of the box. URL paste is the last resort. The value is always a URL.
+// Image upload. Asks the API for a signed, per-member Cloudinary upload (POST
+// /api/uploads/cloudinary-signature); when signed uploads aren't configured
+// (503 signed_uploads_unavailable) it uploads through the first-party endpoint
+// (POST /api/uploads) instead. No unsigned preset is ever used. URL paste is
+// the last resort. The value is always a URL.
 const BASE = import.meta.env.VITE_API_URL ?? "";
-const CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
-const PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
-const cloudinaryConfigured = Boolean(CLOUD && PRESET);
+
+// What both upload paths accept (the server re-checks by content, not name).
+const ALLOWED_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+const DEFAULT_MAX_BYTES = 8 * 1024 * 1024;
+const ACCEPT = Object.keys(ALLOWED_TYPES).join(",");
+
+// Remembered for the session once the API says signed uploads are off.
+let signedUnavailable = false;
 
 const inputCls =
   "min-h-11 w-full rounded-lg border border-sand bg-paper px-3.5 py-2.5 text-ink placeholder:text-ink-faint focus:border-green focus:outline-none focus:ring-2 focus:ring-green/15";
+
+function errorMessage(res: Record<string, unknown>, status: number): string {
+  const e = res.error;
+  if (typeof res.message === "string" && res.message) return res.message;
+  if (typeof e === "string" && e) return e;
+  if (e && typeof e === "object" && typeof (e as { message?: unknown }).message === "string") return (e as { message: string }).message;
+  return `Upload failed (${status})`;
+}
 
 function xhrUpload(url: string, fd: FormData, auth: boolean, pick: (r: Record<string, unknown>) => string | undefined, onProgress: (pct: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -25,7 +41,7 @@ function xhrUpload(url: string, fd: FormData, auth: boolean, pick: (r: Record<st
         const res = JSON.parse(xhr.responseText) as Record<string, unknown>;
         const got = pick(res);
         if (xhr.status >= 200 && xhr.status < 300 && got) resolve(got);
-        else reject(new Error((res.error as string) ?? ((res.error as { message?: string })?.message) ?? `Upload failed (${xhr.status})`));
+        else reject(new Error(errorMessage(res, xhr.status)));
       } catch { reject(new Error("Upload failed — unexpected response.")); }
     };
     xhr.onerror = () => reject(new Error("Network error during upload."));
@@ -33,19 +49,45 @@ function xhrUpload(url: string, fd: FormData, auth: boolean, pick: (r: Record<st
   });
 }
 
-function upload(file: File, onProgress: (pct: number) => void): Promise<string> {
-  if (cloudinaryConfigured) {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("upload_preset", PRESET as string);
-    return xhrUpload(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, fd, false, (r) => r.secure_url as string | undefined, onProgress);
+/** A signature for this upload, or null when signed uploads are off (use /api/uploads). */
+async function signature(): Promise<CloudinarySignature | null> {
+  if (signedUnavailable) return null;
+  try {
+    return await api.cloudinarySignature();
+  } catch (e) {
+    if (errorCode(e) === "signed_uploads_unavailable") { signedUnavailable = true; return null; }
+    throw e;
   }
+}
+
+function checkFile(file: File, sig: CloudinarySignature | null): string | null {
+  const ext = ALLOWED_TYPES[file.type];
+  const allowed = sig ? sig.allowedFormats.split(",").map((f) => f.trim()) : Object.values(ALLOWED_TYPES);
+  if (!ext || !allowed.includes(ext)) return "Please choose a JPG, PNG or WebP image.";
+  const max = sig?.maxFileSize || DEFAULT_MAX_BYTES;
+  if (file.size > max) return `Image must be under ${Math.round(max / (1024 * 1024))} MB.`;
+  return null;
+}
+
+async function upload(file: File, onProgress: (pct: number) => void): Promise<string> {
+  const sig = await signature();
+  const problem = checkFile(file, sig);
+  if (problem) throw new Error(problem);
   const fd = new FormData();
   fd.append("file", file);
+  if (sig) {
+    // Post every signed parameter exactly as given; the signature covers them.
+    fd.append("api_key", sig.apiKey);
+    fd.append("timestamp", String(sig.timestamp));
+    fd.append("signature", sig.signature);
+    fd.append("folder", sig.folder);
+    fd.append("allowed_formats", sig.allowedFormats);
+    return xhrUpload(sig.uploadUrl, fd, false, (r) => r.secure_url as string | undefined, onProgress);
+  }
   return xhrUpload(`${BASE}/api/uploads`, fd, true, (r) => r.url as string | undefined, onProgress);
 }
 
-/** A cover/photo picker (Cloudinary or first-party upload, or paste a URL). */
+/** A cover/photo picker (signed Cloudinary or first-party upload, or paste a URL). */
 export function ImageUpload({
   value,
   onChange,
@@ -67,8 +109,8 @@ export function ImageUpload({
   async function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { setError("Please choose an image file."); return; }
-    if (file.size > 8 * 1024 * 1024) { setError("Image must be under 8 MB."); return; }
+    const problem = checkFile(file, null);
+    if (problem) { setError(problem); if (inputRef.current) inputRef.current.value = ""; return; }
     setError(null); setBusy(true); setProgress(0);
     try {
       onChange(await upload(file, setProgress));
@@ -151,7 +193,7 @@ export function ImageUpload({
 
       {picker}
 
-      <input ref={inputRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
+      <input ref={inputRef} type="file" accept={ACCEPT} onChange={onFile} className="hidden" />
 
       {error && <p className="mt-1.5 text-xs text-clay-text" role="alert">{error}</p>}
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-faint">

@@ -7,7 +7,7 @@ import { PageHero } from "@/components/page-hero";
 import { Container } from "@/components/ui";
 import { StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
-import { formatDate } from "@/lib/format";
+import { EmergencyCallout } from "@/components/emergency-callout";
 import {
   ALERT_STYLE,
   DIRECTIVE_KIND_LABEL,
@@ -22,15 +22,30 @@ export async function loader() {
   return api.directives(false);
 }
 
-/** Date + local time, e.g. "16 Jul 2026, 06:00". */
+// Directives are issued for Cape Coast, so show them on Cape Coast time (GMT)
+// for every viewer, with the date and the time taken from the same clock.
+const CAPE_COAST_TIME = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "Africa/Accra",
+});
+
+/** Date + Cape Coast time, e.g. "16 Jul 2026, 06:00 GMT". */
 function dateTime(iso?: string): string {
   if (!iso) return "";
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return iso;
-  const d = new Date(t);
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${formatDate(iso)}, ${hh}:${mm}`;
+  return `${CAPE_COAST_TIME.format(new Date(t))} GMT`;
+}
+
+/** Scheduled but not yet in force. */
+function isUpcoming(d: Directive, nowMs: number): boolean {
+  const from = Date.parse(d.effectiveFrom);
+  return d.status === "active" && !Number.isNaN(from) && nowMs < from;
 }
 
 function windowLabel(d: Directive): string {
@@ -49,7 +64,8 @@ export function Component() {
   }, []);
 
   const active = all.filter((d) => isLive(d, nowMs));
-  const past = all.filter((d) => !isLive(d, nowMs));
+  const upcoming = all.filter((d) => isUpcoming(d, nowMs));
+  const past = all.filter((d) => !isLive(d, nowMs) && !isUpcoming(d, nowMs));
 
   return (
     <>
@@ -61,6 +77,11 @@ export function Component() {
         lede="Advisories and directives issued by Cape Coast's emergency, security, health and local-government authorities. Active notices are pinned to the top of every page — this is the full record."
       />
       <Container size="wide" className="py-12">
+        <p className="mb-4 rounded-[var(--radius-card)] border border-sand bg-cream px-5 py-3 text-sm leading-relaxed text-ink-muted">
+          Oguaa is an independent community platform, not a government service. Each notice names the authority that issued it
+          {" "}and, where one exists, links to its official source.
+        </p>
+        <EmergencyCallout className="mb-8" />
         {all.length === 0 ? (
           <EmptyState
             icon={<EmptyGlyph name="megaphone" />}
@@ -90,6 +111,22 @@ export function Component() {
               )}
             </section>
 
+            {upcoming.length > 0 && (
+              <section>
+                <div className="mb-5 flex items-baseline gap-3">
+                  <h2 className="text-2xl font-semibold text-ink">Coming up</h2>
+                  <span className="text-sm text-ink-faint">{upcoming.length}</span>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {upcoming.map((d, idx) => (
+                    <StaggerItem key={d.id} index={idx} lift>
+                      <DirectiveCard d={d} nowMs={nowMs} startsLabel={`Starts ${dateTime(d.effectiveFrom)}`} />
+                    </StaggerItem>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {past.length > 0 && (
               <section>
                 <div className="mb-5 flex items-baseline gap-3">
@@ -116,10 +153,11 @@ function DirectiveCard({
   d,
   nowMs,
   expired = false,
-}: Readonly<{ d: Directive; nowMs: number; expired?: boolean }>) {
+  startsLabel,
+}: Readonly<{ d: Directive; nowMs: number; expired?: boolean; startsLabel?: string }>) {
   const s = ALERT_STYLE[d.severity];
   const untilMs = d.effectiveUntil ? Date.parse(d.effectiveUntil) : NaN;
-  const cd = !expired && !Number.isNaN(untilMs) ? countdown(untilMs, nowMs) : null;
+  const cd = startsLabel ?? (!expired && !Number.isNaN(untilMs) ? countdown(untilMs, nowMs) : null);
 
   return (
     <article
@@ -153,7 +191,7 @@ function DirectiveCard({
         Issued by {d.issuedByName}
       </p>
       {d.body && <p className={`mt-2 whitespace-pre-line text-sm text-ink-muted ${expired ? "" : "pl-2"}`}>{d.body}</p>}
-      {d.automated && d.sourceUrl && <a href={d.sourceUrl} target="_blank" rel="noreferrer" className={`mt-2 text-xs font-semibold text-green-text underline ${expired ? "" : "pl-2"}`}>Verify at {d.sourceName ?? "the official source"} ↗</a>}
+      {d.sourceUrl?.startsWith("https://") && <a href={d.sourceUrl} target="_blank" rel="noreferrer" className={`mt-2 text-xs font-semibold text-green-text underline ${expired ? "" : "pl-2"}`}>Official source: {d.sourceName ?? d.issuedByName} ↗</a>}
       {d.action && (
         <p className={`mt-3 rounded-lg border px-3 py-2 text-sm font-medium ${s.badge} ${expired ? "" : "ml-2"}`}>
           {d.action}

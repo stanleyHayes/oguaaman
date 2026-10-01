@@ -7,8 +7,17 @@ import { formatDate, initials } from "@/lib/format";
 import { cldAvatar } from "@/lib/cloudinary";
 import { BusyLabel } from "@/components/skeleton";
 
+// The staff endpoint ignores member blocks (a member can't hide from staff by
+// blocking them). Lists are still coerced so a partial body can't crash render.
 export async function loader({ params }: LoaderFunctionArgs): Promise<MemberView> {
-  return api.member(params.slug!);
+  const view = await api.member(params.slug!);
+  const asArray = <U,>(v: unknown): U[] => (Array.isArray(v) ? (v as U[]) : []);
+  return {
+    member: { ...view.member, schoolIds: asArray<string>(view.member?.schoolIds) },
+    listings: asArray(view.listings),
+    places: asArray(view.places),
+    schools: asArray(view.schools),
+  };
 }
 
 export function Component() {

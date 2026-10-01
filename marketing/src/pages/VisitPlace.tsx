@@ -7,7 +7,7 @@ import { SectionRenderer, Gallery } from "@/components/profile-sections";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { fetchPlace, type Organization } from "@/lib/org";
 import { listingSubtitle, portalHref, type Listing } from "@/lib/listings";
-import { setMeta } from "@/lib/meta";
+import { setPageMeta } from "@/lib/meta";
 import { PORTAL_APP_URL } from "@/config";
 
 type State =
@@ -37,19 +37,11 @@ export function Component() {
     const state: State = fetched.slug === slug ? fetched.s : { status: "loading" };
     if (state.status !== "ready") return;
     const org = state.org;
-    const title = `${org.name} — Visit Cape Coast — Oguaa`;
-    const desc = org.summary || `${org.name} — a place to see in and around Cape Coast (Oguaa), Ghana.`;
-    document.title = title;
-    setMeta("property", "og:title", title);
-    setMeta("name", "twitter:title", title);
-    setMeta("name", "description", desc);
-    setMeta("property", "og:description", desc);
-    setMeta("name", "twitter:description", desc);
-    const cover = (org.gallery ?? []).find((m) => m.url)?.url;
-    if (cover) {
-      setMeta("property", "og:image", cover);
-      setMeta("name", "twitter:image", cover);
-    }
+    setPageMeta({
+      title: `${org.name} — Visit Cape Coast — Oguaa`,
+      description: org.summary || `${org.name} — a place to see in and around Cape Coast (Oguaa), Ghana.`,
+      image: (org.gallery ?? []).find((m) => m.url)?.url,
+    });
   }, [fetched, slug]);
 
   if (state.status === "loading") {

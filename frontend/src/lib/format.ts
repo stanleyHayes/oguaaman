@@ -18,8 +18,16 @@ export function dayMonth(iso: string): { day: string; mon: string } {
   return { day: String(d).padStart(2, "0"), mon: MONTHS[m - 1].toUpperCase() };
 }
 
-export function formatDayMonth(iso: string): string {
-  const [, m, d] = iso.slice(0, 10).split("-").map(Number);
+/**
+ * "21 March" from either a full date ("YYYY-MM-DD…") or a month-day ("MM-DD",
+ * the shape birthdays are stored in). Returns "" when the value can't be read.
+ */
+export function formatDayMonth(value?: string): string {
+  if (!value) return "";
+  const parts = value.slice(0, 10).split("-");
+  if (parts.length < 2) return "";
+  const [m, d] = parts.slice(-2).map(Number);
+  if (!Number.isInteger(m) || !Number.isInteger(d) || m < 1 || m > 12 || d < 1 || d > 31) return "";
   return `${d} ${MONTHS_LONG[m - 1]}`;
 }
 

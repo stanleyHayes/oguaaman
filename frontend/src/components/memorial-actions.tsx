@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, type SubmitEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import type { Tribute } from "@/lib/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { ReportButton } from "@/components/report-button";
+import { BlockButton } from "@/components/block-button";
 
 /**
  * Candle + remember (spec §8.11). The candle persists to MongoDB; "Remember"
@@ -105,29 +107,31 @@ export function CandleRemember({
   );
 }
 
-/** Tributes — posts to the Go API (lightly moderated for dignity in production). */
+/** Tributes — posts to the Go API (signed-in members; lightly moderated for dignity). */
 export function Tributes({ slug, initial }: Readonly<{ slug: string; initial: Tribute[] }>) {
+  const { member } = useAuth();
   const [list, setList] = useState<Tribute[]>(initial);
-  const [name, setName] = useState("");
+  const [relation, setRelation] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function submit(e: FormEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault();
     if (!message.trim()) return;
     setBusy(true);
+    setError(null);
     try {
-      const t = await api.addTribute(slug, { authorName: name.trim(), message: message.trim() });
+      const t = await api.addTribute(slug, { message: message.trim(), relation: relation.trim() || undefined });
       setList((cur) => [t, ...cur]);
-    } catch {
-      setList((cur) => [
-        { id: `local-${cur.length}`, authorName: name.trim() || "A member of the community", message: message.trim(), createdAt: "just now" },
-        ...cur,
-      ]);
+      setRelation("");
+      setMessage("");
+    } catch (err) {
+      // Keep what they wrote so they can try again.
+      setError(err instanceof Error && err.message ? err.message : "We couldn't post your tribute. Please try again.");
+    } finally {
+      setBusy(false);
     }
-    setName("");
-    setMessage("");
-    setBusy(false);
   }
 
   return (
@@ -145,34 +149,47 @@ export function Tributes({ slug, initial }: Readonly<{ slug: string; initial: Tr
                 {t.authorName}
                 {t.relation && <span className="ml-1 text-ink-faint">· {t.relation}</span>}
               </span>
-              <span className="text-xs italic text-ink-faint">
-                {t.createdAt === "just now" ? "just now" : t.createdAt.slice(0, 10)}
+              <span className="flex items-center gap-3 text-xs italic text-ink-faint">
+                {t.createdAt.slice(0, 10)}
+                {t.memberSlug !== member?.slug && <ReportButton compact target={{ type: "tribute", id: t.id }} />}
+                {t.memberSlug && <BlockButton slug={t.memberSlug} name={t.authorName} variant="link" />}
               </span>
             </figcaption>
           </figure>
         ))}
       </div>
 
-      <form onSubmit={submit} className="mt-7 rounded-lg border border-dashed border-sand p-5 text-center">
-        <textarea
-          rows={3}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Share a memory or leave a word of comfort…"
-          className="w-full resize-none rounded-md border border-sand bg-paper p-3 font-serif text-ink placeholder:italic placeholder:text-ink-faint focus:border-gold-brand focus:outline-none"
-        />
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your name (optional)"
-          className="mt-3 w-full rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-brand focus:outline-none"
-        />
-        <button type="submit" disabled={busy} className="mt-4 rounded-full bg-green px-7 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
-          {busy ? "Leaving…" : "Leave a tribute"}
-        </button>
-        <p className="mt-3 text-xs text-ink-faint">Tributes are lightly reviewed for dignity before they appear.</p>
-      </form>
+      {member ? (
+        <form onSubmit={submit} className="mt-7 rounded-lg border border-dashed border-sand p-5 text-center">
+          <textarea
+            rows={3}
+            value={message}
+            maxLength={1000}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Share a memory or leave a word of comfort…"
+            aria-label="Your tribute"
+            className="w-full resize-none rounded-md border border-sand bg-paper p-3 font-serif text-ink placeholder:italic placeholder:text-ink-faint focus:border-gold-brand focus:outline-none"
+          />
+          <input
+            type="text"
+            value={relation}
+            maxLength={60}
+            onChange={(e) => setRelation(e.target.value)}
+            placeholder="How you knew them (optional)"
+            aria-label="How you knew them"
+            className="mt-3 w-full rounded-md border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-gold-brand focus:outline-none"
+          />
+          {error && <p role="alert" className="mt-3 text-sm text-clay-text">{error}</p>}
+          <button type="submit" disabled={busy} className="mt-4 rounded-full bg-green px-7 py-2.5 text-sm font-semibold text-on-green hover:bg-green-900 disabled:opacity-60">
+            {busy ? "Leaving…" : "Leave a tribute"}
+          </button>
+          <p className="mt-3 text-xs text-ink-faint">Posted as {member.displayName}. Tributes are lightly reviewed for dignity.</p>
+        </form>
+      ) : (
+        <p className="mt-7 rounded-lg border border-dashed border-sand p-5 text-center text-sm text-ink-muted">
+          <Link to="/signin" state={{ from: `/memoriam/${slug}` }} className="font-semibold text-green-text hover:text-gold-text">Sign in</Link> to leave a tribute.
+        </p>
+      )}
     </div>
   );
 }

@@ -324,7 +324,7 @@ export function Component() {
   const displayName = member?.displayName ?? "Your account";
   const initials = displayName.split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
   const mfaEnabled = Boolean(member?.mfaEnabled);
-  const mfaLabel = mfaEnabled ? "Protected" : member?.role === "moderator" ? "Optional" : "Needs setup";
+  const mfaLabel = mfaEnabled ? "Protected" : "Needs setup";
   const canRunRemembrance = member?.role === "steward";
 
   return (
@@ -430,7 +430,7 @@ export function Component() {
                 </div>
               </div>
               <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${mfaEnabled ? "bg-green/[0.1] text-green-text" : "bg-gold/[0.15] text-gold-text"}`}>
-                {mfaEnabled ? "On" : member?.role === "moderator" ? "Optional" : "Setup required"}
+                {mfaEnabled ? "On" : "Setup required"}
               </span>
             </div>
             <MfaManage />

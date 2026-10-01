@@ -7,6 +7,7 @@ import { PageHero } from "@/components/page-hero";
 import { Thumb } from "@/components/cards";
 import { Container, CTA as Cta } from "@/components/ui";
 import { SectionIcon } from "@/components/section-icon";
+import { EmergencyCallout } from "@/components/emergency-callout";
 import { formatDate, initials } from "@/lib/format";
 import { LayoutPill, StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph } from "@/components/empty-state";
@@ -41,6 +42,7 @@ export function Component() {
       </PageHero>
 
       <Container size="wide" className="py-10 sm:py-12">
+        <EmergencyCallout className="mb-8" />
         <section aria-label="Lost and found overview" className="grid overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] sm:grid-cols-3">
           <BoardMetric value={openCount} label="Open searches" tone="text-gold-text" />
           <BoardMetric value={countFor("missing_person")} label="Missing people" tone="text-maroon-text" />

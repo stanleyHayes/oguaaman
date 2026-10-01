@@ -61,8 +61,14 @@ function toPayload(f: FormState): PlanPayload {
     maxProducts: f.maxProducts.trim() ? Number.parseInt(f.maxProducts, 10) : 0,
     maxServices: f.maxServices.trim() ? Number.parseInt(f.maxServices, 10) : 0,
     goldBadge: f.goldBadge, active: f.active,
-    sortOrder: Number.parseInt(f.sortOrder || "10", 10) || 10,
+    sortOrder: parseSortOrder(f.sortOrder),
   };
+}
+
+/** Sort order 0 is valid (list first); fall back to 10 only when unparseable. */
+function parseSortOrder(v: string): number {
+  const n = Number.parseInt(v, 10);
+  return Number.isNaN(n) ? 10 : n;
 }
 
 export function Component() {

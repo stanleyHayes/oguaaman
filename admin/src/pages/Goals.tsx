@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLoaderData, useRevalidator } from "react-router-dom";
-import { api, type GoalInput } from "@/lib/api";
+import { api, isForbidden, type GoalInput } from "@/lib/api";
 import type { Goal, GoalCadence, GoalRing, GoalStatus, GoalVerdict } from "@/lib/types";
 import { PageHeader, Card, Empty, Pill, Select } from "@/components/ui";
 import { Stagger, StaggerItem } from "@/components/motion";
@@ -9,7 +9,12 @@ import { BusyLabel } from "@/components/skeleton";
 import { useAuth } from "@/lib/auth";
 
 export async function loader(): Promise<Goal[]> {
-  return api.adminGoals();
+  // Curators, accountability officers and stewards read the staff list; any
+  // other role that can see the page falls back to the public scoreboard.
+  return api.adminGoals().catch((err: unknown) => {
+    if (isForbidden(err)) return api.goals();
+    throw err;
+  });
 }
 
 const inputCls = "w-full rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-green-text focus:outline-none focus:ring-2 focus:ring-green/15";
@@ -63,11 +68,15 @@ const EMPTY_FORM: FormState = {
   ring: "", setAtDurbar: false, featured: false,
 };
 
-/** A date-input value ("2026-01-01") → RFC3339 at UTC midnight, or "" when blank. */
-function dateToISO(value: string): string {
-  if (!value.trim()) return "";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A date-input value ("2026-01-01") → RFC3339 at the start (00:00:00Z) or
+ *  the end (23:59:59Z) of that day, or "" when blank. The end of a period is
+ *  inclusive: a goal ending 31 Dec stays active all of 31 Dec. */
+function dateToISO(value: string, edge: "start" | "end"): string {
+  const v = value.trim();
+  if (!DATE_RE.test(v) || Number.isNaN(Date.parse(v))) return "";
+  return `${v}T${edge === "start" ? "00:00:00" : "23:59:59"}Z`;
 }
 /** An RFC3339 instant → the "YYYY-MM-DD" a date input expects. */
 function isoToDate(iso?: string): string {
@@ -86,7 +95,7 @@ function toPayload(f: FormState): GoalInput {
   return {
     title: f.title.trim(), description: f.description.trim(), target: f.target.trim(),
     cadence: f.cadence, periodLabel: f.periodLabel.trim(),
-    periodStart: dateToISO(f.periodStart), periodEnd: dateToISO(f.periodEnd),
+    periodStart: dateToISO(f.periodStart, "start"), periodEnd: dateToISO(f.periodEnd, "end"),
     setAtDurbar: f.setAtDurbar, ring: f.ring, featured: f.featured,
   };
 }
@@ -305,10 +314,7 @@ function GoalCard({ goal, flagship = false, canCurate, canReview, onEdit, onDele
       setVerdict(null); setNote("");
       onChanged();
     } catch (e) {
-      const status = (e as { status?: number }).status;
-      setVerdictError(status === 403
-        ? "Only an accountability officer can record the verdict."
-        : e instanceof Error ? e.message : "Could not record the verdict.");
+      setVerdictError(e instanceof Error ? e.message : "Could not record the verdict.");
     } finally {
       setVerdictBusy(false);
     }

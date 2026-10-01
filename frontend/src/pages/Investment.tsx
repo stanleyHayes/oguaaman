@@ -13,7 +13,10 @@ interface Data { investments: Listing[] }
 
 export async function loader(): Promise<Data> {
   const opportunities = await api.opportunities();
-  return { investments: opportunities.filter((opportunity) => opportunity.details.kind === "investment") };
+  // Open calls only: drop any whose deadline (a date) is already behind us.
+  const today = new Date().toISOString().slice(0, 10);
+  const open = (deadline?: string) => !deadline || deadline.slice(0, 10) >= today;
+  return { investments: opportunities.filter((opportunity) => opportunity.details.kind === "investment" && open(opportunity.details.deadline)) };
 }
 
 const PRINCIPLES = [

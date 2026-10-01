@@ -29,3 +29,9 @@ export function publicPathFor(l: Listing): string | null {
 export function portalUrl(path: string): string {
   return `${PORTAL}${path}`;
 }
+
+/** The canonical legal pages live on the portal (one source for every app). */
+export const TERMS_URL = portalUrl("/terms");
+export const PRIVACY_URL = portalUrl("/privacy");
+/** The portal account page: data export and account deletion. */
+export const ACCOUNT_URL = portalUrl("/me");

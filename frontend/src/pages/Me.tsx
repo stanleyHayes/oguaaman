@@ -3,9 +3,10 @@ import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react
 import { usePageTitle } from "@/lib/use-page-title";
 import type { MemberView, Listing, ListingStatus, Ticket, Subscription, Promotion } from "@/lib/types";
 import { api } from "@/lib/api";
-import { completePayment } from "@/lib/paystack";
+import { paymentErrorMessage } from "@/lib/payments";
+import { usePaymentConfirm } from "@/lib/use-payment-confirm";
+import { PaymentNotice } from "@/components/payment-notice";
 import { useAuth } from "@/lib/auth";
-import { DatePicker } from "@/components/date-picker";
 import { Container, CTA as Cta, Avatar } from "@/components/ui";
 import { ImageUpload } from "@/components/image-upload";
 import { SchoolingEditor, PeopleYouMayKnow } from "@/components/connections";
@@ -15,6 +16,8 @@ import { Thumb } from "@/components/cards";
 import { StaggerItem } from "@/components/motion";
 import { EmptyState, EmptyGlyph, type EmptyIconName } from "@/components/empty-state";
 import { SecuritySettings, ChangePasswordSettings, DataRightsSettings } from "@/components/security-panels";
+import { AIConsentSettings, NotificationSettings } from "@/components/notification-settings";
+import { LEGAL } from "@/lib/legal";
 import { ProfileSkeleton } from "@/components/skeleton";
 import { OtpInput } from "@/components/otp-input";
 
@@ -42,6 +45,7 @@ const TABS = [
   { id: "profile", label: "Profile", icon: "image", title: "Your profile", desc: "How you show up across Oguaa — your photo, the town and Asafo you rep, and your birthday." },
   { id: "activity", label: "Activity", icon: "chart", title: "Listings, tickets & support", desc: "Everything you've contributed, the event tickets you hold, and the businesses you back." },
   { id: "connections", label: "Connections", icon: "users", title: "Your connections", desc: "Record your schooling to find classmates, neighbours and Asafo members you may know." },
+  { id: "notifications", label: "Notifications", icon: "bell", title: "Notifications", desc: "Choose what Oguaa tells you about, and how — on the web, in the app and by email." },
   { id: "security", label: "Security", icon: "shield", title: "Sign-in & security", desc: "Verify your contact and turn on two-factor to keep your account safe." },
   { id: "privacy", label: "Privacy & data", icon: "inbox", title: "Privacy & data", desc: "Take everything Oguaa holds about you with you — or close your account for good." },
 ] as const;
@@ -71,6 +75,68 @@ function subStatusStyle(status: string): string {
   if (status === "success") return "bg-green/[0.08] text-green-text";
   if (status === "pending") return "bg-gold/[0.14] text-gold-text";
   return "bg-maroon-900/[0.08] text-maroon-text";
+}
+
+type Affiliations = { townId: string; asafoId: string };
+
+const BIRTHDAY_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// Days per month in a leap year, so 29 February is a valid birthday.
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+/** Month and day ("MM", "DD") of a stored birthday: "MM-DD", legacy "YYYY-MM-DD", or a half-filled "MM-". */
+function birthdayParts(value: string): [string, string] {
+  const parts = value.split("-");
+  if (parts.length < 2) return ["", ""];
+  const [month, day] = parts.slice(-2);
+  return [month.slice(0, 2), day.slice(0, 2)];
+}
+
+/** "MM-DD" to save, "" to clear, or null when only half of it is chosen. */
+function birthdayMonthDay(value: string): string | null {
+  const [month, day] = birthdayParts(value);
+  if (!month && !day) return "";
+  if (!month || !day) return null;
+  return `${month}-${day}`;
+}
+
+/** Month + day picker: birthdays are stored without a year. */
+function BirthdayPicker({ value, onChange }: Readonly<{ value: string; onChange: (value: string) => void }>) {
+  const [month, day] = birthdayParts(value);
+  const maxDay = month ? DAYS_IN_MONTH[Number(month) - 1] ?? 31 : 31;
+  const emit = (m: string, d: string) => onChange(m || d ? `${m}-${d}` : "");
+  const selectCls = "min-h-11 rounded-lg border border-sand bg-paper px-3 py-2 text-sm text-ink focus:border-green focus:outline-none";
+  return (
+    <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-2">
+      <select aria-label="Birthday month" value={month} onChange={(e) => emit(e.target.value, day && Number(day) <= (DAYS_IN_MONTH[Number(e.target.value) - 1] ?? 31) ? day : "")} className={selectCls}>
+        <option value="">Month</option>
+        {BIRTHDAY_MONTHS.map((name, i) => <option key={name} value={String(i + 1).padStart(2, "0")}>{name}</option>)}
+      </select>
+      <select aria-label="Birthday day" value={day} onChange={(e) => emit(month, e.target.value)} className={selectCls}>
+        <option value="">Day</option>
+        {Array.from({ length: maxDay }, (_, i) => String(i + 1).padStart(2, "0")).map((d) => <option key={d} value={d}>{Number(d)}</option>)}
+      </select>
+    </div>
+  );
+}
+
+/** One row of "My subscriptions": a business Supporter plan, or a creator plan (no listing). */
+function SubscriptionRow({ sub }: Readonly<{ sub: Subscription }>) {
+  const creator = sub.scope === "creator" || !sub.listingSlug;
+  const body = (
+    <>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-ink">{creator ? `Creator plan · ${sub.plan}` : sub.listingTitle}</p>
+        <p className="text-xs text-ink-faint">
+          GH₵ {(sub.amountPesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}
+          {sub.periodEnd ? ` · until ${formatDate(sub.periodEnd)}` : ""}
+        </p>
+      </div>
+      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${subStatusStyle(sub.status)}`}>{sub.status}</span>
+    </>
+  );
+  const cls = "flex items-center gap-3 py-3.5 transition-colors hover:bg-paper";
+  if (creator) return <a href={`${CREATOR_URL}/grow`} className={cls}>{body}</a>;
+  return <Link to={`/business/${sub.listingSlug}`} className={cls}>{body}</Link>;
 }
 
 /** A compact account module that keeps its height driven by content. */
@@ -160,9 +226,12 @@ export function Component() {
   const [birthday, setBirthday] = useState("");
   const [broadcast, setBroadcast] = useState(false);
   const [bdayState, setBdayState] = useState<SaveState>("idle");
-  // Local YYYY-MM-DD upper bound for the birthday picker — birthdays are in the past.
-  const now = new Date();
-  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const [bdayError, setBdayError] = useState("");
+  const [affError, setAffError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  // The last requested quarter/Asafo pair and the queue that saves them in order.
+  const affiliations = useRef<Affiliations>({ townId: "", asafoId: "" });
+  const affQueue = useRef<Promise<void>>(Promise.resolve());
   // Diaspora opt-in (Phase 2 foundation).
   const [abroad, setAbroad] = useState(false);
   const [city, setCity] = useState("");
@@ -175,12 +244,20 @@ export function Component() {
   // Business subscriptions (Phase 7).
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   // Paid promotions (Phase 8): ?promo_ref= confirm + inline day picker.
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const [promoFor, setPromoFor] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
-  const [promoConfirmed, setPromoConfirmed] = useState<Promotion | null>(null);
-  const promoConfirmedRef = useRef(false);
+  // Confirms in place after the inline modal, or once on a ?promo_ref= return
+  // (the redirect fallback); a still-processing payment keeps a re-check.
+  const promoPayment = usePaymentConfirm<Promotion>(api.confirmPromotion, {
+    returnParam: "promo_ref",
+    onConfirmed: () => {
+      setPromoFor(null);
+      setRefreshKey((k) => k + 1);
+    },
+  });
+  const promoConfirmed = promoPayment.confirmed;
   // Phone/contact verification gate for submissions.
   const [verifyCode, setVerifyCode] = useState("");
   const [verifyState, setVerifyState] = useState<SaveState>("idle");
@@ -206,21 +283,6 @@ export function Component() {
     api.mySubscriptions().then(setSubscriptions).catch(() => setSubscriptions([]));
   }, [member]);
 
-  // Returning from Paystack with ?promo_ref=… — confirm once, then refresh.
-  useEffect(() => {
-    const ref = params.get("promo_ref");
-    if (!ref || promoConfirmedRef.current) return;
-    promoConfirmedRef.current = true;
-    api.confirmPromotion(ref)
-      .then((p) => {
-        setPromoConfirmed(p);
-        setParams({}, { replace: true });
-        setRefreshKey((k) => k + 1);
-      })
-      .catch(() => setPromoError("We couldn't confirm that payment. If you were charged, it will reconcile shortly."));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   useEffect(() => {
     if (!member) return;
     let alive = true;
@@ -228,21 +290,38 @@ export function Component() {
       .then((v) => {
         if (!alive) return;
         setView(v);
+        setLoadError(false);
         setPhoto(v.member.photoUrl ?? "");
+        affiliations.current = { townId: v.member.townId ?? "", asafoId: v.member.asafoId ?? "" };
         setTownId(v.member.townId ?? "");
         setAsafoId(v.member.asafoId ?? "");
-        setBirthday(v.member.birthday ?? "");
-        setBroadcast(!!v.member.broadcastBirthday);
+        // Self-only fields: the owner's own profile read carries them, and the
+        // signed-in session (/api/auth/me) is the fallback.
+        setBirthday(v.member.birthday || member.birthday || "");
+        setBroadcast(!!(v.member.broadcastBirthday ?? member.broadcastBirthday));
         setAbroad(!!v.member.diaspora?.abroad);
         setCity(v.member.diaspora?.city ?? "");
         setCountry(v.member.diaspora?.country ?? "");
       })
-      .catch(() => setView(null));
+      .catch(() => {
+        if (alive) setLoadError(true);
+      });
     return () => { alive = false; };
   }, [member, refreshKey]);
 
   if (loading) return <Container className="py-16"><ProfileSkeleton /></Container>;
   if (!member) return <Navigate to="/signin" state={{ from: "/me" }} replace />;
+  if (!view && loadError) {
+    return (
+      <Container className="py-16">
+        <div role="alert" className="mx-auto max-w-md rounded-[var(--radius-card)] border border-clay/30 bg-clay/[0.06] p-6 text-center">
+          <p className="font-semibold text-ink">We couldn't load your account</p>
+          <p className="mt-1 text-sm text-ink-muted">Check your connection and try again.</p>
+          <button type="button" onClick={() => { setLoadError(false); setRefreshKey((k) => k + 1); }} className="mt-4 rounded-full bg-green px-5 py-2 text-sm font-semibold text-on-green hover:bg-green-900">Try again</button>
+        </div>
+      </Container>
+    );
+  }
   if (!view) return <Container className="py-16"><ProfileSkeleton /></Container>;
 
   const { member: me, listings, places, schools } = view;
@@ -259,15 +338,34 @@ export function Component() {
     navigate({ pathname: location.pathname, search: location.search, hash: `#${id}` }, { replace: true });
   }
 
-  async function chooseQuarter(id: string) {
-    const next = townId === id ? "" : id;
-    setTownId(next);
-    try { await api.setAffiliations({ townId: next, asafoId }); } catch { /* keep optimistic */ }
+  // Each save replaces both fields, so saves run one after another in click
+  // order; a failed save puts the choice back and says so.
+  function saveAffiliations(next: Affiliations) {
+    const previous = affiliations.current;
+    affiliations.current = next;
+    setTownId(next.townId);
+    setAsafoId(next.asafoId);
+    setAffError(null);
+    affQueue.current = affQueue.current.then(async () => {
+      try {
+        await api.setAffiliations(next);
+      } catch (e) {
+        if (affiliations.current === next) {
+          affiliations.current = previous;
+          setTownId(previous.townId);
+          setAsafoId(previous.asafoId);
+        }
+        setAffError(e instanceof Error && e.message ? e.message : "We couldn't save that choice. Please try again.");
+      }
+    });
   }
-  async function chooseAsafo(id: string) {
-    const next = asafoId === id ? "" : id;
-    setAsafoId(next);
-    try { await api.setAffiliations({ townId, asafoId: next }); } catch { /* keep optimistic */ }
+  function chooseQuarter(id: string) {
+    const cur = affiliations.current;
+    saveAffiliations({ ...cur, townId: cur.townId === id ? "" : id });
+  }
+  function chooseAsafo(id: string) {
+    const cur = affiliations.current;
+    saveAffiliations({ ...cur, asafoId: cur.asafoId === id ? "" : id });
   }
   async function savePhoto(url: string) {
     setPhoto(url);
@@ -280,11 +378,19 @@ export function Component() {
     }
   }
   async function saveBirthday() {
+    const monthDay = birthdayMonthDay(birthday);
+    if (monthDay === null) {
+      setBdayError("Choose both the month and the day.");
+      setBdayState("error");
+      return;
+    }
     setBdayState("saving");
     try {
-      await api.setBirthday({ birthday, broadcast });
+      const res = await api.setBirthday({ birthday: monthDay, broadcast });
+      setBirthday(res?.birthday ?? monthDay);
       setBdayState("saved");
-    } catch {
+    } catch (e) {
+      setBdayError(e instanceof Error && e.message ? e.message : "We couldn't save your birthday. Try again.");
       setBdayState("error");
     }
   }
@@ -313,11 +419,13 @@ export function Component() {
       setVerifyState("error");
     }
   }
-  async function confirmVerification() {
+  // OtpInput hands over the full code on completion; state set in the same
+  // event has not re-rendered yet, so it must not be read from verifyCode.
+  async function confirmVerification(code: string = verifyCode) {
     setVerifyError(null);
     setVerifyState("saving");
     try {
-      const res = await api.confirmPhoneVerification(verifyCode);
+      const res = await api.confirmPhoneVerification(code.trim());
       setMember(res.member);
       setVerifySentCode(null);
       setVerifyExpiresAt(null);
@@ -334,25 +442,12 @@ export function Component() {
     setPromoBusy(true);
     try {
       const r = await api.promoteListing(l.id, days);
-      // Complete in the in-app Paystack modal. On payer success we confirm the
-      // reference and update the UI in place — mirroring the ?promo_ref= return
-      // handler above (which stays as the redirect-fallback path). If the modal
-      // can't run, completePayment redirects to authorizationUrl and that
-      // handler confirms on the way back.
-      await completePayment(r, {
-        onSuccess: async () => {
-          try {
-            const p = await api.confirmPromotion(r.reference);
-            setPromoConfirmed(p);
-            setPromoFor(null);
-            setRefreshKey((k) => k + 1);
-          } catch {
-            setPromoError("We couldn't confirm that payment. If you were charged, it will reconcile shortly.");
-          }
-        },
-      });
+      // Complete in the in-app Paystack modal and confirm in place. If the
+      // modal can't run, completePayment redirects to authorizationUrl and the
+      // ?promo_ref= return confirms on the way back.
+      await promoPayment.complete(r);
     } catch (e) {
-      setPromoError(e instanceof Error ? e.message : "Could not start the payment.");
+      setPromoError(paymentErrorMessage(e, "Could not start the payment."));
     } finally {
       // Modal path (success/cancel) clears busy here; on the redirect fallback
       // the page unloads before this runs, which is fine.
@@ -525,17 +620,12 @@ export function Component() {
                   </button>
                 ))}
               </div>
+              {affError && <p role="alert" className="mt-3 text-sm text-clay-text">{affError}</p>}
             </Panel>
 
-            <Panel title="Your birthday" lede="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose." className="xl:col-span-6">
+            <Panel title="Your birthday" lede="Optional. If you turn this on, your followers get a gentle note on your day and your profile shows the day and month — never the year. Off by default." className="xl:col-span-6">
               <div className="space-y-3">
-                <DatePicker
-                  value={birthday.length >= 10 ? birthday.slice(0, 10) : birthday}
-                  onChange={(v) => { setBirthday(v); setBdayState("idle"); }}
-                  max={todayIso}
-                  aria-label="Your birthday"
-                  className="w-full"
-                />
+                <BirthdayPicker value={birthday} onChange={(v) => { setBirthday(v); setBdayState("idle"); }} />
                 <ToggleField
                   checked={broadcast}
                   onChange={(checked) => { setBroadcast(checked); setBdayState("idle"); }}
@@ -547,12 +637,12 @@ export function Component() {
                     {bdayState === "saving" ? "Saving…" : "Save"}
                   </button>
                   {bdayState === "saved" && <span className="text-sm text-teal-text">Saved ✓</span>}
-                  {bdayState === "error" && <span className="text-sm text-clay-text">Add a valid date first.</span>}
+                  {bdayState === "error" && <span role="alert" className="text-sm text-clay-text">{bdayError}</span>}
                 </div>
               </div>
             </Panel>
 
-            <Panel title="Oguaa abroad" lede="Living away from home? Add yourself to the diaspora — the bridge for homecomings, projects, and giving back. Off by default." className="xl:col-span-6">
+            <Panel title="Oguaa abroad" lede="Optional. Living away from home? Add yourself to the diaspora — the bridge for homecomings, projects, and giving back. Your name, city and country appear on the public diaspora register until you turn this off. Off by default." className="xl:col-span-6">
               <div className="space-y-3">
                 <ToggleField
                   checked={abroad}
@@ -617,6 +707,7 @@ export function Component() {
                 {promoError && (
                   <p className="mb-4 rounded-lg bg-maroon-900/[0.08] px-4 py-3 text-sm font-medium text-maroon-text">{promoError}</p>
                 )}
+                <PaymentNotice notice={promoPayment.notice} confirming={promoPayment.confirming} onRecheck={promoPayment.recheck} className="mb-4" />
                 <ul className="divide-y divide-sand">
                   {listings.map((l) => {
                     const href = linkFor(l);
@@ -694,16 +785,7 @@ export function Component() {
                   <ul className="divide-y divide-sand">
                     {subscriptions.map((sub) => (
                       <li key={sub.id}>
-                        <Link to={`/business/${sub.listingSlug}`} className="flex items-center gap-3 py-3.5 transition-colors hover:bg-paper">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-medium text-ink">{sub.listingTitle}</p>
-                            <p className="text-xs text-ink-faint">
-                              GH₵ {(sub.amountPesewas / 100).toLocaleString("en-GH", { maximumFractionDigits: 2 })}
-                              {sub.periodEnd ? ` · until ${formatDate(sub.periodEnd)}` : ""}
-                            </p>
-                          </div>
-                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${subStatusStyle(sub.status)}`}>{sub.status}</span>
-                        </Link>
+                        <SubscriptionRow sub={sub} />
                       </li>
                     ))}
                     {subscriptions.length === 0 && <li><EmptyState compact icon={<EmptyGlyph name="money" size={18} />} title="No subscriptions yet" /></li>}
@@ -758,11 +840,11 @@ export function Component() {
                         <OtpInput
                           value={verifyCode}
                           onChange={setVerifyCode}
-                          onComplete={confirmVerification}
+                          onComplete={(value) => { if (verifyState !== "saving") void confirmVerification(value); }}
                           ariaLabel="Verification code"
                           autoFocus
                         />
-                        <button type="button" onClick={confirmVerification} disabled={verifyState === "saving" || verifyCode.trim().length < 6} className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-on-green hover:bg-clay/90 disabled:opacity-60">
+                        <button type="button" onClick={() => void confirmVerification()} disabled={verifyState === "saving" || verifyCode.trim().length < 6} className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-on-green hover:bg-clay/90 disabled:opacity-60">
                           {verifyState === "saving" ? "Checking…" : "Confirm code"}
                         </button>
                       </div>
@@ -797,10 +879,28 @@ export function Component() {
           </div>
         )}
 
-        {tab === "privacy" && (
+        {tab === "notifications" && (
           <div>
+            <Panel title="Notification preferences" lede="Product news is off unless you turn it on. Safety, account and payment messages always reach you.">
+              <NotificationSettings />
+            </Panel>
+          </div>
+        )}
+
+        {tab === "privacy" && (
+          <div className="grid items-start gap-4">
             <Panel title="Your data" lede="Yours to take with you, or to erase — under Ghana's Data Protection Act (Act 843). Account deletion is the danger zone at the foot of this panel.">
               <DataRightsSettings />
+            </Panel>
+            <Panel title="Writing assistant" lede="Your choice about sending text to an AI provider.">
+              <AIConsentSettings />
+            </Panel>
+            <Panel title="Other requests" lede="Ask us to correct or remove something about you, or object to how your data is used.">
+              <ul className="space-y-2 text-sm">
+                <li><Link to={LEGAL.privacyRequest} className="font-semibold text-green-text underline">Make a privacy request</Link> <span className="text-ink-muted">— access, correction, deletion or objection.</span></li>
+                <li><Link to={LEGAL.deleteAccount} className="font-semibold text-green-text underline">Account deletion page</Link> <span className="text-ink-muted">— what we delete and keep, and deleting with a code.</span></li>
+                <li><Link to={LEGAL.privacy} className="font-semibold text-green-text underline">Privacy Policy</Link></li>
+              </ul>
             </Panel>
           </div>
         )}

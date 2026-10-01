@@ -6,6 +6,7 @@ import { useRecordView } from "@/lib/use-record-view";
 import { Container, Pill } from "@/components/ui";
 import { Thumb } from "@/components/cards";
 import { ReportButton } from "@/components/report-button";
+import { SubjectLink } from "@/components/subject-link";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { initials } from "@/lib/format";
 
@@ -91,6 +92,7 @@ export function Component() {
                   ✦
                 </span>
               </div>
+              {person.coverImageUrl && d.imageCredit && <p className="mt-6 max-w-72 text-xs text-cream/60">{d.imageCredit}</p>}
             </Reveal>
           </div>
 
@@ -186,7 +188,10 @@ export function Component() {
             </Link>
           </div>
 
-          <div className="flex justify-end"><ReportButton listingId={person.id} /></div>
+          <div className="flex flex-col items-end gap-2">
+            <ReportButton listingId={person.id} />
+            <SubjectLink />
+          </div>
         </aside>
       </Container>
 

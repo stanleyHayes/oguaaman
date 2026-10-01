@@ -25,7 +25,8 @@ export function Component() {
   const shown = useMemo(() => {
     if (ageBand === "all") return mentorship;
     if (ageBand === "13-17") return mentorship.filter((item) => Number(item.details.minAge ?? 18) <= 17);
-    return mentorship.filter((item) => Number(item.details.maxAge ?? 99) >= 18);
+    // Programmes whose age range overlaps 18–24.
+    return mentorship.filter((item) => Number(item.details.minAge ?? 18) <= 24 && Number(item.details.maxAge ?? 99) >= 18);
   }, [ageBand, mentorship]);
 
   return (

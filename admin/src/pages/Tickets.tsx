@@ -62,17 +62,18 @@ export function Component() {
     return {
       revenue: success.reduce((sum, t) => sum + t.amountPesewas, 0),
       sold: success.reduce((sum, t) => sum + t.qty, 0),
-      admitted: success.filter((t) => t.checkedInAt).length,
+      // One check-in admits the whole order, so count guests, not orders.
+      admitted: success.filter((t) => t.checkedInAt).reduce((sum, t) => sum + t.qty, 0),
     };
   }, [tickets]);
 
   async function checkIn() {
     const c = code.trim().toUpperCase();
-    if (!c) return;
+    if (!c || !slug) return;
     setChecking(true);
     setResult(null);
     try {
-      const t = await api.checkIn(c);
+      const t = await api.checkIn(slug, c);
       setResult({ ok: true, msg: `Admitted — ${t.qty} × ${t.tier} · ${t.eventTitle}` });
       setCode("");
       // Refresh the ledger so the admitted row updates in place.

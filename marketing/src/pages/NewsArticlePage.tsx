@@ -5,11 +5,24 @@ import { Markdown } from "@/components/markdown";
 import { Reveal } from "@/components/motion";
 import { api, type NewsArticle } from "@/lib/api";
 import { mediaUrl } from "@/lib/media";
+import { setPageMeta } from "@/lib/meta";
 
 function fmt(iso?: string): string {
   if (!iso) return "";
   const t = Date.parse(iso);
   return Number.isNaN(t) ? "" : new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+const META_DESCRIPTION_MAX = 200;
+
+/** A share/search description from the summary: plain text, one line, capped. */
+function metaDescription(a: NewsArticle): string {
+  const plain = (a.summary ?? "")
+    .replace(/[#*_>`[\]]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!plain) return `${a.title} — news from Cape Coast (Oguaa), Ghana.`;
+  return plain.length > META_DESCRIPTION_MAX ? `${plain.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…` : plain;
 }
 
 function ArticleSkeleton() {
@@ -61,6 +74,17 @@ export function Component() {
       .catch(() => { if (alive) setState("missing"); });
     return () => { alive = false; };
   }, [slug]);
+
+  // Each article shares and indexes as itself, not as the Newsroom default
+  // RootLayout applies (there is no route handle for news/:slug).
+  useEffect(() => {
+    if (state !== "ready" || !article) return;
+    setPageMeta({
+      title: `${article.title} — Oguaa Newsroom`,
+      description: metaDescription(article),
+      image: article.coverImageUrl,
+    });
+  }, [article, state]);
 
   if (state === "loading") return <ArticleSkeleton />;
 

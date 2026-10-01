@@ -111,6 +111,34 @@ export interface Member {
    * everywhere else. */
   email?: string;
   phone?: string;
+  /** Self view only: true when the member must (re-)accept the current Terms and Privacy Policy. */
+  consentRequired?: boolean;
+  /** Self view only: the member has confirmed they are 18 or older. */
+  adultVerified?: boolean;
+  /** Self view only: the member agreed to send text to the AI writing assistant. */
+  aiConsent?: boolean;
+  /** Self view only: a staff account that must turn on two-factor to use staff tools. */
+  staffMfaRequired?: boolean;
+  consent?: { termsVersion: string; privacyVersion: string; acceptedAt: string; platform: string };
+}
+
+/** Notification preferences (GET/PUT /api/me/notification-preferences). Safety is always on. */
+export interface NotificationPreferences {
+  categories: { safety: boolean; community: boolean; remembrances: boolean; product: boolean };
+  channels: { push: boolean; email: boolean; whatsapp: boolean };
+}
+
+/** A signed, direct-to-Cloudinary upload (POST /api/uploads/cloudinary-signature). */
+export interface CloudinarySignature {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  signature: string;
+  folder: string;
+  allowedFormats: string;
+  maxFileSize: number;
+  resourceType: string;
+  uploadUrl: string;
 }
 
 /** Newsroom status: writers submit drafts for review; authority managers publish directly. */
@@ -311,6 +339,8 @@ export interface Subscription {
   id: string;
   reference: string;
   memberId?: string;
+  /** "business" (attached to listingId) or "creator" (member-level; no listing). */
+  scope?: "business" | "creator";
   listingId: string;
   listingSlug: string;
   listingTitle: string;

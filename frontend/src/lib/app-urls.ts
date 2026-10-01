@@ -63,6 +63,37 @@ export const CITIZEN_URL = ((): string => {
   return "https://citizen.oguaaman.com";
 })();
 
+/** The staff back-office. */
+export const ADMIN_URL = resolve(
+  import.meta.env.VITE_ADMIN_URL as string | undefined,
+  DEV_PORTS.admin,
+  "https://admin.oguaaman.com",
+);
+
+// The notifications feed is shared by every app, so some links are routes of
+// the creator studio or the back-office rather than of this portal.
+const CREATOR_PATHS = ["/bookings", "/work", "/team", "/grow", "/money", "/institutions"];
+const ADMIN_PATHS = ["/reports", "/incidents", "/privacy-requests", "/moderation", "/claims", "/outside-agents", "/outside-disputes"];
+
+function underPath(link: string, prefixes: string[]): boolean {
+  const path = link.split(/[?#]/)[0];
+  return prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
+/**
+ * Where a notification link should open: a portal route (navigate in-app) or
+ * an absolute URL in another Oguaa app. Anything else (e.g. a non-http scheme)
+ * resolves to null and is not followed.
+ */
+export function resolveNotificationLink(link: string): { internal: string } | { external: string } | null {
+  const value = link.trim();
+  if (/^https?:\/\//i.test(value)) return { external: value };
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  if (underPath(value, CREATOR_PATHS)) return { external: `${CREATOR_URL}${value}` };
+  if (underPath(value, ADMIN_PATHS)) return { external: `${ADMIN_URL}${value}` };
+  return { internal: value };
+}
+
 /** Build a link into the creator studio. */
 export function creatorUrl(path = ""): string {
   return `${CREATOR_URL}${path}`;

@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type FormEvent } from "react";
+import { useState, type ReactNode, type SubmitEvent } from "react";
 import { Link } from "react-router-dom";
 import type { ArtistRelease, ListingType, PropertyAvailability, PropertyOfferType, PropertyType, SocialLink } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -231,7 +231,7 @@ export function SubmitForm({ initialType }: Readonly<{ initialType?: ListingType
 
   if (submitted) return <SubmittedState title={submitted} onReset={() => { setSubmitted(null); setAiText(""); setCoverImageUrl(""); setLocation(null); setPropertyAmenities([]); setArtistStreamingLinks([]); setArtistGenres([]); setArtistSocials([]); setArtistBooking(""); setArtistReleases([]); setBusinessSocialLinks([]); setBusinessCategories([]); setEventFormat("community"); setEventAudience(["all-ages"]); setEventAdmission("free"); setEventTiers([]); }} />;
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);

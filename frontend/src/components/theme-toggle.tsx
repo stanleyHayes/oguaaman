@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { THEME_CHANGE_EVENT, type Theme, getInitialTheme, setTheme } from "@/lib/theme";
+import { THEME_CHANGE_EVENT, type Theme, applyTheme, getInitialTheme, setTheme } from "@/lib/theme";
 
 function Moon({ size = 18 }: Readonly<{ size?: number }>) {
   return (
@@ -23,7 +23,11 @@ export function ThemeToggle({ className = "" }: Readonly<{ className?: string }>
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "oguaa.theme") set((e.newValue as Theme) ?? getInitialTheme());
+      if (e.key !== "oguaa.theme") return;
+      // Another tab changed the theme: apply it here too, not just the icon.
+      const next = (e.newValue as Theme | null) ?? getInitialTheme();
+      applyTheme(next);
+      set(next);
     };
     const onThemeChange = (e: Event) => set((e as CustomEvent<Theme>).detail);
     window.addEventListener("storage", onStorage);

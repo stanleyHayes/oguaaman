@@ -269,6 +269,8 @@ function escrowMeta(status: string): { label: string; cls: string } {
   const s = (status || "").toLowerCase();
   if (s.includes("release") || s.includes("paid") || s.includes("complete"))
     return { label: "Escrow released", cls: "border-green/30 bg-green/[0.07] text-green-text" };
+  if (s === "refund_due")
+    return { label: "Refund due", cls: "border-clay/30 bg-clay/[0.08] text-clay-text" };
   if (s.includes("refund"))
     return { label: "Escrow refunded", cls: "border-clay/30 bg-clay/[0.08] text-clay-text" };
   if (s.includes("disput") || s.includes("frozen") || s.includes("hold-dispute"))

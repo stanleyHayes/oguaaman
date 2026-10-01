@@ -5,6 +5,7 @@ import { SymbolDivider } from "@/components/adinkra";
 import { LiveCollection } from "@/components/live-collection";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { useSchools, schoolInitials, type SchoolOrg } from "@/lib/schools";
+import { PORTAL_OPPORTUNITIES_URL } from "@/lib/listings";
 import { PORTAL_APP_URL } from "@/config";
 
 interface Alum {
@@ -177,7 +178,7 @@ export function Component() {
         title="Scholarships & apprenticeships."
         lede="The Old Students networks and institutions of Oguaa are the natural source of mentors and funders for the next generation. Here is what is open, straight from the app."
         endpoint="/api/opportunities"
-        cta={{ href: `${PORTAL_APP_URL}/events`, label: "See every opportunity", external: true }}
+        cta={{ href: PORTAL_OPPORTUNITIES_URL, label: "See every opportunity", external: true }}
       />
     </>
   );

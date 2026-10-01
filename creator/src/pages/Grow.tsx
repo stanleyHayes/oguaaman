@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useLoaderData, useRevalidator } from "react-router-dom";
 import { api } from "@/lib/api";
-import { completePayment } from "@/lib/paystack";
+import { paymentError } from "@/lib/payments";
+import { useStudioPayment } from "@/lib/use-studio-payment";
+import { PaymentNotice } from "@/components/payment-notice";
 import type { CreatorOverview, Member, MemberView, Plan, Subscription } from "@/lib/types";
 import { BusyLabel } from "@/components/skeleton";
 import { formatDate } from "@/lib/format";
@@ -79,9 +81,15 @@ const planLabelFromSlug = (slug: string) =>
     ? slug.split("-").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ")
     : "Supporter";
 
+/** Member-level creator-plan subscriptions carry no listing. */
+const isCreatorSubscription = (s: Subscription) => s.scope === "creator" || !s.listingId;
+
+// Current business-plan subscriptions, one per business listing. Creator-plan
+// (member-level) subscriptions are shown in the Fan support section instead.
 function currentSubscriptions(subscriptions: Subscription[], nowISO: string): Subscription[] {
   const byListing = new Map<string, Subscription>();
   for (const subscription of subscriptions) {
+    if (isCreatorSubscription(subscription)) continue;
     if (subscription.status !== "success" || (subscription.periodEnd ?? "") <= nowISO) continue;
     const current = byListing.get(subscription.listingId);
     if (!current || (subscription.periodEnd ?? "") > (current.periodEnd ?? "")) {
@@ -103,7 +111,11 @@ export function Component() {
   const revalidator = useRevalidator();
   const [busy, setBusy] = useState<string | null>(null); // "slug:plan" being subscribed
   const [err, setErr] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<Subscription | null>(null);
+
+  // Creator plans and business plans both return to /grow?sub_ref= when the
+  // inline modal falls back to Paystack's hosted page (contract C3).
+  const payment = useStudioPayment<Subscription>(api.confirmSubscription, "sub_ref", () => { void revalidator.revalidate(); });
+  const { confirmed } = payment;
 
   // Creator (member-level) subscription — unlocks donations & campaigns.
   const creatorPlans = plans.filter((p) => p.active && p.interval === "month" && (p.audience === "creator" || p.audience === "any") && creatorPrice(p) > 0);
@@ -113,12 +125,9 @@ export function Component() {
     setErr(null);
     setBusy(`creator:${plan}`);
     try {
-      const r = await api.subscribeCreator(plan);
-      const settle = async () => { await api.confirmSubscription(r.reference); revalidator.revalidate(); };
-      if (r.simulated) await settle();
-      else await completePayment(r, { onSuccess: settle });
+      await payment.pay(await api.subscribeCreator(plan));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not start the payment.");
+      setErr(paymentError(e));
     } finally {
       setBusy(null);
     }
@@ -149,26 +158,11 @@ export function Component() {
     setErr(null);
     setBusy(`${slug}:${plan}`);
     try {
-      const r = await api.subscribe(slug, plan);
-      if (r.simulated) {
-        // Dev mode has no Paystack checkout to return from — settle in place.
-        const s = await api.confirmSubscription(r.reference);
-        setConfirmed(s);
-        revalidator.revalidate();
-      } else {
-        // Open the in-app Paystack modal; confirm in place on payer success.
-        // When the modal can't run, completePayment redirects to the hosted
-        // page and the return-URL flow confirms on the way back.
-        await completePayment(r, {
-          onSuccess: async () => {
-            const s = await api.confirmSubscription(r.reference);
-            setConfirmed(s);
-            revalidator.revalidate();
-          },
-        });
-      }
+      // In-app Paystack modal, confirmed in place; when the modal can't run
+      // the hosted page returns to /grow?sub_ref= and confirms there.
+      await payment.pay(await api.subscribe(slug, plan));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not start the payment.");
+      setErr(paymentError(e));
     } finally {
       setBusy(null);
     }
@@ -247,10 +241,15 @@ export function Component() {
       {confirmed && (
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-teal/25 bg-teal/[0.1] px-4 py-3.5 text-sm text-teal-text" role="status">
           <BadgeCheck size={18} className="mt-0.5 shrink-0" aria-hidden />
-          <p><strong>Payment confirmed.</strong> &ldquo;{confirmed.listingTitle}&rdquo; is now active on the {planName(confirmed.plan)} plan.</p>
+          {isCreatorSubscription(confirmed) ? (
+            <p><strong>Payment confirmed.</strong> Your {planName(confirmed.plan)} creator plan is now active.</p>
+          ) : (
+            <p><strong>Payment confirmed.</strong> &ldquo;{confirmed.listingTitle}&rdquo; is now active on the {planName(confirmed.plan)} plan.</p>
+          )}
         </div>
       )}
       {err && <p className="mt-4 rounded-2xl border border-maroon-900/20 bg-maroon-900/[0.08] px-4 py-3.5 text-sm font-medium text-maroon-text" role="alert">{err}</p>}
+      <PaymentNotice notice={payment.notice} checking={payment.checking} onRecheck={payment.recheck} />
       {(subscriptionsUnavailable || plansUnavailable) && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gold-border/35 bg-gold/[0.08] px-4 py-3.5 text-sm text-ink-muted" role="alert">
           <span>

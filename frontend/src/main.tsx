@@ -14,7 +14,8 @@ import { LanguageProvider } from "./lib/i18n";
 // builds — dev keeps plain vite HMR with no interception.
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    const build = encodeURIComponent(String(import.meta.env.VITE_BUILD_ID ?? ""));
+    navigator.serviceWorker.register(`/sw.js?v=${build}`).catch(() => {
       // Offline support is progressive enhancement — never break boot.
     });
   });

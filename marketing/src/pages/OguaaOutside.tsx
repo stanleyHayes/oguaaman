@@ -308,8 +308,8 @@ const TRUST: Trust[] = [
     icon: <HandshakeIcon />,
   },
   {
-    title: "A refundable bond",
-    body: "Agents post a bond that can be drawn on to make you whole if a job goes wrong on their side.",
+    title: "Disputes reviewed by a person",
+    body: "If a job goes wrong, a vetting officer reviews both sides and decides whether the escrow is released to the agent or refunded to you.",
     icon: <ShieldIcon />,
   },
   {
