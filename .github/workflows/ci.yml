@@ -36,11 +36,15 @@ jobs:
           go mod tidy
           git diff --exit-code -- go.mod go.sum
 
+      # Pinned, not @latest: newer buf releases require a newer Go than the
+      # one go.mod pins (buf v1.73 needs Go 1.26.7; GOTOOLCHAIN is local), and
+      # the plugin versions must match the ones recorded in gen/ or the
+      # drift check below fails. Bump them together with go.mod.
       - name: Install buf and protoc plugins
         run: |
-          go install github.com/bufbuild/buf/cmd/buf@latest
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+          go install github.com/bufbuild/buf/cmd/buf@v1.65.0
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Lint protobuf
