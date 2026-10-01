@@ -95,11 +95,12 @@ func (h *Handler) SetMyBirthday(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	if err := h.svc.SetMemberBirthday(r.Context(), m.ID, in.Birthday, in.Broadcast); err != nil {
+	stored, err := h.svc.SetMemberBirthday(r.Context(), m.ID, in.Birthday, in.Broadcast)
+	if err != nil {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"birthday": in.Birthday, "broadcastBirthday": in.Broadcast})
+	writeJSON(w, http.StatusOK, map[string]any{"birthday": stored, "broadcastBirthday": in.Broadcast})
 }
 
 // SetMyPhoto — the signed-in member sets (or clears) their profile photo. The
@@ -145,7 +146,8 @@ func (h *Handler) SetMyLinks(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	if err := h.svc.SetMemberLinks(r.Context(), m.ID, in.Links); err != nil {
+	stored, err := h.svc.SetMemberLinks(r.Context(), m.ID, in.Links)
+	if err != nil {
 		var fb *domain.ForbiddenError
 		if errors.As(err, &fb) {
 			h.handleErr(w, err)
@@ -154,7 +156,9 @@ func (h *Handler) SetMyLinks(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"links": in.Links})
+	// Respond with what was stored (unsafe schemes blanked, empty rows dropped),
+	// never the raw request.
+	writeJSON(w, http.StatusOK, map[string]any{"links": stored})
 }
 
 // MyConnections — "people you may know" for the signed-in member (spec §8.6).

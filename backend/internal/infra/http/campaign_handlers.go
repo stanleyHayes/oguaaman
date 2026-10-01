@@ -19,7 +19,7 @@ func (h *Handler) Campaigns(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeJSON(w, http.StatusOK, h.viewable(r, items))
 }
 
 // MyCampaigns — GET /api/me/campaigns. The signed-in creator's own campaigns,

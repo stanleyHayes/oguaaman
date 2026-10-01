@@ -20,16 +20,10 @@ func (h *Handler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	if h.rateLimited(w, r, "subscribe:"+clientKey(r), 10, time.Hour) {
 		return
 	}
-	memberID, email := "", ""
-	if m != nil {
-		memberID = m.ID
-		email = m.Email
-	}
-	if email == "" {
-		email = "support@oguaa.test" // dev mode without auth — Paystack requires an email
-	}
 	var in struct {
-		Plan string `json:"plan"`
+		Plan     string `json:"plan"`
+		Email    string `json:"email"`
+		ReturnTo string `json:"returnTo"` // "creator": Paystack returns to the creator studio (C3)
 	}
 	if r.Body != nil && r.ContentLength > 0 {
 		if err := decodeBody(r, &in); err != nil {
@@ -37,15 +31,20 @@ func (h *Handler) Subscribe(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	authURL, accessCode, reference, err := h.subs.StartSubscription(r.Context(), r.PathValue("slug"), memberID, email, in.Plan)
+	email, ok := h.receiptEmail(w, in.Email, m)
+	if !ok {
+		return
+	}
+	memberID := ""
+	if m != nil {
+		memberID = m.ID
+	}
+	authURL, accessCode, reference, err := h.subs.StartSubscriptionFrom(r.Context(), r.PathValue("slug"), memberID, email, in.Plan, in.ReturnTo)
+	if h.paymentsUnavailable(w, err) {
+		return
+	}
 	if err != nil {
-		var nf *domain.NotFoundError
-		var fb *domain.ForbiddenError
-		if errors.As(err, &nf) || errors.As(err, &fb) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadGateway, "Could not start the payment. Please try again.")
+		h.paymentStartErr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -81,22 +80,16 @@ func (h *Handler) SubscribeCreator(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	email := in.Email
-	if email == "" {
-		email = m.Email
-	}
-	if email == "" {
-		email = "creator@oguaa.test" // dev mode without auth — Paystack requires an email
+	email, ok := h.receiptEmail(w, in.Email, m)
+	if !ok {
+		return
 	}
 	authURL, accessCode, reference, err := h.subs.StartCreatorSubscription(r.Context(), m.ID, email, in.Plan)
+	if h.paymentsUnavailable(w, err) {
+		return
+	}
 	if err != nil {
-		var nf *domain.NotFoundError
-		var fb *domain.ForbiddenError
-		if errors.As(err, &nf) || errors.As(err, &fb) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadGateway, "Could not start the payment. Please try again.")
+		h.paymentStartErr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -109,12 +102,14 @@ func (h *Handler) SubscribeCreator(w http.ResponseWriter, r *http.Request) {
 
 // ConfirmSubscription verifies a transaction after the owner returns from Paystack.
 func (h *Handler) ConfirmSubscription(w http.ResponseWriter, r *http.Request) {
-	reference := r.URL.Query().Get("reference")
-	if reference == "" {
-		fail(w, http.StatusBadRequest, "reference is required")
+	reference, ok := h.confirmReference(w, r)
+	if !ok {
 		return
 	}
 	sub, err := h.subs.ConfirmSubscription(r.Context(), reference)
+	if h.paymentsUnavailable(w, err) {
+		return
+	}
 	if err != nil {
 		var nf *domain.NotFoundError
 		if errors.As(err, &nf) {

@@ -2,7 +2,9 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"os"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -83,12 +85,46 @@ const (
 	officePlaceholder     = "(office)"
 )
 
-// SeedPassword is the password shared by every seeded demo account. Demo data
-// only — never reuse it for a real account.
-const SeedPassword = "Oguaa-2026!"
+// devSeedPassword is the password shared by every seeded demo account in
+// LOCAL DEVELOPMENT only. It is documented in this repository, so it is never
+// used when GO_ENV=production (demo identities cannot sign in there either).
+const devSeedPassword = "Oguaa-2026!"
 
-// Seed resets the collections and loads the fact-checked Cape Coast seed data.
-// It is idempotent: collections are dropped and reinserted. (See agent_plan.md §1.)
+// errNoSeedPassword: production seeding without SEED_PASSWORD.
+var errNoSeedPassword = errors.New("SEED_PASSWORD is not set; seeded accounts get no password in production")
+
+// SeedPassword returns the password for seeded accounts: SEED_PASSWORD when
+// set; otherwise the documented development password, except in production,
+// where there is none (seeded accounts are then created without a password).
+func SeedPassword() (string, error) {
+	if v := os.Getenv("SEED_PASSWORD"); v != "" {
+		return v, nil
+	}
+	if os.Getenv("GO_ENV") == "production" {
+		return "", errNoSeedPassword
+	}
+	return devSeedPassword, nil
+}
+
+// seedPasswordHash hashes SeedPassword; "" (with a logged warning) when there
+// is none or hashing fails.
+func seedPasswordHash(caller string) string {
+	pw, err := SeedPassword()
+	if err == nil {
+		var hash []byte
+		if hash, err = bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost); err == nil {
+			return string(hash)
+		}
+	}
+	slog.Warn(caller+": seeded members will have no password", "err", err)
+	return ""
+}
+
+// Seed is the DESTRUCTIVE local reset: it drops every product collection —
+// members, listings, pledges, tickets, orders and the rest — and reloads the
+// Cape Coast seed data, demo identities and illustration included. Never point
+// it at a live database; callers must pass CheckResetAllowed first (cmd/seed
+// does). For a live database use SeedUpsert (cmd/seedlive). (See agent_plan.md §1.)
 func Seed(ctx context.Context, db *mongo.Database) error {
 	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collMemberBlocks, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collBusinessVerifications, collCommerceOrders, collBusinessCoupons, collAffiliateProgrammes, collAffiliates, collAffiliateConversions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents, collAgentJobs, collAgentReviews, collArtistBookings} {
 		if err := db.Collection(name).Drop(ctx); err != nil {
@@ -97,11 +133,9 @@ func Seed(ctx context.Context, db *mongo.Database) error {
 	}
 	// Give every seeded member the shared demo password (hashed once).
 	members := seedMembers
-	if hash, err := bcrypt.GenerateFromPassword([]byte(SeedPassword), bcrypt.DefaultCost); err != nil {
-		slog.Warn("seed: could not hash the seed password — seeded members will have no password", "err", err)
-	} else {
+	if hash := seedPasswordHash("seed"); hash != "" {
 		for i := range members {
-			members[i].PasswordHash = string(hash)
+			members[i].PasswordHash = hash
 		}
 	}
 	if err := insertAll(ctx, db.Collection(collMembers), members); err != nil {
@@ -326,6 +360,10 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 	if _, err := db.Collection(collNotifications).Indexes().CreateOne(ctx, idx(bson.D{{Key: "memberId", Value: 1}, {Key: "read", Value: 1}})); err != nil {
+		return err
+	}
+	// Retention TTLs: notices (12 months) and AI usage counters (90 days).
+	if err := EnsureRetentionIndexes(ctx, db); err != nil {
 		return err
 	}
 	if _, err := db.Collection(collArtistBookings).Indexes().CreateMany(ctx, []mongo.IndexModel{

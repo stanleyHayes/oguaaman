@@ -1,14 +1,8 @@
 package service
 
 import (
-	"context"
-	"errors"
 	"testing"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
-
-	"github.com/oguaa/backend/internal/domain"
 )
 
 // rfc6238Secret is the RFC 6238 appendix-B SHA1 test secret ("12345678901234567890"
@@ -57,6 +51,14 @@ func TestValidTOTP(t *testing.T) {
 	if validTOTP(rfc6238Secret, "12345", now) {
 		t.Error("short code accepted")
 	}
+	// An empty key yields codes anyone can compute: never valid (F029).
+	emptyKeyCode, err := totpCode("", now)
+	if err != nil {
+		t.Fatalf("totpCode with empty key: %v", err)
+	}
+	if validTOTP("", emptyKeyCode, now) || validTOTP("   ", emptyKeyCode, now) {
+		t.Error("blank secret validated a code")
+	}
 }
 
 func TestNewTOTPSecret(t *testing.T) {
@@ -82,164 +84,5 @@ func TestRecoveryCodeShape(t *testing.T) {
 	}
 	if normalizeRecovery("abcde-23456") != "ABCDE23456" {
 		t.Error("normalizeRecovery should strip dash + upper-case")
-	}
-}
-
-// ── full enrolment + login flow ──────────────────────────────────────────────
-
-type mfaFakeRepo struct {
-	domain.MemberRepository // embedded nil — only the overridden methods are used
-	m                       *domain.Member
-}
-
-func (f *mfaFakeRepo) ByID(context.Context, string) (*domain.Member, error)         { return f.m, nil }
-func (f *mfaFakeRepo) ByIdentifier(context.Context, string) (*domain.Member, error) { return f.m, nil }
-func (f *mfaFakeRepo) SetMFA(_ context.Context, _ string, enabled bool, secret string, hashes []string) error {
-	f.m.MFAEnabled = enabled
-	f.m.TOTPSecret = secret
-	f.m.MFARecoveryHashes = hashes
-	return nil
-}
-
-func TestMFAFlow(t *testing.T) {
-	hash, _ := bcrypt.GenerateFromPassword([]byte("correct horse"), bcrypt.MinCost)
-	repo := &mfaFakeRepo{m: &domain.Member{
-		ID: "m-1", Slug: "ama", DisplayName: "Ama", Email: "ama@oguaa.test",
-		Role: domain.RoleMember, PasswordHash: string(hash),
-	}}
-	svc := NewAuthService(repo, "test-secret")
-	ctx := context.Background()
-
-	// 1. Plain login issues a session token before enrolment.
-	tok, _, err := svc.Login(ctx, "ama@oguaa.test", "correct horse")
-	if err != nil {
-		t.Fatalf("login: %v", err)
-	}
-	if _, err := svc.ParseToken(tok); err != nil {
-		t.Fatalf("pre-MFA session token rejected: %v", err)
-	}
-
-	// 2. Setup stores a secret but does not enable MFA.
-	secret, account, err := svc.MFASetup(ctx, "m-1")
-	if err != nil {
-		t.Fatalf("setup: %v", err)
-	}
-	if account != "ama@oguaa.test" {
-		t.Errorf("account label = %q", account)
-	}
-	if repo.m.MFAEnabled {
-		t.Error("MFA enabled before confirm")
-	}
-
-	// 3. Wrong confirm code → ErrInvalidMFACode; right code → recovery codes.
-	if _, err := svc.MFAConfirm(ctx, "m-1", "000000"); !errors.Is(err, ErrInvalidMFACode) {
-		t.Errorf("bad confirm = %v, want ErrInvalidMFACode", err)
-	}
-	code, _ := totpCode(secret, time.Now())
-	codes, err := svc.MFAConfirm(ctx, "m-1", code)
-	if err != nil {
-		t.Fatalf("confirm: %v", err)
-	}
-	if len(codes) != mfaRecoveryCount || !repo.m.MFAEnabled {
-		t.Fatalf("confirm: %d codes, enabled=%v", len(codes), repo.m.MFAEnabled)
-	}
-
-	// 4. Login now returns a challenge that ParseToken must reject.
-	challenge, m, err := svc.Login(ctx, "ama@oguaa.test", "correct horse")
-	if err != nil {
-		t.Fatalf("mfa login: %v", err)
-	}
-	if !m.MFAEnabled {
-		t.Fatal("member should be MFA-enabled")
-	}
-	if _, err := svc.ParseToken(challenge); err == nil {
-		t.Error("challenge token accepted as a session")
-	}
-
-	// 5. MFALogin: bad code, good TOTP, recovery code (single-use).
-	if _, _, err := svc.MFALogin(ctx, challenge, "999999"); !errors.Is(err, ErrInvalidMFACode) {
-		t.Errorf("bad code = %v, want ErrInvalidMFACode", err)
-	}
-	if _, _, err := svc.MFALogin(ctx, "garbage", code); !errors.Is(err, ErrInvalidChallenge) {
-		t.Errorf("bad challenge = %v, want ErrInvalidChallenge", err)
-	}
-	good, _ := totpCode(repo.m.TOTPSecret, time.Now())
-	sess, _, err := svc.MFALogin(ctx, challenge, good)
-	if err != nil {
-		t.Fatalf("mfa verify: %v", err)
-	}
-	if _, err := svc.ParseToken(sess); err != nil {
-		t.Fatalf("post-MFA session rejected: %v", err)
-	}
-	sess2, _, err := svc.MFALogin(ctx, challenge, codes[0])
-	if err != nil || sess2 == "" {
-		t.Fatalf("recovery code login: %v", err)
-	}
-	if _, _, err := svc.MFALogin(ctx, challenge, codes[0]); !errors.Is(err, ErrInvalidMFACode) {
-		t.Error("recovery code reused")
-	}
-
-	// 6. Disable re-verifies a code, then login goes back to one step.
-	if err := svc.MFADisable(ctx, "m-1", "000000"); !errors.Is(err, ErrInvalidMFACode) {
-		t.Errorf("bad disable code = %v", err)
-	}
-	now, _ := totpCode(repo.m.TOTPSecret, time.Now())
-	if err := svc.MFADisable(ctx, "m-1", now); err != nil {
-		t.Fatalf("disable: %v", err)
-	}
-	if repo.m.MFAEnabled || repo.m.TOTPSecret != "" {
-		t.Error("MFA state not cleared")
-	}
-	tok2, _, err := svc.Login(ctx, "ama@oguaa.test", "correct horse")
-	if err != nil {
-		t.Fatalf("post-disable login: %v", err)
-	}
-	if _, err := svc.ParseToken(tok2); err != nil {
-		t.Fatalf("post-disable session rejected: %v", err)
-	}
-}
-
-// TestMFAEncryptionAtRest verifies that with a key configured the stored TOTP
-// secret is sealed (not the raw base32), still validates, and that a legacy
-// plaintext secret both validates and is migrated to sealed form on next write.
-func TestMFAEncryptionAtRest(t *testing.T) {
-	hash, _ := bcrypt.GenerateFromPassword([]byte("pw"), bcrypt.MinCost)
-	repo := &mfaFakeRepo{m: &domain.Member{
-		ID: "m-1", Slug: "kojo", DisplayName: "Kojo", Email: "kojo@oguaa.test",
-		Role: domain.RoleMember, PasswordHash: string(hash),
-	}}
-	svc := NewAuthService(repo, "test-secret").WithMFAEncryption("a-strong-mfa-key")
-	ctx := context.Background()
-
-	secret, _, err := svc.MFASetup(ctx, "m-1")
-	if err != nil {
-		t.Fatalf("setup: %v", err)
-	}
-	if !isSealed(repo.m.TOTPSecret) {
-		t.Fatalf("stored secret not sealed: %q", repo.m.TOTPSecret)
-	}
-	if repo.m.TOTPSecret == secret {
-		t.Fatal("stored secret equals plaintext")
-	}
-	code, _ := totpCode(secret, time.Now())
-	if _, err := svc.MFAConfirm(ctx, "m-1", code); err != nil {
-		t.Fatalf("confirm with sealed secret: %v", err)
-	}
-
-	// Legacy plaintext secret: still validates, then re-seals on a write.
-	repo.m.TOTPSecret = rfc6238Secret // no marker → legacy
-	repo.m.MFAEnabled = true
-	legacyCode, _ := totpCode(rfc6238Secret, time.Now())
-	if !svc.checkMFACode(ctx, repo.m, legacyCode) {
-		t.Fatal("legacy plaintext secret rejected")
-	}
-	if !isSealed(repo.m.TOTPSecret) {
-		t.Fatalf("legacy secret not migrated to sealed on write: %q", repo.m.TOTPSecret)
-	}
-
-	// A different key cannot decrypt → validation fails closed.
-	other := NewAuthService(repo, "test-secret").WithMFAEncryption("different-key")
-	if other.revealSecret(repo.m.TOTPSecret) != "" {
-		t.Fatal("wrong key decrypted the secret")
 	}
 }

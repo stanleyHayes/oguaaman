@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -60,7 +61,7 @@ func TestStartDonation_usesPlanTakeRate(t *testing.T) {
 		"m-kwesi": {ID: "m-kwesi", CreatorPlan: "creator-supporter", CreatorSubscribedUntil: futureRFC3339()},
 	}}
 	pledges := &fakePledges{}
-	svc := NewPaymentsService(listings, pledges, stubNotifs{}, members, creatorPlans(), &fakePaystack{verifyOK: true}, "http://localhost:5173", 5)
+	svc := NewPaymentsService(listings, pledges, stubNotifs{}, members, creatorPlans(), &fakePaystack{verifyOK: true, verifyAmount: 10_000}, "http://localhost:5173", 5)
 
 	_, _, ref, err := svc.StartDonation(ctx, "kwesi-sings", "m-fan", "fan@oguaa.test", 10_000, "keep singing!", false)
 	if err != nil {
@@ -107,7 +108,7 @@ func TestConfirmPledge_legacyProjectUsesFlatFee(t *testing.T) {
 	}}
 	members := &monMembers{byID: map[string]*domain.Member{"m-steward": {ID: "m-steward"}}}
 	pledges := &fakePledges{}
-	svc := NewPaymentsService(listings, pledges, stubNotifs{}, members, creatorPlans(), &fakePaystack{verifyOK: true}, "http://localhost:5173", 5)
+	svc := NewPaymentsService(listings, pledges, stubNotifs{}, members, creatorPlans(), &fakePaystack{verifyOK: true, verifyAmount: 10_000}, "http://localhost:5173", 5)
 
 	_, _, ref, err := svc.StartPledge(ctx, "library-corner", "m-fan", "fan@oguaa.test", 10_000)
 	if err != nil {
@@ -129,7 +130,7 @@ func TestConfirmCreatorSubscription_extendsMember(t *testing.T) {
 	listings := &fakeRepo{}
 	subs := &fakeSubs{}
 	members := &monMembers{byID: map[string]*domain.Member{"m-kwesi": {ID: "m-kwesi"}}}
-	svc := NewSubscriptionsService(listings, subs, creatorPlans(), members, &fakePaystack{verifyOK: true}, "http://localhost:5173", "http://localhost:5175")
+	svc := NewSubscriptionsService(listings, subs, creatorPlans(), members, &fakePaystack{verifyOK: true, verifyAmount: 3_000}, "http://localhost:5173", "http://localhost:5175")
 
 	_, _, ref, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@oguaa.test", "creator-supporter")
 	if err != nil {
@@ -225,4 +226,44 @@ func asForbidden(err error, target **domain.ForbiddenError) bool {
 		*target = fb
 	}
 	return ok
+}
+
+// The pledge quote shows the owner's plan take-rate, the fee and the net
+// before paying (K17/P063), and confirmation charges exactly the quoted rate
+// even if the owner's plan lapses in between.
+func TestQuotePledge_matchesLockedRate(t *testing.T) {
+	ctx := context.Background()
+	listings := &fakeRepo{listings: []domain.Listing{
+		{ID: "pr-1", Slug: "costumes", Type: domain.TypeProject, OwnerID: "m-kwesi", Status: domain.StatusApproved, Title: "Youth costumes",
+			Details: map[string]any{"organiser": "Kwesi Mensah"}},
+	}}
+	members := &monMembers{byID: map[string]*domain.Member{
+		"m-kwesi": {ID: "m-kwesi", CreatorPlan: "creator-supporter", CreatorSubscribedUntil: futureRFC3339()},
+	}}
+	pledges := &fakePledges{}
+	svc := NewPaymentsService(listings, pledges, stubNotifs{}, members, creatorPlans(), &fakePaystack{verifyOK: true, verifyAmount: 10_000}, "http://localhost:5173", 5)
+
+	q, err := svc.QuotePledge(ctx, "costumes", 10_000)
+	if err != nil {
+		t.Fatalf("QuotePledge: %v", err)
+	}
+	if q.FeePercent != 15 || q.FeePesewas != 1_500 || q.NetPesewas != 8_500 || q.RefundPolicy == "" || q.Beneficiary != "Kwesi Mensah" {
+		t.Errorf("quote = %+v, want 15%% → 1500/8500 with refund terms and beneficiary", q)
+	}
+	if _, err := svc.QuotePledge(ctx, "costumes", 50); !errors.Is(err, ErrPledgeAmount) {
+		t.Errorf("tiny amount: want ErrPledgeAmount, got %v", err)
+	}
+
+	_, _, ref, err := svc.StartPledge(ctx, "costumes", "m-fan", "fan@example.com", 10_000)
+	if err != nil {
+		t.Fatalf("StartPledge: %v", err)
+	}
+	members.byID["m-kwesi"].CreatorSubscribedUntil = "" // plan lapses before confirmation
+	got, err := svc.ConfirmPledge(ctx, ref)
+	if err != nil {
+		t.Fatalf("ConfirmPledge: %v", err)
+	}
+	if got.FeePesewas != q.FeePesewas || got.NetPesewas != q.NetPesewas {
+		t.Errorf("charged fee/net %d/%d, quoted %d/%d", got.FeePesewas, got.NetPesewas, q.FeePesewas, q.NetPesewas)
+	}
 }

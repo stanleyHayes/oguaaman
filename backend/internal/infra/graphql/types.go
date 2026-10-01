@@ -84,9 +84,9 @@ var memberType = graphql.NewObject(graphql.ObjectConfig{
 		"links":         &graphql.Field{Type: graphql.NewList(socialLinkType)},
 		"phoneVerified": &graphql.Field{Type: graphql.Boolean},
 		"role":          &graphql.Field{Type: graphql.String},
-		"suspended":     &graphql.Field{Type: graphql.Boolean},
 		"joinedAt":      &graphql.Field{Type: graphql.String},
-		// Note: phone/email are intentionally absent — private (spec §11).
+		// Note: phone/email and moderation state (suspended) are intentionally
+		// absent — private (spec §11, public member projection).
 	},
 })
 

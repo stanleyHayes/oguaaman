@@ -50,65 +50,21 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 		return nil, fmt.Errorf("a signed-in member is required to submit")
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
-	details := in.Details
-	if details == nil {
-		details = map[string]any{}
+	// Members never write system keys (plan entitlements, ratings, counters,
+	// editorial and festival flags) — see systemDetailKeys.
+	details, err := cleanTypedDetails(in.Type, submittedDetails(in.Type, in.Details))
+	if err != nil {
+		return nil, err
 	}
-	if in.Type == domain.TypeOpportunity {
-		if err := validateOpportunityDetails(details); err != nil {
-			return nil, err
-		}
-		if kind, _ := details["kind"].(string); strings.TrimSpace(kind) != "" {
-			tagged := false
-			for _, t := range in.Tags {
-				if t == kind {
-					tagged = true
-					break
-				}
-			}
-			if !tagged {
-				in.Tags = append(in.Tags, kind)
-			}
-		}
-	}
-	if in.Type == domain.TypeProperty {
-		cleaned, err := cleanPropertyDetails(details)
-		if err != nil {
-			return nil, err
-		}
-		details = cleaned
+	switch in.Type {
+	case domain.TypeOpportunity:
+		in.Tags = appendUniqueTag(in.Tags, asStringAny(details["kind"]))
+	case domain.TypeProperty:
 		for _, key := range []string{"offerType", "propertyType"} {
 			in.Tags = appendUniqueTag(in.Tags, asStringAny(details[key]))
 		}
-	}
-	if in.Type == domain.TypeArtist {
-		details = cleanArtistDetails(details)
-	}
-	if in.Type == domain.TypeEvent {
-		if err := validateEventRange(details); err != nil {
-			return nil, err
-		}
-		cleaned, err := cleanEventDetails(details)
-		if err != nil {
-			return nil, err
-		}
-		details = cleaned
-	}
-	if in.Type == domain.TypeMemorial {
-		if _, ok := details["candles"]; !ok {
-			details["candles"] = 0
-		}
-		details["rememberedByCount"] = 0
-		// Yearly remembrance (spec §8.11): on by default — the passing
-		// anniversary. The keeper may switch reminders off, or also observe
-		// the birthday, at creation or any later edit; explicit values are
-		// respected, only absent ones are defaulted.
-		if _, ok := details["remindersEnabled"]; !ok {
-			details["remindersEnabled"] = true
-		}
-		if _, ok := details["observeBirthday"]; !ok {
-			details["observeBirthday"] = false
-		}
+	case domain.TypeMemorial:
+		defaultMemorialDetails(details)
 	}
 	// Use the nanosecond as a uniqueness token so two submissions with the same
 	// title don't collide on slug or ID.
@@ -130,11 +86,28 @@ func (s *Service) Submit(ctx context.Context, in SubmitInput) (*domain.Listing, 
 	if l.Tags == nil {
 		l.Tags = []string{}
 	}
+	// Submissions wait for a curator anyway; the content screen marks the ones
+	// that need a closer look.
+	l.ScreenFlags = ScreenTerms(append([]string{title}, detailStrings(details)...)...).Reasons
 	l.Latitude, l.Longitude = sanitizeCoords(in.Latitude, in.Longitude)
 	if err := s.listings.Insert(ctx, l); err != nil {
 		return nil, err
 	}
 	return &l, nil
+}
+
+// defaultMemorialDetails sets a new memorial's counters and its remembrance
+// defaults (spec §8.11): reminders on for the passing anniversary, birthday
+// off. Explicit remembrance choices are respected; only absent ones default.
+func defaultMemorialDetails(details map[string]any) {
+	details["candles"] = 0
+	details["rememberedByCount"] = 0
+	if _, ok := details["remindersEnabled"]; !ok {
+		details["remindersEnabled"] = true
+	}
+	if _, ok := details["observeBirthday"]; !ok {
+		details["observeBirthday"] = false
+	}
 }
 
 // sanitizeCoords returns the pin only when both coordinates are present and fall
@@ -282,10 +255,8 @@ func (s *Service) Moderate(ctx context.Context, listingID, action, reason, moder
 	if err != nil {
 		return err
 	}
-	if newStatus != "" {
-		if err := s.listings.UpdateStatus(ctx, listingID, newStatus, moderatorID, reason, now); err != nil {
-			return err
-		}
+	if err := s.applyModeration(ctx, listing, action, newStatus, reason, moderatorID, now); err != nil {
+		return err
 	}
 	// First-time campaign approval vets the owner so their subsequent campaigns
 	// auto-publish (Creator Monetization).
@@ -309,6 +280,20 @@ func (s *Service) Moderate(ctx context.Context, listingID, action, reason, moder
 	// Notify the owner on approve/reject/request-changes (spec §8.2).
 	s.notifyModeration(ctx, listing, action, reason)
 	return nil
+}
+
+// applyModeration moves a listing to the status a moderation action sets.
+// Approving an incident is a curator's verification: it goes through the
+// incident lifecycle so a held report publishes with its town alert (and
+// ring, when critical), exactly as verifying it on the Incidents page does.
+func (s *Service) applyModeration(ctx context.Context, l *domain.Listing, action, newStatus, reason, moderatorID, now string) error {
+	switch {
+	case newStatus == "":
+		return nil
+	case action == actionApprove && l.Type == domain.TypeIncident:
+		return s.applyIncidentStatus(ctx, l, &domain.Member{ID: moderatorID}, domain.IncidentStatusVerified, reason)
+	}
+	return s.listings.UpdateStatus(ctx, l.ID, newStatus, moderatorID, reason, now)
 }
 
 func (s *Service) notifyModeration(ctx context.Context, l *domain.Listing, action, reason string) {
@@ -336,36 +321,142 @@ func (s *Service) notifyModeration(ctx context.Context, l *domain.Listing, actio
 	s.notifyOutOfBand(ctx, l.OwnerID, title, body, "/me")
 }
 
-func (s *Service) LightCandle(ctx context.Context, slug string) (int, error) {
-	l, err := s.listings.GetBySlug(ctx, domain.TypeMemorial, slug)
+// Candles one visitor may light on a memorial per UTC day. A member lights
+// one. A signed-out visitor is known only by IP address, and one address can
+// be a whole household, school, office or mobile network behind carrier-grade
+// NAT, so an address may light several: enough for the people sharing it,
+// while one person reloading the page still adds only a bounded number.
+const (
+	memberCandlesPerDay  = 1
+	addressCandlesPerDay = 50
+)
+
+// LightCandle lights one candle on a published memorial for visitorKey (a
+// member id, or domain.AnonymousVisitorPrefix + the caller's IP when signed
+// out), within that visitor's daily allowance; past it a candle returns the
+// current count unchanged.
+func (s *Service) LightCandle(ctx context.Context, slug, visitorKey string) (int, error) {
+	l, err := s.ListingBySlug(ctx, domain.TypeMemorial, slug)
 	if err != nil {
 		return 0, err
 	}
-	return s.listings.IncrementCandles(ctx, l.ID)
+	perDay := memberCandlesPerDay
+	if strings.HasPrefix(visitorKey, domain.AnonymousVisitorPrefix) {
+		perDay = addressCandlesPerDay
+	}
+	return s.listings.IncrementCandles(ctx, l.ID, visitorKey, perDay)
 }
 
-func (s *Service) AddTribute(ctx context.Context, slug, author, message string) (*domain.Tribute, error) {
-	message = strings.TrimSpace(message)
-	if message == "" {
-		return nil, fmt.Errorf("tribute message is required")
+// Tribute limits (F092): tributes are embedded in the memorial document, so
+// each is bounded, and one member can leave only a few on a memorial.
+const (
+	maxTributeMessageRunes  = 1000
+	maxTributeRelationRunes = 60
+	maxTributesPerMember    = 3
+	tributeNoun             = "tribute"
+	msgCannotInteract       = "You can't interact with this member."
+)
+
+// TributeInput is a member's tribute on a memorial.
+type TributeInput struct {
+	Relation string `json:"relation"`
+	Message  string `json:"message"`
+}
+
+// AddTribute leaves a tribute on a published memorial as the signed-in member.
+// The author is always the member's own display name (no impersonation), the
+// text is screened (anything flagged is refused with a request to rephrase),
+// and a member in a block with the memorial's owner cannot post.
+func (s *Service) AddTribute(ctx context.Context, member *domain.Member, slug string, in TributeInput) (*domain.Tribute, error) {
+	if member == nil {
+		return nil, &domain.ForbiddenError{Reason: "sign in to leave a tribute"}
 	}
+	if member.Suspended {
+		return nil, &domain.ForbiddenError{Reason: "your account is suspended"}
+	}
+	message := strings.TrimSpace(in.Message)
+	relation := strings.TrimSpace(in.Relation)
+	switch {
+	case message == "":
+		return nil, &domain.ValidationError{Message: "tribute message is required"}
+	case runeLen(message) > maxTributeMessageRunes:
+		return nil, &domain.ValidationError{Message: fmt.Sprintf("please keep your tribute under %d characters", maxTributeMessageRunes)}
+	case runeLen(relation) > maxTributeRelationRunes:
+		return nil, &domain.ValidationError{Message: fmt.Sprintf("please keep how you knew them under %d characters", maxTributeRelationRunes)}
+	}
+	if err := screenRefusal(ScreenText(message, relation), tributeNoun); err != nil {
+		return nil, err
+	}
+	// The raw memorial (hidden and removed tributes included) so the per-member
+	// cap cannot be dodged by removing and re-posting.
 	l, err := s.listings.GetBySlug(ctx, domain.TypeMemorial, slug)
 	if err != nil {
 		return nil, err
 	}
+	if l.Status != domain.StatusApproved {
+		return nil, &domain.NotFoundError{Entity: domain.TypeMemorial}
+	}
+	if s.BlockedBetween(ctx, member, l.OwnerID) {
+		return nil, &domain.ForbiddenError{Reason: msgCannotInteract}
+	}
+	if tributesBy(l, member.ID) >= maxTributesPerMember {
+		return nil, &domain.ValidationError{Message: fmt.Sprintf("you can leave up to %d tributes on a memorial", maxTributesPerMember)}
+	}
+	author := strings.TrimSpace(member.DisplayName)
 	if author == "" {
 		author = "A member of the community"
 	}
 	t := domain.Tribute{
 		ID:         newID(domain.PrefixTribute),
 		AuthorName: author,
+		Relation:   relation,
 		Message:    message,
 		CreatedAt:  time.Now().UTC().Format(time.RFC3339),
+		MemberID:   member.ID,
+		MemberSlug: member.Slug,
 	}
 	if err := s.listings.AddTribute(ctx, l.ID, t); err != nil {
 		return nil, err
 	}
 	return &t, nil
+}
+
+// tributesBy counts the tributes (visible or not) a member left on a memorial.
+func tributesBy(l *domain.Listing, memberID string) int {
+	n := 0
+	for _, t := range l.Tributes {
+		if t.MemberID == memberID {
+			n++
+		}
+	}
+	return n
+}
+
+// RemoveTribute takes a tribute down (kept as evidence, never shown again).
+// Its author, the memorial's owner or keeper, and safety staff may remove it.
+func (s *Service) RemoveTribute(ctx context.Context, actor *domain.Member, slug, tributeID string) error {
+	if actor == nil {
+		return &domain.ForbiddenError{Reason: "sign in to remove a tribute"}
+	}
+	l, err := s.listings.GetByTributeID(ctx, tributeID)
+	if err != nil {
+		return err
+	}
+	if l.Type != domain.TypeMemorial || (slug != "" && l.Slug != slug) {
+		return &domain.NotFoundError{Entity: tributeNoun}
+	}
+	var author string
+	for _, t := range l.Tributes {
+		if t.ID == tributeID {
+			author = t.MemberID
+		}
+	}
+	allowed := isSafetyStaff(actor.Role) || actor.ID == l.OwnerID ||
+		(author != "" && actor.ID == author) || asString(l.Details, "keeperId") == actor.ID
+	if !allowed {
+		return &domain.ForbiddenError{Reason: "only the tribute's author, the memorial's keeper or a curator can remove it"}
+	}
+	return s.listings.SetTributeStatus(ctx, l.ID, tributeID, domain.TributeRemoved)
 }
 
 // ClaimKeeperRole submits a memorial family claim request to the curator queue.

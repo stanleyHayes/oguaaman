@@ -53,6 +53,9 @@ func (s *Service) SetCreatorTypes(ctx context.Context, id string, types []string
 	return s.members.ByID(ctx, id)
 }
 
+// Members returns every stored member record. It is NOT a public projection —
+// REST public surfaces use PublicMembers; this remains for the GraphQL/gRPC
+// mappers, which apply their own field lists.
 func (s *Service) Members(ctx context.Context) ([]domain.Member, error) { return s.members.All(ctx) }
 func (s *Service) MemberBySlug(ctx context.Context, slug string) (*domain.Member, error) {
 	return s.members.BySlug(ctx, slug)
@@ -111,18 +114,21 @@ func (s *Service) SetMemberDiaspora(ctx context.Context, id string, abroad bool,
 }
 
 // DiasporaMembers lists members who have opted in as living abroad — the "sons &
-// daughters abroad" wall, sorted by display name.
-func (s *Service) DiasporaMembers(ctx context.Context) ([]domain.Member, error) {
+// daughters abroad" wall, sorted by display name. It is public, so it returns
+// the public projection only (never birthdays, plans or account state), and
+// skips suspended/erased accounts.
+func (s *Service) DiasporaMembers(ctx context.Context) ([]PublicMember, error) {
 	all, err := s.members.All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	out := []domain.Member{}
+	abroad := make([]domain.Member, 0, len(all))
 	for _, m := range all {
 		if m.Diaspora != nil && m.Diaspora.Abroad {
-			out = append(out, m)
+			abroad = append(abroad, m)
 		}
 	}
+	out := publicMembersOf(abroad)
 	sort.SliceStable(out, func(i, j int) bool { return out[i].DisplayName < out[j].DisplayName })
 	return out, nil
 }

@@ -96,8 +96,8 @@ func cleanEventTiers(raw any) ([]map[string]any, error) {
 		seen[key] = true
 		price := eventInt64(m["pricePesewas"])
 		capacity := int(eventInt64(m["capacity"]))
-		if price <= 0 || price > 100_000_000 {
-			return nil, fmt.Errorf("ticket prices must be between GH₵0.01 and GH₵1,000,000")
+		if price < minTicketPesewas || price > 100_000_000 {
+			return nil, fmt.Errorf("ticket prices must be between GH₵1 and GH₵1,000,000")
 		}
 		if capacity < 0 || capacity > 1_000_000 {
 			return nil, fmt.Errorf("ticket capacity must be between 0 and 1,000,000")

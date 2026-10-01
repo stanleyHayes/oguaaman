@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -101,23 +102,7 @@ func (h *Handler) ogResolve(ctx context.Context, path, base string) (ogcard.Card
 			meta.Description = truncate(desc, 200)
 		}
 	}
-	str := func(m map[string]any, k string) string {
-		switch v := m[k].(type) {
-		case string:
-			return v
-		case float64:
-			return fmt.Sprintf("%v", v)
-		case []any: // e.g. genres
-			parts := make([]string, 0, len(v))
-			for _, it := range v {
-				if s, ok := it.(string); ok {
-					parts = append(parts, s)
-				}
-			}
-			return strings.Join(parts, " · ")
-		}
-		return ""
-	}
+	str := ogDetailString
 	listingType := map[string]string{
 		"music": domain.TypeArtist, "business": domain.TypeBusiness, "events": domain.TypeEvent,
 		"memoriam": domain.TypeMemorial, "people": domain.TypePerson, "projects": domain.TypeProject,
@@ -222,11 +207,60 @@ func (h *Handler) ogCover(url string) image.Image {
 		return nil
 	}
 	defer func() { _ = rc.Close() }()
-	img, _, err := image.Decode(rc)
+	return decodeBoundedImage(rc)
+}
+
+// Cover images are decoded only within these bounds: the decoder allocates
+// width×height up front, so a tiny, highly compressed PNG with huge declared
+// dimensions would otherwise take gigabytes of memory (F096).
+const (
+	ogCoverMaxBytes  = 10 << 20 // above the 8 MB upload limit
+	ogCoverMaxSide   = 8000
+	ogCoverMaxPixels = 24_000_000
+)
+
+// decodeBoundedImage decodes an image only when its declared dimensions are
+// within the cover bounds; anything larger, or unreadable, is nil.
+func decodeBoundedImage(r io.Reader) image.Image {
+	data, err := io.ReadAll(io.LimitReader(r, ogCoverMaxBytes+1))
+	if err != nil || len(data) > ogCoverMaxBytes {
+		return nil
+	}
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil || cfg.Width <= 0 || cfg.Height <= 0 ||
+		cfg.Width > ogCoverMaxSide || cfg.Height > ogCoverMaxSide || cfg.Width*cfg.Height > ogCoverMaxPixels {
+		return nil
+	}
+	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil
 	}
 	return img
+}
+
+// ogDetailString renders a details value for a card line: strings as-is,
+// numbers in plain form, and lists (including bson.A read back from Mongo)
+// joined with " · " (F101).
+func ogDetailString(m map[string]any, k string) string {
+	switch v := m[k].(type) {
+	case nil:
+		return ""
+	case string:
+		return v
+	case float64, float32, int, int32, int64:
+		return fmt.Sprintf("%v", v)
+	}
+	rv := reflect.ValueOf(m[k])
+	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+		return ""
+	}
+	parts := make([]string, 0, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		if s, ok := rv.Index(i).Interface().(string); ok && s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return strings.Join(parts, " · ")
 }
 
 // OGPage — the crawler-facing meta shim (bots only; humans get the SPA).

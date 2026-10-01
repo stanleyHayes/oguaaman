@@ -116,17 +116,8 @@ var seedGoals = []domain.Goal{
 	},
 }
 
-// seedGoals loads the town goals (seed only).
+// seedGoalsData loads the town goals for the local reset only. Every seeded goal
+// is illustration (domain/seedclass.go): it is never written to a live database.
 func seedGoalsData(ctx context.Context, db *mongo.Database) error {
 	return insertAll(ctx, db.Collection(collGoals), seedGoals)
-}
-
-// SeedGoalsOnly drops and reloads ONLY the goals collection, leaving every other
-// collection untouched — a targeted, non-destructive top-up for a live database
-// (mirrors SeedCivicOnly). Idempotent.
-func SeedGoalsOnly(ctx context.Context, db *mongo.Database) error {
-	if err := db.Collection(collGoals).Drop(ctx); err != nil {
-		return err
-	}
-	return seedGoalsData(ctx, db)
 }

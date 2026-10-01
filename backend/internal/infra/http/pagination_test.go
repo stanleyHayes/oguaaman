@@ -100,3 +100,12 @@ func TestInstitutionsHandler_optionalPagination(t *testing.T) {
 		t.Fatalf("envelope = %+v", env)
 	}
 }
+
+// A huge ?page must not overflow (page-1)*pageSize into a negative bound.
+func TestPageOf_hugePageDoesNotPanic(t *testing.T) {
+	all := []int{1, 2, 3}
+	p := pageOf(all, int(^uint(0)>>1), defaultPageSize)
+	if len(p.Items) != 0 || p.Items == nil || p.Total != 3 {
+		t.Fatalf("huge page = %+v (want empty items, total 3)", p)
+	}
+}

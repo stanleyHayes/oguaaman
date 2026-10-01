@@ -30,12 +30,27 @@ func (s *Service) BusinessReviews(ctx context.Context, slug string) ([]domain.Re
 	if err != nil {
 		return nil, 0, 0, err
 	}
+	if l.Status != domain.StatusApproved {
+		return nil, 0, 0, &domain.NotFoundError{Entity: "business"}
+	}
 	reviews, err := s.reviews.ByListing(ctx, l.ID)
 	if err != nil {
 		return nil, 0, 0, err
 	}
+	reviews = visibleReviews(reviews)
 	avg, count := ratingAggregate(reviews)
 	return reviews, avg, count, nil
+}
+
+// visibleReviews drops hidden and removed reviews (kept only as evidence).
+func visibleReviews(in []domain.Review) []domain.Review {
+	out := make([]domain.Review, 0, len(in))
+	for _, r := range in {
+		if r.Status == "" {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // AddBusinessReview records (or replaces) a member's review of a business and
@@ -51,6 +66,12 @@ func (s *Service) AddBusinessReview(ctx context.Context, actor *domain.Member, s
 	if len([]rune(body)) > maxReviewBodyRunes {
 		return nil, fmt.Errorf("keep the review under %d characters", maxReviewBodyRunes)
 	}
+	// Reviews publish instantly: anything the content screen flags is refused
+	// with a request to rephrase (contact details are fine — a review may quote
+	// the shop's own number).
+	if err := screenRefusal(ScreenTerms(body), "review"); err != nil {
+		return nil, err
+	}
 	l, err := s.listings.GetBySlug(ctx, domain.TypeBusiness, slug)
 	if err != nil {
 		return nil, err
@@ -60,6 +81,9 @@ func (s *Service) AddBusinessReview(ctx context.Context, actor *domain.Member, s
 	}
 	if actor.ID == l.OwnerID {
 		return nil, &domain.ForbiddenError{Reason: "you can't review your own business"}
+	}
+	if s.BlockedBetween(ctx, actor, l.OwnerID) {
+		return nil, &domain.ForbiddenError{Reason: msgCannotInteract}
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	name := strings.TrimSpace(actor.DisplayName)
@@ -71,6 +95,7 @@ func (s *Service) AddBusinessReview(ctx context.Context, actor *domain.Member, s
 		ListingID:   l.ID,
 		ListingSlug: l.Slug,
 		MemberID:    actor.ID,
+		MemberSlug:  actor.Slug,
 		AuthorName:  name,
 		Rating:      in.Rating,
 		Body:        body,
@@ -84,9 +109,15 @@ func (s *Service) AddBusinessReview(ctx context.Context, actor *domain.Member, s
 	if err != nil {
 		return nil, err
 	}
-	avg, count := ratingAggregate(all)
+	avg, count := ratingAggregate(visibleReviews(all))
 	if err := s.listings.SetRating(ctx, l.ID, avg, count); err != nil {
 		return nil, err
+	}
+	// An edit keeps the stored review's id and creation time: answer with them.
+	for _, r := range all {
+		if r.MemberID == actor.ID {
+			review.ID, review.CreatedAt, review.Status = r.ID, r.CreatedAt, r.Status
+		}
 	}
 	// Notify the owner a review landed (in-app only; best-effort).
 	if s.notifs != nil && l.OwnerID != "" {

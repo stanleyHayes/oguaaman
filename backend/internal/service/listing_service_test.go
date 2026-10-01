@@ -11,8 +11,39 @@ import (
 // fakeRepo implements every repository interface with in-memory slices, so the
 // engine can be tested without MongoDB.
 type fakeRepo struct {
-	listings []domain.Listing
-	mods     []domain.ModerationRecord
+	listings       []domain.Listing
+	mods           []domain.ModerationRecord
+	candleVisitors map[string]int  // candles lit today, per listing:visitor
+	credited       map[string]bool // payment references already credited (IncrementRaised/IncrementDonations)
+	creditErr      error           // when set, the next credit fails (a transient write error)
+}
+
+// creditOnce mirrors the repository's reference-keyed credit: a reference is
+// added to a listing's detail at most once.
+func (f *fakeRepo) creditOnce(id, ref, key string, delta int64) (bool, error) {
+	if err := f.creditErr; err != nil {
+		f.creditErr = nil
+		return false, err
+	}
+	for i := range f.listings {
+		if f.listings[i].ID != id {
+			continue
+		}
+		if f.credited == nil {
+			f.credited = map[string]bool{}
+		}
+		if f.credited[ref] {
+			return false, nil
+		}
+		f.credited[ref] = true
+		if f.listings[i].Details == nil {
+			f.listings[i].Details = map[string]any{}
+		}
+		cur, _ := f.listings[i].Details[key].(int64)
+		f.listings[i].Details[key] = cur + delta
+		return true, nil
+	}
+	return false, nil
 }
 
 func (f *fakeRepo) Find(_ context.Context, q domain.ListingFilter) ([]domain.Listing, error) {
@@ -63,11 +94,93 @@ func (f *fakeRepo) UpdateStatus(_ context.Context, id, status, _, reason, _ stri
 			f.listings[i].Status = status
 			if status == domain.StatusApproved {
 				f.listings[i].RejectionReason = ""
+				f.listings[i].Held = false
+				f.listings[i].ScreenFlags = nil
 			} else if reason != "" {
 				f.listings[i].RejectionReason = reason
 			}
 			return nil
 		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
+func (f *fakeRepo) HoldForReview(_ context.Context, id, _ string) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			f.listings[i].Status = domain.StatusPending
+			f.listings[i].Held = true
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
+func (f *fakeRepo) SetScreenFlags(_ context.Context, id string, flags []string) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			f.listings[i].ScreenFlags = flags
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
+func (f *fakeRepo) ClaimIncidentAlert(_ context.Context, id, alert, at string) (bool, error) {
+	for i := range f.listings {
+		if f.listings[i].ID != id || f.listings[i].Type != domain.TypeIncident {
+			continue
+		}
+		if f.listings[i].Details == nil {
+			f.listings[i].Details = map[string]any{}
+		}
+		key := alert + "At"
+		if _, done := f.listings[i].Details[key]; done {
+			return false, nil
+		}
+		f.listings[i].Details[key] = at
+		return true, nil
+	}
+	return false, nil
+}
+func (f *fakeRepo) SetTributeStatus(_ context.Context, listingID, tributeID, status string) error {
+	for i := range f.listings {
+		if f.listings[i].ID != listingID {
+			continue
+		}
+		for j := range f.listings[i].Tributes {
+			if f.listings[i].Tributes[j].ID == tributeID {
+				f.listings[i].Tributes[j].Status = status
+				return nil
+			}
+		}
+	}
+	return &domain.NotFoundError{Entity: "tribute"}
+}
+func (f *fakeRepo) GetByTributeID(_ context.Context, tributeID string) (*domain.Listing, error) {
+	for i := range f.listings {
+		for _, t := range f.listings[i].Tributes {
+			if t.ID == tributeID {
+				return &f.listings[i], nil
+			}
+		}
+	}
+	return nil, &domain.NotFoundError{Entity: "tribute"}
+}
+func (f *fakeRepo) RemoveStoreItem(_ context.Context, listingID, itemID string) error {
+	for i := range f.listings {
+		if f.listings[i].ID != listingID {
+			continue
+		}
+		keep := func(items []domain.StoreItem) []domain.StoreItem {
+			out := []domain.StoreItem{}
+			for _, it := range items {
+				if it.ID != itemID {
+					out = append(out, it)
+				}
+			}
+			return out
+		}
+		f.listings[i].Products = keep(f.listings[i].Products)
+		f.listings[i].Services = keep(f.listings[i].Services)
+		return nil
 	}
 	return &domain.NotFoundError{Entity: "listing"}
 }
@@ -86,16 +199,45 @@ func (f *fakeRepo) OwnerUpdate(_ context.Context, id, title, coverImageURL strin
 	}
 	return &domain.NotFoundError{Entity: "listing"}
 }
-func (f *fakeRepo) AddTribute(_ context.Context, id string, t domain.Tribute) error { return nil }
-func (f *fakeRepo) IncrementCandles(_ context.Context, id string) (int, error)      { return 1, nil }
-func (f *fakeRepo) IncrementRaised(_ context.Context, id string, delta int64) error {
+func (f *fakeRepo) AddTribute(_ context.Context, id string, t domain.Tribute) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			if len(f.listings[i].Tributes) >= domain.MaxTributesPerMemorial {
+				return &domain.ValidationError{Message: "This memorial has reached its limit of tributes."}
+			}
+			f.listings[i].Tributes = append(f.listings[i].Tributes, t)
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "memorial"}
+}
+func (f *fakeRepo) IncrementCandles(_ context.Context, id, visitorKey string, perDay int) (int, error) {
 	for i := range f.listings {
 		if f.listings[i].ID == id {
 			if f.listings[i].Details == nil {
 				f.listings[i].Details = map[string]any{}
 			}
-			cur, _ := f.listings[i].Details["raisedPesewas"].(int64)
-			f.listings[i].Details["raisedPesewas"] = cur + delta
+			n, _ := asIntAny(f.listings[i].Details["candles"])
+			if f.candleVisitors == nil {
+				f.candleVisitors = map[string]int{}
+			}
+			if f.candleVisitors[id+":"+visitorKey] >= perDay {
+				return n, nil
+			}
+			f.candleVisitors[id+":"+visitorKey]++
+			f.listings[i].Details["candles"] = n + 1
+			return n + 1, nil
+		}
+	}
+	return 0, &domain.NotFoundError{Entity: "listing"}
+}
+func (f *fakeRepo) IncrementRaised(_ context.Context, id, ref string, delta int64) (bool, error) {
+	return f.creditOnce(id, ref, "raisedPesewas", delta)
+}
+func (f *fakeRepo) SetPromotedUntil(_ context.Context, id, until string) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			f.listings[i].PromotedUntil = until
 			return nil
 		}
 	}
@@ -106,6 +248,9 @@ func (f *fakeRepo) SetFeatured(_ context.Context, id string, featured bool, unti
 		if f.listings[i].ID == id {
 			f.listings[i].Featured = featured
 			f.listings[i].FeaturedUntil = until
+			if !featured {
+				f.listings[i].PromotedUntil = ""
+			}
 			return nil
 		}
 	}
@@ -152,18 +297,8 @@ func (f *fakeRepo) SetPropertyAvailability(_ context.Context, id, availability s
 	return &domain.NotFoundError{Entity: "listing"}
 }
 
-func (f *fakeRepo) IncrementDonations(_ context.Context, id string, delta int64) error {
-	for i := range f.listings {
-		if f.listings[i].ID == id {
-			if f.listings[i].Details == nil {
-				f.listings[i].Details = map[string]any{}
-			}
-			cur, _ := f.listings[i].Details["donationsNetPesewas"].(int64)
-			f.listings[i].Details["donationsNetPesewas"] = cur + delta
-			return nil
-		}
-	}
-	return &domain.NotFoundError{Entity: "listing"}
+func (f *fakeRepo) IncrementDonations(_ context.Context, id, ref string, delta int64) (bool, error) {
+	return f.creditOnce(id, ref, "donationsNetPesewas", delta)
 }
 func (f *fakeRepo) SetRating(_ context.Context, id string, avg float64, count int) error {
 	for i := range f.listings {
@@ -232,6 +367,18 @@ func (f *fakeRepo) PlatformViewsThisMonth(_ context.Context) (int, error) {
 	return 0, nil
 }
 func (f *fakeRepo) AvgApprovalHours(_ context.Context) (float64, error) { return 0, nil }
+func (f *fakeRepo) MarkPostReviewed(_ context.Context, id, reviewerID, at string) error {
+	for i := range f.listings {
+		if f.listings[i].ID == id {
+			if f.listings[i].Details == nil {
+				f.listings[i].Details = map[string]any{}
+			}
+			f.listings[i].Details["postReviewedAt"], f.listings[i].Details["postReviewedBy"] = at, reviewerID
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "listing"}
+}
 func (f *fakeRepo) SetKeeperID(_ context.Context, id, keeperID string) error {
 	for i := range f.listings {
 		if f.listings[i].ID == id {
@@ -243,6 +390,17 @@ func (f *fakeRepo) SetKeeperID(_ context.Context, id, keeperID string) error {
 		}
 	}
 	return &domain.NotFoundError{Entity: "listing"}
+}
+
+func (f *fakeRepo) ReassignOrgListings(_ context.Context, orgID, from, to string) (int, error) {
+	n := 0
+	for i := range f.listings {
+		if f.listings[i].PostedByOrgID == orgID && f.listings[i].OwnerID == from {
+			f.listings[i].OwnerID = to
+			n++
+		}
+	}
+	return n, nil
 }
 
 // repository interfaces the service needs but these tests don't exercise.
@@ -283,6 +441,12 @@ func (stubReports) UpdateStatus(context.Context, string, string, string, string,
 	return nil
 }
 func (stubReports) OpenCount(context.Context) (int, error) { return 0, nil }
+func (stubReports) OpenByTarget(context.Context, string, string) ([]domain.Report, error) {
+	return nil, nil
+}
+func (stubReports) Resolve(context.Context, string, string, string, string, string, string) error {
+	return nil
+}
 
 type stubNews struct{}
 
@@ -297,6 +461,7 @@ func (stubNews) ByAuthor(context.Context, string) ([]domain.NewsArticle, error) 
 }
 func (stubNews) SetPublished(context.Context, string, string, string) error { return nil }
 func (stubNews) Delete(context.Context, string) error                       { return nil }
+func (stubNews) EraseAuthor(context.Context, string, string) error          { return nil }
 
 type stubNotifs struct{}
 
@@ -305,6 +470,8 @@ func (stubNotifs) ByMember(context.Context, string) ([]domain.Notification, erro
 func (stubNotifs) MarkRead(context.Context, string, string) error                  { return nil }
 func (stubNotifs) MarkAllRead(context.Context, string) error                       { return nil }
 func (stubNotifs) UnreadCount(context.Context, string) (int, error)                { return 0, nil }
+
+func (stubNotifs) InsertOnce(context.Context, domain.Notification) (bool, error) { return true, nil }
 
 type stubFollows struct{}
 
@@ -341,7 +508,16 @@ func (stubMembers) SetLinks(context.Context, string, []domain.SocialLink) error 
 func (stubMembers) SetPhoto(context.Context, string, string) error                   { return nil }
 func (stubMembers) SetProfile(context.Context, string, string, string, string) error { return nil }
 func (stubMembers) SetPasswordHash(context.Context, string, string) error            { return nil }
-func (stubMembers) SetDateOfBirth(context.Context, string, string) error             { return nil }
+func (stubMembers) RecordPasswordResetFailure(context.Context, string) (int, error)  { return 0, nil }
+func (stubMembers) SetAdultVerified(context.Context, string, string) error           { return nil }
+func (stubMembers) SetConsent(context.Context, string, domain.Consent) error         { return nil }
+func (stubMembers) BumpTokenVersion(context.Context, string) (int, error)            { return 0, nil }
+func (stubMembers) RecordLoginFailure(context.Context, string) (int, error)          { return 0, nil }
+func (stubMembers) LockLogin(context.Context, string, string) error                  { return nil }
+func (stubMembers) ClearLoginFailures(context.Context, string) error                 { return nil }
+func (stubMembers) SetMFAChallenge(context.Context, string, string) error            { return nil }
+func (stubMembers) RecordMFAChallengeFailure(context.Context, string) (int, error)   { return 0, nil }
+func (stubMembers) SetPendingMFA(context.Context, string, string) error              { return nil }
 func (stubMembers) SetCreatorTypes(context.Context, string, []string) error          { return nil }
 func (stubMembers) SetCreatorPlanIntent(context.Context, string, string) error       { return nil }
 func (stubMembers) SetCreatorSubscription(context.Context, string, string, string) error {
@@ -349,7 +525,15 @@ func (stubMembers) SetCreatorSubscription(context.Context, string, string, strin
 }
 func (stubMembers) SetCampaignerVetted(context.Context, string, bool) error      { return nil }
 func (stubMembers) SetMFA(context.Context, string, bool, string, []string) error { return nil }
-func (stubMembers) Anonymize(context.Context, string) error                      { return nil }
+func (stubMembers) Anonymize(context.Context, string, string) error              { return nil }
+func (stubMembers) ReserveErasureID(_ context.Context, _, candidate string) (string, error) {
+	return candidate, nil
+}
+
+func (stubMembers) SetNotificationPrefs(context.Context, string, domain.NotificationPrefs) error {
+	return nil
+}
+func (stubMembers) SetAIConsent(context.Context, string, string) error { return nil }
 
 type stubOrgs struct{}
 

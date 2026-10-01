@@ -12,7 +12,8 @@ import (
 // RevenueService aggregates the platform's four income streams into one
 // overview for the steward back-office: crowdfunding fees (kept from pledges),
 // ticket sales, business subscriptions and paid promotions. Read-only — every
-// figure derives from the confirmed ledgers.
+// figure derives from the confirmed ledgers. Simulated (dev-mode) records are
+// counted apart and never added to real money.
 
 // PledgeRevenue is the platform-fee split across successful pledges.
 type PledgeRevenue struct {
@@ -34,6 +35,11 @@ type StreamRevenue struct {
 	Count        int   `json:"count"`
 }
 
+func (r *StreamRevenue) add(amount int64) {
+	r.GrossPesewas += amount
+	r.Count++
+}
+
 // SubscriptionRevenue adds the count of currently-active subscriptions.
 type SubscriptionRevenue struct {
 	GrossPesewas int64 `json:"grossPesewas"`
@@ -52,6 +58,9 @@ type RevenueOverview struct {
 	// TotalPesewas is platform income: pledge + donation fees + the gross of
 	// every direct-sale stream (tickets, subscriptions, promotions).
 	TotalPesewas int64 `json:"totalPesewas"`
+	// Simulated counts settled dev-mode records (no real money moved). They
+	// are left out of every figure above (P32).
+	Simulated StreamRevenue `json:"simulated"`
 }
 
 // RevenueService reads across the four money ledgers.
@@ -101,6 +110,10 @@ func (s *RevenueService) sumCommerce(ctx context.Context, out *RevenueOverview) 
 		if o.Status == domain.OrderPending || o.Status == domain.OrderCancelled || o.Status == domain.OrderRefunded {
 			continue
 		}
+		if o.Simulated {
+			out.Simulated.add(o.AmountPesewas)
+			continue
+		}
 		out.Commerce.GrossPesewas += o.AmountPesewas
 		out.Commerce.FeePesewas += o.PlatformFeePesewas
 		out.Commerce.BusinessNetPesewas += o.BusinessNetPesewas
@@ -118,6 +131,10 @@ func (s *RevenueService) sumPledges(ctx context.Context, out *RevenueOverview) e
 	}
 	for _, p := range pledges {
 		if p.Status != domain.PledgeSuccess {
+			continue
+		}
+		if p.Simulated {
+			out.Simulated.add(p.AmountPesewas)
 			continue
 		}
 		bucket := &out.Pledges
@@ -141,6 +158,10 @@ func (s *RevenueService) sumTickets(ctx context.Context, out *RevenueOverview) e
 		if t.Status != domain.PledgeSuccess {
 			continue
 		}
+		if t.Simulated {
+			out.Simulated.add(t.AmountPesewas)
+			continue
+		}
 		out.Tickets.GrossPesewas += t.AmountPesewas
 		out.Tickets.Count++
 	}
@@ -157,6 +178,10 @@ func (s *RevenueService) sumSubscriptions(ctx context.Context, out *RevenueOverv
 	now := time.Now().UTC().Format(time.RFC3339)
 	for _, sub := range subs {
 		if sub.Status != domain.PledgeSuccess {
+			continue
+		}
+		if sub.Simulated {
+			out.Simulated.add(sub.AmountPesewas)
 			continue
 		}
 		out.Subscriptions.GrossPesewas += sub.AmountPesewas
@@ -176,6 +201,10 @@ func (s *RevenueService) sumPromotions(ctx context.Context, out *RevenueOverview
 	}
 	for _, p := range promos {
 		if p.Status != domain.PledgeSuccess {
+			continue
+		}
+		if p.Simulated {
+			out.Simulated.add(p.AmountPesewas)
 			continue
 		}
 		out.Promotions.GrossPesewas += p.AmountPesewas

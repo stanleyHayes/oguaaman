@@ -73,7 +73,8 @@ func NewSchema(svc *service.Service) (graphql.Schema, error) {
 				Type: organizationType, Args: slugArg,
 				Resolve: func(p graphql.ResolveParams) (any, error) {
 					slug, _ := p.Args["slug"].(string)
-					return svc.InstitutionBySlug(p.Context, slug)
+					// Revoked/unverified institutions are offline to the public.
+					return svc.PublicInstitutionBySlug(p.Context, slug)
 				},
 			},
 

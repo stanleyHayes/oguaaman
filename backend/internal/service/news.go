@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -26,10 +25,10 @@ type NewsInput struct {
 func (s *Service) validateNews(in NewsInput) (string, error) {
 	title := strings.TrimSpace(in.Title)
 	if len(title) < 3 || len(title) > 160 {
-		return "", fmt.Errorf("title must be 3–160 characters")
+		return "", &domain.ValidationError{Message: "title must be 3–160 characters"}
 	}
 	if strings.TrimSpace(in.Body) == "" {
-		return "", fmt.Errorf("an article needs a body")
+		return "", &domain.ValidationError{Message: "an article needs a body"}
 	}
 	return title, nil
 }
@@ -88,7 +87,9 @@ func (s *Service) SubmitNews(ctx context.Context, memberID string, in NewsInput)
 	if a.Tags == nil {
 		a.Tags = []string{}
 	}
-	if authorityManager {
+	// Only a MANAGER of a verified authority publishes without review; an
+	// officer ("content only") of that authority goes through the newsroom.
+	if authorityManager && s.managesVerifiedAuthority(ctx, m.ID) {
 		a.Status = domain.NewsPublished
 		a.PublishedAt = now
 	}
@@ -155,11 +156,40 @@ func (s *Service) UpdateNews(ctx context.Context, id string, in NewsInput) (*dom
 	return a, nil
 }
 
-// SetNewsPublished publishes or unpublishes an article.
+// formerMemberName is the byline an erased author's articles carry (matches the
+// display name the member document is anonymised to).
+const formerMemberName = "Former member"
+
+// EraseNewsAuthor applies a member's right to erasure (Act 843) to the
+// newsroom: their published articles keep running under a "Former member"
+// byline and their unpublished drafts are deleted, so an editor can never
+// publish them under the erased member's name.
+func (s *Service) EraseNewsAuthor(ctx context.Context, memberID string) error {
+	return s.news.EraseAuthor(ctx, memberID, formerMemberName)
+}
+
+// memberErased reports whether a member document is an erasure tombstone:
+// stamped erasedAt (its id and slug are random), or, from before that stamp,
+// kept under a former-<id> slug.
+func memberErased(m *domain.Member) bool {
+	return m != nil && (m.ErasedAt != "" || m.Slug == "former-"+m.ID)
+}
+
+// SetNewsPublished publishes or unpublishes an article. A draft whose author
+// has since erased their account cannot be published.
 func (s *Service) SetNewsPublished(ctx context.Context, id string, publish bool) error {
 	status := domain.NewsDraft
 	if publish {
 		status = domain.NewsPublished
+		a, err := s.news.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		if a.Status != domain.NewsPublished && a.AuthorID != "" {
+			if m, err := s.members.ByID(ctx, a.AuthorID); err == nil && memberErased(m) {
+				return &domain.ValidationError{Message: "The author of this draft has deleted their account, so it cannot be published."}
+			}
+		}
 	}
 	return s.news.SetPublished(ctx, id, status, time.Now().UTC().Format(time.RFC3339))
 }

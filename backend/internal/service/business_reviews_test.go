@@ -23,15 +23,39 @@ func (r *fakeReviews) ByListing(_ context.Context, listingID string) ([]domain.R
 	return out, nil
 }
 
+// Upsert mirrors the Mongo repo: an edit keeps the review's id, creation time
+// and moderation status and only updates the content fields.
 func (r *fakeReviews) Upsert(_ context.Context, rev domain.Review) error {
 	for i := range r.rows {
 		if r.rows[i].ListingID == rev.ListingID && rev.MemberID != "" && r.rows[i].MemberID == rev.MemberID {
-			r.rows[i] = rev
+			cur := &r.rows[i]
+			cur.ListingSlug, cur.MemberSlug, cur.AuthorName = rev.ListingSlug, rev.MemberSlug, rev.AuthorName
+			cur.Rating, cur.Body, cur.UpdatedAt = rev.Rating, rev.Body, rev.UpdatedAt
 			return nil
 		}
 	}
 	r.rows = append(r.rows, rev)
 	return nil
+}
+
+func (r *fakeReviews) Get(_ context.Context, id string) (*domain.Review, error) {
+	for i := range r.rows {
+		if r.rows[i].ID == id {
+			rv := r.rows[i]
+			return &rv, nil
+		}
+	}
+	return nil, &domain.NotFoundError{Entity: "review"}
+}
+
+func (r *fakeReviews) SetStatus(_ context.Context, id, status string) error {
+	for i := range r.rows {
+		if r.rows[i].ID == id {
+			r.rows[i].Status = status
+			return nil
+		}
+	}
+	return &domain.NotFoundError{Entity: "review"}
 }
 
 func (r *fakeReviews) HasReviewed(_ context.Context, listingID, memberID string) (bool, error) {
@@ -120,3 +144,27 @@ func TestAddBusinessReview_rejectsOwnerAndBadRating(t *testing.T) {
 // errFrom drops the first return value of AddBusinessReview so tests can assert
 // on the error alone.
 func errFrom(_ *domain.Review, err error) error { return err }
+
+// F094: an edit answers with the stored review's id; hidden reviews are
+// neither shown nor counted; the content screen refuses abusive reviews.
+func TestAddBusinessReview_editKeepsIDAndHiddenNotCounted(t *testing.T) {
+	svc, _, fr := reviewTestService()
+	ctx := context.Background()
+	kojo := &domain.Member{ID: "m-kojo", DisplayName: "Kojo", Role: domain.RoleMember}
+	first, err := svc.AddBusinessReview(ctx, kojo, "auntie-akos-kitchen", ReviewInput{Rating: 2})
+	if err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	edited, err := svc.AddBusinessReview(ctx, kojo, "auntie-akos-kitchen", ReviewInput{Rating: 4})
+	if err != nil || edited.ID != first.ID {
+		t.Fatalf("edit must keep id %q, got %+v (%v)", first.ID, edited, err)
+	}
+	_ = fr.SetStatus(ctx, first.ID, domain.ReviewHidden)
+	reviews, _, count, err := svc.BusinessReviews(ctx, "auntie-akos-kitchen")
+	if err != nil || len(reviews) != 0 || count != 0 {
+		t.Fatalf("hidden review leaked: %v count %d (%v)", reviews, count, err)
+	}
+	if _, err := svc.AddBusinessReview(ctx, &domain.Member{ID: "m-x"}, "auntie-akos-kitchen", ReviewInput{Rating: 1, Body: "I will kill you"}); err == nil {
+		t.Fatal("a threatening review must be refused")
+	}
+}

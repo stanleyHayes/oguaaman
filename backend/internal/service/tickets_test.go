@@ -24,26 +24,43 @@ func (f *fakeTickets) ByReference(_ context.Context, ref string) (*domain.Ticket
 	}
 	return nil, &domain.NotFoundError{Entity: "ticket"}
 }
-func (f *fakeTickets) UpdateStatus(_ context.Context, ref, status, at string) error {
+
+// MarkSuccess mirrors the repository's conditional write: only a ticket not
+// already issued transitions, and the result says whether it did.
+func (f *fakeTickets) MarkSuccess(_ context.Context, ref, at, code string) (bool, error) {
 	for i := range f.rows {
-		if f.rows[i].Reference == ref {
-			f.rows[i].Status = status
-			if status == domain.PledgeSuccess {
-				f.rows[i].ConfirmedAt = at
-			}
-			return nil
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status, f.rows[i].ConfirmedAt, f.rows[i].Code = domain.PledgeSuccess, at, code
+			f.rows[i].RefundDue, f.rows[i].FailureReason = false, ""
+			return true, nil
 		}
 	}
-	return &domain.NotFoundError{Entity: "ticket"}
+	return false, nil
 }
-func (f *fakeTickets) SetCode(_ context.Context, ref, code string) error {
+func (f *fakeTickets) MarkFailed(_ context.Context, ref string) error {
 	for i := range f.rows {
-		if f.rows[i].Reference == ref {
-			f.rows[i].Code = code
-			return nil
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status = domain.PledgeFailed
 		}
 	}
-	return &domain.NotFoundError{Entity: "ticket"}
+	return nil
+}
+func (f *fakeTickets) MarkRefundDue(_ context.Context, ref, reason string) error {
+	for i := range f.rows {
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status, f.rows[i].RefundDue, f.rows[i].FailureReason = domain.PledgeFailed, true, reason
+		}
+	}
+	return nil
+}
+func (f *fakeTickets) RevokeForRefund(_ context.Context, ref, reason string) error {
+	for i := range f.rows {
+		if f.rows[i].Reference == ref && f.rows[i].Status == domain.PledgeSuccess {
+			f.rows[i].Status, f.rows[i].RefundDue, f.rows[i].FailureReason = domain.PledgeFailed, true, reason
+			f.rows[i].Code, f.rows[i].ConfirmedAt = "", ""
+		}
+	}
+	return nil
 }
 func (f *fakeTickets) ByEvent(_ context.Context, eventID string) ([]domain.Ticket, error) {
 	out := []domain.Ticket{}
@@ -159,8 +176,110 @@ func TestStartTicketPurchase_capacity(t *testing.T) {
 		t.Errorf("last seat should be buyable: %v", err)
 	}
 	// …and unlimited tiers never sell out.
-	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Orange Friday carnival", 50); err != nil {
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Orange Friday carnival", 10); err != nil {
 		t.Errorf("unlimited tier should never sell out: %v", err)
+	}
+}
+
+// One checkout buys 1–10 tickets; a huge quantity used to wrap the int64 price
+// into a few cedis for quadrillions of seats (F143).
+func TestStartTicketPurchase_boundsQuantityAndAmount(t *testing.T) {
+	svc, tickets := ticketsFixture(true, 0)
+	ctx := context.Background()
+	for _, qty := range []int{-1, 0, 11, 1_844_674_407_370_956} {
+		if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Orange Friday carnival", qty); !errors.Is(err, ErrTicketQty) {
+			t.Errorf("qty %d: want ErrTicketQty, got %v", qty, err)
+		}
+	}
+	if len(tickets.rows) != 0 {
+		t.Fatalf("refused quantities must not record tickets, got %d", len(tickets.rows))
+	}
+	if _, _, _, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-1", "a@b.c", "Orange Friday carnival", 10); err != nil {
+		t.Fatalf("qty 10: %v", err)
+	}
+	if tickets.rows[0].AmountPesewas != 30_000 {
+		t.Errorf("amount = %d, want 10 × 3000", tickets.rows[0].AmountPesewas)
+	}
+}
+
+// Capacity is enforced when payment confirms, not only at checkout: two buyers
+// who both started while seats looked free can't both be issued the last
+// seats (F144/F145). The later one is flagged for refund, with no code.
+func TestConfirmTicket_enforcesCapacityAtConfirmation(t *testing.T) {
+	svc, tickets := ticketsFixture(true, 10_000)
+	ctx := context.Background()
+	// Capacity 2, none sold: both buyers pass the checkout check for 2 seats.
+	_, _, refA, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-a", "a@example.com", "Grand Durbar stand", 2)
+	if err != nil {
+		t.Fatalf("buyer A start: %v", err)
+	}
+	_, _, refB, err := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-b", "b@example.com", "Grand Durbar stand", 2)
+	if err != nil {
+		t.Fatalf("buyer B start: %v", err)
+	}
+	if _, err := svc.ConfirmTicket(ctx, refA); err != nil {
+		t.Fatalf("buyer A confirm: %v", err)
+	}
+	if _, err := svc.ConfirmTicket(ctx, refB); !errors.Is(err, ErrSoldOutAfterPayment) {
+		t.Fatalf("buyer B confirm: want ErrSoldOutAfterPayment, got %v", err)
+	}
+	b, _ := tickets.ByReference(ctx, refB)
+	if b.Status != domain.PledgeFailed || !b.RefundDue || b.Code != "" || b.FailureReason != domain.RefundReasonSoldOut {
+		t.Errorf("buyer B ticket = %+v, want failed, refund due, no code", b)
+	}
+	view, _ := svc.EventView(ctx, "fetu-afahye-2026")
+	if view.Tiers[0].Sold != 2 || *view.Tiers[0].Remaining != 0 {
+		t.Errorf("sold/remaining = %d/%d, want 2/0 — never oversold", view.Tiers[0].Sold, *view.Tiers[0].Remaining)
+	}
+}
+
+// When two confirms race for the last seats, the loser is revoked after its
+// claim: its code is withdrawn and the payment flagged for refund.
+func TestConfirmTicket_raceForLastSeatsNeverOversells(t *testing.T) {
+	ctx := context.Background()
+	svc, tickets := ticketsFixture(true, 10_000)
+	ps := &racingPaystack{fakePaystack: fakePaystack{verifyOK: true, verifyAmount: 10_000}}
+	svc.paystack = ps
+	_, _, refA, _ := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-a", "a@example.com", "Grand Durbar stand", 2)
+	_, _, refB, _ := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-b", "b@example.com", "Grand Durbar stand", 2)
+	// B's confirm passes its capacity check, then A settles while B waits on Paystack.
+	var errA error
+	ps.meanwhile = func() { _, errA = svc.ConfirmTicket(ctx, refA) }
+	_, errB := svc.ConfirmTicket(ctx, refB)
+	if errA != nil {
+		t.Fatalf("A (settled first): %v", errA)
+	}
+	if !errors.Is(errB, ErrSoldOutAfterPayment) {
+		t.Fatalf("B: want ErrSoldOutAfterPayment, got %v", errB)
+	}
+	issued := 0
+	for _, tk := range tickets.rows {
+		if tk.Status == domain.PledgeSuccess {
+			issued += tk.Qty
+		}
+	}
+	if issued != 2 {
+		t.Errorf("issued seats = %d, want exactly the capacity (2)", issued)
+	}
+}
+
+// Concurrent confirms of ONE ticket issue one code, and every response shows
+// the code that actually exists (F140).
+func TestConfirmTicket_concurrentConfirmsIssueOneCode(t *testing.T) {
+	ctx := context.Background()
+	svc, tickets := ticketsFixture(true, 5_000)
+	ps := &racingPaystack{fakePaystack: fakePaystack{verifyOK: true, verifyAmount: 5_000}}
+	svc.paystack = ps
+	_, _, ref, _ := svc.StartTicketPurchase(ctx, "fetu-afahye-2026", "m-a", "a@example.com", "Grand Durbar stand", 1)
+	var inner *domain.Ticket
+	ps.meanwhile = func() { inner, _ = svc.ConfirmTicket(ctx, ref) }
+	outer, err := svc.ConfirmTicket(ctx, ref)
+	if err != nil || inner == nil {
+		t.Fatalf("confirms: outer err %v, inner %v", err, inner)
+	}
+	stored := tickets.rows[0].Code
+	if outer.Code != stored || inner.Code != stored {
+		t.Errorf("codes outer=%q inner=%q stored=%q — every response must show the stored code", outer.Code, inner.Code, stored)
 	}
 }
 
@@ -243,7 +362,7 @@ func TestCheckIn_onceOnly(t *testing.T) {
 		t.Fatalf("ConfirmTicket failed: %v", err)
 	}
 
-	got, err := svc.CheckIn(ctx, tk.Code, "curator")
+	got, err := svc.CheckIn(ctx, "fetu-afahye-2026", tk.Code, "curator")
 	if err != nil {
 		t.Fatalf("first check-in failed: %v", err)
 	}
@@ -251,7 +370,7 @@ func TestCheckIn_onceOnly(t *testing.T) {
 		t.Error("expected CheckedInAt to be set")
 	}
 	// Second scan: rejected with the ORIGINAL gate time.
-	_, err = svc.CheckIn(ctx, tk.Code, "curator")
+	_, err = svc.CheckIn(ctx, "fetu-afahye-2026", tk.Code, "curator")
 	var used *AlreadyCheckedInError
 	if !errors.As(err, &used) {
 		t.Fatalf("expected AlreadyCheckedInError, got %v", err)
@@ -261,8 +380,28 @@ func TestCheckIn_onceOnly(t *testing.T) {
 	}
 	// A ticket whose payment never confirmed can't be admitted.
 	_ = tickets.Insert(ctx, domain.Ticket{ID: "pending-1", EventID: "e-1", Tier: "Grand Durbar stand", Qty: 1, Status: domain.PledgePending, Code: "PENDING1"})
-	if _, err := svc.CheckIn(ctx, "PENDING1", "curator"); err == nil {
+	if _, err := svc.CheckIn(ctx, "fetu-afahye-2026", "PENDING1", "curator"); err == nil {
 		t.Error("expected an unconfirmed ticket to be refused at the gate")
+	}
+}
+
+// A code only admits at its own event's gate: a cheap ticket for another
+// event is refused and stays unused (F146).
+func TestCheckIn_boundToEvent(t *testing.T) {
+	svc, tickets := ticketsFixture(true, 5_000)
+	ctx := context.Background()
+	_ = tickets.Insert(ctx, domain.Ticket{ID: "other-1", EventID: "e-2", Tier: "Regular", Qty: 1, Status: domain.PledgeSuccess, Code: "PICNIC01"})
+	if _, err := svc.CheckIn(ctx, "fetu-afahye-2026", "PICNIC01", "curator"); !errors.Is(err, ErrTicketWrongEvent) {
+		t.Fatalf("other event's code: want ErrTicketWrongEvent, got %v", err)
+	}
+	if tickets.rows[0].CheckedInAt != "" {
+		t.Error("a refused code must not be marked admitted")
+	}
+	if _, err := svc.CheckIn(ctx, "", "PICNIC01", "curator"); !errors.Is(err, ErrCheckInEventRequired) {
+		t.Errorf("no event: want ErrCheckInEventRequired, got %v", err)
+	}
+	if _, err := svc.CheckIn(ctx, "free-prize-giving", "picnic01", "curator"); err != nil {
+		t.Errorf("own event's gate: %v", err)
 	}
 }
 
@@ -274,7 +413,7 @@ func TestCheckIn_nonCuratorRejected(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ConfirmTicket failed: %v", err)
 	}
-	if _, err := svc.CheckIn(ctx, tk.Code, "member"); err == nil {
+	if _, err := svc.CheckIn(ctx, "fetu-afahye-2026", tk.Code, "member"); err == nil {
 		t.Fatal("expected a member check-in to be rejected")
 	} else {
 		var fb *domain.ForbiddenError
@@ -284,5 +423,22 @@ func TestCheckIn_nonCuratorRejected(t *testing.T) {
 	}
 	if tickets.rows[0].CheckedInAt != "" {
 		t.Error("rejected check-in must not mark the ticket")
+	}
+}
+
+// P36: ticket tiers are at least GH₵1 when saved and when bought, so Paystack
+// is never asked to charge a few pesewas.
+func TestTicketTiers_minimumOneCedi(t *testing.T) {
+	if _, err := cleanEventTiers([]any{map[string]any{"name": "Cheap", "pricePesewas": int64(50)}}); err == nil {
+		t.Error("a 50-pesewa tier was saved")
+	}
+	if _, err := cleanEventTiers([]any{map[string]any{"name": "Standard", "pricePesewas": int64(100)}}); err != nil {
+		t.Errorf("a GH₵1 tier was refused: %v", err)
+	}
+	svc, _ := ticketsFixture(true, 50)
+	listings := svc.listings.(*fakeRepo)
+	listings.listings[0].Details["tiers"] = []map[string]any{{"name": "Legacy", "pricePesewas": int64(50), "capacity": 0}}
+	if _, _, _, err := svc.StartTicketPurchase(context.Background(), "fetu-afahye-2026", "m-1", "a@b.c", "Legacy", 1); !errors.Is(err, ErrTierNotFound) {
+		t.Fatalf("legacy sub-cedi tier: err=%v, want ErrTierNotFound", err)
 	}
 }

@@ -57,7 +57,7 @@ func TestSubmitLostFound_validatesKindAndRequired(t *testing.T) {
 
 func TestSubmitLostFound_autoPublishes(t *testing.T) {
 	svc, _ := lostFoundTestService()
-	m := &domain.Member{ID: "m-9", Role: domain.RoleMember, TownID: "aboom"}
+	m := &domain.Member{ID: "m-9", Role: domain.RoleMember, TownID: "aboom", PhoneVerified: true}
 	l, err := svc.SubmitLostFound(context.Background(), m, LostFoundInput{
 		Title: "Lost: brown goat answers to 'Aponkye'", Kind: "lost_item",
 		Description:      "A brown goat with a red collar, last seen near the old well.",
@@ -133,6 +133,7 @@ func TestResolveLostFound_validatesStatus(t *testing.T) {
 }
 
 func TestSubmitLostFound_missingPersonNotifiesCurators(t *testing.T) {
+	syncIncidentFanOut(t)
 	f := &fakeRepo{}
 	notifs := &lfNotifs{}
 	members := lfMembers{members: []domain.Member{
@@ -162,11 +163,12 @@ func TestSubmitLostFound_missingPersonNotifiesCurators(t *testing.T) {
 }
 
 func TestSubmitLostFound_lostItemDoesNotNotifyCurators(t *testing.T) {
+	syncIncidentFanOut(t)
 	f := &fakeRepo{}
 	notifs := &lfNotifs{}
 	members := lfMembers{members: []domain.Member{{ID: "m-c", Role: domain.RoleCurator}}}
 	svc := New(Deps{Listings: f, Members: members, Orgs: stubOrgs{}, Places: stubPlaces{}, Mod: modRepo{f}, Notifs: notifs, Follows: stubFollows{}, Claims: stubClaims{}, News: stubNews{}, Reports: stubReports{}, Timeline: stubTimeline{}})
-	m := &domain.Member{ID: "m-9", Role: domain.RoleMember}
+	m := &domain.Member{ID: "m-9", Role: domain.RoleMember, PhoneVerified: true}
 
 	if _, err := svc.SubmitLostFound(context.Background(), m, LostFoundInput{
 		Title: "Lost keys", Kind: "lost_item", Description: "A bunch of keys.", Contact: "024 000 0000",

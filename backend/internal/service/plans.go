@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 	"sort"
 	"strings"
@@ -37,6 +36,16 @@ type PlanInput struct {
 
 var planSlugRe = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,48}$`)
 
+// Plan validation messages reused across checks.
+const (
+	msgPlanDefaultPrice = "a default price is required (0 for a free plan)"
+	msgPlanSlugTaken    = "a plan with that slug already exists"
+)
+
+// invalidPlan is a curator-fixable problem with a plan form: the admin
+// handlers answer it with 400 and the message.
+func invalidPlan(msg string) error { return &domain.ValidationError{Message: msg} }
+
 func validatePlan(in PlanInput) (domain.Plan, error) {
 	p := domain.Plan{
 		Name: strings.TrimSpace(in.Name), Audience: strings.TrimSpace(in.Audience),
@@ -46,49 +55,30 @@ func validatePlan(in PlanInput) (domain.Plan, error) {
 		GoldBadge: in.GoldBadge, Active: in.Active, SortOrder: in.SortOrder,
 	}
 	if len(p.Name) < 2 || len(p.Name) > 80 {
-		return p, fmt.Errorf("name must be 2–80 characters")
+		return p, invalidPlan("name must be 2–80 characters")
 	}
 	p.Slug = strings.TrimSpace(in.Slug)
 	if p.Slug == "" {
 		p.Slug = slugify(p.Name)
 	}
 	if !planSlugRe.MatchString(p.Slug) {
-		return p, fmt.Errorf("slug must be lowercase letters, numbers and dashes")
+		return p, invalidPlan("slug must be lowercase letters, numbers and dashes")
 	}
 	switch p.Audience {
 	case "any", "business", "creator":
 	default:
-		return p, fmt.Errorf("audience must be any, business or creator")
+		return p, invalidPlan("audience must be any, business or creator")
 	}
 	switch p.Interval {
 	case "free", "month":
 	default:
-		return p, fmt.Errorf("interval must be free or month")
+		return p, invalidPlan("interval must be free or month")
 	}
-	if len(in.Prices) == 0 {
-		return p, fmt.Errorf("a default price is required (0 for a free plan)")
+	prices, err := validatePlanPrices(in.Prices, p.Interval)
+	if err != nil {
+		return p, err
 	}
-	p.Prices = map[string]int64{}
-	for k, v := range in.Prices {
-		k = strings.TrimSpace(k)
-		if k == "" {
-			continue
-		}
-		if v < 0 {
-			return p, fmt.Errorf("prices can't be negative")
-		}
-		p.Prices[k] = v
-	}
-	def, ok := p.Prices["default"]
-	if !ok {
-		return p, fmt.Errorf("a default price is required (0 for a free plan)")
-	}
-	if p.Interval == "free" && def != 0 {
-		return p, fmt.Errorf("a free plan must have a zero default price")
-	}
-	if p.Interval == "month" && def == 0 {
-		return p, fmt.Errorf("a monthly plan needs a non-zero default price")
-	}
+	p.Prices = prices
 	for _, perk := range in.Perks {
 		if s := strings.TrimSpace(perk); s != "" {
 			p.Perks = append(p.Perks, s)
@@ -98,24 +88,56 @@ func validatePlan(in PlanInput) (domain.Plan, error) {
 		p.Perks = []string{} // the API always returns an array, never null
 	}
 	if len(p.Perks) > 8 {
-		return p, fmt.Errorf("at most 8 perk lines")
+		return p, invalidPlan("at most 8 perk lines")
 	}
-	if p.MaxListings < 0 || p.MaxListings > 100 {
-		return p, fmt.Errorf("max listings must be 0–100")
+	return p, validatePlanLimits(p)
+}
+
+// validatePlanPrices cleans the per-audience price map: non-negative pesewas,
+// a "default" key always, zero for a free plan and non-zero for a monthly one.
+func validatePlanPrices(in map[string]int64, interval string) (map[string]int64, error) {
+	if len(in) == 0 {
+		return nil, invalidPlan(msgPlanDefaultPrice)
 	}
-	if p.IncludedPromoDays < 0 || p.IncludedPromoDays > 31 {
-		return p, fmt.Errorf("included promotion days must be 0–31")
+	prices := map[string]int64{}
+	for k, v := range in {
+		k = strings.TrimSpace(k)
+		if k == "" {
+			continue
+		}
+		if v < 0 {
+			return nil, invalidPlan("prices can't be negative")
+		}
+		prices[k] = v
 	}
-	if p.TakeRatePercent < 0 || p.TakeRatePercent > 90 {
-		return p, fmt.Errorf("platform take-rate must be 0–90%%")
+	def, ok := prices["default"]
+	if !ok {
+		return nil, invalidPlan(msgPlanDefaultPrice)
 	}
-	if p.MaxProducts < 0 || p.MaxProducts > 1000 {
-		return p, fmt.Errorf("max products must be 0–1000")
+	if interval == "free" && def != 0 {
+		return nil, invalidPlan("a free plan must have a zero default price")
 	}
-	if p.MaxServices < 0 || p.MaxServices > 1000 {
-		return p, fmt.Errorf("max services must be 0–1000")
+	if interval == "month" && def == 0 {
+		return nil, invalidPlan("a monthly plan needs a non-zero default price")
 	}
-	return p, nil
+	return prices, nil
+}
+
+// validatePlanLimits range-checks a plan's numeric entitlements.
+func validatePlanLimits(p domain.Plan) error {
+	switch {
+	case p.MaxListings < 0 || p.MaxListings > 100:
+		return invalidPlan("max listings must be 0–100")
+	case p.IncludedPromoDays < 0 || p.IncludedPromoDays > 31:
+		return invalidPlan("included promotion days must be 0–31")
+	case p.TakeRatePercent < 0 || p.TakeRatePercent > 90:
+		return invalidPlan("platform take-rate must be 0–90%")
+	case p.MaxProducts < 0 || p.MaxProducts > 1000:
+		return invalidPlan("max products must be 0–1000")
+	case p.MaxServices < 0 || p.MaxServices > 1000:
+		return invalidPlan("max services must be 0–1000")
+	}
+	return nil
 }
 
 // Plans is the public catalog: active plans in display order. It feeds the
@@ -161,7 +183,7 @@ func (s *Service) CreatePlan(ctx context.Context, in PlanInput) (*domain.Plan, e
 		return nil, err
 	}
 	if _, err := s.plans.BySlug(ctx, p.Slug); err == nil {
-		return nil, fmt.Errorf("a plan with that slug already exists")
+		return nil, invalidPlan(msgPlanSlugTaken)
 	} else {
 		var nf *domain.NotFoundError
 		if !errors.As(err, &nf) {
@@ -190,7 +212,7 @@ func (s *Service) UpdatePlan(ctx context.Context, id string, in PlanInput) (*dom
 	// Slug change must not collide with another plan.
 	if p.Slug != existing.Slug {
 		if other, err := s.plans.BySlug(ctx, p.Slug); err == nil && other.ID != id {
-			return nil, fmt.Errorf("a plan with that slug already exists")
+			return nil, invalidPlan(msgPlanSlugTaken)
 		}
 	}
 	p.ID = existing.ID

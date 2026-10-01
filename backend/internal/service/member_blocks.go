@@ -60,6 +60,57 @@ func (s *Service) IsBlockedMember(ctx context.Context, viewerID, slug string) (b
 	return s.blocks.IsBlocked(ctx, viewerID, target.ID)
 }
 
+// BlockStatus is the direction-aware block state between a viewer and another
+// member. The record is one-directional (who blocked whom) even though its
+// effect is symmetric, and the UI must know which side the viewer is on: only
+// the member who made a block can undo it, and the member on the receiving end
+// should see a neutral "profile unavailable", not "You blocked …".
+type BlockStatus struct {
+	BlockedByMe bool `json:"blockedByMe"`
+	BlockedMe   bool `json:"blockedMe"`
+}
+
+// Blocked reports whether the pair is blocked in either direction.
+func (b BlockStatus) Blocked() bool { return b.BlockedByMe || b.BlockedMe }
+
+// BlockStatusBetween returns the direction-aware state between viewerID and
+// targetID. Either id empty (signed out) or equal means no block.
+func (s *Service) BlockStatusBetween(ctx context.Context, viewerID, targetID string) (BlockStatus, error) {
+	var st BlockStatus
+	if s.blocks == nil || viewerID == "" || targetID == "" || viewerID == targetID {
+		return st, nil
+	}
+	mine, err := s.blocks.BlockedBy(ctx, viewerID)
+	if err != nil {
+		return st, err
+	}
+	st.BlockedByMe = blocksInclude(mine, targetID)
+	theirs, err := s.blocks.BlockedBy(ctx, targetID)
+	if err != nil {
+		return st, err
+	}
+	st.BlockedMe = blocksInclude(theirs, viewerID)
+	return st, nil
+}
+
+// BlockStatusWith resolves slug and returns the viewer's block state with them.
+func (s *Service) BlockStatusWith(ctx context.Context, viewerID, slug string) (BlockStatus, error) {
+	target, err := s.members.BySlug(ctx, slug)
+	if err != nil {
+		return BlockStatus{}, err
+	}
+	return s.BlockStatusBetween(ctx, viewerID, target.ID)
+}
+
+func blocksInclude(rows []domain.MemberBlock, blockedID string) bool {
+	for _, b := range rows {
+		if b.BlockedID == blockedID {
+			return true
+		}
+	}
+	return false
+}
+
 // MyBlocked lists the members this member has blocked, with enough identity to
 // render an unblock list. Members that no longer resolve are skipped.
 func (s *Service) MyBlocked(ctx context.Context, memberID string) ([]domain.BlockedMember, error) {

@@ -25,17 +25,36 @@ func (f *fakePromos) ByReference(_ context.Context, ref string) (*domain.Promoti
 	}
 	return nil, &domain.NotFoundError{Entity: "promotion"}
 }
-func (f *fakePromos) UpdateStatus(_ context.Context, ref, status, at string) error {
+
+// MarkSuccess mirrors the repository's conditional write: only a promotion
+// that has not already succeeded transitions, and the result says whether it did.
+func (f *fakePromos) MarkSuccess(_ context.Context, ref, at, featuredUntil string) (bool, error) {
 	for i := range f.rows {
-		if f.rows[i].Reference == ref {
-			f.rows[i].Status = status
-			if status == domain.PledgeSuccess {
-				f.rows[i].ConfirmedAt = at
-			}
-			return nil
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status = domain.PledgeSuccess
+			f.rows[i].ConfirmedAt = at
+			f.rows[i].FeaturedUntil = featuredUntil
+			f.rows[i].GrantPending = true
+			return true, nil
 		}
 	}
-	return &domain.NotFoundError{Entity: "promotion"}
+	return false, nil
+}
+func (f *fakePromos) MarkGranted(_ context.Context, ref string) error {
+	for i := range f.rows {
+		if f.rows[i].Reference == ref {
+			f.rows[i].GrantPending = false
+		}
+	}
+	return nil
+}
+func (f *fakePromos) MarkFailed(_ context.Context, ref string) error {
+	for i := range f.rows {
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status = domain.PledgeFailed
+		}
+	}
+	return nil
 }
 func (f *fakePromos) All(context.Context) ([]domain.Promotion, error) { return f.rows, nil }
 func (f *fakePromos) ByMember(_ context.Context, memberID string) ([]domain.Promotion, error) {
@@ -78,8 +97,8 @@ func TestStartPromotion_ownerOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("owner promote failed: %v", err)
 	}
-	if !strings.HasPrefix(ref, "pro-") {
-		t.Errorf("reference = %q, want pro-<ts>", ref)
+	if !strings.HasPrefix(ref, "oguaa-pro-") {
+		t.Errorf("reference = %q, want oguaa-pro-<ts>", ref)
 	}
 	if _, _, _, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "", 7); err == nil {
 		t.Error("expected a missing email to be rejected")
@@ -194,5 +213,80 @@ func TestConfirmPromotion_failedVerification(t *testing.T) {
 	}
 	if listings.listings[0].Featured {
 		t.Error("failed promotion should not feature the listing")
+	}
+}
+
+// One 7-day promotion confirmed twice at once features the listing for 7 days,
+// not 14 (F142/F139).
+func TestConfirmPromotion_concurrentConfirmsExtendOnce(t *testing.T) {
+	ctx := context.Background()
+	listings := &fakeRepo{listings: []domain.Listing{
+		{ID: "b-1", Slug: "castle-view-guesthouse", Type: domain.TypeBusiness, OwnerID: "m-yaw", Status: domain.StatusApproved, Title: "Castle View", Details: map[string]any{}},
+	}}
+	ps := &racingPaystack{fakePaystack: fakePaystack{verifyOK: true, verifyAmount: 7_000}}
+	svc := NewPromotionsService(listings, &fakePromos{}, ps, "http://portal.test")
+
+	_, _, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@example.com", 7)
+	if err != nil {
+		t.Fatalf("StartPromotion: %v", err)
+	}
+	ps.meanwhile = func() {
+		if _, err := svc.ConfirmPromotion(ctx, ref); err != nil {
+			t.Errorf("inner confirm: %v", err)
+		}
+	}
+	promo, err := svc.ConfirmPromotion(ctx, ref)
+	if err != nil {
+		t.Fatalf("outer confirm: %v", err)
+	}
+	if promo.Status != domain.PledgeSuccess {
+		t.Errorf("status = %q, want success", promo.Status)
+	}
+	if got := daysFromNow(t, listings.listings[0].FeaturedUntil); got != 7 {
+		t.Errorf("featuredUntil is %d days out, want 7 — one payment, one placement", got)
+	}
+}
+
+// Paid placement is marked promotedUntil (the "Sponsored" label, K18);
+// editorial featuring never is, and unfeaturing clears it.
+func TestPromotedUntil_paidOnly(t *testing.T) {
+	svc, listings, _ := promosFixture(true, 7_000)
+	ctx := context.Background()
+	_, _, ref, err := svc.StartPromotion(ctx, "b-1", "m-yaw", "yaw@example.com", 7)
+	if err != nil {
+		t.Fatalf("StartPromotion: %v", err)
+	}
+	if _, err := svc.ConfirmPromotion(ctx, ref); err != nil {
+		t.Fatalf("ConfirmPromotion: %v", err)
+	}
+	l := listings.listings[0]
+	if l.PromotedUntil == "" || l.PromotedUntil != l.FeaturedUntil {
+		t.Errorf("paid promotion: promotedUntil = %q, want the featured end %q", l.PromotedUntil, l.FeaturedUntil)
+	}
+
+	core := New(Deps{Listings: listings})
+	if _, err := core.SetFeatured(ctx, "b-2", true, 5); err != nil {
+		t.Fatalf("editorial SetFeatured: %v", err)
+	}
+	if listings.listings[1].PromotedUntil != "" {
+		t.Errorf("editorial featuring set promotedUntil = %q", listings.listings[1].PromotedUntil)
+	}
+	if _, err := core.SetFeatured(ctx, "b-1", false, 0); err != nil {
+		t.Fatalf("unfeature: %v", err)
+	}
+	if listings.listings[0].PromotedUntil != "" {
+		t.Error("unfeaturing must end the Sponsored label")
+	}
+}
+
+// P060: safety notices, lost & found and memorials can't be promoted for money.
+func TestStartPromotion_rejectsSensitiveTypes(t *testing.T) {
+	svc, listings, _ := promosFixture(true, 0)
+	for _, typ := range []string{domain.TypeIncident, domain.TypeLostFound, domain.TypeMemorial} {
+		listings.listings = append(listings.listings, domain.Listing{ID: "s-" + typ, Type: typ, OwnerID: "m-yaw", Status: domain.StatusApproved})
+		var fb *domain.ForbiddenError
+		if _, _, _, err := svc.StartPromotion(context.Background(), "s-"+typ, "m-yaw", "a@b.c", 7); !errors.As(err, &fb) {
+			t.Fatalf("%s: got %v, want forbidden", typ, err)
+		}
 	}
 }

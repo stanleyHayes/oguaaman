@@ -69,9 +69,16 @@ cd mobile   && pnpm exec tsc --noEmit   # typecheck (expo export -p web to bundl
 ## The AI writing assistant (admin)
 
 The `/admin/compose` writing bar calls Claude **server-side** via `POST /api/ai`.
-Without `ANTHROPIC_API_KEY` it runs in a clearly-labelled simulation so the UI is
-fully demoable; set the key (and optionally `OGUAA_AI_MODEL`) in `backend/.env`
-to switch to live output. Calls are metered against a daily budget.
+The AI endpoints need a signed-in member who has agreed to the assistant's data
+use (`POST /api/me/ai-consent {"consent": true}`; otherwise 401 / 403
+`ai_consent_required`). E-mail addresses, phone numbers and Ghana Card numbers
+are replaced by placeholders before text leaves for the provider. Without
+`ANTHROPIC_API_KEY` it runs in a clearly-labelled simulation in development so
+the UI is fully demoable; in production (`GO_ENV=production`) it answers 503
+`ai_unavailable` instead, and the Kimi (Moonshot) backup stays off unless
+`AI_ALLOW_KIMI=true`. Set the key (and optionally `OGUAA_AI_MODEL`) in
+`backend/.env` to switch to live output. Calls are metered against a daily
+budget and a per-member cap.
 
 ## API (selected)
 

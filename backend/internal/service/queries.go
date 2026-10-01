@@ -10,8 +10,17 @@ import (
 
 // ── reads: listings by type ──────────────────────────────────────────────────
 
+// approved returns the published listings of one type. Tributes that were
+// hidden or removed are never part of a public read.
 func (s *Service) approved(ctx context.Context, typ string) ([]domain.Listing, error) {
-	return s.listings.Find(ctx, domain.ListingFilter{Type: typ, Status: domain.StatusApproved})
+	items, err := s.listings.Find(ctx, domain.ListingFilter{Type: typ, Status: domain.StatusApproved})
+	if err != nil {
+		return nil, err
+	}
+	for i := range items {
+		items[i].Tributes = visibleTributes(items[i].Tributes, nil)
+	}
+	return items, nil
 }
 
 func (s *Service) Artists(ctx context.Context) ([]domain.Listing, error) {
@@ -26,7 +35,106 @@ func (s *Service) ListingBySlug(ctx context.Context, typ, slug string) (*domain.
 	if l.Status != domain.StatusApproved {
 		return nil, &domain.NotFoundError{Entity: typ}
 	}
+	l.Tributes = visibleTributes(l.Tributes, nil)
 	return l, nil
+}
+
+// ── what a viewer may see (blocks, reporter privacy, tribute visibility) ─────
+
+// viewerID is the member id of a viewer, "" when signed out.
+func viewerID(viewer *domain.Member) string {
+	if viewer == nil {
+		return ""
+	}
+	return viewer.ID
+}
+
+// ViewListings prepares listings for a public response to viewer (nil when
+// signed out). Listings owned by a member the viewer has blocked, or who
+// blocked the viewer, are dropped (K13), and each listing gets its public
+// projection: a safety post loses its reporter's details unless the viewer is
+// the reporter or staff (D3), and a memorial shows only visible tributes by
+// authors outside the viewer's blocks.
+func (s *Service) ViewListings(ctx context.Context, viewer *domain.Member, items []domain.Listing) []domain.Listing {
+	items = s.FilterBlockedListings(ctx, viewerID(viewer), items)
+	var hidden map[string]struct{}
+	for i := range items {
+		if len(items[i].Tributes) > 0 {
+			hidden = s.hiddenFor(ctx, viewerID(viewer))
+			break
+		}
+	}
+	out := make([]domain.Listing, len(items))
+	for i, l := range items {
+		out[i] = publicListingView(l, viewer, hidden)
+	}
+	return out
+}
+
+// ViewListing is ViewListings for one listing: NotFound when a block between
+// the viewer and the owner hides it.
+func (s *Service) ViewListing(ctx context.Context, viewer *domain.Member, l *domain.Listing) (*domain.Listing, error) {
+	views := s.ViewListings(ctx, viewer, []domain.Listing{*l})
+	if len(views) == 0 {
+		return nil, &domain.NotFoundError{Entity: l.Type}
+	}
+	return &views[0], nil
+}
+
+// FilterBlockedNews drops articles written by a member in a block with the
+// viewer (K13). Signed-out viewers see everything.
+func (s *Service) FilterBlockedNews(ctx context.Context, viewer *domain.Member, in []domain.NewsArticle) []domain.NewsArticle {
+	hidden := s.hiddenFor(ctx, viewerID(viewer))
+	if len(hidden) == 0 {
+		return in
+	}
+	out := make([]domain.NewsArticle, 0, len(in))
+	for _, a := range in {
+		if _, blocked := hidden[a.AuthorID]; blocked && a.AuthorID != "" {
+			continue
+		}
+		out = append(out, a)
+	}
+	return out
+}
+
+// BlockedBetween reports whether viewer and the member ownerID have blocked
+// each other (either direction). Signed-out viewers have no blocks.
+func (s *Service) BlockedBetween(ctx context.Context, viewer *domain.Member, ownerID string) bool {
+	if viewer == nil || ownerID == "" {
+		return false
+	}
+	_, blocked := s.hiddenFor(ctx, viewer.ID)[ownerID]
+	return blocked
+}
+
+func publicListingView(l domain.Listing, viewer *domain.Member, hidden map[string]struct{}) domain.Listing {
+	if (l.Type == domain.TypeIncident || l.Type == domain.TypeLostFound) && !canSeeReporter(viewer, &l) {
+		l = publicSafetyView(l)
+	}
+	if len(l.Tributes) > 0 {
+		l.Tributes = visibleTributes(l.Tributes, hidden)
+	}
+	return l
+}
+
+// visibleTributes keeps the tributes the public may read: not hidden or
+// removed, and not written by a member in hidden (the viewer's blocks).
+func visibleTributes(in []domain.Tribute, hidden map[string]struct{}) []domain.Tribute {
+	if len(in) == 0 {
+		return in
+	}
+	out := make([]domain.Tribute, 0, len(in))
+	for _, t := range in {
+		if t.Status != "" {
+			continue
+		}
+		if _, blocked := hidden[t.MemberID]; blocked && t.MemberID != "" {
+			continue
+		}
+		out = append(out, t)
+	}
+	return out
 }
 
 func (s *Service) SpotlightArtist(ctx context.Context) (*domain.Listing, error) {
@@ -162,7 +270,23 @@ func (s *Service) FilteredMemories(ctx context.Context, f MemoryFilter) ([]domai
 }
 
 // RecordView records a unique daily page-view for the given listing.
+// maxListingIDLen bounds ids taken from a URL before any lookup.
+const maxListingIDLen = 200
+
+// RecordView counts a daily-unique view of a published listing. Unknown,
+// unpublished or absurd ids are NotFound, so no view record is written for
+// them (F098).
 func (s *Service) RecordView(ctx context.Context, listingID, visitorKey string) (bool, error) {
+	if listingID == "" || len(listingID) > maxListingIDLen {
+		return false, &domain.NotFoundError{Entity: "listing"}
+	}
+	l, err := s.listings.GetByID(ctx, listingID)
+	if err != nil {
+		return false, err
+	}
+	if l.Status != domain.StatusApproved {
+		return false, &domain.NotFoundError{Entity: "listing"}
+	}
 	return s.listings.RecordView(ctx, listingID, visitorKey)
 }
 

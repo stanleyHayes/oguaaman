@@ -24,9 +24,10 @@ func (h *Handler) Goals(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, items)
 }
 
-// AdminGoals lists every goal for the back-office (curator).
+// AdminGoals lists every goal for the back-office. Curators (who set goals) and
+// accountability officers (who record the verdict) both need the list.
 func (h *Handler) AdminGoals(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.requireRole(w, r, domain.RoleCurator); !ok {
+	if _, ok := h.requireRole(w, r, domain.RoleCurator, domain.RoleAccountabilityOfficer); !ok {
 		return
 	}
 	items, err := h.svc.AdminGoals(r.Context())
@@ -50,16 +51,18 @@ func (h *Handler) AdminCreateGoal(w http.ResponseWriter, r *http.Request) {
 	}
 	g, err := h.svc.CreateGoal(r.Context(), *orDevSteward(m), in)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, g)
 }
 
 // AdminUpdateGoal edits a goal's fields (curator). POST (not PATCH) because the
-// CORS policy allows GET/POST/DELETE only.
+// CORS policy allows GET/POST/DELETE only. A goal with a recorded verdict can
+// only be edited by a steward (403 otherwise).
 func (h *Handler) AdminUpdateGoal(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.requireRole(w, r, domain.RoleCurator); !ok {
+	m, ok := h.requireRole(w, r, domain.RoleCurator)
+	if !ok {
 		return
 	}
 	var in service.GoalInput
@@ -67,25 +70,22 @@ func (h *Handler) AdminUpdateGoal(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	g, err := h.svc.UpdateGoal(r.Context(), r.PathValue("id"), in)
+	g, err := h.svc.UpdateGoal(r.Context(), *orDevSteward(m), r.PathValue("id"), in)
 	if err != nil {
-		var nf *domain.NotFoundError
-		if errors.As(err, &nf) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, g)
 }
 
-// AdminDeleteGoal removes a goal (curator).
+// AdminDeleteGoal removes a goal (curator). A goal with a recorded verdict can
+// only be removed by a steward (403 otherwise); every delete is audited.
 func (h *Handler) AdminDeleteGoal(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.requireRole(w, r, domain.RoleCurator); !ok {
+	m, ok := h.requireRole(w, r, domain.RoleCurator)
+	if !ok {
 		return
 	}
-	if err := h.svc.DeleteGoal(r.Context(), r.PathValue("id")); err != nil {
+	if err := h.svc.DeleteGoal(r.Context(), *orDevSteward(m), r.PathValue("id")); err != nil {
 		h.handleErr(w, err)
 		return
 	}
@@ -109,15 +109,23 @@ func (h *Handler) AdminReviewGoal(w http.ResponseWriter, r *http.Request) {
 	}
 	g, err := h.svc.ReviewGoal(r.Context(), r.PathValue("id"), in.Status, in.Note, *orDevSteward(m))
 	if err != nil {
-		var nf *domain.NotFoundError
-		if errors.As(err, &nf) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, g)
+}
+
+// failInputOr answers a service error: a validation error is the caller's to fix
+// and is echoed as 400; everything else goes through handleErr (404/403 mapped,
+// internal errors logged and replaced by a generic 500) so database and driver
+// details never reach the caller.
+func (h *Handler) failInputOr(w http.ResponseWriter, err error) {
+	var ve *domain.ValidationError
+	if errors.As(err, &ve) {
+		fail(w, http.StatusBadRequest, ve.Error())
+		return
+	}
+	h.handleErr(w, err)
 }
 
 // orDevSteward supplies a dev-mode member when AUTH_REQUIRED is false and

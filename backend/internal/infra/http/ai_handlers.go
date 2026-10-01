@@ -6,63 +6,44 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/oguaa/backend/internal/domain"
 	"github.com/oguaa/backend/internal/service"
 )
 
-// ── AI writing assistant ──────────────────────────────────────────────────────
+// ── AI writing assistant (contract K15) ───────────────────────────────────────
+
+// msgAIConsent explains the 403 ai_consent_required answer.
+const msgAIConsent = "The writing assistant sends the text you select to Anthropic (Claude), a US company, to write a suggestion. Agree to that first to use it."
+
+// aiRequest is the assistant's input.
+type aiRequest struct {
+	Action   string `json:"action"`
+	Text     string `json:"text"`
+	Language string `json:"language"`
+	Prompt   string `json:"prompt"`
+}
 
 func (h *Handler) AI(w http.ResponseWriter, r *http.Request) {
-	in, memberID, ok := h.decodeAIInput(w, r)
+	in, m, ok := h.aiPreflight(w, r)
 	if !ok {
 		return
 	}
-	res, err := h.ai.Generate(r.Context(), memberID, in.Action, in.Text, in.Language, in.Prompt)
-	if errors.Is(err, service.ErrAILimit) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]any{
-			"error": "limit", "message": "You've reached today's AI limit. It resets at midnight.",
-		})
-		return
-	}
-	// A decline is a decision, not a failure — 422 with the model's own framing,
-	// so the member isn't told to retry something that will be declined again.
-	if errors.Is(err, service.ErrAIRefused) {
-		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
-			"error": "refused", "message": "The assistant declined that request. Your text is unchanged.",
-		})
-		return
-	}
-	if err != nil {
-		h.log.Error("ai error", "err", err)
-		fail(w, http.StatusBadGateway, "Something went wrong generating that. Your text is unchanged.")
+	res, err := h.ai.Generate(r.Context(), m.ID, in.Action, in.Text, in.Language, in.Prompt)
+	if h.aiFailed(w, err) {
 		return
 	}
 	writeJSON(w, http.StatusOK, res)
 }
 
 func (h *Handler) AIStream(w http.ResponseWriter, r *http.Request) {
-	in, memberID, ok := h.decodeAIInput(w, r)
+	in, m, ok := h.aiPreflight(w, r)
 	if !ok {
 		return
 	}
-	res, err := h.ai.Generate(r.Context(), memberID, in.Action, in.Text, in.Language, in.Prompt)
-	if errors.Is(err, service.ErrAILimit) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]any{
-			"error": "limit", "message": "You've reached today's AI limit. It resets at midnight.",
-		})
-		return
-	}
-	// A decline is a decision, not a failure — 422 with the model's own framing,
-	// so the member isn't told to retry something that will be declined again.
-	if errors.Is(err, service.ErrAIRefused) {
-		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
-			"error": "refused", "message": "The assistant declined that request. Your text is unchanged.",
-		})
-		return
-	}
-	if err != nil {
-		h.log.Error("ai stream error", "err", err)
-		fail(w, http.StatusBadGateway, "Something went wrong generating that. Your text is unchanged.")
+	res, err := h.ai.Generate(r.Context(), m.ID, in.Action, in.Text, in.Language, in.Prompt)
+	if h.aiFailed(w, err) {
 		return
 	}
 
@@ -93,31 +74,87 @@ func (h *Handler) AIStream(w http.ResponseWriter, r *http.Request) {
 	fl.Flush()
 }
 
-func (h *Handler) decodeAIInput(w http.ResponseWriter, r *http.Request) (struct {
-	Action   string `json:"action"`
-	Text     string `json:"text"`
-	Language string `json:"language"`
-	Prompt   string `json:"prompt"`
-}, string, bool) {
-	var in struct {
-		Action   string `json:"action"`
-		Text     string `json:"text"`
-		Language string `json:"language"`
-		Prompt   string `json:"prompt"`
+// aiPreflight enforces K15 before anything reaches the provider: a signed-in
+// member (401), who has agreed to the assistant's data use (403
+// ai_consent_required), within the per-member rate limit (429), with a
+// decodable body (400). Input validation (length, language, empty text)
+// happens in the service before any budget is spent.
+func (h *Handler) aiPreflight(w http.ResponseWriter, r *http.Request) (aiRequest, *domain.Member, bool) {
+	var in aiRequest
+	m := currentMember(r)
+	if m == nil {
+		fail(w, http.StatusUnauthorized, "Sign in to use the writing assistant.")
+		return in, nil, false
+	}
+	if m.AIConsentAt == "" {
+		writeAIError(w, http.StatusForbidden, "ai_consent_required", msgAIConsent)
+		return in, nil, false
+	}
+	if h.rateLimited(w, r, "ai:"+m.ID, 10, time.Minute) {
+		return in, nil, false
 	}
 	if err := decodeBody(r, &in); err != nil {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
-		return in, "", false
+		return in, nil, false
 	}
-	if len(in.Text) > 8000 || len(in.Prompt) > 2000 {
-		fail(w, http.StatusBadRequest, "input too long")
-		return in, "", false
+	return in, m, true
+}
+
+// aiFailed writes the HTTP answer for an assistant error and reports whether
+// there was one.
+func (h *Handler) aiFailed(w http.ResponseWriter, err error) bool {
+	var input *service.AIInputError
+	switch {
+	case err == nil:
+		return false
+	case errors.As(err, &input):
+		fail(w, http.StatusBadRequest, input.Message)
+	case errors.Is(err, service.ErrAILimit):
+		writeAIError(w, http.StatusTooManyRequests, "limit", "You've reached today's AI limit. It resets at midnight.")
+	case errors.Is(err, service.ErrAIUnavailable):
+		writeAIError(w, http.StatusServiceUnavailable, "ai_unavailable", "The writing assistant is temporarily unavailable.")
+	case errors.Is(err, service.ErrAIRefused):
+		// A decline is a decision, not a failure — 422 with the model's own
+		// framing, so the member isn't told to retry something that will be
+		// declined again.
+		writeAIError(w, http.StatusUnprocessableEntity, "refused", "The assistant declined that request. Your text is unchanged.")
+	default:
+		h.log.Error("ai error", "err", err)
+		fail(w, http.StatusBadGateway, "Something went wrong generating that. Your text is unchanged.")
 	}
-	memberID := ""
-	if m := currentMember(r); m != nil {
-		memberID = m.ID
+	return true
+}
+
+// writeAIError writes the assistant's error shape {"error": code, "message": text}.
+func writeAIError(w http.ResponseWriter, status int, code, message string) {
+	writeJSON(w, status, map[string]string{"error": code, "message": message})
+}
+
+// SetMyAIConsent records or withdraws the signed-in member's consent to the
+// writing assistant (K15): POST /api/me/ai-consent {"consent": bool} →
+// {"aiConsent": bool}.
+func (h *Handler) SetMyAIConsent(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
 	}
-	return in, memberID, true
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	var in struct {
+		Consent *bool `json:"consent"`
+	}
+	if err := decodeBody(r, &in); err != nil || in.Consent == nil {
+		fail(w, http.StatusBadRequest, "Send consent: true or false.")
+		return
+	}
+	got, err := h.svc.SetAIConsent(r.Context(), m.ID, *in.Consent)
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"aiConsent": got})
 }
 
 func chunkText(in string, size int) []string {

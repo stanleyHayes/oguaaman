@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/paymentintent"
@@ -13,10 +14,12 @@ type StripeClient interface {
 	// CreatePaymentIntent creates a PaymentIntent and returns its client secret
 	// (for the mobile sheet) and its Stripe ID (for server-side verification).
 	CreatePaymentIntent(ctx context.Context, params StripeIntentParams) (clientSecret, paymentIntentID string, err error)
-	// VerifyPaymentIntent returns the Stripe status and captured amount (in the
-	// currency's smallest unit, e.g. pesewas for GHS). Status should be compared
-	// to "succeeded" by the caller.
-	VerifyPaymentIntent(ctx context.Context, paymentIntentID string) (status string, amountPesewas int64, err error)
+	// VerifyPaymentIntent returns what Stripe actually recorded for the
+	// PaymentIntent: its status, the captured amount (in the currency's
+	// smallest unit, e.g. pesewas for GHS), the currency, and the reference we
+	// stamped into its metadata. The caller compares all of them with the
+	// pending record before fulfilling anything.
+	VerifyPaymentIntent(ctx context.Context, paymentIntentID string) (StripePaymentIntent, error)
 	// Simulated reports whether this client moves real money.
 	Simulated() bool
 }
@@ -28,6 +31,14 @@ type StripeIntentParams struct {
 	Reference     string
 	Email         string
 	Metadata      map[string]string
+}
+
+// StripePaymentIntent is the server-side view of a PaymentIntent.
+type StripePaymentIntent struct {
+	Status        string // compare to "succeeded"
+	AmountPesewas int64  // 0 = unknown (simulation only)
+	Currency      string // lowercase ISO 4217, e.g. "ghs"
+	Reference     string // metadata["reference"]
 }
 
 // NewStripeClient talks to the live Stripe API with the given secret key.
@@ -45,11 +56,11 @@ func (s *stripeHTTP) CreatePaymentIntent(ctx context.Context, p StripeIntentPara
 		Amount:       stripe.Int64(p.AmountPesewas),
 		Currency:     stripe.String(p.Currency),
 		ReceiptEmail: stripe.String(p.Email),
-		Metadata:     map[string]string{"reference": p.Reference},
+		Metadata:     map[string]string{},
 	}
-	for k, v := range p.Metadata {
-		params.Metadata[k] = v
-	}
+	maps.Copy(params.Metadata, p.Metadata)
+	// Set last so no metadata entry can replace the reference we verify.
+	params.Metadata["reference"] = p.Reference
 	pi, err := paymentintent.New(params)
 	if err != nil {
 		return "", "", fmt.Errorf("stripe create intent failed: %w", err)
@@ -57,12 +68,17 @@ func (s *stripeHTTP) CreatePaymentIntent(ctx context.Context, p StripeIntentPara
 	return pi.ClientSecret, pi.ID, nil
 }
 
-func (s *stripeHTTP) VerifyPaymentIntent(ctx context.Context, id string) (string, int64, error) {
+func (s *stripeHTTP) VerifyPaymentIntent(ctx context.Context, id string) (StripePaymentIntent, error) {
 	pi, err := paymentintent.Get(id, nil)
 	if err != nil {
-		return "", 0, fmt.Errorf("stripe retrieve intent failed: %w", err)
+		return StripePaymentIntent{}, fmt.Errorf("stripe retrieve intent failed: %w", err)
 	}
-	return string(pi.Status), pi.Amount, nil
+	return StripePaymentIntent{
+		Status:        string(pi.Status),
+		AmountPesewas: pi.Amount,
+		Currency:      string(pi.Currency),
+		Reference:     pi.Metadata["reference"],
+	}, nil
 }
 
 // SimulatedStripe closes the Stripe loop without moving money.
@@ -74,6 +90,6 @@ func (SimulatedStripe) CreatePaymentIntent(_ context.Context, p StripeIntentPara
 	return "sim_secret_" + p.Reference, "sim_pi_" + p.Reference, nil
 }
 
-func (SimulatedStripe) VerifyPaymentIntent(_ context.Context, _ string) (string, int64, error) {
-	return "succeeded", 0, nil
+func (SimulatedStripe) VerifyPaymentIntent(_ context.Context, _ string) (StripePaymentIntent, error) {
+	return StripePaymentIntent{Status: "succeeded"}, nil
 }

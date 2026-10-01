@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/oguaa/backend/internal/domain"
+	"github.com/oguaa/backend/internal/platform/logger"
 )
 
 // ── admin ────────────────────────────────────────────────────────────────────
@@ -40,14 +41,20 @@ func (s *Service) SetMemberRole(ctx context.Context, id, role string) error {
 	if !validRole(role) {
 		return fmt.Errorf("invalid role %q", role)
 	}
-	return s.members.UpdateRole(ctx, id, role)
+	if err := s.members.UpdateRole(ctx, id, role); err != nil {
+		return err
+	}
+	logger.Security(ctx, s.log, logger.EventRoleChanged, logger.KeyMemberID, id, "role", role)
+	return nil
 }
 
 // InviteMember pre-creates a member with a role (steward action). When they
 // later sign in with this phone/email, they already hold the role — the
 // passwordless way to onboard curators, stewards and editors (spec §9).
 func (s *Service) InviteMember(ctx context.Context, identifier, displayName, role string) (*domain.Member, error) {
-	identifier = strings.TrimSpace(identifier)
+	// The same normalisation sign-in and password reset use (emails lowercased),
+	// or an invite typed with capitals could never be found and claimed.
+	identifier = normalizeIdentifier(identifier)
 	displayName = strings.TrimSpace(displayName)
 	if identifier == "" || displayName == "" {
 		return nil, fmt.Errorf("a name and a phone or email are required")
@@ -58,9 +65,14 @@ func (s *Service) InviteMember(ctx context.Context, identifier, displayName, rol
 	if existing, _ := s.members.ByIdentifier(ctx, identifier); existing != nil {
 		return nil, fmt.Errorf("%s is already a member — change their role from the list instead", identifier)
 	}
+	// Profiles, follows and blocks resolve members by slug: never reuse one.
+	slug, err := UniqueMemberSlug(ctx, s.members, displayName)
+	if err != nil {
+		return nil, err
+	}
 	m := domain.Member{
 		ID:          newID("m-"),
-		Slug:        slugify(displayName),
+		Slug:        slug,
 		DisplayName: displayName,
 		Initials:    initialsOf(displayName),
 		Role:        role,
@@ -75,11 +87,32 @@ func (s *Service) InviteMember(ctx context.Context, identifier, displayName, rol
 	if err := s.members.Insert(ctx, m); err != nil {
 		return nil, err
 	}
+	logger.Security(ctx, s.log, logger.EventRoleChanged, logger.KeyMemberID, m.ID, "role", role, "invited", true)
 	return &m, nil
 }
 
 func (s *Service) SuspendMember(ctx context.Context, id string, suspended bool) error {
-	return s.members.SetSuspended(ctx, id, suspended)
+	if !suspended {
+		m, err := s.members.ByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		if m.ErasedAt != "" {
+			return &domain.ValidationError{Message: "This account was deleted at the member's request and can't be reactivated."}
+		}
+	}
+	if err := s.members.SetSuspended(ctx, id, suspended); err != nil {
+		return err
+	}
+	// Suspension already blocks every request; revoking the sessions too means
+	// lifting it later never revives a token issued before (e.g. a hijacked one).
+	if suspended {
+		if _, err := s.members.BumpTokenVersion(ctx, id); err != nil {
+			return err
+		}
+	}
+	logger.Security(ctx, s.log, logger.EventSuspensionChanged, logger.KeyMemberID, id, "suspended", suspended)
+	return nil
 }
 
 // SetFeatured surfaces a listing on the front pages as a paid placement

@@ -19,6 +19,17 @@ func (r *recNotifs) Insert(_ context.Context, n domain.Notification) error {
 	return nil
 }
 
+// InsertOnce records n unless a notice with its id is already stored.
+func (r *recNotifs) InsertOnce(_ context.Context, n domain.Notification) (bool, error) {
+	for _, have := range r.inserted {
+		if have.ID == n.ID {
+			return false, nil
+		}
+	}
+	r.inserted = append(r.inserted, n)
+	return true, nil
+}
+
 // recFollows serves fixed follow graphs for listings and members.
 type recFollows struct {
 	stubFollows

@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/oguaa/backend/internal/domain"
 )
@@ -11,9 +12,12 @@ import (
 
 // Search runs the unified cross-pillar search (spec §12).
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
+	if h.rateLimited(w, r, "search:"+clientKey(r), 120, time.Minute) {
+		return
+	}
 	q := r.URL.Query().Get("q")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	hits, err := h.svc.Search(r.Context(), q, limit)
+	hits, err := h.svc.SearchAs(r.Context(), currentMember(r), q, limit)
 	if err != nil {
 		h.handleErr(w, err)
 		return

@@ -40,8 +40,19 @@ type Subscription struct {
 	Status        string `json:"status" bson:"status"`
 	PeriodEnd     string `json:"periodEnd,omitempty" bson:"periodEnd,omitempty"` // RFC3339; set on success
 	Simulated     bool   `json:"simulated,omitempty" bson:"simulated,omitempty"` // dev-mode payment, not real money
+	// FailureReason says why an unpaid record was closed (e.g. abandoned by
+	// the reconciliation sweep after 48 hours).
+	FailureReason string `json:"failureReason,omitempty" bson:"failureReason,omitempty"`
 	CreatedAt     string `json:"createdAt" bson:"createdAt"`
 	ConfirmedAt   string `json:"confirmedAt,omitempty" bson:"confirmedAt,omitempty"`
+	// FeaturedUntil is the plan-bundled featured window this payment bought
+	// (RFC3339), stored at settlement so a failed grant can be re-applied.
+	FeaturedUntil string `json:"-" bson:"featuredUntil,omitempty"`
+	// GrantPending is set when the payment settles and cleared once what it
+	// bought has been applied, so a confirm retried after a failed grant
+	// (webhook 500 → Paystack retry) applies it instead of stopping at the
+	// settled status. Legacy rows without it count as granted.
+	GrantPending bool `json:"-" bson:"grantPending,omitempty"`
 }
 
 // SubscriptionRepository persists subscriptions and answers by-reference (the
@@ -49,9 +60,27 @@ type Subscription struct {
 type SubscriptionRepository interface {
 	Insert(ctx context.Context, s Subscription) error
 	ByReference(ctx context.Context, reference string) (*Subscription, error)
-	UpdateStatus(ctx context.Context, reference, status, at string) error
-	SetPeriodEnd(ctx context.Context, reference, until string) error // paid-until date, set on confirmation
+	// MarkSuccess moves a subscription that has not yet succeeded to success in
+	// ONE conditional write, stamping confirmedAt and the paid-until date. It
+	// reports whether this call made the transition: concurrent confirms race
+	// here and only the winner extends the paid period.
+	// The bundled featuredUntil ("" for none) is stored with it and the row
+	// is flagged grantPending until MarkGranted.
+	MarkSuccess(ctx context.Context, reference, at, periodEnd, featuredUntil string) (bool, error)
+	// MarkGranted clears grantPending once the paid period (and any bundled
+	// promotion) has been applied.
+	MarkGranted(ctx context.Context, reference string) error
+	// MarkFailed records a payment that did not complete. It never overwrites
+	// a success.
+	MarkFailed(ctx context.Context, reference string) error
 	ByMember(ctx context.Context, memberID string) ([]Subscription, error)
+	// PendingBetween lists records still pending whose createdAt is in
+	// [from, to) (from "" = no lower bound), oldest first, at most limit —
+	// the payment reconciliation sweep's work list (C5).
+	PendingBetween(ctx context.Context, from, to string, limit int) ([]Subscription, error)
+	// ExpirePending closes a record that is STILL pending (status failed, or
+	// cancelled for an order) with reason; it reports whether it did.
+	ExpirePending(ctx context.Context, reference, reason, at string) (bool, error)
 	All(ctx context.Context) ([]Subscription, error) // steward ledger
 	// ActiveByListing reports whether the listing has a success subscription
 	// whose periodEnd is still in the future (now is RFC3339).

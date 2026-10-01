@@ -92,7 +92,9 @@ restart the dev server.
 
 `go run ./cmd/seed` (or the `seed` compose service) loads nine demo members. Sign-in is
 by email + password — password sign-in replaced the earlier one-time-code flow — and
-every seeded account shares the same demo password: **`Oguaa-2026!`**
+every seeded account shares one demo password: `SEED_PASSWORD` when set, otherwise a
+local-development default defined in `backend/internal/infra/mongo/seed.go`. That default
+is never used when `GO_ENV=production`, and `@oguaa.test` identities cannot sign in there.
 
 | Email | Role |
 |-------|------|
@@ -106,7 +108,9 @@ every seeded account shares the same demo password: **`Oguaa-2026!`**
 | `esi-quayson@oguaa.test` | member |
 | `efia-quagraine@oguaa.test` | editor |
 
-Demo data only — never reuse this password for a real account. Pre-existing accounts
+Demo data only — never reuse this password for a real account, and never load the demo
+identities into a live database (the API logs an ERROR at startup if it finds any; remove
+them with `go run ./cmd/purgefabricated`). Pre-existing accounts
 without a password (e.g. invited members created before password sign-in) are claimed
 through the Join/Register flow: registering with their identifier sets their first
 password.

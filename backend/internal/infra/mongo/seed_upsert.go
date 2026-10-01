@@ -3,168 +3,147 @@ package mongo
 import (
 	"context"
 	"log/slog"
-	"strings"
 
-	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/oguaa/backend/internal/domain"
 )
 
-// SeedUpsert loads the full Cape Coast corpus into a database that is already
-// in use, WITHOUT dropping anything.
+// SeedUpsert loads the factual Cape Coast corpus into a database that is
+// already in use, WITHOUT dropping or overwriting anything.
 //
-// Seed() is for a local reset: it drops 28 collections first, including members.
-// Run against production that would delete every real account — including the
-// steward's — so it must never be pointed at a live database. This function is
+// Seed() is for a local reset: it drops every collection first, including
+// members, so it must never be pointed at a live database. This function is
 // the deployable half of the same data:
 //
-//   - content collections (listings, orgs, places, news, timeline, plans,
-//     directives…) are ReplaceOne upserts keyed by _id, so re-running restores
-//     seed rows to their canonical state and never touches rows we didn't ship;
-//   - members are INSERT-IF-ABSENT. If a real signed-up account ever occupies an
-//     id the seed also uses, replacing it would reset that person's password,
-//     email and role. Existing member documents are left exactly as they are,
-//     and the count of skips is reported so the operator can see it happened.
+//   - every write is INSERT-IF-ABSENT ($setOnInsert keyed by _id). A row that
+//     already exists is left exactly as it is, because staff and members edit
+//     seeded rows in place: plan prices, institution pages and offices,
+//     verification, moderation status, view counts. Re-running never undoes
+//     those edits. A correction to a row that already shipped must go out as a
+//     targeted migration, not through this command.
+//   - illustration is never written: fabricated listings, demo directives and
+//     goals, demo institution claims, outside agents and demo news (see
+//     domain/seedclass.go). No member accounts are created either — every
+//     seeded identity is an @oguaa.test demo account.
+//   - the copy that is written is cleaned for a live site: placeholder contact
+//     buttons are dropped from institution pages, and invented ticket tiers are
+//     dropped from real events.
 //
-// It returns the number of documents written and the number of members skipped
-// because a real account already held that id.
-func SeedUpsert(ctx context.Context, db *mongo.Database) (written int, membersSkipped int, err error) {
-	skipped := 0
-	defer func() {
-		slog.Info("seedlive: illustration withheld from the live database", "listingsSkipped", skipped)
-	}()
-	up := func(coll string, id string, doc any) error {
-		if id == "" {
-			return nil
+// It returns the number of documents inserted and the number of corpus rows
+// left alone because a document with that _id already existed.
+func SeedUpsert(ctx context.Context, db *mongo.Database) (written int, existing int, err error) {
+	w := &liveSeedWriter{ctx: ctx, db: db}
+	steps := []func() error{w.orgsAndPlaces, w.listings, w.reference}
+	for _, step := range steps {
+		if err = step(); err != nil {
+			return w.written, w.existing, err
 		}
-		_, e := db.Collection(coll).ReplaceOne(ctx, bson.M{"_id": id}, doc, options.Replace().SetUpsert(true))
-		if e == nil {
-			written++
-		}
-		return e
 	}
+	slog.Info("seedlive: illustration withheld from the live database", "rowsWithheld", w.withheld)
+	err = createIndexes(ctx, db)
+	return w.written, w.existing, err
+}
 
-	// ── members: insert only when absent ────────────────────────────────────
-	members := append([]domain.Member{}, seedMembers...)
-	if hash, hErr := bcrypt.GenerateFromPassword([]byte(SeedPassword), bcrypt.DefaultCost); hErr != nil {
-		slog.Warn("seedupsert: could not hash the seed password", "err", hErr)
+// liveSeedWriter tallies insert-if-absent writes for SeedUpsert.
+type liveSeedWriter struct {
+	ctx      context.Context
+	db       *mongo.Database
+	written  int
+	existing int
+	withheld int
+}
+
+func (w *liveSeedWriter) put(coll, id string, doc any) error {
+	inserted, err := insertIfAbsent(w.ctx, w.db.Collection(coll), id, doc)
+	if err != nil {
+		return err
+	}
+	if inserted {
+		w.written++
 	} else {
-		for i := range members {
-			members[i].PasswordHash = string(hash)
-		}
+		w.existing++
 	}
-	for _, m := range members {
-		// The demo identities own the invented content and share one password
-		// that is documented in this repository. They must never exist in a live
-		// database — see domain/seedclass.go.
-		if strings.HasSuffix(m.Email, domain.DemoMemberEmailSuffix) {
-			continue
-		}
-		n, cErr := db.Collection(collMembers).CountDocuments(ctx, bson.M{"_id": m.ID})
-		if cErr != nil {
-			return written, membersSkipped, cErr
-		}
-		if n > 0 {
-			membersSkipped++
-			continue
-		}
-		if _, iErr := db.Collection(collMembers).InsertOne(ctx, m); iErr != nil {
-			return written, membersSkipped, iErr
-		}
-		written++
-	}
+	return nil
+}
 
-	// ── organisations, places ───────────────────────────────────────────────
+func (w *liveSeedWriter) orgsAndPlaces() error {
 	allOrgs := append(append([]domain.Organization{}, seedOrgs...), seedExtraOrgs...)
 	applyOrgCoords(allOrgs)
 	for _, o := range allOrgs {
-		if err = up(collOrgs, o.ID, o); err != nil {
-			return
+		if err := w.put(collOrgs, o.ID, liveCorpusOrg(o)); err != nil {
+			return err
 		}
 	}
-	if _, err = seedClaimableOrgsData(ctx, db); err != nil { // already upsert-by-slug
-		return
+	added, err := seedClaimableOrgsData(w.ctx, w.db) // insert-if-absent by _id and slug
+	if err != nil {
+		return err
 	}
+	w.written += added
 	for _, p := range seedPlaces {
-		if err = up(collPlaces, p.ID, p); err != nil {
-			return
+		if err := w.put(collPlaces, p.ID, p); err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
-	// ── listings: the archive people actually came to read ──────────────────
-	allListings := append(append(append(seedListings(), seedExtraListings()...), seedIncidents()...), seedLostFound()...)
-	applyListingCoords(allListings)
-	for _, l := range allListings {
+func (w *liveSeedWriter) listings() error {
+	all := append(append(append(seedListings(), seedExtraListings()...), seedIncidents()...), seedLostFound()...)
+	applyListingCoords(all)
+	for _, l := range all {
 		// Illustration never reaches a live database. Shops that do not exist,
 		// fabricated emergencies, memorials for the living — see
 		// domain/seedclass.go for the full reasoning.
 		if domain.IsFabricatedListing(l.ID, l.Type) {
-			skipped++
+			w.withheld++
 			continue
 		}
-		if err = up(collListings, l.ID, l); err != nil {
-			return
+		if err := w.put(collListings, l.ID, liveCorpusListing(l)); err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
-	// ── editorial + reference data ──────────────────────────────────────────
+func (w *liveSeedWriter) reference() error {
 	for _, n := range seedNews {
-		if err = up(collNews, n.ID, n); err != nil {
-			return
+		if domain.IsFabricatedNews(n.ID) {
+			w.withheld++
+			continue
+		}
+		if err := w.put(collNews, n.ID, n); err != nil {
+			return err
 		}
 	}
 	for _, t := range seedTimeline {
-		if err = up(collTimeline, t.ID, t); err != nil {
-			return
+		if err := w.put(collTimeline, t.ID, t); err != nil {
+			return err
 		}
 	}
 	for _, p := range seedPlans {
-		if err = up(collPlans, p.ID, p); err != nil {
-			return
+		if err := w.put(collPlans, p.ID, p); err != nil {
+			return err
 		}
 	}
-	for _, c := range seedOrgClaims {
-		if err = up(collOrgClaims, c.ID, c); err != nil {
-			return
-		}
-	}
-	for _, d := range seedDirectives() {
-		if err = up(collDirectives, d.ID, d); err != nil {
-			return
-		}
-	}
-
-	// Civic code, goals and agents are upserted here rather than through
-	// seedCivic/seedGoalsData/seedAgentsData: those are plain InsertMany and only
-	// work because Seed() drops their collections first, so calling them twice
-	// fails on a duplicate _id.
 	for _, b := range seedCivicBehaviours {
-		if err = up(collCivicBehaviours, b.Slug, b); err != nil { // Slug is bson _id
-			return
+		if err := w.put(collCivicBehaviours, b.Slug, b); err != nil { // Slug is bson _id
+			return err
 		}
 	}
 	for _, l := range seedCivicLessons {
-		if err = up(collCivicLessons, l.Slug, l); err != nil { // Slug is bson _id
-			return
+		if err := w.put(collCivicLessons, l.Slug, l); err != nil { // Slug is bson _id
+			return err
 		}
 	}
-	for _, g := range seedGoals {
-		if err = up(collGoals, g.ID, g); err != nil {
-			return
-		}
-	}
-	// Outside agents are invented people offering escrow-backed errand services.
-	// A fabricated agent is a fabricated trust signal — somebody could try to
-	// hire one — so they are illustration, and withheld like the rest.
-	skipped += len(seedAgents)
+	// Directives, goals, institution claims and outside agents are all
+	// illustration (domain/seedclass.go): demo announcements and verdicts in
+	// real authorities' names, a demo manager of a real office, invented
+	// escrow agents. None of them is written.
+	w.withheld += len(seedDirectives()) + len(seedGoals) + len(seedOrgClaims) + len(seedAgents)
 
 	// SeedEmptyCollections fills empty activity collections with representative
 	// pledges, tickets and subscriptions. That is invented transaction history;
 	// a live database's activity must be its own.
-
-	err = createIndexes(ctx, db)
-	return
+	return nil
 }

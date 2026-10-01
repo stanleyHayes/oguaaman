@@ -21,6 +21,38 @@ func (h *Handler) Queue(w http.ResponseWriter, r *http.Request) {
 	writeList(w, r, items)
 }
 
+// SafetyReviewQueue — GET /api/admin/safety-review. Auto-published incidents
+// and lost & found notices awaiting a curator's follow-up review (overdue
+// first).
+func (h *Handler) SafetyReviewQueue(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.requireRole(w, r, "curator", "moderator"); !ok {
+		return
+	}
+	rows, err := h.svc.SafetyReviewQueue(r.Context())
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeList(w, r, rows)
+}
+
+// MarkSafetyReviewed — POST /api/admin/safety-review/{id}. Records the
+// follow-up review of an auto-published safety post.
+func (h *Handler) MarkSafetyReviewed(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireRole(w, r, "curator", "moderator")
+	if !ok {
+		return
+	}
+	if m == nil {
+		m = &domain.Member{ID: domain.DevDemoModeratorID, Role: domain.RoleSteward} // dev convenience only — never reached when AUTH_REQUIRED=true
+	}
+	if err := h.svc.MarkSafetyReviewed(r.Context(), m, r.PathValue("id")); err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"reviewed": true})
+}
+
 func (h *Handler) Moderate(w http.ResponseWriter, r *http.Request) {
 	m, ok := h.requireRole(w, r, "curator", "moderator")
 	if !ok {

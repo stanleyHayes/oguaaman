@@ -12,6 +12,13 @@ already done**: it stores Expo tokens (`POST /api/push/subscribe`, `platform:
 `priority: high`, channel `alerts`). You only need to register the device token
 and (for iOS) request Apple's critical-alert entitlement.
 
+Server-side rules the app should expect: the token must be a real Expo token
+(`ExponentPushToken[…]`, else 400), a member keeps at most 10 devices (the
+oldest registration is dropped), subscribing is rate-limited, pushes go out in
+batches of at most 100 with dead (`DeviceNotRegistered`) tokens pruned, and a
+member who switched the push channel off in their notification preferences
+(`PUT /api/me/notification-preferences`) is skipped.
+
 ## 1. Install the native modules
 
 ```bash

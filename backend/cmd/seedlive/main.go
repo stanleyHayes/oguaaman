@@ -4,9 +4,12 @@
 // Use this — never `cmd/seed` — against production. `cmd/seed` drops 28
 // collections including members, which would delete every real account.
 //
-// Every content write is an idempotent upsert keyed by _id, and members are
-// inserted only when absent, so a real account that happens to share a seed id
-// keeps its own password, email and role. Safe to re-run.
+// Every write is insert-if-absent keyed by _id: a row that already exists is
+// never replaced, so staff and member edits to seeded rows (plan prices,
+// institution pages, moderation, verification) survive a re-run. Corrections
+// to rows that already shipped go out as targeted migrations instead.
+// Illustration — fabricated listings, demo directives, goals, claims and
+// agents — is never written. Safe to re-run.
 //
 //	go run ./cmd/seedlive              # uses MONGODB_URI / MONGODB_DB from the env
 //
@@ -43,11 +46,11 @@ func main() {
 	}
 	defer func() { _ = client.Disconnect(context.Background()) }()
 
-	written, skipped, err := mongox.SeedUpsert(ctx, db)
+	written, existing, err := mongox.SeedUpsert(ctx, db)
 	if err != nil {
 		log.Error("seedlive failed", "err", err, "written", written)
 		os.Exit(1)
 	}
-	log.Info("seedlive complete — non-destructive upsert",
-		"db", cfg.MongoDB, "documentsWritten", written, "existingMembersLeftAlone", skipped)
+	log.Info("seedlive complete — insert-if-absent, existing rows untouched",
+		"db", cfg.MongoDB, "documentsInserted", written, "existingRowsLeftAlone", existing)
 }

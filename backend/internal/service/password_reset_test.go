@@ -83,3 +83,50 @@ func TestStartPasswordResetUnknownAccount(t *testing.T) {
 		t.Fatalf("StartPasswordReset unknown = %v, want ErrResetAccountNotFound", err)
 	}
 }
+
+// R26: in production a reset code that no channel accepted is withdrawn and
+// reported (ErrCodeNotDelivered → 503), never a 200 promising a code.
+func TestStartPasswordResetUndeliveredInProduction(t *testing.T) {
+	ctx := context.Background()
+	repo := &pwResetRepo{m: &domain.Member{ID: "m-1", Email: testMemberEmail}}
+	mail := &failingSender{}
+	svc := NewAuthService(repo, "secret").WithProduction(true).WithNotifiers(mail, nil)
+
+	m, code, err := svc.StartPasswordReset(ctx, testMemberEmail)
+	if !errors.Is(err, ErrCodeNotDelivered) || m != nil || code != "" {
+		t.Fatalf("got member=%v code=%q err=%v, want ErrCodeNotDelivered only", m, code, err)
+	}
+	if mail.calls != 1 {
+		t.Fatalf("email tried %d times, want 1", mail.calls)
+	}
+	if repo.m.PasswordResetCodeHash != "" || repo.m.PasswordResetExpiresAt != "" {
+		t.Fatal("an undelivered code was left usable")
+	}
+}
+
+// R26: with no email provider every email address gets the same answer,
+// before any lookup — known and unknown accounts alike.
+func TestStartPasswordResetNoEmailProviderInProduction(t *testing.T) {
+	ctx := context.Background()
+	repo := &pwResetRepo{m: &domain.Member{ID: "m-1", Email: testMemberEmail}}
+	svc := NewAuthService(repo, "secret").WithProduction(true)
+	for _, id := range []string{testMemberEmail, "nobody@example.com"} {
+		if _, _, err := svc.StartPasswordReset(ctx, id); !errors.Is(err, ErrCodeNotDelivered) {
+			t.Fatalf("%s: err = %v, want ErrCodeNotDelivered", id, err)
+		}
+	}
+	if repo.m.PasswordResetCodeHash != "" {
+		t.Fatal("a code was issued with no way to deliver it")
+	}
+}
+
+func TestStartPasswordResetDeliveredInProduction(t *testing.T) {
+	ctx := context.Background()
+	repo := &pwResetRepo{m: &domain.Member{ID: "m-1", Email: testMemberEmail}}
+	mail := &okSender{}
+	svc := NewAuthService(repo, "secret").WithProduction(true).WithNotifiers(mail, nil)
+	m, code, err := svc.StartPasswordReset(ctx, testMemberEmail)
+	if err != nil || m == nil || code != "" || mail.calls != 1 || repo.m.PasswordResetCodeHash == "" {
+		t.Fatalf("got member=%v code=%q err=%v calls=%d", m, code, err, mail.calls)
+	}
+}

@@ -69,19 +69,19 @@ type CivicBehaviourInput struct {
 func validateBehaviour(in CivicBehaviourInput) (domain.CivicBehaviour, error) {
 	ring := strings.TrimSpace(in.Ring)
 	if _, ok := civicRingOrder[ring]; !ok {
-		return domain.CivicBehaviour{}, fmt.Errorf("choose a valid ring (self, home, school, work, town, nation)")
+		return domain.CivicBehaviour{}, &domain.ValidationError{Message: "choose a valid ring (self, home, school, work, town, nation)"}
 	}
 	typ := strings.TrimSpace(in.Type)
 	if typ != "do" && typ != "stop" {
-		return domain.CivicBehaviour{}, fmt.Errorf("type must be \"do\" or \"stop\"")
+		return domain.CivicBehaviour{}, &domain.ValidationError{Message: "type must be \"do\" or \"stop\""}
 	}
 	title := strings.TrimSpace(in.Title)
 	if len(title) < 2 || len(title) > 160 {
-		return domain.CivicBehaviour{}, fmt.Errorf("title must be 2–160 characters")
+		return domain.CivicBehaviour{}, &domain.ValidationError{Message: "title must be 2–160 characters"}
 	}
 	desc := strings.TrimSpace(in.Description)
 	if desc == "" {
-		return domain.CivicBehaviour{}, fmt.Errorf("a description is required")
+		return domain.CivicBehaviour{}, &domain.ValidationError{Message: "a description is required"}
 	}
 	return domain.CivicBehaviour{Ring: ring, Type: typ, Title: title, Description: desc, Why: strings.TrimSpace(in.Why)}, nil
 }

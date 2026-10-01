@@ -1,6 +1,6 @@
 # Oguaa — common commands. `make up` (Docker) or `make dev` (local).
 
-.PHONY: help up down logs dev seed seed-empty test build lint proto tidy ci
+.PHONY: help up down logs dev seed seed-empty purge-demo verify-no-demo test build lint proto tidy ci
 
 help:
 	@echo "Oguaa:"
@@ -8,8 +8,10 @@ help:
 	@echo "  make down   - Docker: stop & remove containers"
 	@echo "  make logs   - Docker: tail logs"
 	@echo "  make dev    - Local: start backend + web + admin (needs local mongod, go, pnpm)"
-	@echo "  make seed   - Reseed MongoDB with the Cape Coast data"
+	@echo "  make seed   - RESET a local MongoDB to the Cape Coast seed data (drops everything; refuses production)"
 	@echo "  make seed-empty - Safely fill only completely empty demo activity collections"
+	@echo "  make purge-demo - Move @oguaa.test demo accounts out of MONGODB_URI into DEV_MONGODB_URI"
+	@echo "  make verify-no-demo - Fail if MONGODB_URI still holds @oguaa.test accounts or seeded illustration"
 	@echo "  make proto  - Regenerate gRPC code from proto/ (needs buf)"
 	@echo "  make lint   - Lint Go (vet), proto (buf), and the web/admin apps (eslint)"
 	@echo "  make test   - Run Go tests"
@@ -35,6 +37,12 @@ seed:
 
 seed-empty:
 	cd backend && go run ./cmd/seedmissing -apply
+
+purge-demo:
+	cd backend && go run ./cmd/purgefabricated --members-only --apply
+
+verify-no-demo:
+	cd backend && go run ./cmd/purgefabricated --verify
 
 proto:
 	cd backend && buf lint && buf generate

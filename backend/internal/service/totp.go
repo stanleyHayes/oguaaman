@@ -47,10 +47,11 @@ func totpCode(secret string, t time.Time) (string, error) {
 }
 
 // validTOTP checks code against the current step and ±1 step (clock drift),
-// using constant-time comparison per window.
+// using constant-time comparison per window. A blank secret never validates:
+// an empty HMAC key yields codes anyone can compute.
 func validTOTP(secret, code string, t time.Time) bool {
 	code = strings.TrimSpace(code)
-	if len(code) != 6 {
+	if len(code) != 6 || strings.TrimSpace(secret) == "" {
 		return false
 	}
 	for _, delta := range []int64{-totpStepSeconds, 0, totpStepSeconds} {

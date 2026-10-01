@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/base64"
 	"encoding/json"
 	"math/big"
@@ -20,64 +21,102 @@ import (
 // own certificate authority — the exact shape a forgery takes — and assert it is
 // refused. A verifier that only ever sees genuine input proves nothing.
 
+// fakeCA is a root → intermediate → leaf chain shaped like Apple's: the
+// intermediate carries the WWDR marker OID and the leaf the App Store
+// receipt-signing OID (each can be left out to model a non-App-Store cert).
 type fakeCA struct {
-	rootCert *x509.Certificate
-	rootKey  *ecdsa.PrivateKey
-	leafCert *x509.Certificate
-	leafKey  *ecdsa.PrivateKey
+	rootCert         *x509.Certificate
+	rootKey          *ecdsa.PrivateKey
+	intermediateCert *x509.Certificate
+	intermediateKey  *ecdsa.PrivateKey
+	leafCert         *x509.Certificate
+	leafKey          *ecdsa.PrivateKey
 }
 
-func newFakeCA(t *testing.T) *fakeCA {
+type fakeCAOptions struct {
+	leafWithoutReceiptOID      bool
+	intermediateWithoutWWDROID bool
+}
+
+// appleMarker is an Apple marker extension (its value is ASN.1 NULL).
+func appleMarker(oid asn1.ObjectIdentifier) []pkix.Extension {
+	return []pkix.Extension{{Id: oid, Value: []byte{0x05, 0x00}}}
+}
+
+func mustKey(t *testing.T) *ecdsa.PrivateKey {
 	t.Helper()
-	rootKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	k, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		t.Fatalf("root key: %v", err)
+		t.Fatalf("key: %v", err)
 	}
-	rootTmpl := &x509.Certificate{
-		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "Not Apple Root CA - G3"},
-		NotBefore:             time.Now().Add(-time.Hour),
-		NotAfter:              time.Now().Add(24 * time.Hour),
-		IsCA:                  true,
-		BasicConstraintsValid: true,
-		KeyUsage:              x509.KeyUsageCertSign,
-	}
-	rootDER, err := x509.CreateCertificate(rand.Reader, rootTmpl, rootTmpl, &rootKey.PublicKey, rootKey)
-	if err != nil {
-		t.Fatalf("root cert: %v", err)
-	}
-	rootCert, _ := x509.ParseCertificate(rootDER)
-
-	leafKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		t.Fatalf("leaf key: %v", err)
-	}
-	leafTmpl := &x509.Certificate{
-		SerialNumber: big.NewInt(2),
-		Subject:      pkix.Name{CommonName: "Not Apple Leaf"},
-		NotBefore:    time.Now().Add(-time.Hour),
-		NotAfter:     time.Now().Add(24 * time.Hour),
-		KeyUsage:     x509.KeyUsageDigitalSignature,
-	}
-	leafDER, err := x509.CreateCertificate(rand.Reader, leafTmpl, rootCert, &leafKey.PublicKey, rootKey)
-	if err != nil {
-		t.Fatalf("leaf cert: %v", err)
-	}
-	leafCert, _ := x509.ParseCertificate(leafDER)
-	return &fakeCA{rootCert: rootCert, rootKey: rootKey, leafCert: leafCert, leafKey: leafKey}
+	return k
 }
 
-// signJWS produces a structurally perfect ES256 JWS with an x5c chain.
+func mustCert(t *testing.T, tmpl, parent *x509.Certificate, pub *ecdsa.PublicKey, signer *ecdsa.PrivateKey) *x509.Certificate {
+	t.Helper()
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, parent, pub, signer)
+	if err != nil {
+		t.Fatalf("cert %s: %v", tmpl.Subject.CommonName, err)
+	}
+	c, err := x509.ParseCertificate(der)
+	if err != nil {
+		t.Fatalf("parse %s: %v", tmpl.Subject.CommonName, err)
+	}
+	return c
+}
+
+func newFakeCA(t *testing.T) *fakeCA { return newFakeCAWith(t, fakeCAOptions{}) }
+
+func newFakeCAWith(t *testing.T, opts fakeCAOptions) *fakeCA {
+	t.Helper()
+	notBefore, notAfter := time.Now().Add(-time.Hour), time.Now().Add(24*time.Hour)
+	rootKey := mustKey(t)
+	rootTmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "Not Apple Root CA - G3"},
+		NotBefore: notBefore, NotAfter: notAfter, IsCA: true, BasicConstraintsValid: true, KeyUsage: x509.KeyUsageCertSign,
+	}
+	rootCert := mustCert(t, rootTmpl, rootTmpl, &rootKey.PublicKey, rootKey)
+
+	intermediateKey := mustKey(t)
+	intermediateTmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(2), Subject: pkix.Name{CommonName: "Not Apple WWDR CA - G6"},
+		NotBefore: notBefore, NotAfter: notAfter, IsCA: true, BasicConstraintsValid: true, KeyUsage: x509.KeyUsageCertSign,
+	}
+	if !opts.intermediateWithoutWWDROID {
+		intermediateTmpl.ExtraExtensions = appleMarker(oidAppleWWDRIntermediate)
+	}
+	intermediateCert := mustCert(t, intermediateTmpl, rootCert, &intermediateKey.PublicKey, rootKey)
+
+	leafKey := mustKey(t)
+	leafTmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(3), Subject: pkix.Name{CommonName: "Not Apple Leaf"},
+		NotBefore: notBefore, NotAfter: notAfter, KeyUsage: x509.KeyUsageDigitalSignature,
+	}
+	if !opts.leafWithoutReceiptOID {
+		leafTmpl.ExtraExtensions = appleMarker(oidAppStoreReceiptSigner)
+	}
+	leafCert := mustCert(t, leafTmpl, intermediateCert, &leafKey.PublicKey, intermediateKey)
+	return &fakeCA{rootCert: rootCert, rootKey: rootKey, intermediateCert: intermediateCert, intermediateKey: intermediateKey, leafCert: leafCert, leafKey: leafKey}
+}
+
+// chain is the x5c the fake CA presents: leaf, intermediate, root.
+func (c *fakeCA) chain() []*x509.Certificate {
+	return []*x509.Certificate{c.leafCert, c.intermediateCert, c.rootCert}
+}
+
+// signJWS produces a structurally perfect ES256 JWS with the CA's x5c chain.
 func (c *fakeCA) signJWS(t *testing.T, payload AppleTransaction) string {
 	t.Helper()
-	header := map[string]any{
-		"alg": "ES256",
-		"x5c": []string{
-			base64.StdEncoding.EncodeToString(c.leafCert.Raw),
-			base64.StdEncoding.EncodeToString(c.rootCert.Raw),
-		},
+	return c.signJWSWithChain(t, payload, c.chain())
+}
+
+func (c *fakeCA) signJWSWithChain(t *testing.T, payload AppleTransaction, chain []*x509.Certificate) string {
+	t.Helper()
+	x5c := make([]string, 0, len(chain))
+	for _, cert := range chain {
+		x5c = append(x5c, base64.StdEncoding.EncodeToString(cert.Raw))
 	}
-	hb, _ := json.Marshal(header)
+	hb, _ := json.Marshal(map[string]any{"alg": "ES256", "x5c": x5c})
 	pb, _ := json.Marshal(payload)
 	signing := base64.RawURLEncoding.EncodeToString(hb) + "." + base64.RawURLEncoding.EncodeToString(pb)
 	digest := sha256.Sum256([]byte(signing))
@@ -103,11 +142,14 @@ func verifier(t *testing.T, sandbox bool) *AppleVerifier {
 // The embedded root must be the real Apple Root CA - G3, self-signed.
 func TestEmbeddedRootIsAppleRootCAG3(t *testing.T) {
 	v := verifier(t, false)
-	if v.roots == nil {
+	if v.roots == nil || v.root == nil {
 		t.Fatal("no root pool built")
 	}
 	if got := len(v.roots.Subjects()); got != 1 { //nolint:staticcheck // reading our own pool
 		t.Errorf("root pool holds %d certs, want exactly 1", got)
+	}
+	if v.root.Subject.CommonName != "Apple Root CA - G3" {
+		t.Errorf("pinned root is %q", v.root.Subject.CommonName)
 	}
 }
 
@@ -158,33 +200,62 @@ func TestHeaderWithoutCertChainIsRejected(t *testing.T) {
 	}
 }
 
-// Tampering with the payload after signing must break the signature. Checked
-// against our own CA so we isolate the signature check from the chain check.
-func TestTamperedPayloadBreaksSignature(t *testing.T) {
-	ca := newFakeCA(t)
-	jws := ca.signJWS(t, AppleTransaction{TransactionID: "1", ProductID: "cheap", BundleID: "gh.oguaa.app"})
-	parts := strings.Split(jws, ".")
-	swapped, _ := json.Marshal(AppleTransaction{TransactionID: "1", ProductID: "expensive", BundleID: "gh.oguaa.app"})
-	parts[1] = base64.RawURLEncoding.EncodeToString(swapped)
-
-	// Verify against the fake CA's own root: the chain would pass, so only the
-	// signature stands between the swap and an entitlement.
-	v := verifier(t, false)
+// Everything below is exercised against a chain we control, pinned as if it
+// were Apple's root, so each check is isolated from the others.
+func policyVerifier(t *testing.T, ca *fakeCA, sandbox bool) *AppleVerifier {
+	t.Helper()
+	v := verifier(t, sandbox)
+	v.root = ca.rootCert
 	v.roots = x509.NewCertPool()
 	v.roots.AddCert(ca.rootCert)
-	if _, err := v.Verify(strings.Join(parts, ".")); err == nil {
+	return v
+}
+
+// Tampering with the payload after signing must break the signature.
+func TestTamperedPayloadBreaksSignature(t *testing.T) {
+	ca := newFakeCA(t)
+	jws := ca.signJWS(t, AppleTransaction{TransactionID: "1", ProductID: "cheap", BundleID: "gh.oguaa.app", Environment: "Production"})
+	parts := strings.Split(jws, ".")
+	swapped, _ := json.Marshal(AppleTransaction{TransactionID: "1", ProductID: "expensive", BundleID: "gh.oguaa.app", Environment: "Production"})
+	parts[1] = base64.RawURLEncoding.EncodeToString(swapped)
+	if _, err := policyVerifier(t, ca, false).Verify(strings.Join(parts, ".")); err == nil {
 		t.Fatal("a payload swapped after signing was accepted")
 	}
 }
 
-// Everything below verifies the policy checks that run after the signature, so
-// they are exercised against a chain we control.
-func policyVerifier(t *testing.T, ca *fakeCA, sandbox bool) *AppleVerifier {
-	t.Helper()
-	v := verifier(t, sandbox)
-	v.roots = x509.NewCertPool()
-	v.roots.AddCert(ca.rootCert)
-	return v
+// F047: a certificate that chains to Apple's root but is not an App Store
+// receipt-signing certificate (e.g. an Apple Pay key a developer generated)
+// must not be able to sign receipts.
+func TestLeafWithoutAppStoreReceiptOIDIsRejected(t *testing.T) {
+	ca := newFakeCAWith(t, fakeCAOptions{leafWithoutReceiptOID: true})
+	jws := ca.signJWS(t, AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app", Environment: "Production"})
+	if _, err := policyVerifier(t, ca, false).Verify(jws); err == nil {
+		t.Fatal("a leaf without the App Store receipt-signing OID was accepted")
+	}
+}
+
+func TestIntermediateWithoutWWDROIDIsRejected(t *testing.T) {
+	ca := newFakeCAWith(t, fakeCAOptions{intermediateWithoutWWDROID: true})
+	jws := ca.signJWS(t, AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app", Environment: "Production"})
+	if _, err := policyVerifier(t, ca, false).Verify(jws); err == nil {
+		t.Fatal("an intermediate without the WWDR OID was accepted")
+	}
+}
+
+// The chain must be exactly leaf, intermediate and the pinned root.
+func TestChainMustBeLeafIntermediateAndThePinnedRoot(t *testing.T) {
+	ca := newFakeCA(t)
+	other := newFakeCA(t)
+	tx := AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app", Environment: "Production"}
+	for name, chain := range map[string][]*x509.Certificate{
+		"two certificates":    {ca.leafCert, ca.intermediateCert},
+		"four certificates":   {ca.leafCert, ca.intermediateCert, ca.rootCert, ca.rootCert},
+		"someone else's root": {ca.leafCert, ca.intermediateCert, other.rootCert},
+	} {
+		if _, err := policyVerifier(t, ca, false).Verify(ca.signJWSWithChain(t, tx, chain)); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
 }
 
 func TestReceiptForAnotherAppIsRejected(t *testing.T) {
@@ -197,16 +268,23 @@ func TestReceiptForAnotherAppIsRejected(t *testing.T) {
 	}
 }
 
-func TestSandboxRejectedInProductionAcceptedWhenAllowed(t *testing.T) {
+// F058/A009: App Review buys in the sandbox against the production server, so
+// sandbox receipts are accepted (IAPService flags and time-limits them).
+func TestSandboxReceiptIsAcceptedAndFlagged(t *testing.T) {
 	ca := newFakeCA(t)
-	tx := AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app", Environment: "Sandbox"}
-	jws := ca.signJWS(t, tx)
-
-	if _, err := policyVerifier(t, ca, false).Verify(jws); err == nil {
-		t.Error("a sandbox receipt was accepted with sandbox disabled — free subscriptions for any tester")
+	jws := ca.signJWS(t, AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app", Environment: AppleEnvironmentSandbox})
+	for _, allow := range []bool{false, true} {
+		got, err := policyVerifier(t, ca, allow).Verify(jws)
+		if err != nil {
+			t.Fatalf("allowSandbox=%v: a sandbox receipt was refused: %v", allow, err)
+		}
+		if got.Environment != AppleEnvironmentSandbox {
+			t.Fatalf("environment=%q", got.Environment)
+		}
 	}
-	if _, err := policyVerifier(t, ca, true).Verify(jws); err != nil {
-		t.Errorf("a sandbox receipt was refused with sandbox enabled: %v", err)
+	unknown := ca.signJWS(t, AppleTransaction{TransactionID: "1", ProductID: "p", BundleID: "gh.oguaa.app", Environment: "Xcode"})
+	if _, err := policyVerifier(t, ca, false).Verify(unknown); err == nil {
+		t.Fatal("an unknown environment was accepted")
 	}
 }
 

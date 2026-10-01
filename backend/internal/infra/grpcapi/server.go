@@ -3,8 +3,11 @@ package grpcapi
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"net"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/oguaa/backend/gen/oguaa/v1"
@@ -34,7 +37,10 @@ func grpcErr(err error) error {
 	if errors.As(err, &ve) {
 		return status.Error(codes.InvalidArgument, ve.Error())
 	}
-	return status.Error(codes.Internal, err.Error())
+	// Anything else is internal (a database error, a timeout): log it and send a
+	// generic message so hostnames and driver details never reach the caller.
+	slog.Default().Error("grpc handler error", "err", err)
+	return status.Error(codes.Internal, "internal error")
 }
 
 // listingsByType resolves the read for a listing type string (spec §8.3).
@@ -141,7 +147,9 @@ func (s *Server) ListSchools(ctx context.Context, _ *pb.Empty) (*pb.Organization
 }
 
 func (s *Server) GetInstitution(ctx context.Context, req *pb.SlugRequest) (*pb.OrganizationReply, error) {
-	o, err := s.svc.InstitutionBySlug(ctx, req.GetSlug())
+	// Revoked/unverified institutions are offline to the public (the REST
+	// detail endpoint 404s them for anyone who does not manage the page).
+	o, err := s.svc.PublicInstitutionBySlug(ctx, req.GetSlug())
 	if err != nil {
 		return nil, grpcErr(err)
 	}
@@ -157,7 +165,15 @@ func (s *Server) ListPlaces(ctx context.Context, _ *pb.Empty) (*pb.PlacesReply, 
 }
 
 func (s *Server) LightCandle(ctx context.Context, req *pb.SlugRequest) (*pb.CandleReply, error) {
-	count, err := s.svc.LightCandle(ctx, req.GetSlug())
+	visitor := "grpc"
+	if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
+		host, _, err := net.SplitHostPort(p.Addr.String())
+		if err != nil {
+			host = p.Addr.String()
+		}
+		visitor = "grpc:" + host
+	}
+	count, err := s.svc.LightCandle(ctx, req.GetSlug(), visitor)
 	if err != nil {
 		return nil, grpcErr(err)
 	}

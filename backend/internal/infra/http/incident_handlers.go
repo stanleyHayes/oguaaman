@@ -12,10 +12,11 @@ import (
 // ── incidents: community safety (auto-published; curators transition) ────────
 
 // Incidents lists published safety incidents, newest first, with optional
-// ?status=, ?category= and ?town= filters.
+// ?status=, ?category= and ?town= filters. The reporter's contact and member
+// id are shown only to the reporter and to staff (D3).
 func (h *Handler) Incidents(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	items, err := h.svc.Incidents(r.Context(), service.IncidentFilters{
+	items, err := h.svc.Incidents(r.Context(), currentMember(r), service.IncidentFilters{
 		Status:   q.Get("status"),
 		Category: q.Get("category"),
 		Town:     q.Get("town"),
@@ -29,7 +30,7 @@ func (h *Handler) Incidents(w http.ResponseWriter, r *http.Request) {
 
 // Incident fetches one published incident by slug.
 func (h *Handler) Incident(w http.ResponseWriter, r *http.Request) {
-	l, err := h.svc.Incident(r.Context(), r.PathValue("slug"))
+	l, err := h.svc.Incident(r.Context(), currentMember(r), r.PathValue("slug"))
 	if err != nil {
 		h.handleErr(w, err)
 		return
@@ -37,8 +38,11 @@ func (h *Handler) Incident(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, l)
 }
 
-// SubmitIncident files a safety report as the signed-in member. The incident
-// goes live immediately (time-critical); curators verify afterwards.
+// SubmitIncident files a safety report as the signed-in member. Most reports
+// go live immediately (time-critical) and curators verify afterwards; crime
+// and medical reports, and any the content screen flags (threats included, as
+// a victim may quote one), are saved pending with held: true until a curator
+// reviews them (K12).
 func (h *Handler) SubmitIncident(w http.ResponseWriter, r *http.Request) {
 	m, ok := h.requireAuth(w, r)
 	if !ok {
@@ -61,6 +65,25 @@ func (h *Handler) SubmitIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, l)
+}
+
+// AdminIncidents lists incidents for safety staff (curator, moderator,
+// steward): live incidents and the held reports waiting for review, held
+// first. Staff see the reporter's details.
+func (h *Handler) AdminIncidents(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireRole(w, r, "curator", "moderator")
+	if !ok {
+		return
+	}
+	if m == nil {
+		m = &domain.Member{ID: domain.DevDemoModeratorID, Role: domain.RoleSteward} // dev convenience only — never reached when AUTH_REQUIRED=true
+	}
+	items, err := h.svc.AdminIncidents(r.Context(), m)
+	if err != nil {
+		h.handleErr(w, err)
+		return
+	}
+	writeList(w, r, items)
 }
 
 // AdminIncidentStatus advances an incident's lifecycle (curator/steward only).

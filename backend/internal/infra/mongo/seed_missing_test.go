@@ -255,3 +255,39 @@ func TestSeedDerivedListingSetsMatchSuccessfulFixtures(t *testing.T) {
 		}
 	}
 }
+
+// The pre-insert reference check must cover every listing the reconcile step
+// writes to; otherwise a missing target could still abort a run after the
+// fixtures were inserted and strand a half-applied ledger.
+func TestSeedFixtureRefsCoverDerivedListingTargets(t *testing.T) {
+	for _, seed := range missingSeedCollections() {
+		refs := map[string]bool{}
+		for _, id := range seed.listingRefs {
+			refs[id] = true
+		}
+		sets, err := seedDerivedListingSets(seed.name)
+		if err != nil {
+			t.Fatalf("seedDerivedListingSets(%s): %v", seed.name, err)
+		}
+		for listingID := range sets {
+			if !refs[listingID] {
+				t.Errorf("%s reconciles listing %q that its reference check does not resolve", seed.name, listingID)
+			}
+		}
+	}
+	listings, members := seedFixtureRefs(collPledges)
+	if !reflect.DeepEqual(listings, []string{"pr-bakaano-lib", "pr-fosu-cleanup", "pr-quaque-ict"}) {
+		t.Errorf("pledge listing refs = %v", listings)
+	}
+	if len(members) == 0 {
+		t.Error("pledge fixtures should reference their members")
+	}
+	for _, name := range []string{collModeration, collFollows, collReports, collTickets, collSubscriptions, collPromotions, collListingViews} {
+		if l, _ := seedFixtureRefs(name); len(l) == 0 {
+			t.Errorf("%s fixtures reference listings but no refs were resolved", name)
+		}
+	}
+	if l, m := seedFixtureRefs(collPlans); len(l)+len(m) != 0 {
+		t.Errorf("plans reference nothing, got %v %v", l, m)
+	}
+}

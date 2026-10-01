@@ -41,6 +41,11 @@ func (r *BusinessVerificationRepo) Review(ctx context.Context, listingID, status
 	return err
 }
 
+func (r *BusinessVerificationRepo) SetPaystackSubaccount(ctx context.Context, listingID, subaccount, at string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"listingId": listingID}, bson.M{"$set": bson.M{"paystackSubaccount": subaccount, "updatedAt": at}})
+	return err
+}
+
 type CommerceOrderRepo struct{ c *mongo.Collection }
 
 func NewCommerceOrderRepo(db *mongo.Database) *CommerceOrderRepo {
@@ -72,9 +77,30 @@ func (r *CommerceOrderRepo) ByBusiness(ctx context.Context, id string) ([]domain
 func (r *CommerceOrderRepo) All(ctx context.Context) ([]domain.CommerceOrder, error) {
 	return r.find(ctx, bson.M{})
 }
-func (r *CommerceOrderRepo) MarkPaid(ctx context.Context, ref, at string) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"reference": ref, "status": domain.OrderPending}, bson.M{"$set": bson.M{"status": domain.OrderPaid, "paidAt": at, "updatedAt": at}})
-	return err
+
+// MarkPaid is a conditional pending→paid update; ModifiedCount tells the
+// caller whether it won the transition. An order the reconciliation sweep
+// closed as abandoned is also claimable: a payment that completes after the
+// sweep must revive the order rather than be ignored (with split payments the
+// seller's share has already been settled to them).
+func (r *CommerceOrderRepo) MarkPaid(ctx context.Context, ref, at string, processingFee int64) (bool, error) {
+	update := bson.M{
+		"$set":   bson.M{"status": domain.OrderPaid, "paidAt": at, "updatedAt": at},
+		"$unset": bson.M{"cancelReason": ""},
+	}
+	if processingFee > 0 {
+		update["$set"].(bson.M)["processingFeePesewas"] = processingFee
+		update["$inc"] = bson.M{"businessNetPesewas": -processingFee}
+	}
+	filter := bson.M{"reference": ref, "$or": bson.A{
+		bson.M{"status": domain.OrderPending},
+		bson.M{"status": domain.OrderCancelled, "cancelReason": domain.AbandonedPaymentReason},
+	}}
+	res, err := r.c.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount == 1, nil
 }
 func (r *CommerceOrderRepo) SetStatus(ctx context.Context, id, listingID, status, at string) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id, "listingId": listingID}, bson.M{"$set": bson.M{"status": status, "updatedAt": at}})
@@ -111,18 +137,12 @@ func (r *BusinessCouponRepo) ByBusiness(ctx context.Context, lid string) ([]doma
 	out := []domain.BusinessCoupon{}
 	return out, cur.All(ctx, &out)
 }
-func (r *BusinessCouponRepo) Reserve(ctx context.Context, id string) error {
-	res, err := r.c.UpdateOne(ctx, bson.M{"_id": id, "active": true, "$expr": bson.M{"$or": bson.A{bson.M{"$eq": bson.A{"$redemptionLimit", 0}}, bson.M{"$lt": bson.A{"$redemptions", "$redemptionLimit"}}}}}, bson.M{"$inc": bson.M{"redemptions": 1}})
-	if err != nil {
-		return err
-	}
-	if res.ModifiedCount == 0 {
-		return &domain.ForbiddenError{Reason: "coupon is no longer available"}
-	}
-	return nil
-}
-func (r *BusinessCouponRepo) Release(ctx context.Context, id string) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id, "redemptions": bson.M{"$gt": 0}}, bson.M{"$inc": bson.M{"redemptions": -1}})
+
+// Redeem counts a redemption for a paid order. It is unconditional on
+// purpose: the buyer has already paid the discounted price, so the count
+// must record it even if concurrent checkouts pushed it past the limit.
+func (r *BusinessCouponRepo) Redeem(ctx context.Context, id string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$inc": bson.M{"redemptions": 1}})
 	return err
 }
 func (r *BusinessCouponRepo) Delete(ctx context.Context, id, lid string) error {
@@ -139,8 +159,11 @@ type AffiliateRepo struct {
 func NewAffiliateRepo(db *mongo.Database) *AffiliateRepo {
 	return &AffiliateRepo{db.Collection(collAffiliateProgrammes), db.Collection(collAffiliates), db.Collection(collAffiliateConversions)}
 }
+
+// SaveProgramme filters on {_id, listingId}: if the id already belongs to
+// another listing the upsert collides on _id instead of replacing it.
 func (r *AffiliateRepo) SaveProgramme(ctx context.Context, v domain.AffiliateProgramme) error {
-	_, err := r.programmes.ReplaceOne(ctx, bson.M{"_id": v.ID}, v, options.Replace().SetUpsert(true))
+	_, err := r.programmes.ReplaceOne(ctx, bson.M{"_id": v.ID, "listingId": v.ListingID}, v, options.Replace().SetUpsert(true))
 	return err
 }
 func (r *AffiliateRepo) Programmes(ctx context.Context, lid string) ([]domain.AffiliateProgramme, error) {
@@ -160,12 +183,23 @@ func (r *AffiliateRepo) Programme(ctx context.Context, id string) (*domain.Affil
 	err := r.programmes.FindOne(ctx, bson.M{"_id": id}).Decode(&v)
 	return &v, notFound("affiliate programme", err)
 }
+
+// SaveAffiliate filters on {_id, listingId} for the same reason as
+// SaveProgramme: one business can never overwrite another's affiliate.
 func (r *AffiliateRepo) SaveAffiliate(ctx context.Context, v domain.Affiliate) error {
-	_, err := r.affiliates.ReplaceOne(ctx, bson.M{"_id": v.ID}, v, options.Replace().SetUpsert(true))
+	_, err := r.affiliates.ReplaceOne(ctx, bson.M{"_id": v.ID, "listingId": v.ListingID}, v, options.Replace().SetUpsert(true))
 	return err
 }
-func (r *AffiliateRepo) Affiliates(ctx context.Context, programmeID string) ([]domain.Affiliate, error) {
-	filter := bson.M{}
+func (r *AffiliateRepo) AffiliateByID(ctx context.Context, id string) (*domain.Affiliate, error) {
+	var v domain.Affiliate
+	err := r.affiliates.FindOne(ctx, bson.M{"_id": id}).Decode(&v)
+	return &v, notFound("affiliate", err)
+}
+
+// Affiliates is always scoped to one listing so a caller can never list
+// another business's (or Oguaa's) partners by omitting the programme.
+func (r *AffiliateRepo) Affiliates(ctx context.Context, listingID, programmeID string) ([]domain.Affiliate, error) {
+	filter := bson.M{"listingId": listingID}
 	if programmeID != "" {
 		filter["programmeId"] = programmeID
 	}
@@ -181,12 +215,18 @@ func (r *AffiliateRepo) AffiliateByCode(ctx context.Context, lid, code string) (
 	err := r.affiliates.FindOne(ctx, bson.M{"code": code, "active": true, "listingId": bson.M{"$in": bson.A{lid, "*"}}}, options.FindOne().SetSort(bson.D{{Key: "listingId", Value: -1}})).Decode(&v)
 	return &v, notFound("affiliate", err)
 }
-func (r *AffiliateRepo) ReserveConversion(ctx context.Context, v domain.AffiliateConversion) error {
-	_, err := r.conversions.InsertOne(ctx, v)
-	return err
-}
-func (r *AffiliateRepo) Convert(ctx context.Context, ref, hold, at string) error {
-	_, err := r.conversions.UpdateOne(ctx, bson.M{"orderReference": ref, "status": domain.AffiliateReserved}, bson.M{"$set": bson.M{"status": domain.AffiliateConverted, "holdUntil": hold, "updatedAt": at}})
+
+// RecordConversion upserts the conversion of a paid order by its order
+// reference. A legacy row reserved at checkout is upgraded in place; a row
+// that has already moved on (payable, paid, void) is left alone.
+func (r *AffiliateRepo) RecordConversion(ctx context.Context, v domain.AffiliateConversion) error {
+	filter := bson.M{"orderReference": v.OrderReference, "status": bson.M{"$in": bson.A{domain.AffiliateReserved, v.Status}}}
+	set := bson.M{"status": v.Status, "holdUntil": v.HoldUntil, "updatedAt": v.UpdatedAt}
+	insert := bson.M{"_id": v.ID, "orderId": v.OrderID, "affiliateId": v.AffiliateID, "programmeId": v.ProgrammeID, "listingId": v.ListingID, "affiliateCode": v.AffiliateCode, "grossPesewas": v.GrossPesewas, "commissionPesewas": v.CommissionPesewas, "fundingSource": v.FundingSource, "createdAt": v.CreatedAt}
+	_, err := r.conversions.UpdateOne(ctx, filter, bson.M{"$set": set, "$setOnInsert": insert}, options.UpdateOne().SetUpsert(true))
+	if mongo.IsDuplicateKeyError(err) {
+		return nil // the conversion already exists and has moved past "converted"
+	}
 	return err
 }
 func (r *AffiliateRepo) Conversions(ctx context.Context, lid string) ([]domain.AffiliateConversion, error) {

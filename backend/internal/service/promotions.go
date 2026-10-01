@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,6 +37,18 @@ type PromotionsService struct {
 	promotions domain.PromotionRepository
 	paystack   PaystackClient
 	portal     string // public portal origin for callback URLs
+	creator    string // creator-studio origin, for checkouts started there (C3)
+}
+
+// ReturnToCreator is the returnTo value a creator-studio checkout sends so
+// Paystack returns the payer to the studio instead of the portal (C3).
+const ReturnToCreator = "creator"
+
+// WithCreatorURL sets the creator-studio origin used for returnTo=creator
+// callbacks; without it they fall back to the portal.
+func (s *PromotionsService) WithCreatorURL(creatorURL string) *PromotionsService {
+	s.creator = strings.TrimRight(creatorURL, "/")
+	return s
 }
 
 func NewPromotionsService(l domain.ListingRepository, p domain.PromotionRepository, ps PaystackClient, portalURL string) *PromotionsService {
@@ -49,6 +62,21 @@ func (s *PromotionsService) Simulated() bool { return s.paystack.Simulated() }
 // by the member and returns the Paystack authorization URL to redirect the
 // owner to. Only the listing's owner may promote it.
 func (s *PromotionsService) StartPromotion(ctx context.Context, listingID, memberID, email string, days int) (authorizationURL, accessCode, reference string, err error) {
+	return s.StartPromotionFrom(ctx, listingID, memberID, email, days, "")
+}
+
+// promotionCallback is where Paystack returns the payer: the creator studio's
+// /work when the checkout started there (C3), otherwise the portal's /me.
+func (s *PromotionsService) promotionCallback(returnTo, reference string) string {
+	if returnTo == ReturnToCreator && s.creator != "" {
+		return fmt.Sprintf("%s/work?promo_ref=%s", s.creator, url.QueryEscape(reference))
+	}
+	return fmt.Sprintf("%s/me?promo_ref=%s", s.portal, url.QueryEscape(reference))
+}
+
+// StartPromotionFrom is StartPromotion with the app the checkout started in
+// (returnTo: "creator", or "" for the portal).
+func (s *PromotionsService) StartPromotionFrom(ctx context.Context, listingID, memberID, email string, days int, returnTo string) (authorizationURL, accessCode, reference string, err error) {
 	if days != 7 && days != 14 && days != 30 {
 		return "", "", "", ErrPromotionDays
 	}
@@ -63,8 +91,11 @@ func (s *PromotionsService) StartPromotion(ctx context.Context, listingID, membe
 	if listing.Status != domain.StatusApproved || listing.OwnerID == "" || listing.OwnerID != memberID {
 		return "", "", "", &domain.ForbiddenError{Reason: "only the owner of an approved listing can promote it"}
 	}
+	if !PromotableType(listing.Type) {
+		return "", "", "", &domain.ForbiddenError{Reason: "This kind of listing can't be promoted."}
+	}
 	now := time.Now().UTC()
-	reference = fmt.Sprintf("pro-%d", now.UnixNano())
+	reference = newReference(RefPrefixPromotion, strconv.FormatInt(now.UnixNano(), 10))
 	promo := domain.Promotion{
 		ID:            "p" + reference,
 		Reference:     reference,
@@ -82,7 +113,7 @@ func (s *PromotionsService) StartPromotion(ctx context.Context, listingID, membe
 	if err := s.promotions.Insert(ctx, promo); err != nil {
 		return "", "", "", err
 	}
-	callback := fmt.Sprintf("%s/me?promo_ref=%s", s.portal, url.QueryEscape(reference))
+	callback := s.promotionCallback(returnTo, reference)
 	authURL, accessCode, err := s.paystack.Initialize(ctx, email, promo.AmountPesewas, "GHS", reference, callback)
 	if err != nil {
 		return "", "", "", err
@@ -101,13 +132,12 @@ func (s *PromotionsService) ConfirmPromotion(ctx context.Context, reference stri
 		return nil, err
 	}
 	if promo.Status == domain.PledgeSuccess {
-		return promo, nil // already settled
+		return s.finishGrant(ctx, promo) // settled; apply a grant a failed earlier confirm left owed
 	}
-	success, amount, err := s.paystack.Verify(ctx, reference)
-	if err != nil {
+	if err := verifyCharge(ctx, s.paystack, reference, promo.AmountPesewas, s.promotions.MarkFailed); err != nil {
 		return nil, err
 	}
-	return s.fulfillPromotion(ctx, promo, success, amount)
+	return s.fulfillPromotion(ctx, promo, true, promo.AmountPesewas)
 }
 
 // FulfillPromotion marks a promotion successful using an amount already verified
@@ -118,7 +148,7 @@ func (s *PromotionsService) FulfillPromotion(ctx context.Context, reference stri
 		return nil, err
 	}
 	if promo.Status == domain.PledgeSuccess {
-		return promo, nil
+		return s.finishGrant(ctx, promo)
 	}
 	return s.fulfillPromotion(ctx, promo, true, amountPesewas)
 }
@@ -127,26 +157,52 @@ func (s *PromotionsService) fulfillPromotion(ctx context.Context, promo *domain.
 	now := time.Now().UTC()
 	nowStr := now.Format(time.RFC3339)
 	if !success || (amount > 0 && amount < promo.AmountPesewas) {
-		_ = s.promotions.UpdateStatus(ctx, promo.Reference, domain.PledgeFailed, nowStr)
-		return nil, fmt.Errorf("payment was not completed")
+		_ = s.promotions.MarkFailed(ctx, promo.Reference)
+		return nil, ErrPaymentNotCompleted
 	}
 	listing, err := s.listings.GetByID(ctx, promo.ListingID)
 	if err != nil {
 		return nil, err
 	}
-	base := now
-	if until, perr := time.Parse(time.RFC3339, listing.FeaturedUntil); perr == nil && until.After(base) {
-		base = until // stack onto the current featured period
-	}
-	featuredUntil := base.Add(time.Duration(promo.Days) * 24 * time.Hour).Format(time.RFC3339)
-	if err := s.promotions.UpdateStatus(ctx, promo.Reference, domain.PledgeSuccess, nowStr); err != nil {
+	// Stack onto the current featured period.
+	featuredUntil := stackFrom(now, listing.FeaturedUntil).Add(time.Duration(promo.Days) * 24 * time.Hour).Format(time.RFC3339)
+	// One conditional write settles the promotion and stores the window it
+	// bought; only the confirm that made the transition computed it, so
+	// replays can't stack extra days.
+	claimed, err := s.promotions.MarkSuccess(ctx, promo.Reference, nowStr, featuredUntil)
+	if err != nil {
 		return nil, err
 	}
-	if err := s.listings.SetFeatured(ctx, promo.ListingID, true, featuredUntil); err != nil {
-		return nil, err
+	if !claimed {
+		return s.promotions.ByReference(ctx, promo.Reference) // settled by a concurrent confirm
 	}
 	promo.Status = domain.PledgeSuccess
 	promo.ConfirmedAt = nowStr
+	promo.FeaturedUntil = featuredUntil
+	promo.GrantPending = true
+	return s.finishGrant(ctx, promo)
+}
+
+// finishGrant applies the placement a settled promotion still owes (a
+// confirm whose grant write failed after the claim): features the listing
+// and labels it "Sponsored" to the stored window, skipping what the listing
+// already covers, then clears grantPending. A record owing nothing is
+// returned as-is.
+func (s *PromotionsService) finishGrant(ctx context.Context, promo *domain.Promotion) (*domain.Promotion, error) {
+	if !promo.GrantPending {
+		return promo, nil
+	}
+	listing, err := s.listings.GetByID(ctx, promo.ListingID)
+	if err != nil {
+		return nil, err
+	}
+	if err := applyFeaturedWindow(ctx, s.listings, listing, promo.FeaturedUntil); err != nil {
+		return nil, err
+	}
+	if err := s.promotions.MarkGranted(ctx, promo.Reference); err != nil {
+		return nil, err
+	}
+	promo.GrantPending = false
 	return promo, nil
 }
 
@@ -173,4 +229,11 @@ func (s *PromotionsService) AllPromotions(ctx context.Context) ([]domain.Promoti
 		promos[i], promos[j] = promos[j], promos[i]
 	}
 	return promos, nil
+}
+
+// PromotableType reports whether listings of a type may be promoted for money.
+// Safety notices, lost & found (including missing people) and memorials are
+// never sold visibility (Google Play UGC, P060).
+func PromotableType(typ string) bool {
+	return typ != domain.TypeIncident && typ != domain.TypeLostFound && typ != domain.TypeMemorial
 }

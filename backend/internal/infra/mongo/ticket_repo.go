@@ -20,23 +20,48 @@ func (r *TicketRepo) Insert(ctx context.Context, t domain.Ticket) error {
 
 func (r *TicketRepo) ByReference(ctx context.Context, reference string) (*domain.Ticket, error) {
 	var t domain.Ticket
-	if err := r.c.FindOne(ctx, bson.M{"reference": reference}).Decode(&t); err != nil {
+	if err := r.c.FindOne(ctx, bson.M{fieldReference: reference}).Decode(&t); err != nil {
 		return nil, notFound("ticket", err)
 	}
 	return &t, nil
 }
 
-func (r *TicketRepo) UpdateStatus(ctx context.Context, reference, status, at string) error {
-	set := bson.M{"status": status}
-	if status == domain.PledgeSuccess {
-		set["confirmedAt"] = at
-	}
-	_, err := r.c.UpdateOne(ctx, bson.M{"reference": reference}, bson.M{"$set": set})
+// Ticket refund bookkeeping fields.
+const (
+	fieldRefundDue     = "refundDue"
+	fieldFailureReason = "failureReason"
+	fieldCode          = "code"
+)
+
+// MarkSuccess issues a ticket in one conditional write; see
+// domain.TicketRepository for the concurrency contract.
+func (r *TicketRepo) MarkSuccess(ctx context.Context, reference, at, code string) (bool, error) {
+	return won(r.c.UpdateOne(ctx, unsettled(reference), bson.M{
+		"$set":   bson.M{fieldStatus: domain.PledgeSuccess, fieldConfirmedAt: at, fieldCode: code},
+		"$unset": bson.M{fieldRefundDue: "", fieldFailureReason: ""},
+	}))
+}
+
+// MarkFailed records a failed payment unless the ticket was already issued.
+func (r *TicketRepo) MarkFailed(ctx context.Context, reference string) error {
+	_, err := r.c.UpdateOne(ctx, unsettled(reference), bson.M{"$set": bson.M{fieldStatus: domain.PledgeFailed}})
 	return err
 }
 
-func (r *TicketRepo) SetCode(ctx context.Context, reference, code string) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"reference": reference}, bson.M{"$set": bson.M{"code": code}})
+// MarkRefundDue records a paid ticket that can't be issued, unless it already was.
+func (r *TicketRepo) MarkRefundDue(ctx context.Context, reference, reason string) error {
+	_, err := r.c.UpdateOne(ctx, unsettled(reference), bson.M{"$set": bson.M{
+		fieldStatus: domain.PledgeFailed, fieldRefundDue: true, fieldFailureReason: reason,
+	}})
+	return err
+}
+
+// RevokeForRefund withdraws an issued ticket and its code, flagging the refund.
+func (r *TicketRepo) RevokeForRefund(ctx context.Context, reference, reason string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{fieldReference: reference, fieldStatus: domain.PledgeSuccess}, bson.M{
+		"$set":   bson.M{fieldStatus: domain.PledgeFailed, fieldRefundDue: true, fieldFailureReason: reason},
+		"$unset": bson.M{fieldCode: "", fieldConfirmedAt: ""},
+	})
 	return err
 }
 
@@ -60,14 +85,14 @@ func (r *TicketRepo) ByMember(ctx context.Context, memberID string) ([]domain.Ti
 
 func (r *TicketRepo) ByCode(ctx context.Context, code string) (*domain.Ticket, error) {
 	var t domain.Ticket
-	if err := r.c.FindOne(ctx, bson.M{"code": code}).Decode(&t); err != nil {
+	if err := r.c.FindOne(ctx, bson.M{fieldCode: code}).Decode(&t); err != nil {
 		return nil, notFound("ticket", err)
 	}
 	return &t, nil
 }
 
 func (r *TicketRepo) SetCheckedIn(ctx context.Context, code, at string) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"code": code}, bson.M{"$set": bson.M{"checkedInAt": at}})
+	_, err := r.c.UpdateOne(ctx, bson.M{fieldCode: code}, bson.M{"$set": bson.M{"checkedInAt": at}})
 	return err
 }
 

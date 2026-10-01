@@ -82,17 +82,58 @@ func (s *Service) CreateGoal(ctx context.Context, creator domain.Member, in Goal
 	return s.goals.Create(ctx, g)
 }
 
+// Goal audit actions, written to the moderation audit log (GET /api/admin/audit)
+// with the goal id as the target, so a verdict, edit or delete is never lost
+// without trace.
+const (
+	goalAuditVerdict = "goal_verdict"
+	goalAuditAmend   = "goal_verdict_amended"
+	goalAuditEdit    = "goal_edit"
+	goalAuditDelete  = "goal_delete"
+
+	msgGoalJudged = "This goal already has a recorded verdict; only a steward can change it."
+)
+
+// goalJudged reports whether an accountability verdict has been recorded.
+func goalJudged(g domain.Goal) bool {
+	return g.Status == domain.GoalStatusAchieved || g.Status == domain.GoalStatusMissed
+}
+
+// canAlterJudgedGoal: once an officer has judged a goal, only a steward may edit,
+// delete or re-judge it — the curators who set the promise cannot rewrite the
+// verdict on it (separation of duties).
+func canAlterJudgedGoal(actor domain.Member) bool {
+	return actor.Role == domain.RoleSteward
+}
+
+// auditGoal appends an immutable audit record for a goal action.
+func (s *Service) auditGoal(ctx context.Context, goalID, action, reason string, actor domain.Member) error {
+	return s.mod.Insert(ctx, domain.ModerationRecord{
+		ID:          newID(domain.PrefixModeration),
+		ListingID:   goalID,
+		ModeratorID: actor.ID,
+		Action:      action,
+		Reason:      reason,
+		CreatedAt:   time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
 // UpdateGoal edits an existing goal's editable fields (curator action). The
-// verdict/review fields are untouched here.
-func (s *Service) UpdateGoal(ctx context.Context, id string, in GoalInput) (domain.Goal, error) {
+// verdict/review fields are untouched here. A judged goal can only be edited by
+// a steward, so a verdict never ends up sitting under text nobody reviewed.
+func (s *Service) UpdateGoal(ctx context.Context, actor domain.Member, id string, in GoalInput) (domain.Goal, error) {
 	existing, err := s.goals.ByID(ctx, id)
 	if err != nil {
 		return domain.Goal{}, err
+	}
+	if goalJudged(existing) && !canAlterJudgedGoal(actor) {
+		return domain.Goal{}, &domain.ForbiddenError{Reason: msgGoalJudged}
 	}
 	patch, err := s.buildGoal(in)
 	if err != nil {
 		return domain.Goal{}, err
 	}
+	before := existing.Title + " / " + existing.Target + " / " + existing.PeriodStart + "–" + existing.PeriodEnd
 	existing.Title = patch.Title
 	existing.Description = patch.Description
 	existing.Target = patch.Target
@@ -104,12 +145,33 @@ func (s *Service) UpdateGoal(ctx context.Context, id string, in GoalInput) (doma
 	existing.Ring = patch.Ring
 	existing.Featured = patch.Featured
 	existing.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
-	return s.goals.Update(ctx, existing)
+	out, err := s.goals.Update(ctx, existing)
+	if err != nil {
+		return domain.Goal{}, err
+	}
+	if err := s.auditGoal(ctx, id, goalAuditEdit, "was: "+before, actor); err != nil {
+		return domain.Goal{}, err
+	}
+	return out, nil
 }
 
-// DeleteGoal removes a goal (curator action).
-func (s *Service) DeleteGoal(ctx context.Context, id string) error {
-	if _, err := s.goals.ByID(ctx, id); err != nil {
+// DeleteGoal removes a goal (curator action). A judged goal is part of the
+// public accountability record: only a steward may remove it, and every delete
+// is audited with the verdict it carried.
+func (s *Service) DeleteGoal(ctx context.Context, actor domain.Member, id string) error {
+	g, err := s.goals.ByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if goalJudged(g) && !canAlterJudgedGoal(actor) {
+		return &domain.ForbiddenError{Reason: msgGoalJudged}
+	}
+	reason := g.Title + " (status " + g.Status + ")"
+	if g.ReviewNote != "" {
+		reason += ": " + g.ReviewNote
+	}
+	// Audit first: if the record cannot be written the goal stays.
+	if err := s.auditGoal(ctx, id, goalAuditDelete, reason, actor); err != nil {
 		return err
 	}
 	return s.goals.Delete(ctx, id)
@@ -117,43 +179,65 @@ func (s *Service) DeleteGoal(ctx context.Context, id string) error {
 
 // ReviewGoal records the accountability verdict — achieved or missed — with a
 // note and the reviewing officer. This is the manual check the town is held to.
+// A verdict is final: once recorded, only a steward can amend it, and every
+// verdict (and amendment, with the previous one) goes to the audit log.
 func (s *Service) ReviewGoal(ctx context.Context, id, status, note string, reviewer domain.Member) (domain.Goal, error) {
 	if status != domain.GoalStatusAchieved && status != domain.GoalStatusMissed {
-		return domain.Goal{}, fmt.Errorf("verdict must be %q or %q", domain.GoalStatusAchieved, domain.GoalStatusMissed)
+		return domain.Goal{}, &domain.ValidationError{Message: fmt.Sprintf("verdict must be %q or %q", domain.GoalStatusAchieved, domain.GoalStatusMissed)}
+	}
+	note = strings.TrimSpace(note)
+	if note == "" {
+		return domain.Goal{}, &domain.ValidationError{Message: "add a note explaining the verdict"}
 	}
 	g, err := s.goals.ByID(ctx, id)
 	if err != nil {
 		return domain.Goal{}, err
 	}
+	action := goalAuditVerdict
+	reason := status + ": " + note
+	if goalJudged(g) {
+		if !canAlterJudgedGoal(reviewer) {
+			return domain.Goal{}, &domain.ForbiddenError{Reason: msgGoalJudged}
+		}
+		action = goalAuditAmend
+		reason = fmt.Sprintf("%s (was %s by %s: %s)", reason, g.Status, g.ReviewedByID, g.ReviewNote)
+	}
 	now := time.Now().UTC()
 	g.Status = status
-	g.ReviewNote = strings.TrimSpace(note)
+	g.ReviewNote = note
 	g.ReviewedByID = reviewer.ID
 	g.ReviewedByName = reviewer.DisplayName
 	g.ReviewedAt = now.Format(time.RFC3339)
 	g.UpdatedAt = now.Format(time.RFC3339)
-	return s.goals.Update(ctx, g)
+	out, err := s.goals.Update(ctx, g)
+	if err != nil {
+		return domain.Goal{}, err
+	}
+	if err := s.auditGoal(ctx, id, action, reason, reviewer); err != nil {
+		return domain.Goal{}, err
+	}
+	return out, nil
 }
 
 // buildGoal validates a GoalInput into a Goal (without identity/status/review).
 func (s *Service) buildGoal(in GoalInput) (domain.Goal, error) {
 	title := strings.TrimSpace(in.Title)
 	if len(title) < 2 || len(title) > 160 {
-		return domain.Goal{}, fmt.Errorf("title must be 2–160 characters")
+		return domain.Goal{}, &domain.ValidationError{Message: "title must be 2–160 characters"}
 	}
 	if !validGoalCadences[in.Cadence] {
-		return domain.Goal{}, fmt.Errorf("choose a valid cadence")
+		return domain.Goal{}, &domain.ValidationError{Message: "choose a valid cadence"}
 	}
 	start := strings.TrimSpace(in.PeriodStart)
 	end := strings.TrimSpace(in.PeriodEnd)
 	if start == "" || end == "" {
-		return domain.Goal{}, fmt.Errorf("a goal needs a period start and end")
+		return domain.Goal{}, &domain.ValidationError{Message: "a goal needs a period start and end"}
 	}
 	if _, err := time.Parse(time.RFC3339, start); err != nil {
-		return domain.Goal{}, fmt.Errorf("period start must be an RFC3339 date")
+		return domain.Goal{}, &domain.ValidationError{Message: "period start must be an RFC3339 date"}
 	}
 	if _, err := time.Parse(time.RFC3339, end); err != nil {
-		return domain.Goal{}, fmt.Errorf("period end must be an RFC3339 date")
+		return domain.Goal{}, &domain.ValidationError{Message: "period end must be an RFC3339 date"}
 	}
 	return domain.Goal{
 		Title:       title,

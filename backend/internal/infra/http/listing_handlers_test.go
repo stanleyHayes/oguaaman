@@ -51,11 +51,30 @@ func (s *submitListings) OwnerUpdate(context.Context, string, string, string, ma
 	return nil
 }
 func (s *submitListings) AddTribute(context.Context, string, domain.Tribute) error { return nil }
-func (s *submitListings) IncrementCandles(context.Context, string) (int, error)    { return 0, nil }
-func (s *submitListings) IncrementRaised(context.Context, string, int64) error     { return nil }
-func (s *submitListings) IncrementDonations(context.Context, string, int64) error  { return nil }
-func (s *submitListings) SetRating(context.Context, string, float64, int) error    { return nil }
-func (s *submitListings) SetFeatured(context.Context, string, bool, string) error  { return nil }
+func (s *submitListings) SetTributeStatus(context.Context, string, string, string) error {
+	return nil
+}
+func (s *submitListings) GetByTributeID(context.Context, string) (*domain.Listing, error) {
+	return nil, &domain.NotFoundError{Entity: "tribute"}
+}
+func (s *submitListings) RemoveStoreItem(context.Context, string, string) error  { return nil }
+func (s *submitListings) HoldForReview(context.Context, string, string) error    { return nil }
+func (s *submitListings) SetScreenFlags(context.Context, string, []string) error { return nil }
+func (s *submitListings) ClaimIncidentAlert(context.Context, string, string, string) (bool, error) {
+	return false, nil
+}
+func (s *submitListings) IncrementCandles(context.Context, string, string, int) (int, error) {
+	return 0, nil
+}
+func (s *submitListings) IncrementRaised(context.Context, string, string, int64) (bool, error) {
+	return true, nil
+}
+func (s *submitListings) IncrementDonations(context.Context, string, string, int64) (bool, error) {
+	return true, nil
+}
+func (s *submitListings) SetRating(context.Context, string, float64, int) error   { return nil }
+func (s *submitListings) SetFeatured(context.Context, string, bool, string) error { return nil }
+func (s *submitListings) SetPromotedUntil(context.Context, string, string) error  { return nil }
 func (s *submitListings) UpdateIncidentStatus(context.Context, string, string, map[string]any) error {
 	return nil
 }
@@ -73,11 +92,15 @@ func (s *submitListings) GetByHandle(context.Context, string) (*domain.Listing, 
 func (s *submitListings) HandleTaken(context.Context, string, string) (bool, error) {
 	return false, nil
 }
-func (s *submitListings) SetKeeperID(context.Context, string, string) error        { return nil }
-func (s *submitListings) AvgApprovalHours(context.Context) (float64, error)        { return 0, nil }
-func (s *submitListings) RecordView(context.Context, string, string) (bool, error) { return true, nil }
-func (s *submitListings) ViewsThisMonth(context.Context, []string) (int, error)    { return 0, nil }
-func (s *submitListings) PlatformViewsThisMonth(context.Context) (int, error)      { return 0, nil }
+func (s *submitListings) MarkPostReviewed(context.Context, string, string, string) error { return nil }
+func (s *submitListings) SetKeeperID(context.Context, string, string) error              { return nil }
+func (s *submitListings) AvgApprovalHours(context.Context) (float64, error)              { return 0, nil }
+func (s *submitListings) RecordView(context.Context, string, string) (bool, error)       { return true, nil }
+func (s *submitListings) ViewsThisMonth(context.Context, []string) (int, error)          { return 0, nil }
+func (s *submitListings) PlatformViewsThisMonth(context.Context) (int, error)            { return 0, nil }
+func (s *submitListings) ReassignOrgListings(context.Context, string, string, string) (int, error) {
+	return 0, nil
+}
 
 func TestSubmit_requiresVerifiedContact(t *testing.T) {
 	listings := &submitListings{}
@@ -160,5 +183,44 @@ func TestPropertiesListAndDetailExposeApprovedPropertyData(t *testing.T) {
 	}
 	if item.Type != domain.TypeProperty || item.Slug != "pedu-flat" {
 		t.Fatalf("property detail = %+v", item)
+	}
+}
+
+// R27: many signed-out mourners can share one IP (a school, an office, a
+// mobile network's NAT), so thirty candles in an hour from that address must
+// not shut everyone behind it out. The address is still bounded, and one
+// member keeps the member budget.
+func TestCandle_sharedAddressGetsAnAddressSizedBudget(t *testing.T) {
+	listings := &submitListings{inserted: []domain.Listing{
+		{ID: "mem-1", Slug: "auntie-esi", Type: domain.TypeMemorial, Status: domain.StatusApproved},
+	}}
+	h := NewHandler(HandlerDeps{Svc: service.New(service.Deps{Listings: listings})})
+	light := func(m *domain.Member) int {
+		req := httptest.NewRequest(http.MethodPost, "/api/memorials/auntie-esi/candle", nil)
+		req.SetPathValue("slug", "auntie-esi")
+		req.RemoteAddr = "41.66.200.7:51234"
+		if m != nil {
+			req = req.WithContext(context.WithValue(req.Context(), memberCtxKey, m))
+		}
+		w := httptest.NewRecorder()
+		h.Candle(w, req)
+		return w.Code
+	}
+	for i := 1; i <= 300; i++ {
+		if code := light(nil); code != http.StatusOK {
+			t.Fatalf("signed-out candle %d from a shared address = %d, want 200", i, code)
+		}
+	}
+	if code := light(nil); code != http.StatusTooManyRequests {
+		t.Fatalf("signed-out candle 301 from one address = %d, want 429", code)
+	}
+	kojo := &domain.Member{ID: "m-kojo"}
+	for i := 1; i <= 30; i++ {
+		if code := light(kojo); code != http.StatusOK {
+			t.Fatalf("member candle %d = %d, want 200", i, code)
+		}
+	}
+	if code := light(kojo); code != http.StatusTooManyRequests {
+		t.Fatalf("member candle 31 = %d, want 429", code)
 	}
 }

@@ -57,37 +57,83 @@ func (r *OrgRepo) SetVerified(ctx context.Context, id string, verified bool, on 
 	return err
 }
 
+// UpdateProfile applies a PARTIAL profile patch: only the fields the client
+// sent are written, and the Clear* flags $unset the optional bool/number facts.
+// A field the caller didn't send is never touched, so one client's save can't
+// wipe the per-kind facts, the MoMo number or the verification links another
+// client maintains.
 func (r *OrgRepo) UpdateProfile(ctx context.Context, id string, patch domain.OrgProfilePatch) error {
-	contact := patch.Contact
-	if contact == nil {
-		contact = []domain.SocialLink{}
+	set, unset := orgProfileUpdate(patch)
+	update := bson.M{}
+	if len(set) > 0 {
+		update["$set"] = set
 	}
-	fields := bson.M{
-		"summary":               patch.Summary,
-		"history":               patch.History,
-		"motto":                 patch.Motto,
-		"crestUrl":              patch.CrestURL,
-		"contact":               contact,
-		"ghanaPostGPS":          patch.GhanaPostGPS,
-		"momoNumber":            patch.MoMoNumber,
-		"gesCategory":           patch.GESCategory,
-		"boardingType":          patch.BoardingType,
-		"genderPolicy":          patch.GenderPolicy,
-		"quarterTag":            patch.QuarterTag,
-		"asafoTag":              patch.AsafoTag,
-		"verificationArtifacts": patch.VerificationArtifacts,
+	if len(unset) > 0 {
+		update["$unset"] = unset
 	}
-	if patch.NHISAccredited != nil {
-		fields["nhisAccredited"] = *patch.NHISAccredited
+	if len(update) == 0 {
+		return nil // nothing sent — nothing to write
 	}
-	if patch.Latitude != nil {
-		fields["latitude"] = *patch.Latitude
-	}
-	if patch.Longitude != nil {
-		fields["longitude"] = *patch.Longitude
-	}
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": fields})
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, update)
 	return err
+}
+
+// orgProfileUpdate turns a partial patch into its $set / $unset documents.
+func orgProfileUpdate(p domain.OrgProfilePatch) (set, unset bson.M) {
+	set, unset = bson.M{}, bson.M{}
+	for key, v := range map[string]*string{
+		"summary": p.Summary, "history": p.History, "motto": p.Motto, "crestUrl": p.CrestURL,
+		"gesCategory": p.GESCategory, "boardingType": p.BoardingType, "genderPolicy": p.GenderPolicy,
+		"ghanaPostGPS": p.GhanaPostGPS, "momoNumber": p.MoMoNumber,
+		"quarterTag": p.QuarterTag, "asafoTag": p.AsafoTag,
+	} {
+		if v != nil {
+			set[key] = *v
+		}
+	}
+	for key, v := range map[string]*[]domain.SocialLink{"contact": p.Contact, "verificationArtifacts": p.VerificationArtifacts} {
+		if v != nil {
+			links := *v
+			if links == nil {
+				links = []domain.SocialLink{}
+			}
+			set[key] = links
+		}
+	}
+	optional := []struct {
+		key   string
+		value any
+		clear bool
+	}{
+		{"nhisAccredited", derefBool(p.NHISAccredited), p.ClearNHISAccredited},
+		{"latitude", derefFloat(p.Latitude), p.ClearLatitude},
+		{"longitude", derefFloat(p.Longitude), p.ClearLongitude},
+	}
+	for _, o := range optional {
+		switch {
+		case o.clear:
+			unset[o.key] = ""
+		case o.value != nil:
+			set[o.key] = o.value
+		}
+	}
+	return set, unset
+}
+
+// derefBool / derefFloat return the pointed-to value, or an untyped nil so the
+// caller can tell "not sent" apart from a zero value.
+func derefBool(b *bool) any {
+	if b == nil {
+		return nil
+	}
+	return *b
+}
+
+func derefFloat(f *float64) any {
+	if f == nil {
+		return nil
+	}
+	return *f
 }
 
 func (r *OrgRepo) SetOffices(ctx context.Context, id string, offices []domain.Office) error {

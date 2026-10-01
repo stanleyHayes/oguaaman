@@ -29,7 +29,8 @@ var validAgentServiceSet = func() map[string]bool {
 }()
 
 // AgentInput is the apply/update payload. The client uploads the ID via
-// POST /api/uploads first and passes the returned URL as idDocUrl.
+// POST /api/uploads/private first and passes the returned "private:<id>" ref
+// as idDocUrl (contract K8); a public URL is refused for new submissions.
 type AgentInput struct {
 	Type          string                `json:"type"`
 	DisplayName   string                `json:"displayName"`
@@ -117,6 +118,9 @@ func (s *Service) ApplyAsAgent(ctx context.Context, member domain.Member, in Age
 	if err != nil {
 		return domain.Agent{}, err
 	}
+	if err := checkPrivateDocs([]string{a.IDDocURL}, nil); err != nil {
+		return domain.Agent{}, err
+	}
 	now := time.Now().UTC()
 	a.ID = "agent-" + fmt.Sprintf("%d", now.UnixNano())
 	a.Slug = slugify(in.DisplayName) + "-" + fmt.Sprintf("%d", now.UnixNano()%1_000_000)
@@ -127,7 +131,19 @@ func (s *Service) ApplyAsAgent(ctx context.Context, member domain.Member, in Age
 	return s.agents.Create(ctx, a)
 }
 
-// UpdateMyAgent edits the caller's editable profile fields (never status/vetting).
+// agentVettingChanged reports whether an edit touches what the Vetting
+// officer checked: who the agent is (type, name, government ID), who vouches
+// for them (guarantor) and where escrow payouts go.
+func agentVettingChanged(before, after domain.Agent) bool {
+	return before.Type != after.Type || before.DisplayName != after.DisplayName ||
+		before.IDDocURL != after.IDDocURL || before.Guarantor != after.Guarantor ||
+		before.PayoutMethod != after.PayoutMethod || before.PayoutDetail != after.PayoutDetail
+}
+
+// UpdateMyAgent edits the caller's profile. Descriptive fields (headline, bio,
+// services, areas, rates) save as they are; changing a vetted field on a
+// verified agent sends the profile back to the vetting queue (pending, off the
+// public directory, verification stamp cleared) until an officer re-approves.
 func (s *Service) UpdateMyAgent(ctx context.Context, memberID string, in AgentInput) (domain.Agent, error) {
 	existing, err := s.agents.ByMemberID(ctx, memberID)
 	if err != nil {
@@ -137,6 +153,7 @@ func (s *Service) UpdateMyAgent(ctx context.Context, memberID string, in AgentIn
 	if err != nil {
 		return domain.Agent{}, err
 	}
+	before := existing
 	existing.Type = patch.Type
 	existing.DisplayName = patch.DisplayName
 	existing.Headline = patch.Headline
@@ -147,8 +164,16 @@ func (s *Service) UpdateMyAgent(ctx context.Context, memberID string, in AgentIn
 	existing.Guarantor = patch.Guarantor
 	existing.PayoutMethod = patch.PayoutMethod
 	existing.PayoutDetail = patch.PayoutDetail
-	if strings.TrimSpace(in.IDDocURL) != "" {
-		existing.IDDocURL = strings.TrimSpace(in.IDDocURL)
+	if patch.IDDocURL != "" {
+		// A new ID must be a private upload; the one on record stays valid.
+		if err := checkPrivateDocs([]string{patch.IDDocURL}, []string{before.IDDocURL}); err != nil {
+			return domain.Agent{}, err
+		}
+		existing.IDDocURL = patch.IDDocURL
+	}
+	if before.Status == domain.AgentStatusVerified && agentVettingChanged(before, existing) {
+		existing.Status = domain.AgentStatusPending
+		existing.VerifiedByID, existing.VerifiedByName, existing.VerifiedAt = "", "", ""
 	}
 	existing.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 	return s.agents.Update(ctx, existing)

@@ -33,22 +33,26 @@ func (h *Handler) BuyTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Tier string `json:"tier"`
-		Qty  int    `json:"qty"`
+		Tier  string `json:"tier"`
+		Qty   int    `json:"qty"`
+		Email string `json:"email"`
 	}
 	if err := decodeBody(r, &in); err != nil {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	memberID, email := "", ""
+	email, ok := h.receiptEmail(w, in.Email, m)
+	if !ok {
+		return
+	}
+	memberID := ""
 	if m != nil {
 		memberID = m.ID
-		email = m.Email
-	}
-	if email == "" {
-		email = "tickets@oguaa.test" // dev mode without auth — Paystack requires an email
 	}
 	authURL, accessCode, reference, err := h.tickets.StartTicketPurchase(r.Context(), r.PathValue("slug"), memberID, email, in.Tier, in.Qty)
+	if h.paymentsUnavailable(w, err) {
+		return
+	}
 	if errors.Is(err, service.ErrTicketQty) || errors.Is(err, service.ErrTierNotFound) || errors.Is(err, service.ErrSoldOut) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
@@ -72,16 +76,22 @@ func (h *Handler) BuyTicket(w http.ResponseWriter, r *http.Request) {
 
 // ConfirmTicket verifies a transaction after the buyer returns from Paystack.
 func (h *Handler) ConfirmTicket(w http.ResponseWriter, r *http.Request) {
-	reference := r.URL.Query().Get("reference")
-	if reference == "" {
-		fail(w, http.StatusBadRequest, "reference is required")
+	reference, ok := h.confirmReference(w, r)
+	if !ok {
 		return
 	}
 	ticket, err := h.tickets.ConfirmTicket(r.Context(), reference)
+	if h.paymentsUnavailable(w, err) {
+		return
+	}
 	if err != nil {
 		var nf *domain.NotFoundError
 		if errors.As(err, &nf) {
 			h.handleErr(w, err)
+			return
+		}
+		if errors.Is(err, service.ErrSoldOutAfterPayment) {
+			fail(w, http.StatusConflict, err.Error()) // paid, not issued: refund due
 			return
 		}
 		fail(w, http.StatusBadRequest, err.Error())
@@ -118,8 +128,11 @@ func (h *Handler) AdminEventTickets(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tickets)
 }
 
-// AdminCheckIn admits one ticket by its check-in code (curator/steward only).
-// A second scan returns 409 with the original gate time.
+// AdminCheckIn admits one ticket by its check-in code at the gate of one event
+// (curator/steward only): POST /api/admin/events/{slug}/tickets/{code}/checkin.
+// The legacy POST /api/admin/tickets/{code}/checkin must name the event in
+// ?event=<slug>. A code for another event is refused with 409, and a second
+// scan returns 409 with the original gate time.
 func (h *Handler) AdminCheckIn(w http.ResponseWriter, r *http.Request) {
 	m, ok := h.requireRole(w, r, "curator")
 	if !ok {
@@ -129,11 +142,19 @@ func (h *Handler) AdminCheckIn(w http.ResponseWriter, r *http.Request) {
 	if m != nil {
 		role = m.Role
 	}
-	ticket, err := h.tickets.CheckIn(r.Context(), r.PathValue("code"), role)
+	eventSlug := r.PathValue("slug")
+	if eventSlug == "" {
+		eventSlug = r.URL.Query().Get("event")
+	}
+	ticket, err := h.tickets.CheckIn(r.Context(), eventSlug, r.PathValue("code"), role)
 	if err != nil {
 		var used *service.AlreadyCheckedInError
 		if errors.As(err, &used) {
 			fail(w, http.StatusConflict, "Already admitted — first scanned at "+used.At)
+			return
+		}
+		if errors.Is(err, service.ErrTicketWrongEvent) {
+			fail(w, http.StatusConflict, "This ticket is for a different event. Do not admit.")
 			return
 		}
 		var nf *domain.NotFoundError

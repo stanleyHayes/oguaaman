@@ -27,10 +27,55 @@ func (r *AgentJobRepo) ByID(ctx context.Context, id string) (domain.AgentJob, er
 
 func (r *AgentJobRepo) ByReference(ctx context.Context, reference string) (domain.AgentJob, error) {
 	var j domain.AgentJob
-	if err := r.c.FindOne(ctx, bson.M{"reference": reference}).Decode(&j); err != nil {
+	filter := bson.M{"$or": bson.A{bson.M{"reference": reference}, bson.M{"pastReferences": reference}}}
+	if err := r.c.FindOne(ctx, filter).Decode(&j); err != nil {
 		return domain.AgentJob{}, notFound("job", err)
 	}
 	return j, nil
+}
+
+// MarkFunded is conditional on the job still awaiting its escrow payment.
+func (r *AgentJobRepo) MarkFunded(ctx context.Context, id string, escrow domain.AgentJobEscrow, at string) (bool, error) {
+	res, err := r.c.UpdateOne(ctx,
+		bson.M{"_id": id, "status": domain.JobStatusQuoted, "escrow.status": domain.EscrowPending},
+		bson.M{"$set": bson.M{"status": domain.JobStatusFunded, "escrow": escrow, "updatedAt": at}})
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount == 1, nil
+}
+
+// MarkRefundDue is conditional on the job being cancelled with its escrow
+// checkout still pending, so a payment is recorded exactly once.
+func (r *AgentJobRepo) MarkRefundDue(ctx context.Context, id string, escrow domain.AgentJobEscrow, reason, at string) (bool, error) {
+	res, err := r.c.UpdateOne(ctx,
+		bson.M{"_id": id, "status": domain.JobStatusCancelled, "escrow.status": domain.EscrowPending},
+		bson.M{"$set": bson.M{"escrow": escrow, "disputeReason": reason, "updatedAt": at}})
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount == 1, nil
+}
+
+// AddExtraPayment pushes a stray payment onto a job once per reference.
+func (r *AgentJobRepo) AddExtraPayment(ctx context.Context, id string, p domain.AgentJobExtraPayment) (bool, error) {
+	res, err := r.c.UpdateOne(ctx,
+		bson.M{"_id": id, "extraPayments.reference": bson.M{"$ne": p.Reference}},
+		bson.M{"$push": bson.M{"extraPayments": p}, "$set": bson.M{"updatedAt": p.RecordedAt}})
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount == 1, nil
+}
+
+// SetReviewed changes the flag only if it differs, so exactly one caller
+// claims (or releases) a job's review slot.
+func (r *AgentJobRepo) SetReviewed(ctx context.Context, id string, reviewed bool) (bool, error) {
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": id, "reviewed": bson.M{"$ne": reviewed}}, bson.M{"$set": bson.M{"reviewed": reviewed}})
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount == 1, nil
 }
 
 func (r *AgentJobRepo) list(ctx context.Context, q bson.M) ([]domain.AgentJob, error) {
@@ -51,7 +96,11 @@ func (r *AgentJobRepo) ForAgentMember(ctx context.Context, memberID string) ([]d
 }
 
 func (r *AgentJobRepo) Disputed(ctx context.Context) ([]domain.AgentJob, error) {
-	return r.list(ctx, bson.M{"status": domain.JobStatusDisputed})
+	return r.list(ctx, bson.M{opOr: bson.A{
+		bson.M{"status": domain.JobStatusDisputed},
+		bson.M{"escrow.status": domain.EscrowRefundDue},
+		bson.M{"extraPayments": bson.M{"$elemMatch": bson.M{"refundedAt": bson.M{"$exists": false}}}},
+	}})
 }
 
 func (r *AgentJobRepo) Create(ctx context.Context, j domain.AgentJob) (domain.AgentJob, error) {

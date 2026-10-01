@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/oguaa/backend/internal/domain"
 )
@@ -20,8 +22,46 @@ func (f *fakePaystack) Initialize(_ context.Context, _ string, _ int64, _, refer
 	f.initCalls++
 	return "https://pay.example/" + reference + "?cb=" + callbackURL, "ACCESS_" + reference, nil
 }
-func (f *fakePaystack) Verify(context.Context, string) (bool, int64, error) {
-	return f.verifyOK, f.verifyAmount, nil
+func (f *fakePaystack) Verify(_ context.Context, ref string) (PaymentCheck, error) {
+	return scriptedCheck(f.verifyOK, f.verifyAmount, ref), nil
+}
+
+// scriptedCheck is the PaymentCheck a scripted fake reports: a GHS charge of
+// amount on ref when ok, a failed one otherwise.
+func scriptedCheck(ok bool, amount int64, ref string) PaymentCheck {
+	if !ok {
+		return PaymentCheck{Outcome: PaymentFailed, Reference: ref}
+	}
+	return PaymentCheck{Outcome: PaymentPaid, AmountPesewas: amount, Currency: paymentCurrency, Reference: ref}
+}
+
+// racingPaystack verifies like fakePaystack, but its first Verify first runs
+// `meanwhile`: a second confirm of the same reference landing during the first
+// confirm's Paystack round trip — the window every check-then-act confirm race
+// lives in (redirect + webhook, or a burst of replayed confirms).
+type racingPaystack struct {
+	fakePaystack
+	meanwhile func()
+}
+
+func (p *racingPaystack) Verify(ctx context.Context, ref string) (PaymentCheck, error) {
+	if f := p.meanwhile; f != nil {
+		p.meanwhile = nil
+		f()
+	}
+	return p.fakePaystack.Verify(ctx, ref)
+}
+
+// countingNotifs records in-app notifications so tests can assert how many
+// times a settlement announced itself.
+type countingNotifs struct {
+	stubNotifs
+	sent []domain.Notification
+}
+
+func (n *countingNotifs) Insert(_ context.Context, x domain.Notification) error {
+	n.sent = append(n.sent, x)
+	return nil
 }
 
 // fakePledges is an in-memory PledgeRepository.
@@ -39,27 +79,37 @@ func (f *fakePledges) ByReference(_ context.Context, ref string) (*domain.Pledge
 	}
 	return nil, &domain.NotFoundError{Entity: "pledge"}
 }
-func (f *fakePledges) UpdateStatus(_ context.Context, ref, status, at string) error {
+
+// MarkSuccess mirrors the repository's conditional write: only a pledge that
+// has not already succeeded transitions, and the result says whether it did.
+func (f *fakePledges) MarkSuccess(_ context.Context, ref, at string, fee, net int64) (bool, error) {
 	for i := range f.rows {
-		if f.rows[i].Reference == ref {
-			f.rows[i].Status = status
-			if status == domain.PledgeSuccess {
-				f.rows[i].ConfirmedAt = at
-			}
-			return nil
-		}
-	}
-	return &domain.NotFoundError{Entity: "pledge"}
-}
-func (f *fakePledges) SetFeeNet(_ context.Context, ref string, fee, net int64) error {
-	for i := range f.rows {
-		if f.rows[i].Reference == ref {
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status = domain.PledgeSuccess
+			f.rows[i].ConfirmedAt = at
 			f.rows[i].FeePesewas = fee
 			f.rows[i].NetPesewas = net
-			return nil
+			f.rows[i].GrantPending = true
+			return true, nil
 		}
 	}
-	return &domain.NotFoundError{Entity: "pledge"}
+	return false, nil
+}
+func (f *fakePledges) MarkGranted(_ context.Context, ref string) error {
+	for i := range f.rows {
+		if f.rows[i].Reference == ref {
+			f.rows[i].GrantPending = false
+		}
+	}
+	return nil
+}
+func (f *fakePledges) MarkFailed(_ context.Context, ref string) error {
+	for i := range f.rows {
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status = domain.PledgeFailed
+		}
+	}
+	return nil
 }
 func (f *fakePledges) All(context.Context) ([]domain.Pledge, error) { return f.rows, nil }
 func (f *fakePledges) ByProject(_ context.Context, projectID string) ([]domain.Pledge, error) {
@@ -210,5 +260,78 @@ func TestConfirmPledge_amountMismatchFails(t *testing.T) {
 	}
 	if pledges.rows[0].Status != domain.PledgeFailed {
 		t.Errorf("pledge status = %q, want failed", pledges.rows[0].Status)
+	}
+}
+
+// A confirm that lands while another confirm of the same pledge is waiting on
+// Paystack must not credit the project a second time (F137/F140).
+func TestConfirmPledge_concurrentConfirmsCreditOnce(t *testing.T) {
+	ctx := context.Background()
+	listings := &fakeRepo{listings: []domain.Listing{
+		{ID: "pr-1", Slug: "library-corner", Type: domain.TypeProject, OwnerID: "m-aidoo", Status: domain.StatusApproved, Title: "Library corner", Details: map[string]any{}},
+	}}
+	pledges := &fakePledges{}
+	notifs := &countingNotifs{}
+	ps := &racingPaystack{fakePaystack: fakePaystack{verifyOK: true, verifyAmount: 100_00}}
+	svc := NewPaymentsService(listings, pledges, notifs, stubMembers{}, &fakePlans{}, ps, "http://portal.test", 5)
+
+	_, _, ref, err := svc.StartPledge(ctx, "library-corner", "m-1", "ama@example.com", 100_00)
+	if err != nil {
+		t.Fatalf("StartPledge: %v", err)
+	}
+	ps.meanwhile = func() { // e.g. the webhook, mid-way through the redirect confirm
+		if _, err := svc.ConfirmPledge(ctx, ref); err != nil {
+			t.Errorf("inner confirm: %v", err)
+		}
+	}
+	got, err := svc.ConfirmPledge(ctx, ref)
+	if err != nil {
+		t.Fatalf("outer confirm: %v", err)
+	}
+	if got.Status != domain.PledgeSuccess || got.NetPesewas != 9_500 {
+		t.Errorf("outer confirm returned %+v, want the settled pledge", got)
+	}
+	if raised, _ := listings.listings[0].Details["raisedPesewas"].(int64); raised != 9_500 {
+		t.Errorf("raised = %d, want 9500 — one payment credited exactly once", raised)
+	}
+	if len(notifs.sent) != 1 {
+		t.Errorf("owner notified %d times, want once", len(notifs.sent))
+	}
+}
+
+// A late failed verification can never knock a settled pledge back to failed.
+func TestConfirmPledge_lateFailureNeverOverwritesSuccess(t *testing.T) {
+	ctx := context.Background()
+	svc, _, pledges, _ := paymentsFixture(true, 5_00)
+	_, _, ref, _ := svc.StartPledge(ctx, "library-corner", "m-1", "ama@example.com", 5_00)
+	if _, err := svc.ConfirmPledge(ctx, ref); err != nil {
+		t.Fatalf("ConfirmPledge: %v", err)
+	}
+	stale := pledges.rows[0]
+	stale.Status = domain.PledgePending // a confirm that read the record before it settled
+	if _, err := svc.fulfillPledge(ctx, &stale, false, 0); !errors.Is(err, ErrPaymentNotCompleted) {
+		t.Fatalf("want ErrPaymentNotCompleted, got %v", err)
+	}
+	if pledges.rows[0].Status != domain.PledgeSuccess {
+		t.Errorf("status = %q, want success to stand", pledges.rows[0].Status)
+	}
+}
+
+// A campaign past its funding deadline takes no more pledges (F147).
+func TestStartPledge_refusesAfterDeadline(t *testing.T) {
+	svc, listings, pledges, _ := paymentsFixture(true, 0)
+	ctx := context.Background()
+	for _, deadline := range []string{"2020-08-20T23:59:59Z", "2020-08-20"} {
+		listings.listings[0].Details["deadline"] = deadline
+		if _, _, _, err := svc.StartPledge(ctx, "library-corner", "m-1", "a@b.c", 5_000); !errors.Is(err, ErrFundingClosed) {
+			t.Errorf("deadline %s: want ErrFundingClosed, got %v", deadline, err)
+		}
+	}
+	if len(pledges.rows) != 0 {
+		t.Fatalf("closed campaigns must not record pledges, got %d", len(pledges.rows))
+	}
+	listings.listings[0].Details["deadline"] = time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	if _, _, _, err := svc.StartPledge(ctx, "library-corner", "m-1", "a@b.c", 5_000); err != nil {
+		t.Errorf("open campaign: %v", err)
 	}
 }

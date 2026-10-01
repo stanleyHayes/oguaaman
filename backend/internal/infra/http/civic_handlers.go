@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -35,7 +34,7 @@ func (h *Handler) AdminCreateCivicBehaviour(w http.ResponseWriter, r *http.Reque
 	}
 	b, err := h.svc.CreateCivicBehaviour(r.Context(), in)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, b)
@@ -53,12 +52,7 @@ func (h *Handler) AdminUpdateCivicBehaviour(w http.ResponseWriter, r *http.Reque
 	}
 	b, err := h.svc.UpdateCivicBehaviour(r.Context(), r.PathValue("slug"), in)
 	if err != nil {
-		var nf *domain.NotFoundError
-		if errors.As(err, &nf) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, b)

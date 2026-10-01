@@ -77,11 +77,28 @@ func (h *Handler) RedeemApplePurchase(w http.ResponseWriter, r *http.Request) {
 		// 200, not an error: a restore-purchases pass replays every transaction,
 		// and "already applied" is the correct, successful outcome for the user.
 		writeJSON(w, http.StatusOK, map[string]any{"alreadyRedeemed": true})
-	case errors.Is(err, service.ErrIAPUnknownProduct):
-		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, service.ErrIAPExpired):
+	case errors.Is(err, service.ErrIAPWrongAccount):
+		fail(w, http.StatusForbidden, err.Error())
+	case errors.Is(err, service.ErrIAPUnknownProduct), errors.Is(err, service.ErrIAPExpired),
+		errors.Is(err, service.ErrIAPPlanMismatch), errors.Is(err, service.ErrIAPNeedsReference):
 		fail(w, http.StatusBadRequest, err.Error())
 	default:
 		h.handleErr(w, err)
 	}
+}
+
+// AppleAccountToken — GET /api/iap/apple/account-token. The app passes this
+// UUID to StoreKit as `appAccountToken` on every purchase, so Apple signs
+// which Oguaa account the purchase is for; redemption by any other account is
+// then refused.
+func (h *Handler) AppleAccountToken(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"appAccountToken": service.AppAccountToken(m.ID)})
 }

@@ -23,7 +23,7 @@ func (r *NewsRepo) Update(ctx context.Context, a domain.NewsArticle) error {
 		"slug": a.Slug, "title": a.Title, "summary": a.Summary, "body": a.Body,
 		"coverColor": a.CoverColor, "coverImageUrl": a.CoverImageURL, "tags": a.Tags, "updatedAt": a.UpdatedAt,
 		"automated": a.Automated, "automationLabel": a.AutomationLabel, "sourceName": a.SourceName,
-		"sourceUrl": a.SourceURL, "sourcePublishedAt": a.SourcePublishedAt,
+		"sourceUrl": a.SourceURL, "sourceAuthor": a.SourceAuthor, "sourcePublishedAt": a.SourcePublishedAt,
 	}})
 	return err
 }
@@ -73,6 +73,19 @@ func (r *NewsRepo) ByAuthor(ctx context.Context, authorID string) ([]domain.News
 
 func (r *NewsRepo) SetPublished(ctx context.Context, id, status, at string) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"status": status, "publishedAt": at, "updatedAt": at}})
+	return err
+}
+
+// EraseAuthor rewrites the byline on the author's articles and deletes their
+// unpublished drafts (Act 843 right to erasure).
+func (r *NewsRepo) EraseAuthor(ctx context.Context, authorID, displayName string) error {
+	if authorID == "" {
+		return nil
+	}
+	if _, err := r.c.DeleteMany(ctx, bson.M{"authorId": authorID, "status": bson.M{"$ne": domain.NewsPublished}}); err != nil {
+		return err
+	}
+	_, err := r.c.UpdateMany(ctx, bson.M{"authorId": authorID}, bson.M{"$set": bson.M{"authorName": displayName}})
 	return err
 }
 

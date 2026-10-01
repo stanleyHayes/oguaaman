@@ -11,11 +11,16 @@ import (
 // ── people you may know (spec §8.6) ──────────────────────────────────────────
 
 // Connection is a suggested member to follow, with a human reason and a score.
+// The member is the public projection: a suggestion must never carry more than
+// the member's public profile would.
 type Connection struct {
-	Member  domain.Member `json:"member"`
-	Reasons []string      `json:"reasons"`
-	Score   int           `json:"score"`
+	Member  PublicMember `json:"member"`
+	Reasons []string     `json:"reasons"`
+	Score   int          `json:"score"`
 }
+
+// maxConnections caps the "people you may know" list.
+const maxConnections = 12
 
 // SetMemberSchooling records a member's schools + years (the classmate signal).
 func (s *Service) SetMemberSchooling(ctx context.Context, memberID string, stints []domain.SchoolStint) error {
@@ -40,7 +45,9 @@ func overlaps(a, b domain.SchoolStint) (bool, bool) {
 
 // Recommendations suggests members to connect with, ranked by shared ties:
 // classmates (same school + overlapping years) rank highest, then same Asafo,
-// then same quarter (spec §8.6). Members already followed are excluded.
+// then same quarter (spec §8.6). Members already followed are excluded, and so
+// is anyone on either side of a block with the viewer — a suggestion would put
+// the very profile the block withholds back in front of them.
 func (s *Service) Recommendations(ctx context.Context, memberID string) ([]Connection, error) {
 	me, err := s.members.ByID(ctx, memberID)
 	if err != nil {
@@ -50,29 +57,49 @@ func (s *Service) Recommendations(ctx context.Context, memberID string) ([]Conne
 	if err != nil {
 		return nil, err
 	}
+	hidden := s.hiddenFor(ctx, memberID)
 
-	out := []Connection{}
+	scored := []Connection{}
 	for i := range all {
 		other := &all[i]
 		if other.ID == memberID || other.Suspended {
 			continue
 		}
+		if _, blocked := hidden[other.ID]; blocked {
+			continue
+		}
 		score, reasons := s.scoreConnection(ctx, me, other)
 		if score > 0 {
-			out = append(out, Connection{Member: *other, Reasons: reasons, Score: score})
+			scored = append(scored, Connection{Member: PublicMemberOf(other), Reasons: reasons, Score: score})
 		}
 	}
 
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Score != out[j].Score {
-			return out[i].Score > out[j].Score
+	sort.SliceStable(scored, func(i, j int) bool {
+		if scored[i].Score != scored[j].Score {
+			return scored[i].Score > scored[j].Score
 		}
-		return out[i].Member.DisplayName < out[j].Member.DisplayName
+		return scored[i].Member.DisplayName < scored[j].Member.DisplayName
 	})
-	if len(out) > 12 {
-		out = out[:12]
+	return s.dropFollowed(ctx, memberID, scored), nil
+}
+
+// dropFollowed walks the ranked suggestions best-first, skipping members the
+// viewer already follows, until the list is full. Checking in rank order keeps
+// the follow lookups bounded by the page size rather than the whole directory.
+func (s *Service) dropFollowed(ctx context.Context, memberID string, ranked []Connection) []Connection {
+	out := make([]Connection, 0, maxConnections)
+	for _, c := range ranked {
+		if len(out) == maxConnections {
+			break
+		}
+		if s.follows != nil {
+			if following, err := s.follows.IsFollowingMember(ctx, memberID, c.Member.ID); err == nil && following {
+				continue
+			}
+		}
+		out = append(out, c)
 	}
-	return out, nil
+	return out
 }
 
 // scoreConnection computes the tie score and human reasons between the member
@@ -118,14 +145,14 @@ func (s *Service) classmateTies(ctx context.Context, me, other *domain.Member) (
 }
 
 func (s *Service) schoolName(ctx context.Context, id string) string {
-	if o, err := s.orgs.ByID(ctx, id); err == nil {
+	if o, err := s.orgs.ByID(ctx, id); err == nil && o != nil {
 		return o.Name
 	}
 	return "the same school"
 }
 
 func (s *Service) placeName(ctx context.Context, id string) string {
-	if p, err := s.places.ByID(ctx, id); err == nil {
+	if p, err := s.places.ByID(ctx, id); err == nil && p != nil {
 		return p.Name
 	}
 	return "the same place"

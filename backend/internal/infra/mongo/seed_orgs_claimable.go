@@ -14,15 +14,17 @@ import (
 // technical/vocational, colleges of education, tertiary, nurses' training —
 // public, mission and private) plus more heritage places. Seeded UNCLAIMED
 // (Verified:false, no offices) so a member or the responsible office can claim
-// and complete each page later. Inserted by slug top-up (existing slugs are
+// and complete each page later. Inserted by _id/slug top-up (existing rows are
 // never touched), so this is safe to run against a live database.
+//
+// An institution that already has a verified page in seedOrgs/seedExtraOrgs
+// must NOT be listed here under another slug: the directory would show it
+// twice, and the stub could be claimed as a second "official" page.
 
 var seedClaimableOrgs = []domain.Organization{
 	// ── Senior High Schools ──────────────────────────────────────────────────
 	{ID: "ghana-national-college", Slug: "ghana-national-college", Kind: "school", Name: "Ghana National College", Founded: 1948, Classification: "Senior High · public, co-ed", GenderPolicy: "Mixed", BoardingType: "Day & Boarding", Jurisdiction: "Cape Coast, Central Region", Summary: "A public co-educational senior high school founded in 1948 by Kwame Nkrumah for students dismissed for political protest — a cradle of the independence generation."},
-	{ID: "oguaa-senior-high-tech", Slug: "oguaa-senior-high-tech", Kind: "school", Name: "Oguaa Senior High Technical School", Classification: "Senior High Technical · public, co-ed", GenderPolicy: "Mixed", BoardingType: "Day & Boarding", Jurisdiction: "Cape Coast, Central Region", Summary: "A public technical senior high school offering technical, vocational and general programmes to the town's day and boarding students."},
 	{ID: "university-practice-shs", Slug: "university-practice-shs", Kind: "school", Name: "University Practice Senior High School", Classification: "Senior High · public, co-ed", GenderPolicy: "Mixed", BoardingType: "Day & Boarding", Jurisdiction: "UCC Campus, Cape Coast", Summary: "The University of Cape Coast's practice senior high school on campus — a teaching school for the university's education students."},
-	{ID: "efutu-senior-high-tech", Slug: "efutu-senior-high-tech", Kind: "school", Name: "Efutu Senior High Technical School", Classification: "Senior High Technical · public, co-ed", GenderPolicy: "Mixed", BoardingType: "Day", Jurisdiction: "Efutu, Cape Coast", Summary: "A public senior high technical school serving the Efutu area of Cape Coast."},
 	{ID: "academy-of-christ-the-king", Slug: "academy-of-christ-the-king", Kind: "school", Name: "Academy of Christ the King", Classification: "Basic & Senior High · private (Catholic), co-ed", GenderPolicy: "Mixed", Jurisdiction: "Pedu, Cape Coast", Summary: "A private Catholic school running basic and senior high programmes in Cape Coast."},
 	{ID: "cape-coast-international-school", Slug: "cape-coast-international-school", Kind: "school", Name: "Cape Coast International School", Classification: "Basic & Senior High · private, co-ed", GenderPolicy: "Mixed", Jurisdiction: "Cape Coast, Central Region", Summary: "An independent, fee-paying international school offering basic and secondary education in Cape Coast."},
 
@@ -47,14 +49,12 @@ var seedClaimableOrgs = []domain.Organization{
 	{ID: "ola-college-of-education", Slug: "ola-college-of-education", Kind: "school", Name: "OLA College of Education", Classification: "College of Education · public, women", GenderPolicy: "Girls", BoardingType: "Boarding", Jurisdiction: "OLA Estate, Cape Coast", Summary: "A public women's college of education in Cape Coast training basic-school teachers."},
 	{ID: "komenda-college-of-education", Slug: "komenda-college-of-education", Kind: "school", Name: "Komenda College of Education", Classification: "College of Education · public, co-ed", GenderPolicy: "Mixed", BoardingType: "Boarding", Jurisdiction: "Komenda (KEEA), Central Region", Summary: "A public college of education at Komenda, west of Cape Coast, training teachers for the region."},
 	{ID: "cape-coast-technical-university", Slug: "cape-coast-technical-university", Kind: "school", Name: "Cape Coast Technical University", Classification: "Technical University · public", GenderPolicy: "Mixed", Jurisdiction: "Cape Coast, Central Region", Summary: "A public technical university offering higher national diploma and degree programmes in technical and applied fields."},
-	{ID: "nmtc-cape-coast", Slug: "nmtc-cape-coast", Kind: "school", Name: "Nursing & Midwifery Training College, Cape Coast", Classification: "Nurses' Training · public", GenderPolicy: "Mixed", BoardingType: "Boarding", Jurisdiction: "Cape Coast, Central Region · Ministry of Health", Summary: "A public health-training college preparing registered nurses and midwives for the Central Region."},
 
 	// ── Heritage places (claimable by the responsible office) ────────────────
 	{ID: "fort-william-lighthouse", Slug: "fort-william-lighthouse", Kind: "heritage", Name: "Fort William (Cape Coast Lighthouse)", Classification: "Colonial fort & lighthouse", Jurisdiction: "Dawson's Hill, Cape Coast", Summary: "A British fort on the hill above the town, later crowned with the Cape Coast lighthouse that still guides ships along the coast."},
 	{ID: "fort-victoria-cape-coast", Slug: "fort-victoria-cape-coast", Kind: "heritage", Name: "Fort Victoria", Classification: "Colonial watch-tower fort", Jurisdiction: "Cape Coast, Central Region", Summary: "A small hilltop fort built to watch over Cape Coast Castle and the approaches to the town."},
 	{ID: "fosu-lagoon", Slug: "fosu-lagoon", Kind: "heritage", Name: "Fosu Lagoon", Classification: "Lagoon & wetland", Jurisdiction: "Cape Coast, Central Region", Summary: "The lagoon on the eastern edge of Cape Coast — a fishing and ecological site woven into the town's Fetu Afahye rites."},
 	{ID: "victoria-park-cape-coast", Slug: "victoria-park-cape-coast", Kind: "heritage", Name: "Victoria Park", Classification: "Public park & durbar ground", Jurisdiction: "Cape Coast, Central Region", Summary: "The town's central park and parade ground, host to durbars, independence marches and public gatherings."},
-	{ID: "centre-for-national-culture-cc", Slug: "centre-for-national-culture-cc", Kind: "heritage", Name: "Cape Coast Centre for National Culture", Classification: "Arts & culture centre", Jurisdiction: "Cape Coast, Central Region", Summary: "The regional centre for arts and culture — crafts, performance and the home of much of the town's festival organising."},
 	{ID: "emintsimadze-palace", Slug: "emintsimadze-palace", Kind: "heritage", Name: "Emintsimadze Palace", Classification: "Traditional palace", Jurisdiction: "Oguaa Traditional Area, Cape Coast", Summary: "The palace of the Oguaamanhen — seat of the Oguaa Traditional Council and the focus of the town's chieftaincy."},
 	{ID: "chapel-square-cape-coast", Slug: "chapel-square-cape-coast", Kind: "heritage", Name: "Chapel Square", Classification: "Historic square", Jurisdiction: "Chapel Square, Cape Coast", Summary: "The historic square by the Wesley Methodist cathedral, long a gathering point in the old town."},
 	{ID: "jubilee-park-cape-coast", Slug: "jubilee-park-cape-coast", Kind: "heritage", Name: "Jubilee Park", Classification: "Public park", Jurisdiction: "Cape Coast, Central Region", Summary: "A public park and event ground in Cape Coast."},
@@ -62,14 +62,14 @@ var seedClaimableOrgs = []domain.Organization{
 	{ID: "assin-manso-slave-river", Slug: "assin-manso-slave-river", Kind: "heritage", Name: "Assin Manso Slave River Site (Nnonkonsuo)", Classification: "Memorial & heritage site", Jurisdiction: "Assin Manso, Central Region · ~40 km from Cape Coast", Summary: "The 'Last Bath' river where enslaved people were washed before the coast — now a memorial and a site of return for the diaspora."},
 }
 
-// seedClaimableOrgsData inserts every claimable org whose slug is not already
-// present (used by the full Seed and the top-up command). Returns how many were
+// seedClaimableOrgsData inserts every claimable org whose _id and slug are
+// both absent (used by the full Seed and the top-up command). Returns how many were
 // newly inserted.
 func seedClaimableOrgsData(ctx context.Context, db *mongo.Database) (int, error) {
 	coll := db.Collection(collOrgs)
 	inserted := 0
 	for _, o := range seedClaimableOrgs {
-		n, err := coll.CountDocuments(ctx, bson.M{"slug": o.Slug})
+		n, err := coll.CountDocuments(ctx, bson.M{"$or": []bson.M{{"_id": o.ID}, {"slug": o.Slug}}})
 		if err != nil {
 			return inserted, err
 		}

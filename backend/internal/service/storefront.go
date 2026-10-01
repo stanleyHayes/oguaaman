@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -92,11 +94,11 @@ func (s *Service) SetListingStorefront(ctx context.Context, actor *domain.Member
 	// Products & services are capped by the business's subscription plan
 	// (admin-configured Plan.MaxProducts / MaxServices).
 	maxProducts, maxServices := s.storefrontItemCaps(ctx, *l)
-	products, err := cleanStoreItems(in.Products, "product", maxProducts)
+	products, err := cleanStoreItems(in.Products, "product", domain.StoreItemPhysical, maxProducts)
 	if err != nil {
 		return nil, err
 	}
-	services, err := cleanStoreItems(in.Services, "service", maxServices)
+	services, err := cleanStoreItems(in.Services, "service", domain.StoreItemService, maxServices)
 	if err != nil {
 		return nil, err
 	}
@@ -125,37 +127,85 @@ func (s *Service) storefrontItemCaps(ctx context.Context, l domain.Listing) (max
 	return plan.MaxProducts, plan.MaxServices
 }
 
+// msgDigitalGoodsRefused is the P062 refusal for a storefront item that is
+// neither a physical good nor an in-person service.
+const msgDigitalGoodsRefused = "Digital downloads and online content can't be sold through Oguaa storefronts."
+
 // cleanStoreItems validates and normalises a product/service catalog, enforcing
-// the per-plan count cap. idPrefix seeds ids for new items lacking one.
-func cleanStoreItems(items []domain.StoreItem, idPrefix string, max int) ([]domain.StoreItem, error) {
+// the per-plan count cap. idPrefix seeds ids for new items lacking one;
+// defaultKind is the kind of an item that doesn't say (products are physical
+// goods, services are in person). Only physical goods and in-person services
+// may be listed: digital goods can't go through Paystack/Stripe in the apps.
+//
+// Item ids are what product links and checkout resolve, so they must be
+// unique: new items get a random id, and an item repeating an id already
+// used earlier in the catalogue (older data) is given a fresh one.
+func cleanStoreItems(items []domain.StoreItem, idPrefix, defaultKind string, max int) ([]domain.StoreItem, error) {
 	out := make([]domain.StoreItem, 0, len(items))
+	used := make(map[string]bool, len(items))
 	for i := range items {
 		it := items[i]
 		it.Name = strings.TrimSpace(it.Name)
 		if it.Name == "" {
 			continue // skip blank rows silently (empty editor rows)
 		}
-		if len([]rune(it.Name)) > maxStoreItemNameRunes {
-			return nil, fmt.Errorf("a %s name is too long (max %d characters)", idPrefix, maxStoreItemNameRunes)
+		if err := normaliseStoreItem(&it, idPrefix, defaultKind); err != nil {
+			return nil, err
 		}
-		it.Description = strings.TrimSpace(it.Description)
-		if len([]rune(it.Description)) > maxStoreItemDescRunes {
-			return nil, fmt.Errorf("a %s description is too long (max %d characters)", idPrefix, maxStoreItemDescRunes)
+		if it.ID == "" || used[it.ID] {
+			id, err := newStoreItemID(idPrefix, used)
+			if err != nil {
+				return nil, err
+			}
+			it.ID = id
 		}
-		if it.PricePesewas < 0 || it.PricePesewas > maxStoreItemPesewas {
-			return nil, fmt.Errorf("a %s price is out of range", idPrefix)
-		}
-		it.Unit = strings.TrimSpace(it.Unit)
-		it.ImageURL = safeURL(strings.TrimSpace(it.ImageURL))
-		if strings.TrimSpace(it.ID) == "" {
-			it.ID = fmt.Sprintf("%s-%d", idPrefix, i+1)
-		}
+		used[it.ID] = true
 		out = append(out, it)
 	}
 	if len(out) > max {
 		return nil, fmt.Errorf("your plan allows at most %d %ss — upgrade to add more", max, idPrefix)
 	}
 	return out, nil
+}
+
+// normaliseStoreItem trims and bounds one catalogue item (its name is
+// already trimmed and non-empty).
+func normaliseStoreItem(it *domain.StoreItem, idPrefix, defaultKind string) error {
+	if len([]rune(it.Name)) > maxStoreItemNameRunes {
+		return fmt.Errorf("a %s name is too long (max %d characters)", idPrefix, maxStoreItemNameRunes)
+	}
+	it.Description = strings.TrimSpace(it.Description)
+	if len([]rune(it.Description)) > maxStoreItemDescRunes {
+		return fmt.Errorf("a %s description is too long (max %d characters)", idPrefix, maxStoreItemDescRunes)
+	}
+	if it.PricePesewas < 0 || it.PricePesewas > maxStoreItemPesewas {
+		return fmt.Errorf("a %s price is out of range", idPrefix)
+	}
+	it.Kind = strings.ToLower(strings.TrimSpace(it.Kind))
+	if it.Kind == "" {
+		it.Kind = defaultKind
+	}
+	if it.Kind != domain.StoreItemPhysical && it.Kind != domain.StoreItemService {
+		return &domain.ValidationError{Message: msgDigitalGoodsRefused}
+	}
+	it.ID = strings.TrimSpace(it.ID)
+	it.Unit = strings.TrimSpace(it.Unit)
+	it.ImageURL = safeURL(strings.TrimSpace(it.ImageURL))
+	return nil
+}
+
+// newStoreItemID mints a random catalogue id not already used.
+func newStoreItemID(prefix string, used map[string]bool) (string, error) {
+	for range 5 {
+		b := make([]byte, 5)
+		if _, err := rand.Read(b); err != nil {
+			return "", err
+		}
+		if id := prefix + "-" + hex.EncodeToString(b); !used[id] {
+			return id, nil
+		}
+	}
+	return "", fmt.Errorf("could not allocate a %s id", prefix)
 }
 
 // resolveHandle normalises and validates a requested storefront handle. Blank is
@@ -182,7 +232,21 @@ func (s *Service) resolveHandle(ctx context.Context, raw, listingID string) (str
 	return h, nil
 }
 
-// ListingByHandle returns a listing by its clean storefront handle.
+// ListingByHandle returns the public business behind a clean storefront
+// handle. Like every other public detail read, only an approved business is
+// served: a handle survives unpublishing, rejection and a major edit that
+// sends the listing back to review, and must not keep the page live.
 func (s *Service) ListingByHandle(ctx context.Context, handle string) (*domain.Listing, error) {
-	return s.listings.GetByHandle(ctx, slugify(handle))
+	h := slugify(handle)
+	if h == "" {
+		return nil, &domain.NotFoundError{Entity: domain.TypeBusiness}
+	}
+	l, err := s.listings.GetByHandle(ctx, h)
+	if err != nil {
+		return nil, err
+	}
+	if l.Type != domain.TypeBusiness || l.Status != domain.StatusApproved {
+		return nil, &domain.NotFoundError{Entity: domain.TypeBusiness}
+	}
+	return l, nil
 }

@@ -25,26 +25,37 @@ func (f *fakeSubs) ByReference(_ context.Context, ref string) (*domain.Subscript
 	}
 	return nil, &domain.NotFoundError{Entity: "subscription"}
 }
-func (f *fakeSubs) UpdateStatus(_ context.Context, ref, status, at string) error {
+
+// MarkSuccess mirrors the repository's conditional write: only a subscription
+// that has not already succeeded transitions, and the result says whether it did.
+func (f *fakeSubs) MarkSuccess(_ context.Context, ref, at, periodEnd, featuredUntil string) (bool, error) {
 	for i := range f.rows {
-		if f.rows[i].Reference == ref {
-			f.rows[i].Status = status
-			if status == domain.PledgeSuccess {
-				f.rows[i].ConfirmedAt = at
-			}
-			return nil
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status = domain.PledgeSuccess
+			f.rows[i].ConfirmedAt = at
+			f.rows[i].PeriodEnd = periodEnd
+			f.rows[i].FeaturedUntil = featuredUntil
+			f.rows[i].GrantPending = true
+			return true, nil
 		}
 	}
-	return &domain.NotFoundError{Entity: "subscription"}
+	return false, nil
 }
-func (f *fakeSubs) SetPeriodEnd(_ context.Context, ref, until string) error {
+func (f *fakeSubs) MarkGranted(_ context.Context, ref string) error {
 	for i := range f.rows {
 		if f.rows[i].Reference == ref {
-			f.rows[i].PeriodEnd = until
-			return nil
+			f.rows[i].GrantPending = false
 		}
 	}
-	return &domain.NotFoundError{Entity: "subscription"}
+	return nil
+}
+func (f *fakeSubs) MarkFailed(_ context.Context, ref string) error {
+	for i := range f.rows {
+		if f.rows[i].Reference == ref && f.rows[i].Status != domain.PledgeSuccess {
+			f.rows[i].Status = domain.PledgeFailed
+		}
+	}
+	return nil
 }
 func (f *fakeSubs) ByMember(_ context.Context, memberID string) ([]domain.Subscription, error) {
 	out := []domain.Subscription{}
@@ -95,8 +106,8 @@ func TestStartSubscription_ownerOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("owner subscribe failed: %v", err)
 	}
-	if !strings.HasPrefix(ref, "sub-castle-view-guesthouse-") {
-		t.Errorf("reference = %q, want sub-<slug>-<ts>", ref)
+	if !strings.HasPrefix(ref, "oguaa-sub-castle-view-guesthouse-") {
+		t.Errorf("reference = %q, want oguaa-sub-<slug>-<ts>", ref)
 	}
 	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "", ""); err == nil {
 		t.Error("expected a missing email to be rejected")
@@ -228,6 +239,43 @@ func TestStartSubscription_explicitPlanIsStrict(t *testing.T) {
 	}
 }
 
+// A plan is only sold on its own audience's path: a creator can't buy the 0%
+// take-rate business Supporter plan at the default price, and a business
+// can't buy a creator plan whose storefront caps are zero (F135).
+func TestStartSubscription_enforcesPlanAudience(t *testing.T) {
+	ctx := context.Background()
+	listings := &fakeRepo{listings: []domain.Listing{
+		{ID: "b-1", Slug: "castle-view-guesthouse", Type: domain.TypeBusiness, OwnerID: "m-yaw", Status: domain.StatusApproved, Title: "Castle View", Details: map[string]any{}},
+	}}
+	plans := creatorPlans()
+	plans.rows = append(plans.rows, domain.Plan{ID: "plan-patron", Slug: "patron", Name: "Patron", Audience: "any",
+		Prices: map[string]int64{"default": 4_000}, Interval: "month", Active: true})
+	members := &monMembers{byID: map[string]*domain.Member{"m-kwesi": {ID: "m-kwesi"}, "m-yaw": {ID: "m-yaw"}}}
+	subs := &fakeSubs{}
+	svc := NewSubscriptionsService(listings, subs, plans, members, &fakePaystack{verifyOK: true}, "http://portal.test", "http://creator.test")
+
+	var ve *domain.ValidationError
+	if _, _, _, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@example.com", "supporter"); !errors.As(err, &ve) {
+		t.Errorf("creator buying the business plan: want a validation error, got %v", err)
+	}
+	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@example.com", "creator-supporter"); !errors.As(err, &ve) {
+		t.Errorf("business buying a creator plan: want a validation error, got %v", err)
+	}
+	if len(subs.rows) != 0 {
+		t.Fatalf("refused purchases must not record a subscription, got %d", len(subs.rows))
+	}
+	// Plans for "any" audience, and each audience's own plans, still sell.
+	if _, _, _, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@example.com", "patron"); err != nil {
+		t.Errorf("creator buying an any-audience plan: %v", err)
+	}
+	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@example.com", "supporter"); err != nil {
+		t.Errorf("business buying its own plan: %v", err)
+	}
+	if _, _, _, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@example.com", ""); err != nil {
+		t.Errorf("creator default plan: %v", err)
+	}
+}
+
 func TestConfirmSubscription_appliesBundledPromoDays(t *testing.T) {
 	ctx := context.Background()
 	listings := &fakeRepo{listings: []domain.Listing{
@@ -261,5 +309,151 @@ func TestConfirmSubscription_appliesBundledPromoDays(t *testing.T) {
 	}
 	if raw, _ := l.Details["subscribedUntil"].(string); raw == "" {
 		t.Error("subscribedUntil should still be set alongside the promo days")
+	}
+	if l.PromotedUntil != l.FeaturedUntil {
+		t.Errorf("bundled promo days are paid placement: promotedUntil = %q, want %q", l.PromotedUntil, l.FeaturedUntil)
+	}
+}
+
+// daysFromNow parses an RFC3339 value and reports how many whole days away it is.
+func daysFromNow(t *testing.T, raw string) int {
+	t.Helper()
+	at, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		t.Fatalf("%q is not RFC3339", raw)
+	}
+	return int(time.Until(at).Round(24*time.Hour) / (24 * time.Hour))
+}
+
+// One Featured payment confirmed twice at once (redirect + webhook, or a
+// replay burst) buys one month and one set of bundled promo days (F136/F139).
+func TestConfirmSubscription_concurrentConfirmsExtendOnce(t *testing.T) {
+	ctx := context.Background()
+	listings := &fakeRepo{listings: []domain.Listing{
+		{ID: "b-1", Slug: "castle-view-guesthouse", Type: domain.TypeBusiness, OwnerID: "m-yaw", Status: domain.StatusApproved, Title: "Castle View", Details: map[string]any{}},
+	}}
+	plans := &fakePlans{rows: []domain.Plan{
+		{ID: "plan-featured", Slug: "featured", Name: "Featured bundle", Audience: "business", Interval: "month",
+			Prices: map[string]int64{"default": 12_000}, IncludedPromoDays: 7, Active: true},
+	}}
+	subs := &fakeSubs{}
+	ps := &racingPaystack{fakePaystack: fakePaystack{verifyOK: true, verifyAmount: 12_000}}
+	svc := NewSubscriptionsService(listings, subs, plans, stubMembers{}, ps, "http://portal.test", "http://creator.test")
+
+	_, _, ref, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@example.com", "featured")
+	if err != nil {
+		t.Fatalf("StartSubscription: %v", err)
+	}
+	ps.meanwhile = func() {
+		if _, err := svc.ConfirmSubscription(ctx, ref); err != nil {
+			t.Errorf("inner confirm: %v", err)
+		}
+	}
+	sub, err := svc.ConfirmSubscription(ctx, ref)
+	if err != nil {
+		t.Fatalf("outer confirm: %v", err)
+	}
+	l := listings.listings[0]
+	if got := daysFromNow(t, l.Details["subscribedUntil"].(string)); got != 30 {
+		t.Errorf("subscribedUntil is %d days out, want 30 — one payment, one month", got)
+	}
+	if got := daysFromNow(t, l.FeaturedUntil); got != 7 {
+		t.Errorf("featuredUntil is %d days out, want 7 — one payment, one set of promo days", got)
+	}
+	if sub.PeriodEnd != l.Details["subscribedUntil"] {
+		t.Errorf("returned periodEnd %q differs from the listing's %q", sub.PeriodEnd, l.Details["subscribedUntil"])
+	}
+}
+
+// The same holds for member-level creator plans.
+func TestConfirmCreatorSubscription_concurrentConfirmsExtendOnce(t *testing.T) {
+	ctx := context.Background()
+	members := &monMembers{byID: map[string]*domain.Member{"m-kwesi": {ID: "m-kwesi"}}}
+	ps := &racingPaystack{fakePaystack: fakePaystack{verifyOK: true, verifyAmount: 3_000}}
+	svc := NewSubscriptionsService(&fakeRepo{}, &fakeSubs{}, creatorPlans(), members, ps, "http://portal.test", "http://creator.test")
+
+	_, _, ref, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@example.com", "creator-supporter")
+	if err != nil {
+		t.Fatalf("StartCreatorSubscription: %v", err)
+	}
+	ps.meanwhile = func() {
+		if _, err := svc.ConfirmSubscription(ctx, ref); err != nil {
+			t.Errorf("inner confirm: %v", err)
+		}
+	}
+	if _, err := svc.ConfirmSubscription(ctx, ref); err != nil {
+		t.Fatalf("outer confirm: %v", err)
+	}
+	if got := daysFromNow(t, members.byID["m-kwesi"].CreatorSubscribedUntil); got != 30 {
+		t.Errorf("creatorSubscribedUntil is %d days out, want 30", got)
+	}
+}
+
+// A different plan can't be stacked onto a window still paid under another
+// plan: it would re-stamp the new plan's take-rate/caps over time already paid
+// at another price (F141). Renewing the same plan still stacks.
+func TestStartSubscription_refusesPlanSwitchDuringPaidPeriod(t *testing.T) {
+	ctx := context.Background()
+	paidUntil := time.Now().UTC().Add(60 * 24 * time.Hour).Format(time.RFC3339)
+	listings := &fakeRepo{listings: []domain.Listing{
+		{ID: "b-1", Slug: "castle-view-guesthouse", Type: domain.TypeBusiness, OwnerID: "m-yaw", Status: domain.StatusApproved, Title: "Castle View",
+			Details: map[string]any{"plan": "featured", "subscribedUntil": paidUntil}},
+	}}
+	plans := creatorPlans()
+	plans.rows = append(plans.rows,
+		domain.Plan{ID: "plan-featured", Slug: "featured", Name: "Featured", Audience: "business", Interval: "month",
+			Prices: map[string]int64{"default": 12_000}, MaxProducts: 30, Active: true},
+		domain.Plan{ID: "plan-creator-pro", Slug: "creator-pro", Name: "Creator Pro", Audience: "creator", Interval: "month",
+			Prices: map[string]int64{"default": 8_000}, TakeRatePercent: 10, Active: true})
+	members := &monMembers{byID: map[string]*domain.Member{
+		"m-kwesi": {ID: "m-kwesi", CreatorPlan: "creator-supporter", CreatorSubscribedUntil: paidUntil},
+	}}
+	subs := &fakeSubs{}
+	svc := NewSubscriptionsService(listings, subs, plans, members, &fakePaystack{verifyOK: true}, "http://portal.test", "http://creator.test")
+
+	var ve *domain.ValidationError
+	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@example.com", "supporter"); !errors.As(err, &ve) {
+		t.Errorf("business switching plans mid-period: want a validation error, got %v", err)
+	}
+	if _, _, _, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@example.com", "creator-pro"); !errors.As(err, &ve) {
+		t.Errorf("creator switching plans mid-period: want a validation error, got %v", err)
+	}
+	if len(subs.rows) != 0 {
+		t.Fatalf("refused switches must not record a subscription, got %d", len(subs.rows))
+	}
+	if _, _, _, err := svc.StartSubscription(ctx, "castle-view-guesthouse", "m-yaw", "yaw@example.com", "featured"); err != nil {
+		t.Errorf("renewing the same business plan: %v", err)
+	}
+	if _, _, _, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@example.com", "creator-supporter"); err != nil {
+		t.Errorf("renewing the same creator plan: %v", err)
+	}
+	// Once the paid window has ended, any plan sells.
+	members.byID["m-kwesi"].CreatorSubscribedUntil = time.Now().UTC().Add(-time.Hour).Format(time.RFC3339)
+	if _, _, _, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@example.com", "creator-pro"); err != nil {
+		t.Errorf("switching after the period ended: %v", err)
+	}
+}
+
+// Two checkouts for different plans that both settle: the second plan starts
+// now instead of being stamped over the first plan's already-paid window.
+func TestConfirmCreatorSubscription_differentPlanDoesNotRestampPaidTime(t *testing.T) {
+	ctx := context.Background()
+	plans := creatorPlans()
+	plans.rows = append(plans.rows, domain.Plan{ID: "plan-creator-pro", Slug: "creator-pro", Name: "Creator Pro", Audience: "creator",
+		Interval: "month", Prices: map[string]int64{"default": 8_000}, TakeRatePercent: 10, Active: true})
+	members := &monMembers{byID: map[string]*domain.Member{"m-kwesi": {ID: "m-kwesi"}}}
+	svc := NewSubscriptionsService(&fakeRepo{}, &fakeSubs{}, plans, members, &fakePaystack{verifyOK: true, verifyAmount: 8_000}, "http://portal.test", "http://creator.test")
+	_, _, refPro, err := svc.StartCreatorSubscription(ctx, "m-kwesi", "kwesi@example.com", "creator-pro")
+	if err != nil {
+		t.Fatalf("start pro: %v", err)
+	}
+	// A long creator-supporter window lands first.
+	members.byID["m-kwesi"].CreatorPlan = "creator-supporter"
+	members.byID["m-kwesi"].CreatorSubscribedUntil = time.Now().UTC().Add(300 * 24 * time.Hour).Format(time.RFC3339)
+	if _, err := svc.ConfirmSubscription(ctx, refPro); err != nil {
+		t.Fatalf("confirm pro: %v", err)
+	}
+	if got := daysFromNow(t, members.byID["m-kwesi"].CreatorSubscribedUntil); got != 30 {
+		t.Errorf("creator-pro runs %d days, want 30 from now — never stacked over supporter time", got)
 	}
 }

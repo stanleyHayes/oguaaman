@@ -10,6 +10,10 @@
 #
 # Set ANTHROPIC_API_KEY in your shell (or a .env next to this file) to switch the
 # AI writing bar from simulation to live Claude output.
+#
+# Every published port is bound to 127.0.0.1: this stack runs with sign-in off
+# (anyone reaching the API can act as a steward and read reset codes) and a
+# password-less MongoDB, so it must never be reachable from the network.
 
 services:
   mongo:
@@ -18,7 +22,7 @@ services:
     volumes:
       - oguaa_mongo:/data/db
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -26,10 +30,12 @@ services:
       retries: 10
       start_period: 30s
 
-  # One-shot: load the fact-checked Cape Coast seed data, then exit.
+  # One-shot: RESET the disposable compose mongo to the Cape Coast seed data,
+  # then exit. The flag is required because the reset drops every collection;
+  # the URI below is always the local compose mongo, never Atlas.
   seed:
     build: ./backend
-    command: ["seed"]
+    command: ["seed", "--i-know-this-drops-data"]
     environment:
       MONGODB_URI: mongodb://mongo:27017
       MONGODB_DB: oguaa
@@ -44,20 +50,22 @@ services:
     environment:
       PORT: "8080"
       GRPC_PORT: "50051"
-      # Defaults to the compose mongo; set MONGODB_URI (e.g. in a root .env) to
-      # point the API at Atlas instead. Seed stays on the compose mongo — reseed
-      # Atlas deliberately via `cd backend && go run ./cmd/seed`.
-      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
+      # Always the compose mongo unless you opt in with OGUAA_COMPOSE_MONGODB_URI.
+      # It deliberately ignores MONGODB_URI, so a root .env pointing at Atlas is
+      # never picked up by this auth-off stack by accident. Only opt in with
+      # AUTH_REQUIRED=true and a real JWT_SECRET. Seed stays on the compose
+      # mongo — reseed Atlas deliberately via `cd backend && go run ./cmd/seed`.
+      MONGODB_URI: ${OGUAA_COMPOSE_MONGODB_URI:-mongodb://mongo:27017}
       MONGODB_DB: oguaa
-      ALLOWED_ORIGIN: "*"
+      ALLOWED_ORIGIN: "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004"
       JWT_SECRET: ${JWT_SECRET:-oguaa-dev-secret-change-me}
       AUTH_REQUIRED: ${AUTH_REQUIRED:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OGUAA_AI_MODEL: ${OGUAA_AI_MODEL:-claude-haiku-4-5-20251001}
       PLATFORM_FEE_PERCENT: ${PLATFORM_FEE_PERCENT:-5}
     ports:
-      - "8080:8080"
-      - "50051:50051"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:50051:50051"
     depends_on:
       mongo:
         condition: service_healthy
@@ -73,7 +81,7 @@ services:
       args:
         VITE_PORTAL_URL: "http://localhost:3000"
     ports:
-      - "3003:80"
+      - "127.0.0.1:3003:80"
     depends_on:
       - api
     restart: unless-stopped
@@ -81,7 +89,7 @@ services:
   web:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "127.0.0.1:3000:80"
     depends_on:
       - api
     restart: unless-stopped
@@ -89,7 +97,7 @@ services:
   admin:
     build: ./admin
     ports:
-      - "3001:80"
+      - "127.0.0.1:3001:80"
     depends_on:
       - api
     restart: unless-stopped
@@ -99,7 +107,7 @@ services:
   creator:
     build: ./creator
     ports:
-      - "3004:80"
+      - "127.0.0.1:3004:80"
     depends_on:
       - api
     restart: unless-stopped
@@ -107,7 +115,7 @@ services:
   mobileweb:
     build: ./mobile
     ports:
-      - "3002:80"
+      - "127.0.0.1:3002:80"
     depends_on:
       - api
     restart: unless-stopped

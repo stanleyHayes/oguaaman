@@ -68,16 +68,25 @@ func TestSubmitReport_denormalisesListingAndDefaults(t *testing.T) {
 }
 
 func TestResolveReport_validatesStatus(t *testing.T) {
-	svc, _ := reportTestService()
+	f := &fakeRepo{listings: []domain.Listing{{ID: "l-1", Type: domain.TypeArtist, Status: domain.StatusApproved, Title: "C.K. Mann"}}}
+	reps := &fakeReports{}
+	svc := reportService(f, reps, nil)
 	ctx := context.Background()
-	if err := svc.ResolveReport(ctx, "rpt-1", "maybe", "", "m-mod"); err == nil {
+	rep, err := svc.SubmitReport(ctx, ReportInput{ListingID: "l-1", Reason: domain.ReasonInaccurate})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.ResolveReport(ctx, rep.ID, ResolveReportInput{Status: "maybe"}, "m-mod"); err == nil {
 		t.Error("expected an error for an invalid resolution status")
 	}
-	if err := svc.ResolveReport(ctx, "rpt-1", domain.ReportActioned, "removed", "m-mod"); err != nil {
+	if err := svc.ResolveReport(ctx, rep.ID, ResolveReportInput{Status: domain.ReportActioned, Resolution: "removed"}, "m-mod"); err != nil {
 		t.Errorf("actioned resolution should succeed, got %v", err)
 	}
-	if err := svc.ResolveReport(ctx, "rpt-1", domain.ReportDismissed, "", "m-mod"); err != nil {
+	if err := svc.ResolveReport(ctx, rep.ID, ResolveReportInput{Status: domain.ReportDismissed}, "m-mod"); err != nil {
 		t.Errorf("dismissed resolution should succeed, got %v", err)
+	}
+	if err := svc.ResolveReport(ctx, rep.ID, ResolveReportInput{Status: domain.ReportActioned, Action: domain.ReportActionRemove}, "m-mod"); err == nil {
+		t.Error("a removal needs a note")
 	}
 }
 

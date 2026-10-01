@@ -17,6 +17,14 @@ type EmailSender interface {
 	Send(ctx context.Context, to, subject, html string) error
 }
 
+// HeaderEmailSender is an EmailSender that can also set extra message headers
+// (List-Unsubscribe on notification emails). Senders without it get the plain
+// Send and the email keeps only its footer link.
+type HeaderEmailSender interface {
+	EmailSender
+	SendWithHeaders(ctx context.Context, to, subject, html string, headers map[string]string) error
+}
+
 // MessageSender delivers transactional phone messages (WhatsApp).
 type MessageSender interface {
 	SendMessage(ctx context.Context, phone, body string) error
@@ -43,10 +51,17 @@ type Service struct {
 	goals           domain.GoalRepository
 	agents          domain.AgentRepository
 	reviews         domain.ReviewRepository
+	agentReviews    domain.AgentReviewRepository
 	email           EmailSender
 	wa              MessageSender
 	push            *PushSender
 	log             *slog.Logger
+
+	// outbound holds what email/WhatsApp copies need (ConfigureOutbound).
+	outbound outboundConfig
+	// production (GO_ENV=production): staff accounts without two-factor act as
+	// plain members in service-level role checks too (D9, see actingRole).
+	production bool
 }
 
 // Deps are the repositories the Service core is built from.
@@ -70,10 +85,13 @@ type Deps struct {
 	Goals           domain.GoalRepository
 	Agents          domain.AgentRepository
 	Reviews         domain.ReviewRepository
+	AgentReviews    domain.AgentReviewRepository
 	Email           EmailSender
 	WhatsApp        MessageSender
 	Push            *PushSender
 	Log             *slog.Logger
+	// Production withholds staff powers from staff accounts without two-factor (D9).
+	Production bool
 }
 
 func New(d Deps) *Service {
@@ -83,13 +101,36 @@ func New(d Deps) *Service {
 	}
 	return &Service{
 		listings: d.Listings, members: d.Members, orgs: d.Orgs, places: d.Places,
-		mod: d.Mod, notifs: d.Notifs, follows: d.Follows, blocks: d.Blocks, claims: d.Claims,
+		// Every in-app notice passes the member's notification preferences (K14).
+		mod: d.Mod, notifs: gateNotifications(d.Notifs, d.Members), follows: d.Follows, blocks: d.Blocks, claims: d.Claims,
 		news: d.News, reports: d.Reports, timeline: d.Timeline, plans: d.Plans,
 		directives:      d.Directives,
 		civicBehaviours: d.CivicBehaviours, civicLessons: d.CivicLessons,
-		goals: d.Goals, agents: d.Agents, reviews: d.Reviews,
+		goals: d.Goals, agents: d.Agents, reviews: d.Reviews, agentReviews: d.AgentReviews,
 		email: d.Email, wa: d.WhatsApp, push: d.Push, log: l,
+		production: d.Production,
 	}
+}
+
+// actingRole is the role a member may act with. In production a staff
+// account without two-factor acts as a plain member (D9) — the same rule the
+// request middleware applies to the session copy, so a service check that
+// re-reads the member by id can't hand the powers back.
+func (s *Service) actingRole(ctx context.Context, memberID string) string {
+	m, err := s.members.ByID(ctx, memberID)
+	if err != nil || m == nil {
+		return ""
+	}
+	if staffMFAHeldBack(s.production, m) {
+		return domain.RoleMember
+	}
+	return m.Role
+}
+
+// staffMFAHeldBack reports whether D9 withholds m's staff powers: production,
+// a staff role, and two-factor off.
+func staffMFAHeldBack(production bool, m *domain.Member) bool {
+	return production && m != nil && domain.IsStaffRole(m.Role) && !m.MFAEnabled
 }
 
 // RegisterPush stores a member's push subscription (web endpoint or expo token).

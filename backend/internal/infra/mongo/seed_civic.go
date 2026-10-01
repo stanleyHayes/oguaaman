@@ -197,16 +197,30 @@ func seedCivic(ctx context.Context, db *mongo.Database) error {
 	return insertAll(ctx, db.Collection(collCivicLessons), seedCivicLessons)
 }
 
-// SeedCivicOnly drops and reloads ONLY the two civic collections, leaving every
-// other collection untouched. It exists so the civic code can be topped up into
-// a live database (Atlas, or the compose mongo) WITHOUT the destructive full
-// Seed(), which drops and rewrites the whole dataset. Idempotent: re-running it
-// just replaces the civic documents.
-func SeedCivicOnly(ctx context.Context, db *mongo.Database) error {
-	for _, coll := range []string{collCivicBehaviours, collCivicLessons} {
-		if err := db.Collection(coll).Drop(ctx); err != nil {
-			return err
+// SeedCivicOnly tops up ONLY the two civic collections in a live database,
+// leaving every other collection untouched. Each civic behaviour and lesson is
+// inserted only when its _id (the slug) is absent: staff create and edit civic
+// pledges in place, and a re-run must never delete or revert them. It returns
+// how many documents were newly inserted.
+func SeedCivicOnly(ctx context.Context, db *mongo.Database) (int, error) {
+	added := 0
+	for _, b := range seedCivicBehaviours {
+		ok, err := insertIfAbsent(ctx, db.Collection(collCivicBehaviours), b.Slug, b) // Slug is bson _id
+		if err != nil {
+			return added, err
+		}
+		if ok {
+			added++
 		}
 	}
-	return seedCivic(ctx, db)
+	for _, l := range seedCivicLessons {
+		ok, err := insertIfAbsent(ctx, db.Collection(collCivicLessons), l.Slug, l) // Slug is bson _id
+		if err != nil {
+			return added, err
+		}
+		if ok {
+			added++
+		}
+	}
+	return added, nil
 }

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -54,13 +53,7 @@ func (h *Handler) PostInstitutionDirective(w http.ResponseWriter, r *http.Reques
 	}
 	d, err := h.svc.CreateDirectiveForOrg(r.Context(), m.ID, r.PathValue("slug"), in)
 	if err != nil {
-		var fb *domain.ForbiddenError
-		var nf *domain.NotFoundError
-		if errors.As(err, &fb) || errors.As(err, &nf) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, d)
@@ -96,12 +89,7 @@ func (h *Handler) AdminCreateDirective(w http.ResponseWriter, r *http.Request) {
 	}
 	d, err := h.svc.AdminCreateDirective(r.Context(), m.ID, in)
 	if err != nil {
-		var nf *domain.NotFoundError
-		if errors.As(err, &nf) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, d)

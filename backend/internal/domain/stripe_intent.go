@@ -34,6 +34,11 @@ type StripeIntent struct {
 // idempotent and audited.
 type StripeIntentRepository interface {
 	Insert(ctx context.Context, i StripeIntent) error
+	// ByReference returns the newest intent for a reference.
 	ByReference(ctx context.Context, reference string) (*StripeIntent, error)
+	// Confirm marks the reference's pending intent succeeded.
 	Confirm(ctx context.Context, reference, at string) error
+	// MarkFailed retires the reference's pending intent: it was paid on terms
+	// that don't match the checkout, or replaced by a new intent.
+	MarkFailed(ctx context.Context, reference, at string) error
 }

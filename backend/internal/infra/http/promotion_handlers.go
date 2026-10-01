@@ -22,21 +22,26 @@ func (h *Handler) Promote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Days int `json:"days"`
+		Days     int    `json:"days"`
+		Email    string `json:"email"`
+		ReturnTo string `json:"returnTo"` // "creator": Paystack returns to the creator studio (C3)
 	}
 	if err := decodeBody(r, &in); err != nil {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	memberID, email := "", ""
+	email, ok := h.receiptEmail(w, in.Email, m)
+	if !ok {
+		return
+	}
+	memberID := ""
 	if m != nil {
 		memberID = m.ID
-		email = m.Email
 	}
-	if email == "" {
-		email = "promote@oguaa.test" // dev mode without auth — Paystack requires an email
+	authURL, accessCode, reference, err := h.promotions.StartPromotionFrom(r.Context(), r.PathValue("id"), memberID, email, in.Days, in.ReturnTo)
+	if h.paymentsUnavailable(w, err) {
+		return
 	}
-	authURL, accessCode, reference, err := h.promotions.StartPromotion(r.Context(), r.PathValue("id"), memberID, email, in.Days)
 	if errors.Is(err, service.ErrPromotionDays) {
 		fail(w, http.StatusBadRequest, "Choose a 7, 14 or 30 day promotion.")
 		return
@@ -61,12 +66,14 @@ func (h *Handler) Promote(w http.ResponseWriter, r *http.Request) {
 
 // ConfirmPromotion verifies a transaction after the owner returns from Paystack.
 func (h *Handler) ConfirmPromotion(w http.ResponseWriter, r *http.Request) {
-	reference := r.URL.Query().Get("reference")
-	if reference == "" {
-		fail(w, http.StatusBadRequest, "reference is required")
+	reference, ok := h.confirmReference(w, r)
+	if !ok {
 		return
 	}
 	promo, err := h.promotions.ConfirmPromotion(r.Context(), reference)
+	if h.paymentsUnavailable(w, err) {
+		return
+	}
 	if err != nil {
 		var nf *domain.NotFoundError
 		if errors.As(err, &nf) {

@@ -9,13 +9,30 @@ import (
 
 // ── member ↔ member follows + birthday opt-in (spec §8.11) ───────────────────
 
+// errFollowBlocked is returned when either member has blocked the other. The
+// wording is neutral on purpose: it must not tell the caller who blocked whom.
+var errFollowBlocked = &domain.ForbiddenError{Reason: "you can't follow this member"}
+
 // FollowMember records that one member follows another (by slug). A member's
 // followers are the default audience for their posts' remembrances and birthday.
 // Returns the target's updated follower count.
+//
+// A block in either direction forbids the follow: BlockMember severs existing
+// follows, and without this check the blocked member could simply follow again
+// and keep receiving the blocker's birthday and remembrance notices.
 func (s *Service) FollowMember(ctx context.Context, followerID, slug string) (int, error) {
 	m, err := s.members.BySlug(ctx, slug)
 	if err != nil {
 		return 0, err
+	}
+	if s.blocks != nil {
+		blocked, err := s.blocks.IsBlocked(ctx, followerID, m.ID)
+		if err != nil {
+			return 0, err
+		}
+		if blocked {
+			return 0, errFollowBlocked
+		}
 	}
 	if err := s.follows.FollowMember(ctx, followerID, m.ID); err != nil {
 		return 0, err
@@ -46,12 +63,20 @@ func (s *Service) IsFollowingMember(ctx context.Context, followerID, slug string
 
 // SetMemberBirthday lets a member set their own birthday and opt in/out of
 // broadcasting it to their followers (spec §8.11 — creator-controlled).
-func (s *Service) SetMemberBirthday(ctx context.Context, memberID, birthday string, broadcast bool) error {
+//
+// Only the month and day are kept ("MM-DD"): a birthday greeting needs nothing
+// more, and storing the year would rebuild the date of birth the platform no
+// longer keeps. Returns the value actually stored ("" clears it).
+func (s *Service) SetMemberBirthday(ctx context.Context, memberID, birthday string, broadcast bool) (string, error) {
 	birthday = strings.TrimSpace(birthday)
-	if broadcast && monthDayOf(birthday) == "" {
-		return &domain.ForbiddenError{Reason: "add a valid birthday (YYYY-MM-DD or MM-DD) before broadcasting it"}
+	monthDay := monthDayOf(birthday)
+	if birthday != "" && monthDay == "" {
+		return "", &domain.ForbiddenError{Reason: "enter your birthday as MM-DD (the year is not needed)"}
 	}
-	return s.members.SetBirthday(ctx, memberID, birthday, broadcast)
+	if broadcast && monthDay == "" {
+		return "", &domain.ForbiddenError{Reason: "add your birthday (MM-DD) before broadcasting it"}
+	}
+	return monthDay, s.members.SetBirthday(ctx, memberID, monthDay, broadcast)
 }
 
 // SetMemberAffiliations sets the member's quarter (town) and Asafo company —
@@ -68,8 +93,10 @@ func (s *Service) SetMemberPhoto(ctx context.Context, memberID, photoURL string)
 
 // SetMemberLinks replaces the member's social/contact links (Creator Platform
 // plan §3). URLs are sanitized so a javascript:/data: scheme can't be stored and
-// later rendered as an <a href>; fully-empty rows are dropped.
-func (s *Service) SetMemberLinks(ctx context.Context, memberID string, links []domain.SocialLink) error {
+// later rendered as an <a href>; fully-empty rows are dropped. It returns the
+// links exactly as stored, so the caller can show what was actually saved
+// rather than echoing input the server rejected.
+func (s *Service) SetMemberLinks(ctx context.Context, memberID string, links []domain.SocialLink) ([]domain.SocialLink, error) {
 	clean := make([]domain.SocialLink, 0, len(links))
 	for _, l := range links {
 		l.Label = strings.TrimSpace(l.Label)
@@ -80,9 +107,12 @@ func (s *Service) SetMemberLinks(ctx context.Context, memberID string, links []d
 		clean = append(clean, l)
 	}
 	if len(clean) > 20 {
-		return &domain.ForbiddenError{Reason: "that's too many links — keep it under 20"}
+		return nil, &domain.ForbiddenError{Reason: "that's too many links — keep it under 20"}
 	}
-	return s.members.SetLinks(ctx, memberID, clean)
+	if err := s.members.SetLinks(ctx, memberID, clean); err != nil {
+		return nil, err
+	}
+	return clean, nil
 }
 
 // MemberVerified reports whether a member earns the verified badge and a short

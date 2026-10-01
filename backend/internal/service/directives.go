@@ -53,11 +53,12 @@ type DirectiveInput struct {
 }
 
 // CreateDirectiveForOrg issues a directive on behalf of an institution. The
-// caller must manage the org (requireManager — stewards bypass), and the org's
-// kind must be an authority kind — unless the caller is a steward, who bypasses
-// both gates. High/critical directives fan out townwide.
+// caller must be one of the org's MANAGERS (requireManagerScope — officers are
+// "content only" and may not speak for an authority; stewards bypass), and the
+// org's kind must be an authority kind — unless the caller is a steward, who
+// bypasses both gates. High/critical directives fan out townwide.
 func (s *Service) CreateDirectiveForOrg(ctx context.Context, memberID, orgSlug string, in DirectiveInput) (*domain.Directive, error) {
-	org, err := s.requireManager(ctx, memberID, orgSlug)
+	org, err := s.requireManagerScope(ctx, memberID, orgSlug)
 	if err != nil {
 		return nil, err
 	}
@@ -95,30 +96,20 @@ func (s *Service) resolveIssuingOrg(ctx context.Context, orgID, orgSlug string) 
 	if slug := strings.TrimSpace(orgSlug); slug != "" {
 		return s.orgs.BySlug(ctx, slug)
 	}
-	return nil, fmt.Errorf("choose an issuing authority (issuedByOrgId or issuedByOrgSlug)")
+	return nil, &domain.ValidationError{Message: "choose an issuing authority (issuedByOrgId or issuedByOrgSlug)"}
 }
 
 // createDirective validates, persists and (on high/critical) broadcasts a new
 // directive attributed to org.
 func (s *Service) createDirective(ctx context.Context, creatorID string, org *domain.Organization, in DirectiveInput) (*domain.Directive, error) {
-	title := strings.TrimSpace(in.Title)
-	if len(title) < 2 || len(title) > 160 {
-		return nil, fmt.Errorf("title must be 2–160 characters")
-	}
-	body := strings.TrimSpace(in.Body)
-	if body == "" {
-		return nil, fmt.Errorf("a directive needs a body")
-	}
-	if !validDirectiveSeverities[in.Severity] {
-		return nil, fmt.Errorf("choose a valid severity")
-	}
-	if !validDirectiveKinds[in.Kind] {
-		return nil, fmt.Errorf("choose a valid directive kind")
+	title, body, err := validateDirectiveText(in)
+	if err != nil {
+		return nil, err
 	}
 	now := time.Now().UTC()
-	effectiveFrom := strings.TrimSpace(in.EffectiveFrom)
-	if effectiveFrom == "" {
-		effectiveFrom = now.Format(time.RFC3339)
+	effectiveFrom, effectiveUntil, err := directiveWindow(in.EffectiveFrom, in.EffectiveUntil, now)
+	if err != nil {
+		return nil, err
 	}
 	// Town scope: inherit the issuing member's town so the ?town= filter works;
 	// empty = townwide.
@@ -140,7 +131,7 @@ func (s *Service) createDirective(ctx context.Context, creatorID string, org *do
 		IssuedByOrgSlug: org.Slug,
 		IssuedByName:    org.Name,
 		EffectiveFrom:   effectiveFrom,
-		EffectiveUntil:  strings.TrimSpace(in.EffectiveUntil),
+		EffectiveUntil:  effectiveUntil,
 		Status:          domain.DirectiveStatusActive,
 		CreatedAt:       now.Format(time.RFC3339),
 		CreatedByID:     creatorID,
@@ -156,6 +147,53 @@ func (s *Service) createDirective(ctx context.Context, creatorID string, org *do
 		s.broadcastDirective(ctx, d)
 	}
 	return d, nil
+}
+
+// validateDirectiveText checks the title, body, severity and kind of a new
+// directive, returning the trimmed title and body.
+func validateDirectiveText(in DirectiveInput) (title, body string, err error) {
+	title = strings.TrimSpace(in.Title)
+	if len(title) < 2 || len(title) > 160 {
+		return "", "", &domain.ValidationError{Message: "title must be 2–160 characters"}
+	}
+	body = strings.TrimSpace(in.Body)
+	if body == "" {
+		return "", "", &domain.ValidationError{Message: "a directive needs a body"}
+	}
+	if !validDirectiveSeverities[in.Severity] {
+		return "", "", &domain.ValidationError{Message: "choose a valid severity"}
+	}
+	if !validDirectiveKinds[in.Kind] {
+		return "", "", &domain.ValidationError{Message: "choose a valid directive kind"}
+	}
+	return title, body, nil
+}
+
+// directiveWindow parses the effective window. Both bounds must be RFC3339
+// timestamps (with a zone); they are stored normalised to UTC. An empty "from"
+// means now and an empty "until" means open-ended. An unparseable bound is
+// rejected rather than stored, because read-time expiry ignores a bound it
+// cannot parse and the directive would then never expire.
+func directiveWindow(fromRaw, untilRaw string, now time.Time) (from, until string, err error) {
+	start := now
+	if v := strings.TrimSpace(fromRaw); v != "" {
+		if start, err = time.Parse(time.RFC3339, v); err != nil {
+			return "", "", &domain.ValidationError{Message: "effectiveFrom must be an RFC3339 date and time with a timezone, e.g. 2026-10-05T18:00:00Z"}
+		}
+	}
+	from = start.UTC().Format(time.RFC3339)
+	v := strings.TrimSpace(untilRaw)
+	if v == "" {
+		return from, "", nil
+	}
+	end, err := time.Parse(time.RFC3339, v)
+	if err != nil {
+		return "", "", &domain.ValidationError{Message: "effectiveUntil must be an RFC3339 date and time with a timezone, e.g. 2026-10-05T18:00:00Z"}
+	}
+	if !end.After(start) {
+		return "", "", &domain.ValidationError{Message: "effectiveUntil must be after effectiveFrom"}
+	}
+	return from, end.UTC().Format(time.RFC3339), nil
 }
 
 // ListDirectives returns the public directive feed for a town (empty town = all
@@ -287,10 +325,10 @@ func shortenText(s string, max int) string {
 	return strings.TrimSpace(string(r[:max])) + "…"
 }
 
-// isSteward reports whether the member holds the steward role.
+// isSteward reports whether the member may act as a steward (D9: in
+// production only with two-factor on).
 func (s *Service) isSteward(ctx context.Context, memberID string) bool {
-	m, err := s.members.ByID(ctx, memberID)
-	return err == nil && m != nil && m.Role == domain.RoleSteward
+	return s.actingRole(ctx, memberID) == domain.RoleSteward
 }
 
 // sortDirectives orders a feed most-severe first, then newest.

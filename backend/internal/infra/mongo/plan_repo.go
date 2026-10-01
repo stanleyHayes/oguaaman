@@ -43,13 +43,26 @@ func (r *PlanRepo) Insert(ctx context.Context, p domain.Plan) error {
 	return err
 }
 
-func (r *PlanRepo) Update(ctx context.Context, p domain.Plan) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": p.ID}, bson.M{"$set": bson.M{
+// planFields is the $set a plan edit applies: every configurable field (only
+// _id and createdAt are immutable). Values are written explicitly, zeros
+// included, so a field edited down to 0 really becomes 0 — the struct's
+// omitempty tags must not decide what an edit changes. plan_repo_test.go
+// fails if a stored Plan field is ever missing here.
+func planFields(p domain.Plan) bson.M {
+	return bson.M{
 		"slug": p.Slug, "name": p.Name, "audience": p.Audience, "prices": p.Prices,
 		"interval": p.Interval, "perks": p.Perks, "maxListings": p.MaxListings,
-		"includedPromoDays": p.IncludedPromoDays, "goldBadge": p.GoldBadge,
+		"includedPromoDays": p.IncludedPromoDays, "takeRatePercent": p.TakeRatePercent,
+		"maxProducts": p.MaxProducts, "maxServices": p.MaxServices, "goldBadge": p.GoldBadge,
 		"active": p.Active, "sortOrder": p.SortOrder, "updatedAt": p.UpdatedAt,
-	}})
+	}
+}
+
+func (r *PlanRepo) Update(ctx context.Context, p domain.Plan) error {
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": p.ID}, bson.M{"$set": planFields(p)})
+	if err == nil && res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "plan"}
+	}
 	return err
 }
 

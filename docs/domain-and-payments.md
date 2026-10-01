@@ -85,6 +85,22 @@ necessary as a second card rail**, not as a replacement. That is a data
 question, not a taste question. Instrument Paystack failures by cardholder
 country before deciding; do not add a second processor on a hunch.
 
+### Charge currency
+
+Every charge Oguaa initiates is in **Ghana cedis**, chosen by the server:
+Paystack initialisations use GHS, and the dormant Stripe PaymentSheet path (only
+active when `STRIPE_SECRET_KEY` is set) charges the pending record's stored
+amount in GHS and ignores any amount or currency a client sends; a confirmation
+is honoured only when Stripe's recorded amount, currency and reference match.
+There is no non-resident or foreign-currency pricing flow. Adding one would need
+conversion at the Bank of Ghana reference rate, recorded on each charge, and a
+foreign-currency settlement account — decide that with counsel first.
+
+Apple In-App Purchase prices are set by Apple per App Store storefront, not by
+Oguaa, so the currency a buyer pays in the iOS app follows their storefront.
+How that sits with cedi-pricing rules is an open question for counsel before
+StoreKit ships.
+
 ### What still sells through Paystack on iOS
 
 Guideline 3.1.1 carves out physical goods and services consumed outside the app,

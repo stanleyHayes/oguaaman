@@ -39,6 +39,14 @@ func (r *creatorSignupMembers) SetCreatorPlanIntent(_ context.Context, _ string,
 	return nil
 }
 
+// signupInput is an adult, consenting sign-up request.
+func signupInput(identifier, name, password string, creatorTypes []string, planIntent string) RegisterInput {
+	return RegisterInput{
+		Identifier: identifier, DisplayName: name, DateOfBirth: "1990-01-01", Password: password,
+		CreatorTypes: creatorTypes, CreatorPlanIntent: planIntent, AcceptTerms: true, Platform: "web",
+	}
+}
+
 func TestRegisterCreatorDefaultsToFreeStarterIntent(t *testing.T) {
 	repo := &creatorSignupMembers{}
 	plans := &fakePlans{rows: []domain.Plan{{
@@ -47,10 +55,7 @@ func TestRegisterCreatorDefaultsToFreeStarterIntent(t *testing.T) {
 	}}}
 	auth := NewAuthService(repo, "secret").WithPlans(plans)
 
-	_, member, err := auth.Register(
-		context.Background(), "creator@oguaa.test", "Ama Creator", "1990-01-01", "creator-pass",
-		[]string{domain.CreatorArtist}, "",
-	)
+	_, member, err := auth.Register(context.Background(), signupInput("creator@oguaa.test", "Ama Creator", "creator-pass", []string{domain.CreatorArtist}, ""))
 	if err != nil {
 		t.Fatalf("Register: %v", err)
 	}
@@ -70,10 +75,7 @@ func TestRegisterCreatorPersistsActivePaidPlanAsIntentOnly(t *testing.T) {
 	}}}
 	auth := NewAuthService(repo, "secret").WithPlans(plans)
 
-	_, member, err := auth.Register(
-		context.Background(), "business@oguaa.test", "Esi Business", "1990-01-01", "creator-pass",
-		[]string{domain.CreatorBusiness}, "supporter",
-	)
+	_, member, err := auth.Register(context.Background(), signupInput("business@oguaa.test", "Esi Business", "creator-pass", []string{domain.CreatorBusiness}, "supporter"))
 	if err != nil {
 		t.Fatalf("Register: %v", err)
 	}
@@ -101,10 +103,7 @@ func TestRegisterCreatorRejectsPlanForDifferentAudience(t *testing.T) {
 	}}}
 	auth := NewAuthService(repo, "secret").WithPlans(plans)
 
-	_, _, err := auth.Register(
-		context.Background(), "artist@oguaa.test", "Ama Artist", "1990-01-01", "creator-pass",
-		[]string{domain.CreatorArtist}, "business",
-	)
+	_, _, err := auth.Register(context.Background(), signupInput("artist@oguaa.test", "Ama Artist", "creator-pass", []string{domain.CreatorArtist}, "business"))
 	var validation *domain.ValidationError
 	if !errors.As(err, &validation) {
 		t.Fatalf("Register error = %v, want ValidationError", err)
@@ -137,10 +136,7 @@ func TestRegisterCreatorRejectsInactiveOrUnknownPlanBeforeInsert(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			repo := &creatorSignupMembers{}
 			auth := NewAuthService(repo, "secret").WithPlans(&fakePlans{rows: test.plans})
-			_, _, err := auth.Register(
-				context.Background(), "creator@oguaa.test", "Ama Creator", "1990-01-01", "creator-pass",
-				[]string{domain.CreatorArtist}, test.slug,
-			)
+			_, _, err := auth.Register(context.Background(), signupInput("creator@oguaa.test", "Ama Creator", "creator-pass", []string{domain.CreatorArtist}, test.slug))
 			var validation *domain.ValidationError
 			if !errors.As(err, &validation) {
 				t.Fatalf("Register error = %v, want ValidationError", err)
@@ -156,10 +152,7 @@ func TestRegisterCitizenStoresNoPlanIntent(t *testing.T) {
 	repo := &creatorSignupMembers{}
 	auth := NewAuthService(repo, "secret")
 
-	_, member, err := auth.Register(
-		context.Background(), "citizen@oguaa.test", "Kojo Citizen", "1990-01-01", "citizen-pass",
-		nil, "supporter",
-	)
+	_, member, err := auth.Register(context.Background(), signupInput("citizen@oguaa.test", "Kojo Citizen", "citizen-pass", nil, "supporter"))
 	if err != nil {
 		t.Fatalf("Register: %v", err)
 	}

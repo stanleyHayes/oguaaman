@@ -34,6 +34,29 @@ func (r *AgentReviewRepo) ByJob(ctx context.Context, jobID string) (domain.Agent
 	return rv, nil
 }
 
+func (r *AgentReviewRepo) Get(ctx context.Context, id string) (domain.AgentReview, error) {
+	var rv domain.AgentReview
+	if err := r.c.FindOne(ctx, bson.M{"_id": id}).Decode(&rv); err != nil {
+		return domain.AgentReview{}, notFound("review", err)
+	}
+	return rv, nil
+}
+
+func (r *AgentReviewRepo) SetStatus(ctx context.Context, id, status string) error {
+	update := bson.M{"$set": bson.M{"status": status}}
+	if status == "" {
+		update = bson.M{"$unset": bson.M{"status": ""}}
+	}
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "review"}
+	}
+	return nil
+}
+
 func (r *AgentReviewRepo) Create(ctx context.Context, rv domain.AgentReview) (domain.AgentReview, error) {
 	if _, err := r.c.InsertOne(ctx, rv); err != nil {
 		return domain.AgentReview{}, err

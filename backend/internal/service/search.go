@@ -20,12 +20,27 @@ type SearchHit struct {
 	Subtitle string `json:"subtitle,omitempty"`
 	ImageURL string `json:"imageUrl,omitempty"` // listing cover, member photo, or institution crest
 	score    int
+	memberID string // the listing's owner or the member hit, for block filtering
 }
+
+// Search input bounds (F097): the query is cut to maxSearchQueryRunes and at
+// most maxSearchTerms distinct terms are scored, so one request cannot turn
+// into minutes of scoring work.
+const (
+	maxSearchQueryRunes = 200
+	maxSearchTerms      = 8
+)
 
 // Search ranks members, approved listings, and institutions against a free-text
 // query. It loads-and-ranks in process — correct and instant at the platform's
 // current scale; the seam moves to a Mongo $text index when the catalog grows.
 func (s *Service) Search(ctx context.Context, query string, limit int) ([]SearchHit, error) {
+	return s.SearchAs(ctx, nil, query, limit)
+}
+
+// SearchAs is Search for a viewer (nil when signed out): listings owned by, and
+// member hits for, anyone in a block with the viewer are left out (K13).
+func (s *Service) SearchAs(ctx context.Context, viewer *domain.Member, query string, limit int) ([]SearchHit, error) {
 	terms := searchTerms(query)
 	if len(terms) == 0 {
 		return []SearchHit{}, nil
@@ -42,6 +57,18 @@ func (s *Service) Search(ctx context.Context, query string, limit int) ([]Search
 			return nil, err
 		}
 		hits = append(hits, found...)
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if hidden := s.hiddenFor(ctx, viewerID(viewer)); len(hidden) > 0 {
+		kept := hits[:0]
+		for _, h := range hits {
+			if _, blocked := hidden[h.memberID]; !blocked || h.memberID == "" {
+				kept = append(kept, h)
+			}
+		}
+		hits = kept
 	}
 
 	sort.SliceStable(hits, func(i, j int) bool {
@@ -64,6 +91,9 @@ func (s *Service) searchListings(ctx context.Context, terms []string) ([]SearchH
 	}
 	hits := []SearchHit{}
 	for _, l := range listings {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 		// A property marked "let" (taken) is hidden from the public browse, so it
 		// should not surface in search either. See SetPropertyAvailability.
 		if l.Type == domain.TypeProperty && asString(l.Details, "availability") == domain.PropertyAvailabilityLet {
@@ -80,7 +110,7 @@ func (s *Service) searchListings(ctx context.Context, terms []string) ([]SearchH
 			strings.Join(asStringSlice(l.Details["amenities"]), " "),
 		)
 		if score > 0 {
-			hits = append(hits, SearchHit{Kind: "listing", Type: l.Type, Slug: l.Slug, Title: l.Title, Subtitle: listingSubtitle(l), ImageURL: l.CoverImageURL, score: score})
+			hits = append(hits, SearchHit{Kind: "listing", Type: l.Type, Slug: l.Slug, Title: l.Title, Subtitle: listingSubtitle(l), ImageURL: l.CoverImageURL, score: score, memberID: l.OwnerID})
 		}
 	}
 	return hits, nil
@@ -96,7 +126,7 @@ func (s *Service) searchMembers(ctx context.Context, terms []string) ([]SearchHi
 	for _, m := range members {
 		score := scoreTerms(terms, m.DisplayName, m.Bio)
 		if score > 0 {
-			hits = append(hits, SearchHit{Kind: "member", Slug: m.Slug, Title: m.DisplayName, Subtitle: strings.TrimSpace(m.Bio), ImageURL: m.PhotoURL, score: score})
+			hits = append(hits, SearchHit{Kind: "member", Slug: m.Slug, Title: m.DisplayName, Subtitle: strings.TrimSpace(m.Bio), ImageURL: m.PhotoURL, score: score, memberID: m.ID})
 		}
 	}
 	return hits, nil
@@ -118,15 +148,26 @@ func (s *Service) searchInstitutions(ctx context.Context, terms []string) ([]Sea
 	return hits, nil
 }
 
+// searchTerms splits a query into at most maxSearchTerms distinct lower-case
+// terms of two or more bytes, reading only the first maxSearchQueryRunes.
 func searchTerms(q string) []string {
 	q = strings.ToLower(strings.TrimSpace(q))
 	if q == "" {
 		return nil
 	}
+	if r := []rune(q); len(r) > maxSearchQueryRunes {
+		q = string(r[:maxSearchQueryRunes])
+	}
 	out := []string{}
+	seen := map[string]bool{}
 	for _, t := range strings.Fields(q) {
-		if len(t) >= 2 {
-			out = append(out, t)
+		if len(t) < 2 || seen[t] {
+			continue
+		}
+		seen[t] = true
+		out = append(out, t)
+		if len(out) == maxSearchTerms {
+			break
 		}
 	}
 	return out

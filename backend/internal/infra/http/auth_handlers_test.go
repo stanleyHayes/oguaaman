@@ -50,7 +50,7 @@ func TestAuthRegisterMapsCreatorPlanValidationToBadRequest(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			auth := service.NewAuthService(signupMembers{}, "secret").WithPlans(signupPlans{plan: test.plan})
 			h := NewHandler(HandlerDeps{Auth: auth})
-			body := `{"identifier":"artist@oguaa.test","displayName":"Ama Artist","dateOfBirth":"1990-01-01","password":"creator-pass","creatorTypes":["artist"],"creatorPlanIntent":"supporter"}`
+			body := `{"identifier":"artist@oguaa.test","displayName":"Ama Artist","dateOfBirth":"1990-01-01","password":"creator-pass","creatorTypes":["artist"],"creatorPlanIntent":"supporter","acceptTerms":true,"termsVersion":"2026-10-01","platform":"web"}`
 			req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewBufferString(body))
 			res := httptest.NewRecorder()
 

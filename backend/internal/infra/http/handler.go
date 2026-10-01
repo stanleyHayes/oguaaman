@@ -9,9 +9,11 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/oguaa/backend/internal/domain"
+	"github.com/oguaa/backend/internal/platform/logger"
 	"github.com/oguaa/backend/internal/service"
 )
 
@@ -40,11 +42,16 @@ type Handler struct {
 	artistBookings *service.ArtistBookingService
 	paystackSecret string // webhook signature verification; "" in dev simulation
 	authRequired   bool
+	production     bool // GO_ENV=production: HSTS on, loopback CORS off, no dev codes
 	log            *slog.Logger
 	limiter        *rateLimiter
 	uploadDir      string // where uploaded images are written
 	uploadBase     string // public base URL for uploaded files ("" → derive from request)
 	portalURL      string // citizen-app origin; the host the dynamic sitemap's URLs live on
+
+	// rights holds the member-data features (export, erasure, private
+	// documents, data-rights requests); see WithDataRights.
+	rights DataRightsDeps
 }
 
 // HandlerDeps are the application services and settings NewHandler wires into a Handler.
@@ -65,6 +72,7 @@ type HandlerDeps struct {
 	ArtistBookings *service.ArtistBookingService
 	PaystackSecret string // webhook signature verification; "" in dev simulation
 	AuthRequired   bool
+	Production     bool   // GO_ENV=production
 	UploadDir      string // where uploaded images are written
 	UploadBase     string // public base URL for uploaded files ("" → derive from request)
 	PortalURL      string // citizen-app origin, for the dynamic sitemap
@@ -73,7 +81,7 @@ type HandlerDeps struct {
 
 func NewHandler(d HandlerDeps) *Handler {
 	return &Handler{
-		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, commerce: d.Commerce, stripe: d.Stripe, iap: d.IAP, revenue: d.Revenue, creator: d.Creator, agentJobs: d.AgentJobs, artistBookings: d.ArtistBookings, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired,
+		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, commerce: d.Commerce, stripe: d.Stripe, iap: d.IAP, revenue: d.Revenue, creator: d.Creator, agentJobs: d.AgentJobs, artistBookings: d.ArtistBookings, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired, production: d.Production,
 		uploadDir: d.UploadDir, uploadBase: d.UploadBase, portalURL: d.PortalURL, log: d.Log, limiter: newRateLimiter(),
 	}
 }
@@ -90,24 +98,35 @@ func (h *Handler) requireAuth(w http.ResponseWriter, r *http.Request) (*domain.M
 	return m, true
 }
 
-// requireRole gates curator/steward actions (stewards pass everything).
+// msgStaffMFARequired accompanies 403 {"error":"mfa_required"} (contract K4).
+const msgStaffMFARequired = "Turn on two-factor authentication to use staff tools."
+
+// requireRole gates curator/steward actions (stewards pass everything). In
+// production a staff account without two-factor gets 403
+// {"error":"mfa_required"} instead (D9/K4): the Auth middleware withholds its
+// role until it enrols, so the password alone never unlocks staff tools.
 func (h *Handler) requireRole(w http.ResponseWriter, r *http.Request, roles ...string) (*domain.Member, bool) {
 	m := currentMember(r)
-	if m != nil {
-		if m.Role == "steward" {
-			return m, true
+	if m != nil && roleAllowed(m.Role, roles) {
+		return m, true
+	}
+	if held := heldStaffRole(r); held != "" && roleAllowed(held, roles) {
+		if acct := currentAccount(r); acct != nil {
+			logger.Security(r.Context(), h.log, logger.EventStaffMFARequired, logger.KeyMemberID, acct.ID, "role", held, "path", r.URL.Path)
 		}
-		for _, role := range roles {
-			if m.Role == role {
-				return m, true
-			}
-		}
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "mfa_required", "message": msgStaffMFARequired})
+		return nil, false
 	}
 	if !h.authRequired {
 		return m, true // dev: open back-office
 	}
 	fail(w, http.StatusForbidden, "Curator or steward access required.")
 	return nil, false
+}
+
+// roleAllowed reports whether role passes a requireRole check for roles.
+func roleAllowed(role string, roles []string) bool {
+	return role == domain.RoleSteward || slices.Contains(roles, role)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -120,8 +139,58 @@ func fail(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
 
+// Messages for the service sentinels handleErr maps centrally.
+const (
+	msgPaymentsUnavailable  = "Payments are temporarily unavailable."
+	msgPaymentPending       = "Your payment is still processing. We'll confirm it automatically — check again in a minute."
+	msgPaymentCheckDown     = "We couldn't check your payment right now. Try again in a minute."
+	msgCodeNotDelivered     = "We couldn't send a code right now. Try again later."
+	msgPhoneCodeUnavailable = "We can't send codes to phone numbers yet. Try again later, or use the email address on your account."
+)
+
+// writeSentinelErr writes the response for the service sentinels that map to a
+// fixed status and body, and reports whether err was one of them.
+func writeSentinelErr(w http.ResponseWriter, err error) bool {
+	switch {
+	case errors.Is(err, service.ErrPaymentsUnavailable):
+		// K16: production without a Paystack key never simulates a payment.
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "payments_unavailable", "message": msgPaymentsUnavailable})
+	case errors.Is(err, service.ErrPaymentPending):
+		// C1: Paystack has not finished the charge; the record stays pending.
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "payment_pending", "message": msgPaymentPending})
+	case errors.Is(err, service.ErrPaymentCheckUnavailable):
+		// C1: Paystack could not be asked; nothing about the payment changed.
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "payment_check_unavailable", "message": msgPaymentCheckDown})
+	case errors.Is(err, service.ErrPhoneCodeUnavailable):
+		fail(w, http.StatusServiceUnavailable, msgPhoneCodeUnavailable)
+	case errors.Is(err, service.ErrCodeNotDelivered):
+		fail(w, http.StatusServiceUnavailable, msgCodeNotDelivered)
+	default:
+		return false
+	}
+	return true
+}
+
+// paymentsUnavailable answers the payment sentinels for handlers that
+// otherwise map payment errors themselves: 503 payments_unavailable when
+// payments are switched off, and on confirm paths (C1) 409 payment_pending
+// while Paystack still processes the charge or 503 payment_check_unavailable
+// when Paystack could not be asked.
+func (h *Handler) paymentsUnavailable(w http.ResponseWriter, err error) bool {
+	if !errors.Is(err, service.ErrPaymentsUnavailable) && !errors.Is(err, service.ErrPaymentPending) && !errors.Is(err, service.ErrPaymentCheckUnavailable) {
+		return false
+	}
+	if errors.Is(err, service.ErrPaymentCheckUnavailable) && h.log != nil {
+		h.log.Warn("payment check unavailable", "err", err)
+	}
+	return writeSentinelErr(w, err)
+}
+
 // handleErr maps domain errors to HTTP statuses.
 func (h *Handler) handleErr(w http.ResponseWriter, err error) {
+	if writeSentinelErr(w, err) {
+		return
+	}
 	var nf *domain.NotFoundError
 	if errors.As(err, &nf) {
 		fail(w, http.StatusNotFound, nf.Error())

@@ -1,7 +1,9 @@
 package http
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -62,7 +64,12 @@ func (h *Handler) MyInstitutions(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, orgs)
 }
 
-// UpdateInstitutionProfile — a manager edits the soft profile fields.
+// UpdateInstitutionProfile — a team member edits the soft profile fields. It
+// is a PARTIAL update: only the keys present in the body are written, so the
+// steward editor (summary/motto/history/crest/contact) can't wipe the per-kind
+// facts, MoMo number or verification links the managers keep. An explicit
+// JSON null clears nhisAccredited, latitude or longitude (e.g. removing the
+// map pin); an empty string or list clears the text and link fields.
 func (h *Handler) UpdateInstitutionProfile(w http.ResponseWriter, r *http.Request) {
 	m, ok := h.requireAuth(w, r)
 	if !ok {
@@ -75,41 +82,118 @@ func (h *Handler) UpdateInstitutionProfile(w http.ResponseWriter, r *http.Reques
 	if h.rateLimited(w, r, orgManageRateKey+clientKey(r), 60, time.Hour) {
 		return
 	}
-	var in struct {
-		Summary               string              `json:"summary"`
-		History               string              `json:"history"`
-		Motto                 string              `json:"motto"`
-		CrestURL              string              `json:"crestUrl"`
-		Contact               []domain.SocialLink `json:"contact"`
-		GESCategory           string              `json:"gesCategory"`
-		BoardingType          string              `json:"boardingType"`
-		GenderPolicy          string              `json:"genderPolicy"`
-		NHISAccredited        *bool               `json:"nhisAccredited"`
-		GhanaPostGPS          string              `json:"ghanaPostGPS"`
-		MoMoNumber            string              `json:"momoNumber"`
-		Latitude              *float64            `json:"latitude"`
-		Longitude             *float64            `json:"longitude"`
-		QuarterTag            string              `json:"quarterTag"`
-		AsafoTag              string              `json:"asafoTag"`
-		VerificationArtifacts []domain.SocialLink `json:"verificationArtifacts"`
-	}
-	if err := decodeBody(r, &in); err != nil {
+	var body profileBody
+	if err := decodeBody(r, &body); err != nil {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	org, err := h.svc.UpdateOrgProfile(r.Context(), m.ID, r.PathValue("slug"), domain.OrgProfilePatch{
-		Summary: in.Summary, History: in.History, Motto: in.Motto, CrestURL: in.CrestURL, Contact: in.Contact,
-		GESCategory: in.GESCategory, BoardingType: in.BoardingType, GenderPolicy: in.GenderPolicy,
-		NHISAccredited: in.NHISAccredited, GhanaPostGPS: in.GhanaPostGPS, MoMoNumber: in.MoMoNumber,
-		Latitude: in.Latitude, Longitude: in.Longitude, QuarterTag: in.QuarterTag, AsafoTag: in.AsafoTag,
-		VerificationArtifacts: in.VerificationArtifacts,
-	})
+	patch, err := body.patch()
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	org, err := h.svc.UpdateOrgProfile(r.Context(), m.ID, r.PathValue("slug"), patch)
+	var invalid *domain.ValidationError
+	if errors.As(err, &invalid) {
+		fail(w, http.StatusBadRequest, invalid.Error())
+		return
+	}
 	if err != nil {
 		h.handleErr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, org)
 }
+
+// profileBody is the raw institution-profile payload, kept as raw JSON per key
+// so a field that was not sent can be told apart from one sent empty or null.
+type profileBody map[string]json.RawMessage
+
+// patch decodes the keys present in the body into a partial profile patch.
+func (b profileBody) patch() (domain.OrgProfilePatch, error) {
+	var p domain.OrgProfilePatch
+	var errs []error
+	text := func(dst **string, key string) {
+		v, err := b.text(key)
+		*dst = v
+		errs = append(errs, err)
+	}
+	links := func(dst **[]domain.SocialLink, key string) {
+		v, err := b.links(key)
+		*dst = v
+		errs = append(errs, err)
+	}
+	text(&p.Summary, "summary")
+	text(&p.History, "history")
+	text(&p.Motto, "motto")
+	text(&p.CrestURL, "crestUrl")
+	text(&p.GESCategory, "gesCategory")
+	text(&p.BoardingType, "boardingType")
+	text(&p.GenderPolicy, "genderPolicy")
+	text(&p.GhanaPostGPS, "ghanaPostGPS")
+	text(&p.MoMoNumber, "momoNumber")
+	text(&p.QuarterTag, "quarterTag")
+	text(&p.AsafoTag, "asafoTag")
+	links(&p.Contact, "contact")
+	links(&p.VerificationArtifacts, "verificationArtifacts")
+	var err error
+	p.NHISAccredited, p.ClearNHISAccredited, err = optionalValue[bool](b, "nhisAccredited")
+	errs = append(errs, err)
+	p.Latitude, p.ClearLatitude, err = optionalValue[float64](b, "latitude")
+	errs = append(errs, err)
+	p.Longitude, p.ClearLongitude, err = optionalValue[float64](b, "longitude")
+	errs = append(errs, err)
+	return p, errors.Join(errs...)
+}
+
+// text returns the string sent for key (nil when absent; "" for null).
+func (b profileBody) text(key string) (*string, error) {
+	raw, ok := b[key]
+	if !ok {
+		return nil, nil
+	}
+	s := ""
+	if !isJSONNull(raw) {
+		if err := json.Unmarshal(raw, &s); err != nil {
+			return nil, fmt.Errorf("%s must be text", key)
+		}
+	}
+	return &s, nil
+}
+
+// links returns the link list sent for key (nil when absent; empty for null).
+func (b profileBody) links(key string) (*[]domain.SocialLink, error) {
+	raw, ok := b[key]
+	if !ok {
+		return nil, nil
+	}
+	out := []domain.SocialLink{}
+	if !isJSONNull(raw) {
+		if err := json.Unmarshal(raw, &out); err != nil {
+			return nil, fmt.Errorf("%s must be a list of links", key)
+		}
+	}
+	return &out, nil
+}
+
+// optionalValue decodes an optional bool/number fact: absent → (nil, false),
+// null → clear, a value → set.
+func optionalValue[T any](b profileBody, key string) (*T, bool, error) {
+	raw, ok := b[key]
+	if !ok {
+		return nil, false, nil
+	}
+	if isJSONNull(raw) {
+		return nil, true, nil
+	}
+	var v T
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return nil, false, fmt.Errorf("%s has the wrong type", key)
+	}
+	return &v, false, nil
+}
+
+func isJSONNull(raw json.RawMessage) bool { return string(raw) == "null" }
 
 // SetInstitutionOffices — a manager replaces the roster of offices.
 func (h *Handler) SetInstitutionOffices(w http.ResponseWriter, r *http.Request) {

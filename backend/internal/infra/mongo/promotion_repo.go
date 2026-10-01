@@ -22,18 +22,28 @@ func (r *PromotionRepo) Insert(ctx context.Context, p domain.Promotion) error {
 
 func (r *PromotionRepo) ByReference(ctx context.Context, reference string) (*domain.Promotion, error) {
 	var p domain.Promotion
-	if err := r.c.FindOne(ctx, bson.M{"reference": reference}).Decode(&p); err != nil {
+	if err := r.c.FindOne(ctx, bson.M{fieldReference: reference}).Decode(&p); err != nil {
 		return nil, notFound("promotion", err)
 	}
 	return &p, nil
 }
 
-func (r *PromotionRepo) UpdateStatus(ctx context.Context, reference, status, at string) error {
-	set := bson.M{"status": status}
-	if status == domain.PledgeSuccess {
-		set["confirmedAt"] = at
-	}
-	_, err := r.c.UpdateOne(ctx, bson.M{"reference": reference}, bson.M{"$set": set})
+// MarkSuccess settles a promotion in one conditional write; see
+// domain.PromotionRepository for the contract.
+func (r *PromotionRepo) MarkSuccess(ctx context.Context, reference, at, featuredUntil string) (bool, error) {
+	return won(r.c.UpdateOne(ctx, unsettled(reference), bson.M{"$set": bson.M{
+		fieldStatus: domain.PledgeSuccess, fieldConfirmedAt: at, fieldFeaturedUntil: featuredUntil, fieldGrantPending: true,
+	}}))
+}
+
+// MarkGranted clears grantPending once the promotion's placement is applied.
+func (r *PromotionRepo) MarkGranted(ctx context.Context, reference string) error {
+	return markGranted(ctx, r.c, reference)
+}
+
+// MarkFailed records a failed payment unless the promotion already succeeded.
+func (r *PromotionRepo) MarkFailed(ctx context.Context, reference string) error {
+	_, err := r.c.UpdateOne(ctx, unsettled(reference), bson.M{"$set": bson.M{fieldStatus: domain.PledgeFailed}})
 	return err
 }
 

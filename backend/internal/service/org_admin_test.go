@@ -38,12 +38,24 @@ func (r *recOrgs) Create(_ context.Context, o domain.Organization) error {
 	r.orgs = append(r.orgs, o)
 	return nil
 }
+
+// UpdateProfile applies the partial patch the way the mongo repo does: only
+// the fields that were sent change (the ones these tests exercise).
 func (r *recOrgs) UpdateProfile(_ context.Context, id string, p domain.OrgProfilePatch) error {
 	for i := range r.orgs {
-		if r.orgs[i].ID == id {
-			r.orgs[i].Summary = p.Summary
-			return nil
+		if r.orgs[i].ID != id {
+			continue
 		}
+		if p.Summary != nil {
+			r.orgs[i].Summary = *p.Summary
+		}
+		if p.MoMoNumber != nil {
+			r.orgs[i].MoMoNumber = *p.MoMoNumber
+		}
+		if p.VerificationArtifacts != nil {
+			r.orgs[i].VerificationArtifacts = *p.VerificationArtifacts
+		}
+		return nil
 	}
 	return nil
 }
@@ -125,7 +137,7 @@ func TestUpdateOrgProfile_stewardBypassesClaim(t *testing.T) {
 	orgs := &recOrgs{orgs: []domain.Organization{{ID: "org-castle", Slug: "cape-coast-castle", Name: "Cape Coast Castle"}}}
 	s := svcWith(orgs, roleMembers{role: domain.RoleSteward}, stubClaims{}) // stubClaims.IsManager == false
 
-	_, err := s.UpdateOrgProfile(context.Background(), "m1", "cape-coast-castle", domain.OrgProfilePatch{Summary: "Edited by a steward."})
+	_, err := s.UpdateOrgProfile(context.Background(), "m1", "cape-coast-castle", domain.OrgProfilePatch{Summary: strp("Edited by a steward.")})
 	if err != nil {
 		t.Fatalf("steward should edit any org; got error: %v", err)
 	}
@@ -138,7 +150,7 @@ func TestUpdateOrgProfile_nonManagerRefused(t *testing.T) {
 	orgs := &recOrgs{orgs: []domain.Organization{{ID: "org-castle", Slug: "cape-coast-castle"}}}
 	s := svcWith(orgs, roleMembers{role: domain.RoleMember}, stubClaims{}) // not a steward, no claim
 
-	if _, err := s.UpdateOrgProfile(context.Background(), "m1", "cape-coast-castle", domain.OrgProfilePatch{Summary: "x"}); err == nil {
+	if _, err := s.UpdateOrgProfile(context.Background(), "m1", "cape-coast-castle", domain.OrgProfilePatch{Summary: strp("x")}); err == nil {
 		t.Error("a non-manager, non-steward member must be refused")
 	}
 }

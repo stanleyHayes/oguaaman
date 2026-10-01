@@ -161,31 +161,44 @@ type OrgClaimRepository interface {
 	HasActiveClaim(ctx context.Context, memberID, orgID string) (bool, error)
 }
 
-// OrgProfilePatch is the set of "soft" institution fields a verified manager may
-// edit, including the crest/logo image. Authoritative fields (name, kind,
-// verification) stay steward-only.
+// OrgProfilePatch is a PARTIAL update of the "soft" institution fields a
+// verified manager may edit, including the crest/logo image. A nil field was
+// not sent and is left exactly as stored — clients (the steward editor, the
+// portal, creator and mobile forms) each send only the fields they edit, so a
+// save from one must never wipe the facts another maintains. A non-nil field
+// is written; an empty string or list clears it. The optional bool/number
+// facts have no "empty" value, so clearing them is explicit (Clear* — a JSON
+// null from the client). Authoritative fields (name, kind, verification) stay
+// steward-only.
 type OrgProfilePatch struct {
-	Summary  string
-	History  string
-	Motto    string
-	CrestURL string
-	Contact  []SocialLink
+	Summary  *string
+	History  *string
+	Motto    *string
+	CrestURL *string
+	Contact  *[]SocialLink
 
 	// Per-kind structured catalog fields (§4 perkind-catalog).
 	// Education (schools):
-	GESCategory  string // e.g. "Senior High", "Junior High", "Primary"
-	BoardingType string // "boarding", "day", "both"
-	GenderPolicy string // "boys", "girls", "mixed"
+	GESCategory  *string // e.g. "Senior High", "Junior High", "Primary"
+	BoardingType *string // "boarding", "day", "both"
+	GenderPolicy *string // "boys", "girls", "mixed"
 
 	// Health:
-	NHISAccredited *bool // nil = not specified
+	NHISAccredited      *bool
+	ClearNHISAccredited bool
 
 	// All kinds:
-	GhanaPostGPS          string // GhanaPost digital address e.g. "CF-0172-0842"
-	MoMoNumber            string // Mobile money number for donations/giving
-	Latitude              *float64
-	Longitude             *float64
-	QuarterTag            string
-	AsafoTag              string
-	VerificationArtifacts []SocialLink
+	GhanaPostGPS *string // GhanaPost digital address e.g. "CF-0172-0842"
+	// MoMoNumber is the public Mobile Money number for donations/giving. It is
+	// a money destination: only manager-scope team members may change it.
+	MoMoNumber     *string
+	Latitude       *float64
+	ClearLatitude  bool
+	Longitude      *float64
+	ClearLongitude bool
+	QuarterTag     *string
+	AsafoTag       *string
+	// VerificationArtifacts are the public "Verified sources" links — a trust
+	// signal, so like MoMoNumber they are manager-scope only.
+	VerificationArtifacts *[]SocialLink
 }

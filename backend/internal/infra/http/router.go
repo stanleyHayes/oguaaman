@@ -19,10 +19,11 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 
 	// Curated seed imagery (embedded — see internal/infra/http/seedimg). The more
 	// specific pattern wins over the disk-served uploads below.
-	mux.Handle("GET /uploads/seed/", http.StripPrefix("/uploads/seed/", http.FileServerFS(seedimg.FS)))
+	mux.Handle("GET /uploads/seed/", staticFiles("/uploads/seed/", http.FS(seedimg.FS)))
 
-	// First-party uploaded images, served statically.
-	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(h.uploadDir))))
+	// First-party uploaded images, served statically — plain files only, never
+	// a directory listing (F027). Private documents are not on this disk.
+	mux.Handle("GET /uploads/", staticFiles("/uploads/", http.Dir(h.uploadDir)))
 
 	mux.HandleFunc("GET /api/health", h.Health)
 	mux.HandleFunc("GET /api/home", h.Home)
@@ -35,6 +36,8 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/auth/password/reset/start", h.StartPasswordReset)
 	mux.HandleFunc("POST /api/auth/password/reset/confirm", h.ConfirmPasswordReset)
 	mux.HandleFunc("GET /api/auth/me", h.AuthMe)
+	// Acceptance of the current Terms of Use / Privacy Policy (+ 18+ confirmation).
+	mux.HandleFunc("POST /api/me/consent", h.RecordMyConsent)
 	// Authenticated password change (current password re-verified server-side).
 	mux.HandleFunc("POST /api/me/password", h.ChangeMyPassword)
 	mux.HandleFunc("POST /api/me/phone/verify/start", h.StartPhoneVerification)
@@ -44,6 +47,14 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/me/mfa/disable", h.MFADisable)
 	mux.HandleFunc("GET /api/me/export", h.ExportMyData)
 	mux.HandleFunc("DELETE /api/me", h.DeleteMyAccount)
+	// Public account deletion for people who cannot sign in (Google Play web
+	// deletion URL): a code to the account's email/phone, then confirm (K6).
+	mux.HandleFunc("POST /api/account/deletion-requests", h.StartAccountDeletion)
+	mux.HandleFunc("POST /api/account/deletion-requests/confirm", h.ConfirmAccountDeletion)
+	// Data-rights requests: public intake, steward queue (K10).
+	mux.HandleFunc("POST /api/privacy/requests", h.SubmitPrivacyRequest)
+	mux.HandleFunc("GET /api/admin/privacy-requests", h.AdminPrivacyRequests)
+	mux.HandleFunc("POST /api/admin/privacy-requests/{id}", h.AdminUpdatePrivacyRequest)
 
 	mux.HandleFunc("GET /api/artists", h.Artists)
 	mux.HandleFunc("GET /api/artists/{slug}", h.Artist)
@@ -66,6 +77,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/projects", h.Projects)
 	mux.HandleFunc("GET /api/projects/{slug}", h.Project)
 	mux.HandleFunc("POST /api/projects/{slug}/pledge", h.Pledge)
+	mux.HandleFunc("GET /api/projects/{slug}/pledge-quote", h.PledgeQuote)
 	mux.HandleFunc("GET /api/pledges/confirm", h.ConfirmPledge)
 	mux.HandleFunc("GET /api/me/pledges", h.MyPledges)
 	// Fundraising campaigns (Creator Monetization) — member-created projects.
@@ -73,11 +85,13 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/campaigns", h.CreateCampaign)
 	mux.HandleFunc("GET /api/me/campaigns", h.MyCampaigns)
 	mux.HandleFunc("POST /api/payments/paystack/webhook", h.PaystackWebhook)
+	mux.HandleFunc("GET /api/payments/banks", h.PaymentBanks)
 	// Apple In-App Purchase — Guideline 3.1.1 requires digital plans sold in the
 	// iOS app to go through IAP. The server verifies Apple's signed transaction
 	// before granting anything.
 	mux.HandleFunc("GET /api/iap/apple/products", h.AppleProducts)
 	mux.HandleFunc("POST /api/iap/apple/redeem", h.RedeemApplePurchase)
+	mux.HandleFunc("GET /api/iap/apple/account-token", h.AppleAccountToken)
 	mux.HandleFunc("POST /api/payments/stripe/intent", h.StripeIntent)
 	mux.HandleFunc("POST /api/payments/stripe/confirm", h.StripeConfirm)
 
@@ -85,6 +99,7 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/incidents", h.Incidents)
 	mux.HandleFunc("GET /api/incidents/{slug}", h.Incident)
 	mux.HandleFunc("POST /api/incidents", h.SubmitIncident)
+	mux.HandleFunc("GET /api/admin/incidents", h.AdminIncidents)
 	mux.HandleFunc("POST /api/admin/incidents/{id}/status", h.AdminIncidentStatus)
 
 	// Authorized directives — official notices from recognised authorities.
@@ -138,11 +153,14 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/lost-found/{slug}", h.LostFoundBySlug)
 	mux.HandleFunc("POST /api/lost-found", h.SubmitLostFound)
 	mux.HandleFunc("POST /api/lost-found/{slug}/resolve", h.ResolveLostFound)
+	// The poster's contact is private (D3): members reach them through a relay.
+	mux.HandleFunc("POST /api/lost-found/{slug}/contact", h.ContactLostFound)
 
 	mux.HandleFunc("GET /api/memorials", h.Memorials)
 	mux.HandleFunc("GET /api/memorials/{slug}", h.Memorial)
 	mux.HandleFunc("POST /api/memorials/{slug}/candle", h.Candle)
 	mux.HandleFunc("POST /api/memorials/{slug}/tributes", h.Tribute)
+	mux.HandleFunc("DELETE /api/memorials/{slug}/tributes/{id}", h.RemoveTribute)
 	mux.HandleFunc("GET /api/memorials/{slug}/follow", h.FollowState)
 	mux.HandleFunc("POST /api/memorials/{slug}/follow", h.FollowMemorial)
 	mux.HandleFunc("DELETE /api/memorials/{slug}/follow", h.UnfollowMemorial)
@@ -156,6 +174,12 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/notifications/unread-count", h.UnreadCount)
 	mux.HandleFunc("POST /api/notifications/read-all", h.MarkAllNotificationsRead)
 	mux.HandleFunc("POST /api/notifications/{id}/read", h.MarkNotificationRead)
+	// Notification preferences (K14) + the signed one-click email unsubscribe.
+	mux.HandleFunc("GET /api/me/notification-preferences", h.MyNotificationPreferences)
+	mux.HandleFunc("PUT /api/me/notification-preferences", h.SetMyNotificationPreferences)
+	mux.HandleFunc("POST /api/me/notification-preferences", h.SetMyNotificationPreferences)
+	mux.HandleFunc("GET /api/notifications/unsubscribe", h.UnsubscribeConfirmPage)
+	mux.HandleFunc("POST /api/notifications/unsubscribe", h.UnsubscribeNotifications)
 
 	mux.HandleFunc("GET /api/businesses", h.Businesses)
 	mux.HandleFunc("GET /api/businesses/{slug}", h.Business)
@@ -223,7 +247,8 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/tickets/confirm", h.ConfirmTicket)
 	mux.HandleFunc("GET /api/me/tickets", h.MyTickets)
 	mux.HandleFunc("GET /api/admin/events/{slug}/tickets", h.AdminEventTickets)
-	mux.HandleFunc("POST /api/admin/tickets/{code}/checkin", h.AdminCheckIn)
+	mux.HandleFunc("POST /api/admin/tickets/{code}/checkin", h.AdminCheckIn) // legacy: needs ?event=<slug>
+	mux.HandleFunc("POST /api/admin/events/{slug}/tickets/{code}/checkin", h.AdminCheckIn)
 	mux.HandleFunc("GET /api/festivals", h.Festivals)
 	mux.HandleFunc("GET /api/festivals/{slug}", h.Festival)
 	mux.HandleFunc("GET /api/history", h.History)
@@ -301,11 +326,18 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/stats", h.Stats)
 
 	mux.HandleFunc("GET /api/admin/queue", h.Queue)
+	mux.HandleFunc("GET /api/admin/safety-review", h.SafetyReviewQueue)
+	mux.HandleFunc("POST /api/admin/safety-review/{id}", h.MarkSafetyReviewed)
 	mux.HandleFunc("POST /api/admin/moderate", h.Moderate)
 	mux.HandleFunc("GET /api/admin/listings", h.AdminListings)
 	mux.HandleFunc("GET /api/admin/audit", h.AdminAudit)
 	mux.HandleFunc("POST /api/admin/listings/{id}/unpublish", h.AdminUnpublish)
 	mux.HandleFunc("POST /api/admin/listings/{id}/feature", h.AdminFeature)
+	// Staff member directory + detail (K5): the stored record the public
+	// member endpoints no longer carry.
+	mux.HandleFunc("GET /api/admin/members", h.AdminMembers)
+	mux.HandleFunc("GET /api/admin/members/{slug}", h.AdminMember)
+	mux.HandleFunc("POST /api/admin/members/{id}/erase", h.AdminEraseMember)
 	mux.HandleFunc("POST /api/admin/members/invite", h.AdminInviteMember)
 	mux.HandleFunc("POST /api/admin/members/{id}/role", h.AdminSetRole)
 	mux.HandleFunc("POST /api/admin/members/{id}/suspend", h.AdminSuspend)
@@ -333,10 +365,19 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/listings/{id}/edit", h.EditListing)
 	mux.HandleFunc("POST /api/listings/{id}/storefront", h.SetStorefront)
 	mux.HandleFunc("POST /api/listings/{id}/report", h.Report)
+	mux.HandleFunc("POST /api/reports", h.ContentReport)
 	mux.HandleFunc("POST /api/listings/{id}/view", h.RecordView)
 	mux.HandleFunc("POST /api/uploads", h.Upload)
+	// Signed direct-to-Cloudinary uploads (K9) and private documents (K8):
+	// government ID / KYC files are stored encrypted, never at a public URL.
+	mux.HandleFunc("POST /api/uploads/cloudinary-signature", h.CloudinarySignature)
+	mux.HandleFunc("POST /api/uploads/private", h.UploadPrivate)
+	mux.HandleFunc("GET /api/me/private-uploads/{id}", h.MyPrivateUpload)
+	mux.HandleFunc("GET /api/admin/private-uploads/{id}", h.AdminPrivateUpload)
 	mux.HandleFunc("POST /api/ai", h.AI)
 	mux.HandleFunc("POST /api/ai/stream", h.AIStream)
+	mux.HandleFunc("POST /api/me/ai-consent", h.SetMyAIConsent)
 
-	return Logging(log, CORS(allowedOrigins, h.Auth(mux)))
+	// Loopback origins (local dev servers) are allowed everywhere but production.
+	return Logging(log, SecurityHeaders(h.production, CORS(allowedOrigins, !h.production, h.Auth(mux))))
 }

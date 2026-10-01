@@ -46,3 +46,36 @@ func (r *ReportRepo) OpenCount(ctx context.Context) (int, error) {
 	n, err := r.c.CountDocuments(ctx, bson.M{"status": domain.ReportOpen})
 	return int(n), err
 }
+
+// OpenByTarget returns the open reports against one piece of content. Reports
+// made before targets were generalised carry only listingId, so a listing
+// lookup also matches those.
+func (r *ReportRepo) OpenByTarget(ctx context.Context, targetType, targetID string) ([]domain.Report, error) {
+	q := bson.M{"status": domain.ReportOpen, "targetType": targetType, "targetId": targetID}
+	if targetType == domain.ReportTargetListing {
+		q = bson.M{"status": domain.ReportOpen, "$or": []bson.M{
+			{"targetType": targetType, "targetId": targetID},
+			{"targetType": bson.M{"$exists": false}, "listingId": targetID},
+		}}
+	}
+	cur, err := r.c.Find(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	out := []domain.Report{}
+	return out, cur.All(ctx, &out)
+}
+
+// Resolve closes a report with the reviewer's decision in one write.
+func (r *ReportRepo) Resolve(ctx context.Context, id, status, action, reviewedBy, resolution, at string) error {
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"status": status, "action": action, "reviewedById": reviewedBy, "resolution": resolution, "reviewedAt": at,
+	}})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "report"}
+	}
+	return nil
+}

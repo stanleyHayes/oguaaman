@@ -26,12 +26,13 @@ func TestOwnerEditApprovedMinorStaysLive(t *testing.T) {
 	l, err := svc.UpdateOwnerListing(context.Background(), ownerActor(), "l1", OwnerEditInput{
 		Title: "Esi Sunshine",
 		Details: map[string]any{
-			"bio":       "same bio",           // unchanged — not major
-			"actName":   "Esi Sunshine (Esi)", // minor rename
-			"link":      "https://example.com/esi",
-			"spotlight": true,                  // system key — must be stripped
-			"unknown":   "nope",                // unknown key — must be dropped
-			"bad":       "javascript:alert(1)", // not whitelisted anyway
+			"bio":        "same bio",           // unchanged — not major
+			"actName":    "Esi Sunshine (Esi)", // minor rename
+			"link":       "https://example.com/esi",
+			"spotlight":  false,                 // system key — the edit can't change it
+			"donorCount": 99,                    // system key — the edit can't set it
+			"unknown":    "nope",                // unknown key — must be dropped
+			"bad":        "javascript:alert(1)", // not whitelisted anyway
 		},
 	})
 	if err != nil {
@@ -46,8 +47,11 @@ func TestOwnerEditApprovedMinorStaysLive(t *testing.T) {
 	if l.Details["actName"] != "Esi Sunshine (Esi)" {
 		t.Fatalf("actName not updated: %v", l.Details["actName"])
 	}
-	if _, ok := l.Details["spotlight"]; ok {
-		t.Fatal("system key spotlight leaked into details")
+	if l.Details["spotlight"] != true {
+		t.Fatalf("the editorial spotlight must survive an owner edit untouched: %v", l.Details["spotlight"])
+	}
+	if _, ok := l.Details["donorCount"]; ok {
+		t.Fatal("an owner edit wrote a system counter")
 	}
 	if _, ok := l.Details["unknown"]; ok {
 		t.Fatal("unknown key leaked into details")

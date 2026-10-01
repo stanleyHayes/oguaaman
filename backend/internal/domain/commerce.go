@@ -17,6 +17,11 @@ const (
 	OrderCancelled  = "cancelled"
 	OrderRefunded   = "refunded"
 
+	// AbandonedPaymentReason is recorded on unpaid records the payment
+	// reconciliation sweep closes after 48 hours. An order closed this way
+	// can still be revived by a payment that completes later.
+	AbandonedPaymentReason = "abandoned: no completed payment within 48 hours"
+
 	CouponPercent            = "percent"
 	CouponFixed              = "fixed"
 	PromotionOwnerBusiness   = "business"
@@ -29,6 +34,13 @@ const (
 	AffiliatePayable   = "payable"
 	AffiliatePaid      = "paid"
 	AffiliateVoid      = "void"
+
+	// StoreItemPhysical and StoreItemService are the only kinds of storefront
+	// item Oguaa sells through Paystack/Stripe: physical goods and in-person
+	// services. Digital goods (downloads, online content) are refused — the
+	// app stores require those to go through their own billing.
+	StoreItemPhysical = "physical"
+	StoreItemService  = "service"
 )
 
 // BusinessVerification is deliberately separate from the public Listing.
@@ -45,8 +57,9 @@ type BusinessVerification struct {
 	TaxIdentificationNo string   `json:"taxIdentificationNo,omitempty" bson:"taxIdentificationNo,omitempty"`
 	GhanaCardNumber     string   `json:"ghanaCardNumber" bson:"ghanaCardNumber"`
 	BusinessPhone       string   `json:"businessPhone" bson:"businessPhone"`
+	BusinessEmail       string   `json:"businessEmail,omitempty" bson:"businessEmail,omitempty"` // optional public contact for buyers
 	GhanaPostGPS        string   `json:"ghanaPostGPS" bson:"ghanaPostGPS"`
-	Documents           []string `json:"documents" bson:"documents"`
+	Documents           []string `json:"documents" bson:"documents"` // KYC evidence: new submissions are "private:<id>" upload refs
 	SettlementBankCode  string   `json:"settlementBankCode" bson:"settlementBankCode"`
 	SettlementAccountNo string   `json:"settlementAccountNo" bson:"settlementAccountNo"`
 	SettlementName      string   `json:"settlementName" bson:"settlementName"`
@@ -65,6 +78,9 @@ type BusinessVerificationRepository interface {
 	Upsert(ctx context.Context, verification BusinessVerification) error
 	All(ctx context.Context) ([]BusinessVerification, error)
 	Review(ctx context.Context, listingID, status, note, reviewerID, reviewedAt, subaccount string) error
+	// SetPaystackSubaccount replaces a seller's subaccount code (operator
+	// relink after switching Paystack keys); the review is untouched.
+	SetPaystackSubaccount(ctx context.Context, listingID, subaccount, at string) error
 }
 
 type OrderLine struct {
@@ -98,17 +114,31 @@ type CommerceOrder struct {
 	AffiliateID                string      `json:"affiliateId,omitempty" bson:"affiliateId,omitempty"`
 	AffiliateProgrammeID       string      `json:"affiliateProgrammeId,omitempty" bson:"affiliateProgrammeId,omitempty"`
 	AffiliateCommissionPesewas int64       `json:"affiliateCommissionPesewas,omitempty" bson:"affiliateCommissionPesewas,omitempty"`
+	AffiliateFunding           string      `json:"-" bson:"affiliateFunding,omitempty"`  // programme terms snapshotted at checkout,
+	AffiliateHoldDays          int         `json:"-" bson:"affiliateHoldDays,omitempty"` // so the paid-order conversion matches the split
 	SubtotalPesewas            int64       `json:"subtotalPesewas" bson:"subtotalPesewas"`
 	DiscountPesewas            int64       `json:"discountPesewas" bson:"discountPesewas"`
 	AmountPesewas              int64       `json:"amountPesewas" bson:"amountPesewas"`
 	PlatformFeePesewas         int64       `json:"platformFeePesewas" bson:"platformFeePesewas"`
-	BusinessNetPesewas         int64       `json:"businessNetPesewas" bson:"businessNetPesewas"`
-	PaystackSubaccount         string      `json:"-" bson:"paystackSubaccount"`
-	Status                     string      `json:"status" bson:"status"`
-	Simulated                  bool        `json:"simulated,omitempty" bson:"simulated,omitempty"`
-	CreatedAt                  string      `json:"createdAt" bson:"createdAt"`
-	PaidAt                     string      `json:"paidAt,omitempty" bson:"paidAt,omitempty"`
-	UpdatedAt                  string      `json:"updatedAt" bson:"updatedAt"`
+	// BusinessNetPesewas is what the seller's Paystack subaccount receives.
+	// The split sends bearer=subaccount, so Paystack's processing fee comes
+	// out of the seller's share (P15): until payment it is amount − Oguaa's
+	// fee − any business-funded commission; once paid, the fee Paystack
+	// reported (ProcessingFeePesewas) has been taken off it too.
+	BusinessNetPesewas int64 `json:"businessNetPesewas" bson:"businessNetPesewas"`
+	// ProcessingFeePesewas is Paystack's fee on the charge, borne by the
+	// seller, recorded when the order is paid (0 when Paystack reported none).
+	ProcessingFeePesewas int64 `json:"processingFeePesewas,omitempty" bson:"processingFeePesewas,omitempty"`
+	// CancelReason says why an unpaid order was cancelled (e.g. abandoned:
+	// no completed payment within 48 hours).
+	CancelReason       string `json:"cancelReason,omitempty" bson:"cancelReason,omitempty"`
+	PaystackSubaccount string `json:"-" bson:"paystackSubaccount"`
+	Status             string `json:"status" bson:"status"`
+	Simulated          bool   `json:"simulated,omitempty" bson:"simulated,omitempty"`
+	CreatedAt          string `json:"createdAt" bson:"createdAt"`
+	PaidAt             string `json:"paidAt,omitempty" bson:"paidAt,omitempty"`
+	UpdatedAt          string `json:"updatedAt" bson:"updatedAt"`
+	BuyerContactHidden bool   `json:"buyerContactHidden,omitempty" bson:"-"` // response-only: the seller's view dropped the buyer's contact
 }
 
 type CommerceOrderRepository interface {
@@ -117,8 +147,19 @@ type CommerceOrderRepository interface {
 	ByBuyer(ctx context.Context, buyerID string) ([]CommerceOrder, error)
 	ByBusiness(ctx context.Context, listingID string) ([]CommerceOrder, error)
 	All(ctx context.Context) ([]CommerceOrder, error)
-	MarkPaid(ctx context.Context, reference, paidAt string) error
+	// MarkPaid moves a pending order to paid, recording Paystack's processing
+	// fee and taking it off the seller's net (P15). It reports whether THIS
+	// call made the transition, so once-only side effects run exactly once
+	// when a webhook and a redirect confirm the same order at the same time.
+	MarkPaid(ctx context.Context, reference, paidAt string, processingFeePesewas int64) (bool, error)
 	SetStatus(ctx context.Context, id, listingID, status, updatedAt string) error
+	// PendingBetween lists records still pending whose createdAt is in
+	// [from, to) (from "" = no lower bound), oldest first, at most limit —
+	// the payment reconciliation sweep's work list (C5).
+	PendingBetween(ctx context.Context, from, to string, limit int) ([]CommerceOrder, error)
+	// ExpirePending closes a record that is STILL pending (status failed, or
+	// cancelled for an order) with reason; it reports whether it did.
+	ExpirePending(ctx context.Context, reference, reason, at string) (bool, error)
 }
 
 type BusinessCoupon struct {
@@ -147,8 +188,9 @@ type BusinessCouponRepository interface {
 	ByCode(ctx context.Context, listingID, code string) (*BusinessCoupon, error)
 	ByBusiness(ctx context.Context, listingID string) ([]BusinessCoupon, error)
 	All(ctx context.Context) ([]BusinessCoupon, error)
-	Reserve(ctx context.Context, id string) error
-	Release(ctx context.Context, id string) error
+	// Redeem counts one redemption. It is called once per PAID order, so
+	// abandoned checkouts never use up a coupon's redemption limit.
+	Redeem(ctx context.Context, id string) error
 	Delete(ctx context.Context, id, listingID string) error
 }
 
@@ -205,14 +247,23 @@ type AffiliateConversion struct {
 }
 
 type AffiliateRepository interface {
+	// SaveProgramme upserts a programme scoped to its listing: an existing
+	// programme with the same id but another listingId is never replaced.
 	SaveProgramme(context.Context, AffiliateProgramme) error
 	Programmes(context.Context, string) ([]AffiliateProgramme, error)
 	Programme(context.Context, string) (*AffiliateProgramme, error)
+	// SaveAffiliate upserts an affiliate scoped to its listing: an existing
+	// affiliate with the same id but another listingId is never replaced.
 	SaveAffiliate(context.Context, Affiliate) error
-	Affiliates(context.Context, string) ([]Affiliate, error)
+	// AffiliateByID returns one affiliate (or NotFound).
+	AffiliateByID(ctx context.Context, id string) (*Affiliate, error)
+	// Affiliates lists the affiliates of one listing ("*" = Oguaa's own),
+	// optionally narrowed to one programme. listingID is always required.
+	Affiliates(ctx context.Context, listingID, programmeID string) ([]Affiliate, error)
 	AffiliateByCode(context.Context, string, string) (*Affiliate, error)
-	ReserveConversion(context.Context, AffiliateConversion) error
-	Convert(context.Context, string, string, string) error
+	// RecordConversion stores the conversion of a PAID order (idempotent on
+	// its id, and it upgrades a legacy "reserved" row for the same order).
+	RecordConversion(context.Context, AffiliateConversion) error
 	Conversions(context.Context, string) ([]AffiliateConversion, error)
 	SetConversionStatus(context.Context, string, string, string) error
 }

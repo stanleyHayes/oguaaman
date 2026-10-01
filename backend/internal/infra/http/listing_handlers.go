@@ -39,6 +39,17 @@ func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
+	viewer := currentMember(r)
+	artists = h.svc.ViewListings(ctx, viewer, artists)
+	events = h.svc.ViewListings(ctx, viewer, events)
+	memorials = h.svc.ViewListings(ctx, viewer, memorials)
+	if spotlight != nil {
+		if v, err := h.svc.ViewListing(ctx, viewer, spotlight); err == nil {
+			spotlight = v
+		} else {
+			spotlight = nil
+		}
+	}
 	var memorial *domain.Listing
 	if len(memorials) > 0 {
 		memorial = &memorials[0]
@@ -60,7 +71,24 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request, fn func() ([]doma
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
+	writeJSON(w, http.StatusOK, h.viewable(r, items))
+}
+
+// viewable prepares listings for the signed-in viewer (if any): listings by
+// members in a block with the viewer are dropped (K13), and each listing gets
+// its public projection (reporter privacy, visible tributes).
+func (h *Handler) viewable(r *http.Request, items []domain.Listing) []domain.Listing {
+	return h.svc.ViewListings(r.Context(), currentMember(r), items)
+}
+
+// listingBySlug fetches one published listing as the viewer may see it: a
+// listing whose owner is in a block with the viewer is not found.
+func (h *Handler) listingBySlug(r *http.Request, typ string) (*domain.Listing, error) {
+	l, err := h.svc.ListingBySlug(r.Context(), typ, r.PathValue("slug"))
+	if err != nil {
+		return nil, err
+	}
+	return h.svc.ViewListing(r.Context(), currentMember(r), l)
 }
 
 func (h *Handler) Artists(w http.ResponseWriter, r *http.Request) {
@@ -90,6 +118,7 @@ func (h *Handler) Businesses(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
+	items = h.viewable(r, items)
 	now := time.Now().UTC()
 	out := make([]businessView, len(items))
 	for i, l := range items {
@@ -103,7 +132,7 @@ func (h *Handler) Properties(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeList(w, r, items)
+	writeList(w, r, h.viewable(r, items))
 }
 func (h *Handler) Events(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.Events(r.Context())
@@ -111,7 +140,7 @@ func (h *Handler) Events(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeList(w, r, items)
+	writeList(w, r, h.viewable(r, items))
 }
 
 // ── the festival archive (assembled reads over event listings) ─────────────────
@@ -170,7 +199,7 @@ func (h *Handler) Memories(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeList(w, r, memories)
+	writeList(w, r, h.viewable(r, memories))
 }
 
 // Featured — editorially surfaced listings for the marketing "right now" band.
@@ -196,7 +225,7 @@ type artistView struct {
 }
 
 func (h *Handler) Artist(w http.ResponseWriter, r *http.Request) {
-	l, err := h.svc.ListingBySlug(r.Context(), domain.TypeArtist, r.PathValue("slug"))
+	l, err := h.listingBySlug(r, domain.TypeArtist)
 	if err != nil {
 		h.handleErr(w, err)
 		return
@@ -206,7 +235,7 @@ func (h *Handler) Artist(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Business(w http.ResponseWriter, r *http.Request) {
-	l, err := h.svc.ListingBySlug(r.Context(), domain.TypeBusiness, r.PathValue("slug"))
+	l, err := h.listingBySlug(r, domain.TypeBusiness)
 	if err != nil {
 		h.handleErr(w, err)
 		return
@@ -215,7 +244,7 @@ func (h *Handler) Business(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Property(w http.ResponseWriter, r *http.Request) {
-	l, err := h.svc.ListingBySlug(r.Context(), domain.TypeProperty, r.PathValue("slug"))
+	l, err := h.listingBySlug(r, domain.TypeProperty)
 	if err != nil {
 		h.handleErr(w, err)
 		return
@@ -259,7 +288,7 @@ func (h *Handler) SetPropertyAvailability(w http.ResponseWriter, r *http.Request
 }
 
 func (h *Handler) Memorial(w http.ResponseWriter, r *http.Request) {
-	l, err := h.svc.ListingBySlug(r.Context(), domain.TypeMemorial, r.PathValue("slug"))
+	l, err := h.listingBySlug(r, domain.TypeMemorial)
 	if err != nil {
 		h.handleErr(w, err)
 		return
@@ -268,7 +297,7 @@ func (h *Handler) Memorial(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Person(w http.ResponseWriter, r *http.Request) {
-	l, err := h.svc.ListingBySlug(r.Context(), domain.TypePerson, r.PathValue("slug"))
+	l, err := h.listingBySlug(r, domain.TypePerson)
 	if err != nil {
 		h.handleErr(w, err)
 		return
@@ -380,6 +409,9 @@ func (h *Handler) SetStorefront(w http.ResponseWriter, r *http.Request) {
 // shareable custom URL.
 func (h *Handler) Storefront(w http.ResponseWriter, r *http.Request) {
 	l, err := h.svc.ListingByHandle(r.Context(), r.PathValue("handle"))
+	if err == nil {
+		l, err = h.svc.ViewListing(r.Context(), currentMember(r), l)
+	}
 	if err != nil {
 		h.handleErr(w, err)
 		return
@@ -387,8 +419,21 @@ func (h *Handler) Storefront(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, businessView{Listing: *l, Supporter: service.SupporterActive(*l, time.Now().UTC())})
 }
 
+// Candle — POST /api/memorials/{slug}/candle. Lights a candle on a published
+// memorial within the visitor's daily allowance: one per member, or several
+// per IP address when signed out (service.LightCandle).
 func (h *Handler) Candle(w http.ResponseWriter, r *http.Request) {
-	count, err := h.svc.LightCandle(r.Context(), r.PathValue("slug"))
+	// A signed-out address can be a whole school, office or mobile network, so
+	// it gets a far bigger hourly budget than one member; the daily allowance
+	// per memorial is what bounds the candles it adds.
+	limit := 30
+	if currentMember(r) == nil {
+		limit = 300
+	}
+	if h.rateLimited(w, r, "candle:"+clientKey(r), limit, time.Hour) {
+		return
+	}
+	count, err := h.svc.LightCandle(r.Context(), r.PathValue("slug"), visitorKey(r))
 	if err != nil {
 		h.handleErr(w, err)
 		return
@@ -396,43 +441,68 @@ func (h *Handler) Candle(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]int{"candles": count})
 }
 
+// Tribute — POST /api/memorials/{slug}/tributes {message, relation?}. Signed
+// in only: the author is the member's own name.
 func (h *Handler) Tribute(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
+	}
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
 	if h.rateLimited(w, r, "tribute:"+clientKey(r), 12, time.Hour) {
 		return
 	}
-	var in struct {
-		AuthorName string `json:"authorName"`
-		Message    string `json:"message"`
-	}
+	var in service.TributeInput
 	if err := decodeBody(r, &in); err != nil {
 		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
 		return
 	}
-	t, err := h.svc.AddTribute(r.Context(), r.PathValue("slug"), in.AuthorName, in.Message)
+	t, err := h.svc.AddTribute(r.Context(), m, r.PathValue("slug"), in)
 	if err != nil {
-		var nf *domain.NotFoundError
-		if errors.As(err, &nf) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failDomain(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, t)
 }
 
-// RecordView — POST /api/listings/{id}/view. Daily-deduped page-view counter.
-// Uses member ID when authed, IP otherwise.
-func (h *Handler) RecordView(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	m, _ := h.requireAuth(w, r)
-	var visitorKey string
-	if m != nil {
-		visitorKey = m.ID
-	} else {
-		visitorKey = "ip:" + clientIP(r)
+// RemoveTribute — DELETE /api/memorials/{slug}/tributes/{id}. The author, the
+// memorial's owner or keeper, or safety staff take a tribute down.
+func (h *Handler) RemoveTribute(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.requireAuth(w, r)
+	if !ok {
+		return
 	}
-	isNew, err := h.svc.RecordView(r.Context(), id, visitorKey)
+	if m == nil {
+		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	if err := h.svc.RemoveTribute(r.Context(), m, r.PathValue("slug"), r.PathValue("id")); err != nil {
+		h.failDomain(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"removed": true})
+}
+
+// visitorKey identifies a visitor for daily de-duplication: the member when
+// signed in, the client IP otherwise.
+func visitorKey(r *http.Request) string {
+	if m := currentMember(r); m != nil {
+		return m.ID
+	}
+	return domain.AnonymousVisitorPrefix + clientIP(r)
+}
+
+// RecordView — POST /api/listings/{id}/view. Daily-deduped page-view counter
+// for published listings (404 otherwise). Optional auth: uses the member ID
+// when signed in, the IP otherwise.
+func (h *Handler) RecordView(w http.ResponseWriter, r *http.Request) {
+	if h.rateLimited(w, r, "view:"+clientKey(r), 300, time.Hour) {
+		return
+	}
+	isNew, err := h.svc.RecordView(r.Context(), r.PathValue("id"), visitorKey(r))
 	if err != nil {
 		h.handleErr(w, err)
 		return

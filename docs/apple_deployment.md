@@ -102,10 +102,25 @@ APPLE_ALLOW_SANDBOX=false
 IAP stays **disabled** until `APPLE_BUNDLE_ID` is set — a verifier that accepts
 any bundle is worse than no verifier.
 
-`APPLE_ALLOW_SANDBOX` must stay **false** in production. Sandbox receipts carry
-the same Apple signature as real ones, so accepting them on a live server would
-let anyone with a sandbox tester account mint free subscriptions. Set it to
-`true` only on a staging deploy you use for TestFlight testing.
+Sandbox purchases are **always accepted**, in production too: App Review buys
+in the sandbox against the production server, and refusing those purchases
+fails review (Guideline 2.1). They are recorded with `environment: Sandbox`
+and `sandbox: true`, granted for at most 24 hours, never apply a plan's
+bundled promotion days, and never reach the subscription ledger or the revenue
+dashboard.
+
+Keep `APPLE_ALLOW_SANDBOX` **false** in production. Setting it to `true` (a
+staging deploy for TestFlight) only makes sandbox grants follow Apple's own,
+heavily accelerated sandbox expiry (a monthly plan lasts minutes) so renewal
+handling can be exercised — still never longer than 24 hours.
+
+Every purchase must carry the member's `appAccountToken`
+(`GET /api/iap/apple/account-token`, passed to StoreKit when purchasing): a
+purchase made for one Oguaa account cannot be redeemed by another. The plan
+granted is always the one Apple sold (from the product id) and runs to Apple's
+`expiresDate`; a first business-plan purchase must send the `reference` of the
+business's pending subscription checkout, and its renewals find the business
+from that first redemption.
 
 ### 2.3 Build a development build
 

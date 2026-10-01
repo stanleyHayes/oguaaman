@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -153,27 +156,39 @@ func (s *Service) notifyClaim(ctx context.Context, c *domain.OrgClaim, approve b
 	org, _ := s.orgs.ByID(ctx, c.OrgID)
 	name := "your institution"
 	link := ""
-	if org != nil {
+	switch {
+	case org != nil:
 		name = org.Name
 		link = "/education/" + org.Slug
+	case c.NewOrg != nil:
+		name = c.NewOrg.Name // a declined create-request has no org
 	}
-	var title, body string
-	if approve {
-		title = "You can now manage " + name
-		body = fmt.Sprintf("Your claim as %s was approved. You can edit the profile, roster, and post official events.", c.RequestedRole)
-		if c.NewOrg != nil {
-			title = name + " is live — you're its first manager"
-			body = "Your new institution was created and verified. Open its Team workspace in the creator app to build the page."
-		}
-	} else {
-		title = "Claim not approved"
-		body = fmt.Sprintf("Your request to manage %s was not approved. Reach out if you think this was a mistake.", name)
-	}
+	title, body := claimOutcomeText(c, org, name, approve)
 	_ = s.notifs.Insert(ctx, domain.Notification{
 		ID: newID(domain.PrefixNotification), MemberID: c.MemberID,
 		Kind: "org-claim", Title: title, Body: body, Link: link,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	})
+}
+
+// claimOutcomeText words the review outcome. A brand-new AUTHORITY
+// institution (emergency, security, health, local government) is created
+// unverified and stays offline until a steward verifies it, so it must not be
+// announced as "live" or "verified".
+func claimOutcomeText(c *domain.OrgClaim, org *domain.Organization, name string, approve bool) (title, body string) {
+	switch {
+	case !approve:
+		return "Claim not approved", fmt.Sprintf("Your request to manage %s was not approved. Reach out if you think this was a mistake.", name)
+	case c.NewOrg == nil:
+		return "You can now manage " + name,
+			fmt.Sprintf("Your claim as %s was approved. You can edit the profile, roster, and post official events.", c.RequestedRole)
+	case org != nil && org.Verified:
+		return name + " is live — you're its first manager",
+			"Your new institution was created and verified. Open its Team workspace in the creator app to build the page."
+	default:
+		return name + " was created — you're its first manager",
+			"Your new institution was created. As an official authority it stays offline, and can't issue notices, until a steward verifies it. You can build the page in the creator app's Team workspace meanwhile."
+	}
 }
 
 // ManagedOrgs returns the institutions a member may manage (approved claims).
@@ -202,7 +217,7 @@ func (s *Service) requireManager(ctx context.Context, memberID, orgSlug string) 
 	// institution's official page — including heritage and visitor sites that
 	// have no external manager to claim them — not only orgs they hold an
 	// approved claim for. (The HTTP layer still gates on requireAuth.)
-	if m, err := s.members.ByID(ctx, memberID); err == nil && m != nil && m.Role == domain.RoleSteward {
+	if s.actingRole(ctx, memberID) == domain.RoleSteward {
 		return org, nil
 	}
 	ok, err := s.claims.IsManager(ctx, memberID, org.ID)
@@ -223,29 +238,121 @@ func (s *Service) CanManageInstitution(ctx context.Context, memberID, orgSlug st
 	return err == nil
 }
 
-// UpdateOrgProfile lets a manager edit the institution's soft profile fields.
+// UpdateOrgProfile lets a team member edit the institution's soft profile
+// fields. It is a partial update: fields the client didn't send stay as they
+// are. Officers ("content only") may edit the text and facts, but the two
+// fields that steer money and trust — the public Mobile Money donation number
+// and the "Verified sources" links — can only be CHANGED by a manager (an
+// officer's form that re-sends them unchanged still saves). A changed MoMo
+// number is audit-logged and every other manager is told.
 func (s *Service) UpdateOrgProfile(ctx context.Context, memberID, orgSlug string, patch domain.OrgProfilePatch) (*domain.Organization, error) {
 	org, err := s.requireManager(ctx, memberID, orgSlug)
 	if err != nil {
 		return nil, err
 	}
-	for i := range patch.Contact {
-		patch.Contact[i].URL = safeURL(patch.Contact[i].URL) // contact links render as <a href>
+	normalizeProfilePatch(&patch)
+	momoChanged := patch.MoMoNumber != nil && *patch.MoMoNumber != strings.TrimSpace(org.MoMoNumber)
+	if momoChanged && *patch.MoMoNumber != "" && !momoNumberRE.MatchString(*patch.MoMoNumber) {
+		return nil, &domain.ValidationError{Message: "enter the Mobile Money number as digits, e.g. 024 000 0000"}
 	}
-	for i := range patch.VerificationArtifacts {
-		patch.VerificationArtifacts[i].URL = safeURL(patch.VerificationArtifacts[i].URL)
+	if momoChanged || linksChanged(org.VerificationArtifacts, patch.VerificationArtifacts) {
+		if _, err := s.requireManagerScope(ctx, memberID, orgSlug); err != nil {
+			var fb *domain.ForbiddenError
+			if errors.As(err, &fb) {
+				return nil, &domain.ForbiddenError{Reason: "only the institution's managers can change the Mobile Money number or the verification links"}
+			}
+			return nil, err
+		}
 	}
 	if err := s.orgs.UpdateProfile(ctx, org.ID, patch); err != nil {
 		return nil, err
 	}
+	if momoChanged {
+		s.announceMoMoChange(ctx, org, memberID)
+	}
 	return s.orgs.ByID(ctx, org.ID)
 }
 
-// SetOrgOffices lets a manager replace the institution's roster of offices.
+// momoNumberRE accepts a phone-style Mobile Money number: digits with optional
+// leading +, spaces or dashes (e.g. "024 000 0000", "+233 24 000 0000").
+var momoNumberRE = regexp.MustCompile(`^\+?[0-9][0-9 -]{6,18}[0-9]$`)
+
+// normalizeProfilePatch trims the sent MoMo number and sanitizes the link
+// lists (they render as <a href>).
+func normalizeProfilePatch(p *domain.OrgProfilePatch) {
+	if p.MoMoNumber != nil {
+		v := strings.TrimSpace(*p.MoMoNumber)
+		p.MoMoNumber = &v
+	}
+	for _, links := range []*[]domain.SocialLink{p.Contact, p.VerificationArtifacts} {
+		if links == nil {
+			continue
+		}
+		for i := range *links {
+			(*links)[i].URL = safeURL((*links)[i].URL)
+		}
+	}
+}
+
+// linksChanged reports whether a sent link list differs from the stored one.
+// nil (not sent) is never a change.
+func linksChanged(current []domain.SocialLink, sent *[]domain.SocialLink) bool {
+	if sent == nil {
+		return false
+	}
+	next := *sent
+	if len(next) != len(current) {
+		return true
+	}
+	for i := range next {
+		if strings.TrimSpace(next[i].Label) != strings.TrimSpace(current[i].Label) || next[i].URL != current[i].URL {
+			return true
+		}
+	}
+	return false
+}
+
+// announceMoMoChange records who changed an institution's donation number and
+// tells every other manager, so a hijacked number can't go unnoticed. The log
+// line carries ids only (never the number or a member's contact details).
+func (s *Service) announceMoMoChange(ctx context.Context, org *domain.Organization, actorID string) {
+	if s.log != nil {
+		s.log.Info("audit: institution mobile money number changed", "orgId", org.ID, "actorId", actorID)
+	}
+	actorName := "A team member"
+	if m, err := s.members.ByID(ctx, actorID); err == nil && m != nil {
+		actorName = m.DisplayName
+	}
+	claims, err := s.claims.ByOrg(ctx, org.ID)
+	if err != nil {
+		return
+	}
+	for _, c := range claims {
+		if c.Status != domain.ClaimApproved || c.EffectiveScope() != domain.ScopeManager || c.MemberID == actorID {
+			continue
+		}
+		s.notify(ctx, c.MemberID, "org-team",
+			"The Mobile Money number for "+org.Name+" was changed",
+			actorName+" changed the donation number on the institution's page. If you didn't expect this, check the profile now.",
+			"")
+	}
+}
+
+// SetOrgOffices lets a MANAGER replace the institution's roster of offices.
+// A manager's client-sent verification is never trusted (see
+// verifyOfficeHolder): a tick survives only on a row left exactly as it was,
+// or comes from an approved claim. Stewards — the editors of record who
+// curate verified office-holders — are trusted as sent. Officers are refused:
+// the roster is not "content".
 func (s *Service) SetOrgOffices(ctx context.Context, memberID, orgSlug string, offices []domain.Office) (*domain.Organization, error) {
-	org, err := s.requireManager(ctx, memberID, orgSlug)
+	org, err := s.requireManagerScope(ctx, memberID, orgSlug)
 	if err != nil {
 		return nil, err
+	}
+	steward := s.isSteward(ctx, memberID)
+	stored := make(map[string]domain.Office, len(org.Offices))
+	for _, o := range org.Offices {
+		stored[o.ID] = o
 	}
 	for i := range offices {
 		if strings.TrimSpace(offices[i].Role) == "" {
@@ -254,11 +361,46 @@ func (s *Service) SetOrgOffices(ctx context.Context, memberID, orgSlug string, o
 		if offices[i].ID == "" {
 			offices[i].ID = "ofc-" + fmt.Sprintf("%d-%d", time.Now().UnixNano(), i)
 		}
+		if !steward {
+			s.verifyOfficeHolder(ctx, org.ID, &offices[i], stored)
+		}
 	}
 	if err := s.orgs.SetOffices(ctx, org.ID, offices); err != nil {
 		return nil, err
 	}
 	return s.orgs.ByID(ctx, org.ID)
+}
+
+// verifyOfficeHolder recomputes a manager-sent office's holder fields. A row
+// left exactly as stored keeps its verification (a steward's or a claim's).
+// Otherwise it is verified only when HolderID names a member with an APPROVED
+// claim on the org, and then shows that member's own name. A verified row
+// whose name was edited to someone else (a new office-holder typed over it)
+// becomes an ordinary unverified row for the typed name — the tick never
+// transfers to a person who hasn't been verified.
+func (s *Service) verifyOfficeHolder(ctx context.Context, orgID string, o *domain.Office, stored map[string]domain.Office) {
+	o.Role = strings.TrimSpace(o.Role)
+	o.HolderName = strings.TrimSpace(o.HolderName)
+	if prev, ok := stored[o.ID]; ok && prev.Verified && prev.Role == o.Role && prev.HolderName == o.HolderName && prev.HolderID == o.HolderID {
+		*o = prev // untouched verified row
+		return
+	}
+	o.Verified = false
+	if o.HolderID == "" {
+		return
+	}
+	claim, err := s.claims.ActiveClaim(ctx, o.HolderID, orgID)
+	holder, merr := s.members.ByID(ctx, o.HolderID)
+	if err != nil || claim == nil || merr != nil || holder == nil {
+		o.HolderID = "" // not (or no longer) on the team — keep the typed name only
+		return
+	}
+	if o.HolderName != "" && !strings.EqualFold(o.HolderName, holder.DisplayName) {
+		o.HolderID = "" // renamed to someone else: a new, unverified holder
+		return
+	}
+	o.HolderName = holder.DisplayName
+	o.Verified = true
 }
 
 // SetOrgGallery lets a manager replace the institution's photo gallery. Empty
@@ -426,9 +568,7 @@ func (s *Service) PostOrgEvent(ctx context.Context, memberID, orgSlug, title str
 	if len(title) < 2 || len(title) > 160 {
 		return nil, fmt.Errorf("title must be 2–160 characters")
 	}
-	if details == nil {
-		details = map[string]any{}
-	}
+	details = orgEventDetails(details)
 	if err := validateEventRange(details); err != nil {
 		return nil, err
 	}
@@ -443,9 +583,13 @@ func (s *Service) PostOrgEvent(ctx context.Context, memberID, orgSlug, title str
 		status = domain.StatusApproved
 		publishedAt = now
 	}
+	// Like every other creator, the slug carries a uniqueness suffix: event
+	// pages and ticket purchases resolve by slug, so two institutions (or two
+	// years) posting the same title must never share one.
+	nano := strconv.FormatInt(time.Now().UnixNano(), 10)
 	l := domain.Listing{
-		ID:            "org-" + slugify(title) + "-" + fmt.Sprintf("%d", time.Now().UnixNano()%1_000_000),
-		Slug:          slugify(title),
+		ID:            "org-" + slugify(title) + "-" + nano,
+		Slug:          slugify(title) + "-" + nano[len(nano)-7:],
 		Type:          domain.TypeEvent,
 		OwnerID:       memberID,
 		Title:         title,
@@ -461,4 +605,30 @@ func (s *Service) PostOrgEvent(ctx context.Context, memberID, orgSlug, title str
 		return nil, err
 	}
 	return &l, nil
+}
+
+// orgEventDetails keeps only the event vocabulary an owner may write
+// (editableDetailsKeys) under the same URL guards as an owner edit. Curated
+// keys — festival, edition, recap, programme, anchorFestival, spotlight and
+// the like — are never accepted from a team member: a verified institution's
+// event publishes at once, and could otherwise write itself into an official
+// festival archive. Curators set those keys through review.
+func orgEventDetails(in map[string]any) map[string]any {
+	out := map[string]any{}
+	allow := editableDetailsKeys[domain.TypeEvent]
+	for k, v := range in {
+		if !allow[k] {
+			continue
+		}
+		switch {
+		case urlDetailKeys[k]:
+			if s, ok := v.(string); ok {
+				v = safeURL(s)
+			}
+		case linkListKeys[k]:
+			v = sanitizeLinkList(v)
+		}
+		out[k] = v
+	}
+	return out
 }

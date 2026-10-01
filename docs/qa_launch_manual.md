@@ -159,7 +159,7 @@ its parent; logged, not blocking.
 |---|---|---|
 | 5.3.1 | `GET /api/iap/apple/products` | `enabled: true` once `APPLE_BUNDLE_ID` is set |
 | 5.3.2 | POST a junk receipt | 400 — never a granted plan (`smoke.sh` §8) |
-| 5.3.3 | Sandbox purchase against production | **Refused** unless `APPLE_ALLOW_SANDBOX=true` |
+| 5.3.3 | Sandbox purchase against production (what App Review does) | Accepted, `sandbox: true`, granted for at most 24 h, absent from the revenue dashboard |
 | 5.3.4 | Redeem the same receipt twice | Second returns `alreadyRedeemed: true`, grants nothing extra |
 | 5.3.5 | Restore purchases | Re-establishes entitlement without double-granting |
 | 5.3.6 | Tickets and physical goods | Still Paystack — correct, and allowed |

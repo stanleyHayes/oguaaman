@@ -61,6 +61,37 @@ func IsFabricatedListing(id, listingType string) bool {
 	return false
 }
 
+// FabricatedNewsIDs are seeded newsroom rows that are demo scaffolding rather
+// than reporting (an internal "how to use the newsroom" draft).
+var FabricatedNewsIDs = []string{"news-draft-tip"}
+
+// IsFabricatedNews reports whether a seeded news article is illustration.
+func IsFabricatedNews(id string) bool {
+	for _, x := range FabricatedNewsIDs {
+		if id == x {
+			return true
+		}
+	}
+	return false
+}
+
+// Whole seeded collections that are illustration. Every seeded row in them is
+// invented, so none is written to a live database and purgefabricated moves
+// each one by its exact seeded id:
+//
+//   - directives — demo announcements anchored to the demo "today" and issued
+//     in the name of real, verified authorities (the Metropolitan Assembly, the
+//     Fire & Rescue Service). A directive carries the weight of the issuing
+//     office; an invented one must never be shown as theirs.
+//   - goals — town goals "set" by the Traditional Council and the Assembly, and
+//     accountability verdicts no officer ever gave.
+//   - org claims — a demo identity approved as manager of a real institution.
+//   - agents — invented people offering escrow-backed errands.
+//   - the seeddemo showcase — a shop, an artist and three fundraising campaigns
+//     with invented totals, plus their reviews and bookings.
+//   - seedmissing activity — representative moderation, notifications,
+//     reports, pledges, tickets, subscriptions, promotions and views.
+
 // DemoMemberEmailSuffix marks the seeded demo identities. They own the invented
 // content and share one password that is documented in the repository, so they
 // must never exist in a live database.

@@ -18,6 +18,10 @@ const (
 	IncidentStatusResponding = "responding"
 	IncidentStatusResolved   = "resolved"
 	IncidentStatusRecovered  = "recovered"
+	// IncidentStatusRetracted withdraws a report found to be false or
+	// mistaken: the incident is unpublished and, if it was alerted town-wide,
+	// a correction goes to the same audience.
+	IncidentStatusRetracted = "retracted"
 
 	LostFoundStatusOpen     = "open"
 	LostFoundStatusReunited = "reunited"
@@ -82,6 +86,9 @@ type StoreItem struct {
 	Unit         string `json:"unit,omitempty" bson:"unit,omitempty"` // services: "per hour", "from", …
 	ImageURL     string `json:"imageUrl,omitempty" bson:"imageUrl,omitempty"`
 	Available    bool   `json:"available" bson:"available"`
+	// Kind is "physical" (goods) or "service" (in person) — see
+	// StoreItemPhysical/StoreItemService. Digital goods are never accepted.
+	Kind string `json:"kind,omitempty" bson:"kind,omitempty"`
 }
 
 // Tribute — a condolence/memory left on a memorial (spec §8.11).
@@ -91,7 +98,38 @@ type Tribute struct {
 	Relation   string `json:"relation,omitempty" bson:"relation,omitempty"`
 	Message    string `json:"message" bson:"message"`
 	CreatedAt  string `json:"createdAt" bson:"createdAt"`
+	// MemberID is the signed-in author. It stays server-side: it drives the
+	// per-member cap, block filtering and suspension, while readers get the
+	// public MemberSlug to report or block the author.
+	MemberID   string `json:"-" bson:"memberId,omitempty"`
+	MemberSlug string `json:"memberSlug,omitempty" bson:"memberSlug,omitempty"`
+	// Status is empty for a visible tribute. Hidden and removed tributes stay
+	// in the document as evidence but are never shown to the public.
+	Status string `json:"status,omitempty" bson:"status,omitempty"`
 }
+
+// Tribute visibility (Tribute.Status). The zero value is visible.
+const (
+	TributeHidden  = "hidden"  // withdrawn pending review (child-safety / intimate-image report)
+	TributeRemoved = "removed" // removed by staff, the memorial's keeper or its author
+)
+
+// MaxTributesPerMemorial caps how many tributes one memorial document may hold
+// (visible or not). Tributes are embedded in the memorial, so an unbounded
+// array would eventually hit MongoDB's 16 MB document limit and bloat every
+// read of the memorial.
+const MaxTributesPerMemorial = 500
+
+// Incident alerts sent town-wide at most once each (see ClaimIncidentAlert).
+const (
+	IncidentAlertBroadcast = "broadcast" // in-app notice + push to every member
+	IncidentAlertRing      = "ring"      // the critical, ringing push (curator-verified only)
+)
+
+// AnonymousVisitorPrefix starts the visitor key of a signed-out caller, who is
+// known only by IP address ("ip:<addr>"); a signed-in caller's visitor key is
+// the member ID. Many people can share one address.
+const AnonymousVisitorPrefix = "ip:"
 
 // Listing — Pillar 3. A single polymorphic document for every contributed entry.
 // Type-specific fields live in Details (a free-form object), which is the natural
@@ -115,7 +153,11 @@ type Listing struct {
 	CoverImageURL string   `json:"coverImageUrl,omitempty" bson:"coverImageUrl,omitempty"`
 	Featured      bool     `json:"featured" bson:"featured"`                               // surfaced on front pages (paid placement, spec §8.14)
 	FeaturedUntil string   `json:"featuredUntil,omitempty" bson:"featuredUntil,omitempty"` // RFC3339; empty = no expiry. Past = lapsed.
-	ViewCount     int      `json:"viewCount" bson:"viewCount"`
+	// PromotedUntil (RFC3339) marks PAID placement: set only by paid promotions
+	// and plan-bundled promotion days, never by editorial featuring. Clients
+	// label the listing "Sponsored" while it is in the future.
+	PromotedUntil string `json:"promotedUntil,omitempty" bson:"promotedUntil,omitempty"`
+	ViewCount     int    `json:"viewCount" bson:"viewCount"`
 	// Demo marks illustrative content written by the seeder rather than
 	// contributed by a real member.
 	//
@@ -141,16 +183,24 @@ type Listing struct {
 	// Products / Services are the business storefront catalog (Supporter
 	// feature). How many may be published is capped by the business's
 	// subscription plan (Plan.MaxProducts / MaxServices).
-	Products        []StoreItem `json:"products,omitempty" bson:"products,omitempty"`
-	Services        []StoreItem `json:"services,omitempty" bson:"services,omitempty"`
-	Handle          string      `json:"handle,omitempty" bson:"handle,omitempty"`
-	Tributes        []Tribute   `json:"tributes,omitempty" bson:"tributes,omitempty"`
-	CreatedAt       string      `json:"createdAt" bson:"createdAt"`
-	SubmittedAt     string      `json:"submittedAt,omitempty" bson:"submittedAt,omitempty"`
-	ReviewedByID    string      `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
-	ReviewedAt      string      `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
-	RejectionReason string      `json:"rejectionReason,omitempty" bson:"rejectionReason,omitempty"`
-	PublishedAt     string      `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
+	Products []StoreItem `json:"products,omitempty" bson:"products,omitempty"`
+	Services []StoreItem `json:"services,omitempty" bson:"services,omitempty"`
+	Handle   string      `json:"handle,omitempty" bson:"handle,omitempty"`
+	Tributes []Tribute   `json:"tributes,omitempty" bson:"tributes,omitempty"`
+	// Held marks a post withheld from publication until a curator reviews it:
+	// a sensitive incident category, a content-screen hit, a poster without a
+	// verified phone, or a child-safety / intimate-image report. Cleared when
+	// a curator approves the listing.
+	Held bool `json:"held,omitempty" bson:"held,omitempty"`
+	// ScreenFlags are the automated content screen's reasons for a curator's
+	// attention ("private_info", "sexual", …). Cleared on approval.
+	ScreenFlags     []string `json:"screenFlags,omitempty" bson:"screenFlags,omitempty"`
+	CreatedAt       string   `json:"createdAt" bson:"createdAt"`
+	SubmittedAt     string   `json:"submittedAt,omitempty" bson:"submittedAt,omitempty"`
+	ReviewedByID    string   `json:"reviewedById,omitempty" bson:"reviewedById,omitempty"`
+	ReviewedAt      string   `json:"reviewedAt,omitempty" bson:"reviewedAt,omitempty"`
+	RejectionReason string   `json:"rejectionReason,omitempty" bson:"rejectionReason,omitempty"`
+	PublishedAt     string   `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
 }
 
 // ListingFilter expresses the read predicates the API needs. Empty fields are
@@ -181,20 +231,53 @@ type ListingRepository interface {
 	// the resulting status/submittedAt (edits to non-live listings re-queue
 	// them for review; approved listings stay live).
 	OwnerUpdate(ctx context.Context, id, title, coverImageURL string, details map[string]any, status, submittedAt string) error
+	// AddTribute appends a tribute to a memorial. It refuses (ValidationError)
+	// once the memorial holds MaxTributesPerMemorial tributes.
 	AddTribute(ctx context.Context, listingID string, t Tribute) error
-	IncrementCandles(ctx context.Context, listingID string) (int, error)
+	// SetTributeStatus changes one tribute's visibility ("" visible,
+	// TributeHidden, TributeRemoved) without deleting it.
+	SetTributeStatus(ctx context.Context, listingID, tributeID, status string) error
+	// GetByTributeID returns the memorial that holds the tribute (or NotFound).
+	GetByTributeID(ctx context.Context, tributeID string) (*Listing, error)
+	// RemoveStoreItem pulls one product or service (by item id) out of a
+	// business storefront catalog.
+	RemoveStoreItem(ctx context.Context, listingID, itemID string) error
+	// HoldForReview withdraws a listing from public view until a curator
+	// reviews it (status pending, held), e.g. after a child-safety report.
+	HoldForReview(ctx context.Context, id, at string) error
+	// SetScreenFlags records the content screen's reasons for a curator's
+	// attention on a listing (cleared again on approval).
+	SetScreenFlags(ctx context.Context, id string, flags []string) error
+	// ClaimIncidentAlert records that the named town-wide alert
+	// (IncidentAlertBroadcast / IncidentAlertRing) is being sent for an
+	// incident. It reports false when that alert was already claimed, so each
+	// alert goes out at most once even if curators act concurrently.
+	ClaimIncidentAlert(ctx context.Context, listingID, alert, at string) (bool, error)
+	// MarkPostReviewed records that a curator looked at an auto-published
+	// safety post (details.postReviewedAt / postReviewedBy).
+	MarkPostReviewed(ctx context.Context, id, reviewerID, at string) error
+	// IncrementCandles lights one candle for visitorKey and returns the count.
+	// A visitor lights at most perDay candles per listing per UTC day; past
+	// that the counter is unchanged and the current count is returned.
+	IncrementCandles(ctx context.Context, listingID, visitorKey string, perDay int) (int, error)
 	// IncrementRaised atomically adds a confirmed pledge to a project's running
 	// total (details.raisedPesewas) and bumps its backer count (details.backers).
-	IncrementRaised(ctx context.Context, listingID string, deltaPesewas int64) error
+	// It is keyed on the payment reference: the same reference is credited at
+	// most once, so a retried grant never counts a pledge twice. It reports
+	// whether this call credited it.
+	IncrementRaised(ctx context.Context, listingID, reference string, deltaPesewas int64) (bool, error)
 	// IncrementDonations atomically adds a confirmed artist donation to the
 	// artist listing's running net total (details.donationsNetPesewas) and bumps
-	// its donor count (details.donorCount). The "tip jar" counterpart of
-	// IncrementRaised (Creator Monetization).
-	IncrementDonations(ctx context.Context, listingID string, deltaNetPesewas int64) error
+	// its donor count (details.donorCount), at most once per reference. The
+	// "tip jar" counterpart of IncrementRaised (Creator Monetization).
+	IncrementDonations(ctx context.Context, listingID, reference string, deltaNetPesewas int64) (bool, error)
 	// SetRating stores a listing's recomputed review aggregate
 	// (details.ratingAvg, details.ratingCount) so the directory reads it cheaply.
 	SetRating(ctx context.Context, listingID string, avg float64, count int) error
 	SetFeatured(ctx context.Context, id string, featured bool, until string) error
+	// SetPromotedUntil records the end of a listing's paid placement (the
+	// "Sponsored" label). Editorial featuring never calls it.
+	SetPromotedUntil(ctx context.Context, id, until string) error
 	// UpdateIncidentStatus sets details.incidentStatus and appends the history
 	// entry to details.statusHistory (the incident operational lifecycle).
 	UpdateIncidentStatus(ctx context.Context, listingID, status string, entry map[string]any) error
@@ -221,6 +304,11 @@ type ListingRepository interface {
 	// SetKeeperID sets details.keeperId on a memorial listing (a curator action
 	// taken after reviewing a family keeper-claim request).
 	SetKeeperID(ctx context.Context, listingID, keeperMemberID string) error
+	// ReassignOrgListings moves the listings a team member posted for an
+	// institution (postedByOrgId = orgID, ownerId = fromOwnerID) to
+	// toOwnerID — used when the member is removed from the team, so they keep
+	// no control over its official events. Returns how many moved.
+	ReassignOrgListings(ctx context.Context, orgID, fromOwnerID, toOwnerID string) (int, error)
 	// RecordView idempotently records a unique daily page-view. visitorKey is the
 	// member ID (if authed) or "ip:"+IP (anon). Returns true when this is the
 	// first view from this visitor today (viewCount was incremented).
@@ -228,8 +316,9 @@ type ListingRepository interface {
 	// ViewsThisMonth sums unique daily view records for the given listing IDs in
 	// the current calendar month (YYYY-MM prefix match on the day field).
 	ViewsThisMonth(ctx context.Context, listingIDs []string) (int, error)
-	// PlatformViewsThisMonth counts all unique daily view records across every
-	// listing in the current calendar month (admin KPI dashboard).
+	// PlatformViewsThisMonth counts all unique daily page-view records across
+	// every listing in the current calendar month (admin KPI dashboard). Candles
+	// are not page views.
 	PlatformViewsThisMonth(ctx context.Context) (int, error)
 	// AvgApprovalHours returns the mean hours between submittedAt and reviewedAt
 	// for approved listings over the last 90 days (admin KPI dashboard).

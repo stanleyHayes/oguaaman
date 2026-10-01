@@ -136,16 +136,36 @@ func normalizeDeadline(raw string, now time.Time) (string, error) {
 	return "", fmt.Errorf("the deadline must be a valid date")
 }
 
-// Campaigns lists approved, member-created campaigns (newest first) — the public
-// campaign wall, distinct from curated civic adopt-a-project listings.
+// FundingClosed reports whether a project's funding deadline (details.deadline,
+// RFC3339 or YYYY-MM-DD meaning the end of that day UTC) has passed. A project
+// without a readable deadline stays open.
+func FundingClosed(l domain.Listing, now time.Time) bool {
+	raw := strings.TrimSpace(asString(l.Details, "deadline"))
+	if raw == "" {
+		return false
+	}
+	if t, err := time.Parse(time.RFC3339, raw); err == nil {
+		return !t.After(now)
+	}
+	if t, err := time.Parse("2006-01-02", raw); err == nil {
+		return !time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.UTC).After(now)
+	}
+	return false
+}
+
+// Campaigns lists approved, member-created campaigns that are still taking
+// pledges (newest first) — the public campaign wall, distinct from curated
+// civic adopt-a-project listings. Campaigns past their funding deadline drop
+// off the wall; their own pages stay reachable.
 func (s *Service) Campaigns(ctx context.Context) ([]domain.Listing, error) {
 	all, err := s.listings.Find(ctx, domain.ListingFilter{Type: domain.TypeProject, Status: domain.StatusApproved})
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now().UTC()
 	out := []domain.Listing{}
 	for _, l := range all {
-		if isCampaign(l) {
+		if isCampaign(l) && !FundingClosed(l, now) {
 			out = append(out, l)
 		}
 	}

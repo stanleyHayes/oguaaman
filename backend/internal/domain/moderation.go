@@ -10,6 +10,12 @@ type ModerationRecord struct {
 	Action      string `json:"action" bson:"action"`
 	Reason      string `json:"reason,omitempty" bson:"reason,omitempty"`
 	CreatedAt   string `json:"createdAt" bson:"createdAt"`
+	// TargetType / TargetID name the content acted on when it is not the
+	// listing itself (a review, tribute, product, member, news article or
+	// agent) — e.g. a report resolved with "remove". ListingID then holds the
+	// listing the content lives on, when there is one.
+	TargetType string `json:"targetType,omitempty" bson:"targetType,omitempty"`
+	TargetID   string `json:"targetId,omitempty" bson:"targetId,omitempty"`
 }
 
 type ModerationRepository interface {

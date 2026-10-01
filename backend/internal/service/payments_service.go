@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,9 +29,69 @@ import (
 // ErrPledgeAmount is returned for out-of-range pledge amounts.
 var ErrPledgeAmount = errors.New("pledge amount out of range")
 
+// ErrFundingClosed is returned when a campaign's funding deadline has passed.
+var ErrFundingClosed = errors.New("funding for this campaign has closed")
+
+// PledgeRefundPolicy is the refund term shown to a payer before they pledge
+// (K17). Keep it in step with the Terms of Use.
+const PledgeRefundPolicy = "Pledges aren't refundable once confirmed, unless the campaign is cancelled or the payment was taken in error. See the Terms of Use."
+
+// PledgeQuote is the GET /api/projects/{slug}/pledge-quote payload (K17): what
+// Oguaa keeps from a pledge of AmountPesewas and what reaches the project,
+// shown before the payer pays.
+type PledgeQuote struct {
+	AmountPesewas int64  `json:"amountPesewas"`
+	FeePercent    int    `json:"feePercent"`
+	FeePesewas    int64  `json:"feePesewas"`
+	NetPesewas    int64  `json:"netPesewas"`
+	ProjectTitle  string `json:"projectTitle"`
+	Beneficiary   string `json:"beneficiary,omitempty"` // the named organiser, when the project states one
+	FundingClosed bool   `json:"fundingClosed"`
+	RefundPolicy  string `json:"refundPolicy"`
+}
+
+// splitFee divides a contribution into the platform fee (integer pesewas,
+// rounded down) and the net credited to the recipient.
+func splitFee(amountPesewas int64, feePercent int) (fee, net int64) {
+	fee = amountPesewas * int64(feePercent) / 100
+	return fee, amountPesewas - fee
+}
+
+// ErrPaymentNotCompleted is returned by every confirm/fulfil path when the
+// provider does not report a full, successful charge for the reference. It is
+// a settled outcome, not a transient failure: retrying will not change it.
+var ErrPaymentNotCompleted = errors.New("payment was not completed")
+
+// SettlementFinal reports whether a confirm error is a settled outcome that a
+// retry cannot change — an unknown reference, a charge that did not complete,
+// something no longer available to sell — as opposed to a transient failure
+// (provider or database unreachable) worth retrying. The Paystack webhook acks
+// the former and asks Paystack to retry the latter.
+func SettlementFinal(err error) bool {
+	var nf *domain.NotFoundError
+	var fb *domain.ForbiddenError
+	var ve *domain.ValidationError
+	return errors.As(err, &nf) || errors.As(err, &fb) || errors.As(err, &ve) ||
+		errors.Is(err, ErrPaymentNotCompleted) || errors.Is(err, ErrSoldOut) || errors.Is(err, ErrSoldOutAfterPayment) ||
+		errors.Is(err, ErrJobCancelledRefundDue)
+}
+
 const (
 	minPledgePesewas = 1_00       // GHS 1
 	maxPledgePesewas = 100_000_00 // GHS 100,000 per pledge
+)
+
+// Paystack reference prefixes. Every money flow stamps its own, so the
+// charge.success webhook can route a charge back to the flow that issued it.
+const (
+	RefPrefixPledge              = "plg-"
+	RefPrefixDonation            = "don-"
+	RefPrefixTicket              = "tkt-"
+	RefPrefixSubscription        = "sub-"
+	RefPrefixCreatorSubscription = "csub-"
+	RefPrefixPromotion           = "pro-"
+	RefPrefixOrder               = "ord-" // CommerceService.StartOrder
+	RefPrefixAgentJob            = "job-" // AgentJobsService.AcceptAndFund
 )
 
 // PaystackClient is the seam to the payment provider.
@@ -39,9 +100,11 @@ type PaystackClient interface {
 	// fallback) and the access code (used by the in-app Paystack Inline popup so
 	// the client resumes THIS transaction rather than starting a new one).
 	Initialize(ctx context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (authorizationURL, accessCode string, err error)
-	// Verify reports whether the transaction succeeded and the amount charged.
-	// A returned amount of 0 means "amount unknown" (simulation only).
-	Verify(ctx context.Context, reference string) (success bool, amountPesewas int64, err error)
+	// Verify asks the provider what became of a transaction. A non-nil error
+	// is transient (provider unreachable, rate-limited or erroring — wrapped in
+	// ErrPaymentCheckUnavailable) and says nothing about the payment; the
+	// returned PaymentCheck is the provider's verdict otherwise.
+	Verify(ctx context.Context, reference string) (PaymentCheck, error)
 	// Simulated reports whether this client moves real money.
 	Simulated() bool
 }
@@ -83,7 +146,18 @@ func (p *paystackHTTP) InitializeSplit(ctx context.Context, email string, amount
 	return p.initialize(ctx, map[string]any{"email": email, "amount": amountPesewas, "currency": currency, "reference": reference, "callback_url": callbackURL, "subaccount": subaccount, "transaction_charge": platformFeePesewas, "bearer": "subaccount"})
 }
 
+// errNoCallbackURL refuses an initialize without an explicit callback_url:
+// the dashboard default is shared with the owner's other apps (C5).
+var errNoCallbackURL = errors.New("paystack initialize needs an explicit callback_url")
+
 func (p *paystackHTTP) initialize(ctx context.Context, payload map[string]any) (string, string, error) {
+	if cb, _ := payload["callback_url"].(string); strings.TrimSpace(cb) == "" {
+		return "", "", errNoCallbackURL
+	}
+	ref, _ := payload["reference"].(string)
+	// Tag the transaction as Oguaa's so the shared integration's webhook can
+	// tell it apart from the owner's other apps (C5).
+	payload["metadata"] = map[string]string{"app": metadataApp, "flow": refFlowName(ref)}
 	body, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.base+"/transaction/initialize", bytes.NewReader(body))
 	if err != nil {
@@ -142,31 +216,75 @@ func (p *paystackHTTP) CreateSubaccount(ctx context.Context, businessName, bankC
 	return parsed.Data.SubaccountCode, nil
 }
 
-func (p *paystackHTTP) Verify(ctx context.Context, reference string) (bool, int64, error) {
+func (p *paystackHTTP) Verify(ctx context.Context, reference string) (PaymentCheck, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.base+"/transaction/verify/"+url.PathEscape(reference), nil)
 	if err != nil {
-		return false, 0, err
+		return PaymentCheck{}, err
 	}
 	req.Header.Set("Authorization", "Bearer "+p.secret)
 	resp, err := p.http.Do(req)
 	if err != nil {
-		return false, 0, fmt.Errorf("paystack verify failed: %w", err)
+		return PaymentCheck{}, fmt.Errorf("%w: paystack verify failed: %w", ErrPaymentCheckUnavailable, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	var parsed struct {
-		Status bool `json:"status"`
-		Data   struct {
-			Status string `json:"status"`
-			Amount int64  `json:"amount"`
+		Status  bool   `json:"status"`
+		Message string `json:"message"`
+		Code    string `json:"code"`
+		Data    struct {
+			Status    string `json:"status"`
+			Amount    int64  `json:"amount"`
+			Currency  string `json:"currency"`
+			Reference string `json:"reference"`
+			Fees      int64  `json:"fees"`
 		} `json:"data"`
 	}
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&parsed); err != nil {
-		return false, 0, err
+	decodeErr := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&parsed)
+	if paystackReferenceUnknown(resp.StatusCode, parsed.Code, parsed.Message) {
+		// Paystack never saw this reference: no charge exists, so it is final.
+		return PaymentCheck{Outcome: PaymentFailed, Reference: reference}, nil
 	}
-	return parsed.Status && parsed.Data.Status == "success", parsed.Data.Amount, nil
+	if resp.StatusCode != http.StatusOK || decodeErr != nil || !parsed.Status {
+		return PaymentCheck{}, fmt.Errorf("%w: paystack verify answered HTTP %d (%s)", ErrPaymentCheckUnavailable, resp.StatusCode, parsed.Message)
+	}
+	return PaymentCheck{
+		Outcome:       paystackOutcome(parsed.Data.Status),
+		AmountPesewas: parsed.Data.Amount,
+		Currency:      parsed.Data.Currency,
+		Reference:     parsed.Data.Reference,
+		FeesPesewas:   parsed.Data.Fees,
+	}, nil
+}
+
+// paystackReferenceUnknown reports Paystack's "Transaction reference not
+// found" answer (HTTP 400/404, code transaction_not_found).
+func paystackReferenceUnknown(status int, code, message string) bool {
+	if status != http.StatusBadRequest && status != http.StatusNotFound {
+		return false
+	}
+	return code == "transaction_not_found" || strings.Contains(strings.ToLower(message), "reference not found")
+}
+
+// paystackOutcome maps a Paystack transaction status onto what a flow acts
+// on: success settles; failed, abandoned and reversed are final failures;
+// everything else (pending, ongoing, processing, queued, or a status Paystack
+// adds later) is still in progress and leaves the record pending (C1).
+func paystackOutcome(status string) PaymentOutcome {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "success":
+		return PaymentPaid
+	case "failed", "abandoned", "reversed":
+		return PaymentFailed
+	default:
+		return PaymentInProgress
+	}
 }
 
 // ── simulated client (no keys) ────────────────────────────────────────────────
+
+// simulatedSubaccountPrefix marks subaccount codes the simulation made up;
+// they don't exist at Paystack.
+const simulatedSubaccountPrefix = "ACCT_SIM_"
 
 // SimulatedPaystack closes the payment loop without moving money: the
 // "authorization URL" is simply the callback URL, so the payer lands straight
@@ -176,6 +294,9 @@ type SimulatedPaystack struct{ Log *slog.Logger }
 func (s SimulatedPaystack) Simulated() bool { return true }
 
 func (s SimulatedPaystack) Initialize(_ context.Context, email string, amountPesewas int64, currency, reference, callbackURL string) (string, string, error) {
+	if strings.TrimSpace(callbackURL) == "" {
+		return "", "", errNoCallbackURL
+	}
 	if s.Log != nil {
 		s.Log.Info("SIMULATED Paystack charge — no real money moves", "email", email, "amount", amountPesewas, "currency", currency, "ref", reference)
 	}
@@ -184,11 +305,12 @@ func (s SimulatedPaystack) Initialize(_ context.Context, email string, amountPes
 	return callbackURL, "", nil
 }
 
-func (s SimulatedPaystack) Verify(context.Context, string) (bool, int64, error) {
-	return true, 0, nil // 0 = amount unknown; the pledge's own amount is used
+func (s SimulatedPaystack) Verify(_ context.Context, reference string) (PaymentCheck, error) {
+	// Amount 0 = unknown; only the labelled simulation may report it.
+	return PaymentCheck{Outcome: PaymentPaid, Currency: paymentCurrency, Reference: reference}, nil
 }
 func (s SimulatedPaystack) CreateSubaccount(_ context.Context, businessName, _, _ string) (string, error) {
-	return "ACCT_SIM_" + slugify(businessName), nil
+	return simulatedSubaccountPrefix + slugify(businessName), nil
 }
 func (s SimulatedPaystack) InitializeSplit(ctx context.Context, email string, amount int64, currency, reference, callbackURL, subaccount string, fee int64) (string, string, error) {
 	return s.Initialize(ctx, email, amount, currency, reference, callbackURL)
@@ -234,7 +356,11 @@ func (s *PaymentsService) StartPledge(ctx context.Context, projectSlug, memberID
 		return "", "", "", &domain.NotFoundError{Entity: "project"}
 	}
 	now := time.Now().UTC()
-	reference = fmt.Sprintf("plg-%s-%d", project.Slug, now.UnixNano())
+	if FundingClosed(*project, now) {
+		return "", "", "", ErrFundingClosed
+	}
+	feePercent := s.takeRateForOwner(ctx, project.ID) // the rate the quote showed; locked for confirmation
+	reference = newReference(RefPrefixPledge, project.Slug, strconv.FormatInt(now.UnixNano(), 10))
 	pledge := domain.Pledge{
 		ID:            "p" + reference,
 		Reference:     reference,
@@ -245,6 +371,7 @@ func (s *PaymentsService) StartPledge(ctx context.Context, projectSlug, memberID
 		MemberID:      memberID,
 		Email:         email,
 		AmountPesewas: amountPesewas,
+		FeePercent:    &feePercent,
 		Currency:      "GHS",
 		Status:        domain.PledgePending,
 		Simulated:     s.paystack.Simulated(),
@@ -284,7 +411,7 @@ func (s *PaymentsService) StartDonation(ctx context.Context, artistSlug, memberI
 		return "", "", "", &domain.ForbiddenError{Reason: "this artist isn't accepting donations — the feature needs an active creator plan"}
 	}
 	now := time.Now().UTC()
-	reference = fmt.Sprintf("don-%s-%d", artist.Slug, now.UnixNano())
+	reference = newReference(RefPrefixDonation, artist.Slug, strconv.FormatInt(now.UnixNano(), 10))
 	donation := domain.Pledge{
 		ID:            "p" + reference,
 		Reference:     reference,
@@ -311,6 +438,35 @@ func (s *PaymentsService) StartDonation(ctx context.Context, artistSlug, memberI
 		return "", "", "", err
 	}
 	return authURL, accessCode, reference, nil
+}
+
+// QuotePledge tells a payer, before they pay, the platform fee rate for this
+// project (its owner's plan take-rate, or the flat platform fee), the fee and
+// net amount for amountPesewas, who the money is for and the refund terms.
+// StartPledge locks the same rate onto the pledge.
+func (s *PaymentsService) QuotePledge(ctx context.Context, projectSlug string, amountPesewas int64) (*PledgeQuote, error) {
+	if amountPesewas < minPledgePesewas || amountPesewas > maxPledgePesewas {
+		return nil, ErrPledgeAmount
+	}
+	project, err := s.listings.GetBySlug(ctx, domain.TypeProject, projectSlug)
+	if err != nil {
+		return nil, err
+	}
+	if project.Status != domain.StatusApproved {
+		return nil, &domain.NotFoundError{Entity: "project"}
+	}
+	feePercent := s.takeRateForOwner(ctx, project.ID)
+	fee, net := splitFee(amountPesewas, feePercent)
+	return &PledgeQuote{
+		AmountPesewas: amountPesewas,
+		FeePercent:    feePercent,
+		FeePesewas:    fee,
+		NetPesewas:    net,
+		ProjectTitle:  project.Title,
+		Beneficiary:   strings.TrimSpace(asString(project.Details, "organiser")),
+		FundingClosed: FundingClosed(*project, time.Now().UTC()),
+		RefundPolicy:  PledgeRefundPolicy,
+	}, nil
 }
 
 // donationsEnabled reports whether an artist's owner may receive donations —
@@ -341,13 +497,12 @@ func (s *PaymentsService) ConfirmPledge(ctx context.Context, reference string) (
 		return nil, err
 	}
 	if pledge.Status == domain.PledgeSuccess {
-		return pledge, nil // already settled
+		return s.finishGrant(ctx, pledge) // settled; credit a target a failed earlier confirm left owed
 	}
-	success, amount, err := s.paystack.Verify(ctx, reference)
-	if err != nil {
+	if err := verifyCharge(ctx, s.paystack, reference, pledge.AmountPesewas, s.pledges.MarkFailed); err != nil {
 		return nil, err
 	}
-	return s.fulfillPledge(ctx, pledge, success, amount)
+	return s.fulfillPledge(ctx, pledge, true, pledge.AmountPesewas)
 }
 
 // FulfillPledge marks a pledge successful using an amount already verified by
@@ -358,7 +513,7 @@ func (s *PaymentsService) FulfillPledge(ctx context.Context, reference string, a
 		return nil, err
 	}
 	if pledge.Status == domain.PledgeSuccess {
-		return pledge, nil
+		return s.finishGrant(ctx, pledge)
 	}
 	return s.fulfillPledge(ctx, pledge, true, amountPesewas)
 }
@@ -366,36 +521,61 @@ func (s *PaymentsService) FulfillPledge(ctx context.Context, reference string, a
 func (s *PaymentsService) fulfillPledge(ctx context.Context, pledge *domain.Pledge, success bool, amount int64) (*domain.Pledge, error) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	if !success || (amount > 0 && amount < pledge.AmountPesewas) {
-		_ = s.pledges.UpdateStatus(ctx, pledge.Reference, domain.PledgeFailed, now)
-		return nil, fmt.Errorf("payment was not completed")
-	}
-	if err := s.pledges.UpdateStatus(ctx, pledge.Reference, domain.PledgeSuccess, now); err != nil {
-		return nil, err
+		_ = s.pledges.MarkFailed(ctx, pledge.Reference)
+		return nil, ErrPaymentNotCompleted
 	}
 	// Split the platform fee (integer pesewas, rounded down); the recipient is
 	// credited the NET. The rate is the TARGET listing owner's plan take-rate
 	// (Creator Monetization), falling back to the flat platform fee for legacy
 	// civic projects whose owner has no active creator plan.
 	feePercent := s.takeRateForOwner(ctx, pledge.ProjectID)
-	fee := pledge.AmountPesewas * int64(feePercent) / 100
-	net := pledge.AmountPesewas - fee
-	if err := s.pledges.SetFeeNet(ctx, pledge.Reference, fee, net); err != nil {
+	if pledge.FeePercent != nil {
+		feePercent = *pledge.FeePercent // the rate the payer was shown
+	}
+	fee, net := splitFee(pledge.AmountPesewas, feePercent)
+	// One conditional write settles the pledge. Every confirm that got this far
+	// (redirect, webhook, replays) races here; only the winner credits the
+	// target and notifies, so a single payment is never counted twice.
+	claimed, err := s.pledges.MarkSuccess(ctx, pledge.Reference, now, fee, net)
+	if err != nil {
 		return nil, err
 	}
-	// Credit the recipient: donations bump the artist's donation total; campaign
-	// and project pledges bump the project's raised total.
-	if pledge.Kind == domain.PledgeKindDonation {
-		if err := s.listings.IncrementDonations(ctx, pledge.ProjectID, net); err != nil {
-			return nil, err
-		}
-	} else if err := s.listings.IncrementRaised(ctx, pledge.ProjectID, net); err != nil {
-		return nil, err
+	if !claimed {
+		return s.pledges.ByReference(ctx, pledge.Reference) // settled by a concurrent confirm
 	}
 	pledge.Status = domain.PledgeSuccess
 	pledge.FeePesewas = fee
 	pledge.NetPesewas = net
 	pledge.ConfirmedAt = now
-	s.notifyRecipient(ctx, pledge)
+	pledge.GrantPending = true
+	return s.finishGrant(ctx, pledge)
+}
+
+// finishGrant credits the recipient a settled pledge still owes (a confirm
+// whose credit write failed after the claim), then clears grantPending:
+// donations bump the artist's donation total; campaign and project pledges
+// bump the project's raised total. The credit is keyed on the reference, so
+// a re-run never counts the pledge twice; the recipient is notified by the
+// run that credited it. A record owing nothing is returned as-is.
+func (s *PaymentsService) finishGrant(ctx context.Context, pledge *domain.Pledge) (*domain.Pledge, error) {
+	if !pledge.GrantPending {
+		return pledge, nil
+	}
+	credit := s.listings.IncrementRaised
+	if pledge.Kind == domain.PledgeKindDonation {
+		credit = s.listings.IncrementDonations
+	}
+	credited, err := credit(ctx, pledge.ProjectID, pledge.Reference, pledge.NetPesewas)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.pledges.MarkGranted(ctx, pledge.Reference); err != nil {
+		return nil, err
+	}
+	pledge.GrantPending = false
+	if credited {
+		s.notifyRecipient(ctx, pledge)
+	}
 	return pledge, nil
 }
 
@@ -467,13 +647,14 @@ func sortPledgesNewestFirst(pledges []domain.Pledge) {
 
 // FeeTotals sums the platform-fee split over successful pledges, for the
 // steward ledger: gross charged, fee kept by the platform, net to projects.
+// Simulated (dev-mode) pledges moved no money and are left out (P32).
 func (s *PaymentsService) FeeTotals(ctx context.Context) (gross, fee, net int64, err error) {
 	pledges, err := s.pledges.All(ctx)
 	if err != nil {
 		return 0, 0, 0, err
 	}
 	for _, p := range pledges {
-		if p.Status != domain.PledgeSuccess {
+		if p.Status != domain.PledgeSuccess || p.Simulated {
 			continue
 		}
 		gross += p.AmountPesewas

@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/oguaa/backend/internal/domain"
 )
@@ -30,6 +31,11 @@ func (h *Handler) PushSubscribe(w http.ResponseWriter, r *http.Request) {
 	}
 	if m == nil {
 		fail(w, http.StatusUnauthorized, msgSignInToContinue)
+		return
+	}
+	// Registrations are capped per member server-side; this also bounds how
+	// fast one account can churn tokens into the safety-alert fan-out.
+	if h.rateLimited(w, r, "pushsub:"+clientKey(r), 20, time.Hour) {
 		return
 	}
 	var in pushSubscribeInput

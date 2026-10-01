@@ -39,23 +39,34 @@ func (s *Service) MapData(ctx context.Context) (domain.MapPayload, error) {
 		}
 	}
 
-	// Points from approved listings (business / property / event / incident / lostfound).
+	// Points from approved listings (business / property / event / incident /
+	// lostfound) that are still live: closed incidents and notices, let
+	// properties and past events drop off the map.
 	approved, err := s.listings.Find(ctx, domain.ListingFilter{Status: domain.StatusApproved})
 	if err != nil {
 		return payload, err
 	}
+	today := time.Now().UTC().Format("2006-01-02")
 	for i := range approved {
+		if !listingIsLive(approved[i], today) {
+			continue
+		}
 		if pt, ok := listingPoint(approved[i], quarterName); ok {
 			payload.Points = append(payload.Points, pt)
 		}
 	}
 
-	// Points from orgs that carry coordinates (institutions/schools/landmarks/services).
+	// Points from verified orgs that carry coordinates
+	// (institutions/schools/landmarks/services). Unverified and revoked orgs are
+	// offline to the public (their detail page 404s), so they get no pin.
 	orgs, err := s.orgs.All(ctx)
 	if err != nil {
 		return payload, err
 	}
 	for i := range orgs {
+		if !orgs[i].Verified {
+			continue
+		}
 		if pt, ok := orgPoint(orgs[i]); ok {
 			payload.Points = append(payload.Points, pt)
 		}
@@ -92,6 +103,49 @@ func (s *Service) MapData(ctx context.Context) (domain.MapPayload, error) {
 		})
 	}
 	return payload, nil
+}
+
+// listingIsLive reports whether an approved listing is still current enough to
+// pin: resolved/recovered incidents, lost & found notices that are no longer
+// open, let properties and events that have finished all drop off the map.
+// today is "YYYY-MM-DD" (UTC).
+func listingIsLive(l domain.Listing, today string) bool {
+	switch l.Type {
+	case domain.TypeIncident:
+		st := asString(l.Details, "incidentStatus")
+		return st != domain.IncidentStatusResolved && st != domain.IncidentStatusRecovered
+	case domain.TypeLostFound:
+		st := asString(l.Details, "lfStatus")
+		return st == "" || st == domain.LostFoundStatusOpen
+	case domain.TypeProperty:
+		return asString(l.Details, "availability") != domain.PropertyAvailabilityLet
+	case domain.TypeEvent:
+		return !eventFinished(l.Details, today)
+	default:
+		return true
+	}
+}
+
+// eventFinished reports whether an event's last day (endsAt, else startsAt) is
+// before today. An event with no parseable date is kept.
+func eventFinished(details map[string]any, today string) bool {
+	last := datePart(asString(details, "endsAt"))
+	if last == "" {
+		last = datePart(asString(details, "startsAt"))
+	}
+	return last != "" && last < today
+}
+
+// datePart returns the "YYYY-MM-DD" prefix of a date or RFC3339 timestamp, or ""
+// when the value does not start with one.
+func datePart(v string) string {
+	if len(v) < 10 {
+		return ""
+	}
+	if _, err := time.Parse("2006-01-02", v[:10]); err != nil {
+		return ""
+	}
+	return v[:10]
 }
 
 // listingPoint maps an approved, located listing to a map point. It returns
@@ -167,7 +221,7 @@ func orgPointKind(k string) (kind, layer string) {
 		return "school", "institutions"
 	case "heritage":
 		return "landmark", "landmarks"
-	case "health", "emergency-service":
+	case "health", "health-service", "emergency-service", "security-service":
 		return "service", "services"
 	default: // faith, civic, cultural, traditional-authority, association, asafo, local-government
 		return "institution", "institutions"

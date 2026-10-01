@@ -22,23 +22,30 @@ func (r *SubscriptionRepo) Insert(ctx context.Context, s domain.Subscription) er
 
 func (r *SubscriptionRepo) ByReference(ctx context.Context, reference string) (*domain.Subscription, error) {
 	var s domain.Subscription
-	if err := r.c.FindOne(ctx, bson.M{"reference": reference}).Decode(&s); err != nil {
+	if err := r.c.FindOne(ctx, bson.M{fieldReference: reference}).Decode(&s); err != nil {
 		return nil, notFound("subscription", err)
 	}
 	return &s, nil
 }
 
-func (r *SubscriptionRepo) UpdateStatus(ctx context.Context, reference, status, at string) error {
-	set := bson.M{"status": status}
-	if status == domain.PledgeSuccess {
-		set["confirmedAt"] = at
+// MarkSuccess settles a subscription and its paid-until date in one
+// conditional write; see domain.SubscriptionRepository for the contract.
+func (r *SubscriptionRepo) MarkSuccess(ctx context.Context, reference, at, periodEnd, featuredUntil string) (bool, error) {
+	set := bson.M{fieldStatus: domain.PledgeSuccess, fieldConfirmedAt: at, "periodEnd": periodEnd, fieldGrantPending: true}
+	if featuredUntil != "" {
+		set[fieldFeaturedUntil] = featuredUntil
 	}
-	_, err := r.c.UpdateOne(ctx, bson.M{"reference": reference}, bson.M{"$set": set})
-	return err
+	return won(r.c.UpdateOne(ctx, unsettled(reference), bson.M{"$set": set}))
 }
 
-func (r *SubscriptionRepo) SetPeriodEnd(ctx context.Context, reference, until string) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"reference": reference}, bson.M{"$set": bson.M{"periodEnd": until}})
+// MarkGranted clears grantPending once the subscription's grant is applied.
+func (r *SubscriptionRepo) MarkGranted(ctx context.Context, reference string) error {
+	return markGranted(ctx, r.c, reference)
+}
+
+// MarkFailed records a failed payment unless the subscription already succeeded.
+func (r *SubscriptionRepo) MarkFailed(ctx context.Context, reference string) error {
+	_, err := r.c.UpdateOne(ctx, unsettled(reference), bson.M{"$set": bson.M{fieldStatus: domain.PledgeFailed}})
 	return err
 }
 
@@ -63,7 +70,7 @@ func (r *SubscriptionRepo) All(ctx context.Context) ([]domain.Subscription, erro
 func (r *SubscriptionRepo) ActiveByListing(ctx context.Context, listingID, now string) (bool, error) {
 	n, err := r.c.CountDocuments(ctx, bson.M{
 		"listingId": listingID,
-		"status":    domain.PledgeSuccess,
+		fieldStatus: domain.PledgeSuccess,
 		"periodEnd": bson.M{"$gt": now},
 	})
 	return n > 0, err

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -18,7 +17,7 @@ func (h *Handler) News(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeList(w, r, items)
+	writeList(w, r, h.svc.FilterBlockedNews(r.Context(), currentMember(r), items))
 }
 
 // NewsArticle (public) — one published article by slug.
@@ -54,13 +53,7 @@ func (h *Handler) SubmitNews(w http.ResponseWriter, r *http.Request) {
 	}
 	a, err := h.svc.SubmitNews(r.Context(), m.ID, in)
 	if err != nil {
-		var fb *domain.ForbiddenError
-		var nf *domain.NotFoundError
-		if errors.As(err, &fb) || errors.As(err, &nf) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, a)
@@ -128,7 +121,7 @@ func (h *Handler) AdminNewsCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	a, err := h.svc.CreateNews(r.Context(), authorID, authorName, in)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, a)
@@ -145,12 +138,7 @@ func (h *Handler) AdminNewsUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	a, err := h.svc.UpdateNews(r.Context(), r.PathValue("id"), in)
 	if err != nil {
-		var nf *domain.NotFoundError
-		if errors.As(err, &nf) {
-			h.handleErr(w, err)
-			return
-		}
-		fail(w, http.StatusBadRequest, err.Error())
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, a)
@@ -168,7 +156,7 @@ func (h *Handler) AdminNewsPublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.svc.SetNewsPublished(r.Context(), r.PathValue("id"), in.Publish); err != nil {
-		h.handleErr(w, err)
+		h.failInputOr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"published": in.Publish})

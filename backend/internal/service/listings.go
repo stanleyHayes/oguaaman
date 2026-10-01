@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -30,10 +31,33 @@ type OwnerEditInput struct {
 // project/incident/lostfound have their own flows.
 var ownerEditableTypes = validTypes
 
+// systemDetailKeys are the details keys the platform and its curators
+// maintain, listed by the listing types that use them. Members can never set
+// one: Submit strips them all, whatever the type. An owner's edit can never
+// write one either, and always carries the stored values over, so a content
+// edit can't wipe a paid entitlement, a payment counter or curated festival
+// data. Add a key here whenever new code starts keeping state in details.
+var systemDetailKeys = map[string]bool{
+	// business / property: paid plan entitlements and placements.
+	"subscribedUntil": true, "plan": true, "promotedUntil": true, "featuredUntil": true,
+	// business: the review aggregate written by SetRating (JSON-LD aggregateRating).
+	"ratingAvg": true, "ratingCount": true,
+	// artist: the home-page spotlight and the tip-jar counters kept by IncrementDonations.
+	"spotlight": true, "donationsNetPesewas": true, "donorCount": true,
+	// event: festival archive data maintained by curators (festivals.go, AnchorEvent).
+	"anchorFestival": true, "festival": true, "edition": true, "recap": true, "programme": true,
+	// memorial: counters and the curator-granted keeper.
+	"candles": true, "rememberedByCount": true, "keeperId": true,
+	// project / campaign: pledge counters and the campaign marker.
+	"raisedPesewas": true, "backers": true, "campaign": true,
+	// incident / lost & found: the operational lifecycles and alert bookkeeping.
+	"incidentStatus": true, "statusHistory": true, "broadcastAt": true, "ringAt": true, "lfStatus": true,
+	"postReviewDueAt": true, "postReviewedAt": true, "postReviewedBy": true,
+}
+
 // editableDetailsKeys whitelists the details vocabulary a creator may write.
-// Everything else is stripped — system keys (candles, raisedPesewas, backers,
-// subscribedUntil, incident/lostfound lifecycle, spotlight…) can never
-// arrive here because those types/keys are excluded.
+// Everything else in an edit is ignored; stored keys outside the whitelist
+// (system keys included) are carried over untouched.
 var editableDetailsKeys = map[string]map[string]bool{
 	domain.TypeArtist:      {"actName": true, "genres": true, "bio": true, "link": true, "streamingLinks": true, "socials": true, "booking": true, "releases": true},
 	domain.TypeBusiness:    {"category": true, "categories": true, "description": true, "address": true, "openingHours": true, "services": true, "contact": true},
@@ -46,7 +70,7 @@ var editableDetailsKeys = map[string]map[string]bool{
 }
 
 // urlDetailKeys are scalar details values that must pass the URL guard.
-var urlDetailKeys = map[string]bool{"applyUrl": true, "link": true, "booking": true, "bookingUrl": true}
+var urlDetailKeys = map[string]bool{"applyUrl": true, "link": true, "booking": true, "bookingUrl": true, "safeguardingPolicyUrl": true}
 
 // linkListKeys are details arrays of {label,url}-ish objects whose url fields
 // need the same guard (streamingLinks/socials/contact/gallery).
@@ -55,6 +79,8 @@ var linkListKeys = map[string]bool{"streamingLinks": true, "socials": true, "con
 // majorEditKeys are details fields whose change is significant enough to
 // re-queue a previously-approved listing for curator review (spec §8.2/§17.3).
 // Minor edits (links, opening hours, contact info, booking URL) stay live.
+// The opportunity eligibility and safeguarding terms are major: a mentorship
+// must never quietly open to younger children or drop its safeguarding policy.
 var majorEditKeys = map[string]bool{
 	"bio": true, "description": true, "lifeStory": true, "epitaph": true,
 	"releases": true,
@@ -66,9 +92,258 @@ var majorEditKeys = map[string]bool{
 	"highlights": true, "featuredGuests": true, "ageGuidance": true,
 	"pricePesewas": true, "pricePeriod": true, "depositPesewas": true,
 	"bedrooms": true, "bathrooms": true, "furnished": true, "amenities": true,
+	"kind": true, "safeguardingPolicyUrl": true, "minAge": true, "maxAge": true, "guardianConsentRequired": true,
 }
 
+// guardDetailValue applies the URL guard a details key needs, if any.
+func guardDetailValue(key string, v any) any {
+	switch {
+	case urlDetailKeys[key]:
+		if s, ok := v.(string); ok {
+			return safeURL(s)
+		}
+	case linkListKeys[key]:
+		return sanitizeLinkList(v)
+	}
+	return v
+}
+
+// submittedDetails copies a new listing's details without any system key and,
+// except for property (whose cleaner validates links strictly and reports bad
+// ones), with every link URL-guarded.
+func submittedDetails(typ string, in map[string]any) map[string]any {
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		if systemDetailKeys[k] {
+			continue
+		}
+		if typ != domain.TypeProperty {
+			v = guardDetailValue(k, v)
+		}
+		out[k] = v
+	}
+	return out
+}
+
+// ownerEditedDetails merges an owner's edit into the stored details. The edit
+// fully replaces the whitelisted keys (one the client omits is cleared), while
+// every stored key outside the whitelist — system counters, entitlements,
+// editorial and festival data, keys from other clients — is carried over.
+func ownerEditedDetails(typ string, stored, edit map[string]any) map[string]any {
+	allow := editableDetailsKeys[typ]
+	details := make(map[string]any, len(stored)+len(edit))
+	for k, v := range stored {
+		if !allow[k] {
+			details[k] = v
+		}
+	}
+	for k, v := range edit {
+		if allow[k] {
+			details[k] = guardDetailValue(k, v)
+		}
+	}
+	return details
+}
+
+// carrySystemDetails copies every system key of the stored details onto
+// details (used after a type cleaner rebuilt the map from scratch).
+func carrySystemDetails(details, stored map[string]any) {
+	for k, v := range stored {
+		if systemDetailKeys[k] {
+			details[k] = v
+		}
+	}
+}
+
+// canonicalDetail rewrites a details value into the shape a JSON request
+// decodes to — map[string]any, []any, float64, string, bool or nil — so a value
+// read back from MongoDB (bson.A arrays, bson.D documents, int32/int64 numbers,
+// typed seed structs) compares equal to the same value arriving in an HTTP
+// payload. Empty strings, lists and objects become nil: an absent key and an
+// empty one mean the same thing to a reader.
+func canonicalDetail(v any) any {
+	return canonicalValue(reflect.ValueOf(v))
+}
+
+func canonicalValue(rv reflect.Value) any {
+	rv = indirectPropertyValue(rv)
+	if !rv.IsValid() {
+		return nil
+	}
+	switch rv.Kind() {
+	case reflect.String:
+		if rv.Len() == 0 {
+			return nil
+		}
+		return rv.String()
+	case reflect.Bool:
+		return rv.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(rv.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return float64(rv.Uint())
+	case reflect.Float32, reflect.Float64:
+		return rv.Float()
+	case reflect.Map:
+		return canonicalMap(rv)
+	case reflect.Slice, reflect.Array:
+		return canonicalSlice(rv)
+	case reflect.Struct:
+		return canonicalStruct(rv)
+	default:
+		return rv.Interface()
+	}
+}
+
+func canonicalMap(rv reflect.Value) any {
+	if rv.Len() == 0 {
+		return nil
+	}
+	out := make(map[string]any, rv.Len())
+	iter := rv.MapRange()
+	for iter.Next() {
+		out[fmt.Sprint(iter.Key().Interface())] = canonicalValue(iter.Value())
+	}
+	return out
+}
+
+func canonicalSlice(rv reflect.Value) any {
+	if rv.Len() == 0 {
+		return nil
+	}
+	if isKeyValueSlice(rv) { // bson.D — an ordered document
+		out := make(map[string]any, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			e := rv.Index(i)
+			out[e.FieldByName("Key").String()] = canonicalValue(e.FieldByName("Value"))
+		}
+		return out
+	}
+	out := make([]any, rv.Len())
+	for i := range out {
+		out[i] = canonicalValue(rv.Index(i))
+	}
+	return out
+}
+
+// canonicalStruct turns a typed value (e.g. a seeded []SocialLink) into the
+// generic JSON shape by round-tripping it through encoding/json.
+func canonicalStruct(rv reflect.Value) any {
+	raw, err := json.Marshal(rv.Interface())
+	if err != nil {
+		return rv.Interface()
+	}
+	var generic any
+	if err := json.Unmarshal(raw, &generic); err != nil {
+		return rv.Interface()
+	}
+	return canonicalValue(reflect.ValueOf(generic))
+}
+
+// isKeyValueSlice reports whether rv is a slice of {Key string; Value any}
+// structs — the Mongo driver's ordered-document type — without importing it.
+func isKeyValueSlice(rv reflect.Value) bool {
+	elem := rv.Type().Elem()
+	if elem.Kind() != reflect.Struct {
+		return false
+	}
+	key, hasKey := elem.FieldByName("Key")
+	_, hasValue := elem.FieldByName("Value")
+	return hasKey && hasValue && key.Type.Kind() == reflect.String
+}
+
+// majorDetailsChange reports whether any major content key differs between
+// the stored and the edited details, comparing canonical forms.
+func majorDetailsChange(baseline, details map[string]any) bool {
+	for k := range majorEditKeys {
+		if !reflect.DeepEqual(canonicalDetail(baseline[k]), canonicalDetail(details[k])) {
+			return true
+		}
+	}
+	return false
+}
+
+// detailStrings collects the text in a details map (nested lists and objects
+// included) for the content screen. Bounded so a huge payload costs little.
+func detailStrings(details map[string]any) []string {
+	out := []string{}
+	var walk func(v any)
+	walk = func(v any) {
+		if len(out) >= 200 {
+			return
+		}
+		switch x := canonicalDetail(v).(type) {
+		case string:
+			out = append(out, x)
+		case []any:
+			for _, item := range x {
+				walk(item)
+			}
+		case map[string]any:
+			for _, item := range x {
+				walk(item)
+			}
+		}
+	}
+	for _, v := range details {
+		walk(v)
+	}
+	return out
+}
+
+// Owner-edit audit actions (ModerationRecord.Action).
+const (
+	editKindMinor = "owner-edit-minor"
+	editKindMajor = "owner-edit-major"
+)
+
 func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, listingID string, in OwnerEditInput) (*domain.Listing, error) {
+	l, err := s.editableListing(ctx, actor, listingID)
+	if err != nil {
+		return nil, err
+	}
+	title := strings.TrimSpace(in.Title)
+	if len(title) < 2 || len(title) > 160 {
+		return nil, fmt.Errorf("title must be 2–160 characters")
+	}
+	details, err := ownerEditDetails(l, in.Details)
+	if err != nil {
+		return nil, err
+	}
+	// Screen only what the edit introduces: text a curator already approved
+	// must not re-queue the listing on every later edit.
+	flags := newScreenReasons(
+		ScreenTerms(append([]string{l.Title}, detailStrings(l.Details)...)...),
+		ScreenTerms(append([]string{title}, detailStrings(details)...)...),
+	)
+	now := time.Now().UTC().Format(time.RFC3339)
+	status, submittedAt, editKind := ownerEditStatus(l, title, details, len(flags) > 0, now)
+
+	if err := s.listings.OwnerUpdate(ctx, l.ID, title, safeURL(strings.TrimSpace(in.CoverImageURL)), details, status, submittedAt); err != nil {
+		return nil, err
+	}
+	rec := domain.ModerationRecord{
+		ID:          newID(domain.PrefixModeration),
+		ListingID:   l.ID,
+		ModeratorID: actor.ID,
+		Action:      editKind,
+		CreatedAt:   now,
+	}
+	if len(flags) > 0 {
+		if err := s.listings.SetScreenFlags(ctx, l.ID, flags); err != nil {
+			return nil, err
+		}
+		rec.Reason = "content screen: " + strings.Join(flags, ", ")
+	}
+	if err := s.mod.Insert(ctx, rec); err != nil {
+		return nil, err
+	}
+	return s.listings.GetByID(ctx, l.ID)
+}
+
+// editableListing loads a listing the actor may edit: its owner, or a
+// curator or steward.
+func (s *Service) editableListing(ctx context.Context, actor *domain.Member, listingID string) (*domain.Listing, error) {
 	if actor == nil {
 		return nil, &domain.ForbiddenError{Reason: "a signed-in member is required to edit a listing"}
 	}
@@ -82,63 +357,22 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 	if actor.ID != l.OwnerID && actor.Role != domain.RoleCurator && actor.Role != domain.RoleSteward {
 		return nil, &domain.ForbiddenError{Reason: "only the owner can edit this listing"}
 	}
-	title := strings.TrimSpace(in.Title)
-	if len(title) < 2 || len(title) > 160 {
-		return nil, fmt.Errorf("title must be 2–160 characters")
-	}
+	return l, nil
+}
 
-	// Full-replace details, whitelisted per type + URL-guarded.
-	details := map[string]any{}
-	allow := editableDetailsKeys[l.Type]
-	for k, v := range in.Details {
-		if !allow[k] {
-			continue
-		}
-		switch {
-		case urlDetailKeys[k]:
-			if s, ok := v.(string); ok {
-				v = safeURL(s)
-			}
-		case linkListKeys[k]:
-			v = sanitizeLinkList(v)
-		}
-		details[k] = v
+// ownerEditDetails builds the details an edit stores: the whitelisted keys
+// from the edit (URL-guarded, cleaned and validated for the type, the
+// mentorship safeguarding gate included) on top of everything the owner
+// can't edit, with every system key carried over from the stored listing.
+func ownerEditDetails(l *domain.Listing, edit map[string]any) (map[string]any, error) {
+	details, err := cleanTypedDetails(l.Type, ownerEditedDetails(l.Type, l.Details, edit))
+	if err != nil {
+		return nil, err
 	}
-	if l.Type == domain.TypeProperty {
-		details, err = cleanPropertyDetails(details)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if l.Type == domain.TypeArtist {
-		details = cleanArtistDetails(details)
-	}
-	if l.Type == domain.TypeEvent {
-		if err := validateEventRange(details); err != nil {
-			return nil, err
-		}
-		details, err = cleanEventDetails(details)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if l.Type == domain.TypeBusiness || l.Type == domain.TypeProperty {
-		// Plan entitlement is system-managed and must survive a creator's full
-		// content replacement. Property subscriptions are not sold yet, but
-		// retaining the keys keeps the generic editor safe for future plans.
-		for _, sys := range []string{"subscribedUntil", "plan"} {
-			if cur, ok := l.Details[sys]; ok {
-				details[sys] = cur
-			}
-		}
-	}
+	// A type cleaner may rebuild the map (property does), so restore the
+	// system keys afterwards.
+	carrySystemDetails(details, l.Details)
 	if l.Type == domain.TypeMemorial {
-		// System counters and the keeper link must survive the full-replace edit.
-		for _, sys := range []string{"candles", "rememberedByCount", "keeperId"} {
-			if cur, ok := l.Details[sys]; ok {
-				details[sys] = cur
-			}
-		}
 		// Remembrance flags are editable (whitelisted) but an edit that omits
 		// them must not silently switch the yearly remembrance off — carry the
 		// existing value over (spec §8.11: default is to remember).
@@ -150,67 +384,80 @@ func (s *Service) UpdateOwnerListing(ctx context.Context, actor *domain.Member, 
 			}
 		}
 	}
+	return details, nil
+}
 
-	// Status policy (spec §8.2/§17.3):
-	//   • draft/rejected/unpublished → pending (re-queue)
-	//   • pending → stays pending
-	//   • approved → stays live for minor edits; re-queues for major ones.
-	//
-	// A "major" edit is a title change or a change to significant content keys
-	// (bio, description, lifeStory, etc. — see majorEditKeys). Link, hours,
-	// contact and image changes are always minor and stay live.
-	status := l.Status
-	submittedAt := ""
-	editKind := "owner-edit-minor"
-	now := time.Now().UTC().Format(time.RFC3339)
-	switch status {
+// cleanTypedDetails runs the per-type cleaners and validators shared by
+// Submit and the owner edit.
+func cleanTypedDetails(typ string, details map[string]any) (map[string]any, error) {
+	switch typ {
+	case domain.TypeProperty:
+		return cleanPropertyDetails(details)
+	case domain.TypeArtist:
+		return cleanArtistDetails(details), nil
+	case domain.TypeEvent:
+		if err := validateEventRange(details); err != nil {
+			return nil, err
+		}
+		return cleanEventDetails(details)
+	case domain.TypeOpportunity:
+		if err := validateOpportunityDetails(details); err != nil {
+			return nil, err
+		}
+	}
+	return details, nil
+}
+
+// ownerEditStatus applies the status policy (spec §8.2/§17.3):
+//   - draft/rejected/unpublished → pending (re-queue)
+//   - pending → stays pending
+//   - approved → stays live for minor edits; re-queues for major ones.
+//
+// A "major" edit is a title change, a change to significant content keys (bio,
+// description, lifeStory, the opportunity safeguarding terms… — see
+// majorEditKeys) or new text the content screen flags. Link, hours, contact and
+// image changes are otherwise minor and stay live. It returns the new status,
+// the new submittedAt ("" = unchanged) and the audit action.
+func ownerEditStatus(l *domain.Listing, title string, details map[string]any, flagged bool, now string) (string, string, string) {
+	switch l.Status {
 	case domain.StatusApproved:
-		// Check whether the edit is major (title change or major content key).
-		isMajor := strings.TrimSpace(in.Title) != l.Title
-		if !isMajor {
-			baseline := l.Details
-			if l.Type == domain.TypeProperty {
-				// Mongo may decode stored arrays/numbers with different concrete
-				// Go types than an HTTP payload. Compare canonical property shapes
-				// so an unchanged amenities list is not treated as a major edit.
-				if cleaned, cleanErr := cleanPropertyDetails(l.Details); cleanErr == nil {
-					baseline = cleaned
-				}
-			}
-			for k := range majorEditKeys {
-				if !reflect.DeepEqual(baseline[k], details[k]) {
-					isMajor = true
-					break
-				}
-			}
+		if title == l.Title && !flagged && !majorDetailsChange(approvedBaseline(l), details) {
+			return l.Status, "", editKindMinor
 		}
-		if isMajor {
-			status = domain.StatusPending
-			submittedAt = now
-			editKind = "owner-edit-major"
-		}
+		return domain.StatusPending, now, editKindMajor
 	case domain.StatusPending:
-		// already queued; keep pending.
+		return l.Status, "", editKindMinor
 	default:
-		// draft/rejected/unpublished — re-queue.
-		status = domain.StatusPending
-		submittedAt = now
-		editKind = "owner-edit-major"
+		return domain.StatusPending, now, editKindMajor
 	}
+}
 
-	if err := s.listings.OwnerUpdate(ctx, l.ID, title, safeURL(strings.TrimSpace(in.CoverImageURL)), details, status, submittedAt); err != nil {
-		return nil, err
+// approvedBaseline is the stored details to compare an edit against. Property
+// details are cleaned first so the canonical shapes (deduped amenities,
+// normalised enums) line up with the cleaned edit.
+func approvedBaseline(l *domain.Listing) map[string]any {
+	if l.Type == domain.TypeProperty {
+		if cleaned, err := cleanPropertyDetails(l.Details); err == nil {
+			return cleaned
+		}
 	}
-	if err := s.mod.Insert(ctx, domain.ModerationRecord{
-		ID:          newID(domain.PrefixModeration),
-		ListingID:   l.ID,
-		ModeratorID: actor.ID,
-		Action:      editKind,
-		CreatedAt:   now,
-	}); err != nil {
-		return nil, err
+	return l.Details
+}
+
+// newScreenReasons returns the screen reasons in after that before did not
+// already have.
+func newScreenReasons(before, after ScreenVerdict) []string {
+	seen := map[string]bool{}
+	for _, r := range before.Reasons {
+		seen[r] = true
 	}
-	return s.listings.GetByID(ctx, l.ID)
+	var out []string
+	for _, r := range after.Reasons {
+		if !seen[r] {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // sanitizeLinkList URL-guards every "url" field of a [{label,url}…] details

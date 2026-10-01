@@ -1,10 +1,23 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 
+	"github.com/oguaa/backend/internal/domain"
 	"github.com/oguaa/backend/internal/service"
 )
+
+// planErr answers a failed plan write: a form problem is the curator's to fix
+// (400 with the reason), a missing plan is 404, anything else a server error.
+func (h *Handler) planErr(w http.ResponseWriter, err error) {
+	var ve *domain.ValidationError
+	if errors.As(err, &ve) {
+		fail(w, http.StatusBadRequest, ve.Error())
+		return
+	}
+	h.handleErr(w, err)
+}
 
 // ── subscription plans catalog (Creator plan §5) ─────────────────────────────
 
@@ -42,7 +55,7 @@ func (h *Handler) AdminCreatePlan(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := h.svc.CreatePlan(r.Context(), in)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		h.planErr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, p)
@@ -59,7 +72,7 @@ func (h *Handler) AdminUpdatePlan(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := h.svc.UpdatePlan(r.Context(), r.PathValue("id"), in)
 	if err != nil {
-		h.handleErr(w, err)
+		h.planErr(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, p)

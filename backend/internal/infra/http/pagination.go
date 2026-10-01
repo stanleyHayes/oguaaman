@@ -66,9 +66,11 @@ func pageParams(r *http.Request) (page, pageSize int, on bool) {
 // page yields an empty (non-nil) Items list rather than an error.
 func pageOf[T any](all []T, page, pageSize int) Page[T] {
 	total := len(all)
-	start := (page - 1) * pageSize
-	if start > total {
-		start = total
+	// Compare page against the page count before multiplying: a huge ?page
+	// would otherwise overflow (page-1)*pageSize into a negative slice bound.
+	start := total
+	if pageSize > 0 && page >= 1 && page-1 <= total/pageSize {
+		start = min((page-1)*pageSize, total)
 	}
 	end := start + pageSize
 	if end > total {

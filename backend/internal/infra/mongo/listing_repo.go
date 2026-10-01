@@ -2,6 +2,8 @@ package mongo
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -11,16 +13,46 @@ import (
 	"github.com/oguaa/backend/internal/domain"
 )
 
+// MongoDB operators used more than once in this file.
+const (
+	opExists = "$exists"
+	opUnset  = "$unset"
+)
+
 type ListingRepo struct {
 	c     *mongo.Collection
 	views *mongo.Collection
+	// viewsTTL makes sure the listing_views expiry index exists before the
+	// first view is recorded by this process (see ensureViewsTTL).
+	viewsTTL *sync.Once
 }
+
+// listingViewTTL is how long a daily unique-view record is kept. The monthly
+// view KPIs only read the current month, so older records are dead weight —
+// and without an expiry an anonymous caller could grow the collection forever.
+const listingViewTTL = 30 * 24 * time.Hour
 
 func NewListingRepo(db *mongo.Database) *ListingRepo {
 	return &ListingRepo{
-		c:     db.Collection(collListings),
-		views: db.Collection(collListingViews),
+		c:        db.Collection(collListings),
+		views:    db.Collection(collListingViews),
+		viewsTTL: &sync.Once{},
 	}
+}
+
+// ensureViewsTTL creates the TTL index that expires listing_views records
+// listingViewTTL after they were written. Creating an existing index is a
+// no-op, so every process may do it once; failure only means records linger,
+// so it never fails the request that triggered it.
+func (r *ListingRepo) ensureViewsTTL(ctx context.Context) {
+	r.viewsTTL.Do(func() {
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		defer cancel()
+		_, _ = r.views.Indexes().CreateOne(ctx, mongo.IndexModel{
+			Keys:    bson.D{{Key: "at", Value: 1}},
+			Options: options.Index().SetExpireAfterSeconds(int32(listingViewTTL / time.Second)),
+		})
+	})
 }
 
 func (r *ListingRepo) Find(ctx context.Context, f domain.ListingFilter) ([]domain.Listing, error) {
@@ -49,7 +81,7 @@ func (r *ListingRepo) Find(ctx context.Context, f domain.ListingFilter) ([]domai
 			// Exclude lapsed placements: keep those with no expiry or an expiry still in the future.
 			q["$or"] = []bson.M{
 				{"featuredUntil": ""},
-				{"featuredUntil": bson.M{"$exists": false}},
+				{"featuredUntil": bson.M{opExists: false}},
 				{"featuredUntil": bson.M{"$gte": f.Now}},
 			}
 		}
@@ -99,18 +131,64 @@ func (r *ListingRepo) UpdateStatus(ctx context.Context, id, status, reviewedBy, 
 	set := bson.M{"status": status, "reviewedById": reviewedBy, "reviewedAt": at}
 	unset := bson.M{}
 	if status == domain.StatusApproved {
+		// Approval publishes the listing and clears every "needs review"
+		// marker. A reason typed while approving is not a rejection reason —
+		// $set and $unset on the same path would also conflict in MongoDB.
 		set["publishedAt"] = at
 		unset["rejectionReason"] = ""
-	}
-	if reason != "" {
+		unset["held"] = ""
+		unset["screenFlags"] = ""
+	} else if reason != "" {
 		set["rejectionReason"] = reason
 	}
 	update := bson.M{"$set": set}
 	if len(unset) > 0 {
-		update["$unset"] = unset
+		update[opUnset] = unset
 	}
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, update)
 	return err
+}
+
+// HoldForReview withdraws a listing from public view pending curator review.
+func (r *ListingRepo) HoldForReview(ctx context.Context, id, at string) error {
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"status": domain.StatusPending, "held": true, "submittedAt": at,
+	}})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "listing"}
+	}
+	return nil
+}
+
+// SetScreenFlags records the content screen's reasons on a listing.
+func (r *ListingRepo) SetScreenFlags(ctx context.Context, id string, flags []string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"screenFlags": flags}})
+	return err
+}
+
+// ClaimIncidentAlert atomically marks an incident alert as sent: the update
+// only matches while details.<alert>At is unset, so exactly one caller wins.
+func (r *ListingRepo) ClaimIncidentAlert(ctx context.Context, listingID, alert, at string) (bool, error) {
+	var field string
+	switch alert {
+	case domain.IncidentAlertBroadcast:
+		field = "details.broadcastAt"
+	case domain.IncidentAlertRing:
+		field = "details.ringAt"
+	default:
+		return false, fmt.Errorf("unknown incident alert %q", alert)
+	}
+	res, err := r.c.UpdateOne(ctx,
+		bson.M{"_id": listingID, "type": domain.TypeIncident, field: bson.M{opExists: false}},
+		bson.M{"$set": bson.M{field: at}},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount > 0, nil
 }
 
 // OwnerUpdate applies a creator's content edit in one $set (see the interface
@@ -124,13 +202,81 @@ func (r *ListingRepo) OwnerUpdate(ctx context.Context, id, title, coverImageURL 
 	return err
 }
 
+// AddTribute appends a tribute while the memorial holds fewer than
+// MaxTributesPerMemorial. The cap is part of the update filter (the element at
+// index cap-1 must not exist), so concurrent posts cannot overshoot it.
 func (r *ListingRepo) AddTribute(ctx context.Context, listingID string, t domain.Tribute) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$push": bson.M{"tributes": t}})
-	return err
+	full := fmt.Sprintf("tributes.%d", domain.MaxTributesPerMemorial-1)
+	res, err := r.c.UpdateOne(ctx,
+		bson.M{"_id": listingID, full: bson.M{opExists: false}},
+		bson.M{"$push": bson.M{"tributes": t}},
+	)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		if n, cerr := r.c.CountDocuments(ctx, bson.M{"_id": listingID}); cerr == nil && n == 0 {
+			return &domain.NotFoundError{Entity: "memorial"}
+		}
+		return &domain.ValidationError{Message: "This memorial has reached its limit of tributes."}
+	}
+	return nil
+}
+
+// SetTributeStatus changes one embedded tribute's visibility in place.
+func (r *ListingRepo) SetTributeStatus(ctx context.Context, listingID, tributeID, status string) error {
+	update := bson.M{"$set": bson.M{"tributes.$.status": status}}
+	if status == "" {
+		update = bson.M{opUnset: bson.M{"tributes.$.status": ""}}
+	}
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID, "tributes.id": tributeID}, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "tribute"}
+	}
+	return nil
+}
+
+// GetByTributeID returns the memorial holding the tribute.
+func (r *ListingRepo) GetByTributeID(ctx context.Context, tributeID string) (*domain.Listing, error) {
+	var l domain.Listing
+	if err := r.c.FindOne(ctx, bson.M{"tributes.id": tributeID}).Decode(&l); err != nil {
+		return nil, notFound("tribute", err)
+	}
+	return &l, nil
+}
+
+// RemoveStoreItem pulls one product or service out of a storefront catalog.
+func (r *ListingRepo) RemoveStoreItem(ctx context.Context, listingID, itemID string) error {
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$pull": bson.M{
+		"products": bson.M{"id": itemID},
+		"services": bson.M{"id": itemID},
+	}})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "listing"}
+	}
+	return nil
 }
 
 func (r *ListingRepo) SetFeatured(ctx context.Context, id string, featured bool, until string) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"featured": featured, "featuredUntil": until}})
+	update := bson.M{"$set": bson.M{"featured": featured, "featuredUntil": until}}
+	if !featured {
+		// Taking a listing off the front pages also ends any paid placement
+		// label, so a hidden listing is never shown as "Sponsored".
+		update["$unset"] = bson.M{"promotedUntil": ""}
+	}
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, update)
+	return err
+}
+
+// SetPromotedUntil records the end of a listing's paid placement (K18).
+func (r *ListingRepo) SetPromotedUntil(ctx context.Context, id, until string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"promotedUntil": until}})
 	return err
 }
 
@@ -175,7 +321,7 @@ func (r *ListingRepo) SetStorefront(ctx context.Context, id, handle string, sect
 	set := bson.M{"sections": sections, "photos": photos, "videos": videos, "products": products, "services": services}
 	update := bson.M{"$set": set}
 	if handle == "" {
-		update["$unset"] = bson.M{"handle": ""}
+		update[opUnset] = bson.M{"handle": ""}
 	} else {
 		set["handle"] = handle
 	}
@@ -198,28 +344,81 @@ func (r *ListingRepo) HandleTaken(ctx context.Context, handle, exceptID string) 
 	return n > 0, err
 }
 
+// MarkPostReviewed stamps the follow-up review of an auto-published post.
+func (r *ListingRepo) MarkPostReviewed(ctx context.Context, id, reviewerID, at string) error {
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+		"details.postReviewedAt": at, "details.postReviewedBy": reviewerID,
+	}})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "listing"}
+	}
+	return nil
+}
+
 // SetKeeperID assigns a keeper (family administrator) to a memorial listing.
 func (r *ListingRepo) SetKeeperID(ctx context.Context, id, keeperMemberID string) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"details.keeperId": keeperMemberID}})
 	return err
 }
 
-func (r *ListingRepo) IncrementRaised(ctx context.Context, listingID string, deltaPesewas int64) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{
+// ReassignOrgListings hands an institution's listings posted by a removed
+// team member to another owner (see domain.ListingRepository).
+func (r *ListingRepo) ReassignOrgListings(ctx context.Context, orgID, fromOwnerID, toOwnerID string) (int, error) {
+	if orgID == "" || fromOwnerID == "" {
+		return 0, nil
+	}
+	res, err := r.c.UpdateMany(ctx,
+		bson.M{"postedByOrgId": orgID, "ownerId": fromOwnerID},
+		bson.M{"$set": bson.M{"ownerId": toOwnerID}})
+	if err != nil {
+		return 0, err
+	}
+	return int(res.ModifiedCount), nil
+}
+
+// fieldPledgeCredits holds the references of the most recent contributions
+// credited to a listing (never decoded into domain.Listing). Crediting checks
+// and records the reference in the same single-document update, so a retried
+// grant of one payment is never counted twice.
+const fieldPledgeCredits = "pledgeCredits"
+
+// pledgeCreditsKept bounds that list: a payment's grant is retried within
+// Paystack's retry window, long before this many later contributions to the
+// same listing push its reference out.
+const pledgeCreditsKept = 500
+
+func (r *ListingRepo) IncrementRaised(ctx context.Context, listingID, reference string, deltaPesewas int64) (bool, error) {
+	return r.creditOnce(ctx, listingID, reference, bson.M{
 		"details.raisedPesewas": deltaPesewas,
 		"details.backers":       1,
-	}})
-	return err
+	})
 }
 
 // IncrementDonations adds a confirmed artist donation's net to the artist
 // listing's running total and bumps its donor count (Creator Monetization).
-func (r *ListingRepo) IncrementDonations(ctx context.Context, listingID string, deltaNetPesewas int64) error {
-	_, err := r.c.UpdateOne(ctx, bson.M{"_id": listingID}, bson.M{"$inc": bson.M{
+func (r *ListingRepo) IncrementDonations(ctx context.Context, listingID, reference string, deltaNetPesewas int64) (bool, error) {
+	return r.creditOnce(ctx, listingID, reference, bson.M{
 		"details.donationsNetPesewas": deltaNetPesewas,
 		"details.donorCount":          1,
-	}})
-	return err
+	})
+}
+
+// creditOnce applies inc to the listing unless reference was already
+// credited, recording it in the same write. It reports whether it applied.
+func (r *ListingRepo) creditOnce(ctx context.Context, listingID, reference string, inc bson.M) (bool, error) {
+	res, err := r.c.UpdateOne(ctx,
+		bson.M{"_id": listingID, fieldPledgeCredits: bson.M{"$ne": reference}},
+		bson.M{
+			"$inc":  inc,
+			"$push": bson.M{fieldPledgeCredits: bson.M{"$each": bson.A{reference}, "$slice": -pledgeCreditsKept}},
+		})
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount == 1, nil
 }
 
 // SetRating stores a listing's recomputed review aggregate.
@@ -231,26 +430,63 @@ func (r *ListingRepo) SetRating(ctx context.Context, listingID string, avg float
 	return err
 }
 
-func (r *ListingRepo) IncrementCandles(ctx context.Context, listingID string) (int, error) {
-	var l domain.Listing
+// candleKind marks the daily candle records IncrementCandles keeps in
+// listing_views. They share the collection (and its TTL) with page views but
+// are not views.
+const candleKind = "candle"
+
+// IncrementCandles lights a candle for visitorKey and returns the count. The
+// visitor's candles for the day are counted (n) on one "candle:"-prefixed
+// record in listing_views, and a candle counts only while n is under perDay,
+// so repeats past the allowance do not. Only the counter is projected back —
+// the memorial document (tributes and all) is not.
+func (r *ListingRepo) IncrementCandles(ctx context.Context, listingID, visitorKey string, perDay int) (int, error) {
+	r.ensureViewsTTL(ctx)
+	now := time.Now().UTC()
+	day := now.Format("2006-01-02")
+	key := "candle:" + listingID + ":" + day + ":" + visitorKey
+	if _, err := r.views.UpdateOne(ctx,
+		bson.M{"_id": key},
+		bson.M{"$setOnInsert": bson.M{"kind": candleKind, "day": day, "at": now, "n": 0}},
+		options.UpdateOne().SetUpsert(true),
+	); err != nil {
+		return 0, err
+	}
+	lit, err := won(r.views.UpdateOne(ctx,
+		bson.M{"_id": key, "n": bson.M{"$lt": perDay}},
+		bson.M{"$inc": bson.M{"n": 1}},
+	))
+	if err != nil {
+		return 0, err
+	}
+	inc := 0
+	if lit {
+		inc = 1
+	}
+	var out struct {
+		Details map[string]any `bson:"details"`
+	}
 	if err := r.c.FindOneAndUpdate(ctx,
 		bson.M{"_id": listingID},
-		bson.M{"$inc": bson.M{"details.candles": 1}},
-		options.FindOneAndUpdate().SetReturnDocument(options.After),
-	).Decode(&l); err != nil {
+		bson.M{"$inc": bson.M{"details.candles": inc}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{"details.candles": 1}),
+	).Decode(&out); err != nil {
 		return 0, notFound("listing", err)
 	}
-	return toInt(l.Details["candles"]), nil
+	return toInt(out.Details["candles"]), nil
 }
 
 // RecordView upserts a view doc keyed by "listingId:day:visitorKey". On first
 // insert (new unique daily view) it also increments the listing's viewCount.
+// Each record carries an "at" timestamp that the TTL index expires.
 func (r *ListingRepo) RecordView(ctx context.Context, listingID, visitorKey string) (bool, error) {
-	day := time.Now().UTC().Format("2006-01-02")
+	r.ensureViewsTTL(ctx)
+	now := time.Now().UTC()
+	day := now.Format("2006-01-02")
 	key := listingID + ":" + day + ":" + visitorKey
 	res, err := r.views.UpdateOne(ctx,
 		bson.M{"_id": key},
-		bson.M{"$setOnInsert": bson.M{"_id": key, "listingId": listingID, "day": day}},
+		bson.M{"$setOnInsert": bson.M{"_id": key, "listingId": listingID, "day": day, "at": now}},
 		options.UpdateOne().SetUpsert(true),
 	)
 	if err != nil {
@@ -286,11 +522,20 @@ func (r *ListingRepo) ViewsThisMonth(ctx context.Context, listingIDs []string) (
 	return int(n), err
 }
 
-// PlatformViewsThisMonth counts all unique daily view records in the current
-// calendar month across every listing.
+// platformViewsFilter matches the page-view records of the days start..end.
+// Candle records sit in the same collection with a day too; they are not views.
+func platformViewsFilter(start, end string) bson.M {
+	return bson.M{
+		"day":  bson.M{"$gte": start, "$lte": end},
+		"kind": bson.M{"$ne": candleKind},
+	}
+}
+
+// PlatformViewsThisMonth counts all unique daily page-view records in the
+// current calendar month across every listing.
 func (r *ListingRepo) PlatformViewsThisMonth(ctx context.Context) (int, error) {
 	start, end := monthDayRange()
-	n, err := r.views.CountDocuments(ctx, bson.M{"day": bson.M{"$gte": start, "$lte": end}})
+	n, err := r.views.CountDocuments(ctx, platformViewsFilter(start, end))
 	return int(n), err
 }
 
@@ -301,7 +546,7 @@ func (r *ListingRepo) AvgApprovalHours(ctx context.Context) (float64, error) {
 	cur, err := r.c.Find(ctx, bson.M{
 		"status":      "approved",
 		"reviewedAt":  bson.M{"$gte": cutoff},
-		"submittedAt": bson.M{"$exists": true, "$ne": ""},
+		"submittedAt": bson.M{opExists: true, "$ne": ""},
 	})
 	if err != nil {
 		return 0, err

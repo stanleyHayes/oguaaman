@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -136,6 +137,9 @@ func (m dirMembers) All(context.Context) ([]domain.Member, error) {
 type yesClaims struct{ stubClaims }
 
 func (yesClaims) IsManager(context.Context, string, string) (bool, error) { return true, nil }
+func (yesClaims) ActiveClaim(_ context.Context, memberID, orgID string) (*domain.OrgClaim, error) {
+	return &domain.OrgClaim{ID: "clm-" + memberID, OrgID: orgID, MemberID: memberID, Status: domain.ClaimApproved}, nil
+}
 
 // directiveSvc assembles a service wired with directive-aware doubles.
 func directiveSvc(dirs domain.DirectiveRepository, orgs domain.OrganizationRepository, members domain.MemberRepository, claims domain.OrgClaimRepository, notifs domain.NotificationRepository) *Service {
@@ -196,7 +200,7 @@ func TestCreateDirectiveForOrg_nonAuthorityForbidden(t *testing.T) {
 }
 
 func TestCreateDirectiveForOrg_nonManagerForbidden(t *testing.T) {
-	// stubClaims.IsManager == false, member is not a steward → requireManager fails.
+	// stubClaims has no claim, member is not a steward → requireManagerScope fails.
 	svc := directiveSvc(&fakeDirectives{}, authorityOrgs(), dirMembers{role: domain.RoleMember}, stubClaims{}, stubNotifs{})
 
 	_, err := svc.CreateDirectiveForOrg(context.Background(), "m-1", "cape-coast-fire", validDirectiveInput())
@@ -346,5 +350,47 @@ func TestCancelDirective_setsCancelled(t *testing.T) {
 	}
 	if d.Status != domain.DirectiveStatusCancelled {
 		t.Errorf("status = %q, want cancelled", d.Status)
+	}
+}
+
+// TestCreateDirective_rejectsUnparseableWindow: a bound that read-time expiry
+// cannot parse would make the directive live forever, so it is refused.
+func TestCreateDirective_rejectsUnparseableWindow(t *testing.T) {
+	cases := []struct {
+		name, from, until string
+	}{
+		{"date-only until", "", "2026-10-05"},
+		{"zone-less until", "", "2026-10-05T18:00"},
+		{"garbage from", "tomorrow", ""},
+		{"until before from", "2026-10-05T18:00:00Z", "2026-10-05T17:00:00Z"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dirs := &fakeDirectives{}
+			svc := directiveSvc(dirs, authorityOrgs(), dirMembers{role: domain.RoleMember}, yesClaims{}, stubNotifs{})
+			in := validDirectiveInput()
+			in.EffectiveFrom, in.EffectiveUntil = tc.from, tc.until
+			_, err := svc.CreateDirectiveForOrg(context.Background(), "m-nana", "cape-coast-fire", in)
+			var ve *domain.ValidationError
+			if !errors.As(err, &ve) {
+				t.Fatalf("want ValidationError, got %v", err)
+			}
+			if dirs.count() != 0 {
+				t.Error("nothing should be persisted")
+			}
+		})
+	}
+}
+
+func TestCreateDirective_normalisesWindowToUTC(t *testing.T) {
+	svc := directiveSvc(&fakeDirectives{}, authorityOrgs(), dirMembers{role: domain.RoleMember}, yesClaims{}, stubNotifs{})
+	in := validDirectiveInput()
+	in.EffectiveFrom, in.EffectiveUntil = "2026-10-05T10:00:00+01:00", "2026-10-05T20:00:00.000+01:00"
+	d, err := svc.CreateDirectiveForOrg(context.Background(), "m-nana", "cape-coast-fire", in)
+	if err != nil {
+		t.Fatalf("valid window: %v", err)
+	}
+	if d.EffectiveFrom != "2026-10-05T09:00:00Z" || d.EffectiveUntil != "2026-10-05T19:00:00Z" {
+		t.Errorf("window not normalised to UTC: %q – %q", d.EffectiveFrom, d.EffectiveUntil)
 	}
 }

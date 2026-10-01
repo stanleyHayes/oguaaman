@@ -1,8 +1,11 @@
-// Command seedcivic loads ONLY the civic collections (civic_behaviours,
-// civic_lessons) into the target Mongo — a targeted, non-destructive top-up
-// that never touches the other collections, unlike the full destructive
-// `seed` service. Point it at a database with MONGODB_URI / MONGODB_DB
-// (defaults: mongodb://localhost:27017 / oguaa).
+// Command seedcivic tops up the civic code (civic_behaviours, civic_lessons)
+// and the claimable institutions in a live database.
+//
+// Every write is insert-if-absent: nothing is dropped, and a row that already
+// exists — including one staff created or edited — is left exactly as it is.
+// Seeded town goals and outside agents are illustration (domain/seedclass.go)
+// and are never written here. Point it at a database with MONGODB_URI /
+// MONGODB_DB (defaults: mongodb://localhost:27017 / oguaa).
 package main
 
 import (
@@ -33,18 +36,13 @@ func main() {
 	}
 	defer func() { _ = client.Disconnect(context.Background()) }()
 
-	if err := mongox.SeedCivicOnly(ctx, db); err != nil {
+	civic, err := mongox.SeedCivicOnly(ctx, db)
+	if err != nil {
 		log.Fatalf("seed civic: %v", err)
-	}
-	if err := mongox.SeedGoalsOnly(ctx, db); err != nil {
-		log.Fatalf("seed goals: %v", err)
-	}
-	if err := mongox.SeedAgentsOnly(ctx, db); err != nil {
-		log.Fatalf("seed agents: %v", err)
 	}
 	added, err := mongox.SeedClaimableOrgsOnly(ctx, db)
 	if err != nil {
 		log.Fatalf("seed claimable orgs: %v", err)
 	}
-	log.Printf("civic + goals + agents seeded, %d claimable schools/places added, into db %q", added, dbName)
+	log.Printf("insert-if-absent top-up into db %q: %d civic documents and %d claimable schools/places added; existing rows untouched", dbName, civic, added)
 }

@@ -9,14 +9,22 @@ import (
 
 func f64(v float64) *float64 { return &v }
 
-// mapOrgs is an OrganizationRepository returning a fixed set (only All is used).
+// mapOrgs is an OrganizationRepository returning a fixed set (All and BySlug).
 type mapOrgs struct{ items []domain.Organization }
 
 func (m mapOrgs) All(context.Context) ([]domain.Organization, error) { return m.items, nil }
 func (mapOrgs) ByKind(context.Context, string) ([]domain.Organization, error) {
 	return nil, nil
 }
-func (mapOrgs) BySlug(context.Context, string) (*domain.Organization, error)        { return nil, nil }
+func (m mapOrgs) BySlug(_ context.Context, slug string) (*domain.Organization, error) {
+	for i := range m.items {
+		if m.items[i].Slug == slug {
+			o := m.items[i]
+			return &o, nil
+		}
+	}
+	return nil, &domain.NotFoundError{Entity: "organization"}
+}
 func (mapOrgs) ByID(context.Context, string) (*domain.Organization, error)          { return nil, nil }
 func (mapOrgs) Create(context.Context, domain.Organization) error                   { return nil }
 func (mapOrgs) SetVerified(context.Context, string, bool, string) error             { return nil }
@@ -37,11 +45,30 @@ func TestMapDataAggregates(t *testing.T) {
 		{ID: "b2", Slug: "nocoord", Type: domain.TypeBusiness, Status: domain.StatusApproved, Title: "No pin"},
 		// Located, but a type the map does not pin.
 		{ID: "a1", Slug: "artist", Type: domain.TypeArtist, Status: domain.StatusApproved, Title: "Artist", Latitude: f64(5.1), Longitude: f64(-1.2)},
+		// Lifecycle: closed or finished listings drop off the map.
+		{ID: "i-done", Slug: "old-fire", Type: domain.TypeIncident, Status: domain.StatusApproved, Title: "Old fire",
+			Latitude: f64(5.1085), Longitude: f64(-1.2471), Details: map[string]any{"severity": "critical", "incidentStatus": "recovered"}},
+		{ID: "lf-open", Slug: "lost-goat", Type: domain.TypeLostFound, Status: domain.StatusApproved, Title: "Lost goat",
+			Latitude: f64(5.1), Longitude: f64(-1.25), Details: map[string]any{"lfStatus": "open"}},
+		{ID: "lf-reunited", Slug: "kofi", Type: domain.TypeLostFound, Status: domain.StatusApproved, Title: "Missing: Kofi",
+			Latitude: f64(5.1), Longitude: f64(-1.25), Details: map[string]any{"lfStatus": "reunited"}},
+		{ID: "p-let", Slug: "let-flat", Type: domain.TypeProperty, Status: domain.StatusApproved, Title: "Let flat",
+			Latitude: f64(5.119), Longitude: f64(-1.276), Details: map[string]any{"availability": "let"}},
+		{ID: "e-past", Slug: "past", Type: domain.TypeEvent, Status: domain.StatusApproved, Title: "Past event",
+			Latitude: f64(5.1), Longitude: f64(-1.24), Details: map[string]any{"startsAt": "2020-09-05"}},
+		{ID: "e-running", Slug: "running", Type: domain.TypeEvent, Status: domain.StatusApproved, Title: "Multi-day event",
+			Latitude: f64(5.1), Longitude: f64(-1.24), Details: map[string]any{"startsAt": "2020-09-05T10:00:00Z", "endsAt": "2999-01-01T00:00:00Z"}},
+		{ID: "e-next", Slug: "next", Type: domain.TypeEvent, Status: domain.StatusApproved, Title: "Next event",
+			Latitude: f64(5.1), Longitude: f64(-1.24), Details: map[string]any{"startsAt": "2999-01-01"}},
 	}}
 	orgs := mapOrgs{items: []domain.Organization{
-		{ID: "sch", Slug: "mfantsipim", Kind: "school", Name: "Mfantsipim", Latitude: f64(5.103), Longitude: f64(-1.253)},
-		{ID: "cas", Slug: "cape-coast-castle", Kind: "heritage", Name: "Cape Coast Castle", Latitude: f64(5.105), Longitude: f64(-1.242)},
-		{ID: "noc", Slug: "no-coord-org", Kind: "faith", Name: "No coords"}, // skipped
+		{ID: "sch", Slug: "mfantsipim", Kind: "school", Name: "Mfantsipim", Verified: true, Latitude: f64(5.103), Longitude: f64(-1.253)},
+		{ID: "cas", Slug: "cape-coast-castle", Kind: "heritage", Name: "Cape Coast Castle", Verified: true, Latitude: f64(5.105), Longitude: f64(-1.242)},
+		{ID: "noc", Slug: "no-coord-org", Kind: "faith", Name: "No coords", Verified: true}, // skipped
+		{ID: "pol", Slug: "police-division", Kind: "security-service", Name: "Police Division", Verified: true, Latitude: f64(5.106), Longitude: f64(-1.245)},
+		{ID: "cli", Slug: "clinic", Kind: "health-service", Name: "Clinic", Verified: true, Latitude: f64(5.107), Longitude: f64(-1.246)},
+		// Revoked / never verified → offline, no pin.
+		{ID: "rev", Slug: "revoked-mosque", Kind: "faith", Name: "Revoked", Verified: false, Latitude: f64(5.109), Longitude: f64(-1.2464)},
 	}}
 	dirs := &fakeDirectives{items: []domain.Directive{
 		{ID: "d-geo", Slug: "works", Title: "Road works", Severity: "high", Status: domain.DirectiveStatusActive,
@@ -71,6 +98,21 @@ func TestMapDataAggregates(t *testing.T) {
 	}
 	if _, ok := byID["noc"]; ok {
 		t.Error("org without coordinates must not be a point")
+	}
+	for _, id := range []string{"rev", "i-done", "lf-reunited", "p-let", "e-past"} {
+		if _, ok := byID[id]; ok {
+			t.Errorf("%s must not be pinned (offline or no longer live)", id)
+		}
+	}
+	for _, id := range []string{"lf-open", "e-running", "e-next"} {
+		if _, ok := byID[id]; !ok {
+			t.Errorf("%s is live and must be pinned", id)
+		}
+	}
+	for _, id := range []string{"pol", "cli"} {
+		if p := byID[id]; p.Kind != "service" || p.Layer != "services" {
+			t.Errorf("%s should be a service pin, got %+v", id, p)
+		}
 	}
 	biz := byID["b1"]
 	if biz.Kind != "business" || biz.Layer != "business" || biz.Href != "/business/biz" {

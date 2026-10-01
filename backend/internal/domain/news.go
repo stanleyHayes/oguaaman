@@ -30,6 +30,7 @@ type NewsArticle struct {
 	SourceName        string   `json:"sourceName,omitempty" bson:"sourceName,omitempty"`
 	SourceURL         string   `json:"sourceUrl,omitempty" bson:"sourceUrl,omitempty"`
 	SourcePublishedAt string   `json:"sourcePublishedAt,omitempty" bson:"sourcePublishedAt,omitempty"`
+	SourceAuthor      string   `json:"sourceAuthor,omitempty" bson:"sourceAuthor,omitempty"` // original reporter from the feed: "By {author} for {source}"
 }
 
 // NewsRepository persists editorial articles (spec §8.12).
@@ -43,4 +44,8 @@ type NewsRepository interface {
 	ByAuthor(ctx context.Context, authorID string) ([]NewsArticle, error) // a writer's own posts, all statuses
 	SetPublished(ctx context.Context, id, status, at string) error
 	Delete(ctx context.Context, id string) error
+	// EraseAuthor serves an author's right to erasure: it rewrites the byline on
+	// every article by authorID to displayName and deletes the author's
+	// unpublished drafts, so they can never be published under their name.
+	EraseAuthor(ctx context.Context, authorID, displayName string) error
 }

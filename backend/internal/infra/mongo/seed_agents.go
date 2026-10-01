@@ -74,16 +74,9 @@ var seedAgents = []domain.Agent{
 	},
 }
 
-// seedAgentsData loads the demo agents (seed only).
+// seedAgentsData loads the demo agents for the local reset only. They are
+// invented people offering escrow-backed services, so they are never written
+// to a live database; cmd/purgefabricated moves them by exact id.
 func seedAgentsData(ctx context.Context, db *mongo.Database) error {
 	return insertAll(ctx, db.Collection(collAgents), seedAgents)
-}
-
-// SeedAgentsOnly drops and reloads ONLY the agents collection — a targeted,
-// non-destructive top-up (mirrors SeedCivicOnly / SeedGoalsOnly). Idempotent.
-func SeedAgentsOnly(ctx context.Context, db *mongo.Database) error {
-	if err := db.Collection(collAgents).Drop(ctx); err != nil {
-		return err
-	}
-	return seedAgentsData(ctx, db)
 }

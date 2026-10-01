@@ -27,6 +27,15 @@ type Config struct {
 	KimiAPIKey  string
 	KimiModel   string
 	KimiBaseURL string
+	// AIAllowKimi opts a PRODUCTION deployment into the Kimi (Moonshot AI,
+	// China) fallback (D4). Off by default: sending members' text to another
+	// processor abroad needs a contract and a privacy-notice update first.
+	AIAllowKimi bool
+
+	// Production is GO_ENV=production: the production safety rules apply
+	// (Validate), the seeded demo identities are refused, and staff roles need
+	// two-factor.
+	Production bool
 
 	// Auth (spec §8.1, §9). Password-based sign-in → JWT sessions.
 	JWTSecret         string
@@ -40,6 +49,13 @@ type Config struct {
 	// absolute URL from the incoming request.
 	UploadDir     string
 	PublicBaseURL string
+
+	// Cloudinary signed uploads (contract K9). All three must be set for
+	// POST /api/uploads/cloudinary-signature to work; otherwise it answers 503
+	// and clients fall back to POST /api/uploads.
+	CloudinaryCloudName string
+	CloudinaryAPIKey    string
+	CloudinaryAPISecret string
 
 	// Payments (adopt-a-project, spec §4/§6/§15). Without a secret key the pledge
 	// flow runs a clearly-labelled simulation. PortalURL builds the Paystack
@@ -58,9 +74,15 @@ type Config struct {
 
 	// WhatsApp OTP delivery. Uses WhatsApp Business Cloud API (Meta) or a
 	// provider that speaks the same HTTP interface (e.g. 360dialog, Twilio).
-	// Without a token the OTP code is returned in the API response (dev/sim mode).
+	// Without a token WhatsApp is off: outside production an undelivered code
+	// is returned in the API response; production never returns one.
 	WhatsAppToken   string // Bearer token for the WhatsApp Business API
 	WhatsAppPhoneID string // WhatsApp Business Account phone number ID
+	// WhatsAppOTPTemplate names an approved authentication template. Meta only
+	// delivers business-initiated messages outside the 24-hour window through
+	// templates, so codes use it when set (free-form text otherwise).
+	WhatsAppOTPTemplate  string
+	WhatsAppTemplateLang string // the template's language code (default "en")
 
 	// Web Push (VAPID) for browser safety alerts. Generate a key pair once
 	// (e.g. `npx web-push generate-vapid-keys`). Without them, browsers can't
@@ -89,6 +111,15 @@ func Load() Config {
 	return cfg
 }
 
+// authRequired reports whether real sign-in is enforced. Production always
+// enforces it, whatever AUTH_REQUIRED says: with it off, requireRole opens the
+// back office and unauthenticated writes fall back to a demo identity. Forcing
+// it (rather than refusing to start) keeps a mis-set flag from taking the API
+// down while never running production open.
+func authRequired() bool {
+	return os.Getenv("AUTH_REQUIRED") == "true" || os.Getenv("GO_ENV") == "production"
+}
+
 // Validate enforces production safety rules. It returns an error when settings
 // that are unsafe for production are left at dev defaults.
 func (c Config) Validate() error {
@@ -107,10 +138,61 @@ func (c Config) Validate() error {
 	return nil
 }
 
+// Paystack key modes, from the secret key's prefix.
+const (
+	PaystackModeNone    = ""        // no key: simulated in dev, disabled in production
+	PaystackModeLive    = "live"    // sk_live_: real money
+	PaystackModeTest    = "test"    // sk_test_: Paystack test mode, no real money
+	PaystackModeUnknown = "unknown" // some other value
+)
+
+// PaystackMode reports whether PAYSTACK_SECRET_KEY is a live or a test key.
+func (c Config) PaystackMode() string {
+	switch {
+	case c.PaystackSecretKey == "":
+		return PaystackModeNone
+	case strings.HasPrefix(c.PaystackSecretKey, "sk_live_"):
+		return PaystackModeLive
+	case strings.HasPrefix(c.PaystackSecretKey, "sk_test_"):
+		return PaystackModeTest
+	default:
+		return PaystackModeUnknown
+	}
+}
+
+// ProductionWarnings lists the optional settings a production deploy is
+// missing and what that switches off. They never stop the server (D4: that
+// would take production down); main logs each one at ERROR. Nothing is
+// simulated in their place.
+func (c Config) ProductionWarnings() []string {
+	if !c.Production {
+		return nil
+	}
+	var out []string
+	switch c.PaystackMode() {
+	case PaystackModeNone:
+		out = append(out, "PAYSTACK_SECRET_KEY is not set: paid flows answer 503 payments_unavailable (production never simulates payments)")
+	case PaystackModeTest:
+		out = append(out, "PAYSTACK_SECRET_KEY is a TEST key (sk_test_): Paystack test cards will issue real tickets, plans, promotions and orders — set the live sk_live_ key")
+	case PaystackModeUnknown:
+		out = append(out, "PAYSTACK_SECRET_KEY does not start with sk_live_ or sk_test_: check the value pasted in the environment")
+	}
+	if c.ResendAPIKey == "" {
+		out = append(out, "RESEND_API_KEY is not set: no email is sent, so email verification and password-reset codes cannot be delivered")
+	}
+	if c.WhatsAppToken == "" || c.WhatsAppPhoneID == "" {
+		out = append(out, "WHATSAPP_TOKEN / WHATSAPP_PHONE_ID are not set: codes cannot be sent to phone numbers")
+	} else if c.WhatsAppOTPTemplate == "" {
+		out = append(out, "WHATSAPP_OTP_TEMPLATE is not set: WhatsApp codes go out as free-form text, which Meta delivers only inside the 24-hour window")
+	}
+	return out
+}
+
 func load() Config {
 	_ = godotenv.Load() // .env is optional; ignore if missing
 
 	return Config{
+		Production:    os.Getenv("GO_ENV") == "production",
 		Port:          env("PORT", "8080"),
 		GRPCPort:      env("GRPC_PORT", "50051"),
 		MongoURI:      env("MONGODB_URI", "mongodb://localhost:27017"),
@@ -123,8 +205,9 @@ func load() Config {
 		KimiAPIKey:    os.Getenv("KIMI_API_KEY"),
 		KimiModel:     env("KIMI_MODEL", "k3"),
 		KimiBaseURL:   env("KIMI_BASE_URL", "https://api.moonshot.ai/v1"),
+		AIAllowKimi:   os.Getenv("AI_ALLOW_KIMI") == "true",
 		JWTSecret:     env("JWT_SECRET", "oguaa-dev-secret-change-me"),
-		AuthRequired:  os.Getenv("AUTH_REQUIRED") == "true",
+		AuthRequired:  authRequired(),
 		MFAEncKey:     os.Getenv("MFA_ENC_KEY"),
 		// Apple IAP. Sandbox receipts are signed by the same Apple chain as
 		// production ones, so accepting them on a live server would let any
@@ -135,7 +218,13 @@ func load() Config {
 		UploadDir:     env("UPLOAD_DIR", "./uploads"),
 		PublicBaseURL: os.Getenv("PUBLIC_API_URL"),
 
-		PaystackSecretKey:  os.Getenv("PAYSTACK_SECRET_KEY"),
+		CloudinaryCloudName: os.Getenv("CLOUDINARY_CLOUD_NAME"),
+		CloudinaryAPIKey:    os.Getenv("CLOUDINARY_API_KEY"),
+		CloudinaryAPISecret: os.Getenv("CLOUDINARY_API_SECRET"),
+
+		// Trimmed: a pasted trailing newline would make Go refuse the
+		// Authorization header and break every webhook signature (P22).
+		PaystackSecretKey:  strings.TrimSpace(os.Getenv("PAYSTACK_SECRET_KEY")),
 		StripeSecretKey:    os.Getenv("STRIPE_SECRET_KEY"),
 		PortalURL:          env("PUBLIC_PORTAL_URL", "http://localhost:5173"),
 		CreatorURL:         env("PUBLIC_CREATOR_URL", env("PUBLIC_PORTAL_URL", "http://localhost:5173")),
@@ -146,6 +235,9 @@ func load() Config {
 
 		WhatsAppToken:   os.Getenv("WHATSAPP_TOKEN"),
 		WhatsAppPhoneID: os.Getenv("WHATSAPP_PHONE_ID"),
+
+		WhatsAppOTPTemplate:  os.Getenv("WHATSAPP_OTP_TEMPLATE"),
+		WhatsAppTemplateLang: env("WHATSAPP_TEMPLATE_LANG", "en"),
 
 		VAPIDPublic:                 os.Getenv("VAPID_PUBLIC_KEY"),
 		VAPIDPrivate:                os.Getenv("VAPID_PRIVATE_KEY"),

@@ -13,10 +13,17 @@ import (
 // jobErr maps service errors to the right status (forbidden/not-found → mapped;
 // validation → 400).
 func (h *Handler) jobErr(w http.ResponseWriter, err error) {
+	if h.paymentsUnavailable(w, err) {
+		return
+	}
 	var fb *domain.ForbiddenError
 	var nf *domain.NotFoundError
 	if errors.As(err, &fb) || errors.As(err, &nf) {
 		h.handleErr(w, err)
+		return
+	}
+	if errors.Is(err, service.ErrJobCancelledRefundDue) || errors.Is(err, service.ErrJobAlreadyPaid) {
+		fail(w, http.StatusConflict, err.Error())
 		return
 	}
 	fail(w, http.StatusBadRequest, err.Error())
@@ -71,13 +78,19 @@ func (h *Handler) AcceptJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Email string `json:"email"`
+		Email string `json:"email"` // optional (C4): falls back like every other payment
 	}
-	if err := decodeBody(r, &in); err != nil {
-		fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := decodeBody(r, &in); err != nil {
+			fail(w, http.StatusBadRequest, msgInvalidRequestBody)
+			return
+		}
+	}
+	email, ok := h.receiptEmail(w, in.Email, m)
+	if !ok {
 		return
 	}
-	authURL, accessCode, reference, err := h.agentJobs.AcceptAndFund(r.Context(), r.PathValue("id"), orDevMember(m).ID, in.Email)
+	authURL, accessCode, reference, err := h.agentJobs.AcceptAndFund(r.Context(), r.PathValue("id"), orDevMember(m).ID, email)
 	if err != nil {
 		h.jobErr(w, err)
 		return
@@ -92,7 +105,11 @@ func (h *Handler) AcceptJob(w http.ResponseWriter, r *http.Request) {
 
 // ConfirmJob — verifies the escrow charge (called on redirect back / webhook).
 func (h *Handler) ConfirmJob(w http.ResponseWriter, r *http.Request) {
-	j, err := h.agentJobs.ConfirmFunding(r.Context(), r.URL.Query().Get("reference"))
+	reference, ok := h.confirmReference(w, r)
+	if !ok {
+		return
+	}
+	j, err := h.agentJobs.ConfirmFunding(r.Context(), reference)
 	if err != nil {
 		h.jobErr(w, err)
 		return

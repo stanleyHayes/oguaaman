@@ -100,3 +100,70 @@ func TestStorefront_HandleUniqueAndReserved(t *testing.T) {
 		t.Error("expected reserved-handle error")
 	}
 }
+
+// F054/F087: a handle never serves a business that isn't approved (a curator
+// takedown, a rejection or a pending major edit must take the page down).
+func TestStorefrontHandleServesOnlyApprovedBusinesses(t *testing.T) {
+	for _, status := range []string{domain.StatusPending, domain.StatusRejected, domain.StatusUnpublished, domain.StatusDraft} {
+		l := supporterBiz("b1", "m1", true)
+		l.Handle, l.Status = "aunties-kitchen", status
+		svc, _ := storefrontSvc(l)
+		_, err := svc.ListingByHandle(context.Background(), "aunties-kitchen")
+		var nf *domain.NotFoundError
+		if !errors.As(err, &nf) {
+			t.Errorf("%s business served by handle: err=%v", status, err)
+		}
+	}
+	notBusiness := domain.Listing{ID: "e1", Type: domain.TypeEvent, Status: domain.StatusApproved, Handle: "gig"}
+	svc, _ := storefrontSvc(notBusiness)
+	if _, err := svc.ListingByHandle(context.Background(), "gig"); err == nil {
+		t.Error("a non-business listing was served as a storefront")
+	}
+}
+
+// F051: new items get ids that collide with no surviving item, and a repeated
+// id (older data) is re-assigned, so checkout can never resolve another item.
+func TestStoreItemIDsNeverCollide(t *testing.T) {
+	items := []domain.StoreItem{
+		{ID: "product-2", Name: "B", PricePesewas: 2_000},
+		{Name: "C (new)", PricePesewas: 15_000},
+		{ID: "product-2", Name: "D (legacy duplicate)", PricePesewas: 900},
+		{ID: "tmp-1", Name: "E", PricePesewas: 100},
+	}
+	out, err := cleanStoreItems(items, "product", domain.StoreItemPhysical, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]string{}
+	for _, it := range out {
+		if other, dup := seen[it.ID]; dup {
+			t.Fatalf("%q and %q share id %q", other, it.Name, it.ID)
+		}
+		seen[it.ID] = it.Name
+	}
+	if out[0].ID != "product-2" {
+		t.Errorf("the first item lost its id: %+v", out[0])
+	}
+	if out[3].ID != "tmp-1" {
+		t.Errorf("an unrelated existing id changed: %+v", out[3])
+	}
+}
+
+// P062: only physical goods and in-person services can be listed.
+func TestStorefrontRejectsDigitalProducts(t *testing.T) {
+	out, err := cleanStoreItems([]domain.StoreItem{{Name: "Kente"}}, "product", domain.StoreItemPhysical, 5)
+	if err != nil || out[0].Kind != domain.StoreItemPhysical {
+		t.Fatalf("default product kind: %+v %v", out, err)
+	}
+	out, err = cleanStoreItems([]domain.StoreItem{{Name: "Braiding"}}, "service", domain.StoreItemService, 5)
+	if err != nil || out[0].Kind != domain.StoreItemService {
+		t.Fatalf("default service kind: %+v %v", out, err)
+	}
+	for _, kind := range []string{"digital", "download", "ebook"} {
+		_, err = cleanStoreItems([]domain.StoreItem{{Name: "Beat pack", Kind: kind}}, "product", domain.StoreItemPhysical, 5)
+		var ve *domain.ValidationError
+		if !errors.As(err, &ve) || ve.Message != msgDigitalGoodsRefused {
+			t.Errorf("kind %q: err=%v", kind, err)
+		}
+	}
+}

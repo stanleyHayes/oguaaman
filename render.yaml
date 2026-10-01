@@ -26,7 +26,8 @@ services:
       - key: MONGODB_DB
         value: oguaa
       # Apple In-App Purchase (Guideline 3.1.1). IAP is disabled until the
-      # bundle id is set; sandbox receipts are never accepted in production.
+      # bundle id is set; sandbox (App Review) purchases are accepted, flagged
+      # and limited to 24 h. Keep APPLE_ALLOW_SANDBOX false in production.
       - key: APPLE_BUNDLE_ID
         sync: false
       - key: APPLE_ALLOW_SANDBOX
@@ -65,12 +66,23 @@ services:
         value: https://api.oguaaman.com
       - key: UPLOAD_DIR
         value: /app/uploads
+      # ── Cloudinary signed uploads (optional) ──
+      # When all three are set, clients get per-upload signatures from
+      # POST /api/uploads/cloudinary-signature and the unsigned upload preset
+      # can be disabled in the Cloudinary console. Blank => signed uploads are
+      # unavailable and clients use first-party POST /api/uploads.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: PLATFORM_FEE_PERCENT
         value: "5"
       # ── AI writing assistant: Anthropic is PRIMARY; Kimi is the backup ──
-      # Set ANTHROPIC_API_KEY in the Render dashboard. If it is blank the
-      # assistant silently falls through to Kimi, and then to a labelled
-      # simulation — it never errors, so a missing key is easy to miss.
+      # Set ANTHROPIC_API_KEY in the Render dashboard. In production a blank
+      # key means the AI endpoints answer 503 ai_unavailable (never a
+      # simulation); the server still starts and logs an ERROR.
       - key: ANTHROPIC_API_KEY
         sync: false
       # Claude model for the assistant. Haiku 4.5 is the cheapest tier and is
@@ -84,8 +96,12 @@ services:
         value: "60"
       - key: OGUAA_AI_PER_MEMBER
         value: "20"
-      # Kimi (Moonshot) — resilience backup, used only if Anthropic is absent
-      # or errors. Leave KIMI_API_KEY blank to run Anthropic-only.
+      # Kimi (Moonshot AI, China) — resilience backup, used only if Anthropic
+      # is absent or errors. It is OFF in production unless AI_ALLOW_KIMI is
+      # "true": enable it only once the transfer is contracted and named in
+      # the privacy notice. Leave KIMI_API_KEY blank to run Anthropic-only.
+      - key: AI_ALLOW_KIMI
+        value: "false"
       - key: KIMI_API_KEY
         sync: false
       - key: KIMI_MODEL
@@ -95,7 +111,11 @@ services:
 
       # ── Automated research desk — trusted RSS/Atom sources only ──
       # Semicolon-separated `name|https-url` entries. Edit this Blueprint value
-      # and sync Render whenever the trusted publisher list changes.
+      # and sync Render whenever the trusted publisher list changes. Only a short
+      # (<= 60-word) summary, the source, its author and a link to the full story
+      # are stored. Items from a feed marked "all rights reserved" are skipped
+      # unless the entry carries a third field recording the licence or written
+      # permission to republish: `name|https-url|licence-reference`.
       - key: AUTO_NEWS_FEEDS
         # Defaults cover two Ghana newsrooms plus a Cape Coast-specific Google
         # News discovery feed. The backend still applies its local relevance
@@ -110,26 +130,54 @@ services:
       - key: AUTO_RESEARCH_INTERVAL_MINUTES
         value: "30"
 
-      # ── Payments — blank => pledge/escrow runs a labelled simulation ──
+      # ── Payments — required for paid flows. Production never simulates:
+      # blank => every paid start/confirm answers 503 payments_unavailable and
+      # the server logs an ERROR at startup (it still starts). ──
+      # PAYSTACK_SECRET_KEY: the LIVE secret key (sk_live_…), set in the Render
+      # dashboard only — never commit it. The same key also verifies webhook
+      # signatures (HMAC-SHA512), so no separate webhook secret exists. An
+      # sk_test_ key in production logs an ERROR at startup. No Paystack public
+      # key is needed anywhere.
+      # The key may be shared with other apps on the same Paystack account:
+      # Oguaa sends its own callback_url on every transaction, prefixes its
+      # references with "oguaa-", tags them metadata.app="oguaa", ignores other
+      # apps' webhook events, and re-checks its own pending payments every 10
+      # minutes — so it needs neither the dashboard callback URL nor the
+      # account webhook. Point the Live webhook at
+      # https://api.oguaaman.com/api/payments/paystack/webhook only if no other
+      # app relies on it (it makes confirmations instant instead of ≤10 min).
       - key: PAYSTACK_SECRET_KEY
         sync: false
-      - key: STRIPE_SECRET_KEY # optional — Stripe mobile checkout
+      # STRIPE_SECRET_KEY: leave BLANK. Setting it enables Stripe mobile
+      # checkout, which would sell plans and promotions in the apps.
+      - key: STRIPE_SECRET_KEY
         sync: false
 
       # ── Transactional email (Resend) — password-reset codes, OTPs, notices ──
-      # Blank => email is skipped (in-app notices still work). Recommended in
-      # production so reset/OTP codes are delivered, not returned in the response.
+      # Blank => email is skipped (in-app notices still work) and email codes
+      # cannot be delivered: production answers 503 instead (it never returns a
+      # code in the response). Set it so verification and reset codes arrive.
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
         value: Oguaa <noreply@oguaaman.com> # must be a Resend-verified domain
 
       # ── WhatsApp OTP (Meta WhatsApp Business Cloud API) — optional ──
-      # Blank => phone-verification OTP is returned in the API response (dev only).
+      # Blank => no codes to phone numbers: production answers 503 for
+      # phone-only accounts (codes are never returned in the response).
       - key: WHATSAPP_TOKEN
         sync: false
       - key: WHATSAPP_PHONE_ID
         sync: false
+      # Optional: name of an approved WhatsApp *authentication* template (one
+      # body placeholder for the code + the copy-code button). Meta delivers
+      # business-initiated messages outside the 24-hour window only through
+      # templates. Blank => codes go as free-form text (inside the window only).
+      - key: WHATSAPP_OTP_TEMPLATE
+        sync: false
+      # Optional: the template's language code (default "en").
+      - key: WHATSAPP_TEMPLATE_LANG
+        value: en
 
       # ── Web Push (VAPID) — browser safety-alert push (the "ring") ──
       # Generate once: `npx web-push generate-vapid-keys`. Blank => browsers can't

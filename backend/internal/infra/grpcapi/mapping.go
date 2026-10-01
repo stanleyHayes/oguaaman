@@ -82,7 +82,9 @@ func memberToPB(m *domain.Member) *pb.Member {
 		Id: m.ID, Slug: m.Slug, DisplayName: m.DisplayName, Initials: m.Initials,
 		PhotoUrl: m.PhotoURL, Bio: m.Bio, TownId: m.TownID, SchoolIds: m.SchoolIDs,
 		Links: socialLinksToPB(m.Links), PhoneVerified: m.PhoneVerified,
-		Role: m.Role, Suspended: m.Suspended, JoinedAt: m.JoinedAt,
+		Role: m.Role, JoinedAt: m.JoinedAt,
+		// Suspended is left unset: moderation state is not part of the public
+		// member projection.
 	}
 }
 

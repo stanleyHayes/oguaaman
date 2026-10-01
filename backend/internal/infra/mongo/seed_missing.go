@@ -3,10 +3,12 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/oguaa/backend/internal/domain"
 )
@@ -20,11 +22,17 @@ type SeedMissingResult struct {
 	FixtureCount    int
 	InsertedCount   int
 	UpdatedListings int64
+	// MissingRefs lists the listing/member ids the fixtures point at that the
+	// database does not hold ("listing:<id>", "member:<id>"). When non-empty
+	// the collection was skipped: nothing was inserted and no listing touched.
+	MissingRefs []string
 }
 
 type missingSeedCollection struct {
-	name string
-	docs []any
+	name        string
+	docs        []any
+	listingRefs []string // listings the fixtures and their derived state target
+	memberRefs  []string // members the fixtures name
 }
 
 // SeedEmptyCollections is the apply-only entry point for safely filling the
@@ -40,33 +48,102 @@ func SeedEmptyCollections(ctx context.Context, db *mongo.Database) ([]SeedMissin
 //
 // It deliberately excludes ai_usage and stripe_intents: those collections are
 // operational/transient records and should truthfully start empty.
+//
+// Before anything is written to a collection, every listing and member its
+// fixtures (and their derived listing state) reference is resolved. If any is
+// absent — a database seeded by seedlive, or cleaned by purgefabricated — the
+// collection is skipped whole and reported, so a run never leaves a half-applied
+// ledger that later runs would treat as "already seeded".
 func SeedMissing(ctx context.Context, db *mongo.Database, apply bool) ([]SeedMissingResult, error) {
 	collections := missingSeedCollections()
 	results := make([]SeedMissingResult, 0, len(collections))
 	for _, seed := range collections {
-		count, err := db.Collection(seed.name).CountDocuments(ctx, bson.M{})
+		result, err := seedMissingCollection(ctx, db, seed, apply)
 		if err != nil {
-			return results, fmt.Errorf("count %s: %w", seed.name, err)
-		}
-		result := SeedMissingResult{
-			Collection:    seed.name,
-			ExistingCount: count,
-			FixtureCount:  len(seed.docs),
-		}
-		if count == 0 && apply {
-			if err := insertAll(ctx, db.Collection(seed.name), seed.docs); err != nil {
-				return results, fmt.Errorf("seed %s: %w", seed.name, err)
-			}
-			result.InsertedCount = len(seed.docs)
-			updated, err := applySeedDerivedListingState(ctx, db, seed.name)
-			if err != nil {
-				return results, fmt.Errorf("reconcile %s listing state: %w", seed.name, err)
-			}
-			result.UpdatedListings = updated
+			return results, err
 		}
 		results = append(results, result)
 	}
 	return results, nil
+}
+
+func seedMissingCollection(ctx context.Context, db *mongo.Database, seed missingSeedCollection, apply bool) (SeedMissingResult, error) {
+	result := SeedMissingResult{Collection: seed.name, FixtureCount: len(seed.docs)}
+	count, err := db.Collection(seed.name).CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return result, fmt.Errorf("count %s: %w", seed.name, err)
+	}
+	result.ExistingCount = count
+	if count > 0 {
+		return result, nil
+	}
+	missing, err := missingSeedRefs(ctx, db, seed)
+	if err != nil {
+		return result, fmt.Errorf("resolve %s references: %w", seed.name, err)
+	}
+	if len(missing) > 0 || !apply {
+		result.MissingRefs = missing
+		return result, nil
+	}
+	if err := insertAll(ctx, db.Collection(seed.name), seed.docs); err != nil {
+		return result, fmt.Errorf("seed %s: %w", seed.name, err)
+	}
+	result.InsertedCount = len(seed.docs)
+	updated, err := applySeedDerivedListingState(ctx, db, seed.name)
+	if err != nil {
+		return result, fmt.Errorf("reconcile %s listing state: %w", seed.name, err)
+	}
+	result.UpdatedListings = updated
+	return result, nil
+}
+
+// missingSeedRefs returns the referenced listings and members that are absent.
+func missingSeedRefs(ctx context.Context, db *mongo.Database, seed missingSeedCollection) ([]string, error) {
+	listings, err := absentIDs(ctx, db.Collection(collListings), seed.listingRefs)
+	if err != nil {
+		return nil, err
+	}
+	members, err := absentIDs(ctx, db.Collection(collMembers), seed.memberRefs)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(listings)+len(members))
+	for _, id := range listings {
+		out = append(out, "listing:"+id)
+	}
+	for _, id := range members {
+		out = append(out, "member:"+id)
+	}
+	return out, nil
+}
+
+// absentIDs returns the ids (sorted) that no document in coll holds.
+func absentIDs(ctx context.Context, coll *mongo.Collection, ids []string) ([]string, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	cur, err := coll.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options.Find().SetProjection(bson.M{"_id": 1}))
+	if err != nil {
+		return nil, err
+	}
+	var rows []struct {
+		ID string `bson:"_id"`
+	}
+	if err := cur.All(ctx, &rows); err != nil {
+		return nil, err
+	}
+	present := make(map[string]bool, len(rows))
+	for _, r := range rows {
+		present[r.ID] = true
+	}
+	var absent []string
+	for _, id := range ids {
+		if !present[id] {
+			absent = append(absent, id)
+		}
+	}
+	sort.Strings(absent)
+	return absent, nil
 }
 
 // applySeedDerivedListingState keeps the denormalised listing fields in sync
@@ -149,7 +226,7 @@ func seedDerivedListingSets(collection string) (map[string]bson.M, error) {
 }
 
 func missingSeedCollections() []missingSeedCollection {
-	return []missingSeedCollection{
+	collections := []missingSeedCollection{
 		{name: collModeration, docs: toSeedDocs(seedModerationRecords)},
 		{name: collNotifications, docs: toSeedDocs(seedNotifications)},
 		{name: collFollows, docs: toSeedDocs(seedFollows)},
@@ -162,6 +239,99 @@ func missingSeedCollections() []missingSeedCollection {
 		{name: collListingViews, docs: toSeedDocs(seedListingViews)},
 		{name: collPlans, docs: toSeedDocs(seedPlans)},
 	}
+	for i := range collections {
+		collections[i].listingRefs, collections[i].memberRefs = seedFixtureRefs(collections[i].name)
+	}
+	return collections
+}
+
+// seedFixtureRefs lists the listing and member ids a collection's fixtures
+// reference, de-duplicated and sorted.
+func seedFixtureRefs(collection string) (listings, members []string) {
+	var l, m refSet
+	switch collection {
+	case collModeration:
+		for _, r := range seedModerationRecords {
+			l.add(r.ListingID)
+			m.add(r.ModeratorID)
+		}
+	case collNotifications:
+		for _, r := range seedNotifications {
+			m.add(r.MemberID)
+		}
+	case collFollows:
+		for _, r := range seedFollows {
+			l.add(r.ListingID)
+			m.add(r.MemberID)
+		}
+	case collMemberFollows:
+		for _, r := range seedMemberFollows {
+			m.add(r.FollowerID)
+			m.add(r.MemberID)
+		}
+	case collReports:
+		for _, r := range seedReports {
+			l.add(r.ListingID)
+			m.add(r.ReporterID)
+			m.add(r.ReviewedByID)
+		}
+	default:
+		seedLedgerRefs(collection, &l, &m)
+	}
+	return l.sorted(), m.sorted()
+}
+
+// seedLedgerRefs covers the money and view ledgers, whose derived state is
+// written onto the listings they reference.
+func seedLedgerRefs(collection string, l, m *refSet) {
+	switch collection {
+	case collPledges:
+		for _, r := range seedPledges {
+			l.add(r.ProjectID)
+			m.add(r.MemberID)
+		}
+	case collTickets:
+		for _, r := range seedTickets {
+			l.add(r.EventID)
+			m.add(r.MemberID)
+		}
+	case collSubscriptions:
+		for _, r := range seedSubscriptions {
+			l.add(r.ListingID)
+			m.add(r.MemberID)
+		}
+	case collPromotions:
+		for _, r := range seedPromotions {
+			l.add(r.ListingID)
+			m.add(r.MemberID)
+		}
+	case collListingViews:
+		for _, v := range seedListingViews {
+			id, _ := v["listingId"].(string)
+			l.add(id)
+		}
+	}
+}
+
+type refSet map[string]bool
+
+func (s *refSet) add(id string) {
+	if id == "" {
+		return
+	}
+	if *s == nil {
+		*s = refSet{}
+	}
+	(*s)[id] = true
+}
+
+func (s refSet) sorted() []string {
+	out := make([]string, 0, len(s))
+	for id := range s {
+		out = append(out, id)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func toSeedDocs[T any](items []T) []any {
