@@ -101,3 +101,24 @@ These routes are mirrored in-app under **More → Legal**.
 - `eas.json` `cli.appVersionSource` is `remote`, so the build/version numbers are
   tracked by EAS; `production` uses `autoIncrement` to bump the build number each
   release.
+
+## Release checklist (store compliance)
+
+- `eas.json` → `build.production.env` pins `EXPO_PUBLIC_API_URL=https://api.oguaaman.com`
+  and `EXPO_PUBLIC_PORTAL_URL=https://citizen.oguaaman.com`. `app.config.ts` stops a
+  production build whose API URL is not `https://` or that enables simulated payments,
+  and release builds never fall back to `localhost`.
+- `pnpm check:privacy-manifest` validates `ios.privacyManifests` in `app.json` against
+  Apple's allowed values. Keep the App Store Connect App Privacy answers identical.
+- Android permissions are pinned in `app.json` (`permissions` + `blockedPermissions`).
+  After `npx expo prebuild -p android --no-install`, run
+  `pnpm check:android-permissions android/app/src/main/AndroidManifest.xml`; for the
+  uploaded bundle, run it on `bundletool dump manifest --bundle app.aab`. Answer "No" to
+  the advertising-ID declaration in Play Console.
+- `ios.supportsTablet` is `false`: layouts are phone-only until an iPad pass is done.
+- No Face ID purpose string (`expo-secure-store` has `faceIDPermission: false`) and no
+  Apple Pay merchant entitlement (the Stripe plugin has no `merchantIdentifier`). If
+  Apple's processing email reports ITMS-90683 for the camera, add a specific
+  `NSCameraUsageDescription`, never a generic one.
+- Digital goods (plans, creator plans, promotions) are not sold in the app on either
+  platform; iOS pledges open the web portal in Safari.

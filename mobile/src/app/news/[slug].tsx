@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { T as Text } from "@/components/typography";
-import { api } from "@/lib/api";
+import { api, mediaUrl } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useTheme } from "@/lib/theme-context";
 import type { NewsArticle } from "@/lib/types";
@@ -10,6 +10,10 @@ import { D, SI, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { Loading, ErrorView, Markdown, VerifiedBadge } from "@/ui";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView } from "@/components/anim";
+import { openInAppBrowser } from "@/lib/webbrowser";
+import { ReportButton } from "@/report-button";
+
+const NEWSROOM_EMAIL = "hello@oguaaman.com";
 
 function newsDate(a: NewsArticle): string {
   const raw = a.publishedAt ?? a.createdAt;
@@ -31,7 +35,7 @@ export default function Article() {
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
       <RevealView style={s.hero}>
         {data.coverImageUrl ? (
-          <Image source={{ uri: cldCover(data.coverImageUrl, 800) }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+          <Image source={{ uri: cldCover(mediaUrl(data.coverImageUrl), 800) }} resizeMode="cover" style={StyleSheet.absoluteFill} />
         ) : (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: data.coverColor ?? C.green }]} />
         )}
@@ -42,19 +46,39 @@ export default function Article() {
           {data.automated ? <Text style={s.automated}>{data.automationLabel ?? "AUTOMATED REPORT"}</Text> : null}
           <View style={s.bylineRow}>
             <View style={s.bylineDot} />
-            <Text style={s.byline}>By {data.authorName} · {newsDate(data)}</Text>
+            <Text style={s.byline}>
+              {data.automated && data.sourceName ? `From ${data.sourceName} · summarised by Oguaa` : `By ${data.authorName}`} · {newsDate(data)}
+            </Text>
             {data.authorVerified ? <VerifiedBadge onDark size={14} /> : null}
           </View>
         </View>
       </RevealView>
 
       <RevealView delay={100} style={s.body}>
-        {data.automated && data.sourceUrl ? <Text style={s.source}>Automated summary from {data.sourceName ?? "a trusted public source"}. Verify important details at the original source: {data.sourceUrl}</Text> : null}
+        {data.automated ? <SourceLink article={data} s={s} /> : null}
         {data.summary ? <Text style={s.summary}>{data.summary}</Text> : null}
         <View style={s.divider} />
         <Markdown>{data.body}</Markdown>
+        <View style={s.divider} />
+        <ReportButton target={{ type: "news", id: data.id || data.slug }} />
+        <Text style={s.newsroom}>Newsroom contact: {NEWSROOM_EMAIL}. Rights holders can ask us to remove a story at the same address.</Text>
       </RevealView>
     </ScrollView>
+  );
+}
+
+// The original report for an automated summary: tappable only for https links.
+function SourceLink({ article, s }: Readonly<{ article: NewsArticle; s: ReturnType<typeof makeStyles> }>) {
+  const name = article.sourceName ?? "a trusted public source";
+  const url = article.sourceUrl ?? "";
+  if (!url.startsWith("https://")) {
+    return <Text style={s.source}>Automated summary from {name}. Verify important details at the original source.</Text>;
+  }
+  return (
+    <Pressable accessibilityRole="link" accessibilityLabel={`Read the original at ${name}`} onPress={() => { void openInAppBrowser(url); }} style={s.sourceBox}>
+      <Text style={s.sourceText}>Automated summary from {name}. Verify important details at the original source.</Text>
+      <Text style={s.sourceLink}>Read the original at {name} ↗</Text>
+    </Pressable>
   );
 }
 
@@ -69,6 +93,10 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   automated: { color: C.gold, fontSize: 10, letterSpacing: 1.2, marginTop: 10, ...D(700), textTransform: "uppercase" },
   body: { padding: 20 },
   source: { color: C.goldText, backgroundColor: withAlpha(C.gold, 0.1), borderRadius: 12, padding: 12, marginBottom: 16, fontSize: 12, lineHeight: 18 },
+  sourceBox: { backgroundColor: withAlpha(C.gold, 0.1), borderRadius: 12, padding: 12, marginBottom: 16, gap: 6 },
+  sourceText: { color: C.goldText, fontSize: 12, lineHeight: 18 },
+  sourceLink: { color: C.tealText, fontSize: 13, textDecorationLine: "underline" },
+  newsroom: { color: C.inkFaint, fontSize: 12, lineHeight: 18, marginTop: 12 },
   summary: { ...SI(), fontSize: 18, lineHeight: 27, color: C.inkMuted },
   divider: { height: 1, backgroundColor: C.sand, marginVertical: 20 },
 });

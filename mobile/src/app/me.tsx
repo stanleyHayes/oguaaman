@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
+import { parseApiDate } from "@/lib/dates";
 import { route, ROUTES } from "@/lib/routes";
 import { push, replace } from "@/lib/router";
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
@@ -8,7 +8,7 @@ import { T as Text, TI as TextInput } from "@/components/typography";
 import { api, canWriteNews, canUseStudio } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
-import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Promotion, Listing } from "@/lib/types";
+import type { Member, MemberView, Organization, Place, SchoolStint, Connection, Ticket, Subscription, Listing } from "@/lib/types";
 import { D, S, initials, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { CalendarIcon, ChevronRightIcon, CloseIcon, EyeIcon, FlagIcon, PenIcon, PlusIcon, RefreshIcon, SearchIcon, SettingsIcon, SparkleIcon, TicketIcon, UsersIcon } from "@/components/icons";
@@ -48,10 +48,20 @@ export default function Me() {
   return <MeLoaded slug={member.slug} onSignOut={signOut} />;
 }
 
+function sendCodeLabel(state: SaveState, sent: boolean): string {
+  if (state === "saving") return "Sending…";
+  return sent ? "Send a new code" : "Send code";
+}
+
+function fmtTime(iso: string): string {
+  const d = parseApiDate(iso);
+  return d ? d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : iso;
+}
+
 function fmtDate(iso?: string): string {
   if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  const d = parseApiDate(iso);
+  return d ? d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : iso;
 }
 
 function money(pesewas: number): string {
@@ -120,8 +130,18 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
   const [verifyCode, setVerifyCode] = useState("");
   const [verifyState, setVerifyState] = useState<SaveState>("idle");
   const [verifyError, setVerifyError] = useState("");
+  // A code was requested: the input shows from then on. Production never
+  // echoes the code (it arrives by email/WhatsApp), so this — not the echoed
+  // code — gates the form; the echo is a dev-only hint.
+  const [codeSent, setCodeSent] = useState(false);
   const [verifySentCode, setVerifySentCode] = useState("");
   const [verifyExpiresAt, setVerifyExpiresAt] = useState("");
+  // The verify endpoints return the bare stored member (no computed badges), so
+  // only its phoneVerified flag is merged into the signed-in member.
+  function applyVerified(phoneVerified: boolean) {
+    setVerified(phoneVerified);
+    if (authMember) setMember({ ...authMember, phoneVerified });
+  }
 
   const { data: ticketsData, error: ticketsError, loading: ticketsLoading } = useApi<Ticket[]>(() => api.myTickets(), "me:tickets");
   const { data: subsData, error: subsError, loading: subsLoading } = useApi<Subscription[]>(() => api.mySubscriptions(), "me:subscriptions");
@@ -158,8 +178,8 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
     setVerifyState("saving");
     try {
       const res = await api.startPhoneVerification();
-      setVerified(res.member.phoneVerified);
-      setMember(res.member);
+      applyVerified(res.member.phoneVerified);
+      setCodeSent(true);
       setVerifySentCode(res.code ?? "");
       setVerifyExpiresAt(res.expiresAt ?? "");
       setVerifyCode("");
@@ -173,9 +193,9 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
     setVerifyError("");
     setVerifyState("saving");
     try {
-      const res = await api.confirmPhoneVerification(verifyCode);
-      setVerified(res.member.phoneVerified);
-      setMember(res.member);
+      const res = await api.confirmPhoneVerification(verifyCode.trim());
+      applyVerified(res.member.phoneVerified);
+      setCodeSent(false);
       setVerifySentCode("");
       setVerifyExpiresAt("");
       setVerifyCode("");
@@ -293,7 +313,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
             </Section>
 
             <Section title="Your birthday" help="If you turn this on, your followers get a gentle note on your day. Off by default — it's yours to choose.">
-              <BirthdayCard member={m} />
+              <BirthdayCard member={self} />
             </Section>
 
             <Section title="Oguaa abroad" help="A son or daughter of the Castle living away from home? Add yourself to the diaspora — the bridge for homecomings and giving back. Off by default.">
@@ -304,7 +324,7 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
 
         <TabPanel id="activity" active={tab} visited={visited}>
           <View style={s.panelStack}>
-            <Section title="Your listings" help="Everything you've contributed, with its review status. Promote an approved listing to feature it on the front pages — GH₵ 10 per day.">
+            <Section title="Your listings" help="Everything you've contributed, with its review status.">
               <MyListings listings={view.listings ?? []} />
             </Section>
             <Section title="My tickets" help="Your event tickets and gate codes. Show the code at the entrance.">
@@ -332,16 +352,20 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
             {!verified && (
               <Section title="Contact verification" help="Submissions stay blocked until your account is verified. Send a code, then enter it here to unlock the submit form.">
                 <Pressable accessibilityRole="button" onPress={startVerification} disabled={verifyState === "saving"} style={[s.primaryBtn, { alignSelf: "flex-start" }, verifyState === "saving" && { opacity: 0.6 }]}>
-                  <Text style={s.primaryBtnText}>{verifyState === "saving" ? "Sending…" : "Send code"}</Text>
+                  <Text style={s.primaryBtnText}>{sendCodeLabel(verifyState, codeSent)}</Text>
                 </Pressable>
-                {verifySentCode ? (
+                {codeSent ? (
                   <View style={{ gap: 10, marginTop: 12 }}>
+                    <Text style={s.help}>We sent a 6-digit code to the email or WhatsApp number on your account. Enter it here.</Text>
                     <TextInput
                       value={verifyCode}
                       onChangeText={setVerifyCode}
                       placeholder="123456"
                       keyboardType="number-pad"
-                      autoComplete="one-time-code"
+                      autoComplete={Platform.OS === "android" ? "sms-otp" : "one-time-code"}
+                      textContentType="oneTimeCode"
+                      maxLength={6}
+                      accessibilityLabel="Verification code"
                       style={s.codeInput}
                     />
                     <View style={{ flexDirection: "row", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -352,9 +376,9 @@ function Profile({ view, onSignOut }: Readonly<{ view: MemberView; onSignOut: ()
                       >
                         <Text style={s.secondaryBtnText}>{verifyState === "saving" ? "Checking…" : "Confirm code"}</Text>
                       </Pressable>
-                      {verifyExpiresAt ? <Text style={s.help}>Expires: {verifyExpiresAt}</Text> : null}
+                      {verifyExpiresAt ? <Text style={s.help}>Expires at {fmtTime(verifyExpiresAt)}</Text> : null}
                     </View>
-                    <Text style={s.help}>Dev mode shows the code here: <Text style={s.mono}>{verifySentCode}</Text></Text>
+                    {__DEV__ && verifySentCode ? <Text style={s.help}>Dev mode shows the code here: <Text style={s.mono}>{verifySentCode}</Text></Text> : null}
                   </View>
                 ) : null}
                 {verifyError ? <Text style={[s.errNote, { marginTop: 10 }]}>{verifyError}</Text> : null}
@@ -584,28 +608,41 @@ function PropertyCreatorCard({ member: m, onUpdated }: Readonly<{ member: Member
 }
 
 // Birthday + follower-broadcast opt-in (spec §8.11).
+/** "MM-DD" from a stored birthday ("MM-DD", or a legacy "YYYY-MM-DD…"). */
+function toMonthDay(b?: string): string {
+  if (!b) return "";
+  if (/^\d{2}-\d{2}$/.test(b)) return b;
+  const full = /^\d{4}-(\d{2})-(\d{2})/.exec(b);
+  return full ? `${full[1]}-${full[2]}` : "";
+}
+
 function BirthdayCard({ member: m }: Readonly<{ member: Member }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const [birthday, setBirthday] = useState(m.birthday ? m.birthday.slice(0, 10) : "");
+  // Seeded from the signed-in (self) member — the public profile blanks the
+  // birthday unless it is broadcast. Stored as "MM-DD"; legacy values carry a year.
+  const [birthday, setBirthday] = useState(toMonthDay(m.birthday));
   const [broadcast, setBroadcast] = useState(!!m.broadcastBirthday);
   const [bdaySave, setBdaySave] = useState<SaveState>("idle");
-  const now = new Date();
-  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const [bdayError, setBdayError] = useState("");
   async function saveBirthday() {
-    setBdaySave("saving");
+    setBdaySave("saving"); setBdayError("");
     try {
-      await api.setBirthday({ birthday: birthday.trim(), broadcast });
+      const res = await api.setBirthday({ birthday: birthday.trim(), broadcast });
+      setBirthday(toMonthDay(res.birthday));
       setBdaySave("saved");
-    } catch { setBdaySave("error"); }
+    } catch (e) {
+      setBdayError(e instanceof Error ? e.message : "Add your birthday first.");
+      setBdaySave("error");
+    }
   }
   return (
     <>
       <DateField
         value={birthday}
         onChange={(v) => { setBirthday(v); setBdaySave("idle"); }}
-        placeholder="Your birthday"
-        maxDate={todayIso}
+        placeholder="Your birthday (day and month)"
+        monthDay
       />
       <View style={[s.diaRow, { marginTop: 10 }]}>
         <Text style={s.diaLabel}>Let my followers know</Text>
@@ -616,7 +653,7 @@ function BirthdayCard({ member: m }: Readonly<{ member: Member }>) {
           <Text style={s.saveBtnText}>{bdaySave === "saving" ? "Saving…" : "Save"}</Text>
         </Pressable>
         {bdaySave === "saved" && <Text style={s.savedNote}>Saved ✓</Text>}
-        {bdaySave === "error" && <Text style={s.errNote}>Add a valid date first</Text>}
+        {bdaySave === "error" && <Text style={s.errNote}>{bdayError}</Text>}
       </View>
     </>
   );
@@ -783,7 +820,7 @@ function ListingPreviewRow({ listing: l }: Readonly<{ listing: Listing }>) {
   );
 }
 
-// Everything the member has contributed, with review status + promote control.
+// Everything the member has contributed, with review status (and a running promotion).
 function MyListings({ listings }: Readonly<{ listings: Listing[] }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -827,10 +864,10 @@ function ListingRow({ listing: l }: Readonly<{ listing: Listing }>) {
       )}
       {l.status === "approved" && (
         <View style={s.promoSlot}>
+          {/* Paid promotions are not sold in the app (D1); a running one still shows. */}
           {l.featuredUntil && l.featuredUntil > new Date().toISOString() ? (
             <Text style={s.featuredNote}>★ Featured until {fmtDate(l.featuredUntil)}</Text>
           ) : null}
-          <PromoteControl listing={l} />
         </View>
       )}
     </View>
@@ -924,96 +961,6 @@ function SubscriptionsList({ subscriptions, limit, loading, error, onBusiness, o
         </Pressable>
       ) : null}
     </View>
-  );
-}
-
-// Paid featured placement on an owned listing — GH₵ 10/day, Paystack handoff
-// with a manual verify step, mirroring the projects pledge flow.
-function PromoteControl({ listing }: Readonly<{ listing: Listing }>) {
-  const { C } = useTheme();
-  const s = useMemo(() => makeStyles(C), [C]);
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [pendingRef, setPendingRef] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<Promotion | null>(null);
-
-  async function promote(days: number) {
-    setBusy(true); setErr("");
-    try {
-      const r = await api.promoteListing(listing.id, days);
-      const amountPesewas = days * 10 * 100;
-      const result = await presentCheckout(
-        sessionFromStartResponse(r, { amountPesewas, flow: "promotion", metadata: { listingId: listing.id, days: String(days) } })
-      );
-      if (result.kind === "error") {
-        setErr(result.message);
-      } else if (result.kind === "cancelled") {
-        // keep the picker open
-      } else if (result.provider === "simulated") {
-        const p = await api.confirmPromotion(r.reference);
-        setConfirmed(p);
-        setOpen(false);
-      } else if (result.provider === "stripe") {
-        const p = await api.confirmPromotion(r.reference);
-        setConfirmed(p);
-        setOpen(false);
-      } else {
-        setPendingRef(r.reference);
-      }
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not start the payment.");
-    } finally { setBusy(false); }
-  }
-
-  async function verify() {
-    if (!pendingRef) return;
-    setBusy(true); setErr("");
-    try {
-      const p = await api.confirmPromotion(pendingRef);
-      setConfirmed(p);
-      setPendingRef(null);
-      setOpen(false);
-    } catch {
-      setErr("Payment not confirmed yet. Finish paying in the browser, then verify again.");
-    } finally { setBusy(false); }
-  }
-
-  if (confirmed) {
-    return <Text style={s.promoDone}>★ Featured {confirmed.days}d ✓</Text>;
-  }
-  if (pendingRef) {
-    return (
-      <View style={{ alignItems: "flex-end", gap: 4 }}>
-        <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.promoBtn, busy && { opacity: 0.6 }]}>
-          <Text style={s.promoBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
-        </Pressable>
-        {err !== "" && <Text style={s.promoErr}>{err}</Text>}
-      </View>
-    );
-  }
-  if (open) {
-    return (
-      <View style={{ alignItems: "flex-end", gap: 6 }}>
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          {[7, 14, 30].map((d) => (
-            <Pressable accessibilityRole="button" key={d} onPress={() => promote(d)} disabled={busy} style={[s.promoDayBtn, busy && { opacity: 0.6 }]}>
-              <Text style={s.promoDayText}>{d}d</Text>
-              <Text style={s.promoDayPrice}>GH₵{d * 10}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Pressable accessibilityRole="button" onPress={() => { setOpen(false); setErr(""); }} hitSlop={6} style={{ minHeight: 32, justifyContent: "center" }}>
-          <Text style={s.promoCancel}>Cancel</Text>
-        </Pressable>
-        {err !== "" && <Text style={s.promoErr}>{err}</Text>}
-      </View>
-    );
-  }
-  return (
-    <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={s.promoBtn}>
-      <Text style={s.promoBtnText}>Promote</Text>
-    </Pressable>
   );
 }
 

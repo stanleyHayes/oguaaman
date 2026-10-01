@@ -1,0 +1,11 @@
+# Permissions a release build of Oguaa may request. One per line.
+# The check fails on any other <uses-permission> in the merged manifest.
+android.permission.INTERNET
+android.permission.ACCESS_NETWORK_STATE
+android.permission.VIBRATE
+# Legacy storage, only with android:maxSdkVersion="32" (photo picker on Android 12L and older).
+android.permission.READ_EXTERNAL_STORAGE
+android.permission.WRITE_EXTERNAL_STORAGE
+# Added by the React Native / Expo runtime for dev menus and deep links; harmless.
+android.permission.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+gh.oguaa.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION

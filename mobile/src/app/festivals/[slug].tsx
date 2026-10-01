@@ -1,4 +1,5 @@
 import { route } from "@/lib/routes";
+import { eventHasEnded, parseApiDate } from "@/lib/dates";
 import { useMemo } from "react";
 import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -14,8 +15,8 @@ import { RevealView, StaggerIn } from "@/components/anim";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  const d = parseApiDate(iso);
+  return d ? d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }) : iso;
 }
 
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -44,7 +45,7 @@ function ProgrammeList({ e }: Readonly<{ e: Listing }>) {
         </View>
       )}
       <Pressable accessibilityRole="button" onPress={() => push(route.event(e.slug))} style={s.evLink}>
-        <Text style={s.evLinkText}>See event details &amp; tickets →</Text>
+        <Text style={s.evLinkText}>{eventHasEnded(e.details) ? "See event details →" : "See event details & tickets →"}</Text>
       </Pressable>
     </View>
   );

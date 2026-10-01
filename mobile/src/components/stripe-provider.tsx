@@ -8,7 +8,7 @@ const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
 export function AppStripeProvider({ children }: Readonly<{ children: ReactNode }>) {
   if (!STRIPE_PK) return <>{children}</>;
   return (
-    <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="gh.oguaa.app.stripe">
+    <StripeProvider publishableKey={STRIPE_PK}>
       <>{children}</>
     </StripeProvider>
   );

@@ -11,6 +11,7 @@ import { canUseStudio } from "@/lib/api";
 import { useLang, LANGS } from "@/lib/i18n";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 import { memberRoleLabel } from "@/lib/member-role";
+import { NOT_GOVERNMENT } from "@/components/notices";
 
 // The More tab is the account & settings hub: profile banner, quick links,
 // language, legal, and auth. Section navigation lives in the ☰ drawer.
@@ -179,7 +180,10 @@ export default function More() {
             { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Terms of Use", href: ROUTES.legalTerms },
             { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Privacy Policy", href: ROUTES.legalPrivacy },
             { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Acceptable Use", href: ROUTES.legalAcceptableUse },
+            { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Terms of Sale", href: ROUTES.legalTermsOfSale },
+            { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Child Safety Standards", href: ROUTES.legalChildSafety },
             { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Safeguarding Policy", href: ROUTES.legalSafeguarding },
+            { icon: <BellIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Contact & support", href: ROUTES.contact },
           ]}
         />
       </View>
@@ -201,6 +205,7 @@ export default function More() {
 
       <Text style={s.foot}>Yɛn ara asaase ni — this is our own land.</Text>
       <Text style={s.version}>Oguaa v1.0 · an independent community initiative</Text>
+      <Text style={s.note}>{NOT_GOVERNMENT}</Text>
       <Text style={s.note}>Made by us, for us. For ages 18+.</Text>
     </ScrollView>
   );

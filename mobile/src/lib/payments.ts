@@ -16,7 +16,8 @@ export type CheckoutSession =
   | {
       provider: "stripe";
       reference: string;
-      amountPesewas: number;
+      /** Informational only: the server charges the pending record's own amount. */
+      amountPesewas?: number;
       flow: StripeFlow;
       metadata?: Record<string, string>;
     }
@@ -32,10 +33,6 @@ export function activePaymentProvider(): PaymentProvider {
 
 export function isStripeConfigured(): boolean {
   return !!process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-}
-
-export function isPaystackConfigured(): boolean {
-  return !!process.env.EXPO_PUBLIC_PAYSTACK_PUBLIC_KEY;
 }
 
 export function simulationEnabled(): boolean {
@@ -73,13 +70,9 @@ export async function presentCheckout(session: CheckoutSession): Promise<Checkou
     return { kind: "error", message: "Stripe is not configured on this device." };
   }
   try {
-    const intent = await api.stripeIntent({
-      reference: session.reference,
-      amountPesewas: session.amountPesewas,
-      currency: "GHS",
-      flow: session.flow,
-      metadata: session.metadata,
-    });
+    // The server charges the pending record's own amount (in GHS); the client
+    // only names the checkout.
+    const intent = await api.stripeIntent({ reference: session.reference, flow: session.flow });
     const { error: initError } = await initPaymentSheet({
       paymentIntentClientSecret: intent.clientSecret,
       merchantDisplayName: "Oguaa",
@@ -95,11 +88,35 @@ export async function presentCheckout(session: CheckoutSession): Promise<Checkou
       }
       return { kind: "error", message: presentError.message };
     }
-    return { kind: "success", reference: intent.reference, provider: "stripe" };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Could not start Stripe checkout.";
     return { kind: "error", message };
   }
+  return confirmStripeCheckout(session.reference);
+}
+
+/**
+ * The card is charged: fulfil the record through the Stripe confirm endpoint,
+ * which checks the PaymentIntent with Stripe. The flow's own confirm endpoint
+ * verifies with Paystack and would mark a Stripe-paid record failed, so callers
+ * only read the record back after this succeeds. One retry covers a
+ * PaymentIntent that is still settling.
+ */
+async function confirmStripeCheckout(reference: string): Promise<CheckoutResult> {
+  let last = "";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await api.confirmStripe(reference);
+      return { kind: "success", reference, provider: "stripe" };
+    } catch (e) {
+      last = e instanceof Error ? e.message : "";
+      if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 2_000));
+    }
+  }
+  return {
+    kind: "error",
+    message: `We couldn't confirm your card payment yet${last ? ` (${last})` : ""}. Please don't pay again — contact support with reference ${reference} if it doesn't show on your profile soon.`,
+  };
 }
 
 /**
@@ -109,7 +126,7 @@ export async function presentCheckout(session: CheckoutSession): Promise<Checkou
  */
 export function sessionFromStartResponse(
   response: { authorizationUrl?: string; reference?: string; simulated?: boolean },
-  stripeFallback: { amountPesewas: number; flow: StripeFlow; metadata?: Record<string, string> }
+  stripeFallback: { amountPesewas?: number; flow: StripeFlow; metadata?: Record<string, string> }
 ): CheckoutSession {
   const reference = response.reference ?? "";
   if (response.simulated) {

@@ -9,6 +9,7 @@ import { useTheme } from "@/lib/theme-context";
 import { cldCover } from "@/lib/cloudinary";
 import { mediaUrl } from "@/lib/api";
 import { SPLASH_LINES, randomSplashIndex, type SplashLine } from "@/lib/splash-lines";
+import { openInAppBrowser } from "@/lib/webbrowser";
 
 /**
  * Branded splash-style skeleton loader — keeps the Oguaa tone while using shape
@@ -123,7 +124,7 @@ export function ErrorView({ message }: Readonly<{ message: string }>) {
     <View style={s.center}>
       <Text style={s.errTitle}>Couldn&apos;t load</Text>
       <Text style={s.errMsg}>{message}</Text>
-      <Text style={s.errHint}>Is the Go API running on :8080?</Text>
+      {__DEV__ ? <Text style={s.errHint}>Is the Go API running on :8080?</Text> : null}
     </View>
   );
 }
@@ -312,17 +313,31 @@ export function Thumb({
   );
 }
 
-// ── A tiny Markdown renderer for news bodies (headings, lists, quotes, bold) ──
+// ── A tiny Markdown renderer for news bodies (headings, lists, quotes, bold, links) ──
+// Only https links become tappable; anything else stays plain text.
+const INLINE_SPLIT = /(\*\*[^*]+\*\*|\[[^\]]+\]\(https:\/\/[^)\s]+\))/g;
+const INLINE_LINK = /^\[([^\]]+)\]\((https:\/\/[^)\s]+)\)$/;
+
+function InlinePart({ part }: Readonly<{ part: string }>) {
+  const { C } = useTheme();
+  if (part.startsWith("**") && part.endsWith("**")) return <Text style={{ ...S(700) }}>{part.slice(2, -2)}</Text>;
+  const link = INLINE_LINK.exec(part);
+  if (link) {
+    const [, label, url] = link;
+    return (
+      <Text accessibilityRole="link" onPress={() => { void openInAppBrowser(url); }} style={{ color: C.tealText, textDecorationLine: "underline" }}>
+        {label}
+      </Text>
+    );
+  }
+  return <Text>{part}</Text>;
+}
+
 function Inline({ text, style }: Readonly<{ text: string; style?: StyleProp<TextStyle> }>) {
-  // Split on **bold** spans.
-  const parts = text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+  const parts = text.split(INLINE_SPLIT).filter(Boolean);
   return (
     <Text style={style}>
-      {parts.map((p, i) =>
-        p.startsWith("**") && p.endsWith("**")
-          ? <Text key={`${p}-${i}`} style={{ ...S(700) }}>{p.slice(2, -2)}</Text>
-          : <Text key={`${p}-${i}`}>{p}</Text>,
-      )}
+      {parts.map((p, i) => <InlinePart key={`${p}-${i}`} part={p} />)}
     </Text>
   );
 }

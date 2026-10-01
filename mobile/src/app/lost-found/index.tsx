@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { parseApiDate } from "@/lib/dates";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
@@ -22,8 +23,8 @@ const TABS: { kind: LostFoundKind; label: string }[] = [
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  const d = parseApiDate(iso);
+  return d ? d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : iso;
 }
 
 function NoticeCard({ i }: Readonly<{ i: LostFound }>) {

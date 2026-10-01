@@ -49,7 +49,7 @@ export default function Campaigns() {
         </View>
       </PhotoHero>
       <View style={{ padding: 16, gap: 14 }}>
-        {data.length === 0 && <EmptyState icon={<DiamondIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="No campaigns yet" body="Subscribed creators can start a fundraising campaign from the studio." />}
+        {data.length === 0 && <EmptyState icon={<DiamondIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="No campaigns yet" body="Verified creators start fundraising campaigns — check back soon." />}
         {data.map((l, i) => (
           <StaggerIn key={l.id} index={i}>
             <Link href={route.project(l.slug)} asChild>

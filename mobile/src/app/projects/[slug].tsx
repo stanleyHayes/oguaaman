@@ -1,10 +1,14 @@
 import { ROUTES } from "@/lib/routes";
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { parseCedisToPesewas } from "@/lib/money";
+import { useEffect, useMemo, useState } from "react";
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
+import { useHostedCheckout } from "@/lib/use-hosted-checkout";
+import { CheckoutPending } from "@/components/checkout-pending";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
-import { api } from "@/lib/api";
+import { api, PORTAL_URL, type PledgeQuote } from "@/lib/api";
+import { push } from "@/lib/router";
 import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
@@ -82,10 +86,11 @@ function Detail({ project, slug, reload }: Readonly<{ project: Listing; slug: st
           <View style={s.trust}>
             <Text style={s.trustKicker}>PUBLIC ACCOUNTABILITY</Text>
             <Text style={s.trustTitle}>Where the money goes</Text>
-            <Text style={s.trustPanelBody}>Each pledge is verified server-side. The configured platform fee supports Oguaa, and the net amount is credited to the named project.</Text>
+            <Text style={s.trustPanelBody}>Each pledge is verified server-side. A platform fee, shown before you pledge, supports Oguaa, and the rest is credited to the named project.</Text>
           </View>
 
-          <PledgeBox slug={slug} reload={reload} />
+          {/* iOS: pledges are completed on the web in Safari (App Store 3.2.2, D2). */}
+          {Platform.OS === "ios" ? <WebPledgeBox slug={slug} /> : <PledgeBox slug={slug} reload={reload} />}
 
           <View style={{ marginTop: 22, alignItems: "center" }}>
             <ReportButton listingId={project.id} />
@@ -117,62 +122,108 @@ function FundingStep({ number, title, body, styles }: Readonly<{ number: string;
   );
 }
 
-// Pledge flow: amount pick → Paystack handoff → manual verify. After a
-// real-Paystack handoff we hold the reference and offer "Verify"; confirm is
-// idempotent server-side, so verifying twice is harmless.
+// iOS: a neutral hand-off to the web portal in Safari — no amounts, no in-app
+// checkout (App Store 3.2.2(iv); decision D2).
+function WebPledgeBox({ slug }: Readonly<{ slug: string }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  const [err, setErr] = useState("");
+  function open() {
+    setErr("");
+    Linking.openURL(`${PORTAL_URL}/projects/${encodeURIComponent(slug)}`).catch(() => setErr("Couldn't open Safari. Visit oguaaman.com to pledge."));
+  }
+  return (
+    <View style={s.pledgeBox}>
+      <Text style={s.pledgeLabel}>SUPPORT THIS PROJECT</Text>
+      <Text style={s.trustBody}>Pledges are made on oguaaman.com and open in Safari.</Text>
+      {err !== "" && <Text style={s.err}>{err}</Text>}
+      <Pressable accessibilityRole="link" onPress={open} style={s.pledgeBtn}>
+        <Text style={s.pledgeBtnText}>Pledge on oguaaman.com</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// Fee, net amount and refund terms for the amount being pledged (K17). The
+// quote is keyed by its amount so a stale one is never shown.
+function usePledgeQuote(slug: string, amountPesewas: number | null): PledgeQuote | null {
+  const [quote, setQuote] = useState<PledgeQuote | null>(null);
+  useEffect(() => {
+    if (amountPesewas == null || amountPesewas < 100) return;
+    let alive = true;
+    const t = setTimeout(() => {
+      api.pledgeQuote(slug, amountPesewas).then((q) => { if (alive) setQuote(q); }).catch(() => { if (alive) setQuote(null); });
+    }, 350);
+    return () => { alive = false; clearTimeout(t); };
+  }, [slug, amountPesewas]);
+  return quote && quote.amountPesewas === amountPesewas ? quote : null;
+}
+
+function QuoteLine({ quote }: Readonly<{ quote: PledgeQuote | null }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  if (!quote) return null;
+  const who = quote.beneficiary ? `Organised by ${quote.beneficiary}. ` : "";
+  return (
+    <View style={s.quote}>
+      <Text style={s.quoteText}>
+        {who}Oguaa keeps {quote.feePercent}% ({cedis(quote.feePesewas)}); {cedis(quote.netPesewas)} goes to “{quote.projectTitle ?? "this project"}”.
+      </Text>
+      {quote.refundPolicy ? <Text style={s.quoteText}>{quote.refundPolicy}</Text> : null}
+      <Text accessibilityRole="link" style={s.quoteLink} onPress={() => push(ROUTES.legalTerms)}>Terms of Use</Text>
+    </View>
+  );
+}
+
+// Pledge flow (Android): amount pick → Paystack handoff → verify. The hosted
+// checkout keeps the reference and page so the payer can reopen, check or
+// cancel it, and checks quietly when they come back to the app. Confirm is
+// idempotent server-side, so checking twice is harmless.
 function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void }>) {
   const { member } = useAuth();
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const [amount, setAmount] = useState("50");
-  const [busy, setBusy] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [err, setErr] = useState("");
-  const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<{ amount: number; simulated?: boolean } | null>(null);
+  const [email, setEmail] = useState("");
+  const quote = usePledgeQuote(slug, parseCedisToPesewas(amount));
+  // Phone-only members need an email for the receipt (the server asks for one).
+  const needsEmail = member != null && !member.email;
+  const checkout = useHostedCheckout({
+    confirm: api.confirmPledge,
+    onPaid: (p) => { setConfirmed({ amount: p.amountPesewas, simulated: p.simulated }); reload(); },
+    notConfirmed: "Payment not confirmed yet. Finish paying on the Paystack page, then check again.",
+  });
+  const busy = starting || checkout.busy;
 
   async function startPledge() {
     setErr("");
-    const cedisNum = Number.parseFloat(amount);
-    if (!Number.isFinite(cedisNum) || cedisNum < 1) { setErr("Enter an amount of at least GH₵ 1."); return; }
+    const amountPesewas = parseCedisToPesewas(amount);
+    if (amountPesewas == null || amountPesewas < 100) { setErr("Enter an amount of at least GH₵ 1, e.g. 50 or 1,200."); return; }
     if (!member) { router.push(ROUTES.signIn); return; }
-    setBusy(true);
+    setStarting(true);
     try {
-      const r = await api.pledge(slug, { amountPesewas: Math.round(cedisNum * 100) });
-      const amountPesewas = Math.round(cedisNum * 100);
-      const result = await presentCheckout(
-        sessionFromStartResponse(r, { amountPesewas, flow: "pledge", metadata: { projectSlug: slug } })
-      );
+      const r = await api.pledge(slug, { amountPesewas, ...(email.trim() ? { email: email.trim() } : {}) });
+      const session = sessionFromStartResponse(r, { amountPesewas, flow: "pledge", metadata: { projectSlug: slug } });
+      if (session.provider === "paystack") {
+        await checkout.begin({ reference: r.reference, url: session.authorizationUrl });
+        return;
+      }
+      const result = await presentCheckout(session);
       if (result.kind === "error") {
         setErr(result.message);
-      } else if (result.kind === "cancelled") {
-        // User closed the sheet/browser without paying — keep the form open.
-      } else if (result.provider === "simulated") {
+      } else if (result.kind === "success") {
+        // Simulated, or Stripe already confirmed by presentCheckout — this read
+        // returns the settled record without a Paystack verify.
         const p = await api.confirmPledge(r.reference);
-        setConfirmed({ amount: p.amountPesewas, simulated: true });
+        setConfirmed({ amount: p.amountPesewas, simulated: result.provider === "simulated" || !!p.simulated });
         reload();
-      } else if (result.provider === "stripe") {
-        const p = await api.confirmPledge(r.reference);
-        setConfirmed({ amount: p.amountPesewas, simulated: p.simulated });
-        reload();
-      } else {
-        setPendingRef(r.reference);
-      }
+      } // cancelled: the payer closed the sheet without paying — keep the form open.
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not start the payment.");
-    } finally { setBusy(false); }
-  }
-
-  async function verify() {
-    if (!pendingRef) return;
-    setBusy(true); setErr("");
-    try {
-      const p = await api.confirmPledge(pendingRef);
-      setConfirmed({ amount: p.amountPesewas, simulated: p.simulated });
-      setPendingRef(null);
-      reload();
-    } catch {
-      setErr("Payment not confirmed yet. Finish paying in the browser, then verify again.");
-    } finally { setBusy(false); }
+    } finally { setStarting(false); }
   }
 
   if (confirmed) {
@@ -181,24 +232,13 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
         <Text style={s.thanksTitle}>Medaase! 🎉</Text>
         <Text style={s.thanksBody}>
           Your pledge of {cedis(confirmed.amount)} is confirmed.
-          {confirmed.simulated ? " (Simulated — dev mode, no real money moved.)" : " A receipt is on its way to your email."}
+          {__DEV__ && confirmed.simulated ? " (Simulated — dev mode, no real money moved.)" : " A receipt is on its way to your email."}
         </Text>
       </View>
     );
   }
 
-  if (pendingRef) {
-    return (
-      <View style={s.pledgeBox}>
-        <Text style={s.pledgeLabel}>FINISH IN YOUR BROWSER</Text>
-        <Text style={s.trustBody}>Complete the payment on the Paystack page that opened, then come back and verify.</Text>
-        {err !== "" && <Text style={s.err}>{err}</Text>}
-        <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.pledgeBtn, busy && { opacity: 0.6 }]}>
-          <Text style={s.pledgeBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
-        </Pressable>
-      </View>
-    );
-  }
+  if (checkout.pending) return <CheckoutPending checkout={checkout} style={{ marginTop: 18 }} />;
 
   const pledgeLabel = member ? "Pledge with Paystack" : "Sign in to pledge";
 
@@ -220,6 +260,18 @@ function PledgeBox({ slug, reload }: Readonly<{ slug: string; reload: () => void
         placeholder="Amount in GH₵"
         placeholderTextColor={C.inkFaint}
       />
+      {needsEmail ? (
+        <TextInput
+          style={s.input}
+          value={email}
+          onChangeText={(v) => { setEmail(v); setErr(""); }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          placeholder="Email for your receipt"
+          placeholderTextColor={C.inkFaint}
+        />
+      ) : null}
+      <QuoteLine quote={quote} />
       {err !== "" && <Text style={s.err}>{err}</Text>}
       <Pressable accessibilityRole="button" onPress={startPledge} disabled={busy} style={[s.pledgeBtn, busy && { opacity: 0.6 }]}>
         <Text style={s.pledgeBtnText}>{busy ? "Starting…" : pledgeLabel}</Text>
@@ -269,6 +321,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   pledgeBtn: { backgroundColor: C.green, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 14 },
   pledgeBtnText: { color: ON_GREEN, ...S(700), fontSize: 15 },
   note: { color: C.inkFaint, fontSize: 11, textAlign: "center", marginTop: 8 },
+  quote: { marginTop: 12, gap: 6 },
+  quoteText: { color: C.inkMuted, fontSize: 12.5, lineHeight: 18 },
+  quoteLink: { color: C.greenText, fontSize: 12.5, textDecorationLine: "underline", ...S(600) },
   thanks: { marginTop: 18, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 14, padding: 16 },
   thanksTitle: { ...D(700), fontSize: 20, color: C.greenText },
   thanksBody: { color: C.inkMuted, fontSize: 14, lineHeight: 20, marginTop: 6 },

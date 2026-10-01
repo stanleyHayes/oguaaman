@@ -50,6 +50,10 @@ export const ROUTES = {
   legalPrivacy: "/legal/privacy",
   legalAcceptableUse: "/legal/acceptable-use",
   legalSafeguarding: "/legal/safeguarding",
+  legalTermsOfSale: "/legal/terms-of-sale",
+  legalChildSafety: "/legal/child-safety",
+  resetPassword: "/reset-password",
+  contact: "/contact",
   studioMoney: "/studio/money",
 } as const;
 

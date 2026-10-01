@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -8,19 +7,19 @@ import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/lib/auth";
-import type { Listing, MemberView, Promotion } from "@/lib/types";
+import type { Listing, MemberView } from "@/lib/types";
 import { D, S, initials, withAlpha, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, HeroBand, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 import { fmtDate } from "@/components/studio-kit";
-import { CheckIcon, PenIcon, PlusIcon, StarIcon } from "@/components/icons";
+import { PenIcon, PlusIcon, StarIcon } from "@/components/icons";
 
 /*
  * My Work — ports creator/src/pages/MyWork.tsx. The member's own listings (all
- * statuses), with status-filter tabs, a promote action on approved listings
- * (the mobile checkout mirrors me.tsx's PromoteControl), and an edit link to the
- * dedicated edit route. Listings come from api.member(slug) — a member's own
+ * statuses), with status-filter tabs, a running promotion's end date (paid
+ * promotions are not sold in the app, D1), and an edit link to the dedicated
+ * edit route. Listings come from api.member(slug) — a member's own
  * view carries every listing they own, at every status.
  */
 
@@ -106,7 +105,7 @@ export default function StudioWork() {
         tone={C.green}
         kicker="My work"
         title="Your listings"
-        lede="Everything you've contributed, with its review status. Promote an approved listing to feature it across the app — GH₵ 10 per day."
+        lede="Everything you've contributed, with its review status."
       />
 
       <View style={s.body}>
@@ -134,7 +133,7 @@ export default function StudioWork() {
           </View>
         ) : (
           <View style={{ gap: 10 }}>
-            {filtered.map((l) => <WorkRow key={l.id} listing={l} onChanged={reload} />)}
+            {filtered.map((l) => <WorkRow key={l.id} listing={l} />)}
           </View>
         )}
 
@@ -153,7 +152,7 @@ export default function StudioWork() {
   );
 }
 
-function WorkRow({ listing: l, onChanged }: Readonly<{ listing: Listing; onChanged: () => void }>) {
+function WorkRow({ listing: l }: Readonly<{ listing: Listing }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const added = meta(l).submittedAt ?? meta(l).createdAt;
@@ -199,7 +198,6 @@ function WorkRow({ listing: l, onChanged }: Readonly<{ listing: Listing; onChang
             </Pressable>
           )}
         </View>
-        {l.status === "approved" && <PromoteControl listing={l} onDone={onChanged} />}
       </View>
     </View>
   );
@@ -218,103 +216,6 @@ function StatusChip({ status }: Readonly<{ status: string }>) {
     <View style={[s.statusChip, v.bg]}>
       <Text style={[s.statusText, { color: v.color }]}>{status}</Text>
     </View>
-  );
-}
-
-// Promote an approved listing — mirrors me.tsx's PromoteControl: settle in place
-// when Paystack is simulated (dev), otherwise open checkout and verify after.
-function PromoteControl({ listing, onDone }: Readonly<{ listing: Listing; onDone: () => void }>) {
-  const { C } = useTheme();
-  const s = useMemo(() => makeStyles(C), [C]);
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [pendingRef, setPendingRef] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<Promotion | null>(null);
-
-  async function promote(days: number) {
-    setBusy(true); setErr("");
-    try {
-      const r = await api.promoteListing(listing.id, days);
-      const amountPesewas = days * 10 * 100;
-      const result = await presentCheckout(
-        sessionFromStartResponse(r, { amountPesewas, flow: "promotion", metadata: { listingId: listing.id, days: String(days) } })
-      );
-      if (result.kind === "error") {
-        setErr(result.message);
-      } else if (result.kind === "cancelled") {
-        // keep the picker open
-      } else if (result.provider === "simulated") {
-        const p = await api.confirmPromotion(r.reference);
-        setConfirmed(p);
-        setOpen(false);
-        onDone();
-      } else if (result.provider === "stripe") {
-        const p = await api.confirmPromotion(r.reference);
-        setConfirmed(p);
-        setOpen(false);
-        onDone();
-      } else {
-        setPendingRef(r.reference);
-      }
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not start the payment.");
-    } finally { setBusy(false); }
-  }
-
-  async function verify() {
-    if (!pendingRef) return;
-    setBusy(true); setErr("");
-    try {
-      const p = await api.confirmPromotion(pendingRef);
-      setConfirmed(p);
-      setPendingRef(null);
-      setOpen(false);
-      onDone();
-    } catch {
-      setErr("Payment not confirmed yet. Finish paying in the browser, then verify again.");
-    } finally { setBusy(false); }
-  }
-
-  if (confirmed) return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-      <StarIcon size={12} color={C.goldText} strokeWidth={2.5} />
-      <Text style={s.promoDone}>Featured {confirmed.days}d</Text>
-      <CheckIcon size={12} color={C.goldText} strokeWidth={2.5} />
-    </View>
-  );
-  if (pendingRef) {
-    return (
-      <View style={{ alignItems: "flex-end", gap: 4 }}>
-        <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.promoBtn, busy && { opacity: 0.6 }]}>
-          <Text style={s.promoBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
-        </Pressable>
-        {err !== "" && <Text style={s.promoErr}>{err}</Text>}
-      </View>
-    );
-  }
-  if (open) {
-    return (
-      <View style={{ alignItems: "flex-end", gap: 6 }}>
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          {[7, 14, 30].map((d) => (
-            <Pressable accessibilityRole="button" key={d} onPress={() => promote(d)} disabled={busy} style={[s.promoDayBtn, busy && { opacity: 0.6 }]}>
-              <Text style={s.promoDayText}>{d}d</Text>
-              <Text style={s.promoDayPrice}>GH₵{d * 10}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Pressable accessibilityRole="button" onPress={() => { setOpen(false); setErr(""); }} hitSlop={6} style={{ minHeight: 32, justifyContent: "center" }}>
-          <Text style={s.promoCancel}>Cancel</Text>
-        </Pressable>
-        {err !== "" && <Text style={s.promoErr}>{err}</Text>}
-      </View>
-    );
-  }
-  return (
-    <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={s.promoBtn}>
-      <Text style={s.promoBtnText}>Promote</Text>
-    </Pressable>
   );
 }
 

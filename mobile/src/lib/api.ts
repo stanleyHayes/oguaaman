@@ -1,10 +1,22 @@
 import type { ArtistBooking, Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs, BlockedMember, CommerceOrder, BusinessCoupon, AffiliateProgramme, Affiliate, AffiliateConversion,} from "./types";
+import { Platform } from "react-native";
 import { getToken } from "./storage";
 
 // On a simulator/web, localhost reaches the Go API. On a physical device set
 // EXPO_PUBLIC_API_URL to your machine's LAN IP, e.g. http://192.168.1.10:8080
-// Trailing slashes are stripped so joining "/path" never yields "//path".
-export const API_BASE = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/+$/, "");
+// Release builds never fall back to localhost: without a configured URL they use
+// the production API, and app.config.ts refuses a production build without an
+// https URL. Trailing slashes are stripped so joining "/path" never yields "//path".
+const PRODUCTION_API = "https://api.oguaaman.com";
+export const API_BASE = (process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? "http://localhost:8080" : PRODUCTION_API)).replace(/\/+$/, "");
+
+/** The public web portal (pledges on iOS open here in Safari). */
+export const PORTAL_URL = (process.env.EXPO_PUBLIC_PORTAL_URL ?? "https://citizen.oguaaman.com").replace(/\/+$/, "");
+
+// A release build must only talk to the API over HTTPS.
+const INSECURE_RELEASE = !__DEV__ && !API_BASE.startsWith("https://");
+
+const LOCAL_HOST = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?(\/|$)/i;
 
 /**
  * Seed/upload URLs arrive root-relative ("/uploads/..."). Web works because
@@ -13,7 +25,10 @@ export const API_BASE = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:80
  */
 export function mediaUrl(src?: string): string | undefined {
   if (!src) return undefined;
-  if (/^https?:\/\//i.test(src) || src.startsWith("data:")) return src;
+  if (/^https:\/\//i.test(src) || src.startsWith("data:")) return src;
+  // Plain-http media is blocked by App Transport Security and Android's cleartext
+  // policy; upgrade public hosts to https (local dev servers stay as they are).
+  if (/^http:\/\//i.test(src)) return LOCAL_HOST.test(src) && __DEV__ ? src : src.replace(/^http:/i, "https:");
   const path = src.startsWith("/") ? src : `/${src}`;
   return `${API_BASE}${path}`;
 }
@@ -26,39 +41,131 @@ function authHeaders(json = false): Record<string, string> {
   return h;
 }
 
+/** The result of deleting an account (K6). */
+export interface AccountDeletion { ok?: boolean; deleted: boolean; retained: string[] }
+
+/** The obligations a 409 from account deletion lists (unsettled escrow, orders). */
+export function deletionBlockers(e: unknown): string[] {
+  const data = (e as { data?: { blockers?: unknown } } | null)?.data;
+  return Array.isArray(data?.blockers) ? data.blockers.filter((b): b is string => typeof b === "string") : [];
+}
+
+/** GET/PUT /api/me/notification-preferences (K14). */
+export interface NotificationPrefs {
+  categories: { safety: boolean; community: boolean; remembrances: boolean; product: boolean };
+  channels: { push: boolean; email: boolean; whatsapp: boolean };
+}
+
+/** GET /api/projects/{slug}/pledge-quote (K17). */
+export interface PledgeQuote {
+  amountPesewas: number;
+  feePercent: number;
+  feePesewas: number;
+  netPesewas: number;
+  projectTitle?: string;
+  beneficiary?: string;
+  fundingClosed?: boolean;
+  refundPolicy: string;
+}
+
+/** The client platform sent with registration and consent (K1/K2). */
+export type ClientPlatform = "ios" | "android" | "web";
+
+export function clientPlatform(): ClientPlatform {
+  if (Platform.OS === "ios") return "ios";
+  if (Platform.OS === "android") return "android";
+  return "web";
+}
+
+/** The Terms/Privacy version this build shows (the server records its own). */
+export const TERMS_VERSION = "2026-10-01";
+
+/** Block state between the viewer and a member (K5). */
+export interface BlockState { blocked: boolean; blockedByMe?: boolean; blockedMe?: boolean }
+
+/** What a report can point at (POST /api/reports). */
+export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output";
+
+/** An API failure: the server's own message plus the HTTP status (0 = no response). */
+export type ApiError = Error & { status: number; data?: unknown };
+
+/** The HTTP status carried by an API error (0 when the request never got a response). */
+export function errorStatus(e: unknown): number {
+  const status = (e as { status?: unknown } | null)?.status;
+  return typeof status === "number" ? status : 0;
+}
+
+// A message people can act on when the server sent none (no internal paths or codes).
+function fallbackMessage(status: number): string {
+  if (status === 401) return "Please sign in again.";
+  if (status === 403) return "You don't have access to this.";
+  if (status === 404) return "We couldn't find that — it may have been removed.";
+  if (status === 429) return "You're doing that a bit too often — please wait a little and try again.";
+  if (status >= 500) return "Something went wrong on our side. Please try again shortly.";
+  return "That request didn't work. Please try again.";
+}
+
+// Build the error thrown for a non-2xx response: the server's `message`/`error`
+// text when it sent one, with `status` and the raw body attached.
+function apiError(res: Response, data: unknown): ApiError {
+  const body = (data ?? {}) as { error?: unknown; message?: unknown };
+  let msg = fallbackMessage(res.status);
+  if (typeof body.message === "string" && body.message) msg = body.message;
+  else if (typeof body.error === "string" && body.error) msg = body.error;
+  return Object.assign(new Error(msg), { status: res.status, data });
+}
+
+// fetch() rejects only when there was no response at all (offline, DNS, TLS).
+async function send(path: string, init: RequestInit): Promise<Response> {
+  if (INSECURE_RELEASE) {
+    throw Object.assign(new Error("This build of Oguaa is misconfigured: its server address isn't secure. Please update the app."), { status: 0 });
+  }
+  try {
+    return await fetch(`${API_BASE}${path}`, init);
+  } catch {
+    throw Object.assign(new Error("Can't reach Oguaa right now. Check your connection and try again."), { status: 0 });
+  }
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
-  if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
-  return res.json() as Promise<T>;
+  const res = await send(path, { headers: authHeaders() });
+  const data: unknown = await res.json().catch(() => ({}));
+  if (!res.ok) throw apiError(res, data);
+  return data as T;
 }
 
 async function post<T>(path: string, body: unknown = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await send(path, {
     method: "POST",
     headers: authHeaders(true),
     body: JSON.stringify(body),
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = (data as { error?: string }).error ?? `POST ${path} failed (${res.status})`;
-    throw Object.assign(new Error(msg), { status: res.status, data });
-  }
+  const data: unknown = await res.json().catch(() => ({}));
+  if (!res.ok) throw apiError(res, data);
+  return data as T;
+}
+
+async function put<T>(path: string, body: unknown): Promise<T> {
+  const res = await send(path, {
+    method: "PUT",
+    headers: authHeaders(true),
+    body: JSON.stringify(body),
+  });
+  const data: unknown = await res.json().catch(() => ({}));
+  if (!res.ok) throw apiError(res, data);
   return data as T;
 }
 
 async function del<T>(path: string, body?: unknown): Promise<T> {
   // A body is optional because most DELETEs are identified entirely by their
   // path; account erasure is the exception — it re-verifies the password.
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await send(path, {
     method: "DELETE",
     headers: authHeaders(body !== undefined),
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = (data as { error?: string }).error ?? `DELETE ${path} failed (${res.status})`;
-    throw Object.assign(new Error(msg), { status: res.status, data });
-  }
+  const data: unknown = await res.json().catch(() => ({}));
+  if (!res.ok) throw apiError(res, data);
   return data as T;
 }
 
@@ -147,11 +254,14 @@ export const api = {
     post<ArtistBooking>(`/api/artists/${slug}/bookings`, body),
   artistBookings: () => get<ArtistBooking[]>("/api/me/artist-bookings"),
   updateArtistBooking: (id: string, status: ArtistBooking["status"], artistNote = "") =>
-    post<ArtistBooking>(`/api/me/artist-bookings/${id}/status`, { status, artistNote }),
+    // The API field is `note` (stored as the booking's artistNote); sending the
+    // current note keeps it, since an absent note is saved as empty.
+    post<ArtistBooking>(`/api/me/artist-bookings/${id}/status`, { status, note: artistNote }),
   memorials: () => get<Listing[]>("/api/memorials"),
   memorial: (slug: string) => get<Listing>(`/api/memorials/${slug}`),
   lightCandle: (slug: string) => post<{ candles: number }>(`/api/memorials/${slug}/candle`),
-  addTribute: (slug: string, body: { authorName: string; message: string }) =>
+  // Signed-in only; the author is the signed-in member (relation ≤ 60 chars).
+  addTribute: (slug: string, body: { message: string; relation?: string }) =>
     post<Tribute>(`/api/memorials/${slug}/tributes`, body),
 
   // Remembrance follow (spec §8.11) — enrols a member in yearly anniversary notices.
@@ -168,14 +278,21 @@ export const api = {
   // Fundraising campaigns (Creator Monetization) — member-created projects.
   // A campaign's detail + funding reuse the project screen / pledge flow.
   campaigns: () => get<Listing[]>("/api/campaigns"),
+  // What a pledge costs and where it goes, before paying (K17).
+  pledgeQuote: (slug: string, amountPesewas: number) =>
+    get<PledgeQuote>(`/api/projects/${slug}/pledge-quote?amountPesewas=${Math.round(amountPesewas)}`),
   pledge: (slug: string, body: { amountPesewas: number; email?: string }) =>
     post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean; provider?: "paystack" | "stripe" }>(`/api/projects/${slug}/pledge`, body),
   confirmPledge: (reference: string) =>
     get<{ status: string; amountPesewas: number; projectTitle: string; simulated?: boolean }>(`/api/pledges/confirm?reference=${encodeURIComponent(reference)}`),
 
   // Stripe PaymentSheet support (alternative to Paystack hosted checkout).
-  stripeIntent: (body: { reference: string; amountPesewas: number; currency?: string; flow: "pledge" | "ticket" | "subscription" | "promotion"; metadata?: Record<string, string> }) =>
-    post<{ clientSecret: string; reference: string; paymentIntentId: string }>("/api/payments/stripe/intent", body),
+  // The server charges the pending record's own amount in GHS; the body only
+  // names the checkout (amount/currency sent by older clients are ignored).
+  stripeIntent: (body: { reference: string; flow: "pledge" | "ticket" | "subscription" | "promotion" }) =>
+    post<{ clientSecret: string; reference: string; paymentIntentId: string; amountPesewas: number; currency: string }>("/api/payments/stripe/intent", body),
+  // Fulfils a Stripe-paid checkout (checks the PaymentIntent with Stripe). Must
+  // run before the flow's own confirm, which verifies with Paystack only.
   confirmStripe: (reference: string) =>
     post<{ status: string; reference: string }>(`/api/payments/stripe/confirm?reference=${encodeURIComponent(reference)}`, {}),
 
@@ -184,7 +301,11 @@ export const api = {
 
   // Notice-and-takedown: any visitor can report a listing (spec §14).
   reportListing: (id: string, body: { reason: string; detail?: string }) =>
-    post<{ reported: boolean; id: string }>(`/api/listings/${id}/report`, body),
+    post<{ reported: boolean; id: string; hidden?: boolean }>(`/api/listings/${id}/report`, body),
+  // Signed-in members report any content: members, reviews, tributes, products
+  // (with their business's listingId), news and agents (K11).
+  report: (body: { targetType: ReportTargetType; targetId: string; reason: string; details?: string; listingId?: string }) =>
+    post<{ reported: boolean; id: string; hidden?: boolean }>("/api/reports", body),
 
   // Diaspora register opt-in (spec §4/§5/§15, Phase 2 foundation).
   setDiaspora: (body: { abroad: boolean; city?: string; country?: string }) =>
@@ -209,8 +330,9 @@ export const api = {
   requestAgentJob: (slug: string, body: AgentJobInput) => post<AgentJob>(`/api/agents/${slug}/jobs`, body),
   myAgentJobs: () => get<MyAgentJobs>("/api/me/jobs"),
   quoteAgentJob: (id: string, body: { amountPesewas: number; note: string }) => post<AgentJob>(`/api/jobs/${id}/quote`, body),
-  fundAgentJob: (id: string, email: string) =>
-    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/jobs/${id}/accept`, { email }),
+  // The receipt email is optional: the server falls back to the member's email.
+  fundAgentJob: (id: string, email?: string) =>
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/jobs/${id}/accept`, email ? { email } : {}),
   confirmAgentJob: (reference: string) => get<AgentJob>(`/api/jobs/confirm?reference=${encodeURIComponent(reference)}`),
   deliverAgentJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/deliver`),
   completeAgentJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/complete`),
@@ -323,11 +445,12 @@ export const api = {
   unfollowMember: (slug: string) => del<{ following: boolean; followers: number }>(`/api/members/${slug}/follow`),
 
   // Blocking — App Store Review Guideline 1.2 requires UGC apps to let a member
-  // block an abusive user, and to undo it. Symmetric on the server.
-  memberBlockState: (slug: string) => get<{ blocked: boolean }>(`/api/members/${slug}/block`),
+  // block an abusive user, and to undo it. `blocked` is either direction;
+  // `blockedByMe` is the viewer's own block (the only one they can lift).
+  memberBlockState: (slug: string) => get<BlockState>(`/api/members/${slug}/block`),
   blockMember: (slug: string, reason?: string) =>
-    post<{ blocked: boolean }>(`/api/members/${slug}/block`, reason ? { reason } : {}),
-  unblockMember: (slug: string) => del<{ blocked: boolean }>(`/api/members/${slug}/block`),
+    post<BlockState>(`/api/members/${slug}/block`, reason ? { reason } : {}),
+  unblockMember: (slug: string) => del<BlockState>(`/api/members/${slug}/block`),
   myBlocked: () => get<BlockedMember[]>("/api/me/blocked"),
 
   // Profile connections — "people you may know" (spec §8.6).
@@ -382,8 +505,11 @@ export const api = {
     return get<LostFound[]>(`/api/lost-found${query}`);
   },
   lostFound: (slug: string) => get<LostFound>(`/api/lost-found/${slug}`),
-  postLostFound: (body: { title: string; kind: string; description: string; lastSeenLocation?: string; lastSeenDate?: string; contact: string }) =>
+  postLostFound: (body: { title: string; kind: string; description: string; lastSeenLocation?: string; lastSeenDate?: string; contact: string; subjectIsMinor?: boolean; guardianAttestation?: boolean; guardianRelation?: string; policeReference?: string }) =>
     post<LostFound>("/api/lost-found", body),
+  // Message the poster through Oguaa — their contact details are never public.
+  contactLostFound: (slug: string, message: string) =>
+    post<{ sent: boolean }>(`/api/lost-found/${slug}/contact`, { message }),
   resolveLostFound: (slug: string, status: string) =>
     post<{ status: string }>(`/api/lost-found/${slug}/resolve`, { status }),
 
@@ -437,23 +563,34 @@ export const api = {
     post<LoginResult>("/api/auth/login", { identifier, password }),
   mfaLogin: (challenge: string, code: string) =>
     post<{ token: string; member: Member }>("/api/auth/mfa", { challenge, code }),
-  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[]; creatorPlanIntent?: string }) =>
+  register: (input: { identifier: string; displayName: string; dateOfBirth: string; password: string; creatorTypes?: string[]; creatorPlanIntent?: string; acceptTerms: boolean; termsVersion: string; platform: ClientPlatform }) =>
     post<{ token: string; member: Member }>("/api/auth/register", input),
+  // Records agreement to the current Terms/Privacy for an existing account (K2).
+  // confirmAdult is required when the account's age was never verified.
+  acceptConsent: (body: { acceptTerms: true; confirmAdult?: boolean; platform: ClientPlatform }) =>
+    post<Member>("/api/me/consent", body),
+  // Forgot password — also how invited accounts set their first password (K3).
+  resetPasswordStart: (identifier: string) =>
+    post<{ ok: boolean; devCode?: string }>("/api/auth/password/reset/start", { identifier }),
+  resetPasswordConfirm: (identifier: string, code: string, newPassword: string) =>
+    post<{ ok: boolean }>("/api/auth/password/reset/confirm", { identifier, code, newPassword }),
   startPhoneVerification: () => post<PhoneVerificationResult>("/api/me/phone/verify/start", {}),
   confirmPhoneVerification: (code: string) =>
     post<PhoneVerificationResult>("/api/me/phone/verify/confirm", { code }),
 
   // ── Settings: security (spec §14) — mirrors the web creator/admin signatures. ──
   // Authenticated password change — the server re-verifies the current password
-  // (bcrypt) and enforces the 8-char floor; the existing session stays valid.
+  // (bcrypt) and enforces the 8-char floor. Every earlier session is revoked,
+  // so the caller must store the returned token.
   changePassword: (currentPassword: string, newPassword: string) =>
-    post<{ ok: boolean }>("/api/me/password", { currentPassword, newPassword }),
+    post<{ ok: boolean; token?: string }>("/api/me/password", { currentPassword, newPassword }),
   // Two-factor (TOTP) self-enrolment. The secret and recovery-code hashes never
   // leave the server; enrolment returns the QR (a data-URI PNG, rendered inline)
   // plus the otpauth:// URL (deep-linkable to an authenticator app) and codes.
   mfaSetup: () => post<{ secret: string; otpauthUrl: string; qr: string }>("/api/me/mfa/setup"),
-  mfaConfirm: (code: string) => post<{ recoveryCodes: string[] }>("/api/me/mfa/confirm", { code }),
-  mfaDisable: (code: string) => post<{ ok: boolean }>("/api/me/mfa/disable", { code }),
+  // Enrolment revokes every earlier session: store the returned token.
+  mfaConfirm: (code: string) => post<{ recoveryCodes: string[]; token?: string }>("/api/me/mfa/confirm", { code }),
+  mfaDisable: (code: string) => post<{ ok: boolean; token?: string }>("/api/me/mfa/disable", { code }),
 
   // ── Act 843 data rights (spec §14.2) — also what the app stores require ──
   // Apple guideline 5.1.1(v) and Google Play's data-deletion policy both demand
@@ -475,7 +612,20 @@ export const api = {
     }
     return res.text();
   },
-  deleteAccount: (password: string) => del<{ ok: boolean }>("/api/me", { password }),
+  // 200 {deleted, retained[]}; 409 {error, blockers[]} when escrow or paid
+  // orders must be settled first (read them with deletionBlockers()).
+  deleteAccount: (password: string) => del<AccountDeletion>("/api/me", { password }),
+  // Code-based deletion for accounts that can't use a password (K6). Always 202.
+  deletionRequestStart: (identifier: string) =>
+    post<{ ok: boolean; devCode?: string }>("/api/account/deletion-requests", { identifier }),
+  deletionRequestConfirm: (identifier: string, code: string) =>
+    post<AccountDeletion>("/api/account/deletion-requests/confirm", { identifier, code }),
+
+  // Account-wide notification preferences (K14). PUT is a partial update;
+  // safety is always on.
+  notificationPrefs: () => get<NotificationPrefs>("/api/me/notification-preferences"),
+  saveNotificationPrefs: (body: { categories?: Partial<NotificationPrefs["categories"]>; channels?: Partial<NotificationPrefs["channels"]> }) =>
+    put<NotificationPrefs>("/api/me/notification-preferences", body),
 
   me: () => get<Member>("/api/auth/me"),
 };

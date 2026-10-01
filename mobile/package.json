@@ -46,7 +46,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:privacy-manifest": "node scripts/check-privacy-manifest.mjs",
+    "check:android-permissions": "node scripts/check-android-permissions.mjs"
   },
   "private": true
 }

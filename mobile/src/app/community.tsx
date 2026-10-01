@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { InvestmentNote } from "@/components/notices";
+import { ReportButton } from "@/report-button";
+import { eventHasEnded, parseApiDate } from "@/lib/dates";
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Stack } from "expo-router";
 import { T as Text } from "@/components/typography";
@@ -43,10 +46,8 @@ function hasKind(listing: Listing, kind: Exclude<DoorFilter, "all">): boolean {
 
 function formatDate(iso?: string): string {
   if (!iso) return "Date to be announced";
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime())
-    ? iso
-    : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  const date = parseApiDate(iso);
+  return date ? date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : iso;
 }
 
 function initials(value: string): string {
@@ -74,10 +75,10 @@ export default function Community() {
 
   const { eventCards, upcomingEventCount } = useMemo(() => {
     const all = (data?.events ?? []).slice().sort((a, b) => (a.details.startsAt ?? "").localeCompare(b.details.startsAt ?? ""));
-    const today = new Date().toISOString().slice(0, 10);
-    const upcoming = all.filter((item) => (item.details.startsAt ?? "") >= today);
-    const visible = upcoming.length > 0 ? upcoming : all;
-    return { eventCards: visible.slice(0, 3), upcomingEventCount: visible.length };
+    // Only events still to come (in local time) — past editions are never
+    // presented as "coming up".
+    const upcoming = all.filter((item) => !eventHasEnded(item.details));
+    return { eventCards: upcoming.slice(0, 3), upcomingEventCount: upcoming.length };
   }, [data?.events]);
 
   if (loading) return <Loading />;
@@ -265,6 +266,8 @@ function OpportunityCard({ item }: Readonly<{ item: Listing }>) {
           </Pressable>
         ) : null}
       </View>
+      {kind === "investment" ? <InvestmentNote /> : null}
+      <ReportButton listingId={item.id} compact />
     </View>
   );
 }

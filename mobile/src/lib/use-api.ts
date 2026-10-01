@@ -41,7 +41,10 @@ export function useApi<T>(fn: () => Promise<T>, key: string): State<T> {
     setRefreshing(true);
     fn()
       .then((data) => setState({ data, error: null, loadedKey: key }))
-      .catch((e: Error) => setState((s) => ({ ...s, error: e.message, loadedKey: key })))
+      // A failed soft refresh keeps whatever is already on screen: consumers show
+      // ErrorView whenever `error` is set, so only surface it when there is no
+      // data yet (the first load for this key failed too).
+      .catch((e: Error) => setState((s) => (s.data != null && s.loadedKey === key ? s : { ...s, error: e.message, loadedKey: key })))
       .finally(() => setRefreshing(false));
   }
 

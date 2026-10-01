@@ -21,7 +21,8 @@ export type CheckoutSession =
   | {
       provider: "stripe";
       reference: string;
-      amountPesewas: number;
+      /** Informational only: the server charges the pending record's own amount. */
+      amountPesewas?: number;
       flow: StripeFlow;
       metadata?: Record<string, string>;
     }
@@ -35,10 +36,6 @@ export function activePaymentProvider(): PaymentProvider {
 /** Native Stripe is never available on web, so sessions always fall back to Paystack. */
 export function isStripeConfigured(): boolean {
   return false;
-}
-
-export function isPaystackConfigured(): boolean {
-  return !!process.env.EXPO_PUBLIC_PAYSTACK_PUBLIC_KEY;
 }
 
 export function simulationEnabled(): boolean {
@@ -80,7 +77,7 @@ export async function presentCheckout(session: CheckoutSession): Promise<Checkou
  */
 export function sessionFromStartResponse(
   response: { authorizationUrl?: string; reference?: string; simulated?: boolean },
-  stripeFallback: { amountPesewas: number; flow: StripeFlow; metadata?: Record<string, string> }
+  stripeFallback: { amountPesewas?: number; flow: StripeFlow; metadata?: Record<string, string> }
 ): CheckoutSession {
   const reference = response.reference ?? "";
   if (response.simulated) {

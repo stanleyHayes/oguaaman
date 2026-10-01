@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { EmergencyCallout } from "@/components/notices";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
@@ -73,8 +74,9 @@ export default function Safety() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} />}
     >
       <Text style={s.lede}>
-        Floods, fires, accidents and hazards across Cape Coast — reported by neighbours, verified by curators, and followed through to recovery. In an emergency, call the services first, then post here so the town can help.
+        Floods, fires, accidents and hazards across Cape Coast — reported by neighbours, verified by curators, and followed through to recovery.
       </Text>
+      <View style={{ marginTop: 14 }}><EmergencyCallout /></View>
       <Pressable accessibilityRole="button" onPress={() => push(ROUTES.safetyReport)} style={s.cta}>
         <Text style={s.ctaText}>Report an incident</Text>
       </Pressable>

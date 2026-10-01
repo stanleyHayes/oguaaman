@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { ROUTES } from "@/lib/routes";
 import { push, replace } from "@/lib/router";
 import { Alert, Image, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, View } from "react-native";
 import * as Linking from "expo-linking";
-import * as SecureStore from "expo-secure-store";
 import { T as Text, TI as TextInput } from "@/components/typography";
-import { api } from "@/lib/api";
+import { api, deletionBlockers, type NotificationPrefs as Prefs } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
+import { setToken } from "@/lib/storage";
 import { useAuth } from "@/lib/auth";
 import { useTheme, type ThemeSetting } from "@/lib/theme-context";
 import type { BlockedMember, Member } from "@/lib/types";
@@ -105,6 +105,12 @@ export default function Settings() {
             </Pressable>
           ))}
         </View>
+        <View style={s.hr} />
+        <Text style={s.subLabel}>HELP</Text>
+        <Pressable accessibilityRole="button" onPress={() => push(ROUTES.contact)} style={s.profileLink}>
+          <Text style={s.profileLinkText}>Contact &amp; support</Text>
+          <Text style={s.chevron}>›</Text>
+        </Pressable>
       </Section>
     </ScrollView>
   );
@@ -116,6 +122,8 @@ const LEGAL_LINKS = [
   { label: "Privacy", route: ROUTES.legalPrivacy },
   { label: "Terms", route: ROUTES.legalTerms },
   { label: "Acceptable use", route: ROUTES.legalAcceptableUse },
+  { label: "Terms of sale", route: ROUTES.legalTermsOfSale },
+  { label: "Child safety", route: ROUTES.legalChildSafety },
   { label: "Safeguarding", route: ROUTES.legalSafeguarding },
 ] as const;
 
@@ -240,39 +248,74 @@ function ExportMyData() {
 
 /**
  * Right to erasure — and the in-app account deletion both stores require
- * (Apple guideline 5.1.1(v), Google Play's data-deletion policy).
+ * (Apple guideline 5.1.1(v), Google Play's data-deletion policy; contract K6).
  *
- * This is a SOFT delete and the copy says so in as many words. The server
- * anonymises the member record in place: identifiers unset, profile wiped,
- * account permanently suspended. Approved community content stays up under
- * "Former member" — a memorial or a tribute is other people's memory too, and
- * hard-deleting the row would tear a hole in it. Nothing that survives can be
- * traced back to a person, which is what erasure actually requires.
- *
- * Reviewers check that this path is reachable without contacting support, so it
- * lives in Settings under a plain "Delete my account" label — no email form, no
- * dark pattern.
+ * The server erases the member everywhere: profile, contact details, listings
+ * (unpublished), uploads, follows, blocks, notifications and devices. What must
+ * be kept (payment ledgers, reports, reviews/tributes under "Former member") is
+ * stripped of identity and listed back to the member after deletion. A 409
+ * lists obligations to settle first (funded escrow, paid unfulfilled orders).
+ * Members who can't use a password confirm with a code sent to their email or
+ * phone instead.
  */
+const DELETE_SUMMARY = [
+  "Your name, photo, bio, contact details, schooling and settings.",
+  "Listings you posted (they are taken down), your uploads, follows, blocks, notifications and devices.",
+  "Paid plans and promotions end straight away.",
+];
+const DELETE_KEPT = "Some records are kept without your name, because the law or other members rely on them: payment and order records (for tax and disputes), reports you made, and reviews or tributes you wrote (shown as “Former member”). You'll see the full list when your account is deleted.";
+
+function showDeleted(retained: string[]) {
+  const kept = retained.length > 0 ? `\n\nWhat we keep, without your name:\n• ${retained.join("\n• ")}` : "";
+  Alert.alert("Your account has been deleted", `Your personal data has been erased and you've been signed out.${kept}`);
+}
+
 function DeleteAccount() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const { signOut } = useAuth();
+  const { member, signOut } = useAuth();
   const [confirming, setConfirming] = useState(false);
+  const [mode, setMode] = useState<"password" | "code">("password");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [blockers, setBlockers] = useState<string[]>([]);
+  const identifier = member?.email || member?.phone || "";
+
+  function finish(retained: string[]) {
+    // Drop the session before navigating: the account behind the token is gone.
+    signOut();
+    replace(ROUTES.home);
+    showDeleted(retained);
+  }
 
   async function run() {
     setErr(null);
+    setBlockers([]);
     setBusy(true);
     try {
-      await api.deleteAccount(password);
-      // Drop the session before navigating: the token still parses, but the
-      // account behind it is suspended, so every later call would 401.
-      signOut();
-      replace(ROUTES.home);
+      const res = mode === "password"
+        ? await api.deleteAccount(password)
+        : await api.deletionRequestConfirm(identifier, code.trim());
+      finish(res.retained ?? []);
     } catch (e) {
+      setBlockers(deletionBlockers(e));
       setErr(e instanceof Error ? e.message : "Couldn't delete your account.");
+      setBusy(false);
+    }
+  }
+
+  async function sendCode() {
+    setErr(null);
+    setBusy(true);
+    try {
+      await api.deletionRequestStart(identifier);
+      setCodeSent(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't send a code right now.");
+    } finally {
       setBusy(false);
     }
   }
@@ -280,7 +323,7 @@ function DeleteAccount() {
   function confirm() {
     Alert.alert(
       "Delete your account?",
-      "Your personal details are erased and the account is closed for good. This can't be undone.",
+      "Your personal data is erased and the account is closed for good. This can't be undone.",
       [
         { text: "Keep my account", style: "cancel" },
         { text: "Delete", style: "destructive", onPress: run },
@@ -291,9 +334,7 @@ function DeleteAccount() {
   if (!confirming) {
     return (
       <View>
-        <Text style={s.hint}>
-          Erase your personal data and close your account. Published community content stays, under “Former member”.
-        </Text>
+        <Text style={s.hint}>Erase your personal data and close your account.</Text>
         <View style={s.saveRow}>
           <Pressable accessibilityRole="button" onPress={() => setConfirming(true)} style={s.dangerBtnOutline}>
             <Text style={s.dangerBtnOutlineText}>Delete my account</Text>
@@ -303,36 +344,51 @@ function DeleteAccount() {
     );
   }
 
+  const ready = mode === "password" ? password.length > 0 : codeSent && code.trim().length > 0;
   return (
     <View style={s.dangerPanel}>
       <Text style={s.dangerTitle}>This can’t be undone.</Text>
-      <Text style={s.dangerBody}>
-        Your name, photo, bio, contact details, schooling, date of birth and settings are wiped, and the account is
-        closed permanently.
-      </Text>
-      <Text style={s.dangerBody}>
-        Listings and tributes you already had approved stay published under “Former member”, so the town’s memory keeps
-        its shape. Anything still in draft or awaiting review is unpublished.
-      </Text>
+      <Text style={s.dangerBody}>We delete:</Text>
+      {DELETE_SUMMARY.map((line) => <Text key={line} style={s.dangerBody}>• {line}</Text>)}
+      <Text style={s.dangerBody}>{DELETE_KEPT}</Text>
+      <Text style={s.dangerBody}>Before you delete: finish or cancel open Oguaa Outside jobs, and fulfil paid shop orders.</Text>
       <View style={{ height: 6 }} />
-      <PasswordField
-        label="Confirm with your password"
-        value={password}
-        onChange={(v) => { setPassword(v); setErr(null); }}
-        autoComplete="current-password"
-        placeholder="Your password"
-      />
+      {mode === "password" ? (
+        <PasswordField
+          label="Confirm with your password"
+          value={password}
+          onChange={(v) => { setPassword(v); setErr(null); }}
+          autoComplete="current-password"
+          placeholder="Your password"
+        />
+      ) : (
+        <View style={{ marginBottom: 12, gap: 8 }}>
+          <Text style={s.hint}>We&apos;ll send a 6-digit code to {identifier || "the email or phone on your account"}.</Text>
+          <Pressable accessibilityRole="button" onPress={sendCode} disabled={busy || !identifier} style={[s.secondaryBtn, (busy || !identifier) && { opacity: 0.6 }]}>
+            <Text style={s.secondaryBtnText}>{codeSent ? "Send a new code" : "Send me a code"}</Text>
+          </Pressable>
+          {codeSent ? (
+            <View style={s.inputWrap}>
+              <TextInput value={code} onChangeText={(v) => { setCode(v); setErr(null); }} placeholder="6-digit code" placeholderTextColor={C.inkFaint} keyboardType="number-pad" autoComplete="one-time-code" style={s.input} />
+            </View>
+          ) : null}
+        </View>
+      )}
+      <Pressable accessibilityRole="button" onPress={() => { setMode(mode === "password" ? "code" : "password"); setErr(null); }} style={{ minHeight: 36, justifyContent: "center" }}>
+        <Text style={s.cancelText}>{mode === "password" ? "Can't use your password? Get a code instead" : "Use my password instead"}</Text>
+      </Pressable>
       {err ? <Text style={s.errNote}>{err}</Text> : null}
+      {blockers.map((b) => <Text key={b} style={s.errNote}>• {b}</Text>)}
       <View style={s.saveRow}>
         <Pressable
           accessibilityRole="button"
           onPress={confirm}
-          disabled={busy || password.length === 0}
-          style={[s.dangerBtn, (busy || password.length === 0) && { opacity: 0.6 }]}
+          disabled={busy || !ready}
+          style={[s.dangerBtn, (busy || !ready) && { opacity: 0.6 }]}
         >
           <Text style={s.dangerBtnText}>{busy ? "Deleting…" : "Delete my account"}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" onPress={() => { setConfirming(false); setPassword(""); setErr(null); }} disabled={busy}>
+        <Pressable accessibilityRole="button" onPress={() => { setConfirming(false); setPassword(""); setCode(""); setErr(null); setBlockers([]); }} disabled={busy}>
           <Text style={s.cancelText}>Cancel</Text>
         </Pressable>
       </View>
@@ -413,63 +469,47 @@ function ThemeControl() {
   );
 }
 
-// ── Notification preferences (device-local placeholder, like the web) ─────────
-const NOTIFY_KEY = "oguaa.notifications";
-const NOTIFY_ITEMS: { id: string; label: string; description: string }[] = [
-  { id: "safety", label: "Safety alerts", description: "High & critical directives buzz your phone." },
+// ── Notification preferences (account-wide, K14) ──────────────────────────────
+// Stored on the server so every sender honours them. Safety alerts can't be
+// turned off; product news is off until the member opts in.
+type CategoryKey = keyof Prefs["categories"];
+type ChannelKey = keyof Prefs["channels"];
+const NOTIFY_ITEMS: { id: CategoryKey; label: string; description: string }[] = [
+  { id: "safety", label: "Safety alerts", description: "Directives and verified incidents near you. Always on." },
   { id: "remembrances", label: "Remembrances", description: "Anniversaries of memorials you follow." },
   { id: "community", label: "Community & follows", description: "New followers, classmates and neighbours." },
   { id: "product", label: "Product news", description: "Occasional tips and new features." },
 ];
-
-function defaultPrefs(): Record<string, boolean> {
-  return Object.fromEntries(NOTIFY_ITEMS.map((i) => [i.id, true]));
-}
-
-function readPrefsSync(): Record<string, boolean> {
-  if (Platform.OS === "web") {
-    try {
-      const raw = (globalThis as { localStorage?: Storage }).localStorage?.getItem(NOTIFY_KEY);
-      if (raw) return { ...defaultPrefs(), ...(JSON.parse(raw) as Record<string, boolean>) };
-    } catch { /* fall through to defaults */ }
-  }
-  return defaultPrefs();
-}
-
-function writePrefs(prefs: Record<string, boolean>) {
-  const raw = JSON.stringify(prefs);
-  if (Platform.OS === "web") {
-    (globalThis as { localStorage?: Storage }).localStorage?.setItem(NOTIFY_KEY, raw);
-  } else {
-    SecureStore.setItemAsync(NOTIFY_KEY, raw).catch(() => {});
-  }
-}
+const CHANNEL_ITEMS: { id: ChannelKey; label: string }[] = [
+  { id: "push", label: "Push" },
+  { id: "email", label: "Email" },
+  { id: "whatsapp", label: "WhatsApp" },
+];
 
 function NotificationPrefs() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const [prefs, setPrefs] = useState<Record<string, boolean>>(() => readPrefsSync());
+  const { data, error, loading } = useApi<Prefs>(() => api.notificationPrefs(), "me:notification-prefs");
+  const [local, setLocal] = useState<Prefs | null>(null);
+  const [state, setState] = useState<SaveState>("idle");
+  const prefs = local ?? data;
 
-  // On native the store is async, so hydrate the persisted choice once at mount.
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    let alive = true;
-    SecureStore.getItemAsync(NOTIFY_KEY)
-      .then((raw) => {
-        if (!alive || !raw) return;
-        try { setPrefs({ ...defaultPrefs(), ...(JSON.parse(raw) as Record<string, boolean>) }); } catch { /* keep defaults */ }
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
-  function toggle(id: string, value: boolean) {
-    setPrefs((cur) => {
-      const next = { ...cur, [id]: value };
-      writePrefs(next);
-      return next;
-    });
+  async function save(patch: { categories?: Partial<Prefs["categories"]>; channels?: Partial<Prefs["channels"]> }) {
+    if (!prefs) return;
+    const previous = prefs;
+    setLocal({ categories: { ...prefs.categories, ...patch.categories }, channels: { ...prefs.channels, ...patch.channels } });
+    setState("saving");
+    try {
+      setLocal(await api.saveNotificationPrefs(patch));
+      setState("saved");
+    } catch {
+      setLocal(previous);
+      setState("error");
+    }
   }
+
+  if (loading) return <Text style={s.hint}>Loading your notification choices…</Text>;
+  if (error || !prefs) return <Text style={s.errNote}>Couldn&apos;t load your notification choices. Pull to refresh or try again later.</Text>;
 
   return (
     <View>
@@ -481,14 +521,31 @@ function NotificationPrefs() {
             <Text style={s.toggleDesc}>{item.description}</Text>
           </View>
           <Switch
-            value={prefs[item.id] ?? true}
-            onValueChange={(v) => toggle(item.id, v)}
+            accessibilityLabel={item.label}
+            value={item.id === "safety" ? true : prefs.categories[item.id]}
+            disabled={item.id === "safety"}
+            onValueChange={(v) => { void save({ categories: { [item.id]: v } }); }}
             trackColor={{ true: C.green, false: C.sand }}
             thumbColor={C.cream}
           />
         </View>
       ))}
-      <Text style={s.deviceNote}>Saved on this device for now. Account-wide delivery preferences are on the way.</Text>
+      <Text style={[s.subLabel, { marginTop: 16 }]}>HOW WE REACH YOU</Text>
+      {CHANNEL_ITEMS.map((item, i) => (
+        <View key={item.id} style={[s.toggleRow, i < CHANNEL_ITEMS.length - 1 && s.toggleRowBorder]}>
+          <Text style={[s.toggleLabel, { flex: 1 }]}>{item.label}</Text>
+          <Switch
+            accessibilityLabel={`${item.label} notifications`}
+            value={prefs.channels[item.id]}
+            onValueChange={(v) => { void save({ channels: { [item.id]: v } }); }}
+            trackColor={{ true: C.green, false: C.sand }}
+            thumbColor={C.cream}
+          />
+        </View>
+      ))}
+      <Text style={s.deviceNote}>
+        {state === "error" ? "Couldn't save that change — please try again." : "Saved to your account, on every device. Account, payment and safety messages are always sent."}
+      </Text>
     </View>
   );
 }
@@ -542,7 +599,9 @@ function ChangePassword() {
     if (next === current) { setState("error"); setErr("Choose a new password that's different from your current one."); return; }
     setState("saving");
     try {
-      await api.changePassword(current, next);
+      const res = await api.changePassword(current, next);
+      // The server revokes every earlier session; keep this one signed in.
+      if (res.token) setToken(res.token);
       setCurrent(""); setNext(""); setConfirm("");
       setState("saved");
     } catch (e) {
@@ -618,6 +677,7 @@ function MfaEnroll({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
     setBusy(true); setErr(null);
     try {
       const res = await api.mfaConfirm(code.trim());
+      if (res.token) setToken(res.token);
       // Keep the recovery codes on screen; refresh the member only once the user
       // acknowledges (finish), so mfaEnabled flips after they've saved the codes.
       setStage({ step: "recovery", codes: res.recoveryCodes });
@@ -659,7 +719,7 @@ function MfaEnroll({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
   if (stage.step === "qr") {
     return (
       <View style={{ gap: 12 }}>
-        <Text style={s.mfaStatusText}>1. Scan this QR in your authenticator app (Google Authenticator, 1Password, Aegis…), or tap to add it.  2. Enter the 6-digit code it shows.</Text>
+        <Text style={s.mfaStatusText}>1. Scan this QR in your authenticator app (Apple Passwords, Google Authenticator, 1Password…), or tap to add it.  2. Enter the 6-digit code it shows.</Text>
         <View style={{ flexDirection: "row", gap: 14, flexWrap: "wrap", alignItems: "flex-start" }}>
           <View style={s.qrTile}>
             <Image source={{ uri: stage.qr }} style={{ width: 128, height: 128 }} accessibilityLabel="Authenticator QR code" />
@@ -718,7 +778,9 @@ function MfaDisable({ onMember }: Readonly<{ onMember: (m: Member) => void }>) {
   async function confirm() {
     setBusy(true); setErr(null);
     try {
-      await api.mfaDisable(code.trim());
+      const res = await api.mfaDisable(code.trim());
+      // Turning 2FA off revokes every earlier session, this one included.
+      if (res.token) setToken(res.token);
       onMember(await api.me());
       setOpen(false);
     } catch (e) {

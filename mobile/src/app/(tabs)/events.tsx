@@ -1,15 +1,15 @@
 import { useMemo } from "react";
+import { eventHasEnded, parseApiDate } from "@/lib/dates";
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import { Stack } from "expo-router";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
-import { usePaginatedList } from "@/lib/use-paginated";
+import { useApi } from "@/lib/use-api";
 import type { Listing } from "@/lib/types";
 import { D, S, initials, ON_GREEN, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
-import { ListFooter } from "@/components/list-footer";
 import { route } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { StaggerIn } from "@/components/anim";
@@ -33,22 +33,37 @@ function monthLabel(key: string): string {
   return name ? `${name} ${key.slice(0, 4)}` : "Undated";
 }
 
-function groupByMonth(list: Listing[]): MonthSection[] {
-  const sorted = list.slice().sort((a, b) => (a.details.startsAt ?? "").localeCompare(b.details.startsAt ?? ""));
+// Group already-sorted events into month sections. Past months carry a
+// "past" key prefix and label so they never read as upcoming.
+function groupByMonth(sorted: Listing[], past = false): MonthSection[] {
   const sections: MonthSection[] = [];
   for (const l of sorted) {
-    const key = (l.details.startsAt ?? "").slice(0, 7) || "undated";
+    const month = (l.details.startsAt ?? "").slice(0, 7) || "undated";
+    const key = past ? `past:${month}` : month;
     const last = sections.at(-1);
     if (last?.key === key) last.items.push(l);
-    else sections.push({ key, label: monthLabel(key), items: [l] });
+    else sections.push({ key, label: past ? `${monthLabel(month)} · past` : monthLabel(month), items: [l] });
   }
   return sections;
 }
 
+const byStart = (a: Listing, b: Listing) => (a.details.startsAt ?? "").localeCompare(b.details.startsAt ?? "");
+
+// The calendar opens on what is still to come (soonest first, undated last);
+// finished events follow, most recent first.
+function splitCalendar(list: Listing[]): { sections: MonthSection[]; upcoming: number } {
+  const upcoming = list.filter((l) => !eventHasEnded(l.details)).sort((a, b) => {
+    if (!a.details.startsAt !== !b.details.startsAt) return a.details.startsAt ? -1 : 1;
+    return byStart(a, b);
+  });
+  const past = list.filter((l) => eventHasEnded(l.details)).sort((a, b) => byStart(b, a));
+  return { sections: [...groupByMonth(upcoming), ...groupByMonth(past, true)], upcoming: upcoming.length };
+}
+
 function eventDateParts(value?: string): { day: string; month: string } {
   if (!value) return { day: "--", month: "TBA" };
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return { day: "--", month: "TBA" };
+  const date = parseApiDate(value);
+  if (!date) return { day: "--", month: "TBA" };
   return {
     day: date.toLocaleDateString(undefined, { day: "2-digit" }),
     month: date.toLocaleDateString(undefined, { month: "short" }).toUpperCase(),
@@ -95,13 +110,13 @@ function EventCard({ listing: l, index }: Readonly<{ listing: Listing; index: nu
 export default function EventsTab() {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
-  const { items, total, loading, loadingMore, refreshing, error, hasMore, loadMore, refresh } =
-    usePaginatedList<Listing>((page, pageSize) => api.events({ page, pageSize }), "events:tab", 24);
-
-  const sections = useMemo(() => groupByMonth(items), [items]);
+  // GET /api/events returns every approved event, past editions included, so
+  // the whole calendar is loaded and split here (a town calendar is small).
+  const { data, loading, refreshing, error, reload } = useApi<Listing[]>(() => api.events(), "events:tab");
+  const { sections, upcoming } = useMemo(() => splitCalendar(data ?? []), [data]);
 
   if (loading) return <Loading />;
-  if (error && items.length === 0) return <ErrorView message={error} />;
+  if (error || !data) return <ErrorView message={error ?? "No events"} />;
 
   return (
     <>
@@ -111,23 +126,13 @@ export default function EventsTab() {
         contentContainerStyle={{ paddingBottom: 40 }}
         data={sections}
         keyExtractor={(sec) => sec.key}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.green} colors={[C.green]} />}
-        onEndReached={() => loadMore()}
-        onEndReachedThreshold={0.5}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.green} colors={[C.green]} />}
         ListHeaderComponent={
           <View style={s.hero}>
             <Text style={s.heroKicker}>THE TOWN CALENDAR</Text>
             <Text style={s.heroTitle}>Events</Text>
-            <Text style={s.heroMeta}>{total} upcoming {total === 1 ? "event" : "events"}</Text>
+            <Text style={s.heroMeta}>{upcoming} upcoming {upcoming === 1 ? "event" : "events"}</Text>
           </View>
-        }
-        ListFooterComponent={
-          <ListFooter
-            loadingMore={loadingMore}
-            hasMore={hasMore}
-            onLoadMore={loadMore}
-            endLabel={!hasMore && total > 0 ? `${total} events` : undefined}
-          />
         }
         ListEmptyComponent={
           <View style={s.pad}>

@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
+import { parseApiDate } from "@/lib/dates";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import Animated from "react-native-reanimated";
-import { T as Text } from "@/components/typography";
+import { T as Text, TI as TextInput } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useRecordView } from "@/lib/use-record-view";
 import { useApi } from "@/lib/use-api";
@@ -14,11 +15,15 @@ import { D, S, ON_GREEN, withAlpha, type Palette } from "@/theme";
 import { Loading, ErrorView } from "@/ui";
 import { HeroParallax, RevealView, useHeroParallax } from "@/components/anim";
 import { LocationCard } from "@/components/location-card";
+import { EmergencyCallout, HeldNotice, isHeld } from "@/components/notices";
+import { ReportButton } from "@/report-button";
+import { push } from "@/lib/router";
+import { ROUTES } from "@/lib/routes";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  const d = parseApiDate(iso);
+  return d ? d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : iso;
 }
 
 function locationLabel(d: LostFound["details"], missing: boolean): string {
@@ -63,6 +68,8 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
         </View>
 
         <View style={s.body}>
+          {missing ? <View style={{ marginBottom: 16 }}><EmergencyCallout /></View> : null}
+          {isHeld(notice) ? <View style={{ marginBottom: 16 }}><HeldNotice /></View> : null}
           {d.description ? <Text style={s.desc}>{d.description}</Text> : null}
 
           <RevealView delay={100} style={s.facts}>
@@ -83,11 +90,15 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
             </RevealView>
           ) : null}
 
-          <RevealView delay={160} style={[s.contactBox, missing && { borderColor: C.maroon }]}>
-            <Text style={s.contactLabel}>CONTACT</Text>
-            <Text style={s.contactValue}>{d.contact}</Text>
-            <Text style={s.contactHint}>{missing ? "Any information, however small — reach out." : "Reach out directly to arrange a handover."}</Text>
-          </RevealView>
+          {d.contact ? (
+            // Only the poster and curators receive the contact from the server.
+            <RevealView delay={160} style={[s.contactBox, missing && { borderColor: C.maroon }]}>
+              <Text style={s.contactLabel}>YOUR CONTACT</Text>
+              <Text style={s.contactValue}>{d.contact}</Text>
+              <Text style={s.contactHint}>Only you and curators can see this. Others message you through Oguaa.</Text>
+            </RevealView>
+          ) : null}
+          {!isOwner && lfStatus === "open" ? <MessagePoster slug={notice.slug} missing={missing} signedIn={!!member} /> : null}
 
           {canResolve && lfStatus === "open" && (
             <ResolveBox slug={notice.slug} missing={missing} onResolved={setLfStatus} />
@@ -102,9 +113,66 @@ function Detail({ notice }: Readonly<{ notice: LostFound }>) {
           <Text style={s.foot}>
             {isOwner ? "You posted this notice." : "Only the person who posted this notice or a curator can resolve it."}
           </Text>
+          {!isOwner ? <ReportButton listingId={notice.id} /> : null}
         </View>
       </Animated.ScrollView>
     </>
+  );
+}
+
+// Message the poster through Oguaa's relay (POST /api/lost-found/{slug}/contact):
+// their phone or email is never shown publicly. The relay is one-way: the
+// poster gets a notice with the sender's name and has no way to reply in Oguaa.
+const RELAY_NO_REPLY = "The poster can't reply through Oguaa, so include how to reach you.";
+
+function MessagePoster({ slug, missing, signedIn }: Readonly<{ slug: string; missing: boolean; signedIn: boolean }>) {
+  const [message, setMessage] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+  const [error, setError] = useState("");
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+
+  async function send() {
+    const text = message.trim();
+    if (!text) { setError("Write a short message first."); return; }
+    setState("sending");
+    setError("");
+    try {
+      await api.contactLostFound(slug, text);
+      setState("sent");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not send that — please try again.");
+      setState("idle");
+    }
+  }
+
+  let body;
+  if (!signedIn) {
+    body = (
+      <Pressable accessibilityRole="button" onPress={() => push(ROUTES.signIn)} style={[s.resolveBtn, { alignSelf: "flex-start", marginTop: 12 }]}>
+        <Text style={s.resolveBtnText}>Sign in to send a message</Text>
+      </Pressable>
+    );
+  } else if (state === "sent") {
+    body = <Text style={[s.happyText, { marginTop: 10 }]}>Sent. The poster gets your message with your name. They can&apos;t reply through Oguaa, so they can only reach you using any contact details you included.</Text>;
+  } else {
+    body = (
+      <>
+        <TextInput value={message} onChangeText={setMessage} placeholder="Your message" placeholderTextColor={C.inkFaint} multiline maxLength={1000} style={s.messageInput} />
+        <Pressable accessibilityRole="button" onPress={send} disabled={state === "sending"} style={[s.resolveBtn, { alignSelf: "flex-start", marginTop: 10 }, state === "sending" && { opacity: 0.6 }]}>
+          <Text style={s.resolveBtnText}>{state === "sending" ? "Sending…" : "Send message"}</Text>
+        </Pressable>
+        {error !== "" && <Text style={s.error}>{error}</Text>}
+      </>
+    );
+  }
+
+  return (
+    <View style={[s.contactBox, missing && { borderColor: C.maroon }]}>
+      <Text style={s.contactLabel}>CONTACT THE POSTER</Text>
+      <Text style={s.contactHint}>{missing ? "Any information, however small, helps. If someone is in danger, call 112 first." : "Send a message to arrange a handover."} {RELAY_NO_REPLY}</Text>
+      {body}
+    </View>
   );
 }
 
@@ -165,7 +233,8 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   contactBox: { marginTop: 16, borderWidth: 1, borderColor: C.teal, backgroundColor: C.cream, borderRadius: 12, padding: 16 },
   contactLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...S(700) },
   contactValue: { color: C.ink, ...S(700), fontSize: 18, marginTop: 6 },
-  contactHint: { color: C.inkMuted, fontSize: 12, marginTop: 6 },
+  contactHint: { color: C.inkMuted, fontSize: 12, marginTop: 6, lineHeight: 17 },
+  messageInput: { marginTop: 12, minHeight: 72, borderWidth: 1, borderColor: C.sand, borderRadius: 8, backgroundColor: C.paper, padding: 12, fontSize: 14, color: C.ink, textAlignVertical: "top" },
   resolveBox: { marginTop: 22, backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 16 },
   resolveTitle: { ...S(700), fontSize: 18, color: C.ink },
   resolveHelp: { color: C.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },

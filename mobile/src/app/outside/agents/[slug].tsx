@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { parseCedisToPesewas } from "@/lib/money";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -14,6 +15,7 @@ import { useTheme } from "@/lib/theme-context";
 import type { Agent, AgentReview, AgentService } from "@/lib/types";
 import { D, ON_GREEN, S, fillFor, initials, onFill, type Palette } from "@/theme";
 import { ErrorView, Loading } from "@/ui";
+import { ReportButton } from "@/report-button";
 
 interface AgentDetailData { agent: Agent; reviews: AgentReview[]; services: AgentService[] }
 
@@ -87,6 +89,7 @@ function AgentDetail({ data }: Readonly<{ data: AgentDetailData }>) {
               <View style={s.noReviews}><UsersIcon size={28} color={C.inkFaint} strokeWidth={1.7} /><Text style={s.noReviewsTitle}>No reviews yet</Text><Text style={s.noReviewsBody}>Completed clients can leave the first review.</Text></View>
             )}
           </View>
+          <ReportButton target={{ type: "agent", id: agent.slug }} />
         </View>
       </ScrollView>
     </>
@@ -108,18 +111,18 @@ function RequestCard({ agent, services }: Readonly<{ agent: Agent; services: Age
 
   async function submit() {
     if (!member) { push(ROUTES.signIn); return; }
-    const value = Number.parseFloat(budget);
+    const budgetPesewas = parseCedisToPesewas(budget);
     if (!service) { setError("Choose the service you need."); return; }
     if (title.trim().length < 3) { setError("Give the request a clear title."); return; }
     if (description.trim().length < 10) { setError("Add enough detail for an accurate quote."); return; }
-    if (!Number.isFinite(value) || value < 1 || value > 500_000) { setError("Enter a budget between GH₵1 and GH₵500,000."); return; }
+    if (budgetPesewas == null || budgetPesewas < 100 || budgetPesewas > 50_000_000) { setError("Enter a budget between GH₵1 and GH₵500,000, e.g. 1,200."); return; }
     setBusy(true); setError("");
     try {
       await api.requestAgentJob(agent.slug, {
         service,
         title: title.trim(),
         description: description.trim(),
-        budgetPesewas: Math.round(value * 100),
+        budgetPesewas,
         deadline: deadline || undefined,
       });
       replace(ROUTES.outsideJobs);
@@ -164,12 +167,15 @@ function RequestCard({ agent, services }: Readonly<{ agent: Agent; services: Age
 
 function ReviewCard({ review }: Readonly<{ review: AgentReview }>) {
   const { C } = useTheme();
+  const { member } = useAuth();
   const s = useMemo(() => makeStyles(C), [C]);
+  const ownReview = member != null && member.id === review.clientMemberId;
   return (
     <View style={s.reviewCard}>
       <View style={s.reviewTop}><Text style={s.reviewAuthor}>{review.clientName || "Oguaa client"}</Text><View style={s.stars}>{Array.from({ length: 5 }, (_, index) => <StarFilledIcon key={index} size={13} color={index < review.rating ? C.goldBrand : C.sand} />)}</View></View>
       {review.body ? <Text style={s.reviewBody}>{review.body}</Text> : null}
       <Text style={s.reviewDate}>{new Date(review.createdAt).toLocaleDateString("en-GH", { day: "numeric", month: "short", year: "numeric" })}</Text>
+      {ownReview ? null : <ReportButton target={{ type: "agent_review", id: review.id }} compact />}
     </View>
   );
 }

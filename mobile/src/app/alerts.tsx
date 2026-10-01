@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
@@ -11,6 +11,8 @@ import { directiveFill, isActiveAt, countdownTo, DIRECTIVE_KIND_LABEL, DIRECTIVE
 import { Loading, ErrorView } from "@/ui";
 import { EmptyState } from "@/components/empty-state";
 import { CheckIcon } from "@/components/icons";
+import { EmergencyCallout, NOT_GOVERNMENT } from "@/components/notices";
+import { openInAppBrowser } from "@/lib/webbrowser";
 
 function fmtDateTime(iso?: string): string {
   if (!iso) return "";
@@ -20,7 +22,19 @@ function fmtDateTime(iso?: string): string {
     : d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-function DirectiveCard({ d, now, past }: Readonly<{ d: Directive; now: number; past?: boolean }>) {
+// A directive that is active but whose effectiveFrom is still ahead.
+function isScheduledAt(d: Directive, at: number): boolean {
+  const from = Date.parse(d.effectiveFrom);
+  return d.status === "active" && !Number.isNaN(from) && at < from;
+}
+
+function footLabel(d: Directive, past: boolean | undefined, scheduled: boolean | undefined, countdown: string | null): string {
+  if (scheduled) return `Starts ${fmtDateTime(d.effectiveFrom)}`;
+  if (past) return d.status === "expired" || d.effectiveUntil ? "Ended" : "Lifted";
+  return countdown ?? "Ongoing";
+}
+
+function DirectiveCard({ d, now, past, scheduled }: Readonly<{ d: Directive; now: number; past?: boolean; scheduled?: boolean }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
   const sevText = severityColors(C)[d.severity] ?? C.inkMuted;
@@ -44,6 +58,11 @@ function DirectiveCard({ d, now, past }: Readonly<{ d: Directive; now: number; p
 
         <Text style={s.title}>{d.title}</Text>
         <Text style={s.issuer}>{d.issuedByName}</Text>
+        {d.sourceUrl?.startsWith("https://") ? (
+          <Pressable accessibilityRole="link" onPress={() => { void openInAppBrowser(d.sourceUrl ?? ""); }} hitSlop={6}>
+            <Text style={s.source}>Official source: {d.sourceName ?? d.issuedByName} ↗</Text>
+          </Pressable>
+        ) : null}
 
         {d.action ? (
           <View style={s.actionChip}>
@@ -54,12 +73,8 @@ function DirectiveCard({ d, now, past }: Readonly<{ d: Directive; now: number; p
         {d.body ? <Text style={s.body} numberOfLines={past ? 2 : 6}>{d.body}</Text> : null}
 
         <View style={s.footRow}>
-          <Text style={s.foot}>Issued {fmtDateTime(d.effectiveFrom || d.createdAt)}</Text>
-          {past ? (
-            <Text style={s.foot}>Expired</Text>
-          ) : (
-            <Text style={[s.foot, s.footLive]}>{countdown ?? "Ongoing"}</Text>
-          )}
+          <Text style={s.foot}>Issued {fmtDateTime(scheduled ? d.createdAt : d.effectiveFrom || d.createdAt)}</Text>
+          <Text style={[s.foot, !past && s.footLive]}>{footLabel(d, past, scheduled, countdown)}</Text>
         </View>
       </View>
     </View>
@@ -85,7 +100,9 @@ export default function Alerts() {
 
   const active = data.filter((d) => isActiveAt(d, now));
   const activeIds = new Set(active.map((d) => d.id));
-  const past = data.filter((d) => !activeIds.has(d.id));
+  const scheduled = data.filter((d) => !activeIds.has(d.id) && isScheduledAt(d, now));
+  const scheduledIds = new Set(scheduled.map((d) => d.id));
+  const past = data.filter((d) => !activeIds.has(d.id) && !scheduledIds.has(d.id));
 
   return (
     <ScrollView
@@ -97,6 +114,8 @@ export default function Alerts() {
         Advisories, directives and emergency notices from Cape Coast&apos;s authorities — the fire &amp; rescue service, the
         assembly, health and security. High and critical notices also buzz your phone and appear at the top of every screen.
       </Text>
+      <Text style={s.notGov}>{NOT_GOVERNMENT}</Text>
+      <View style={{ marginTop: 14 }}><EmergencyCallout /></View>
 
       {data.length === 0 ? (
         <EmptyState icon={<CheckIcon size={56} color={C.inkFaint} strokeWidth={1.5} />} title="No standing notices" body="There are no directives in effect right now." />
@@ -108,9 +127,15 @@ export default function Alerts() {
               {active.map((d) => <DirectiveCard key={d.id} d={d} now={now} />)}
             </>
           )}
+          {scheduled.length > 0 && (
+            <>
+              <Text style={[s.section, active.length > 0 && { marginTop: 12 }]}>COMING UP</Text>
+              {scheduled.map((d) => <DirectiveCard key={d.id} d={d} now={now} scheduled />)}
+            </>
+          )}
           {past.length > 0 && (
             <>
-              <Text style={[s.section, active.length > 0 && { marginTop: 12 }]}>RECENT &amp; LIFTED</Text>
+              <Text style={[s.section, (active.length > 0 || scheduled.length > 0) && { marginTop: 12 }]}>RECENT &amp; LIFTED</Text>
               {past.map((d) => <DirectiveCard key={d.id} d={d} now={now} past />)}
             </>
           )}
@@ -121,6 +146,8 @@ export default function Alerts() {
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
+  notGov: { color: C.inkMuted, fontSize: 12, lineHeight: 18, marginTop: 10, fontStyle: "italic" },
+  source: { color: C.tealText, fontSize: 12, textDecorationLine: "underline", marginTop: 4 },
   lede: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
   section: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginBottom: 2 },
   card: { flexDirection: "row", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 14, overflow: "hidden" },

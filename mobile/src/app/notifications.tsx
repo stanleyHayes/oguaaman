@@ -32,18 +32,41 @@ function kindLabel(kind: string): string {
   return kind.replaceAll("_", " ").replaceAll("-", " ").trim() || "Update";
 }
 
+// Portal paths whose trailing slug maps onto a mobile detail route.
+const SLUG_ROUTES: readonly (readonly [string, (slug: string) => Href])[] = [
+  ["/education/", route.institution],
+  ["/events/", route.event],
+  ["/safety/", route.safety],
+  ["/lost-found/", route.lostFound],
+];
+
+// Portal list pages with a mobile home (exact path or any sub-path).
+const LIST_ROUTES: readonly (readonly [string, Href])[] = [
+  [ROUTES.alerts, ROUTES.alerts as Href],
+  ["/incidents", ROUTES.safety as Href],
+  [ROUTES.safety, ROUTES.safety as Href],
+  [ROUTES.lostFound, ROUTES.lostFound as Href],
+  [ROUTES.outsideJobs, ROUTES.outsideJobs as Href],
+  ["/bookings", ROUTES.studioBookings as Href],
+  ["/events", ROUTES.browseEvents],
+  ["/community", ROUTES.browseOpportunities],
+];
+
+// Same-shaped routes that pass straight through.
+const SAME_PREFIXES = ["/memoriam/", "/members/", "/news/", "/music/", "/people/", "/business/", "/institutions/", "/projects/"];
+
 // Notification links are portal paths; translate them to mobile routes.
+// Admin-only links (reports, privacy requests) have no mobile screen.
 function mobileLink(link?: string): Href | null {
   if (!link) return null;
-  // The directive broadcast links to the alerts screen.
-  if (link === ROUTES.alerts || link.startsWith(ROUTES.alerts)) return ROUTES.alerts as Href;
-  // Same-shaped routes pass straight through.
-  if (["/memoriam/", "/members/", "/news/", "/music/", "/people/", "/business/", "/institutions/", "/projects/"].some((r) => link.startsWith(r))) return link as Href;
-  // Portal paths with a different mobile home.
-  if (link.startsWith("/education/")) return route.institution(link.slice("/education/".length));
-  if (link === "/events" || link.startsWith("/events")) return ROUTES.browseEvents;
-  if (link === "/community" || link.startsWith("/community")) return ROUTES.browseOpportunities;
-  return null;
+  const path = link.split(/[?#]/)[0];
+  if (SAME_PREFIXES.some((r) => path.startsWith(r))) return path as Href;
+  for (const [prefix, build] of SLUG_ROUTES) {
+    const slug = path.startsWith(prefix) ? path.slice(prefix.length).split("/")[0] : "";
+    if (slug) return build(slug);
+  }
+  const list = LIST_ROUTES.find(([prefix]) => path === prefix || path.startsWith(`${prefix}/`));
+  return list ? list[1] : null;
 }
 
 export default function Notifications() {

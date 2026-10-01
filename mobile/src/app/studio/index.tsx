@@ -70,7 +70,7 @@ function StudioLoaded() {
   const tools: Tool[] = [
     { icon: GridIcon, label: "My work", desc: "Listings you own, with review status", href: ROUTES.studioWork },
     { icon: CalendarIcon, label: "Artist bookings", desc: "Private event requests sent to your artist pages", href: ROUTES.studioBookings },
-    { icon: ArrowUpRightIcon, label: "Grow", desc: "Promote your work and pick a plan", href: ROUTES.studioGrow },
+    { icon: ArrowUpRightIcon, label: "Grow", desc: "Your plan and promotions", href: ROUTES.studioGrow },
     { icon: CediIcon, label: "Money", desc: "Tickets sold and pledges raised", href: ROUTES.studioMoney },
     { icon: DiamondIcon, label: "Team", desc: "Manage your institution roster", href: ROUTES.studioTeam },
   ];
@@ -112,7 +112,7 @@ function StudioLoaded() {
               <View style={s.grid}>
                 <MetricCard label="Live listings" value={overview.live} icon={GridIcon} tone="teal" sub={overview.pending ? `${overview.pending} in review` : undefined} href={ROUTES.studioWork} />
                 <MetricCard label="In review" value={overview.pending} icon={ClockIcon} tone="gold" sub="Moderation queue" href={ROUTES.studioWork} />
-                <MetricCard label="Active promotions" value={overview.activePromotions} icon={ArrowUpRightIcon} tone="green" sub={overview.promotionDaysLeft ? `${overview.promotionDaysLeft} days left` : "GH₵ 10 per day"} href={ROUTES.studioGrow} />
+                <MetricCard label="Active promotions" value={overview.activePromotions} icon={ArrowUpRightIcon} tone="green" sub={overview.promotionDaysLeft ? `${overview.promotionDaysLeft} days left` : "None running"} href={ROUTES.studioGrow} />
                 <MetricCard label="Plan" value={overview.activeSubscription ? "Supporter" : "Starter"} icon={StarIcon} tone="ink" sub={overview.activeSubscription ? "Supporter badge + priority" : "Free"} href={ROUTES.studioGrow} />
                 <MetricCard label="Tickets sold" value={overview.ticketsSold} icon={TicketIcon} tone="teal" sub={cedis(overview.ticketsGrossPesewas)} href={ROUTES.studioMoney} />
                 <MetricCard label="Pledges raised" value={cedis(overview.pledgesRaisedPesewas)} icon={CediIcon} tone="gold" sub="Net to your projects" href={ROUTES.studioMoney} />

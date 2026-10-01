@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { openInAppBrowser } from "@/lib/webbrowser";
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { WebView } from "react-native-webview";
 import { useTheme } from "@/lib/theme-context";
@@ -138,10 +139,17 @@ function MapFrame({ html, title, style, onPointPress }: Readonly<{
         style={styles.webview}
         scrollEnabled={false}
         bounces={false}
-        originWhitelist={["*"]}
+        // Locked down: the page is inline HTML, it may load only its pinned
+        // https resources, never mixed content, pop-ups, files or navigation.
+        originWhitelist={["about:*"]}
+        onShouldStartLoadWithRequest={allowMapNavigation}
         javaScriptEnabled
-        domStorageEnabled
-        mixedContentMode="always"
+        domStorageEnabled={false}
+        mixedContentMode="never"
+        setSupportMultipleWindows={false}
+        allowFileAccess={false}
+        allowFileAccessFromFileURLs={false}
+        allowUniversalAccessFromFileURLs={false}
         androidLayerType="hardware"
         onMessage={(event) => {
           const id = readPointMessage(event.nativeEvent.data);
@@ -150,6 +158,22 @@ function MapFrame({ html, title, style, onPointPress }: Readonly<{
       />
     </View>
   );
+}
+
+// Links a tap can legitimately open from the map (the tile attribution).
+const MAP_LINK_HOSTS = new Set(["www.openstreetmap.org", "openstreetmap.org", "leafletjs.com"]);
+
+/**
+ * Navigation policy for the map WebView: the inline document (about:blank /
+ * data:) loads; an https attribution link opens in the in-app browser;
+ * everything else (javascript:, http:, other hosts) is blocked.
+ */
+export function allowMapNavigation(req: Readonly<{ url: string }>): boolean {
+  const url = req.url ?? "";
+  if (url.startsWith("about:") || url.startsWith("data:")) return true;
+  const host = /^https:\/\/([^/?#:]+)/i.exec(url)?.[1]?.toLowerCase();
+  if (host && MAP_LINK_HOSTS.has(host)) void openInAppBrowser(url);
+  return false;
 }
 
 function readPointMessage(value: unknown): string | null {
@@ -198,8 +222,8 @@ function leafletHtml(points: MapPoint[], zoom: number, bg: string, surface: stri
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 <style>
   html, body, #map { margin: 0; padding: 0; height: 100%; width: 100%; background: ${bg}; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -219,6 +243,7 @@ function leafletHtml(points: MapPoint[], zoom: number, bg: string, surface: stri
   (function() {
     var points = ${safeJson(payload)};
     var map = L.map('map', { zoomControl: false, attributionControl: true }).setView([${centerLat}, ${centerLng}], ${zoom});
+    map.attributionControl.setPrefix(false);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'

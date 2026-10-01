@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Stack } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
-import { ImageField } from "@/components/image-field";
+import { PrivateDocField } from "@/components/image-field";
 import { ArrowRightIcon, BriefcaseIcon, CheckIcon, ShieldIcon } from "@/components/icons";
-import { OutsideDisclaimer, cedis } from "@/components/outside";
+import { OutsideDisclaimer } from "@/components/outside";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { push } from "@/lib/router";
@@ -175,7 +175,7 @@ function AgentApplication({ initialAgent, services, memberName }: Readonly<{ ini
           <FormSection number="03" kicker="PRIVATE VETTING" title="Identity and guarantor">
             <Text style={s.privacyNote}>These details go only to the vetting team. They never appear in the public directory.</Text>
             <Field label="GOVERNMENT-ISSUED ID" hint="Upload a clear Ghana Card, passport or driver's licence image.">
-              <ImageField value={idDocUrl} onChange={(value) => { setIdDocUrl(value); setError(""); }} />
+              <PrivateDocField purpose="agent_id" value={idDocUrl} onChange={(value) => { setIdDocUrl(value); setError(""); }} />
             </Field>
             <Field label="GUARANTOR NAME" hint="A Cape Coast person who can vouch for you.">
               <TextInput value={guarantorName} onChangeText={(value) => { setGuarantorName(value); setError(""); }} placeholder="Full name" placeholderTextColor={C.inkFaint} style={s.input} />
@@ -202,12 +202,12 @@ function AgentApplication({ initialAgent, services, memberName }: Readonly<{ ini
             </Field>
           </FormSection>
 
-          <View style={s.bondCard}>
-            <View style={s.bondIcon}><ShieldIcon size={22} color={C.goldText} strokeWidth={2} /></View>
+          <View style={s.vetCard}>
+            <View style={s.vetIcon}><ShieldIcon size={22} color={C.goldText} strokeWidth={2} /></View>
             <View style={{ flex: 1 }}>
-              <Text style={s.bondKicker}>REFUNDABLE GOOD-FAITH BOND</Text>
-              <Text style={s.bondTitle}>{cedis(agent?.bond?.amountPesewas || 20_000)}</Text>
-              <Text style={s.bondBody}>The vetting team explains the bond step before approval. It is refundable when an agent leaves in good standing.</Text>
+              <Text style={s.vetKicker}>VETTED BEFORE APPROVAL</Text>
+              <Text style={s.vetTitle}>Identity and guarantor checks</Text>
+              <Text style={s.vetBody}>The vetting team checks your identity record and your Cape Coast guarantor before you appear to clients. Nothing is charged to apply; a good-faith bond may be introduced later.</Text>
             </View>
           </View>
 
@@ -315,11 +315,11 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   choiceTextActive: { color: ON_GREEN },
   noCatalogue: { color: C.inkFaint, fontSize: 12, lineHeight: 18, marginTop: 8 },
   privacyNote: { color: C.tealText, fontSize: 11.5, lineHeight: 18, borderWidth: 1, borderColor: withAlpha(C.teal, 0.25), backgroundColor: withAlpha(C.teal, 0.06), borderRadius: 12, padding: 11 },
-  bondCard: { flexDirection: "row", gap: 12, borderWidth: 1, borderColor: C.goldBorder35, backgroundColor: C.goldTint14, borderRadius: 19, padding: 15 },
-  bondIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.goldBorder35 },
-  bondKicker: { color: C.goldText, ...S(700), fontSize: 8.5, letterSpacing: 1.2 },
-  bondTitle: { color: C.ink, ...D(700), fontSize: 22, marginTop: 2 },
-  bondBody: { color: C.inkMuted, fontSize: 11, lineHeight: 17, marginTop: 3 },
+  vetCard: { flexDirection: "row", gap: 12, borderWidth: 1, borderColor: C.goldBorder35, backgroundColor: C.goldTint14, borderRadius: 19, padding: 15 },
+  vetIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: C.cream, borderWidth: 1, borderColor: C.goldBorder35 },
+  vetKicker: { color: C.goldText, ...S(700), fontSize: 8.5, letterSpacing: 1.2 },
+  vetTitle: { color: C.ink, ...D(700), fontSize: 18, marginTop: 2 },
+  vetBody: { color: C.inkMuted, fontSize: 11, lineHeight: 17, marginTop: 3 },
   error: { color: C.clayText, fontSize: 12, lineHeight: 18, borderWidth: 1, borderColor: withAlpha(C.clay, 0.25), backgroundColor: withAlpha(C.clay, 0.06), borderRadius: 13, padding: 11 },
   saved: { color: C.greenText, fontSize: 12, lineHeight: 18, borderWidth: 1, borderColor: withAlpha(C.green, 0.28), backgroundColor: withAlpha(C.green, 0.06), borderRadius: 13, padding: 11 },
   submitButton: { minHeight: 50, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 20 },

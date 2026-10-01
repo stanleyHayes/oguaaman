@@ -113,6 +113,8 @@ export interface ListingDetails {
 export interface Tribute {
   id: string;
   authorName: string;
+  /** The author's profile slug (signed-in tributes). */
+  memberSlug?: string;
   relation?: string;
   message: string;
   createdAt: string;
@@ -132,6 +134,10 @@ export interface Listing {
   featured?: boolean;
   featuredUntil?: string;
   supporter?: boolean;
+  /** Paid promotion end (RFC3339). Show "Sponsored" while it is in the future (K18). */
+  promotedUntil?: string;
+  /** A safety post held for curator review (not public yet). */
+  held?: boolean;
   viewCount?: number;
   details: ListingDetails;
   tributes?: Tribute[];
@@ -192,6 +198,14 @@ export interface Member {
   /** Two-factor enrolment state — secret never leaves the server. */
   mfaEnabled?: boolean;
   joinedAt?: string;
+  /** Self view only: the member must accept the current Terms/Privacy (K2). */
+  consentRequired?: boolean;
+  /** Self view only: the 18+ check has been recorded. */
+  adultVerified?: boolean;
+  /** Self view only: the member agreed to the writing-assistant disclosure. */
+  aiConsent?: boolean;
+  email?: string;
+  phone?: string;
 }
 
 export interface Place { id: string; slug: string; name: string; kind?: "quarter" | "asafo"; colors?: string[] }
@@ -303,6 +317,10 @@ export interface MemberView {
   schools?: Organization[];
   /** Set when a block exists in either direction — the profile is withheld. */
   blocked?: boolean;
+  /** The viewer blocked this member (show Unblock). */
+  blockedByMe?: boolean;
+  /** This member blocked the viewer (show a neutral "unavailable"). */
+  blockedMe?: boolean;
 }
 
 /** A member you have blocked, for the unblock list (App Store Guideline 1.2). */
@@ -413,6 +431,8 @@ export interface Incident {
   status: string;
   tags: string[];
   townId?: string;
+  /** Held for curator review (crime/medical, or screened) — not public yet. */
+  held?: boolean;
   details: {
     category: IncidentCategory;
     severity: IncidentSeverity;
@@ -444,9 +464,11 @@ export interface LostFound {
     description: string;
     lastSeenLocation?: string;
     lastSeenDate?: string; // YYYY-MM-DD
-    contact: string;
+    /** Only present for the poster and curators; everyone else uses the relay. */
+    contact?: string;
     lfStatus: LostFoundStatus;
   };
+  held?: boolean;
   createdAt: string;
 }
 
@@ -560,7 +582,8 @@ export interface Promotion {
 }
 
 export interface HomeData {
-  spotlight: Listing;
+  /** null until a curator approves the first artist (a freshly launched town). */
+  spotlight: Listing | null;
   artists: Listing[];
   events?: Listing[];
   memorial: Listing | null;

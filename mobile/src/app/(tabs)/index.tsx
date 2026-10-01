@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { SponsoredChip } from "@/components/notices";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Image, ScrollView, StyleSheet, View, Pressable } from "react-native";
@@ -116,6 +117,40 @@ function OutsideBanner() {
   );
 }
 
+// The rotating artist spotlight card (GET /api/home sends null when no artist
+// is approved yet — the launch state — so the caller renders this conditionally).
+function Spotlight({ spotlight }: Readonly<{ spotlight: Listing }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  return (
+    <View style={s.section}>
+      <SectionHeading index="02" kicker="ROTATING SPOTLIGHT" title="A voice from the coast" />
+      <StaggerIn index={0}>
+        <Link href={route.music(spotlight.slug)} asChild>
+          <Pressable style={s.spotlight} accessibilityRole="button" accessibilityLabel={spotlight.details.actName ?? spotlight.title}>
+            <View style={s.spotImageWrap}>
+              <Thumb
+                seed={spotlight.slug}
+                src={spotlight.coverImageUrl}
+                label={initials(spotlight.details.actName ?? spotlight.title)}
+                style={s.thumb}
+                labelStyle={s.thumbInit}
+              />
+              <View style={s.spotBadge}><StarIcon size={13} color={C.green900} strokeWidth={2.2} /><Text style={s.spotBadgeText}>OGUAA SPOTLIGHT</Text></View>
+            </View>
+            <View style={s.spotCopy}>
+              <Text style={s.spotGenre}>{(spotlight.details.genres ?? []).join(" · ")}</Text>
+              <Text style={s.spotName}>{spotlight.details.actName ?? spotlight.title}</Text>
+              <Text style={s.spotBio} numberOfLines={3}>{spotlight.details.bio}</Text>
+              <View style={s.spotLink}><Text style={s.spotLinkText}>Open artist profile</Text><ArrowRightIcon size={15} color={C.gold} strokeWidth={2.2} /></View>
+            </View>
+          </Pressable>
+        </Link>
+      </StaggerIn>
+    </View>
+  );
+}
+
 // Route a featured listing to its canonical screen (any type can be featured).
 function featuredRoute(l: Listing): Href {
   switch (l.type) {
@@ -125,7 +160,10 @@ function featuredRoute(l: Listing): Href {
     case "property": return route.property(l.slug);
     case "person": return route.person(l.slug);
     case "project": return route.project(l.slug);
-    case "event": return ROUTES.browseEvents;
+    case "event": return route.event(l.slug);
+    case "opportunity": return ROUTES.browseOpportunities;
+    case "lostfound": return route.lostFound(l.slug);
+    case "incident": return route.safety(l.slug);
     default: return ROUTES.browseMemories;
   }
 }
@@ -161,7 +199,7 @@ function FeaturedRow() {
   if (items.length === 0) return null;
   return (
     <View style={s.section}>
-      <SectionHeading index="04" kicker="FEATURED IN OGUAA" title="Community picks" />
+      <SectionHeading index="04" kicker="FEATURED IN OGUAA" title="Featured and sponsored" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.horizontalRail}>
         {items.map((l, i) => (
           <StaggerIn key={l.id} index={i}>
@@ -169,6 +207,7 @@ function FeaturedRow() {
               <Thumb seed={l.slug} src={l.coverImageUrl} label={initials(l.title)} style={s.artistThumb} labelStyle={s.thumbInit} />
               <Text style={s.artistName} numberOfLines={1}>{l.title}</Text>
               <Text style={s.artistGenre} numberOfLines={1}>{l.type}</Text>
+              <SponsoredChip listing={l} />
             </Pressable>
           </StaggerIn>
         ))}
@@ -220,7 +259,7 @@ export default function Home() {
   if (error || !data) return <ErrorView message={error ?? "No data"} />;
 
   const { spotlight, artists, memorial, stats } = data;
-  const more = artists.filter((a) => a.id !== spotlight.id).slice(0, 6);
+  const more = (artists ?? []).filter((a) => a.id !== spotlight?.id).slice(0, 6);
   const events = (data.events ?? []).slice(0, 3);
 
   return (
@@ -266,56 +305,34 @@ export default function Home() {
       <CivicGoalBanner />
       <OutsideBanner />
 
-      {/* spotlight */}
-      <View style={s.section}>
-        <SectionHeading index="02" kicker="ROTATING SPOTLIGHT" title="A voice from the coast" />
-        <StaggerIn index={0}>
-          <Link href={route.music(spotlight.slug)} asChild>
-            <Pressable style={s.spotlight} accessibilityRole="button" accessibilityLabel={spotlight.details.actName ?? spotlight.title}>
-              <View style={s.spotImageWrap}>
-                <Thumb
-                  seed={spotlight.slug}
-                  src={spotlight.coverImageUrl}
-                  label={initials(spotlight.details.actName ?? spotlight.title)}
-                  style={s.thumb}
-                  labelStyle={s.thumbInit}
-                />
-                <View style={s.spotBadge}><StarIcon size={13} color={C.green900} strokeWidth={2.2} /><Text style={s.spotBadgeText}>OGUAA SPOTLIGHT</Text></View>
-              </View>
-              <View style={s.spotCopy}>
-                <Text style={s.spotGenre}>{(spotlight.details.genres ?? []).join(" · ")}</Text>
-                <Text style={s.spotName}>{spotlight.details.actName ?? spotlight.title}</Text>
-                <Text style={s.spotBio} numberOfLines={3}>{spotlight.details.bio}</Text>
-                <View style={s.spotLink}><Text style={s.spotLinkText}>Open artist profile</Text><ArrowRightIcon size={15} color={C.gold} strokeWidth={2.2} /></View>
-              </View>
-            </Pressable>
-          </Link>
-        </StaggerIn>
-      </View>
+      {/* spotlight — absent until a curator approves the first artist */}
+      {spotlight ? <Spotlight spotlight={spotlight} /> : null}
 
       {/* artists preview */}
-      <View style={s.section}>
-        <SectionHeading index="03" kicker="THE OGUAA SOUND" title="More in rotation" href={ROUTES.music} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.horizontalRail}>
-          {more.map((a, i) => (
-            <StaggerIn key={a.id} index={i + 1}>
-              <Link href={route.music(a.slug)} asChild>
-                <Pressable style={s.artistCard} accessibilityRole="button" accessibilityLabel={a.details.actName ?? a.title}>
-                  <Thumb
-                    seed={a.slug}
-                    src={a.coverImageUrl}
-                    label={initials(a.details.actName ?? a.title)}
-                    style={s.artistThumb}
-                    labelStyle={s.thumbInit}
-                  />
-                  <Text style={s.artistName} numberOfLines={1}>{a.details.actName ?? a.title}</Text>
-                  <Text style={s.artistGenre} numberOfLines={1}>{(a.details.genres ?? [])[0]}</Text>
-                </Pressable>
-              </Link>
-            </StaggerIn>
-          ))}
-        </ScrollView>
-      </View>
+      {more.length > 0 ? (
+        <View style={s.section}>
+          <SectionHeading index="03" kicker="THE OGUAA SOUND" title="More in rotation" href={ROUTES.music} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.horizontalRail}>
+            {more.map((a, i) => (
+              <StaggerIn key={a.id} index={i + 1}>
+                <Link href={route.music(a.slug)} asChild>
+                  <Pressable style={s.artistCard} accessibilityRole="button" accessibilityLabel={a.details.actName ?? a.title}>
+                    <Thumb
+                      seed={a.slug}
+                      src={a.coverImageUrl}
+                      label={initials(a.details.actName ?? a.title)}
+                      style={s.artistThumb}
+                      labelStyle={s.thumbInit}
+                    />
+                    <Text style={s.artistName} numberOfLines={1}>{a.details.actName ?? a.title}</Text>
+                    <Text style={s.artistGenre} numberOfLines={1}>{(a.details.genres ?? [])[0]}</Text>
+                  </Pressable>
+                </Link>
+              </StaggerIn>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
 
       <FeaturedRow />
 

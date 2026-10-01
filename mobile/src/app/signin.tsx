@@ -10,6 +10,13 @@ import { D, DI, ON_GREEN, withAlpha, type Palette, S } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Mark } from "@/ui";
 import { CheckIcon } from "@/components/icons";
+import { push } from "@/lib/router";
+import { ROUTES } from "@/lib/routes";
+
+// True when a YYYY-MM-DD date of birth is at least 18 years ago.
+function isAdult(dob: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(dob) && dob <= adultCutoffIso();
+}
 
 // Latest allowed date of birth — Oguaa is 18+, mirroring the web Join form.
 function adultCutoffIso() {
@@ -54,12 +61,18 @@ const STARTER_FALLBACK: Plan = {
 
 type PlanCatalogStatus = "loading" | "ready" | "fallback" | "unavailable";
 
+// Only free plans are offered in the app: paid plans are digital goods, which
+// are not sold here on iOS or Android (D1), so no prices appear at sign-up.
+function isFreePlan(plan: Plan): boolean {
+  return plan.interval === "free" && Object.values(plan.prices).every((p) => (p ?? 0) === 0);
+}
+
 function creatorPlansFor(plans: Plan[], creatorTypes: string[]): Plan[] {
   const hasBusiness = creatorTypes.some((type) => type === "business" || type === "property");
   const hasNonBusinessCreator = creatorTypes.some((type) => type !== "business" && type !== "property");
   return plans
     .filter((plan) => {
-      if (!plan.active) return false;
+      if (!plan.active || !isFreePlan(plan)) return false;
       if (plan.audience === "business") return hasBusiness;
       if (plan.audience === "creator") return hasNonBusinessCreator;
       return plan.audience === "any";
@@ -82,11 +95,9 @@ function planPrice(plan: Plan, creatorTypes: string[]): number {
   return audiencePrice ?? plan.prices.default ?? 0;
 }
 
-function planPriceLabel(plan: Plan, creatorTypes: string[]): string {
-  const price = planPrice(plan, creatorTypes);
-  if (price === 0 || plan.interval === "free") return "Free";
-  const cedis = price / 100;
-  return `GH₵${Number.isInteger(cedis) ? cedis.toFixed(0) : cedis.toFixed(2)}/month`;
+// Every plan offered in the app is free (see isFreePlan).
+function planPriceLabel(_plan: Plan, _creatorTypes: string[]): string {
+  return "Free";
 }
 
 type FormState = {
@@ -101,6 +112,8 @@ type FormState = {
   identifier: string;
   dob: string;
   password: string;
+  acceptTerms: boolean;
+  onToggleTerms: () => void;
   busy: boolean;
   err: string | null;
   onName: (v: string) => void;
@@ -196,7 +209,7 @@ function AccountTypeSelection({
               );
             })}
           </View>
-          <Text style={s.creatorHint}>Creators get a studio to publish work, promote listings and manage a plan.</Text>
+          <Text style={s.creatorHint}>Creators get a studio to publish work and follow how it does.</Text>
         </View>
       )}
     </View>
@@ -223,7 +236,7 @@ function PlanSelection({
       <View style={s.stepHeader}>
         <Text style={s.stepEyebrow}>Step 2 of 2</Text>
         <Text style={s.planHeading}>Choose your starting plan</Text>
-        <Text style={s.planIntro}>Starter is free by default. You can change your preference later in Creator Studio.</Text>
+        <Text style={s.planIntro}>Starter is free and is where every creator begins.</Text>
       </View>
       {(status === "ready" || status === "fallback") && plans.map((plan) => {
           const selected = plan.slug === selectedSlug;
@@ -245,7 +258,7 @@ function PlanSelection({
                   {selected && <View style={s.radioDot} />}
                 </View>
               </View>
-              <Text style={s.planPrice}>{planPriceLabel(plan, creatorTypes)}</Text>
+
               {plan.perks.slice(0, 4).map((perk) => (
                 <View key={perk} style={s.perkRow}>
                   <CheckIcon size={13} color={C.goldText} strokeWidth={2.5} />
@@ -270,9 +283,6 @@ function PlanSelection({
           <Text style={s.catalogErrorText}>No free creator plan is available right now. Please try again shortly.</Text>
         </View>
       )}
-      <View style={s.intentNote}>
-        <Text style={s.intentNoteText}>A paid choice only saves your preference. There is no charge during signup; payment and benefits activate later through an eligible approved business listing.</Text>
-      </View>
     </View>
   );
 }
@@ -360,6 +370,7 @@ function FormCard(f: Readonly<FormState>) {
         </>
       )}
 
+      {f.isJoin && (!f.asCreator || planStep) ? <TermsConsent checked={f.acceptTerms} onToggle={f.onToggleTerms} /> : null}
       {f.err && <Text style={s.err}>{f.err}</Text>}
       <View style={s.actionRow}>
         {planStep && (
@@ -376,9 +387,37 @@ function FormCard(f: Readonly<FormState>) {
           <Text style={s.btnText}>{btnLabel}</Text>
         </Pressable>
       </View>
+      {!f.isJoin ? (
+        <Pressable accessibilityRole="button" onPress={() => push(ROUTES.resetPassword)} style={{ minHeight: 44, justifyContent: "center" }}>
+          <Text style={s.back}>Forgot your password, or invited by an institution? Set a password</Text>
+        </Pressable>
+      ) : null}
       <Pressable accessibilityRole="button" onPress={() => f.onSwitchMode(f.isJoin ? "signin" : "join")}>
         <Text style={s.back}>{f.isJoin ? "Have an account? Sign in instead" : "New here? Join instead"}</Text>
       </Pressable>
+    </View>
+  );
+}
+
+// "I agree" at Join (K1, App Store 1.2, Play UGC): links open the in-app legal
+// screens; creating the account is blocked until it is ticked.
+function TermsConsent({ checked, onToggle }: Readonly<{ checked: boolean; onToggle: () => void }>) {
+  const { C } = useTheme();
+  const s = useMemo(() => makeStyles(C), [C]);
+  return (
+    <View style={s.consentRow}>
+      <Pressable accessibilityRole="checkbox" accessibilityState={{ checked }} accessibilityLabel="I agree to the Terms of Use and Privacy Policy" onPress={onToggle} hitSlop={8} style={[s.checkbox, checked && s.checkboxOn]}>
+        {checked ? <CheckIcon size={14} color={ON_GREEN} strokeWidth={3} /> : null}
+      </Pressable>
+      <Text style={s.consentText}>
+        I agree to the{" "}
+        <Text accessibilityRole="link" style={s.consentLink} onPress={() => push(ROUTES.legalTerms)}>Terms of Use</Text>
+        {" "}and{" "}
+        <Text accessibilityRole="link" style={s.consentLink} onPress={() => push(ROUTES.legalPrivacy)}>Privacy Policy</Text>
+        , including the{" "}
+        <Text accessibilityRole="link" style={s.consentLink} onPress={() => push(ROUTES.legalAcceptableUse)}>Acceptable Use rules</Text>
+        : zero tolerance for objectionable content and abusive users. I am 18 or older.
+      </Text>
     </View>
   );
 }
@@ -398,8 +437,12 @@ export default function SignIn() {
   const [planCatalogStatus, setPlanCatalogStatus] = useState<PlanCatalogStatus>("loading");
   const [creatorPlanIntent, setCreatorPlanIntent] = useState(STARTER_FALLBACK.slug);
   const [password, setPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [challenge, setChallenge] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  // Recovery codes are letters, digits and a dash (XXXXX-XXXXX), which the
+  // number pad cannot type — this switches the field to a text keyboard.
+  const [useRecovery, setUseRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -462,6 +505,7 @@ export default function SignIn() {
       if (!name.trim()) { setErr("Please enter your name."); return; }
       if (!identifier.trim()) { setErr("Please enter your phone or email."); return; }
       if (!dob.trim()) { setErr("Please enter your date of birth."); return; }
+      if (!isAdult(dob.trim())) { setErr("You must be 18 or older to join Oguaa."); return; }
       if (password.length < 8) { setErr("Your password must be at least 8 characters."); return; }
       if (asCreator) { setCreatorStep(2); return; }
     }
@@ -472,6 +516,7 @@ export default function SignIn() {
         return;
       }
     }
+    if (isJoin && !acceptTerms) { setErr("Please agree to the Terms of Use and Privacy Policy to join."); return; }
     setBusy(true);
     try {
       if (isJoin) {
@@ -480,6 +525,7 @@ export default function SignIn() {
           displayName: name.trim(),
           dateOfBirth: dob.trim(),
           password,
+          acceptTerms,
           ...(asCreator ? {
             creatorTypes,
             creatorPlanIntent: selectedCreatorPlan.slug,
@@ -520,16 +566,23 @@ export default function SignIn() {
             style={[s.input, { textAlign: "center", letterSpacing: 4, fontSize: 18 }]}
             value={code}
             onChangeText={setCode}
-            placeholder="123 456"
+            placeholder={useRecovery ? "XXXXX-XXXXX" : "123 456"}
             placeholderTextColor={C.inkFaint}
-            keyboardType="number-pad"
-            autoComplete="one-time-code"
+            keyboardType={useRecovery ? "default" : "number-pad"}
+            autoCapitalize={useRecovery ? "characters" : "none"}
+            autoCorrect={false}
+            autoComplete={useRecovery ? "off" : "one-time-code"}
+            textContentType={useRecovery ? "none" : "oneTimeCode"}
+            accessibilityLabel={useRecovery ? "Recovery code" : "Authenticator code"}
           />
+          <Pressable accessibilityRole="button" onPress={() => { setUseRecovery((r) => !r); setCode(""); setErr(null); }} style={{ minHeight: 44, justifyContent: "center" }}>
+            <Text style={s.back}>{useRecovery ? "Use a code from my authenticator app" : "Use a recovery code instead"}</Text>
+          </Pressable>
           {err ? <Text style={s.err}>{err}</Text> : null}
           <Pressable accessibilityRole="button" style={[s.btn, busy && { opacity: 0.6 }]} onPress={submitCode} disabled={busy}>
             <Text style={s.btnText}>{busy ? "Verifying…" : "Verify & sign in"}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => { setChallenge(null); setErr(null); setPassword(""); }}>
+          <Pressable accessibilityRole="button" onPress={() => { setChallenge(null); setErr(null); setPassword(""); setCode(""); setUseRecovery(false); }}>
             <Text style={s.back}>← Back to sign in</Text>
           </Pressable>
         </View>
@@ -552,6 +605,8 @@ export default function SignIn() {
         identifier={identifier}
         dob={dob}
         password={password}
+        acceptTerms={acceptTerms}
+        onToggleTerms={() => { setAcceptTerms((v) => !v); setErr(null); }}
         busy={busy}
         err={err}
         onName={setName}
@@ -570,6 +625,11 @@ export default function SignIn() {
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
+  consentRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: C.inkFaint, alignItems: "center", justifyContent: "center", marginTop: 1 },
+  checkboxOn: { backgroundColor: C.green, borderColor: C.green },
+  consentText: { flex: 1, color: C.inkMuted, fontSize: 13, lineHeight: 19 },
+  consentLink: { color: C.greenText, textDecorationLine: "underline", ...S(600) },
   hero: { backgroundColor: C.green, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 44, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   heroMark: { alignItems: "center", marginBottom: 14 },
   heroKicker: { color: C.gold, fontSize: 11, ...D(700), letterSpacing: 2, textTransform: "uppercase", textAlign: "center" },

@@ -44,10 +44,20 @@ function monthDisabled(y: number, m: number, min?: string, max?: string) {
   return false;
 }
 
-function formatDisplay(value: string) {
+function formatDisplay(value: string, monthDay = false) {
   const p = parseIso(value);
   if (!p) return value;
-  return new Date(p.y, p.m - 1, p.d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const opts: Intl.DateTimeFormatOptions = monthDay ? { day: "2-digit", month: "short" } : { day: "2-digit", month: "short", year: "numeric" };
+  return new Date(p.y, p.m - 1, p.d).toLocaleDateString("en-GB", opts);
+}
+
+// Month-day mode works on a fixed leap year so 29 Feb stays pickable.
+const MONTH_DAY_YEAR = 2000;
+
+/** "MM-DD" (or a legacy "YYYY-MM-DD") → a full ISO date in the fixed leap year. */
+function monthDayToIso(value: string): string {
+  const m = /^(?:\d{4}-)?(\d{2})-(\d{2})$/.exec(value);
+  return m ? `${MONTH_DAY_YEAR}-${m[1]}-${m[2]}` : "";
 }
 
 // Snap a draft to a real, in-range date: day clamped to the month's length,
@@ -117,6 +127,8 @@ interface DateFieldProps {
   minDate?: string;
   maxDate?: string;
   label?: string;
+  /** Month and day only (no year): value and output are "MM-DD". */
+  monthDay?: boolean;
 }
 
 /**
@@ -124,21 +136,26 @@ interface DateFieldProps {
  * TextInputs that opens a bottom sheet with Year / Month / Day columns. Commits
  * an ISO YYYY-MM-DD string on Done; Cancel discards the draft.
  */
-export function DateField({ value, onChange, placeholder = "Pick a date", minDate, maxDate, label }: Readonly<DateFieldProps>) {
+export function DateField({ value: rawValue, onChange, placeholder = "Pick a date", minDate: rawMin, maxDate: rawMax, label, monthDay = false }: Readonly<DateFieldProps>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
+  // Month-day fields run on a fixed year with no bounds.
+  const value = monthDay ? monthDayToIso(rawValue) : rawValue;
+  const minDate = monthDay ? undefined : rawMin;
+  const maxDate = monthDay ? undefined : rawMax;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(() => initialDraft(value, minDate, maxDate));
 
   function openSheet() {
-    setDraft(initialDraft(value, minDate, maxDate));
+    setDraft(monthDay && !value ? { y: MONTH_DAY_YEAR, m: 1, d: 1 } : initialDraft(value, minDate, maxDate));
     setOpen(true);
   }
   function cancel() {
     setOpen(false);
   }
   function commit() {
-    onChange(iso(draft.y, draft.m, draft.d));
+    const full = iso(draft.y, draft.m, draft.d);
+    onChange(monthDay ? full.slice(5) : full);
     setOpen(false);
   }
 
@@ -181,7 +198,7 @@ export function DateField({ value, onChange, placeholder = "Pick a date", minDat
         accessibilityLabel={label ?? placeholder}
         style={s.field}
       >
-        <Text style={value ? s.fieldText : s.fieldPlaceholder}>{value ? formatDisplay(value) : placeholder}</Text>
+        <Text style={value ? s.fieldText : s.fieldPlaceholder}>{value ? formatDisplay(value, monthDay) : placeholder}</Text>
         <Text style={s.fieldGlyph}>▾</Text>
       </Pressable>
 
@@ -191,7 +208,7 @@ export function DateField({ value, onChange, placeholder = "Pick a date", minDat
           <View style={s.sheet}>
             <Text style={s.sheetTitle}>{label ?? "Pick a date"}</Text>
             <View style={s.columns}>
-              <Column title="Year" items={yearItems} onPick={(y) => setDraft((cur) => normalize(y, cur.m, cur.d, minDate, maxDate))} />
+              {monthDay ? null : <Column title="Year" items={yearItems} onPick={(y) => setDraft((cur) => normalize(y, cur.m, cur.d, minDate, maxDate))} />}
               <Column title="Month" items={monthItems} onPick={(m) => setDraft((cur) => normalize(cur.y, m, cur.d, minDate, maxDate))} />
               <Column title="Day" items={dayItems} onPick={(d) => setDraft((cur) => normalize(cur.y, cur.m, d, minDate, maxDate))} />
             </View>

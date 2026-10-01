@@ -1,4 +1,5 @@
 import { ROUTES } from "@/lib/routes";
+import { parseApiDate } from "@/lib/dates";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -13,13 +14,14 @@ import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView, Thumb } from "@/ui";
 import { CandleIcon, HeartFilledIcon, HeartIcon } from "@/components/icons";
 import { ReportButton } from "@/report-button";
+import { BlockButton } from "@/components/block-button";
 import { cldCover } from "@/lib/cloudinary";
 import { RevealView, StaggerIn } from "@/components/anim";
 
 function dayMonth(date?: string): string {
   if (!date) return "";
-  const d = new Date(date.length === 5 ? `2000-${date}` : date);
-  if (Number.isNaN(d.getTime())) return date;
+  const d = parseApiDate(date);
+  if (!d) return date;
   return d.toLocaleDateString(undefined, { day: "numeric", month: "long" });
 }
 
@@ -68,6 +70,11 @@ function RememberButton({ slug, initialCount }: Readonly<{ slug: string; initial
   );
 }
 
+function tributeButtonLabel(busy: boolean, signedIn: boolean): string {
+  if (busy) return "Leaving…";
+  return signedIn ? "Leave a tribute" : "Sign in to leave a tribute";
+}
+
 function lifeDates(bornYear?: number, diedDate?: string) {
   return [bornYear ? String(bornYear) : "", diedDate ? diedDate.slice(0, 4) : ""].filter(Boolean).join(" — ");
 }
@@ -88,37 +95,40 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
   const [candles, setCandles] = useState(d.candles ?? 0);
   const [lit, setLit] = useState(false);
   const story = (d.lifeStory ?? "").split("\n\n");
+  const { member } = useAuth();
   const [tributes, setTributes] = useState<Tribute[]>(m.tributes ?? []);
-  const [name, setName] = useState("");
+  const [relation, setRelation] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [tributeErr, setTributeErr] = useState("");
+  const [candleErr, setCandleErr] = useState("");
 
+  // Only a tribute the server accepted is shown; on failure the words stay in
+  // the box with the reason, so nothing is lost and it can be sent again.
   async function submitTribute() {
     const msg = message.trim();
     if (!msg || busy) return;
-    setBusy(true);
+    if (!member) { router.push(ROUTES.signIn); return; }
+    setBusy(true); setTributeErr("");
     try {
-      const t = await api.addTribute(slug, { authorName: name.trim(), message: msg });
+      const t = await api.addTribute(slug, { message: msg, relation: relation.trim() || undefined });
       setTributes((cur) => [t, ...cur]);
-    } catch {
-      setTributes((cur) => [
-        { id: `local-${cur.length}`, authorName: name.trim() || "A member of the community", message: msg, createdAt: "just now" },
-        ...cur,
-      ]);
-    }
-    setName("");
-    setMessage("");
-    setBusy(false);
+      setRelation("");
+      setMessage("");
+    } catch (e) {
+      setTributeErr(e instanceof Error ? e.message : "Your tribute wasn't sent. Please try again.");
+    } finally { setBusy(false); }
   }
 
   async function light() {
     if (lit) return;
-    setLit(true);
+    setLit(true); setCandleErr("");
     try {
       const { candles: c } = await api.lightCandle(slug);
       setCandles(c);
-    } catch {
-      setCandles((c) => c + 1);
+    } catch (e) {
+      setLit(false);
+      setCandleErr(e instanceof Error ? e.message : "The candle couldn't be lit. Please try again.");
     }
   }
 
@@ -140,6 +150,7 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
             <Text style={s.candleText}>{lit ? "Candle lit" : "Light a candle"} · {candles}</Text>
           </View>
         </Pressable>
+        {candleErr ? <Text style={s.formErr}>{candleErr}</Text> : null}
         <RememberButton slug={slug} initialCount={d.rememberedByCount ?? 0} />
         <Text style={s.rememberHint}>Those who remember are quietly told on the anniversary each year.</Text>
       </RevealView>
@@ -183,6 +194,12 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
         <StaggerIn key={t.id} index={i} style={s.tribute}>
           <Text style={s.tributeMsg}>“{t.message}”</Text>
           <Text style={s.tributeWho}>{t.authorName}{t.relation ? ` · ${t.relation}` : ""}</Text>
+          {member?.slug && member.slug === t.memberSlug ? null : (
+            <View style={s.tributeActions}>
+              <ReportButton target={{ type: "tribute", id: t.id }} compact />
+              <BlockButton slug={t.memberSlug} name={t.authorName} />
+            </View>
+          )}
         </StaggerIn>
       ))}
 
@@ -197,13 +214,15 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
         />
         <TextInput
           style={s.inputSm}
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name (optional)"
+          value={relation}
+          onChangeText={setRelation}
+          placeholder="How you knew them (optional)"
           placeholderTextColor={C.inkFaint}
+          maxLength={60}
         />
+        {tributeErr ? <Text style={s.formErr}>{tributeErr}</Text> : null}
         <Pressable accessibilityRole="button" onPress={submitTribute} disabled={busy} style={[s.submit, busy && { opacity: 0.6 }]}>
-          <Text style={s.submitText}>{busy ? "Leaving…" : "Leave a tribute"}</Text>
+          <Text style={s.submitText}>{tributeButtonLabel(busy, member != null)}</Text>
         </Pressable>
         <Text style={s.formNote}>Tributes are lightly reviewed for dignity before they appear.</Text>
       </View>
@@ -219,6 +238,7 @@ function Detail({ m, slug }: Readonly<{ m: Listing; slug: string }>) {
 }
 
 const makeStyles = (C: Palette) => StyleSheet.create({
+  tributeActions: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 6 },
   // #EADFC4 is a bespoke parchment tone behind the portrait with no palette
   // token; kept as-is in both themes (decorative, photo-placeholder-like).
   portrait: { width: 110, height: 110, borderRadius: 55, backgroundColor: C.goldTint14, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.goldBrand },
@@ -236,6 +256,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   moment: { width: 150 },
   momentImg: { width: 150, height: 110, borderRadius: 10, borderWidth: 1, borderColor: C.sand },
   momentCaption: { color: C.inkMuted, fontSize: 11, lineHeight: 15, marginTop: 5 },
+  formErr: { color: C.clayText, fontSize: 13, lineHeight: 18, marginTop: 8, textAlign: "center" },
   datesNote: { marginTop: 22, backgroundColor: C.paper, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 14 },
   datesTitle: { color: C.goldText, fontSize: 11, letterSpacing: 2, ...D(700), textTransform: "uppercase" },
   datesLine: { color: C.ink, ...S(400), fontSize: 14, marginTop: 6 },

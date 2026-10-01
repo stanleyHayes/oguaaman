@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { parseCedisToPesewas } from "@/lib/money";
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Stack } from "expo-router";
 import { T as Text, TI as TextInput } from "@/components/typography";
@@ -11,7 +12,8 @@ import { push } from "@/lib/router";
 import { ROUTES, route } from "@/lib/routes";
 import { useApi } from "@/lib/use-api";
 import { useTheme } from "@/lib/theme-context";
-import { openInAppBrowser } from "@/lib/webbrowser";
+import { useHostedCheckout } from "@/lib/use-hosted-checkout";
+import { CheckoutPending } from "@/components/checkout-pending";
 import type { AgentJob, MyAgentJobs } from "@/lib/types";
 import { D, ON_GREEN, S, withAlpha, type Palette } from "@/theme";
 import { ErrorView, Loading } from "@/ui";
@@ -52,7 +54,9 @@ export default function OutsideJobsScreen() {
   const activeSide = showAgentSide ? side : "client";
   const jobs = activeSide === "client" ? clientJobs : agentJobs;
   const openCount = jobs.filter(isOpen).length;
-  const escrowTotal = jobs.reduce((sum, job) => sum + (job.escrow?.heldPesewas ?? 0), 0);
+  // Only money still held counts: released and refunded escrow keeps its
+  // heldPesewas on record but has already left escrow.
+  const escrowTotal = jobs.reduce((sum, job) => sum + (job.escrow?.status === "held" ? job.escrow.heldPesewas : 0), 0);
   const completedCount = jobs.filter((job) => job.status === "completed").length;
 
   return (
@@ -164,6 +168,14 @@ function Summary({ label, value, divided = false }: Readonly<{ label: string; va
   );
 }
 
+// What happened to a job's escrowed money, for the card's money grid.
+function escrowLabel(status?: string): string {
+  if (status === "released") return "Paid out";
+  if (status === "refunded") return "Refunded";
+  if (status === "refund_due") return "Refund due";
+  return "In escrow";
+}
+
 function JobCard({ job, side, onReload }: Readonly<{ job: AgentJob; side: JobSide; onReload: () => void }>) {
   const { C } = useTheme();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -199,7 +211,7 @@ function JobCard({ job, side, onReload }: Readonly<{ job: AgentJob; side: JobSid
         <View style={s.moneyGrid}>
           <Money label="Budget" amount={job.budgetPesewas} />
           {job.quotePesewas > 0 ? <Money label="Firm quote" amount={job.quotePesewas} strong /> : null}
-          {funded ? <Money label="In escrow" amount={job.escrow?.heldPesewas} /> : null}
+          {funded ? <Money label={escrowLabel(job.escrow?.status)} amount={job.escrow?.heldPesewas} /> : null}
           {funded && side === "agent" ? <Money label="Your payout" amount={job.escrow?.payoutPesewas} /> : null}
         </View>
         {job.quoteNote ? <Text style={s.quoteNote}>Agent note — {job.quoteNote}</Text> : null}
@@ -232,9 +244,13 @@ function ClientActions({ job, onReload }: Readonly<{ job: AgentJob; onReload: ()
   const [reason, setReason] = useState("");
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState("");
-  const [pendingRef, setPendingRef] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const funding = useHostedCheckout<AgentJob>({
+    confirm: api.confirmAgentJob,
+    onPaid: () => { setMode(null); onReload(); },
+    notConfirmed: "Payment is not confirmed yet. Finish paying on the Paystack page, then check again.",
+  });
 
   async function run(action: () => Promise<unknown>, after?: () => void) {
     setBusy(true); setError("");
@@ -247,31 +263,19 @@ function ClientActions({ job, onReload }: Readonly<{ job: AgentJob; onReload: ()
     } finally { setBusy(false); }
   }
 
-  async function confirmFunding(reference: string) {
-    await api.confirmAgentJob(reference);
-    setPendingRef(null);
-    setMode(null);
-    onReload();
-  }
-
   async function fund() {
     const address = email.trim();
-    if (!/.+@.+\..+/.test(address)) { setError("Enter a valid email for your payment receipt."); return; }
+    if (address && !/.+@.+\..+/.test(address)) { setError("Check the receipt email, or leave it blank."); return; }
     setBusy(true); setError("");
     try {
       const result = await api.fundAgentJob(job.id, address);
-      setPendingRef(result.reference);
       if (result.simulated) {
-        await confirmFunding(result.reference);
+        await api.confirmAgentJob(result.reference);
+        setMode(null);
+        onReload();
         return;
       }
-      const opened = await openInAppBrowser(result.authorizationUrl);
-      if (!opened) throw new Error("The secure payment page could not be opened.");
-      try {
-        await confirmFunding(result.reference);
-      } catch {
-        setError("Payment is not confirmed yet. If you paid, use Check payment below.");
-      }
+      await funding.begin({ reference: result.reference, url: result.authorizationUrl });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the protected payment.");
     } finally { setBusy(false); }
@@ -300,23 +304,14 @@ function ClientActions({ job, onReload }: Readonly<{ job: AgentJob; onReload: ()
   }
 
   if (job.status === "quoted") {
-    if (pendingRef) {
-      return (
-        <View>
-          <Text style={s.actionText}>Finish the Paystack payment, then confirm that the escrow is funded.</Text>
-          {error ? <Text style={s.actionError}>{error}</Text> : null}
-          <View style={s.actionRow}>
-            <ActionButton label={busy ? "Checking…" : "Check payment"} disabled={busy} gold onPress={() => { void run(() => api.confirmAgentJob(pendingRef), () => { setPendingRef(null); setMode(null); }); }} />
-            <ActionButton label="Cancel" disabled={busy} onPress={() => { setPendingRef(null); setMode(null); setError(""); }} />
-          </View>
-        </View>
-      );
+    if (funding.pending) {
+      return <CheckoutPending checkout={funding} body="Finish the Paystack payment. We check that the escrow is funded when you come back; you can also check now." />;
     }
     if (mode === "fund") {
       return (
         <View>
           <OutsideDisclaimer compact />
-          <Text style={s.formLabel}>EMAIL FOR RECEIPT</Text>
+          <Text style={s.formLabel}>EMAIL FOR RECEIPT (OPTIONAL)</Text>
           <TextInput value={email} onChangeText={(value) => { setEmail(value); setError(""); }} autoCapitalize="none" keyboardType="email-address" placeholder="you@example.com" placeholderTextColor={C.inkFaint} style={s.input} />
           <Text style={s.formHint}>You are placing {cedis(job.quotePesewas)} in managed escrow. It is released only when you complete the job.</Text>
           {error ? <Text style={s.actionError}>{error}</Text> : null}
@@ -403,13 +398,15 @@ function AgentActions({ job, onReload }: Readonly<{ job: AgentJob; onReload: () 
     finally { setBusy(false); }
   }
 
-  async function sendQuote() {
-    const value = Number.parseFloat(amount);
-    if (!Number.isFinite(value) || value < 1 || value > 500_000) { setError("Enter a quote between GH₵1 and GH₵500,000."); return; }
-    await run(
-      () => api.quoteAgentJob(job.id, { amountPesewas: Math.round(value * 100), note: note.trim() }),
-      () => setQuoting(false),
-    );
+  // The client can fund a quote straight away, so the parsed figure is shown
+  // back for a final check before it is sent.
+  function sendQuote() {
+    const amountPesewas = parseCedisToPesewas(amount);
+    if (amountPesewas == null || amountPesewas < 100 || amountPesewas > 50_000_000) { setError("Enter a quote between GH₵1 and GH₵500,000, e.g. 1,200."); return; }
+    Alert.alert("Send this quote?", `Your firm price is ${cedis(amountPesewas)}. The client can fund escrow at this amount straight away.`, [
+      { text: "Edit", style: "cancel" },
+      { text: "Send quote", onPress: () => { void run(() => api.quoteAgentJob(job.id, { amountPesewas, note: note.trim() }), () => setQuoting(false)); } },
+    ]);
   }
 
   function decline() {
@@ -429,7 +426,7 @@ function AgentActions({ job, onReload }: Readonly<{ job: AgentJob; onReload: () 
           <Text style={s.formHint}>The client&apos;s working budget is {cedis(job.budgetPesewas)}. Send the amount you can genuinely deliver for.</Text>
           {error ? <Text style={s.actionError}>{error}</Text> : null}
           <View style={s.actionRow}>
-            <ActionButton label={busy ? "Sending…" : "Send firm quote"} disabled={busy} onPress={() => { void sendQuote(); }} />
+            <ActionButton label={busy ? "Sending…" : "Send firm quote"} disabled={busy} onPress={sendQuote} />
             <ActionButton label="Back" disabled={busy} onPress={() => { setQuoting(false); setError(""); }} />
           </View>
         </View>
@@ -465,7 +462,7 @@ function AgentActions({ job, onReload }: Readonly<{ job: AgentJob; onReload: () 
     );
   }
 
-  if (job.status === "completed") return <Text style={s.successText}>Completed. Your payout is {cedis(job.escrow?.payoutPesewas)}{job.escrow?.simulated ? " (simulated)." : "."}</Text>;
+  if (job.status === "completed") return <Text style={s.successText}>Completed. Your payout is {cedis(job.escrow?.payoutPesewas)}{__DEV__ && job.escrow?.simulated ? " (simulated)." : "."}</Text>;
   if (job.status === "disputed") return <Text style={s.disputedText}>Under review. The escrow stays frozen until Oguaa resolves the dispute.</Text>;
   if (job.status === "refunded") return <Text style={s.actionText}>Refunded to the client.</Text>;
   return <Text style={s.actionText}>This request was cancelled.</Text>;

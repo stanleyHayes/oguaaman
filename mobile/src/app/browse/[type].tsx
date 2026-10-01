@@ -16,6 +16,8 @@ import { RevealView, StaggerIn, useHeroParallax } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
 import { ArrowRightIcon, ArrowUpRightIcon, CompassIcon } from "@/components/icons";
 import { ListFooter } from "@/components/list-footer";
+import { InvestmentNote, SponsoredChip } from "@/components/notices";
+import { ReportButton } from "@/report-button";
 
 function openURL(url?: string) {
   const u = (url ?? "").trim();
@@ -187,6 +189,7 @@ export default function Browse() {
           <Text style={s.cardKicker} numberOfLines={1}>{kicker}</Text>
           <Text style={s.title} numberOfLines={2}>{l.title}</Text>
           <Text style={s.sub} numberOfLines={2}>{view.sub(l)}</Text>
+          <SponsoredChip listing={l} />
           {isOpportunities && l.details.description ? (
             <Text style={s.oppDesc} numberOfLines={2}>{l.details.description}</Text>
           ) : null}
@@ -201,6 +204,7 @@ export default function Browse() {
               <ArrowUpRightIcon size={14} color={C.tealText} strokeWidth={2.2} />
             </Pressable>
           ) : null}
+          {isOpportunities && String(l.details.kind ?? "").toLowerCase() === "investment" ? <InvestmentNote /> : null}
         </View>
         {href ? (
           <View style={s.cardArrow}>
@@ -221,7 +225,12 @@ export default function Browse() {
             {card}
           </Pressable>
         ) : (
-          <View>{card}</View>
+          // Opportunities and memories have no detail screen, so the report
+          // control sits under the card (App Store 1.2 / Play UGC).
+          <View>
+            {card}
+            <ReportButton listingId={l.id} compact />
+          </View>
         )}
       </StaggerIn>
     );

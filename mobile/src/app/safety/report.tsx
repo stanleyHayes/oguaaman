@@ -8,7 +8,8 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme-context";
 import type { IncidentCategory, IncidentSeverity } from "@/lib/types";
-import { INCIDENT_CATEGORIES, INCIDENT_SEVERITIES, severityColors } from "@/lib/incidents";
+import { HELD_CATEGORIES, INCIDENT_CATEGORIES, INCIDENT_SEVERITIES, severityColors } from "@/lib/incidents";
+import { EmergencyCallout, HeldNotice } from "@/components/notices";
 import { HeroBand } from "@/ui";
 import { formStyles } from "@/components/form-styles";
 import { ON_GREEN, type Palette } from "@/theme";
@@ -26,12 +27,14 @@ export default function ReportIncident() {
   const [contact, setContact] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [held, setHeld] = useState(false);
 
   if (!member) {
     return (
       <View style={s.gate}>
-        <Text style={s.gateTitle}>Sign in to report</Text>
-        <Text style={s.gateBody}>Incident reports are credited to you so curators can verify them. In a life-threatening emergency, call the emergency services first.</Text>
+        <EmergencyCallout />
+        <Text style={[s.gateTitle, { marginTop: 18 }]}>Sign in to report</Text>
+        <Text style={s.gateBody}>Incident reports are credited to you so curators can verify them.</Text>
         <Pressable accessibilityRole="button" onPress={() => router.replace(ROUTES.signIn)} style={s.btn}>
           <Text style={s.btnText}>Sign in / create account</Text>
         </Pressable>
@@ -55,7 +58,10 @@ export default function ReportIncident() {
         contact: contact.trim() || undefined,
         description: description.trim() || undefined,
       });
-      replace(route.safety(inc.slug));
+      // Crime, medical and screened reports wait for a curator (K12): say so
+      // here, because the detail page is not public until then.
+      if (inc.held || inc.status === "pending") setHeld(true);
+      else replace(route.safety(inc.slug));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn’t post the report. Check your connection and try again.");
     } finally {
@@ -63,9 +69,22 @@ export default function ReportIncident() {
     }
   }
 
+  if (held) {
+    return (
+      <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ padding: 20, gap: 16 }}>
+        <HeldNotice />
+        <EmergencyCallout />
+        <Pressable accessibilityRole="button" onPress={() => replace(ROUTES.safety)} style={s.btn}>
+          <Text style={s.btnText}>Back to the safety board</Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={{ backgroundColor: C.paper }} contentContainerStyle={{ paddingBottom: 48 }}>
-      <HeroBand tone={C.maroon} kicker="Safety board" title="Report an incident" lede="Floods, fires, accidents, hazards — post what is happening so responders and neighbours can act. It goes live immediately; a curator verifies afterwards." />
+      <HeroBand tone={C.maroon} kicker="Safety board" title="Report an incident" lede="Floods, fires, accidents, hazards — post what is happening so neighbours can act. Most reports go live immediately and a curator verifies afterwards; crime and medical reports are checked by a curator first." />
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}><EmergencyCallout /></View>
       <View style={s.formCard}>
       <Text style={s.label}>CATEGORY</Text>
       <View style={s.chips}>
@@ -75,6 +94,9 @@ export default function ReportIncident() {
           </Pressable>
         ))}
       </View>
+      {HELD_CATEGORIES.has(category) ? (
+        <Text style={s.hint}>A curator reviews {category} reports before anyone else sees them, and no town-wide alert goes out until then. To report a crime to the police, call 112.</Text>
+      ) : null}
 
       <Text style={s.label}>SEVERITY</Text>
       <Text style={s.hint}>Critical and high alert every curator immediately.</Text>
@@ -110,7 +132,7 @@ export default function ReportIncident() {
       />
 
       <Text style={s.label}>YOUR CONTACT (OPTIONAL)</Text>
-      <Text style={s.hint}>A phone number responders can reach you on.</Text>
+      <Text style={s.hint}>A phone number curators can reach you on. It is never shown publicly.</Text>
       <TextInput style={s.input} value={contact} onChangeText={setContact} placeholder="e.g. 024 000 0000" placeholderTextColor={C.inkFaint} keyboardType="phone-pad" />
 
       {error !== "" && <Text style={s.error}>{error}</Text>}
@@ -118,7 +140,7 @@ export default function ReportIncident() {
       <Pressable accessibilityRole="button" onPress={submit} disabled={busy} style={[s.btn, busy && { opacity: 0.6 }]}>
         <Text style={s.btnText}>{busy ? "Posting…" : "Post the report"}</Text>
       </Pressable>
-      <Text style={s.note}>Posted as {member.displayName}. In a life-threatening emergency, call the emergency services first.</Text>
+      <Text style={s.note}>Posted as {member.displayName}. Oguaa does not alert the emergency services — in an emergency, call 112.</Text>
       </View>
     </ScrollView>
   );

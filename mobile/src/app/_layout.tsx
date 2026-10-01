@@ -8,6 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from "@expo-google-fonts/outfit";
 import { AuthProvider } from "@/lib/auth";
+import { ConsentGate } from "@/components/consent-gate";
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
 import { DirectivesProvider } from "@/lib/directives";
@@ -83,6 +84,8 @@ function RootNavigator() {
         <Stack.Screen name="music/[slug]" options={{ title: "Artist", headerBackTitle: "Music" }} />
         <Stack.Screen name="memoriam/[slug]" options={{ title: "In Memoriam", headerBackTitle: "Yɛnkae" }} />
         <Stack.Screen name="signin" options={{ title: "Sign in", presentation: "modal" }} />
+        <Stack.Screen name="reset-password" options={{ title: "Set a password", presentation: "modal" }} />
+        <Stack.Screen name="contact" options={{ title: "Contact & support", headerBackTitle: "Back" }} />
         <Stack.Screen name="submit" options={{ title: "Contribute", presentation: "modal", headerBackTitle: "More" }} />
         <Stack.Screen name="write" options={{ title: "Newsroom", presentation: "modal", headerBackTitle: "Back" }} />
         <Stack.Screen name="browse/[type]" options={{ title: "Browse", headerBackTitle: "More" }} />
@@ -158,6 +161,7 @@ export default function RootLayout() {
               </AppStripeProvider>
             </NavDrawerProvider>
             <MobileRingingAlert />
+            <ConsentGate />
           </DirectivesProvider>
         </AuthProvider>
         </LanguageProvider>

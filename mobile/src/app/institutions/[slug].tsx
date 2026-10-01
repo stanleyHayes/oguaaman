@@ -1,4 +1,5 @@
 import { route, ROUTES } from "@/lib/routes";
+import { parseApiDate } from "@/lib/dates";
 import { useMemo, useState, type ReactNode } from "react";
 import { push } from "@/lib/router";
 import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
@@ -125,7 +126,7 @@ export default function Institution() {
 // (spec §8.13). A steward reviews it; editing itself stays on the desktop admin.
 function OfficialEventCard({ event }: Readonly<{ event: Listing }>) {
   const s = useStyles();
-  const dateStr = event.details.startsAt ? new Date(event.details.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
+  const dateStr = event.details.startsAt ? parseApiDate(event.details.startsAt)?.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
   return (
     <Pressable accessibilityRole="button" style={s.eventCard} onPress={() => push(route.event(event.slug))}>      <Text style={s.eventDate}>{dateStr}</Text>
       <Text style={s.eventTitle} numberOfLines={2}>{event.title}</Text>

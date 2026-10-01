@@ -1,5 +1,6 @@
 import { route } from "@/lib/routes";
 import { useMemo } from "react";
+import { ReportButton } from "@/report-button";
 import { push } from "@/lib/router";
 import { StyleSheet, View, Pressable } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -228,6 +229,7 @@ function HeritageScreen({ topic: t }: Readonly<{ topic: Topic }>) {
                       </View>
                       <Text style={s.placeName} numberOfLines={2}>{m.title}</Text>
                       {m.details.text ? <Text style={s.placeSummary} numberOfLines={2}>{m.details.text}</Text> : null}
+                      <ReportButton listingId={m.id} compact />
                     </View>
                   </StaggerIn>
                 ))}

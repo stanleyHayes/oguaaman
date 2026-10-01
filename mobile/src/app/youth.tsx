@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { InvestmentNote } from "@/components/notices";
+import { ReportButton } from "@/report-button";
+import { parseApiDate } from "@/lib/dates";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
@@ -36,8 +39,8 @@ interface YouthData {
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  const d = parseApiDate(iso);
+  return d ? d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : iso;
 }
 
 function initials(name: string): string {
@@ -190,6 +193,8 @@ function OppCard({ opp: o }: Readonly<{ opp: Listing }>) {
           </Pressable>
         ) : null}
       </View>
+      {kind === "investment" ? <InvestmentNote /> : null}
+      <ReportButton listingId={o.id} compact />
     </View>
   );
 }

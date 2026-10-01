@@ -14,6 +14,12 @@ export const INCIDENT_CATEGORIES: { value: IncidentCategory; label: string }[] =
   { value: "other", label: "Other" },
 ];
 
+/**
+ * Categories a curator reviews before they are public or broadcast (D3). The
+ * server decides; this only sets expectations in the form.
+ */
+export const HELD_CATEGORIES: ReadonlySet<IncidentCategory> = new Set<IncidentCategory>(["crime", "medical"]);
+
 export const INCIDENT_SEVERITIES: { value: IncidentSeverity; label: string }[] = [
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },

@@ -1,4 +1,5 @@
 import { route } from "@/lib/routes";
+import { parseApiDate } from "@/lib/dates";
 import { useMemo } from "react";
 import { push } from "@/lib/router";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
@@ -14,8 +15,8 @@ import { ArrowRightIcon } from "@/components/icons";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  const d = parseApiDate(iso);
+  return d ? d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }) : iso;
 }
 
 export default function Festivals() {

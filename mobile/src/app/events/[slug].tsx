@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
+import { eventHasEnded, parseApiDate } from "@/lib/dates";
 import { presentCheckout, sessionFromStartResponse } from "@/lib/payments";
+import { useHostedCheckout } from "@/lib/use-hosted-checkout";
+import { CheckoutPending } from "@/components/checkout-pending";
 import { route, ROUTES } from "@/lib/routes";
 import { push } from "@/lib/router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -20,8 +23,8 @@ import { LocationCard } from "@/components/location-card";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const d = parseApiDate(iso);
+  return d ? d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : iso;
 }
 
 function fmtDateRange(startsAt?: string, endsAt?: string): string {
@@ -102,7 +105,7 @@ function Detail({ view, slug, reload }: Readonly<{ view: EventView; slug: string
             </Pressable>
           ) : null}
 
-          <TicketSection slug={slug} tiers={view.tiers} reload={reload} />
+          <TicketSection slug={slug} tiers={view.tiers} ended={eventHasEnded(d)} reload={reload} />
 
           <View style={{ marginTop: 22, alignItems: "center" }}>
             <ReportButton listingId={event.id} />
@@ -118,68 +121,60 @@ function InfoCard({ mark, label, value }: Readonly<{ mark: string; label: string
 function EventList({ title, mark, items }: Readonly<{ title: string; mark: string; items: string[] }>) { const s = useStyles(); return <View style={s.listCard}><Text style={s.listWatermark}>{mark}</Text><Text style={s.kickerNoMargin}>{title}</Text>{items.map((item) => <View key={item} style={s.listRow}><View style={s.bullet} /><Text style={s.listText}>{item}</Text></View>)}</View>; }
 function Practical({ label, value }: Readonly<{ label: string; value: string }>) { const s = useStyles(); return <View style={s.practicalRow}><Text style={s.practicalLabel}>{label}</Text><Text style={s.practicalValue}>{value}</Text></View>; }
 
-// Ticket purchase flow: tier pick → Paystack handoff → manual verify. Confirm
-// is idempotent server-side, so verifying twice is harmless (same as pledges).
+// Ticket purchase flow: tier pick → Paystack handoff → verify. The hosted
+// checkout keeps the reference and page so the buyer can reopen, check or
+// cancel it, and checks quietly when they come back. Confirm is idempotent
+// server-side, so checking twice is harmless (same as pledges).
 function useTicketFlow(slug: string, tiers: TicketTierView[], reload: () => void) {
   const { member } = useAuth();
   const [selected, setSelected] = useState(0);
   const [qty, setQty] = useState(1);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [pendingRef, setPendingRef] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [startErr, setStartErr] = useState("");
   const [confirmed, setConfirmed] = useState<Ticket | null>(null);
+  const checkout = useHostedCheckout<Ticket>({
+    confirm: api.confirmTicket,
+    onPaid: (t) => { setConfirmed(t); reload(); },
+    notConfirmed: NOT_CONFIRMED,
+  });
 
   async function buy() {
-    setErr("");
+    setStartErr("");
     const tier = tiers[selected];
     if (!tier) return;
     if (!member) { router.push(ROUTES.signIn); return; }
-    setBusy(true);
+    setStarting(true);
     try {
       const r = await api.buyTicket(slug, { tier: tier.name, qty });
       const amountPesewas = Number(tier.pricePesewas) * qty;
-      const result = await presentCheckout(
-        sessionFromStartResponse(r, { amountPesewas, flow: "ticket", metadata: { eventSlug: slug, tier: tier.name, qty: String(qty) } })
-      );
-      if (result.kind === "error") {
-        setErr(result.message);
-      } else if (result.kind === "cancelled") {
-        // keep the picker open
-      } else if (result.provider === "simulated") {
-        const t = await api.confirmTicket(r.reference);
-        setConfirmed(t);
-        reload();
-      } else if (result.provider === "stripe") {
-        const t = await api.confirmTicket(r.reference);
-        setConfirmed(t);
-        reload();
-      } else {
-        setPendingRef(r.reference);
+      const session = sessionFromStartResponse(r, { amountPesewas, flow: "ticket", metadata: { eventSlug: slug, tier: tier.name, qty: String(qty) } });
+      if (session.provider === "paystack") {
+        await checkout.begin({ reference: r.reference, url: session.authorizationUrl });
+        return;
       }
+      const result = await presentCheckout(session);
+      if (result.kind === "error") {
+        setStartErr(result.message);
+      } else if (result.kind === "success") {
+        // Simulated, or Stripe already confirmed by presentCheckout — this read
+        // returns the settled record without a Paystack verify.
+        const t = await api.confirmTicket(r.reference);
+        setConfirmed(t);
+        reload();
+      } // cancelled: keep the picker open
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not start the payment.");
-    } finally { setBusy(false); }
+      setStartErr(e instanceof Error ? e.message : "Could not start the payment.");
+    } finally { setStarting(false); }
   }
 
-  async function verify() {
-    if (!pendingRef) return;
-    setBusy(true); setErr("");
-    try {
-      const t = await api.confirmTicket(pendingRef);
-      setConfirmed(t);
-      setPendingRef(null);
-      reload();
-    } catch {
-      setErr("Payment not confirmed yet. Finish paying in the browser, then verify again.");
-    } finally { setBusy(false); }
-  }
+  function select(i: number) { setSelected(i); setQty(1); setStartErr(""); }
 
-  function select(i: number) { setSelected(i); setQty(1); setErr(""); }
-
-  return { signedIn: member != null, selected, qty, busy, err, pendingRef, confirmed, setQty, select, buy, verify };
+  return { signedIn: member != null, selected, qty, busy: starting || checkout.busy, err: startErr, checkout, confirmed, setQty, select, buy };
 }
 
-function TicketSection({ slug, tiers, reload }: Readonly<{ slug: string; tiers: TicketTierView[]; reload: () => void }>) {
+const NOT_CONFIRMED = "Payment not confirmed yet. Finish paying on the Paystack page, then check again.";
+
+function TicketSection({ slug, tiers, ended, reload }: Readonly<{ slug: string; tiers: TicketTierView[]; ended: boolean; reload: () => void }>) {
   const s = useStyles();
   const flow = useTicketFlow(slug, tiers, reload);
   const tier = tiers[flow.selected];
@@ -189,18 +184,25 @@ function TicketSection({ slug, tiers, reload }: Readonly<{ slug: string; tiers: 
   return (
     <>
       <Text style={s.kicker}>TICKETS</Text>
-      <TicketBody tiers={tiers} flow={flow} maxQty={maxQty} soldOut={soldOut} />
+      <TicketBody tiers={tiers} flow={flow} maxQty={maxQty} soldOut={soldOut} ended={ended} />
     </>
   );
 }
 
 type TicketFlow = ReturnType<typeof useTicketFlow>;
 
-function TicketBody({ tiers, flow, maxQty, soldOut }: Readonly<{ tiers: TicketTierView[]; flow: TicketFlow; maxQty: number; soldOut: boolean }>) {
+function TicketBody({ tiers, flow, maxQty, soldOut, ended }: Readonly<{ tiers: TicketTierView[]; flow: TicketFlow; maxQty: number; soldOut: boolean; ended: boolean }>) {
   const { C } = useTheme();
   const s = useStyles();
   if (flow.confirmed) return <TicketThanks confirmed={flow.confirmed} />;
-  if (flow.pendingRef) return <TicketVerify err={flow.err} busy={flow.busy} verify={flow.verify} />;
+  if (flow.checkout.pending) return <CheckoutPending checkout={flow.checkout} style={{ marginTop: 10 }} />;
+  if (ended) {
+    return (
+      <View style={s.freeBox}>
+        <Text style={s.freeText}>This event has ended, so tickets are no longer on sale. Tickets you bought stay on your profile.</Text>
+      </View>
+    );
+  }
   if (tiers.length === 0) {
     return (
       <View style={s.freeBox}>
@@ -276,23 +278,9 @@ function TicketThanks({ confirmed }: Readonly<{ confirmed: Ticket }>) {
       </Text>
       {confirmed.code ? <Text style={s.code}>{confirmed.code}</Text> : null}
       <Text style={s.codeHint}>Your check-in code — show this at the gate.</Text>
-      {confirmed.simulated ? <Text style={s.simNote}>Simulated — dev mode, no real money moved.</Text> : null}
+      {__DEV__ && confirmed.simulated ? <Text style={s.simNote}>Simulated — dev mode, no real money moved.</Text> : null}
       <Pressable accessibilityRole="button" onPress={() => router.push(ROUTES.me)} style={s.meLink}>
         <Text style={s.meLinkText}>See all my tickets →</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function TicketVerify({ err, busy, verify }: Readonly<{ err: string; busy: boolean; verify: () => void }>) {
-  const s = useStyles();
-  return (
-    <View style={s.ticketBox}>
-      <Text style={s.boxLabel}>FINISH IN YOUR BROWSER</Text>
-      <Text style={s.boxBody}>Complete the payment on the Paystack page that opened, then come back and verify.</Text>
-      {err !== "" && <Text style={s.err}>{err}</Text>}
-      <Pressable accessibilityRole="button" onPress={verify} disabled={busy} style={[s.buyBtn, busy && { opacity: 0.6 }]}>
-        <Text style={s.buyBtnText}>{busy ? "Checking…" : "I've paid — verify"}</Text>
       </Pressable>
     </View>
   );
@@ -348,8 +336,6 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   ticketBox: { marginTop: 10, backgroundColor: C.cream, borderWidth: 1, borderColor: C.green, borderRadius: 14, padding: 16, gap: 10 },
   freeBox: { marginTop: 10, backgroundColor: withAlpha(C.green, 0.06), borderWidth: 1, borderColor: withAlpha(C.green, 0.3), borderRadius: 12, padding: 14 },
   freeText: { color: C.inkMuted, fontSize: 14, lineHeight: 20 },
-  boxLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...S(700) },
-  boxBody: { color: C.inkMuted, fontSize: 13, lineHeight: 19 },
   tier: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: C.sand, backgroundColor: C.paper, borderRadius: 10, padding: 14 },
   tierOn: { borderColor: C.green, backgroundColor: withAlpha(C.green, 0.06) },
   tierName: { color: C.ink, fontSize: 14, ...S(600) },

@@ -11,6 +11,8 @@ import { ON_GREEN, D, S, type Palette } from "@/theme";
 import { useTheme } from "@/lib/theme-context";
 import { Loading, ErrorView } from "@/ui";
 import { LocationCard } from "@/components/location-card";
+import { EmergencyCallout, HeldNotice, isHeld } from "@/components/notices";
+import { ReportButton } from "@/report-button";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "";
@@ -45,9 +47,12 @@ export default function IncidentDetail() {
         </View>
 
         <View style={s.body}>
-          <View style={s.facts}>
+          <EmergencyCallout />
+          {isHeld(data) ? <View style={{ marginTop: 14 }}><HeldNotice /></View> : null}
+          <View style={[s.facts, { marginTop: 14 }]}>
             <View style={s.factRow}><Text style={s.factLabel}>LOCATION</Text><Text style={s.factValue}>{d.location}</Text></View>
-            {d.contact ? <View style={s.factRow}><Text style={s.factLabel}>CONTACT</Text><Text style={s.factValue}>{d.contact}</Text></View> : null}
+            {/* The server only sends the contact to the reporter and curators. */}
+            {d.contact ? <View style={s.factRow}><Text style={s.factLabel}>CONTACT</Text><Text style={s.factValue}>{d.contact}{"\n"}<Text style={s.privateHint}>Only you and curators can see this.</Text></Text></View> : null}
             <View style={s.factRow}><Text style={s.factLabel}>REPORTED</Text><Text style={s.factValue}>{fmtDate(data.createdAt)}</Text></View>
           </View>
           {d.location ? <View style={{ marginTop: 14 }}><LocationCard address={d.location} query={`${data.title} ${d.location}`} /></View> : null}
@@ -80,6 +85,7 @@ export default function IncidentDetail() {
             <Text style={s.currentLabel}>CURRENT STATUS</Text>
             <Text style={[s.currentStatus, { color: st }]}>{STATUS_LABEL[d.incidentStatus] ?? d.incidentStatus}</Text>
           </View>
+          <ReportButton listingId={data.id} />
         </View>
       </ScrollView>
     </>
@@ -96,6 +102,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   factRow: { flexDirection: "row", gap: 12, paddingVertical: 7 },
   factLabel: { color: C.inkFaint, fontSize: 11, letterSpacing: 1, ...S(700), width: 88 },
   factValue: { color: C.ink, fontSize: 14, flex: 1, lineHeight: 20 },
+  privateHint: { color: C.inkFaint, fontSize: 11 },
   desc: { ...S(400), fontSize: 16, lineHeight: 25, color: C.ink, marginTop: 18 },
   kicker: { color: C.inkFaint, fontSize: 11, letterSpacing: 2, ...D(700), marginTop: 26, marginBottom: 12 },
   timeline: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 12, padding: 16 },

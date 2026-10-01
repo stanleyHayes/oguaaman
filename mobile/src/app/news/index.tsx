@@ -127,12 +127,15 @@ export default function News() {
         </View>
       )}
       ListFooterComponent={
-        <ListFooter
-          loadingMore={loadingMore}
-          hasMore={hasMore}
-          onLoadMore={loadMore}
-          endLabel={!hasMore && total > 0 ? `${total} ${total === 1 ? "story" : "stories"}` : undefined}
-        />
+        <>
+          <ListFooter
+            loadingMore={loadingMore}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            endLabel={!hasMore && total > 0 ? `${total} ${total === 1 ? "story" : "stories"}` : undefined}
+          />
+          <Text style={s.newsroom}>Newsroom contact: hello@oguaaman.com. Rights holders can ask us to remove a story at the same address.</Text>
+        </>
       }
     />
   );
@@ -145,6 +148,7 @@ const onDarkText = (C: Palette, alpha: number) => C.onDarkText85.replace(/[^,]+\
 
 const makeStyles = (C: Palette) => StyleSheet.create({
   pad: { paddingHorizontal: 16 },
+  newsroom: { color: C.inkFaint, fontSize: 12, lineHeight: 18, paddingHorizontal: 20, paddingBottom: 24, textAlign: "center" },
   hero: { backgroundColor: C.green, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 26, borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   heroKicker: { color: C.gold, fontSize: 10, letterSpacing: 2, ...S(700), textTransform: "uppercase" },
   heroTitle: { color: ON_GREEN, ...D(700), fontSize: 30, marginTop: 6 },

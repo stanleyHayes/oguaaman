@@ -15,7 +15,13 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.oguaaman.com",
+        "EXPO_PUBLIC_PORTAL_URL": "https://citizen.oguaaman.com",
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_SIMULATE_PAYMENTS": "false"
+      }
     }
   },
   "submit": {
