@@ -79,6 +79,21 @@ jobs:
           version: v2.12.2
           working-directory: backend
 
+  # ── Legal texts: generated modules match docs/legal/*.md ────────────────────
+  legal:
+    name: Legal texts in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Check generated legal modules are up to date
+        run: node scripts/sync-legal.mjs --check
+
   # ── Web apps: type-check, lint, build (frontend + admin) ────────────────────
   web:
     name: Web (${{ matrix.app }})
