@@ -9,10 +9,12 @@ This notice covers the Oguaa website at oguaaman.com, the web app at citizen.ogu
 
 ## Who we are and how to reach us
 
-Oguaa is an independent community platform for Cape Coast (Oguaa), in the Central Region of Ghana, and its people at home and abroad. Oguaa decides why and how your personal data is used, so it is the data controller for the processing described here.
+Oguaa is an independent community platform for Cape Coast (Oguaa), in the Central Region of Ghana, and its people at home and abroad. It is operated by Dev Track, a business registered in Ghana (registration number BN843072020), whose address is Ghana Post GPS digital address GE-161-2814. Dev Track decides why and how your personal data is used on Oguaa, so it is the data controller for the processing described here. In this notice, "Oguaa", "we" and "us" mean Dev Track operating Oguaa.
 
 - **Data-rights requests:** use the form at [citizen.oguaaman.com/privacy/request](/privacy/request). You don't need an account. You get a reference number, and we reply within 40 days (21 days for an objection).
 - **Email:** [hello@oguaaman.com](mailto:hello@oguaaman.com). Put "Privacy" in the subject line.
+- **Phone:** +233 55 518 0048.
+- **Post:** Dev Track, Ghana Post GPS digital address GE-161-2814.
 - **Deleting your account:** see [citizen.oguaaman.com/account/delete](/account/delete).
 
 ## The short version

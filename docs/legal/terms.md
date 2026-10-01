@@ -5,6 +5,8 @@ lede: The agreement between you and Oguaa when you use the websites or the app.
 version: 2026-10-01
 effective: 2026-10-01
 ---
+Oguaa is operated by Dev Track, a business registered in Ghana (registration number BN843072020), whose address is Ghana Post GPS digital address GE-161-2814. In these terms, "Oguaa", "we" and "us" mean Dev Track operating Oguaa.
+
 These terms apply to the Oguaa websites (oguaaman.com and citizen.oguaaman.com), the creator studio and the Oguaa mobile app. By creating an account or using Oguaa, you agree to them, to our [Acceptable Use Policy](/acceptable-use) and, when you buy or sell, to our [Terms of Sale](/terms-of-sale). Our [Privacy Notice](/privacy) explains how we handle your personal data.
 
 ## Who can join
@@ -83,4 +85,4 @@ We may update these terms. The version and effective date are shown at the botto
 
 ## Governing law and contact
 
-These terms are governed by the laws of the Republic of Ghana, and the courts of Ghana decide any dispute about them. Questions? Email [hello@oguaaman.com](mailto:hello@oguaaman.com).
+These terms are governed by the laws of the Republic of Ghana, and the courts of Ghana decide any dispute about them. Questions? Email [hello@oguaaman.com](mailto:hello@oguaaman.com) or call +233 55 518 0048.

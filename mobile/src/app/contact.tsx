@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { T as Text } from "@/components/typography";
-import { EnvelopeIcon, InfoIcon, ShieldIcon } from "@/components/icons";
+import { EnvelopeIcon, InfoIcon, PhoneIcon, ShieldIcon } from "@/components/icons";
 import { EmergencyCallout } from "@/components/notices";
 import { useTheme } from "@/lib/theme-context";
 import { openInAppBrowser } from "@/lib/webbrowser";
@@ -9,9 +9,13 @@ import { push } from "@/lib/router";
 import { ROUTES } from "@/lib/routes";
 import { D, S, type Palette } from "@/theme";
 
-// The contact channels the project already publishes (marketing site config).
+// The contact channels and operator details Oguaa publishes (also in the
+// legal texts and the marketing site config).
 const SUPPORT_EMAIL = "hello@oguaaman.com";
+const SUPPORT_PHONE = "+233555180048";
+const SUPPORT_PHONE_DISPLAY = "+233 55 518 0048";
 const SUPPORT_WEB = "https://oguaaman.com/contact";
+const OPERATOR = "Oguaa is operated by Dev Track, a business registered in Ghana (registration number BN843072020). Ghana Post GPS address GE-161-2814.";
 
 /**
  * Contact & support (App Store 1.5, Play policy): reachable from Settings and
@@ -35,6 +39,14 @@ export default function Contact() {
         </View>
       </Pressable>
 
+      <Pressable accessibilityRole="link" accessibilityLabel={`Call ${SUPPORT_PHONE_DISPLAY}`} onPress={() => { Linking.openURL(`tel:${SUPPORT_PHONE}`).catch(() => {}); }} style={s.row}>
+        <PhoneIcon size={20} color={C.greenText} strokeWidth={2} />
+        <View style={{ flex: 1 }}>
+          <Text style={s.rowLabel}>Phone</Text>
+          <Text style={s.rowValue} selectable>{SUPPORT_PHONE_DISPLAY}</Text>
+        </View>
+      </Pressable>
+
       <Pressable accessibilityRole="link" onPress={() => { void openInAppBrowser(SUPPORT_WEB); }} style={s.row}>
         <InfoIcon size={20} color={C.greenText} strokeWidth={2} />
         <View style={{ flex: 1 }}>
@@ -53,6 +65,7 @@ export default function Contact() {
 
       <Text style={s.body}>To report a post or a member, use “Report this” on the post or profile — we review reports within 24 hours. You can block any member from their profile.</Text>
       <EmergencyCallout />
+      <Text style={s.body} selectable>{OPERATOR}</Text>
     </ScrollView>
   );
 }

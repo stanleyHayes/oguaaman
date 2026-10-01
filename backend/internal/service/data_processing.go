@@ -43,7 +43,7 @@ const affiliateRecordsNotice = "Affiliate records a seller registered under an e
 // ProcessingNoticeForExport returns the processing section.
 func ProcessingNoticeForExport() ProcessingNotice {
 	return ProcessingNotice{
-		Controller: "Oguaa — an independent community initiative for Cape Coast (Oguaa), Ghana (oguaaman.com).",
+		Controller: "Dev Track (business registration number BN843072020), Ghana Post GPS address GE-161-2814, operator of Oguaa (oguaaman.com) — hello@oguaaman.com, +233 55 518 0048.",
 		Purposes: []ProcessingPurpose{
 			{"Running your account and signing you in", "Email or phone number, password (stored only as a salted hash), two-factor settings"},
 			{"Showing your public profile and contributions", "Display name, photo, bio, quarter, Asafo, schools, links, and the listings, reviews and tributes you publish"},

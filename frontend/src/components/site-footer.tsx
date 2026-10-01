@@ -272,7 +272,7 @@ export function SiteFooter() {
           </nav>
 
           <div className="mt-6 flex flex-col items-center gap-3 text-center text-xs text-cream/50 sm:flex-row sm:justify-between sm:text-left">
-            <p>© {new Date().getFullYear()} Oguaa — a community vehicle (to be incorporated). Not a commercial product. For ages 18+.</p>
+            <p>© {new Date().getFullYear()} Oguaa, operated by Dev Track (registration no. BN843072020), GE-161-2814, Ghana · +233 55 518 0048 · For ages 18+.</p>
             <span className="inline-flex items-center gap-2">
               <Adinkra name="sankofa" size={16} labelled={false} className="text-gold/70" />
               Built on pride → cohesion → visibility.

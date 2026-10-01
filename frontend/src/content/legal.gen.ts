@@ -109,7 +109,7 @@ export const LEGAL_DOCS: Readonly<Record<LegalDocKey, LegalDoc>> = {
             "kind": "p",
             "parts": [
               {
-                "text": "Oguaa is an independent community platform for Cape Coast (Oguaa), in the Central Region of Ghana, and its people at home and abroad. Oguaa decides why and how your personal data is used, so it is the data controller for the processing described here."
+                "text": "Oguaa is an independent community platform for Cape Coast (Oguaa), in the Central Region of Ghana, and its people at home and abroad. It is operated by Dev Track, a business registered in Ghana (registration number BN843072020), whose address is Ghana Post GPS digital address GE-161-2814. Dev Track decides why and how your personal data is used on Oguaa, so it is the data controller for the processing described here. In this notice, \"Oguaa\", \"we\" and \"us\" mean Dev Track operating Oguaa."
               }
             ]
           },
@@ -146,6 +146,24 @@ export const LEGAL_DOCS: Readonly<Record<LegalDocKey, LegalDoc>> = {
                 },
                 {
                   "text": ". Put \"Privacy\" in the subject line."
+                }
+              ],
+              [
+                {
+                  "text": "Phone:",
+                  "bold": true
+                },
+                {
+                  "text": " +233 55 518 0048."
+                }
+              ],
+              [
+                {
+                  "text": "Post:",
+                  "bold": true
+                },
+                {
+                  "text": " Dev Track, Ghana Post GPS digital address GE-161-2814."
                 }
               ],
               [
@@ -1210,6 +1228,14 @@ export const LEGAL_DOCS: Readonly<Record<LegalDocKey, LegalDoc>> = {
         "kind": "p",
         "parts": [
           {
+            "text": "Oguaa is operated by Dev Track, a business registered in Ghana (registration number BN843072020), whose address is Ghana Post GPS digital address GE-161-2814. In these terms, \"Oguaa\", \"we\" and \"us\" mean Dev Track operating Oguaa."
+          }
+        ]
+      },
+      {
+        "kind": "p",
+        "parts": [
+          {
             "text": "These terms apply to the Oguaa websites (oguaaman.com and citizen.oguaaman.com), the creator studio and the Oguaa mobile app. By creating an account or using Oguaa, you agree to them, to our "
           },
           {
@@ -1626,7 +1652,7 @@ export const LEGAL_DOCS: Readonly<Record<LegalDocKey, LegalDoc>> = {
                 "href": "mailto:hello@oguaaman.com"
               },
               {
-                "text": "."
+                "text": " or call +233 55 518 0048."
               }
             ]
           }
@@ -1873,7 +1899,14 @@ export const LEGAL_DOCS: Readonly<Record<LegalDocKey, LegalDoc>> = {
             "kind": "p",
             "parts": [
               {
-                "text": "Oguaa is the platform. The business, organiser, artist or agent is the seller and is responsible for what they sell. Before a shop can take payments, we verify its legal identity. Each product page shows the seller's legal name, location, business contact details and, where it has one, its registration number. Oguaa itself sells only its own services, such as business plans and listing promotions."
+                "text": "Oguaa is the platform. The business, organiser, artist or agent is the seller and is responsible for what they sell. Before a shop can take payments, we verify its legal identity. Each product page shows the seller's legal name, location, business contact details and, where it has one, its registration number. Oguaa itself sells only its own services, such as business plans and listing promotions. For those, the supplier is Dev Track, the business that operates Oguaa: registration number BN843072020, Ghana Post GPS digital address GE-161-2814, phone +233 55 518 0048, email "
+              },
+              {
+                "text": "hello@oguaaman.com",
+                "href": "mailto:hello@oguaaman.com"
+              },
+              {
+                "text": "."
               }
             ]
           }
@@ -2329,14 +2362,14 @@ export const LEGAL_DOCS: Readonly<Record<LegalDocKey, LegalDoc>> = {
             "kind": "p",
             "parts": [
               {
-                "text": "Oguaa's child safety point of contact is the Oguaa safety team, at "
+                "text": "Oguaa's child safety point of contact is the Oguaa safety team at Dev Track, the business that operates Oguaa: "
               },
               {
                 "text": "hello@oguaaman.com",
                 "href": "mailto:hello@oguaaman.com"
               },
               {
-                "text": ", subject line \"Child safety\". The team can speak about our child safety practices and how we comply with the law."
+                "text": ", subject line \"Child safety\", or +233 55 518 0048. The team can speak about our child safety practices and how we comply with the law."
               }
             ]
           }

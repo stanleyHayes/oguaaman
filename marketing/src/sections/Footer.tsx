@@ -246,7 +246,7 @@ export function Footer() {
 
           <p className="inline-flex items-center gap-2 text-cream/60">
             <Adinkra name="crab" size={18} labelled={false} className="text-gold/70" />
-            <span>© Oguaa. Made in Cape Coast, Ghana.</span>
+            <span>© Oguaa, operated by Dev Track (registration no. BN843072020), GE-161-2814, Ghana. Made in Cape Coast.</span>
           </p>
 
           <nav aria-label="Legal" className="flex items-center gap-5 text-cream/55">

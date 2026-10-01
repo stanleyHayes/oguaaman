@@ -45,4 +45,4 @@ export const ANDROID_URL = import.meta.env.VITE_ANDROID_URL ?? "#";
 
 /** Contact / social. */
 export const CONTACT_EMAIL = "hello@oguaaman.com";
-export const CONTACT_PHONE = "+255555180048";
+export const CONTACT_PHONE = "+233555180048";

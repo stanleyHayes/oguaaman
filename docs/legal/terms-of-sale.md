@@ -9,7 +9,7 @@ These terms apply when you buy from a shop, buy an event ticket, make a pledge o
 
 ## Who you are buying from
 
-Oguaa is the platform. The business, organiser, artist or agent is the seller and is responsible for what they sell. Before a shop can take payments, we verify its legal identity. Each product page shows the seller's legal name, location, business contact details and, where it has one, its registration number. Oguaa itself sells only its own services, such as business plans and listing promotions.
+Oguaa is the platform. The business, organiser, artist or agent is the seller and is responsible for what they sell. Before a shop can take payments, we verify its legal identity. Each product page shows the seller's legal name, location, business contact details and, where it has one, its registration number. Oguaa itself sells only its own services, such as business plans and listing promotions. For those, the supplier is Dev Track, the business that operates Oguaa: registration number BN843072020, Ghana Post GPS digital address GE-161-2814, phone +233 55 518 0048, email [hello@oguaaman.com](mailto:hello@oguaaman.com).
 
 ## Prices and payment
 

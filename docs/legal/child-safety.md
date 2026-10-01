@@ -42,4 +42,4 @@ Our moderators treat child-safety reports as their top priority, and an automate
 
 ## Contact
 
-Oguaa's child safety point of contact is the Oguaa safety team, at [hello@oguaaman.com](mailto:hello@oguaaman.com), subject line "Child safety". The team can speak about our child safety practices and how we comply with the law.
+Oguaa's child safety point of contact is the Oguaa safety team at Dev Track, the business that operates Oguaa: [hello@oguaaman.com](mailto:hello@oguaaman.com), subject line "Child safety", or +233 55 518 0048. The team can speak about our child safety practices and how we comply with the law.

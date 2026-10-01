@@ -30,6 +30,8 @@ Generated modules (never edit by hand): `frontend/src/content/legal.gen.ts`, `mo
 - Describe what the code actually does. When a data flow, provider or retention period changes in the code, update
   `privacy.md` (and `processors.md` / `retention.md`) in the same change, and the backend's
   `service.ProcessingNoticeForExport` (the "processing" section of the data export).
-- Do not invent company registration numbers, addresses or phone numbers. Use only the contact channels the product
-  already publishes (`hello@oguaaman.com`, the `/privacy/request` form, `/account/delete`).
+- Do not invent company details. The operator's published facts are: Dev Track, business registration number
+  BN843072020, Ghana Post GPS digital address GE-161-2814, phone +233 55 518 0048, `hello@oguaaman.com`, the
+  `/privacy/request` form and `/account/delete`. The Data Protection Commission registration number is not yet
+  published — add it here and in `privacy.md` when it is.
 - The internal registers `processors.md` and `retention.md` are not published in the apps; they back the notice.
