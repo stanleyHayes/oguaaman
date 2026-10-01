@@ -1,21 +1,26 @@
-# Render Blueprint — Oguaa API (free tier).
+# Render Blueprint — Oguaa API (paid instance, 0.5 CPU / 512 MB).
 # Deploy: Render dashboard → New → Blueprint → pick this repo. Render reads this
 # file, builds backend/Dockerfile, and prompts for the sync:false secrets once.
 #
-# Free-tier notes:
-# - The service sleeps after ~15 min idle; first request after a nap takes ~50s.
+# Notes:
+# - Paid instances don't sleep, so Paystack callbacks, webhooks and the payment
+#   reconciliation sweep run without cold-start delays.
 # - The disk is ephemeral — files under UPLOAD_DIR vanish on redeploy/restart.
-#   Durable member images go through Cloudinary (unsigned preset, see
-#   frontend/.env.example); first-party /uploads are best-effort on free.
+#   Durable member images go through Cloudinary (signed uploads: set the
+#   CLOUDINARY_* keys below); first-party /uploads are best-effort.
 # - Only $PORT is exposed publicly, so the gRPC server (50051) stays internal.
-#   The portal talks REST (/api/*) + GraphQL (/graphql) only.
+#   Clients use the REST API (/api/*); GraphQL is off in production unless
+#   GRAPHQL_ENABLED=true.
 services:
   - type: web
     name: oguaa-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    plan: free
+    # 0.5c-512mb = 0.5 CPU / 512 MB, the smallest paid instance (the tier
+    # directly above free). Render's Blueprint plan names are compute-based —
+    # see render.com/docs/blueprint-spec.
+    plan: 0.5c-512mb
     region: frankfurt # closest Render region to Ghana
     healthCheckPath: /api/health
     envVars:
