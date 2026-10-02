@@ -42,17 +42,20 @@ apps' webhook events, and re-checks its own pending payments every 10 minutes.
 What it does: each automated story still publishes as the short linked brief. A background writer then researches the story
 with Claude and web search and drafts an original 300–700 word report with numbered sources and a cover. An editor approves
 it in the Newsroom, which upgrades the brief in place. AI-written reports **always** wait for an editor (Anthropic's usage
-policy requires human review of AI-written journalism) — there is deliberately no auto-publish switch for them. Political and
-sensitive stories (courts, crime allegations, minors, elections) never get an AI write-up or an AI image.
+policy requires human review of AI-written journalism) — there is deliberately no auto-publish switch for them. Sensitive
+stories (courts, crime allegations, minors, accidents, election procedures and the keywords you add) never get an AI write-up
+or an AI image. Political stories never get an AI image, and get no AI write-up while election mode is on.
 
-Before switching on **long-form news** (Admin → Newsroom → Desk settings → `longformEnabled`):
+Before switching on **long-form news** (Admin → Desk settings → **Draft long-form reports**, with the **News desk**
+switch on):
 - [ ] Name at least one editor, plus a backup — ideally someone with journalism experience — who will review drafts in
-      Admin → Newsroom → Research queue.
-- [ ] Anthropic Console: confirm **web search** and **web fetch** are enabled for the organisation, and check any org-level
-      domain allowlist (the desk's own list is `OGUAA_NEWS_ALLOWED_DOMAINS`).
+      Admin → Research queue.
+- [ ] Anthropic Console: confirm **web search** and **web fetch** are enabled for the organisation. If the organisation has
+      a domain allowlist, it must include every domain the desk uses: the list in `OGUAA_NEWS_ALLOWED_DOMAINS` **and** the
+      hosts of the news feeds in `AUTO_NEWS_FEEDS` (news.google.com by default). Otherwise every research request fails.
 - [ ] Optional: review the daily caps (defaults: 4 reports and about $8 of research a day).
 
-Before switching on **AI images** (`imagesEnabled`):
+Before switching on **AI images** (Desk settings → **AI illustrations**):
 - [ ] Create an OpenAI API key (OpenAI may ask you to verify the organisation for image models) and set `OPENAI_API_KEY`
       on Render. Without it, stories get Oguaa's branded cover instead.
 - [ ] Make one test image and check the cost, then adjust the caps if needed (defaults: 10 images and $1.50 a day).
@@ -65,7 +68,7 @@ What it does: advertisers use "Advertise on Oguaa" on the portal: choose a place
 reviews the ad first; once approved the advertiser pays through Paystack and the ad runs. Pricing is per 1,000 viewable
 impressions, set per placement, the same for everyone. Undelivered impressions are refunded automatically.
 
-Before switching on (Admin → Ad pricing → `adsEnabled`):
+Before switching on (Admin → Ad pricing → **Ads**):
 - [ ] Get **written confirmation from Paystack** that selling display ads (including election-campaign ads, if you plan to)
       is fine on your shared account, that the refund API is enabled, and how refunds are funded from the balance.
 - [ ] Set `ADS_TOKEN_SECRET` on Render. Generate it with `openssl rand -base64 48`. Without it, no ads are served.
@@ -94,7 +97,7 @@ declaration (the Political Parties Act bars non-citizens from funding parties); 
 ads need two reviewers (or one steward) and pause automatically during the blackout before polls; ads never target by
 political opinion; a public ad library keeps every political ad for 7 years.
 
-Before switching on (Admin → Ad pricing → `politicalEnabled`):
+Before switching on (Admin → Ad pricing → **Political ads**):
 - [ ] Have a **Ghanaian media lawyer** review the Advertising Policy, the blackout default, the label wording and the
       Editorial standards page. Ask them for the National Media Commission's political-advertising guidelines text (it
       couldn't be retrieved online during research).
@@ -103,20 +106,20 @@ Before switching on (Admin → Ad pricing → `politicalEnabled`):
       day before the poll to 00:00 two days after.
 - [ ] In the Paystack dashboard, decide whether to turn off international cards for these payments.
 - [ ] Remember: District Assembly elections are non-partisan, so their candidates can't advertise without **written
-      Electoral Commission authorisation** (the `allowDistrictAssembly` setting stays off until you have it).
+      Electoral Commission authorisation** (Ad pricing → **District Assembly candidate ads** stays off until you have it).
 
 ---
 
 ## 5. Ads inside the mobile app
 
-Off by default (Admin → Ad pricing → `appDeliveryEnabled`). Apple may treat ads bought on the web for display in the app as
-in-app "boosts", which must be paid through Apple's in-app purchase. The app already contains the ad slot and shows nothing
-while this is off.
+Off by default (Admin → Ad pricing → **Deliver ads in the mobile app**). Apple may treat ads bought on the web for display
+in the app as in-app "boosts", which must be paid through Apple's in-app purchase. The app already contains the ad slot and
+shows nothing while this is off.
 
 - [ ] Decide whether to accept that App Store risk.
 - [ ] Before the app release that shows ads: Play Console → **Contains ads = Yes**, and Data safety → App interactions
-      collected for advertising (not shared, not linked). App Store Connect privacy label: Advertising Data and Product
-      Interaction, not linked to identity, not used for tracking.
+      collected for advertising (not shared, not linked). App Store Connect privacy label: add **Advertising Data** for
+      third-party advertising, not linked to identity, not used for tracking (this matches the app's privacy manifest).
 
 ---
 
