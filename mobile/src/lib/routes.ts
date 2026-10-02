@@ -52,6 +52,8 @@ export const ROUTES = {
   legalSafeguarding: "/legal/safeguarding",
   legalTermsOfSale: "/legal/terms-of-sale",
   legalChildSafety: "/legal/child-safety",
+  legalAdvertising: "/legal/advertising",
+  legalEditorial: "/legal/editorial",
   resetPassword: "/reset-password",
   contact: "/contact",
   studioMoney: "/studio/money",

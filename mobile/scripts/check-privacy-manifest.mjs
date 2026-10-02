@@ -19,7 +19,7 @@ const PURPOSES = [
 const REQUIRED = [
   "Name", "EmailAddress", "PhoneNumber", "PhysicalAddress", "UserID", "PhotosorVideos", "OtherUserContent",
   "CustomerSupport", "PaymentInfo", "PurchaseHistory", "OtherFinancialInfo", "CoarseLocation", "SensitiveInfo",
-  "ProductInteraction", "OtherDataTypes",
+  "ProductInteraction", "AdvertisingData", "OtherDataTypes",
 ].map((t) => `NSPrivacyCollectedDataType${t}`);
 
 const appJson = JSON.parse(readFileSync(fileURLToPath(new URL("../app.json", import.meta.url)), "utf8"));

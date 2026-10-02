@@ -17,6 +17,7 @@ import { HeroParallax, PressScale, RevealView, StaggerIn, useHeroParallax } from
 import { useNavDrawer } from "@/components/nav-drawer";
 import { useDirectives } from "@/lib/directives";
 import { TopBarActions } from "@/components/top-bar-actions";
+import { AdCard } from "@/components/ad-card";
 import { ArrowRightIcon, BriefcaseIcon, CalendarIcon, CandleIcon, ChevronRightIcon, HandsIcon, MenuIcon, StarIcon } from "@/components/icons";
 
 // Prominent civic call-to-action at the top of the home feed — the resident's
@@ -334,6 +335,9 @@ export default function Home() {
         </View>
       ) : null}
 
+      {/* paid slot between 03 and 04; renders nothing unless an ad is served */}
+      <AdCard section="home" style={s.adSlot} />
+
       <FeaturedRow />
 
       {/* upcoming events */}
@@ -478,6 +482,7 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   goalArrow: { width: 25, height: 25, borderRadius: 9, backgroundColor: C.goldTint14, alignItems: "center", justifyContent: "center" },
 
   section: { paddingHorizontal: 20, paddingTop: 30 },
+  adSlot: { paddingHorizontal: 20, paddingTop: 30 },
   sectionHeading: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 13 },
   sectionHeadingCopy: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "flex-start", gap: 10 },
   sectionTitleGroup: { flex: 1, minWidth: 0 },

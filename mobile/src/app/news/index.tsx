@@ -14,22 +14,79 @@ import { RevealView, StaggerIn } from "@/components/anim";
 import { EmptyState } from "@/components/empty-state";
 import { ArrowRightIcon, EnvelopeIcon } from "@/components/icons";
 import { ListFooter } from "@/components/list-footer";
+import { AdCard } from "@/components/ad-card";
+import { AI_ASSISTED, AI_ILLUSTRATION, AiChip, hasAiCover, isReport, longDate } from "@/components/news-meta";
 
-function newsDate(a: NewsArticle): string {
-  const raw = a.publishedAt ?? a.createdAt;
-  if (!raw) return "";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+/** The paid slot follows the 4th story overall (the featured story is the 1st). */
+const AD_AFTER_REST_INDEX = 2;
+
+const newsDate = (a: NewsArticle) => longDate(a.publishedAt ?? a.createdAt);
+
+// Featured covers use the newsroom's 3:2 frame, so AI illustrations and branded
+// covers line up; list thumbnails share one fixed box for the same reason.
+function Cover({ article: a, compact = false }: Readonly<{ article: NewsArticle; compact?: boolean }>) {
+  const { C } = useTheme();
+  const frame = compact ? { width: 108, alignSelf: "stretch" as const, minHeight: 132 } : { width: "100%" as const, aspectRatio: 3 / 2 };
+  const ai = hasAiCover(a) && !!a.coverImageUrl;
+  return (
+    <View style={[frame, { backgroundColor: a.coverColor ?? (a.coverImageUrl ? C.sand : C.green) }]}>
+      {a.coverImageUrl ? (
+        <Image
+          source={{ uri: cldCover(mediaUrl(a.coverImageUrl), compact ? 300 : 600) }}
+          resizeMode="cover"
+          accessible={!!a.coverImageAlt}
+          accessibilityLabel={a.coverImageAlt || undefined}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
+      {ai ? <AiChip label={AI_ILLUSTRATION} overlay /> : null}
+    </View>
+  );
 }
 
-function Cover({ article: a, height, compact = false }: Readonly<{ article: NewsArticle; height: number; compact?: boolean }>) {
+/** "Automated" and, for researched reports, the AI-assisted chip. */
+function Labels({ article: a, s, featured = false }: Readonly<{ article: NewsArticle; s: ReturnType<typeof makeStyles>; featured?: boolean }>) {
+  if (!a.automated && !isReport(a)) return null;
+  return (
+    <View style={s.labels}>
+      {a.automated ? <Text style={s.automated}>{featured ? "AUTOMATED · SOURCE-LINKED" : "AUTOMATED"}</Text> : null}
+      {isReport(a) ? <AiChip label={AI_ASSISTED} /> : null}
+    </View>
+  );
+}
+
+/** One story in the list below the featured card. */
+function NewsRow({ article: a, index, s }: Readonly<{ article: NewsArticle; index: number; s: ReturnType<typeof makeStyles> }>) {
   const { C } = useTheme();
-  const dimensions = { width: compact ? 108 : "100%" as const, height };
-  if (a.coverImageUrl) {
-    return <Image source={{ uri: cldCover(mediaUrl(a.coverImageUrl), compact ? 300 : 600) }} resizeMode="cover" style={[dimensions, { backgroundColor: C.sand }]} />;
-  }
-  return <View style={[dimensions, { backgroundColor: a.coverColor ?? C.green }]} />;
+  return (
+    <View style={[s.pad, { paddingTop: 10 }]}>
+      <StaggerIn index={index + 1}>
+        <Link href={route.newsArticle(a.slug)} asChild>
+          <Pressable
+            style={s.card}
+            accessibilityRole="button"
+            accessibilityLabel={`${a.title}. ${a.authorName}. ${newsDate(a)}`}
+            accessibilityHint="Opens story"
+          >
+            <Cover article={a} compact />
+            <View style={s.cardBody}>
+              <Text style={s.cardKicker} numberOfLines={1}>{a.tags?.[0] || "Oguaa newsroom"}</Text>
+              <Labels article={a} s={s} />
+              <Text style={s.title} numberOfLines={2}>{a.title}</Text>
+              {a.summary ? <Text style={s.summary} numberOfLines={1}>{a.summary}</Text> : null}
+              <View style={s.bylineRow}>
+                <Text style={s.byline} numberOfLines={1}>{a.authorName} · {newsDate(a)}</Text>
+                {a.authorVerified ? <VerifiedBadge size={13} /> : null}
+                <View style={s.cardArrow}>
+                  <ArrowRightIcon size={14} color={C.greenText} strokeWidth={2.2} />
+                </View>
+              </View>
+            </View>
+          </Pressable>
+        </Link>
+      </StaggerIn>
+    </View>
+  );
 }
 
 export default function News() {
@@ -64,10 +121,10 @@ export default function News() {
           <StaggerIn index={0}>
             <Link href={route.newsArticle(featured.slug)} asChild>
               <Pressable style={s.featured} accessibilityRole="button" accessibilityLabel={featured.title}>
-                <Cover article={featured} height={190} />
+                <Cover article={featured} />
                 <View style={s.featuredBody}>
                   <Text style={s.featuredKicker}>Featured story</Text>
-                  {featured.automated ? <Text style={s.automated}>AUTOMATED · SOURCE-LINKED</Text> : null}
+                  <Labels article={featured} s={s} featured />
                   <Text style={s.featuredTitle}>{featured.title}</Text>
                   {featured.summary ? <Text style={s.summary} numberOfLines={3}>{featured.summary}</Text> : null}
                   <View style={s.bylineRow}>
@@ -97,34 +154,11 @@ export default function News() {
       onEndReached={() => loadMore()}
       onEndReachedThreshold={0.5}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.greenText} colors={[C.greenText]} />}
-      renderItem={({ item: a, index }) => (
-        <View style={[s.pad, { paddingTop: 10 }]}>
-          <StaggerIn index={index + 1}>
-            <Link href={route.newsArticle(a.slug)} asChild>
-              <Pressable
-                style={s.card}
-                accessibilityRole="button"
-                accessibilityLabel={`${a.title}. ${a.authorName}. ${newsDate(a)}`}
-                accessibilityHint="Opens story"
-              >
-                <Cover article={a} height={132} compact />
-                <View style={s.cardBody}>
-                  <Text style={s.cardKicker} numberOfLines={1}>{a.tags?.[0] || "Oguaa newsroom"}</Text>
-                  {a.automated ? <Text style={s.automated}>AUTOMATED</Text> : null}
-                  <Text style={s.title} numberOfLines={2}>{a.title}</Text>
-                  {a.summary ? <Text style={s.summary} numberOfLines={1}>{a.summary}</Text> : null}
-                  <View style={s.bylineRow}>
-                    <Text style={s.byline} numberOfLines={1}>{a.authorName} · {newsDate(a)}</Text>
-                    {a.authorVerified ? <VerifiedBadge size={13} /> : null}
-                    <View style={s.cardArrow}>
-                      <ArrowRightIcon size={14} color={C.greenText} strokeWidth={2.2} />
-                    </View>
-                  </View>
-                </View>
-              </Pressable>
-            </Link>
-          </StaggerIn>
-        </View>
+      renderItem={({ item, index }) => (
+        <>
+          <NewsRow article={item} index={index} s={s} />
+          {index === AD_AFTER_REST_INDEX ? <AdCard section="news" style={s.ad} /> : null}
+        </>
       )}
       ListFooterComponent={
         <>
@@ -157,7 +191,9 @@ const makeStyles = (C: Palette) => StyleSheet.create({
   featured: { backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   featuredBody: { padding: 14 },
   featuredKicker: { color: C.goldText, fontSize: 10, letterSpacing: 2, ...S(700), textTransform: "uppercase" },
-  automated: { alignSelf: "flex-start", color: C.goldText, fontSize: 9, letterSpacing: 1, ...S(700), marginTop: 5 },
+  labels: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 5 },
+  automated: { color: C.goldText, fontSize: 9, letterSpacing: 1, ...S(700) },
+  ad: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 8 },
   featuredTitle: { ...S(700), fontSize: 24, color: C.ink, lineHeight: 30, marginTop: 6 },
   card: { flexDirection: "row", alignItems: "stretch", backgroundColor: C.cream, borderWidth: 1, borderColor: C.sand, borderRadius: 18, overflow: "hidden", minHeight: 132, shadowColor: "#000", shadowOpacity: 0.035, shadowRadius: 7, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
   cardBody: { flex: 1, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 },

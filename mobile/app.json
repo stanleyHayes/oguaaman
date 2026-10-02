@@ -160,6 +160,14 @@
             ]
           },
           {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeAdvertisingData",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+            ]
+          },
+          {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeOtherDataTypes",
             "NSPrivacyCollectedDataTypeLinked": true,
             "NSPrivacyCollectedDataTypeTracking": false,

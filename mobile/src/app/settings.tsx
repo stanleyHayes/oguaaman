@@ -125,6 +125,8 @@ const LEGAL_LINKS = [
   { label: "Terms of sale", route: ROUTES.legalTermsOfSale },
   { label: "Child safety", route: ROUTES.legalChildSafety },
   { label: "Safeguarding", route: ROUTES.legalSafeguarding },
+  { label: "Editorial standards", route: ROUTES.legalEditorial },
+  { label: "Advertising policy", route: ROUTES.legalAdvertising },
 ] as const;
 
 // A titled card mirroring the web Section (icon-led header, gold accent).

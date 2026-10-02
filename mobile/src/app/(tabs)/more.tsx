@@ -183,6 +183,8 @@ export default function More() {
             { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Terms of Sale", href: ROUTES.legalTermsOfSale },
             { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Child Safety Standards", href: ROUTES.legalChildSafety },
             { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Safeguarding Policy", href: ROUTES.legalSafeguarding },
+            { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Editorial Standards and AI", href: ROUTES.legalEditorial },
+            { icon: <InfoIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Advertising Policy", href: ROUTES.legalAdvertising },
             { icon: <BellIcon size={18} color={C.inkMuted} strokeWidth={2} />, label: "Contact & support", href: ROUTES.contact },
           ]}
         />

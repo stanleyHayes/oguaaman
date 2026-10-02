@@ -27,6 +27,15 @@ type Styles = ReturnType<typeof makeStyles>;
 
 const legalHref = (key: LegalDocKey): Href => `/legal/${key}` as Href;
 
+// The app never points people to buying ads or to the ad library on the web
+// (store rules, spec §8): such links in a legal text show as plain words.
+const WEB_ONLY_PATHS = [/^\/advertise(?:[/?#]|$)/, /^\/ads(?:[/?#]|$)/];
+const isWebOnly = (href: string) => {
+  // Site paths, or full URLs on an Oguaa host; other sites keep their links.
+  const path = href.replace(/^https?:\/\/(?:[a-z0-9-]+\.)*oguaaman\.com/i, "");
+  return WEB_ONLY_PATHS.some((re) => re.test(path));
+};
+
 /** Legal documents open in-app; other site paths open on the web portal. */
 function openLink(href: string) {
   const key = href.startsWith("/") ? legalDocKeyForPath(href) : undefined;
@@ -43,7 +52,7 @@ function Inline({ parts, s }: Readonly<{ parts: readonly LegalInline[]; s: Style
     <>
       {legalKeyed(parts, (p) => `${p.href ?? ""}|${p.bold ? "b" : ""}|${p.text}`).map(([key, p]) => {
         const { href } = p;
-        if (href) {
+        if (href && !isWebOnly(href)) {
           return <Text key={key} style={s.link} accessibilityRole="link" onPress={() => openLink(href)}>{p.text}</Text>;
         }
         return <Text key={key} style={p.bold ? s.bold : undefined}>{p.text}</Text>;

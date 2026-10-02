@@ -125,7 +125,7 @@ export const DARK: Palette = {
   maroonText: "#E9A08D",
   teal: "#2DBFA5",
   tealText: "#6EE7D2",
-  ai: "#7B6FD6",
+  ai: "#9D93EA",
   aiTint: "#1A1833",
   aiLine: "#3D3966",
   // "On dark" surfaces (green headers/heroes) stay dark in both themes, so the

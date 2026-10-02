@@ -1,4 +1,4 @@
-import type { ArtistBooking, Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs, BlockedMember, CommerceOrder, BusinessCoupon, AffiliateProgramme, Affiliate, AffiliateConversion,} from "./types";
+import type { AdCreative, AdPlacement, AdSlate, ArtistBooking, Listing, HomeData, Member, MemberView, Tribute, NewsArticle, Connection, Notification, Stats, SchoolStint, SearchHit, InstitutionView, Organization, Incident, Directive, LostFound, FestivalSummary, FestivalView, HistoryView, EventView, Ticket, Subscription, Promotion, SocialLink, MapData, CreatorOverview, CreatorEarnings, Plan, Office, MediaAsset, ProfileSection, TeamView, Invitation, InstitutionKind, InstitutionRequest, CivicData, Goal, Agent, AgentInput, AgentJob, AgentJobInput, AgentReview, AgentService, MyAgentJobs, BlockedMember, CommerceOrder, BusinessCoupon, AffiliateProgramme, Affiliate, AffiliateConversion,} from "./types";
 import { Platform } from "react-native";
 import { getToken } from "./storage";
 
@@ -78,13 +78,13 @@ export function clientPlatform(): ClientPlatform {
 }
 
 /** The Terms/Privacy version this build shows (the server records its own). */
-export const TERMS_VERSION = "2026-10-01";
+export const TERMS_VERSION = "2026-10-02";
 
 /** Block state between the viewer and a member (K5). */
 export interface BlockState { blocked: boolean; blockedByMe?: boolean; blockedMe?: boolean }
 
 /** What a report can point at (POST /api/reports). */
-export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output";
+export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output" | "ad";
 
 /** An API failure: the server's own message plus the HTTP status (0 = no response). */
 export type ApiError = Error & { status: number; data?: unknown };
@@ -244,6 +244,52 @@ function listNews(): Promise<NewsArticle[]>;
 function listNews(opts: PageOpts): Promise<Page<NewsArticle>>;
 function listNews(opts?: PageOpts): Promise<NewsArticle[] | Page<NewsArticle>> {
   return get<NewsArticle[] | Page<NewsArticle>>(pagePath("/api/news", opts));
+}
+
+// ── Ads (display only) ────────────────────────────────────────────────────
+// Ad calls never carry the member's token or cookies: the server ignores them
+// and choosing an ad must never depend on who is looking. Every failure turns
+// into "no ad", because an ad must never break a screen.
+
+const EMPTY_SLATE = (placement: AdPlacement): AdSlate => ({ placement, why: "", ads: [] });
+
+/** Reads a slate as a list of well-formed ads, dropping anything malformed. */
+function cleanSlate(placement: AdPlacement, raw: unknown): AdSlate {
+  const body = (raw ?? {}) as Partial<AdSlate>;
+  const ads = Array.isArray(body.ads)
+    ? body.ads.filter((a): a is AdCreative =>
+        !!a && typeof a.id === "string" && typeof a.imageUrl === "string" && a.imageUrl !== "" &&
+        typeof a.token === "string" && typeof a.exp === "number" && typeof a.sponsorLine === "string")
+    : [];
+  return { placement, why: typeof body.why === "string" ? body.why : "", ads };
+}
+
+/** GET /api/ads/slate for the app surface. Resolves to an empty slate on any error. */
+async function adsSlate(placement: AdPlacement, section: string, political = false): Promise<AdSlate> {
+  const q = `placement=${encodeURIComponent(placement)}&section=${encodeURIComponent(section)}&political=${political ? 1 : 0}&surface=app`;
+  try {
+    const res = await send(`/api/ads/slate?${q}`, { credentials: "omit" });
+    if (!res.ok) return EMPTY_SLATE(placement);
+    return cleanSlate(placement, await res.json().catch(() => null));
+  } catch {
+    return EMPTY_SLATE(placement);
+  }
+}
+
+/** POST /api/ads/v: one viewable-impression beacon. Fire and forget; always 204. */
+function adBeacon(ad: Pick<AdCreative, "id" | "token" | "exp">, placement: AdPlacement, viewId: string): void {
+  const body = JSON.stringify({ c: ad.id, p: placement, v: viewId, t: ad.token, e: ad.exp });
+  send("/api/ads/v", { method: "POST", keepalive: true, credentials: "omit", headers: { "Content-Type": "text/plain" }, body })
+    .catch(() => {});
+}
+
+/**
+ * The tracked click-through for an ad, rebuilt from its id and token so the app
+ * only ever opens our own redirect (the server sends the visitor on to the
+ * landing page it has on file).
+ */
+export function adClickUrl(ad: Pick<AdCreative, "id" | "token" | "exp">, placement: AdPlacement): string {
+  return `${API_BASE}/api/ads/c/${encodeURIComponent(ad.id)}?p=${encodeURIComponent(placement)}&t=${encodeURIComponent(ad.token)}&e=${ad.exp}`;
 }
 
 export const api = {
@@ -464,6 +510,11 @@ export const api = {
   // News / editorial (spec §8.12) — markdown bodies. Paged: `api.news({ page })`.
   news: listNews,
   newsArticle: (slug: string) => get<NewsArticle>(`/api/news/${slug}`),
+
+  // Ads: unauthenticated slate + viewable-impression beacon (spec §3.9).
+  adsSlate,
+  adBeacon,
+  adClickUrl,
   // Author a story (writers → draft in the review queue; verified-authority
   // managers → auto-published). Body is Markdown; title 3–160 chars.
   submitNews: (body: { title: string; summary?: string; body: string; coverColor?: string; coverImageUrl?: string; tags?: string[] }) =>

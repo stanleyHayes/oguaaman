@@ -363,6 +363,77 @@ export interface NewsArticle {
   sourceName?: string;
   sourceUrl?: string;
   sourcePublishedAt?: string;
+  /** "" (written by a person), "brief" (feed teaser) or "report" (AI-assisted, editor-reviewed). */
+  tier?: NewsTier;
+  /** Report sources, numbered 1..n to match the [n] markers in the body. */
+  sources?: NewsSource[];
+  topics?: string[];
+  political?: boolean;
+  /** How the cover was made; "ai" covers carry the "AI illustration" label. */
+  coverImageKind?: NewsCoverKind;
+  coverImageAlt?: string;
+  coverImageCredit?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  corrections?: NewsCorrection[];
+}
+
+export type NewsTier = "brief" | "report";
+export type NewsCoverKind = "ai" | "branded" | "upload";
+
+/** One source behind a researched report. `original` marks the feed lead. */
+export interface NewsSource {
+  name: string;
+  title?: string;
+  url: string;
+  author?: string;
+  publishedAt?: string;
+  accessedAt?: string;
+  original?: boolean;
+}
+
+/** A dated correction appended by an editor after publication. */
+export interface NewsCorrection {
+  at: string;
+  note: string;
+}
+
+// ── Advertising (display only in the app; no buying, prices or library) ──
+
+/** The five fixed ad placements. The app only ever asks for "app-card". */
+export type AdPlacement = "portal-home-banner" | "portal-feed-card" | "portal-article-rect" | "marketing-card" | "app-card";
+export type AdFormat = "banner" | "card" | "rect";
+
+/** One servable ad in a slate (GET /api/ads/slate). */
+export interface AdCreative {
+  id: string;
+  format: AdFormat;
+  imageUrl: string;
+  imageUrlDesktop?: string;
+  imageUrlMobile?: string;
+  headline?: string;
+  body?: string;
+  alt: string;
+  /** "Ad" or "Political ad", shown verbatim. */
+  chip: string;
+  /** "Sponsored · {displayName}" or "Paid for by {legalName}", shown verbatim. */
+  sponsorLine: string;
+  political: boolean;
+  electionName?: string;
+  syntheticMedia: boolean;
+  clickUrl: string;
+  token: string;
+  /** Token expiry, unix seconds. */
+  exp: number;
+  /** Pacing weight; the client picks one ad by weight. */
+  weight: number;
+}
+
+export interface AdSlate {
+  placement: AdPlacement;
+  /** Where the ad shows, for the "Why am I seeing this ad?" copy. */
+  why: string;
+  ads: AdCreative[];
 }
 
 export interface Notification {

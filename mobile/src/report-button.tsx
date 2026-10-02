@@ -32,7 +32,7 @@ const OTHER_REASON: Reason = { value: "other", label: "Something else" };
 
 function reasonsFor(targetType: ReportTargetType, memorial: boolean): Reason[] {
   const list = [...SAFETY_REASONS];
-  if (targetType === "listing" || targetType === "news" || targetType === "product") list.push(...LISTING_REASONS);
+  if (targetType === "listing" || targetType === "news" || targetType === "product" || targetType === "ad") list.push(...LISTING_REASONS);
   else list.push(LISTING_REASONS[1]);
   if (memorial) list.unshift(MEMORIAL_REASON);
   list.push(OTHER_REASON);
@@ -49,6 +49,7 @@ const NOUN: Record<ReportTargetType, string> = {
   agent: "agent",
   agent_review: "review",
   ai_output: "suggestion",
+  ad: "ad",
 };
 
 export interface ReportTarget {
@@ -65,8 +66,10 @@ export interface ReportTarget {
  * be reported signed out; everything else asks the visitor to sign in first.
  * `memorial` adds the bereavement reason for In Memoriam screens; `compact`
  * renders a small inline trigger for rows such as reviews and tributes.
+ * `onNavigate` runs before the button leaves the screen (the sign-in route), so
+ * a host sheet or modal can close itself first. `label` overrides the trigger text.
  */
-export function ReportButton({ listingId, target, memorial = false, compact = false }: Readonly<{ listingId?: string; target?: ReportTarget; memorial?: boolean; compact?: boolean }>) {
+export function ReportButton({ listingId, target, memorial = false, compact = false, onNavigate, label }: Readonly<{ listingId?: string; target?: ReportTarget; memorial?: boolean; compact?: boolean; onNavigate?: () => void; label?: string }>) {
   const { C } = useTheme();
   const { member } = useAuth();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -105,7 +108,7 @@ export function ReportButton({ listingId, target, memorial = false, compact = fa
       <Pressable accessibilityRole="button" accessibilityLabel={`Report this ${noun}`} onPress={() => setOpen(true)} style={compact ? s.triggerCompact : s.trigger} hitSlop={8}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
           <FlagIcon size={compact ? 12 : 14} color={C.inkFaint} strokeWidth={2} />
-          <Text style={compact ? s.triggerTextCompact : s.triggerText}>{compact ? "Report" : "Report this"}</Text>
+          <Text style={compact ? s.triggerTextCompact : s.triggerText}>{label ?? (compact ? "Report" : "Report this")}</Text>
         </View>
       </Pressable>
     );
@@ -118,7 +121,7 @@ export function ReportButton({ listingId, target, memorial = false, compact = fa
         <Text style={s.help}>Reports come from signed-in members so a steward can follow up. We review reports within 24 hours.</Text>
         <View style={s.actions}>
           <Pressable accessibilityRole="button" onPress={() => setOpen(false)}><Text style={s.cancel}>Cancel</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => push(ROUTES.signIn)} style={s.send}>
+          <Pressable accessibilityRole="button" onPress={() => { onNavigate?.(); push(ROUTES.signIn); }} style={s.send}>
             <Text style={s.sendText}>Sign in</Text>
           </Pressable>
         </View>
