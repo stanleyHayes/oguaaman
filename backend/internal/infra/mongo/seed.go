@@ -126,7 +126,7 @@ func seedPasswordHash(caller string) string {
 // it at a live database; callers must pass CheckResetAllowed first (cmd/seed
 // does). For a live database use SeedUpsert (cmd/seedlive). (See agent_plan.md §1.)
 func Seed(ctx context.Context, db *mongo.Database) error {
-	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collMemberBlocks, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collBusinessVerifications, collCommerceOrders, collBusinessCoupons, collAffiliateProgrammes, collAffiliates, collAffiliateConversions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents, collAgentJobs, collAgentReviews, collArtistBookings} {
+	for _, name := range []string{collMembers, collOrgs, collPlaces, collListings, collModeration, collNotifications, collFollows, collMemberFollows, collMemberBlocks, collOrgClaims, collNews, collReports, collAIUsage, collPledges, collTickets, collSubscriptions, collPromotions, collBusinessVerifications, collCommerceOrders, collBusinessCoupons, collAffiliateProgrammes, collAffiliates, collAffiliateConversions, collPlans, collTimeline, collListingViews, collDirectives, collStripeIntents, collCivicBehaviours, collCivicLessons, collGoals, collAgents, collAgentJobs, collAgentReviews, collArtistBookings, collAdCampaigns, collAdSponsors, collAdViews, adStatsCampaignDaysColl, adStatsPlacementDaysColl} {
 		if err := db.Collection(name).Drop(ctx); err != nil {
 			return err
 		}

@@ -5,12 +5,12 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"fmt"
-	"html"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/oguaa/backend/internal/domain"
+	"github.com/oguaa/backend/internal/platform/emailtmpl"
 )
 
 // outboundConfig is what out-of-band messages need to be useful outside the app.
@@ -72,7 +72,7 @@ func (s *Service) deliverOutOfBand(ctx context.Context, memberID, category, titl
 	prefs := m.NotificationPreferences()
 	link = s.absoluteLink(link)
 	if s.email != nil && strings.TrimSpace(m.Email) != "" && prefs.Allows(category, domain.ChannelEmail) {
-		if e := s.sendNotificationEmail(ctx, m, category, title, s.outboundEmailHTML(m.ID, category, body, link)); e != nil && s.log != nil {
+		if e := s.sendNotificationEmail(ctx, m, category, title, s.outboundEmailHTML(m.ID, category, title, body, link)); e != nil && s.log != nil {
 			s.log.Warn("outbound email failed", "memberId", memberID, "err", e)
 		}
 	}
@@ -144,43 +144,55 @@ func isWebURL(u string) bool {
 	return strings.HasPrefix(l, "https://") || strings.HasPrefix(l, "http://")
 }
 
-// outboundEmailHTML renders the email body: the (escaped) notice, a link, and
-// the footer that says why the member gets it and how to stop it.
-func (s *Service) outboundEmailHTML(memberID, category, body, link string) string {
-	var b strings.Builder
-	b.WriteString("<p>" + html.EscapeString(body) + "</p>")
-	switch {
-	case link == "":
-	case isWebURL(link):
-		b.WriteString(`<p><a href="` + html.EscapeString(link) + `">See details on Oguaa</a></p>`)
-	default:
-		b.WriteString("<p>See details: " + html.EscapeString(link) + "</p>")
-	}
-	b.WriteString(s.emailFooter(memberID, category))
-	return b.String()
+// NotificationEmail renders the email a notification of the given kind sends
+// to memberID: the branded layout with the notice, an "Open in Oguaa" button
+// when there is a link, and the footer that says why the member gets it and
+// how to stop it. The result is packed for an EmailSender (see
+// emailtmpl.Email.Pack); cmd/emailpreview uses it to show the real thing.
+func (s *Service) NotificationEmail(memberID, kind, title, body, link string) string {
+	return s.outboundEmailHTML(memberID, notificationCategory(kind), title, body, s.absoluteLink(link))
 }
 
-// emailFooter is the manage-preferences line plus, when links can be signed,
-// the unsubscribe link (GET /api/notifications/unsubscribe shows a
-// confirmation page; only its POST changes anything).
-func (s *Service) emailFooter(memberID, category string) string {
-	reason := "You're getting this because you have an Oguaa account."
-	if category == domain.CategoryProduct {
-		reason = "You're getting this because you asked for news about Oguaa."
+// outboundEmailHTML renders a notification email for (member, category).
+func (s *Service) outboundEmailHTML(memberID, category, title, body, link string) string {
+	n := emailtmpl.Notification{
+		Kicker: categoryKicker(category), Title: title, Body: body, Link: link,
+		Reason: notificationReason(category), Hint: notificationSettingsHint,
+		UnsubscribeURL: s.unsubscribeURL(memberID, category), UnsubscribeLabel: unsubscribeLabel(category),
 	}
-	var b strings.Builder
-	b.WriteString(`<hr style="border:none;border-top:1px solid #ddd;margin:24px 0 12px">`)
-	b.WriteString(`<p style="font-size:12px;color:#666">` + html.EscapeString(reason) + " Turn these emails off in the Oguaa app under Settings › Notifications")
 	if s.outbound.portalURL != "" {
-		manage := s.outbound.portalURL + "/me"
-		b.WriteString(` or at <a href="` + html.EscapeString(manage) + `">` + html.EscapeString(manage) + `</a>`)
+		n.ManageURL = s.outbound.portalURL + "/me"
 	}
-	b.WriteString(".")
-	if u := s.unsubscribeURL(memberID, category); u != "" {
-		b.WriteString(` <a href="` + html.EscapeString(u) + `">` + unsubscribeLabel(category) + `</a>`)
+	return brandedEmail(emailtmpl.NotificationMessage(n), body)
+}
+
+// notificationSettingsHint tells the member where notification emails are
+// switched off.
+const notificationSettingsHint = "Turn these emails off in the Oguaa app under Settings › Notifications."
+
+// notificationReason says why the member gets a notification email.
+func notificationReason(category string) string {
+	if category == domain.CategoryProduct {
+		return "You're getting this because you asked for news about Oguaa."
 	}
-	b.WriteString("</p>")
-	return b.String()
+	return "You're getting this because you have an Oguaa account."
+}
+
+// categoryKicker is the small label above a notification email's heading.
+func categoryKicker(category string) string {
+	switch category {
+	case domain.CategorySafety:
+		return "Safety alert"
+	case domain.CategoryTransaction:
+		return "Payments and bookings"
+	case domain.CategoryCommunity:
+		return "Community"
+	case domain.CategoryRemembrances:
+		return "Remembrance"
+	case domain.CategoryProduct:
+		return "News from Oguaa"
+	}
+	return "Your account"
 }
 
 // unsubscribeLabel names what the footer's one-click link switches off: an

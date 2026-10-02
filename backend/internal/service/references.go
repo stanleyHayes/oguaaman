@@ -19,7 +19,7 @@ const metadataApp = "oguaa"
 // refFlows lists every flow prefix (after the namespace).
 var refFlows = []string{
 	RefPrefixPledge, RefPrefixDonation, RefPrefixTicket, RefPrefixSubscription,
-	RefPrefixCreatorSubscription, RefPrefixPromotion, RefPrefixOrder, RefPrefixAgentJob,
+	RefPrefixCreatorSubscription, RefPrefixPromotion, RefPrefixOrder, RefPrefixAgentJob, RefPrefixAd,
 }
 
 // newReference builds a namespaced reference: oguaa-<prefix><parts joined by ->.

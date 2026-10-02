@@ -1,7 +1,8 @@
-// Package cloudinary signs direct-to-Cloudinary uploads and deletes a member's
-// media when they erase their account (contract K9). It is only built when the
-// Cloudinary API secret is configured; clients then stop using the unsigned
-// preset, which anyone who unpacked the app could have used to upload.
+// Package cloudinary signs direct-to-Cloudinary uploads, uploads images the
+// server itself produces (news covers, copies of ad creatives), and deletes a
+// member's media when they erase their account (contract K9). It is only built
+// when the Cloudinary API secret is configured; clients then stop using the
+// unsigned preset, which anyone who unpacked the app could have used to upload.
 package cloudinary
 
 import (
@@ -44,6 +45,7 @@ type Client struct {
 	cloudName, apiKey, apiSecret string
 	apiBase                      string
 	http                         *http.Client
+	upload                       *http.Client // server-side uploads (longer timeout)
 	now                          func() time.Time
 }
 
@@ -54,7 +56,7 @@ func New(cloudName, apiKey, apiSecret string) *Client {
 	}
 	return &Client{
 		cloudName: cloudName, apiKey: apiKey, apiSecret: apiSecret, apiBase: defaultAPIBase,
-		http: &http.Client{Timeout: 20 * time.Second}, now: time.Now,
+		http: &http.Client{Timeout: 20 * time.Second}, upload: &http.Client{Timeout: uploadTimeout}, now: time.Now,
 	}
 }
 

@@ -44,6 +44,10 @@ type ReconcileCounts struct {
 type reconcileFlow struct {
 	name    string
 	pending func(ctx context.Context, from, to string, limit int) ([]string, error)
+	// earlier lists more references to re-verify inside the recheck window
+	// only (never expired): checkout pages a record replaced, which can still
+	// be paid. nil = none.
+	earlier func(ctx context.Context, from, to string, limit int) ([]string, error)
 	confirm func(ctx context.Context, ref string) error
 	// expire closes a still-pending record; nil = the flow never expires
 	// (an agent job's checkout stays payable while the job is quoted).
@@ -128,6 +132,39 @@ func NewPaymentReconciler(p *PaymentsService, t *TicketsService, s *Subscription
 	return r
 }
 
+// WithAds adds the paid-advertising flow to the sweep: campaigns whose
+// checkout is pending are re-verified; after 48 hours an unpaid checkout is
+// marked failed (abandoned) while the campaign itself stays as it is. The
+// pages of earlier checkouts (and a failed latest one) are re-verified too
+// for 48 hours, since a replaced Paystack page can still be paid.
+func (r *PaymentReconciler) WithAds(a *AdsService) *PaymentReconciler {
+	if a == nil {
+		return r
+	}
+	r.flows = append(r.flows, reconcileFlow{name: "ads",
+		pending: func(ctx context.Context, from, to string, n int) ([]string, error) {
+			rows, err := a.campaigns.PendingBetween(ctx, from, to, n)
+			return refsOf(rows, err, func(x domain.AdCampaign) string { return x.Reference })
+		},
+		earlier: func(ctx context.Context, from, to string, n int) ([]string, error) {
+			rows, err := a.campaigns.UnpaidCheckoutsBetween(ctx, from, to, n)
+			if err != nil {
+				return nil, err
+			}
+			var refs []string
+			for _, c := range rows {
+				refs = append(refs, c.PastReferences...)
+				if c.PaymentStatus == domain.AdPaymentFailed && c.Reference != "" {
+					refs = append(refs, c.Reference)
+				}
+			}
+			return refs, nil
+		},
+		confirm: func(ctx context.Context, ref string) error { _, err := a.ConfirmPayment(ctx, ref); return err },
+		expire:  a.campaigns.ExpirePending})
+	return r
+}
+
 // reconcileOutcome classifies a confirm result.
 type reconcileOutcome int
 
@@ -181,12 +218,20 @@ func (r *PaymentReconciler) Run(ctx context.Context) map[string]ReconcileCounts 
 	return out
 }
 
-// recheck re-verifies records pending between 2 minutes and 48 hours old.
+// recheck re-verifies records pending between 2 minutes and 48 hours old,
+// and any earlier checkout pages the flow lists for the same window.
 func (r *PaymentReconciler) recheck(ctx context.Context, f reconcileFlow, from, to string, counts *ReconcileCounts) {
 	refs, err := f.pending(ctx, from, to, reconcileBatch)
 	if err != nil {
 		counts.Errors++
 		return
+	}
+	if f.earlier != nil {
+		more, err := f.earlier(ctx, from, to, reconcileBatch)
+		if err != nil {
+			counts.Errors++
+		}
+		refs = append(refs, more...)
 	}
 	for _, ref := range refs {
 		counts.count(classifyConfirm(f.confirm(ctx, ref)))

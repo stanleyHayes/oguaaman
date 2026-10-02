@@ -35,16 +35,24 @@ func (r *AIUsageRepo) Count(ctx context.Context, day, key string) (int, error) {
 // Incr atomically increments (day, key) and returns the new count. A new
 // counter is stamped with its expiry (day + 90 days) for the TTL index.
 func (r *AIUsageRepo) Incr(ctx context.Context, day, key string) (int, error) {
+	n, err := r.IncrBy(ctx, day, key, 1)
+	return int(n), err
+}
+
+// IncrBy atomically adds n to (day, key) — one $inc upsert — and returns the
+// new total. Counters written by Incr and IncrBy share the same field.
+func (r *AIUsageRepo) IncrBy(ctx context.Context, day, key string, n int64) (int64, error) {
 	var doc struct {
-		Count int `bson:"count"`
+		Count int64 `bson:"count"`
 	}
 	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
-	err := r.c.FindOneAndUpdate(ctx,
-		bson.M{"_id": docID(day, key)},
-		bson.M{"$inc": bson.M{"count": 1}, "$setOnInsert": bson.M{"expireAt": usageExpiry(day)}},
-		opts,
-	).Decode(&doc)
+	err := r.c.FindOneAndUpdate(ctx, bson.M{"_id": docID(day, key)}, usageIncUpdate(day, n), opts).Decode(&doc)
 	return doc.Count, err
+}
+
+// usageIncUpdate adds n to a counter, stamping a new one with its expiry.
+func usageIncUpdate(day string, n int64) bson.M {
+	return bson.M{"$inc": bson.M{"count": n}, "$setOnInsert": bson.M{"expireAt": usageExpiry(day)}}
 }
 
 // usageExpiry is when a counter for day may be deleted.

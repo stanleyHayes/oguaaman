@@ -38,8 +38,8 @@ func IsDemoEmail(email string) bool {
 // its document changes materially; members who accepted an older version are
 // asked again (consentRequired on GET /api/auth/me).
 const (
-	CurrentTermsVersion   = "2026-10-01"
-	CurrentPrivacyVersion = "2026-10-01"
+	CurrentTermsVersion   = "2026-10-02"
+	CurrentPrivacyVersion = "2026-10-02"
 )
 
 // Platforms a member can accept the Terms from. Anything else is recorded as

@@ -24,6 +24,13 @@ services:
     region: frankfurt # closest Render region to Ghana
     healthCheckPath: /api/health
     envVars:
+      # Go's soft memory limit, read by the Go runtime itself (no code reads
+      # it). As the heap nears 400 MiB the garbage collector works harder
+      # instead of letting a burst (cover renders, big exports) grow the heap
+      # until the 512 MB instance is killed; the rest is headroom for stacks,
+      # buffers and the runtime.
+      - key: GOMEMLIMIT
+        value: 400MiB
       # Atlas M0 (free) connection string — paste the mongodb+srv:// URI from
       # Atlas → Database → Connect → Drivers. The live cluster is already seeded.
       - key: MONGODB_URI
@@ -134,6 +141,51 @@ services:
         value: ""
       - key: AUTO_RESEARCH_INTERVAL_MINUTES
         value: "30"
+
+      # ── Researched news desk (long-form reports) ──
+      # Uses ANTHROPIC_API_KEY above; without it the research worker never
+      # starts and the RSS briefs carry on as before. Long-form research and AI
+      # covers are OFF until a steward turns them on in Admin → Settings → News
+      # desk, and every AI-written report waits for an editor (never
+      # auto-published). The Kimi backup is never used for news.
+      - key: OGUAA_NEWS_MODEL
+        value: claude-opus-5-5
+      # Call 2 (structuring). Try claude-sonnet-5-5 later to save cost.
+      - key: OGUAA_NEWS_STRUCTURE_MODEL
+        value: claude-opus-5-5
+      # low | medium | high
+      - key: OGUAA_NEWS_EFFORT
+        value: medium
+      - key: OGUAA_NEWS_MAX_SEARCHES
+        value: "5"
+      - key: OGUAA_NEWS_MAX_FETCHES
+        value: "4"
+      - key: OGUAA_NEWS_MAX_CONTINUATIONS
+        value: "3"
+      # Hosts (no scheme, comma-separated) web search and fetch may read, on
+      # top of the AUTO_NEWS_FEEDS hosts. Read once at startup.
+      - key: OGUAA_NEWS_ALLOWED_DOMAINS
+        value: gna.org.gh,graphic.com.gh,myjoyonline.com,citinewsroom.com,3news.com,gbcghanaonline.com,gov.gh,ucc.edu.gh,ec.gov.gh,ghanahealthservice.org,police.gov.gh
+      # OpenAI image generation for report covers. Blank => every report gets
+      # the branded Oguaa Newsroom cover (needs no key). Covers also need the
+      # CLOUDINARY_* keys above.
+      - key: OPENAI_API_KEY
+        sync: false
+      # Pinned snapshot, never an alias.
+      - key: OPENAI_IMAGE_MODEL
+        value: gpt-image-2.5-flare-2026-09-08
+      - key: OPENAI_IMAGE_QUALITY
+        value: medium
+
+      # ── Paid advertising ──
+      # Signs the tokens that make ad views and clicks billable. Generate once:
+      # `openssl rand -base64 32`. Blank => every ad slot stays empty (a
+      # warning is logged at startup). Rotating it only invalidates tokens
+      # issued in the last 15 minutes. Ads are also OFF until a steward turns
+      # them on in Admin → Settings → Ads. Ad payments use PAYSTACK_SECRET_KEY
+      # below, and ad creatives need the CLOUDINARY_* keys above.
+      - key: ADS_TOKEN_SECRET
+        sync: false
 
       # ── Payments — required for paid flows. Production never simulates:
       # blank => every paid start/confirm answers 503 payments_unavailable and

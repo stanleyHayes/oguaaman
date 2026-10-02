@@ -66,3 +66,20 @@ func TestSeedImagesNeverListDirectories(t *testing.T) {
 		t.Errorf("GET /uploads/ → %d, want 404", w.Code)
 	}
 }
+
+// The email header icon is served from the API (the web origins challenge
+// mail clients' image proxies), as a PNG, with no listing.
+func TestBrandImagesServed(t *testing.T) {
+	h := &Handler{uploadDir: t.TempDir()}
+	router := NewRouter(h, nil, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/uploads/brand/email-icon-96.png", nil))
+	if w.Code != http.StatusOK || w.Header().Get("Content-Type") != "image/png" {
+		t.Errorf("GET email icon → %d %q, want 200 image/png", w.Code, w.Header().Get("Content-Type"))
+	}
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/uploads/brand/", nil))
+	if w.Code != http.StatusNotFound {
+		t.Errorf("GET /uploads/brand/ → %d, want 404", w.Code)
+	}
+}

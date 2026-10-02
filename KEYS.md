@@ -47,6 +47,15 @@ Copy `backend/.env.example` → `backend/.env` and fill in. Required-for-product
 | `OGUAA_AI_MODEL` | `claude-haiku-4-5-20251001` | | Claude model id for the writing bar. |
 | `OGUAA_AI_DAILY_BUDGET` | `60` | | Global AI calls/day cap (metered durably in Mongo). |
 | `OGUAA_AI_PER_MEMBER` | `20` | | Per-admin AI calls/day cap. |
+| `OGUAA_NEWS_MODEL` | `claude-opus-5-5` | | News desk research-and-write model (Call 1). The research worker runs only when `ANTHROPIC_API_KEY` is set, and long-form stays off until a steward turns it on. |
+| `OGUAA_NEWS_STRUCTURE_MODEL` | `claude-opus-5-5` | | News desk structuring model (Call 2). |
+| `OGUAA_NEWS_EFFORT` | `medium` | | `low`, `medium` or `high` for Call 1. |
+| `OGUAA_NEWS_MAX_SEARCHES` / `OGUAA_NEWS_MAX_FETCHES` / `OGUAA_NEWS_MAX_CONTINUATIONS` | `5` / `4` / `3` | | Per-report web search, web fetch and pause-turn limits. |
+| `OGUAA_NEWS_ALLOWED_DOMAINS` | Ghana newsrooms and public bodies | | Hosts (no scheme, comma-separated) the desk may search and fetch, on top of the feed hosts. |
+| `OPENAI_API_KEY` | — | optional | AI cover illustrations for news reports. Without it every report gets the branded cover. [platform.openai.com](https://platform.openai.com) → API keys. |
+| `OPENAI_IMAGE_MODEL` | `gpt-image-2.5-flare-2026-09-08` | | Pinned image model snapshot. |
+| `OPENAI_IMAGE_QUALITY` | `medium` | | Image quality. |
+| `ADS_TOKEN_SECRET` | — | ★ for ads | Signs ad slate tokens so views and clicks can be billed. `openssl rand -base64 32`. Without it every ad slot is empty. |
 
 ### Production example (`backend/.env`)
 ```bash

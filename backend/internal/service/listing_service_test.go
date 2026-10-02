@@ -462,6 +462,11 @@ func (stubNews) ByAuthor(context.Context, string) ([]domain.NewsArticle, error) 
 func (stubNews) SetPublished(context.Context, string, string, string) error { return nil }
 func (stubNews) Delete(context.Context, string) error                       { return nil }
 func (stubNews) EraseAuthor(context.Context, string, string) error          { return nil }
+func (stubNews) ApplyReport(context.Context, domain.NewsArticle) error      { return nil }
+func (stubNews) SetResearchStatus(context.Context, string, string) error    { return nil }
+func (stubNews) AddCorrection(context.Context, string, domain.NewsCorrection, string) error {
+	return nil
+}
 
 type stubNotifs struct{}
 

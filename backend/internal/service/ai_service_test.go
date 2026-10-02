@@ -36,6 +36,13 @@ func (m *memUsage) Incr(_ context.Context, day, key string) (int, error) {
 	return m.n[day+":"+key], nil
 }
 
+func (m *memUsage) IncrBy(_ context.Context, day, key string, n int64) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.n[day+":"+key] += int(n)
+	return int64(m.n[day+":"+key]), nil
+}
+
 func (m *memUsage) today(key string) int {
 	n, _ := m.Count(context.Background(), time.Now().UTC().Format(time.DateOnly), key)
 	return n

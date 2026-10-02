@@ -16,8 +16,51 @@ func (r *researchNewsRepo) Insert(_ context.Context, a domain.NewsArticle) error
 	r.rows = append(r.rows, a)
 	return nil
 }
-func (r *researchNewsRepo) Update(context.Context, domain.NewsArticle) error         { return nil }
-func (r *researchNewsRepo) Get(context.Context, string) (*domain.NewsArticle, error) { return nil, nil }
+func (r *researchNewsRepo) Update(context.Context, domain.NewsArticle) error { return nil }
+func (r *researchNewsRepo) Get(_ context.Context, id string) (*domain.NewsArticle, error) {
+	for i := range r.rows {
+		if r.rows[i].ID == id {
+			a := r.rows[i]
+			return &a, nil
+		}
+	}
+	return nil, &domain.NotFoundError{Entity: "article"}
+}
+
+// row returns a pointer to the stored article id (nil if absent).
+func (r *researchNewsRepo) row(id string) *domain.NewsArticle {
+	for i := range r.rows {
+		if r.rows[i].ID == id {
+			return &r.rows[i]
+		}
+	}
+	return nil
+}
+func (r *researchNewsRepo) ApplyReport(_ context.Context, a domain.NewsArticle) error {
+	row := r.row(a.ID)
+	if row == nil {
+		return &domain.NotFoundError{Entity: "article"}
+	}
+	slug := row.Slug
+	*row = a
+	row.Slug = slug // the repository never writes the slug
+	return nil
+}
+func (r *researchNewsRepo) SetResearchStatus(_ context.Context, id, status string) error {
+	if row := r.row(id); row != nil {
+		row.ResearchStatus = status
+	}
+	return nil
+}
+func (r *researchNewsRepo) AddCorrection(_ context.Context, id string, c domain.NewsCorrection, at string) error {
+	row := r.row(id)
+	if row == nil {
+		return &domain.NotFoundError{Entity: "article"}
+	}
+	row.Corrections = append(row.Corrections, c)
+	row.UpdatedAt = at
+	return nil
+}
 func (r *researchNewsRepo) BySlug(context.Context, string) (*domain.NewsArticle, error) {
 	return nil, nil
 }
@@ -61,7 +104,8 @@ func TestAutomatedResearchPublishesRelevantNewsOnce(t *testing.T) {
 	if err != nil || first.PublishedNews != 1 {
 		t.Fatalf("first run = %+v, %v", first, err)
 	}
-	if !news.rows[0].Automated || news.rows[0].SourceURL != "https://example.test/story" || news.rows[0].Status != domain.NewsPublished {
+	if !news.rows[0].Automated || news.rows[0].SourceURL != "https://example.test/story" || news.rows[0].Status != domain.NewsPublished ||
+		news.rows[0].Tier != domain.NewsTierBrief || news.rows[0].Political {
 		t.Fatalf("missing automation provenance: %+v", news.rows[0])
 	}
 	second, err := worker.Run(context.Background())
@@ -121,6 +165,9 @@ func TestAutomatedNewsStoresOnlyAShortSummary(t *testing.T) {
 	summaryPart := strings.SplitN(a.Body, "\n\n", 2)[0]
 	if n := len(strings.Fields(summaryPart)); n > automatedSummaryWords {
 		t.Errorf("summary has %d words, want <= %d", n, automatedSummaryWords)
+	}
+	if a.Tier != domain.NewsTierBrief || len(a.Sources) != 0 {
+		t.Errorf("a brief keeps today's shape: tier=%q sources=%v", a.Tier, a.Sources)
 	}
 	if a.SourceAuthor != "Ama Reporter" || !strings.Contains(a.Body, "By Ama Reporter for Test desk.") {
 		t.Errorf("author credit missing: author=%q body=%q", a.SourceAuthor, a.Body)

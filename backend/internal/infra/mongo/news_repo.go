@@ -93,3 +93,38 @@ func (r *NewsRepo) Delete(ctx context.Context, id string) error {
 	_, err := r.c.DeleteOne(ctx, bson.M{"_id": id})
 	return err
 }
+
+// ApplyReport writes an approved research report onto the article in place
+// (spec §2.9). The slug is never touched.
+func (r *NewsRepo) ApplyReport(ctx context.Context, a domain.NewsArticle) error {
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": a.ID}, bson.M{"$set": bson.M{
+		"title": a.Title, "summary": a.Summary, "body": a.Body, "sources": a.Sources, "topics": a.Topics,
+		"political": a.Political, "tags": a.Tags, "tier": a.Tier, "coverImageUrl": a.CoverImageURL,
+		"coverImageKind": a.CoverImageKind, "coverImageAlt": a.CoverImageAlt, "coverImageCredit": a.CoverImageCredit,
+		"reviewedById": a.ReviewedByID, "reviewedByName": a.ReviewedByName, "reviewedAt": a.ReviewedAt,
+		"automationLabel": a.AutomationLabel, "status": a.Status, "publishedAt": a.PublishedAt,
+		"updatedAt": a.UpdatedAt, "researchStatus": a.ResearchStatus,
+	}})
+	if err == nil && res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "article"}
+	}
+	return err
+}
+
+// SetResearchStatus mirrors the research job's status onto the article.
+func (r *NewsRepo) SetResearchStatus(ctx context.Context, id, status string) error {
+	_, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"researchStatus": status}})
+	return err
+}
+
+// AddCorrection appends a dated correction and bumps updatedAt.
+func (r *NewsRepo) AddCorrection(ctx context.Context, id string, c domain.NewsCorrection, updatedAt string) error {
+	res, err := r.c.UpdateOne(ctx, bson.M{"_id": id}, bson.M{
+		"$push": bson.M{"corrections": c},
+		"$set":  bson.M{"updatedAt": updatedAt},
+	})
+	if err == nil && res.MatchedCount == 0 {
+		return &domain.NotFoundError{Entity: "article"}
+	}
+	return err
+}

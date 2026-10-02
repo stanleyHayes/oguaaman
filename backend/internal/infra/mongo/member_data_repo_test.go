@@ -271,7 +271,9 @@ func TestKeptMemberRefsNameStoredFields(t *testing.T) {
 		collListings: domain.Listing{OwnerID: old, ReviewedByID: old, Details: map[string]any{
 			"postReviewedBy": old, "statusHistory": []any{map[string]any{"status": "reported", "by": old}},
 		}},
-		collNews: domain.NewsArticle{AuthorID: old},
+		collNews:          domain.NewsArticle{AuthorID: old, ReviewedByID: old},
+		collAdCampaigns:   domain.AdCampaign{Approvals: []domain.AdApproval{{StaffID: old, StaffName: "Nana Essien"}}},
+		collSettingsAudit: domain.SettingsAudit{ActorID: old, ActorName: "Nana Essien"},
 		collReports: domain.Report{TargetType: domain.ReportTargetMember, TargetID: old, TargetOwnerID: old,
 			ReviewedByID: old},
 		collModeration:      domain.ModerationRecord{ModeratorID: old, TargetType: domain.ReportTargetMember, TargetID: old},
@@ -305,6 +307,46 @@ func TestKeptMemberRefsNameStoredFields(t *testing.T) {
 		if got != old {
 			t.Errorf("%s: %s = %v, want the member id stored there", ref.coll, path, got)
 		}
+	}
+}
+
+// An erased editor's name leaves the public reviewer line of the news they
+// approved; the filter and the field are the ones the article stores.
+func TestReviewerErasureRenamesTheEditorOnTheirArticles(t *testing.T) {
+	filter, update := reviewerErasure("usr-old")
+	doc := storedDoc(t, domain.NewsArticle{ReviewedByID: "usr-old", ReviewedByName: "Kofi Mensah"})
+	for k, v := range filter {
+		if doc[k] != v {
+			t.Errorf("filter %s=%v does not match the stored article (%v)", k, v, doc[k])
+		}
+	}
+	set := update[opSet].(bson.M)
+	if len(set) != 1 || set[fReviewedByName] != formerEditor || doc[fReviewedByName] != "Kofi Mensah" {
+		t.Errorf("update = %v, want only %s set to %q (stored: %v)", update, fReviewedByName, formerEditor, doc)
+	}
+}
+
+// Ad approvals are an array: only the erased member's sign-offs move.
+func TestReassignMovesOnlyTheErasedStaffMembersAdApprovals(t *testing.T) {
+	var ref memberRef
+	for _, r := range keptMemberRefs {
+		if r.coll == collAdCampaigns {
+			ref = r
+		}
+	}
+	filter, update, opts := ref.reassign("usr-old", "erased-new")
+	if !reflect.DeepEqual(filter, bson.M{"approvals.staffId": "usr-old"}) ||
+		!reflect.DeepEqual(update, bson.M{opSet: bson.M{"approvals.$[e].staffId": "erased-new"}}) {
+		t.Fatalf("approvals reassign = %v / %v", filter, update)
+	}
+	var set options.UpdateManyOptions
+	for _, apply := range opts.List() {
+		if err := apply(&set); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !reflect.DeepEqual(set.ArrayFilters, []any{bson.M{"e.staffId": "usr-old"}}) {
+		t.Errorf("array filters = %v, want only the erased member's sign-offs", set.ArrayFilters)
 	}
 }
 

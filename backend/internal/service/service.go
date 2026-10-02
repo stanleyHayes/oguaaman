@@ -52,6 +52,7 @@ type Service struct {
 	agents          domain.AgentRepository
 	reviews         domain.ReviewRepository
 	agentReviews    domain.AgentReviewRepository
+	adReports       AdReports // ads in the reports queue; see SetAdReports
 	email           EmailSender
 	wa              MessageSender
 	push            *PushSender

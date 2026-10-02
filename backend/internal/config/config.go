@@ -98,6 +98,32 @@ type Config struct {
 	AutoNewsFeeds               string
 	AutoAlertFeeds              string
 	AutoResearchIntervalMinutes int
+
+	// Researched news desk (spec §2.11). The research worker runs only when
+	// ANTHROPIC_API_KEY is set; it never uses the Kimi backup. Everything else
+	// (long-form, images) is switched on by a steward in the news-desk settings.
+	NewsModel            string // OGUAA_NEWS_MODEL: Call 1 (research and write)
+	NewsStructureModel   string // OGUAA_NEWS_STRUCTURE_MODEL: Call 2 (structure)
+	NewsEffort           string // OGUAA_NEWS_EFFORT: low | medium | high
+	NewsMaxSearches      int    // OGUAA_NEWS_MAX_SEARCHES
+	NewsMaxFetches       int    // OGUAA_NEWS_MAX_FETCHES
+	NewsMaxContinuations int    // OGUAA_NEWS_MAX_CONTINUATIONS (pause_turn)
+	// NewsAllowedDomains is OGUAA_NEWS_ALLOWED_DOMAINS: comma-separated hosts
+	// (no scheme) web search and fetch may use, on top of the feed hosts.
+	// Empty = service.DefaultNewsAllowedDomains (the Ghana newsrooms and
+	// public bodies).
+	NewsAllowedDomains string
+
+	// OpenAI image generation for news covers. Without a key every report gets
+	// the branded cover.
+	OpenAIKey          string // OPENAI_API_KEY
+	OpenAIImageModel   string // OPENAI_IMAGE_MODEL: a pinned snapshot
+	OpenAIImageQuality string // OPENAI_IMAGE_QUALITY
+
+	// AdsTokenSecret (ADS_TOKEN_SECRET, 32 random bytes, base64) signs the
+	// slate tokens that make ad views and clicks billable. Without it every ad
+	// slate is empty.
+	AdsTokenSecret string
 }
 
 // Load reads configuration from a local .env (if present) and the environment,
@@ -245,8 +271,27 @@ func load() Config {
 		AutoNewsFeeds:               os.Getenv("AUTO_NEWS_FEEDS"),
 		AutoAlertFeeds:              os.Getenv("AUTO_ALERT_FEEDS"),
 		AutoResearchIntervalMinutes: envInt("AUTO_RESEARCH_INTERVAL_MINUTES", 30),
+
+		NewsModel:            env("OGUAA_NEWS_MODEL", defaultNewsModel),
+		NewsStructureModel:   env("OGUAA_NEWS_STRUCTURE_MODEL", defaultNewsModel),
+		NewsEffort:           env("OGUAA_NEWS_EFFORT", "medium"),
+		NewsMaxSearches:      envInt("OGUAA_NEWS_MAX_SEARCHES", 5),
+		NewsMaxFetches:       envInt("OGUAA_NEWS_MAX_FETCHES", 4),
+		NewsMaxContinuations: envInt("OGUAA_NEWS_MAX_CONTINUATIONS", 3),
+		NewsAllowedDomains:   os.Getenv("OGUAA_NEWS_ALLOWED_DOMAINS"),
+
+		// Trimmed like the Paystack key: a pasted newline would corrupt the
+		// Authorization header or the HMAC key.
+		OpenAIKey:          strings.TrimSpace(os.Getenv("OPENAI_API_KEY")),
+		OpenAIImageModel:   env("OPENAI_IMAGE_MODEL", "gpt-image-2.5-flare-2026-09-08"),
+		OpenAIImageQuality: env("OPENAI_IMAGE_QUALITY", "medium"),
+
+		AdsTokenSecret: strings.TrimSpace(os.Getenv("ADS_TOKEN_SECRET")),
 	}
 }
+
+// defaultNewsModel is the news desk's Claude model for both calls.
+const defaultNewsModel = "claude-opus-5-5"
 
 func env(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {

@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/oguaa/backend/internal/domain"
-	"github.com/oguaa/backend/internal/infra/http/ogcard"
 	"github.com/oguaa/backend/internal/infra/http/seedimg"
+	"github.com/oguaa/backend/internal/platform/ogcard"
 )
 
 // ── Open Graph share cards (spec §11 — every public page has rich link

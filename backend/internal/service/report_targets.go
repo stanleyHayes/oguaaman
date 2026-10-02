@@ -30,6 +30,9 @@ type reportTarget struct {
 	// report's auto-hide is undone ("" when the type has none).
 	Status   string
 	evidence any
+	// highPriority queues the report at domain.ReportPriorityHigh or more
+	// urgent, whatever the reason (reports on political ads).
+	highPriority bool
 }
 
 const (
@@ -62,6 +65,8 @@ func (s *Service) resolveReportTarget(ctx context.Context, typ, id, listingID st
 		return s.agentReviewTarget(ctx, id)
 	case domain.ReportTargetAIOutput:
 		return &reportTarget{Type: typ, ID: id, Title: "AI writing suggestion"}, nil
+	case domain.ReportTargetAd:
+		return s.adTarget(ctx, id)
 	}
 	return nil, fmt.Errorf("choose what you are reporting")
 }
@@ -185,6 +190,51 @@ func (s *Service) agentReviewTarget(ctx context.Context, id string) (*reportTarg
 	return t, nil
 }
 
+// AdReport is what the reports queue needs to know about a reported ad
+// campaign.
+type AdReport struct {
+	ID string
+	// Title is the ad's headline, or the sponsor's name for a banner.
+	Title     string
+	OwnerID   string // the member who bought the ad
+	Status    string
+	Political bool
+	Evidence  any // a snapshot of the creative and sponsor line as served
+}
+
+// AdReports resolves and removes reported ads. The ads service implements it;
+// until it is wired, reports naming an ad answer not found.
+type AdReports interface {
+	AdForReport(ctx context.Context, id string) (*AdReport, error)
+	// RemoveReportedAd takes a campaign down after a report (status removed,
+	// with the ads flow's own refund rules).
+	RemoveReportedAd(ctx context.Context, id, staffID, note string) error
+}
+
+// SetAdReports wires the ads service into the reports queue.
+func (s *Service) SetAdReports(a AdReports) { s.adReports = a }
+
+// adTarget resolves a reported ad. Ads are never auto-hidden; reports on
+// political ads jump the queue.
+func (s *Service) adTarget(ctx context.Context, id string) (*reportTarget, error) {
+	if s.adReports == nil {
+		return nil, &domain.NotFoundError{Entity: "ad"}
+	}
+	ad, err := s.adReports.AdForReport(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if ad == nil {
+		return nil, &domain.NotFoundError{Entity: "ad"}
+	}
+	title := strings.TrimSpace(ad.Title)
+	if title == "" {
+		title = "Advertisement"
+	}
+	return &reportTarget{Type: domain.ReportTargetAd, ID: ad.ID, Title: title, OwnerID: ad.OwnerID, Status: ad.Status,
+		evidence: ad.Evidence, highPriority: ad.Political}, nil
+}
+
 // setAgentReviewStatus changes an agent review's visibility and refreshes the
 // agent's rating so hidden and removed reviews stop counting.
 func (s *Service) setAgentReviewStatus(ctx context.Context, id, status string) error {
@@ -248,6 +298,8 @@ func (s *Service) hideReportTarget(ctx context.Context, t *reportTarget) (bool, 
 			return false, nil
 		}
 		return true, s.setAgentStatus(ctx, t.ID, domain.AgentStatusSuspended)
+	case domain.ReportTargetAd:
+		return false, nil // an ad is never withdrawn by a report alone; staff review it
 	}
 	return false, nil
 }
@@ -300,6 +352,8 @@ func (s *Service) removeReportTarget(ctx context.Context, rep *domain.Report, re
 		return s.news.SetPublished(ctx, t.ID, domain.NewsDraft, "")
 	case domain.ReportTargetAgent:
 		return s.setAgentStatus(ctx, t.ID, domain.AgentStatusSuspended)
+	case domain.ReportTargetAd:
+		return s.adReports.RemoveReportedAd(ctx, t.ID, reviewerID, reportNoteRemoved)
 	}
 	return fmt.Errorf("this kind of content can't be removed from the reports queue")
 }

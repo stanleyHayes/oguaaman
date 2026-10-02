@@ -92,6 +92,7 @@ const (
 	RefPrefixPromotion           = "pro-"
 	RefPrefixOrder               = "ord-" // CommerceService.StartOrder
 	RefPrefixAgentJob            = "job-" // AgentJobsService.AcceptAndFund
+	RefPrefixAd                  = "adv-" // AdsService.Checkout (paid advertising)
 )
 
 // PaystackClient is the seam to the payment provider.

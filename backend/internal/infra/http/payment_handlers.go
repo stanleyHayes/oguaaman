@@ -401,6 +401,8 @@ func (h *Handler) settlePaystackCharge(ctx context.Context, ref string) error {
 		_, err = h.promotions.ConfirmPromotion(ctx, ref)
 	case prefix == service.RefPrefixAgentJob && h.agentJobs != nil:
 		_, err = h.agentJobs.ConfirmFunding(ctx, ref)
+	case prefix == service.RefPrefixAd && h.ads != nil:
+		_, err = h.ads.ConfirmPayment(ctx, ref)
 	case (prefix == service.RefPrefixPledge || prefix == service.RefPrefixDonation) && h.payments != nil:
 		_, err = h.payments.ConfirmPledge(ctx, ref)
 	default:

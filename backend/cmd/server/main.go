@@ -82,7 +82,8 @@ func main() {
 	ai := newAIService(cfg, db, log)
 	auth := newAuthService(memberRepo, planRepo, cfg, email, wa, log)
 	ensureUploadDir(log, cfg)
-	payments, tickets, subs, promotions, commerce, revenue, stripeSvc, agentJobs := moneyServices(db, cfg, log)
+	money := moneyServices(db, cfg, log)
+	payments, tickets, subs, promotions, commerce, revenue, stripeSvc, agentJobs := money.payments, money.tickets, money.subs, money.promotions, money.commerce, money.revenue, money.stripe, money.agentJobs
 	creator := service.NewCreatorService(mongox.NewListingRepo(db), mongox.NewPledgeRepo(db), mongox.NewTicketRepo(db), mongox.NewSubscriptionRepo(db), mongox.NewPromotionRepo(db))
 	artistBookings := service.NewArtistBookingService(mongox.NewListingRepo(db), mongox.NewArtistBookingRepo(db), mongox.NewNotificationRepo(db))
 
@@ -99,11 +100,19 @@ func main() {
 		log.Info("Apple IAP enabled", "bundleId", cfg.AppleBundleID, "sandboxAccepted", cfg.AppleAllowSandbox)
 	}
 
-	handler := httpx.NewHandler(httpx.HandlerDeps{
+	// One Cloudinary client for member uploads, erasure, news covers and ad
+	// creatives (spec §1.3).
+	media := newMediaClient(cfg, log)
+	sources := researchSources(cfg)
+	feats := newFeatures(ctx, featureInputs{db: db, cfg: cfg, log: log, paystack: money.paystack, media: media, email: email, sources: sources})
+	revenue.WithAds(feats.campaigns) // ad revenue in the admin overview (spec §3.11)
+	svc.SetAdReports(feats.ads)      // ads in the reports queue (spec §1.6)
+
+	handler := httpx.NewHandler(feats.handlerDeps(httpx.HandlerDeps{
 		Svc: svc, AI: ai, Auth: auth, Payments: payments, Tickets: tickets, Subs: subs, Promotions: promotions, Commerce: commerce, Stripe: stripeSvc, IAP: iap, Revenue: revenue, Creator: creator, AgentJobs: agentJobs, ArtistBookings: artistBookings,
 		PaystackSecret: cfg.PaystackSecretKey, AuthRequired: cfg.AuthRequired, Production: cfg.Production, UploadDir: cfg.UploadDir, UploadBase: cfg.PublicBaseURL, PortalURL: cfg.PortalURL, Log: log,
-	})
-	rights := dataRightsDeps(ctx, db, cfg, log, memberRepo, iap, email, wa)
+	}))
+	rights := dataRightsDeps(ctx, db, cfg, log, memberRepo, iap, email, wa, media)
 	handler.WithDataRights(rights)
 	router := newRouter(log, cfg, svc, handler)
 
@@ -119,12 +128,17 @@ func main() {
 	grpcSrv := serveGRPC(log, cfg, svc)
 	go runRemembranceScheduler(log, svc)
 	go runPrivacyDeadlineScheduler(log, rights.PrivacyRequests)
-	automatedResearch := service.NewAutomatedResearchService(mongox.NewNewsRepo(db), mongox.NewDirectiveRepo(db), researchSources(cfg)).WithAI(ai)
+	// The RSS pass reads the news-desk settings and queues long-form research;
+	// the research worker and the ads scheduler run until shutdown.
+	automatedResearch := service.NewAutomatedResearchService(mongox.NewNewsRepo(db), mongox.NewDirectiveRepo(db), sources).WithAI(ai).WithDesk(feats.desk)
 	go runAutomatedResearchScheduler(log, automatedResearch, cfg.AutoResearchIntervalMinutes)
+	background, stopBackground := context.WithCancel(context.Background())
+	defer stopBackground()
+	feats.start(background, log)
 	if cfg.PaystackSecretKey != "" {
 		// C5: re-verify pending payments without relying on the shared
 		// webhook. Never in simulation, which would "settle" every checkout.
-		go runPaymentReconciler(log, service.NewPaymentReconciler(payments, tickets, subs, promotions, commerce, agentJobs))
+		go runPaymentReconciler(log, service.NewPaymentReconciler(payments, tickets, subs, promotions, commerce, agentJobs).WithAds(feats.ads))
 	}
 
 	// Graceful shutdown.
@@ -138,6 +152,8 @@ func main() {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("shutdown error", "err", err)
 	}
+	stopBackground()
+	feats.stop(log)
 }
 
 func researchSources(cfg config.Config) []service.ResearchSource {
@@ -278,13 +294,26 @@ func ensureUploadDir(log *slog.Logger, cfg config.Config) {
 	}
 }
 
+// moneyDeps are the payment-backed services and the one Paystack client they share.
+type moneyDeps struct {
+	paystack   service.PlatformPaystack
+	payments   *service.PaymentsService
+	tickets    *service.TicketsService
+	subs       *service.SubscriptionsService
+	promotions *service.PromotionsService
+	commerce   *service.CommerceService
+	revenue    *service.RevenueService
+	stripe     *service.StripeService
+	agentJobs  *service.AgentJobsService
+}
+
 // moneyServices wires the payment-backed services: live Paystack when a secret
 // key is set; otherwise a labelled simulation in development and, in
 // production, a disabled client whose calls fail with
 // service.ErrPaymentsUnavailable (503 payments_unavailable) — production never
 // simulates a payment (D4/K16). Stripe is optional and only enabled when
 // STRIPE_SECRET_KEY is set.
-func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*service.PaymentsService, *service.TicketsService, *service.SubscriptionsService, *service.PromotionsService, *service.CommerceService, *service.RevenueService, *service.StripeService, *service.AgentJobsService) {
+func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) moneyDeps {
 	paystack := service.PaystackFor(cfg.PaystackSecretKey, cfg.Production, service.SimulatedPaystack{Log: log})
 	switch mode := cfg.PaystackMode(); {
 	case mode == config.PaystackModeLive:
@@ -316,7 +345,10 @@ func moneyServices(db *mongo.Database, cfg config.Config, log *slog.Logger) (*se
 		stripeSvc = service.NewStripeService(stripeClient, mongox.NewStripeIntentRepo(db), payments, tickets, subs, promotions)
 		log.Info("Stripe mobile checkouts enabled")
 	}
-	return payments, tickets, subs, promotions, commerce, revenue, stripeSvc, agentJobs
+	return moneyDeps{
+		paystack: paystack, payments: payments, tickets: tickets, subs: subs, promotions: promotions,
+		commerce: commerce, revenue: revenue, stripe: stripeSvc, agentJobs: agentJobs,
+	}
 }
 
 func newRouter(log *slog.Logger, cfg config.Config, svc *service.Service, handler *httpx.Handler) http.Handler {

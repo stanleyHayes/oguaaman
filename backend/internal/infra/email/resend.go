@@ -10,6 +10,8 @@ import (
 	"log/slog"
 
 	resend "github.com/resend/resend-go/v2"
+
+	"github.com/oguaa/backend/internal/platform/emailtmpl"
 )
 
 // Sender is the interface consumed by services that need to send email.
@@ -52,18 +54,27 @@ func New(apiKey, from string, log *slog.Logger) Sender {
 	return &Client{c: resend.NewClient(apiKey), from: from, log: log}
 }
 
+// Send sends one email. html may come from emailtmpl (Email.Pack) or be any
+// other HTML; see SendWithHeaders.
 func (c *Client) Send(ctx context.Context, to, subject, html string) error {
 	return c.SendWithHeaders(ctx, to, subject, html, nil)
 }
 
 // SendWithHeaders sends like Send, adding extra message headers (for example
 // List-Unsubscribe and List-Unsubscribe-Post on notification emails).
+//
+// Every email goes out branded and with a plain-text part: HTML rendered by
+// emailtmpl is sent as rendered (its packed text part becomes the text
+// part), and any other HTML is wrapped in the branded layout with a
+// transactional footer by emailtmpl.Prepare.
 func (c *Client) SendWithHeaders(_ context.Context, to, subject, html string, headers map[string]string) error {
+	msg := emailtmpl.Prepare(html, subject)
 	params := &resend.SendEmailRequest{
 		From:    c.from,
 		To:      []string{to},
 		Subject: subject,
-		Html:    html,
+		Html:    msg.HTML,
+		Text:    msg.Text,
 		Headers: headers,
 	}
 	_, err := c.c.Emails.Send(params)

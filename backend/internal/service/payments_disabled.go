@@ -35,10 +35,18 @@ func (DisabledPaystack) InitializeSplit(context.Context, string, int64, string, 
 	return "", "", ErrPaymentsUnavailable
 }
 
+func (DisabledPaystack) Refund(context.Context, string, int64, string) (RefundResult, error) {
+	return RefundResult{}, ErrPaymentsUnavailable
+}
+
+func (DisabledPaystack) RefundStatus(context.Context, string) (RefundResult, error) {
+	return RefundResult{}, ErrPaymentsUnavailable
+}
+
 // PaystackFor picks the payment client for the environment: live Paystack
 // with a secret key; otherwise a labelled simulation in development and the
 // disabled client in production.
-func PaystackFor(secretKey string, production bool, sim SimulatedPaystack) CommercePaystack {
+func PaystackFor(secretKey string, production bool, sim SimulatedPaystack) PlatformPaystack {
 	switch {
 	case secretKey != "":
 		return NewPaystackClient(secretKey)

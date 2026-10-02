@@ -76,6 +76,8 @@ type MemberRecords struct {
 	Uploads                []UploadRecord           `json:"uploads"`
 	PrivateUploads         []PrivateUpload          `json:"privateDocuments"`
 	PrivacyRequests        []PrivacyRequest         `json:"privacyRequests"`
+	AdSponsors             []AdSponsorOwnerView     `json:"adSponsors"`
+	AdCampaigns            []AdCampaignExport       `json:"adCampaigns"`
 }
 
 // MemberDataRepository reads and erases a member's personal data outside their
@@ -126,7 +128,9 @@ type MemberDataRepository interface {
 	// booking requests the member sent.
 	PseudonymiseArtistBookings(ctx context.Context, memberID string) error
 	// StripPaymentContacts removes payer emails from pledges, tickets,
-	// subscriptions, promotions and card payments.
+	// subscriptions, promotions and card payments, and unlinks the member's
+	// ad sponsors and campaigns (member id, email, phone cleared; the records
+	// stay for tax and political-ad transparency).
 	StripPaymentContacts(ctx context.Context, memberID string) error
 	// ScrubBusinessVerifications revokes the KYC records of the member's
 	// businesses and deletes the Ghana Card number, ID documents, phone, address

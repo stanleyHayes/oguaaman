@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"html"
 	"log/slog"
 	"strings"
 	"sync"
@@ -17,6 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/oguaa/backend/internal/domain"
+	"github.com/oguaa/backend/internal/platform/emailtmpl"
 	"github.com/oguaa/backend/internal/platform/logger"
 )
 
@@ -695,8 +695,8 @@ func (a *AuthService) StartPhoneVerification(ctx context.Context, memberID strin
 func (a *AuthService) deliverVerificationCode(ctx context.Context, m *domain.Member, code string) bool {
 	if a.email != nil && strings.TrimSpace(m.Email) != "" {
 		body := fmt.Sprintf("Your Oguaa verification code is %s. It expires in 10 minutes. Do not share it with anyone.", code)
-		htmlBody := "<p>" + html.EscapeString(body) + "</p>"
-		e := a.email.Send(ctx, m.Email, "Your Oguaa verification code", htmlBody)
+		htmlBody := brandedEmail(emailtmpl.VerificationCode(code, phoneVerificationTTL), body)
+		e := a.email.Send(ctx, m.Email, emailtmpl.SubjectVerificationCode, htmlBody)
 		if e == nil {
 			return true
 		}
@@ -922,8 +922,8 @@ func (a *AuthService) deliverResetCode(ctx context.Context, m *domain.Member, co
 	body := fmt.Sprintf("Your Oguaa password reset code is %s. It expires in 10 minutes. Do not share it.", code)
 	delivered := false
 	if a.email != nil && strings.TrimSpace(m.Email) != "" {
-		htmlBody := "<p>" + html.EscapeString(body) + "</p>"
-		if e := a.email.Send(ctx, m.Email, "Your Oguaa password reset code", htmlBody); e != nil {
+		htmlBody := brandedEmail(emailtmpl.PasswordResetCode(code, passwordResetTTL), body)
+		if e := a.email.Send(ctx, m.Email, emailtmpl.SubjectPasswordReset, htmlBody); e != nil {
 			a.log.Warn("password-reset email failed", logger.KeyMemberID, m.ID, "err", e)
 		} else {
 			delivered = true

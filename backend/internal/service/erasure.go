@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"html"
 	"log/slog"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/oguaa/backend/internal/domain"
+	"github.com/oguaa/backend/internal/platform/emailtmpl"
 )
 
 // ── account erasure (Act 843 s.33, Apple 5.1.1(v), Google Play; contract K6) ─
@@ -248,7 +248,7 @@ func (s *ErasureService) deliverDeletionCode(ctx context.Context, m *domain.Memb
 	body := fmt.Sprintf("Your Oguaa account deletion code is %s. It expires in %d minutes. "+
 		"If you did not ask to delete your account, ignore this message and nothing will change.", code, int(deletionCodeTTL.Minutes()))
 	if s.d.Email != nil && strings.TrimSpace(m.Email) != "" {
-		if err := s.d.Email.Send(ctx, m.Email, "Your Oguaa account deletion code", "<p>"+html.EscapeString(body)+"</p>"); err != nil {
+		if err := s.d.Email.Send(ctx, m.Email, emailtmpl.SubjectAccountDeletion, brandedEmail(emailtmpl.AccountDeletionCode(code, deletionCodeTTL), body)); err != nil {
 			s.d.Log.Warn("deletion code email failed", "member", pseudonym(m.ID), "err", err)
 		}
 	}

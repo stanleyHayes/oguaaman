@@ -81,13 +81,17 @@ const (
 	// ReportTargetAgentReview is a client's review of an Oguaa Outside agent
 	// (domain.AgentReview), distinct from a business review.
 	ReportTargetAgentReview = "agent_review"
+	// ReportTargetAd is a paid advertisement (an ad campaign). Reports on ads
+	// are never auto-hidden; political ads are queued at high priority.
+	ReportTargetAd = "ad"
 )
 
 // ValidReportTarget reports whether t is a reportable content type.
 func ValidReportTarget(t string) bool {
 	switch t {
 	case ReportTargetListing, ReportTargetMember, ReportTargetReview, ReportTargetTribute,
-		ReportTargetProduct, ReportTargetNews, ReportTargetAgent, ReportTargetAIOutput, ReportTargetAgentReview:
+		ReportTargetProduct, ReportTargetNews, ReportTargetAgent, ReportTargetAIOutput, ReportTargetAgentReview,
+		ReportTargetAd:
 		return true
 	}
 	return false
@@ -133,6 +137,10 @@ func ValidReportReason(r string) bool {
 func UrgentReportReason(r string) bool {
 	return r == ReasonChildSafety || r == ReasonNCII
 }
+
+// ReportPriorityHigh is the priority a report on a political ad is queued at
+// (at least): next after child safety and intimate images.
+const ReportPriorityHigh = 1
 
 // ReportPriority orders the triage queue: lower is more urgent.
 func ReportPriority(reason string) int {

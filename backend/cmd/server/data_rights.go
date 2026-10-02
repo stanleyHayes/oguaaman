@@ -21,22 +21,21 @@ import (
 
 // dataRightsDeps wires the member-data features: data export, account
 // erasure (in-app, public request and staff), encrypted private documents,
-// data-rights requests, upload ownership and signed Cloudinary uploads.
+// data-rights requests, upload ownership and signed Cloudinary uploads. media
+// is the shared Cloudinary client (nil when not configured): erasure deletes a
+// member's own folder with it, and the news desk and ads use the same one.
 func dataRightsDeps(ctx context.Context, db *mongo.Database, cfg config.Config, log *slog.Logger,
 	members domain.MemberRepository, iap *service.IAPService, email service.EmailSender, wa service.MessageSender,
+	media *cloudinary.Client,
 ) httpx.DataRightsDeps {
 	uploads := mongox.NewUploadRepo(db)
 	private := mongox.NewPrivateUploadRepo(db)
 	requests := mongox.NewPrivacyRequestRepo(db)
 	codes := mongox.NewDeletionCodeRepo(db)
-	ensureDataRightsIndexes(ctx, log, uploads, private, requests, codes)
+	ensureIndexes(ctx, log, "data-rights", uploads, private, requests, codes)
 	ensureRetentionIndexes(ctx, log, db)
 	warnDemoAccountsInProduction(ctx, db, log)
 
-	media := cloudinary.New(cfg.CloudinaryCloudName, cfg.CloudinaryAPIKey, cfg.CloudinaryAPISecret)
-	if media == nil {
-		log.Info("Cloudinary signed uploads DISABLED — set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to enable")
-	}
 	data := mongox.NewMemberDataRepo(db)
 	erasure := service.ErasureDeps{
 		Members: members, Data: data, Codes: codes, Blocks: mongox.NewBlockRepo(db), Devices: mongox.NewPushRepo(db), News: mongox.NewNewsRepo(db),
@@ -83,14 +82,25 @@ type indexer interface {
 	EnsureIndexes(ctx context.Context) error
 }
 
-// ensureDataRightsIndexes creates the data-rights collections' indexes. A
-// failure is logged, not fatal: the API still serves without them.
-func ensureDataRightsIndexes(ctx context.Context, log *slog.Logger, repos ...indexer) {
+// newMediaClient builds the one Cloudinary client the server shares (signed
+// member uploads, erasure, news covers, ad creative copies), or nil when the
+// three CLOUDINARY_* keys are not all set.
+func newMediaClient(cfg config.Config, log *slog.Logger) *cloudinary.Client {
+	media := cloudinary.New(cfg.CloudinaryCloudName, cfg.CloudinaryAPIKey, cfg.CloudinaryAPISecret)
+	if media == nil {
+		log.Info("Cloudinary signed uploads DISABLED — set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to enable")
+	}
+	return media
+}
+
+// ensureIndexes creates a group of collections' indexes. A failure is
+// logged, not fatal: the API still serves without them.
+func ensureIndexes(ctx context.Context, log *slog.Logger, group string, repos ...indexer) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	for _, r := range repos {
 		if err := r.EnsureIndexes(ctx); err != nil {
-			log.Warn("data-rights index creation failed", "err", err)
+			log.Warn(group+" index creation failed", "err", err)
 		}
 	}
 }

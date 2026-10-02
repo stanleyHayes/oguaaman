@@ -17,7 +17,11 @@ func (h *Handler) News(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeList(w, r, h.svc.FilterBlockedNews(r.Context(), currentMember(r), items))
+	items = h.svc.FilterBlockedNews(r.Context(), currentMember(r), items)
+	for i := range items {
+		items[i] = h.publicNews(r, items[i])
+	}
+	writeList(w, r, items)
 }
 
 // NewsArticle (public) — one published article by slug.
@@ -27,7 +31,7 @@ func (h *Handler) NewsArticle(w http.ResponseWriter, r *http.Request) {
 		h.handleErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, a)
+	writeJSON(w, http.StatusOK, h.publicNews(r, *a))
 }
 
 // SubmitNews (member) — a "writer" creator or a manager of a verified authority

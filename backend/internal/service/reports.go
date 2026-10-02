@@ -139,6 +139,9 @@ func newReport(in ReportInput, t *reportTarget) domain.Report {
 	if t.Listing != nil {
 		rep.ListingID, rep.ListingSlug, rep.ListingType, rep.ListingTitle = t.Listing.ID, t.Listing.Slug, t.Listing.Type, t.Listing.Title
 	}
+	if t.highPriority && rep.Priority > domain.ReportPriorityHigh {
+		rep.Priority = domain.ReportPriorityHigh
+	}
 	return rep
 }
 

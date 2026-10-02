@@ -61,7 +61,7 @@ func TestEveryInitializeSendsACallbackURL(t *testing.T) {
 			})
 		}
 	}
-	for _, flow := range []string{"StartPledge", "StartDonation", "StartTicketPurchase", "StartSubscriptionFrom", "StartCreatorSubscription", "StartPromotionFrom", "StartOrder", "AcceptAndFund"} {
+	for _, flow := range []string{"StartPledge", "StartDonation", "StartTicketPurchase", "StartSubscriptionFrom", "StartCreatorSubscription", "StartPromotionFrom", "StartOrder", "AcceptAndFund", "Checkout"} {
 		if !slices.Contains(sites, flow) {
 			t.Errorf("no Paystack initialize found in %s (sites: %v)", flow, sites)
 		}

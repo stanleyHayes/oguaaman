@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/oguaa/backend/internal/domain"
@@ -52,6 +53,20 @@ type Handler struct {
 	// rights holds the member-data features (export, erasure, private
 	// documents, data-rights requests); see WithDataRights.
 	rights DataRightsDeps
+	// foundations holds platform settings and the election calendar; see
+	// WithFoundations.
+	foundations FoundationsDeps
+	// newsDesk is the researched news desk; see WithNewsDesk.
+	newsDesk *service.NewsDesk
+	// ads is paid advertising (sponsors, campaigns, review, payment); see
+	// WithAds.
+	ads *service.AdsService
+	// adServing is ad serving, the ad library and the ads report; see
+	// WithAdServing.
+	adServing AdServingDeps
+	// newsCovers draws and caches branded news covers; see coverRenderer.
+	newsCoversOnce sync.Once
+	newsCovers     *newsCoverRenderer
 }
 
 // HandlerDeps are the application services and settings NewHandler wires into a Handler.
@@ -77,12 +92,25 @@ type HandlerDeps struct {
 	UploadBase     string // public base URL for uploaded files ("" → derive from request)
 	PortalURL      string // citizen-app origin, for the dynamic sitemap
 	Log            *slog.Logger
+
+	// Foundations are platform settings and the election calendar (spec §1).
+	// Without them the settings-audit and election routes answer 503.
+	Foundations FoundationsDeps
+	// NewsDesk is the researched news desk (spec §2). Nil: its routes answer
+	// 503 and public news carries no branded cover.
+	NewsDesk *service.NewsDesk
+	// Ads is paid advertising (spec §3.2–§3.8). Nil: its routes answer 503.
+	Ads *service.AdsService
+	// AdServing is ad serving, the ad library and the ads report (spec §3.9,
+	// §3.10). Zero: slates are empty and the library is empty.
+	AdServing AdServingDeps
 }
 
 func NewHandler(d HandlerDeps) *Handler {
 	return &Handler{
 		svc: d.Svc, ai: d.AI, auth: d.Auth, payments: d.Payments, tickets: d.Tickets, subs: d.Subs, promotions: d.Promotions, commerce: d.Commerce, stripe: d.Stripe, iap: d.IAP, revenue: d.Revenue, creator: d.Creator, agentJobs: d.AgentJobs, artistBookings: d.ArtistBookings, paystackSecret: d.PaystackSecret, authRequired: d.AuthRequired, production: d.Production,
 		uploadDir: d.UploadDir, uploadBase: d.UploadBase, portalURL: d.PortalURL, log: d.Log, limiter: newRateLimiter(),
+		foundations: d.Foundations, newsDesk: d.NewsDesk, ads: d.Ads, adServing: d.AdServing,
 	}
 }
 

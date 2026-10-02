@@ -48,6 +48,7 @@ type AutomatedResearchService struct {
 	client     *http.Client
 	now        func() time.Time
 	ai         *AIService
+	desk       *NewsDesk // nil: today's behaviour (desk on, briefs auto-publish, no research)
 }
 
 func NewAutomatedResearchService(news domain.NewsRepository, directives domain.DirectiveRepository, sources []ResearchSource) *AutomatedResearchService {
@@ -65,6 +66,13 @@ func NewAutomatedResearchService(news domain.NewsRepository, directives domain.D
 // output is ignored so an unconfigured provider can never invent public copy.
 func (s *AutomatedResearchService) WithAI(ai *AIService) *AutomatedResearchService {
 	s.ai = ai
+	return s
+}
+
+// WithDesk connects the researched news desk: its settings gate the RSS pass
+// and brief publishing, and eligible briefs are queued for long-form research.
+func (s *AutomatedResearchService) WithDesk(d *NewsDesk) *AutomatedResearchService {
+	s.desk = d
 	return s
 }
 
@@ -123,25 +131,12 @@ func (r *ResearchRun) countNews(held bool) {
 
 func (s *AutomatedResearchService) Run(ctx context.Context) (ResearchRun, error) {
 	var result ResearchRun
-	newsRows, err := s.news.All(ctx)
+	if s.desk != nil && !s.desk.Settings(ctx).DeskEnabled {
+		return result, nil // the newsroom's master kill switch
+	}
+	knownNews, knownAlerts, err := s.knownLinks(ctx)
 	if err != nil {
 		return result, err
-	}
-	knownNews := map[string]bool{}
-	for _, row := range newsRows {
-		if row.SourceURL != "" {
-			knownNews[row.SourceURL] = true
-		}
-	}
-	directiveRows, err := s.directives.List(ctx, domain.DirectiveFilters{IncludeAllStatuses: true})
-	if err != nil {
-		return result, err
-	}
-	knownAlerts := map[string]bool{}
-	for _, row := range directiveRows {
-		if row.SourceURL != "" {
-			knownAlerts[row.SourceURL] = true
-		}
 	}
 
 	var failures []string
@@ -164,6 +159,31 @@ func (s *AutomatedResearchService) Run(ctx context.Context) (ResearchRun, error)
 		return result, fmt.Errorf("research source failures: %s", strings.Join(failures, "; "))
 	}
 	return result, nil
+}
+
+// knownLinks returns the source URLs already stored as news and as alerts.
+func (s *AutomatedResearchService) knownLinks(ctx context.Context) (news, alerts map[string]bool, err error) {
+	newsRows, err := s.news.All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	news = map[string]bool{}
+	for _, row := range newsRows {
+		if row.SourceURL != "" {
+			news[row.SourceURL] = true
+		}
+	}
+	directiveRows, err := s.directives.List(ctx, domain.DirectiveFilters{IncludeAllStatuses: true})
+	if err != nil {
+		return nil, nil, err
+	}
+	alerts = map[string]bool{}
+	for _, row := range directiveRows {
+		if row.SourceURL != "" {
+			alerts[row.SourceURL] = true
+		}
+	}
+	return news, alerts, nil
 }
 
 // ingestItem publishes one relevant, not-yet-seen feed item as an alert or a
@@ -265,6 +285,11 @@ func (s *AutomatedResearchService) insertNews(ctx context.Context, source Resear
 			held = true
 		}
 	}
+	settings := s.desk.Settings(ctx) // nil desk: the code defaults
+	political := politicalText(title, teaser)
+	if political || !settings.BriefAutoPublish {
+		held = true // political briefs are always held for an editor
+	}
 	author := feedAuthor(item)
 	now := s.now().UTC()
 	stamp := now.Format(time.RFC3339)
@@ -278,12 +303,19 @@ func (s *AutomatedResearchService) insertNews(ctx context.Context, source Resear
 		Automated: true, AutomationLabel: label,
 		SourceName: source.Name, SourceURL: link, SourceAuthor: author,
 		SourcePublishedAt: first(item.Published, item.Updated),
+		Tier:              domain.NewsTierBrief, Political: political,
 	}
 	if held {
 		a.Status, a.PublishedAt = domain.NewsDraft, ""
 	}
 	if err := s.news.Insert(ctx, a); err != nil {
 		return false, false, err
+	}
+	if s.desk != nil {
+		lead := newsLead{URL: link, Source: source.Name, Title: title, Teaser: teaser, PublishedAt: a.SourcePublishedAt}
+		if _, err := s.desk.EnqueueBrief(ctx, a, lead); err != nil {
+			return true, held, err
+		}
 	}
 	return true, held, nil
 }

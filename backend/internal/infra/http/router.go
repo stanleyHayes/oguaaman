@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/oguaa/backend/internal/infra/http/brandimg"
 	"github.com/oguaa/backend/internal/infra/http/seedimg"
 )
 
@@ -20,6 +21,8 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	// Curated seed imagery (embedded — see internal/infra/http/seedimg). The more
 	// specific pattern wins over the disk-served uploads below.
 	mux.Handle("GET /uploads/seed/", staticFiles("/uploads/seed/", http.FS(seedimg.FS)))
+	// Brand images that emails link to (embedded — see internal/infra/http/brandimg).
+	mux.Handle("GET /uploads/brand/", staticFiles("/uploads/brand/", http.FS(brandimg.FS)))
 
 	// First-party uploaded images, served statically — plain files only, never
 	// a directory listing (F027). Private documents are not on this disk.
@@ -266,6 +269,10 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("POST /api/news", h.SubmitNews)
 	mux.HandleFunc("GET /api/me/news", h.MyNews) // a writer's own posts, all statuses
 	mux.HandleFunc("GET /api/news/{slug}", h.NewsArticle)
+	// The researched news desk (spec §4.1): the branded cover
+	// (GET /api/news/{slug}/cover.png, next to the article), the research
+	// queue, the editor workflow and the news-desk settings.
+	h.RegisterNewsDeskRoutes(mux)
 
 	mux.HandleFunc("GET /api/places", h.Places)
 	mux.HandleFunc("GET /api/schools", h.Schools)
@@ -353,6 +360,15 @@ func NewRouter(h *Handler, gql http.Handler, allowedOrigins []string, log *slog.
 	mux.HandleFunc("GET /api/admin/reports", h.AdminReports)
 	mux.HandleFunc("POST /api/admin/reports/{id}/resolve", h.AdminResolveReport)
 	mux.HandleFunc("POST /api/admin/memorials/{id}/grant-keeper", h.GrantKeeper)
+
+	// Platform settings audit and the election calendar (spec §4.1, §4.2).
+	h.RegisterFoundationRoutes(mux)
+
+	// Paid advertising (spec §4.3–§4.6): rate card, quotes, sponsors,
+	// campaigns, checkout, review and settings; then serving (slate, view
+	// beacon, click redirect), the public ad library and the ads report.
+	h.RegisterAdRoutes(mux)
+	h.RegisterAdServingRoutes(mux)
 
 	mux.HandleFunc("GET /api/admin/news", h.AdminNewsList)
 	mux.HandleFunc("POST /api/admin/news", h.AdminNewsCreate)

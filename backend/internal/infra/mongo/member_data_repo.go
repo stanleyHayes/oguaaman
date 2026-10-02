@@ -31,6 +31,10 @@ const (
 const (
 	formerMember = "Former member"
 	formerAgent  = "Former agent"
+	// formerEditor replaces an erased editor's name in the public "reviewed
+	// by" line of the news they approved: the article keeps saying an
+	// Oguaa editor checked it, without naming the person.
+	formerEditor = "Oguaa editor"
 )
 
 // Frequently used field names and operators.
@@ -175,6 +179,22 @@ func (r *MemberDataRepo) paymentSections(id string) []exportSection {
 		{"agentJobs", func(ctx context.Context, rec *domain.MemberRecords) (err error) {
 			rec.AgentJobs, err = findMemberDocs[domain.AgentJob](ctx, r.coll(collAgentJobs),
 				bson.M{opOr: bson.A{bson.M{fClientMemberID: id}, bson.M{fAgentMemberID: id}}})
+			return err
+		}},
+		{"adSponsors", func(ctx context.Context, rec *domain.MemberRecords) error {
+			rows, err := findMemberDocs[domain.AdSponsor](ctx, r.coll(collAdSponsors), byMember)
+			rec.AdSponsors = make([]domain.AdSponsorOwnerView, 0, len(rows))
+			for _, sp := range rows {
+				rec.AdSponsors = append(rec.AdSponsors, sp.OwnerView())
+			}
+			return err
+		}},
+		{"adCampaigns", func(ctx context.Context, rec *domain.MemberRecords) error {
+			rows, err := findMemberDocs[domain.AdCampaign](ctx, r.coll(collAdCampaigns), byMember)
+			rec.AdCampaigns = make([]domain.AdCampaignExport, 0, len(rows))
+			for _, c := range rows {
+				rec.AdCampaigns = append(rec.AdCampaigns, domain.AdCampaignExport{AdCampaign: c, Email: c.Email})
+			}
 			return err
 		}},
 	}
@@ -451,8 +471,22 @@ func (r *MemberDataRepo) AnonymiseAuthorship(ctx context.Context, memberID strin
 		bson.M{opSet: bson.M{"authorName": formerMember}}); err != nil {
 		return err
 	}
-	_, err := r.coll(collNews).DeleteMany(ctx, unpublishedNewsBy(memberID))
+	if _, err := r.coll(collNews).DeleteMany(ctx, unpublishedNewsBy(memberID)); err != nil {
+		return err
+	}
+	// Reports an erased editor approved keep a neutral reviewer line (the
+	// reviewer id itself moves to the tombstone with the other kept refs).
+	filter, update := reviewerErasure(memberID)
+	_, err := r.coll(collNews).UpdateMany(ctx, filter, update)
 	return err
+}
+
+// fReviewedByName is the public reviewer byline on news (domain.NewsArticle).
+const fReviewedByName = "reviewedByName"
+
+// reviewerErasure renames the reviewer on every article the member approved.
+func reviewerErasure(memberID string) (filter, update bson.M) {
+	return bson.M{fReviewedByID: memberID}, bson.M{opSet: bson.M{fReviewedByName: formerEditor}}
 }
 
 // fMemberSlug is the author's public handle copied onto reviews and tributes.
@@ -542,6 +576,20 @@ func (r *MemberDataRepo) StripPaymentContacts(ctx context.Context, memberID stri
 			return fmt.Errorf("%s: %w", name, err)
 		}
 	}
+	return r.anonymiseAdvertiser(ctx, memberID)
+}
+
+// anonymiseAdvertiser unlinks the member's ad sponsors and campaigns (spec
+// §3.12): member id, email and phone go; the records stay, because invoices
+// are kept for tax and political sponsors' names and spend stay in the
+// public Ad Library for seven years.
+func (r *MemberDataRepo) anonymiseAdvertiser(ctx context.Context, memberID string) error {
+	if err := NewAdSponsorRepo(r.db).AnonymiseMember(ctx, memberID); err != nil {
+		return fmt.Errorf("%s: %w", collAdSponsors, err)
+	}
+	if err := NewAdRepo(r.db).AnonymiseMember(ctx, memberID); err != nil {
+		return fmt.Errorf("%s: %w", collAdCampaigns, err)
+	}
 	return nil
 }
 
@@ -572,6 +620,7 @@ const (
 	fReviewedByID = "reviewedById"
 	fCreatedByID  = "createdById"
 	fTargetID     = "targetId"
+	fActorID      = "actorId"
 )
 
 // memberTarget narrows a report or moderation record to those about a member
@@ -625,7 +674,13 @@ var keptMemberRefs = []memberRef{
 	{coll: collGoals, field: fCreatedByID},
 	{coll: collGoals, field: fReviewedByID},
 	{coll: collPrivacyRequests, field: fMemberID},
-	{coll: collPrivacyRequests, elem: "history", field: "actorId"},
+	{coll: collPrivacyRequests, elem: "history", field: fActorID},
+	// The news desk, paid advertising and platform settings: the editor who
+	// approved a report, each staff sign-off on an ad (an array) and the
+	// author of every settings or election-calendar change.
+	{coll: collNews, field: fReviewedByID},
+	{coll: collAdCampaigns, elem: "approvals", field: "staffId"},
+	{coll: collSettingsAudit, field: fActorID},
 }
 
 // ReassignToTombstone rewrites every kept reference. Each update matches only

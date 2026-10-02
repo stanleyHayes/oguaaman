@@ -55,8 +55,12 @@ type RevenueOverview struct {
 	Subscriptions SubscriptionRevenue `json:"subscriptions"`
 	Promotions    StreamRevenue       `json:"promotions"`
 	Commerce      CommerceRevenue     `json:"commerce"`
+	// Ads is paid advertising: what advertisers paid less what was refunded
+	// to them, without the tax collected on it (owed to GRA, not income);
+	// Count is paid campaigns.
+	Ads StreamRevenue `json:"ads"`
 	// TotalPesewas is platform income: pledge + donation fees + the gross of
-	// every direct-sale stream (tickets, subscriptions, promotions).
+	// every direct-sale stream (tickets, subscriptions, promotions, ads).
 	TotalPesewas int64 `json:"totalPesewas"`
 	// Simulated counts settled dev-mode records (no real money moved). They
 	// are left out of every figure above (P32).
@@ -70,10 +74,17 @@ type RevenueService struct {
 	subs       domain.SubscriptionRepository
 	promotions domain.PromotionRepository
 	orders     domain.CommerceOrderRepository
+	ads        domain.AdRepository
 }
 
 func NewRevenueService(p domain.PledgeRepository, t domain.TicketRepository, s domain.SubscriptionRepository, pr domain.PromotionRepository, orders domain.CommerceOrderRepository) *RevenueService {
 	return &RevenueService{pledges: p, tickets: t, subs: s, promotions: pr, orders: orders}
+}
+
+// WithAds adds paid advertising to the overview.
+func (s *RevenueService) WithAds(ads domain.AdRepository) *RevenueService {
+	s.ads = ads
+	return s
 }
 
 // Overview sums every confirmed stream into the revenue dashboard payload.
@@ -94,7 +105,10 @@ func (s *RevenueService) Overview(ctx context.Context) (*RevenueOverview, error)
 	if err := s.sumCommerce(ctx, out); err != nil {
 		return nil, err
 	}
-	out.TotalPesewas = out.Pledges.FeePesewas + out.Donations.FeePesewas + out.Tickets.GrossPesewas + out.Subscriptions.GrossPesewas + out.Promotions.GrossPesewas + out.Commerce.FeePesewas
+	if err := s.sumAds(ctx, out); err != nil {
+		return nil, err
+	}
+	out.TotalPesewas = out.Pledges.FeePesewas + out.Donations.FeePesewas + out.Tickets.GrossPesewas + out.Subscriptions.GrossPesewas + out.Promotions.GrossPesewas + out.Commerce.FeePesewas + out.Ads.GrossPesewas
 	return out, nil
 }
 
@@ -209,6 +223,39 @@ func (s *RevenueService) sumPromotions(ctx context.Context, out *RevenueOverview
 		}
 		out.Promotions.GrossPesewas += p.AmountPesewas
 		out.Promotions.Count++
+	}
+	return nil
+}
+
+// adIncome is the part of a campaign's payment Oguaa keeps as income: what
+// was not refunded, in the net-to-total proportion of its price (a refund
+// returns tax and net alike).
+func adIncome(c domain.AdCampaign) int64 {
+	kept := c.Price.TotalPesewas - c.RefundedPesewas
+	if c.Price.TotalPesewas <= 0 || kept <= 0 {
+		return 0
+	}
+	return kept * c.Price.NetPesewas / c.Price.TotalPesewas
+}
+
+// sumAds aggregates paid campaigns: the total each advertiser paid, less the
+// refunds Paystack has processed, less the tax share of what was kept.
+// Simulated payments are counted apart.
+func (s *RevenueService) sumAds(ctx context.Context, out *RevenueOverview) error {
+	if s.ads == nil {
+		return nil
+	}
+	paid, _, err := s.ads.List(ctx, domain.AdFilter{PaymentStatus: domain.AdPaymentSuccess})
+	if err != nil {
+		return err
+	}
+	for _, c := range paid {
+		if c.Simulated {
+			out.Simulated.add(c.Price.TotalPesewas)
+			continue
+		}
+		out.Ads.GrossPesewas += adIncome(c)
+		out.Ads.Count++
 	}
 	return nil
 }
