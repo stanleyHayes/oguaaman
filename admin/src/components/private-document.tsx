@@ -23,7 +23,7 @@ export function PrivateDocument({ docRef, label }: Readonly<{ docRef: string; la
   // Release the object URL when it is replaced or the row unmounts.
   useEffect(() => () => { if (blobUrl) URL.revokeObjectURL(blobUrl); }, [blobUrl]);
 
-  if (!docRef.startsWith(PRIVATE_PREFIX)) {
+  if (!docRef.startsWith(PRIVATE_PREFIX) && !docRef.startsWith("/api/admin/")) {
     if (!/^(https?:\/\/|\/)/i.test(docRef)) return <span className="text-xs text-ink-faint">{label}: unreadable reference</span>;
     return (
       <a href={mediaUrl(docRef)} target="_blank" rel="noopener noreferrer" className={linkCls}>

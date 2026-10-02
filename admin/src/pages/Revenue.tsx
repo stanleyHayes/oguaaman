@@ -1,21 +1,25 @@
 import { useMemo } from "react";
 import { useLoaderData } from "react-router-dom";
 import { api } from "@/lib/api";
-import type { Pledge, Subscription, Promotion, RevenueOverview } from "@/lib/types";
+import type { AdCampaign, Pledge, Subscription, Promotion, RevenueOverview } from "@/lib/types";
 import { PageHeader, Card, Empty } from "@/components/ui";
 import { MetricCard } from "@/components/metric-card";
 import { Stagger, StaggerItem } from "@/components/motion";
 import { HandCoins, Ticket, Repeat, Megaphone, Banknote } from "lucide-react";
+import { Link } from "react-router-dom";
+import { placementName } from "@/lib/ads";
 import { formatDate } from "@/lib/format";
 
 export async function loader() {
-  const [overview, pledges, subscriptions, promotions] = await Promise.all([
+  const [overview, pledges, subscriptions, promotions, ads] = await Promise.all([
     api.revenue(),
     api.pledges(),
     api.subscriptions(),
     api.promotions(),
+    // Paid ad campaigns for the ledger; an older API without ads leaves it empty.
+    api.adsQueue({}).then((r) => (r.items ?? []).filter((a) => a.paymentStatus === "success")).catch(() => [] as AdCampaign[]),
   ]);
-  return { overview, pledges, subscriptions, promotions };
+  return { overview, pledges, subscriptions, promotions, ads };
 }
 
 const cedis = (pesewas?: number) =>
@@ -39,11 +43,12 @@ interface Activity {
 }
 
 export function Component() {
-  const { overview, pledges, subscriptions, promotions } = useLoaderData() as {
+  const { overview, pledges, subscriptions, promotions, ads } = useLoaderData() as {
     overview: RevenueOverview;
     pledges: Pledge[];
     subscriptions: Subscription[];
     promotions: Promotion[];
+    ads: AdCampaign[];
   };
 
   const recent = useMemo<Activity[]>(() => {
@@ -51,10 +56,11 @@ export function Component() {
       ...pledges.map((p) => ({ id: p.id, stream: p.kind === "donation" ? "Donation" : "Pledge", title: p.projectTitle, amountPesewas: p.amountPesewas, status: p.status, simulated: p.simulated, at: p.confirmedAt ?? p.createdAt })),
       ...subscriptions.map((s) => ({ id: s.id, stream: "Subscription", title: s.listingTitle ?? (s.scope === "creator" ? "Creator plan" : "Subscription"), amountPesewas: s.amountPesewas, status: s.status, simulated: s.simulated, at: s.confirmedAt ?? s.createdAt })),
       ...promotions.map((p) => ({ id: p.id, stream: "Promotion", title: `${p.listingTitle} · ${p.days}d`, amountPesewas: p.amountPesewas, status: p.status, simulated: p.simulated, at: p.confirmedAt ?? p.createdAt })),
+      ...ads.map((a) => ({ id: a.id, stream: "Ad", title: `${a.sponsorLine || "Ad"} · ${placementName(a.placement)}`, amountPesewas: a.price.totalPesewas - (a.refundedPesewas ?? 0), status: "success", simulated: a.simulated, at: a.paidAt ?? a.createdAt })),
     ];
     rows.sort((a, b) => (a.at < b.at ? 1 : -1));
     return rows.slice(0, 15);
-  }, [pledges, subscriptions, promotions]);
+  }, [pledges, subscriptions, promotions, ads]);
 
   return (
     <>
@@ -66,11 +72,11 @@ export function Component() {
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-on-green/70">Platform income (confirmed)</p>
           <p className="mt-1 text-4xl font-semibold">{cedis(overview.totalPesewas)}</p>
         </div>
-        <p className="max-w-xs text-sm text-on-green/70">Pledge fees plus the full proceeds of ticket sales, subscriptions and promotions.</p>
+        <p className="max-w-xs text-sm text-on-green/70">Pledge fees plus the full proceeds of ticket sales, subscriptions, promotions and ads (net of refunds).</p>
       </div>
 
       {/* one card per stream */}
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
         <Card className="p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Crowdfunding fees</p>
           <p className="mt-2 text-2xl font-semibold text-green-text">{cedis(overview.pledges.feePesewas)}</p>
@@ -101,10 +107,16 @@ export function Component() {
           <p className="mt-1 text-xs text-ink-muted">{overview.promotions.count} featured placements</p>
           <p className="mt-1 text-xs text-ink-faint">GH₵ 10/day, owner self-serve</p>
         </Card>
+        <Card className="p-5">
+          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-ink-faint">Ads</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-green-text">{cedis(overview.ads?.grossPesewas ?? 0)}</p>
+          <p className="mt-1 text-xs text-ink-muted">{overview.ads?.count ?? 0} paid campaigns</p>
+          <p className="mt-1 text-xs text-ink-faint">Net of refunds · <Link to="/ad-report" className="underline underline-offset-4 hover:text-gold-text">Ad report</Link></p>
+        </Card>
       </div>
 
       {/* headline stats row */}
-      <Stagger className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <Stagger className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StaggerItem index={0}><MetricCard label="Pledges (gross)" value={cedis(overview.pledges.grossPesewas)} tone="teal" icon={<HandCoins size={18} />} /></StaggerItem>
         <StaggerItem index={1}><MetricCard label="Tickets (gross)" value={cedis(overview.tickets.grossPesewas)} tone="teal" icon={<Ticket size={18} />} /></StaggerItem>
         <StaggerItem index={2}><MetricCard label="Subscriptions (gross)" value={cedis(overview.subscriptions.grossPesewas)} tone="teal" icon={<Repeat size={18} />} /></StaggerItem>
@@ -115,7 +127,7 @@ export function Component() {
       {/* recent activity across streams */}
       <h2 className="mb-3 text-lg font-semibold text-ink">Recent activity</h2>
       {recent.length === 0 ? (
-        <Empty icon="chart" title="No payments yet">Confirmed pledges, subscriptions and promotions will land here.</Empty>
+        <Empty icon="chart" title="No payments yet">Confirmed pledges, subscriptions, promotions and ad payments will land here.</Empty>
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[40rem] text-sm">

@@ -88,9 +88,9 @@ export type PageSkeletonVariant = "dashboard" | "table" | "collection" | "detail
 function pageSkeletonVariant(pathname: string): PageSkeletonVariant {
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path === "/") return "dashboard";
-  if (/^\/(listings|members|institutions)\/[^/]+$/.test(path)) return "detail";
-  if (/^\/newsroom\/[^/]+$/.test(path) || ["/profile", "/settings", "/compose"].includes(path)) return "editor";
-  if (["/listings", "/members", "/tickets", "/subscriptions", "/plans", "/revenue", "/audit"].includes(path)) return "table";
+  if (/^\/(listings|members|institutions|ads)\/[^/]+$/.test(path)) return "detail";
+  if (["/listings", "/members", "/tickets", "/subscriptions", "/plans", "/revenue", "/audit", "/newsroom/research", "/ads", "/ad-sponsors", "/ad-report", "/elections"].includes(path)) return "table";
+  if (/^\/newsroom\/[^/]+$/.test(path) || ["/profile", "/settings", "/compose", "/ad-pricing"].includes(path)) return "editor";
   return "collection";
 }
 

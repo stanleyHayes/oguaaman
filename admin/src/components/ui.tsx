@@ -29,7 +29,7 @@ export function KeyVal({ label, children }: Readonly<{ label: string; children: 
   return (
     <div className="flex flex-col gap-0.5 border-b border-sand py-2.5 last:border-0 sm:flex-row sm:gap-4">
       <dt className="w-44 shrink-0 text-xs font-semibold uppercase tracking-wide text-ink-faint">{label}</dt>
-      <dd className="text-sm text-ink">{children}</dd>
+      <dd className="min-w-0 break-words text-sm text-ink">{children}</dd>
     </div>
   );
 }
@@ -71,12 +71,18 @@ export function Pill({ children, tone = "neutral" }: Readonly<{ children: ReactN
   return <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${m[tone]}`}>{children}</span>;
 }
 
-export function PageHeader({ kicker, title, children }: Readonly<{ kicker: string; title: string; children?: ReactNode }>) {
+const KICKER_TONE = { ai: "text-ai", gold: "text-gold-text", green: "text-green-text" } as const;
+
+/** Page title block. The kicker defaults to the AI purple the console has
+ *  always used; ad and election screens pass `gold`/`green`, because purple
+ *  is reserved for AI features. */
+export function PageHeader({ kicker, title, children, tone = "ai", lede }: Readonly<{ kicker: string; title: string; children?: ReactNode; tone?: keyof typeof KICKER_TONE; lede?: ReactNode }>) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p className="eyebrow text-ai">{kicker}</p>
-        <h1 className="mt-1 text-3xl font-semibold">{title}</h1>
+      <div className="min-w-0">
+        <p className={`eyebrow ${KICKER_TONE[tone]}`}>{kicker}</p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-[-0.02em] [text-wrap:balance]">{title}</h1>
+        {lede && <p className="mt-1.5 max-w-[65ch] text-sm leading-relaxed text-ink-muted [text-wrap:pretty]">{lede}</p>}
       </div>
       {children}
     </div>

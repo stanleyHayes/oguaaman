@@ -419,6 +419,105 @@ export const ADMIN_HELP_TOPICS: readonly HelpTopic[] = [
     keywords: ["security", "2fa", "totp", "configuration", "recovery"],
   },
   {
+    id: "research-queue",
+    path: "/newsroom/research",
+    title: "Research queue",
+    kicker: "AI-drafted reports waiting for an editor",
+    category: "Publishing",
+    summary: "See every researched report the news desk has drafted from a feed brief, what each one cost, and which drafts are ready for review. Nothing here is published until an editor approves it.",
+    steps: [
+      "Start with the Ready tab: these drafts passed the automatic checks.",
+      "Open a story to read the draft against its numbered sources.",
+      "Approve and publish, or reject with a reason. Rerun failed jobs only when the lead still matters.",
+    ],
+    tips: ["Today's spend sits at the top; the desk stops drafting when a cap is reached.", "Flags such as uncited claims are prompts to check, not automatic rejections."],
+    keywords: ["ai", "research", "draft", "report", "claude", "sources", "queue"],
+  },
+  {
+    id: "desk-settings",
+    path: "/newsroom/desk",
+    title: "Desk settings",
+    kicker: "Switches and daily caps for automated news",
+    category: "Publishing",
+    summary: "Control the automated news desk: whether briefs publish on their own, whether long-form reports and AI illustrations are drafted, the daily spending caps and the blocked topics. AI-written reports always wait for an editor.",
+    steps: [
+      "Check that the API keys you need are configured.",
+      "Change a switch or cap, then write the reason for the change.",
+      "Save. The change and its reason appear in the change history.",
+    ],
+    tips: ["Only the steward can save; other staff see the settings read-only.", "Election mode stops AI drafting on political leads and uses branded covers."],
+    keywords: ["news desk", "caps", "budget", "election mode", "images", "keywords"],
+  },
+  {
+    id: "elections",
+    path: "/elections",
+    title: "Election calendar",
+    kicker: "One calendar for news and ads",
+    category: "Town operations",
+    summary: "Record each election with its poll date. The calendar sets when political ads may run, when the blackout pauses them, and when the newsroom switches to election mode.",
+    steps: [
+      "Add the election name, kind, scope and poll date; the windows fill in from the poll date.",
+      "Adjust the blackout end once results are declared, if needed.",
+      "Save. Elections that political ads still reference cannot be deleted.",
+    ],
+    tips: ["All times are Accra time (GMT).", "During any blackout every political ad pauses, whatever the election's scope."],
+    keywords: ["election", "blackout", "poll", "political ads", "election mode"],
+  },
+  {
+    id: "ads",
+    path: "/ads",
+    title: "Ads",
+    kicker: "Review, pause and track paid campaigns",
+    category: "Money",
+    summary: "Review submitted ads before the advertiser pays, then watch delivery, pause or remove campaigns, and follow refunds.",
+    steps: [
+      "Open an ad awaiting review and compare the creative, sponsor and landing page.",
+      "Tick every checklist item that holds, then approve, or reject with a reason the advertiser will read.",
+      "Political ads need two curators, or the steward.",
+    ],
+    tips: ["Ads must never look like news.", "A failed refund shows a flag in the queue; the steward can retry it by hand."],
+    keywords: ["ads", "advertising", "campaign", "approve", "political ads", "refund"],
+  },
+  {
+    id: "ad-sponsors",
+    path: "/ad-sponsors",
+    title: "Ad sponsors",
+    kicker: "Who pays for each ad",
+    category: "Money",
+    summary: "Verify the people and organisations behind ads before their campaigns can be approved. Political sponsors must show a Ghana Card or registration and, for District Assembly races, the EC authorisation.",
+    steps: [
+      "Open a pending sponsor and read the documents.",
+      "Verify, reject or suspend with a note. Suspending also pauses their running ads.",
+    ],
+    tips: ["Documents open privately with your staff session; they are never public links."],
+    keywords: ["sponsor", "advertiser", "verify", "ghana card", "political"],
+  },
+  {
+    id: "ad-pricing",
+    path: "/ad-pricing",
+    title: "Ad pricing",
+    kicker: "The public rate card and ad switches",
+    category: "Money",
+    summary: "Set the CPM for each placement, the order limits, tax and the master switches for ads, political ads and app delivery. Every price applies to every advertiser and is public on the rate card.",
+    steps: [
+      "Change prices in cedis per 1,000 viewable impressions.",
+      "Write the reason for the change and save.",
+    ],
+    tips: ["Quotes already given keep the price they were given.", "App delivery carries an app-store risk; keep it off until the owner decides."],
+    keywords: ["cpm", "price", "rate card", "tax", "ads enabled", "inventory"],
+  },
+  {
+    id: "ad-report",
+    path: "/ad-report",
+    title: "Ad report",
+    kicker: "Delivery and income by placement",
+    category: "Money",
+    summary: "See opportunities, billable impressions, clicks, fill rate, recognised income and RPM for each placement over a date range, with political income shown on its own.",
+    steps: ["Choose the date range.", "Read each placement row and the totals underneath."],
+    tips: ["RPM is income per 1,000 opportunities; it is a report figure, not a price."],
+    keywords: ["rpm", "ctr", "fill rate", "impressions", "report", "income"],
+  },
+  {
     id: "help",
     path: "/help",
     title: "Help & guide",
@@ -466,6 +565,13 @@ const DETAIL_TOPICS: readonly HelpTopic[] = [
     kicker: "From draft to publication",
     summary: "Write or revise one newsroom story, preview the result and publish only after editorial review.",
   },
+  {
+    ...HELP_BY_PATH.get("/ads")!,
+    id: "ad-detail",
+    title: "Ad detail",
+    kicker: "One campaign, start to finish",
+    summary: "See the creative exactly as its slot shows it, the sponsor, compliance papers, price, delivery and refunds, and take the actions its status allows.",
+  },
 ];
 
 const FALLBACK_TOPIC = HELP_BY_PATH.get("/help")!;
@@ -478,6 +584,7 @@ export function getAdminHelpTopic(pathname: string): HelpTopic {
   if (cleanPath.startsWith("/members/")) return DETAIL_TOPICS[1];
   if (cleanPath.startsWith("/institutions/")) return DETAIL_TOPICS[2];
   if (cleanPath.startsWith("/newsroom/")) return DETAIL_TOPICS[3];
+  if (cleanPath.startsWith("/ads/")) return DETAIL_TOPICS[4];
   const parent = ADMIN_HELP_TOPICS
     .filter((topic) => topic.path !== "/" && cleanPath.startsWith(`${topic.path}/`))
     .sort((a, b) => b.path.length - a.path.length)[0];
@@ -500,6 +607,13 @@ const TOPIC_ROLE_ALLOWLIST: Readonly<Record<string, readonly string[]>> = {
   "/civic": ["curator", "steward"],
   "/outside-agents": ["vetting", "steward"],
   "/outside-disputes": ["vetting", "steward"],
+  "/newsroom/research": ["curator", "editor", "steward"],
+  "/newsroom/desk": ["curator", "editor", "steward"],
+  "/ads": ["curator", "moderator", "steward"],
+  "/ad-sponsors": ["curator", "moderator", "steward"],
+  "/ad-pricing": ["curator", "steward"],
+  "/ad-report": ["curator", "steward"],
+  "/elections": ["curator", "steward"],
 };
 
 const MODERATOR_HELP_PATHS = new Set([
@@ -507,6 +621,8 @@ const MODERATOR_HELP_PATHS = new Set([
   "/listings",
   "/reports",
   "/incidents",
+  "/ads",
+  "/ad-sponsors",
   "/notifications",
   "/profile",
   "/settings",

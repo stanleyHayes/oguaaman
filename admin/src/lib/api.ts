@@ -1,4 +1,4 @@
-import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged, Agent, AgentStatus, AgentJob, DisputeResolution, BusinessVerification, CommerceOrder, CommercePromotion, AffiliateProgramme, Affiliate, AffiliateConversion, TeamView, ReportAction, PrivacyRequest, PrivacyRequestStatus, CloudinarySignature } from "./types";
+import type { Listing, Member, Organization, Stats, ModerationRecord, OrgClaim, NewsArticle, NotificationItem, MemberView, InstitutionView, Report, MediaAsset, ProfileSection, Pledge, PledgeTotals, Ticket, Subscription, Promotion, RevenueOverview, Incident, Plan, Directive, DirectiveSeverity, DirectiveKind, Goal, GoalCadence, GoalRing, GoalVerdict, CivicBehaviour, CivicBehaviourInput, Paged, Agent, AgentStatus, AgentJob, DisputeResolution, BusinessVerification, CommerceOrder, CommercePromotion, AffiliateProgramme, Affiliate, AffiliateConversion, TeamView, ReportAction, PrivacyRequest, PrivacyRequestStatus, CloudinarySignature, NewsResearchPage, NewsResearchJob, ResearchJobStatus, NewsApprovePayload, NewsDeskSettings, NewsDeskSettingsView, SettingsAudit, SettingsKey, Election, ElectionInput, AdCampaign, AdListPage, AdStatus, AdPlacementSlug, AdApproveChecklist, AdSponsor, AdSponsorStatus, AdSponsorKind, AdSettings, AdSettingsView, AdReport } from "./types";
 
 /** Optional server-side pagination for the heavy list endpoints. Passing this
  *  switches the response to the { items, total, page, pageSize, totalPages }
@@ -144,6 +144,22 @@ async function post<T>(path: string, body: unknown = {}): Promise<T> {
   const res = await request(path, { method: "POST", headers: headers(true), body: JSON.stringify(body) }, "Request failed");
   return (await res.json().catch(() => ({}))) as T;
 }
+
+async function put<T>(path: string, body: unknown): Promise<T> {
+  const res = await request(path, { method: "PUT", headers: headers(true), body: JSON.stringify(body) }, "Request failed");
+  return (await res.json().catch(() => ({}))) as T;
+}
+
+/** Builds "?a=1&b=2" from the defined, non-empty entries ("" when none). */
+function query(params: Record<string, string | number | undefined>): string {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "") p.set(k, String(v));
+  const q = p.toString();
+  return q ? `?${q}` : "";
+}
+
+/** Admin ad-queue filters (GET /api/admin/ads). `political` "1"/"0"; "" = both. */
+export interface AdQueueArgs { status?: AdStatus | ""; political?: "1" | "0" | ""; placement?: AdPlacementSlug | ""; page?: number }
 
 async function del<T>(path: string): Promise<T> {
   const res = await request(path, { method: "DELETE", headers: headers() }, "Request failed");
@@ -396,6 +412,56 @@ export const api = {
   newsPublish: (id: string, publish: boolean) => post<{ published: boolean }>(`/api/admin/news/${id}/publish`, { publish }),
   newsDelete: (id: string) => del<{ status: string }>(`/api/admin/news/${id}`),
 
+  // Researched automated news desk (spec §4.1). Editor role unless noted.
+  newsResearchQueue: (args: { status?: ResearchJobStatus | ""; page?: number }) =>
+    get<NewsResearchPage>(`/api/admin/news/research${query({ status: args.status, page: args.page })}`),
+  newsResearch: (articleId: string) => get<NewsResearchJob>(`/api/admin/news/${articleId}/research`),
+  newsResearchApprove: (articleId: string, body: NewsApprovePayload) =>
+    post<NewsArticle>(`/api/admin/news/${articleId}/research/approve`, body),
+  newsResearchReject: (articleId: string, reason: string) =>
+    post<NewsResearchJob>(`/api/admin/news/${articleId}/research/reject`, { reason }),
+  newsResearchRerun: (articleId: string) => post<NewsResearchJob>(`/api/admin/news/${articleId}/research/rerun`),
+  newsResearchCover: (articleId: string, action: "regenerate" | "branded") =>
+    post<NewsResearchJob>(`/api/admin/news/${articleId}/research/cover`, { action }),
+  newsCorrection: (articleId: string, note: string) => post<NewsArticle>(`/api/admin/news/${articleId}/corrections`, { note }),
+  newsDeskSettings: () => get<NewsDeskSettingsView>("/api/admin/settings/news-desk"),
+  // Steward only. Sends the full document with its version (409 settings_conflict on a stale one).
+  saveNewsDeskSettings: (body: NewsDeskSettings, reason: string) =>
+    put<NewsDeskSettingsView>("/api/admin/settings/news-desk", { ...body, reason }),
+  // Curator: who changed news_desk / ads / elections, newest first.
+  settingsAudit: (key: SettingsKey, limit = 50) => get<SettingsAudit[]>(`/api/admin/settings/audit${query({ key, limit })}`),
+
+  // Election calendar (spec §4.2). Read: curator; writes: steward.
+  elections: () => get<Election[]>("/api/admin/elections"),
+  createElection: (body: ElectionInput) => post<Election>("/api/admin/elections", body),
+  updateElection: (id: string, body: ElectionInput) => put<Election>(`/api/admin/elections/${id}`, body),
+  deleteElection: (id: string) => del<Record<string, never>>(`/api/admin/elections/${id}`),
+
+  // Paid advertising (spec §4.6). Reviewer = curator or moderator.
+  adsQueue: (args: AdQueueArgs = {}) =>
+    get<AdListPage>(`/api/admin/ads${query({ status: args.status, political: args.political, placement: args.placement, page: args.page })}`),
+  ad: (id: string) => get<AdCampaign>(`/api/admin/ads/${id}`),
+  approveAd: (id: string, checklist: AdApproveChecklist, note = "") => post<AdCampaign>(`/api/admin/ads/${id}/approve`, { note, checklist }),
+  rejectAd: (id: string, reason: string) => post<AdCampaign>(`/api/admin/ads/${id}/reject`, { reason }),
+  pauseAd: (id: string, reason: string) => post<AdCampaign>(`/api/admin/ads/${id}/pause`, { reason }),
+  resumeAd: (id: string, reason: string) => post<AdCampaign>(`/api/admin/ads/${id}/resume`, { reason }),
+  removeAd: (id: string, reason: string) => post<AdCampaign>(`/api/admin/ads/${id}/remove`, { reason }),
+  // Steward only; amount ≤ total − already refunded.
+  refundAd: (id: string, amountPesewas: number, reason: string) => post<AdCampaign>(`/api/admin/ads/${id}/refund`, { amountPesewas, reason }),
+  // Steward: settle a refund marked for a check, after looking at Paystack.
+  resolveAdRefund: (id: string, refundId: string, status: "processed" | "failed", reason: string) =>
+    post<AdCampaign>(`/api/admin/ads/${id}/refunds/${encodeURIComponent(refundId)}`, { status, reason }),
+  // Curator: pause every active/scheduled campaign in scope.
+  killAds: (body: { scope: "political" | "sponsor"; sponsorId?: string; reason: string }) =>
+    post<{ paused: number }>("/api/admin/ads/kill", { sponsorId: "", ...body }),
+  adSponsors: (args: { status?: AdSponsorStatus | ""; kind?: AdSponsorKind | "" } = {}) =>
+    get<AdSponsor[]>(`/api/admin/ad-sponsors${query({ status: args.status, kind: args.kind })}`),
+  reviewAdSponsor: (id: string, action: "verify" | "reject" | "suspend", note: string) =>
+    post<AdSponsor>(`/api/admin/ad-sponsors/${id}/${action}`, { note }),
+  adSettings: () => get<AdSettingsView>("/api/admin/settings/ads"),
+  saveAdSettings: (body: AdSettings, reason: string) => put<AdSettingsView>("/api/admin/settings/ads", { ...body, reason }),
+  adReport: (from: string, to: string) => get<AdReport>(`/api/admin/ads/report${query({ from, to })}`),
+
   ai: (body: { action: string; text?: string; language?: string; prompt?: string }) =>
     post<{ result: string; remaining: number; simulated?: boolean }>("/api/ai", body),
   aiStream: async (
@@ -439,8 +505,10 @@ export const api = {
 
   // Private documents (K8): ID and KYC files are fetched with the staff token
   // into a blob URL, never linked publicly. Accepts "private:<id>" or "<id>".
+  // A "private:<id>" reference, or a staff document link the API gives
+  // (an ad's or a sponsor's documents, which ad reviewers may open).
   privateDocument: (ref: string) =>
-    getBlobUrl(`/api/admin/private-uploads/${encodeURIComponent(ref.replace(/^private:/, ""))}`),
+    getBlobUrl(ref.startsWith("/api/admin/") ? ref : `/api/admin/private-uploads/${encodeURIComponent(ref.replace(/^private:/, ""))}`),
 
   // Data-rights requests (K10, steward): the queue and status transitions.
   privacyRequests: () => get<PrivacyRequest[]>("/api/admin/privacy-requests"),

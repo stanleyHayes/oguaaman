@@ -151,3 +151,39 @@ export function Donut({ data, label, className = "" }: Readonly<{ data: Datum[];
 function EmptyChart({ label = "No data yet" }: Readonly<{ label?: string }>) {
   return <div className="flex h-40 items-center justify-center text-sm text-ink-faint">{label}</div>;
 }
+
+export interface DailyPoint { day: string; views: number; clicks: number }
+
+/**
+ * Daily delivery — paired bars per day: views (gold, left scale) and clicks
+ * (green, own scale so a low click count still reads). Each column carries
+ * its exact numbers for screen readers and on hover.
+ */
+export function DailyBars({ data, className = "" }: Readonly<{ data: DailyPoint[]; className?: string }>) {
+  if (!data.length) return <EmptyChart label="No delivery yet" />;
+  const maxViews = Math.max(1, ...data.map((d) => d.views));
+  const maxClicks = Math.max(1, ...data.map((d) => d.clicks));
+  const step = Math.max(1, Math.ceil(data.length / 8));
+  return (
+    <figure className={className}>
+      <div className="flex h-40 items-end gap-[3px]" role="list" aria-label="Daily views and clicks">
+        {data.map((d) => (
+          <div key={d.day} role="listitem" className="group relative flex h-full min-w-0 flex-1 items-end justify-center gap-px" title={`${d.day}: ${d.views} views, ${d.clicks} clicks`}>
+            <span className="sr-only">{d.day}: {d.views} views, {d.clicks} clicks</span>
+            <span aria-hidden className="h-full w-full max-w-[14px] origin-bottom rounded-t-[3px] transition-transform duration-300" style={{ transform: `scaleY(${Math.max(0.015, d.views / maxViews)})`, backgroundColor: PALETTE.gold }} />
+            <span aria-hidden className="h-full w-full max-w-[6px] origin-bottom rounded-t-[3px] transition-transform duration-300" style={{ transform: `scaleY(${Math.max(0.015, d.clicks / maxClicks)})`, backgroundColor: PALETTE.green }} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-1.5 flex gap-[3px]" aria-hidden>
+        {data.map((d, i) => (
+          <span key={d.day} className="min-w-0 flex-1 truncate text-center text-[0.55rem] tabular-nums text-ink-faint">{i % step === 0 ? d.day.slice(5) : ""}</span>
+        ))}
+      </div>
+      <figcaption className="mt-3 flex flex-wrap gap-4 text-xs text-ink-muted">
+        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: PALETTE.gold }} aria-hidden />Views (max {maxViews.toLocaleString("en-GH")})</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: PALETTE.green }} aria-hidden />Clicks (max {maxClicks.toLocaleString("en-GH")})</span>
+      </figcaption>
+    </figure>
+  );
+}

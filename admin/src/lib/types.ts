@@ -389,8 +389,418 @@ export interface NewsArticle {
   automationLabel?: string;
   sourceName?: string;
   sourceUrl?: string;
+  sourceAuthor?: string;
   sourcePublishedAt?: string;
+  // Researched automated news (spec §2.3). All optional: manual articles and
+  // briefs leave them empty.
+  tier?: NewsTier;
+  sources?: NewsSource[];
+  topics?: string[];
+  political?: boolean;
+  coverImageKind?: CoverImageKind;
+  coverImageAlt?: string;
+  coverImageCredit?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  corrections?: NewsCorrection[];
 }
+
+// ── Researched automated news (spec §2) ──────────────────────────────────────
+
+export type NewsTier = "brief" | "report";
+export type CoverImageKind = "ai" | "branded" | "upload";
+
+/** One numbered source behind a report; index + 1 matches the [n] markers. */
+export interface NewsSource {
+  name: string;
+  title?: string;
+  url: string;
+  author?: string;
+  publishedAt?: string;
+  accessedAt?: string;
+  /** The feed lead the story started from. */
+  original?: boolean;
+}
+
+/** A dated, public correction appended to an article. */
+export interface NewsCorrection { at: string; note: string }
+
+export type ResearchJobStatus =
+  | "queued" | "running" | "ready" | "approved" | "rejected"
+  | "failed" | "refused" | "no_story" | "blocked" | "stale";
+
+export type CoverSkippedReason =
+  | "political" | "sensitive" | "disabled" | "cap" | "no_key" | "no_cloudinary"
+  | "moderation_blocked" | "scene_rejected" | "error" | "election_mode";
+
+export interface NewsCoverDraft {
+  kind: "ai" | "branded";
+  url?: string;
+  alt: string;
+  credit?: string;
+  model?: string;
+  prompt?: string;
+  skippedReason?: CoverSkippedReason;
+}
+
+export interface NewsReportDraft {
+  title: string;
+  summary: string;
+  body: string;
+  sources: NewsSource[];
+  topics: string[];
+  political: boolean;
+  wordCount: number;
+  /** Share of the body's characters backed by a citation, 0..1. */
+  citationCoverage: number;
+  flags: string[];
+  uncitedClaims: string[];
+  cover: NewsCoverDraft;
+  generatedAt: string;
+}
+
+export interface NewsResearchJob {
+  id: string;
+  articleId: string;
+  leadUrl: string;
+  leadSource: string;
+  leadTitle: string;
+  leadTeaser: string;
+  leadPublishedAt?: string;
+  status: ResearchJobStatus;
+  attempts: number;
+  nextAttemptAt?: string;
+  lastError?: string;
+  refusalCategory?: string;
+  blockedReason?: string;
+  model?: string;
+  fallbackUsed?: boolean;
+  costMicroUsd: number;
+  imageMicroUsd: number;
+  draft?: NewsReportDraft;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  rejectReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Today's newsroom spend (Accra day), shown against the desk caps. */
+export interface NewsDeskToday {
+  reports: number;
+  researchMicroUsd: number;
+  images: number;
+  imageMicroUsd: number;
+}
+
+export interface NewsResearchPage {
+  items: NewsResearchJob[];
+  total: number;
+  page: number;
+  perPage: number;
+  today: NewsDeskToday;
+}
+
+/** The editor's sign-off before a report replaces its brief (spec §2.9). */
+export interface NewsApproveChecklist {
+  factsMatchSources: boolean;
+  noUnattributedAllegations: boolean;
+  quotesAccurate: boolean;
+  balancedIfPolitical: boolean;
+  imageCompliant: boolean;
+  rightOfReplyConsidered: boolean;
+}
+
+export interface NewsApprovePayload {
+  title: string;
+  summary: string;
+  body: string;
+  cover: "keep" | "branded";
+  checklist: NewsApproveChecklist;
+}
+
+/** platform_settings/news_desk (spec §2.10). Money is micro-USD. */
+export interface NewsDeskSettings {
+  deskEnabled: boolean;
+  briefAutoPublish: boolean;
+  longformEnabled: boolean;
+  imagesEnabled: boolean;
+  electionModeManual: boolean;
+  maxReportsPerDay: number;
+  maxResearchMicroUsdPerDay: number;
+  maxImagesPerDay: number;
+  maxImageMicroUsdPerDay: number;
+  minSources: number;
+  maxQuoteWords: number;
+  extraBlockedKeywords: string[];
+  version: number;
+  updatedAt: string;
+  updatedByName: string;
+}
+
+export interface NewsDeskSettingsView extends NewsDeskSettings {
+  electionModeActive: boolean;
+  keys: { anthropic: boolean; openai: boolean; cloudinary: boolean };
+}
+
+export type SettingsKey = "news_desk" | "ads" | "elections";
+
+/** One change to a settings document; before/after are canonical JSON. */
+export interface SettingsAudit {
+  id: string;
+  key: SettingsKey;
+  actorName: string;
+  at: string;
+  reason?: string;
+  before: string;
+  after: string;
+}
+
+// ── Election calendar (spec §1.2) ────────────────────────────────────────────
+
+export type ElectionKind = "general" | "parliamentary_by" | "party_primary" | "district_assembly" | "referendum";
+export type ElectionScope = "national" | "region" | "constituency";
+
+export interface Election {
+  id: string;
+  name: string;
+  kind: ElectionKind;
+  scope: ElectionScope;
+  areas?: string[];
+  pollDate: string; // YYYY-MM-DD
+  politicalAdsFrom: string; // YYYY-MM-DD
+  blackoutStart: string; // RFC3339
+  blackoutEnd: string; // RFC3339
+  newsModeFrom: string; // YYYY-MM-DD
+  newsModeTo: string; // YYYY-MM-DD
+  resultsDeclaredAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Create/update body: an Election without its server-owned fields. */
+export type ElectionInput = Omit<Election, "id" | "createdAt" | "updatedAt">;
+
+// ── Paid advertising (spec §3) ───────────────────────────────────────────────
+
+export type AdPlacementSlug = "portal-home-banner" | "portal-feed-card" | "portal-article-rect" | "marketing-card" | "app-card";
+export type AdFormat = "banner" | "card" | "rect";
+export type AdStatus =
+  | "pending_review" | "approved" | "scheduled" | "active" | "paused" | "completed"
+  | "rejected" | "expired" | "cancelled" | "removed";
+export type AdSponsorStatus = "pending" | "verified" | "rejected" | "suspended";
+export type AdSponsorKind = "commercial" | "political";
+export type AdPaymentStatus = "none" | "pending" | "success" | "failed";
+
+export interface AdSponsor {
+  id: string;
+  kind: AdSponsorKind;
+  entityType: string;
+  displayName: string;
+  legalName: string;
+  registrationNumber?: string;
+  idNumberLast4?: string;
+  tin?: string;
+  address: string;
+  contactPerson?: string;
+  partyName?: string;
+  candidateName?: string;
+  office?: string;
+  constituency?: string;
+  citizenshipDeclaredAt?: string;
+  status: AdSponsorStatus;
+  reviewNote?: string;
+  verifiedByName?: string;
+  verifiedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Admin shape only (spec §4.5/§4.6).
+  memberId?: string;
+  phone?: string;
+  email?: string;
+  hasIdDocument?: boolean;
+  /** Staff-only links to the private documents
+   *  (/api/admin/private-uploads/{id}); every read is audited. */
+  idDocumentUrl?: string;
+  ecAuthorisationUrl?: string;
+}
+
+export interface AdCreative {
+  format: AdFormat;
+  imageUrl?: string;
+  imageUrlDesktop?: string;
+  imageUrlMobile?: string;
+  headline?: string;
+  body?: string;
+  alt: string;
+  landingUrl: string;
+  containsSyntheticMedia: boolean;
+}
+
+export interface AdCompliance {
+  fdaRegistrationNo?: string;
+  fdaApprovalRef?: string;
+  fdaApprovalExpiresOn?: string;
+  regulator?: string;
+  licenceNumber?: string;
+}
+
+export interface AdPriceSnapshot {
+  settingsVersion: number;
+  cpmPesewas: number;
+  netPesewas: number;
+  taxRateBps: number;
+  taxPesewas: number;
+  totalPesewas: number;
+}
+
+export interface AdStatusChange { from: string; to: string; at: string; actorName: string; reason?: string }
+
+export interface AdApproval { staffName: string; at: string; checklist?: Record<string, boolean> }
+
+export type AdRefundStatus = "requesting" | "pending" | "processed" | "failed" | "manual_check";
+
+export interface AdRefund {
+  id: string;
+  amountPesewas: number;
+  reason: string;
+  status: AdRefundStatus;
+  /** How staff settled a refund that needed a check. */
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdDaily { day: string; views: number; clicks: number }
+
+export interface AdCampaign {
+  id: string;
+  sponsorId: string;
+  sponsorLine: string;
+  political: boolean;
+  politicalType?: "election" | "issue";
+  electionId?: string;
+  electionName?: string;
+  category: string;
+  compliance: AdCompliance;
+  placement: AdPlacementSlug;
+  creative: AdCreative;
+  startDate: string;
+  endDate: string;
+  bookedImpressions: number;
+  price: AdPriceSnapshot;
+  status: AdStatus;
+  statusHistory: AdStatusChange[];
+  approvals?: AdApproval[];
+  approvalExpiresAt?: string;
+  rejectReason?: string;
+  removalReason?: string;
+  startConsentAt?: string;
+  /** Admin shape only: staff link to the private approval letter. */
+  approvalDocumentUrl?: string;
+  reference?: string;
+  paymentStatus: AdPaymentStatus;
+  paidAt?: string;
+  simulated?: boolean;
+  failureReason?: string;
+  delivered: number;
+  clicks: number;
+  firstImpressionAt?: string;
+  lastImpressionAt?: string;
+  refunds?: AdRefund[];
+  refundedPesewas: number;
+  createdAt: string;
+  updatedAt: string;
+  // Admin shape (spec §4.5).
+  memberId?: string;
+  flags?: string[];
+  sponsor?: AdSponsor;
+  reportsCount?: number;
+  daily?: AdDaily[];
+}
+
+export interface AdListPage {
+  items: AdCampaign[];
+  total: number;
+  page: number;
+  perPage: number;
+  counts: Partial<Record<AdStatus, number>>;
+}
+
+export interface AdApproveChecklist {
+  sponsorIdentified: boolean;
+  notDisguisedAsNews: boolean;
+  noFalseOrUnsubstantiatedClaims: boolean;
+  noHateOrSectionalAppeal: boolean;
+  noVoterSuppressionOrResultClaims: boolean;
+  categoryLicenceChecked: boolean;
+  landingPageMatches: boolean;
+  ghsPricingOnly: boolean;
+  aiMediaDisclosed: boolean;
+  noPartySymbolsIfDistrictAssembly: boolean;
+}
+
+export interface AdPlacementPrice {
+  slug: AdPlacementSlug;
+  active: boolean;
+  cpmPesewas: number;
+  politicalCpmPesewas: number;
+  fallbackDailyViews: number;
+}
+
+/** platform_settings/ads (spec §3.2). Money is pesewas. */
+export interface AdSettings {
+  adsEnabled: boolean;
+  politicalEnabled: boolean;
+  appDeliveryEnabled: boolean;
+  allowDistrictAssembly: boolean;
+  taxRateBps: number;
+  taxLabel: string;
+  minOrderPesewas: number;
+  minImpressions: number;
+  impressionStep: number;
+  maxImpressionsPerOrder: number;
+  maxCampaignDays: number;
+  minLeadDays: number;
+  approvalValidHours: number;
+  sellThroughPercent: number;
+  blockedCategories: string[];
+  placements: AdPlacementPrice[];
+  version: number;
+  effectiveFrom: string;
+  updatedAt: string;
+  updatedByName: string;
+}
+
+export interface AdForecast { slug: AdPlacementSlug; dailyOpportunities: number; source: "observed" | "fallback" }
+
+export interface AdSettingsView extends AdSettings {
+  forecast?: AdForecast[];
+  tokenSecretConfigured?: boolean;
+}
+
+export interface AdReportRow {
+  slug: AdPlacementSlug;
+  opportunities: number;
+  billableImpressions: number;
+  unbilledImpressions: number;
+  clicks: number;
+  ctr: number;
+  fillRate: number;
+  recognizedNetPesewas: number;
+  rpmPesewas: number;
+}
+
+export interface AdReportTotals extends Omit<AdReportRow, "slug"> {
+  cashCollectedPesewas: number;
+  refundedPesewas: number;
+  taxCollectedPesewas: number;
+  bookedRemaining: number;
+  politicalNetPesewas: number;
+}
+
+export interface AdReport { placements: AdReportRow[]; totals: AdReportTotals }
 
 // Shared Paystack-style payment lifecycle used by pledges, tickets, subscriptions and promotions.
 export type PaymentStatus = "pending" | "success" | "failed";
@@ -511,6 +921,8 @@ export interface RevenueOverview {
   subscriptions: { grossPesewas: number; count: number; active: number };
   promotions: { grossPesewas: number; count: number };
   commerce: { grossPesewas: number; feePesewas: number; businessNetPesewas: number; count: number };
+  /** Paid ad campaigns, net of processed refunds (spec §3.11). Absent on older APIs. */
+  ads?: { grossPesewas: number; count: number };
   totalPesewas: number;
 }
 
@@ -518,7 +930,7 @@ export interface RevenueOverview {
 export type ReportAction = "none" | "remove" | "remove_and_suspend";
 
 /** Kinds of content a report can target (K11). */
-export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output";
+export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output" | "ad";
 
 // A member-filed report, for steward triage (spec §14.3/§14.4/§14.7, K11).
 export interface Report {

@@ -58,7 +58,7 @@ export function Component() {
                 </div>
                 <div className="flex min-h-9 shrink-0 items-center gap-2">
                   {busy === c.id ? <BusyLabel label="Updating institution claim" /> : <>
-                    <button type="button" onClick={() => review(c, true)} className="rounded-full bg-ai px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90">Approve</button>
+                    <button type="button" onClick={() => review(c, true)} className="rounded-full bg-ai-fill px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90">Approve</button>
                     <button type="button" onClick={() => review(c, false)} className="rounded-full border border-sand px-4 py-2 text-xs font-semibold text-ink-muted transition-colors hover:border-clay hover:text-clay-text">Reject</button>
                   </>}
                 </div>

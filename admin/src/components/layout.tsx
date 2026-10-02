@@ -11,7 +11,8 @@ import {
   Users, Landmark, MapPin, BadgeCheck, HandCoins, Ticket, Repeat, Banknote,
   Newspaper, Sparkles, UserRound, Bell, User, Settings, Search, ChevronDown,
   LogOut, BellRing, Map, PanelLeftClose, PanelLeft, Siren, Megaphone, Target, HeartHandshake,
-  Handshake, UserCheck, Scale, CircleHelp, FileLock, type LucideIcon,
+  Handshake, UserCheck, Scale, CircleHelp, FileLock, ScanSearch, SlidersHorizontal,
+  RectangleHorizontal, Building2, BadgeDollarSign, ChartColumn, Vote, CalendarRange, type LucideIcon,
 } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -71,6 +72,10 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/subscriptions", label: "Subscriptions", icon: Repeat },
       { to: "/revenue", label: "Revenue", icon: Banknote },
       { to: "/commerce", label: "Commerce", icon: HandCoins },
+      { to: "/ads", label: "Ads", icon: RectangleHorizontal },
+      { to: "/ad-sponsors", label: "Ad sponsors", icon: Building2 },
+      { to: "/ad-pricing", label: "Ad pricing", icon: BadgeDollarSign },
+      { to: "/ad-report", label: "Ad report", icon: ChartColumn },
     ],
   },
   {
@@ -78,8 +83,15 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Newspaper,
     items: [
       { to: "/newsroom", label: "Newsroom", icon: Newspaper },
+      { to: "/newsroom/research", label: "Research queue", icon: ScanSearch },
+      { to: "/newsroom/desk", label: "Desk settings", icon: SlidersHorizontal },
       { to: "/compose", label: "Compose · AI", icon: Sparkles },
     ],
+  },
+  {
+    title: "Elections",
+    icon: Vote,
+    items: [{ to: "/elections", label: "Election calendar", icon: CalendarRange }],
   },
   {
     title: "Account",
@@ -96,7 +108,7 @@ const NAV_GROUPS: NavGroup[] = [
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 // Moderators can only access triage-focused routes.
-const MODERATOR_PATHS = new Set(["/moderation", "/listings", "/reports", "/incidents", "/help"]);
+const MODERATOR_PATHS = new Set(["/moderation", "/listings", "/reports", "/incidents", "/ads", "/ad-sponsors", "/help"]);
 
 function visibleGroups(role: string | undefined): NavGroup[] {
   // Each page's role allowlist lives in ROUTE_ROLES, matching the backend's
@@ -197,6 +209,14 @@ function isActivePath(pathname: string, to: string, end?: boolean): boolean {
   return end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
 }
 
+/** The single nav target for a path: the most specific matching item, so
+ *  /newsroom/research lights "Research queue", not "Newsroom" as well. */
+function activeTarget(pathname: string): string | undefined {
+  return ALL_ITEMS
+    .filter((i) => isActivePath(pathname, i.to, i.end))
+    .sort((a, b) => b.to.length - a.to.length)[0]?.to;
+}
+
 /**
  * Dark navy command-center sidebar with gold accents, curved tree connectors,
  * and collapsible groups — a pixel-faithful port of the Aura app-sidebar
@@ -205,6 +225,7 @@ function isActivePath(pathname: string, to: string, end?: boolean): boolean {
  */
 function SidebarNav({ pathname, role, onNavigate, collapsed = false, onToggleCollapsed }: Readonly<{ pathname: string; role?: string; onNavigate?: () => void; collapsed?: boolean; onToggleCollapsed?: () => void }>) {
   const groups = visibleGroups(role);
+  const activeTo = activeTarget(pathname);
   const [openState, setOpenState] = useState<Record<string, boolean>>(() => {
     try {
       return JSON.parse(localStorage.getItem(GROUPS_KEY) ?? "{}") as Record<string, boolean>;
@@ -258,7 +279,7 @@ function SidebarNav({ pathname, role, onNavigate, collapsed = false, onToggleCol
       <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden">
       <nav className="pb-4">
         {groups.map((group) => {
-          const hasActive = group.items.some((i) => isActivePath(pathname, i.to, i.end));
+          const hasActive = group.items.some((i) => i.to === activeTo);
           const isOpen = hasActive || (openState[group.title] ?? true);
           const panelId = `nav-${group.title.replace(/\s+/g, "-").toLowerCase()}`;
           return (
@@ -285,7 +306,7 @@ function SidebarNav({ pathname, role, onNavigate, collapsed = false, onToggleCol
               >
                 <div className="min-h-0 overflow-hidden">
                   {group.items.map((item, i) => {
-                    const active = isActivePath(pathname, item.to, item.end);
+                    const active = item.to === activeTo;
                     return (
                       <Link
                         key={item.to}
@@ -473,7 +494,8 @@ export function AdminLayout() {
     });
   };
 
-  const current = ALL_ITEMS.find((n) => isActivePath(loc.pathname, n.to, n.end)) ?? ALL_ITEMS[0];
+  const currentTo = activeTarget(loc.pathname);
+  const current = ALL_ITEMS.find((n) => n.to === currentTo) ?? ALL_ITEMS[0];
   const helpTopic = getAdminHelpTopic(loc.pathname);
   const helpOpen = helpPath === loc.pathname;
   const firstName = member?.displayName.split(" ")[0] ?? "";

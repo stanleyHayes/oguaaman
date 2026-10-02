@@ -56,7 +56,7 @@ function AiConsentPanel() {
         <span>I agree to send the text I choose to Anthropic for suggestions.</span>
       </label>
       {err && <p className="mt-2 text-xs text-clay-text" role="alert">{err}</p>}
-      <button type="button" onClick={enable} disabled={!agreed || busy} className="mt-3 rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+      <button type="button" onClick={enable} disabled={!agreed || busy} className="mt-3 rounded-lg bg-ai-fill px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
         {busy ? <BusyLabel label="Saving your choice" /> : "Turn on the writing assistant"}
       </button>
     </div>
@@ -172,13 +172,13 @@ export function AiWritingBar({ initialTitle = "", initialBody = "" }: Readonly<{
         {mode === "prompt" && (
           <div className="mt-3 flex flex-wrap gap-2">
             <input autoFocus value={promptText} onChange={(e) => setPromptText(e.target.value)} placeholder="Describe what you want…" className="min-w-[12rem] flex-1 rounded-lg border border-ai-line bg-paper px-3 py-2 text-sm text-ink focus:border-ai focus:outline-none" />
-            <button type="button" onClick={() => go("prompt")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Generate</button>
+            <button type="button" onClick={() => go("prompt")} className="rounded-lg bg-ai-fill px-4 py-2 text-sm font-semibold text-white">Generate</button>
           </div>
         )}
         {mode === "lang" && (
           <div className="mt-3 flex flex-wrap gap-2">
             <Select value={language} onValueChange={setLanguage} className="min-w-[10rem] flex-1">{LANGS.map((l) => <option key={l}>{l}</option>)}</Select>
-            <button type="button" onClick={() => go("translate")} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white">Translate</button>
+            <button type="button" onClick={() => go("translate")} className="rounded-lg bg-ai-fill px-4 py-2 text-sm font-semibold text-white">Translate</button>
           </div>
         )}
 

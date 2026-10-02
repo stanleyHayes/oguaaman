@@ -29,7 +29,7 @@ const TONE: Record<string, "clay" | "gold" | "neutral"> = {
 };
 const TARGET_LABEL: Record<string, string> = {
   listing: "Listing", member: "Member", review: "Review", tribute: "Tribute", product: "Product",
-  news: "News", agent: "Agent", agent_review: "Agent review", ai_output: "AI output",
+  news: "News", agent: "Agent", agent_review: "Agent review", ai_output: "AI output", ad: "Ad",
 };
 const ACTION_LABEL: Record<ReportAction, string> = {
   none: "No change to the content",
@@ -112,6 +112,9 @@ export function Component() {
 /** Where the reported content lives: its listing page when there is one. */
 function TargetLink({ report }: Readonly<{ report: Report }>) {
   const title = report.targetTitle || report.listingTitle || "Untitled";
+  if (report.targetType === "ad" && report.targetId) {
+    return <Link to={`/ads/${report.targetId}`} className="mt-2 block text-lg font-semibold text-green-text hover:underline">{title}</Link>;
+  }
   if (report.listingId) {
     return <Link to={`/listings/${report.listingId}`} className="mt-2 block text-lg font-semibold text-green-text hover:underline">{title}</Link>;
   }
