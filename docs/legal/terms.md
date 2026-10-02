@@ -2,8 +2,8 @@
 title: Terms of Use
 kicker: Terms
 lede: The agreement between you and Oguaa when you use the websites or the app.
-version: 2026-10-01
-effective: 2026-10-01
+version: 2026-10-02
+effective: 2026-10-02
 ---
 Oguaa is operated by Dev Track, a business registered in Ghana (registration number BN843072020), whose address is Ghana Post GPS digital address GE-161-2814. In these terms, "Oguaa", "we" and "us" mean Dev Track operating Oguaa.
 
@@ -33,7 +33,7 @@ The full rules are in the [Acceptable Use Policy](/acceptable-use). An automated
 
 ## Reporting and blocking
 
-- **Report:** every listing, profile, review, tribute, product, news article, agent and writing-assistant suggestion has a Report option. Choose the reason that fits. Child-safety and intimate-image reports hide the content straight away while we review it.
+- **Report:** every listing, profile, review, tribute, product, news article, ad, agent and writing-assistant suggestion has a Report option. Choose the reason that fits. Child-safety and intimate-image reports hide the content straight away while we review it.
 - **Block:** you can block any member from their profile. Once you block someone, neither of you sees the other's content or profile, and they can't follow you, contact you through Oguaa or review your business. You can unblock them at any time.
 - **Our response:** our moderators review every report and act on it **within 24 hours**. We remove content that breaks these terms, and we suspend or permanently close the accounts of people who post it or who abuse others. We tell the person who reported what we decided.
 - If someone is in immediate danger, call the police or emergency services first.
@@ -47,6 +47,8 @@ You can close your account at any time from your account settings or at [citizen
 ## How content is reviewed
 
 Most contributions, including listings, memorials and projects, go to a curator and appear only once approved. Some things are published straight away, then reviewed: tributes, reviews, most safety incident reports and lost & found notices (because they are time-critical), campaigns from organisers we have already vetted, and news from verified authorities. Crime and medical incident reports, notices about missing children, and anything our automated screen holds always wait for a curator. Curators may decline a contribution, and when they do, they tell you why. You can fix it and resubmit.
+
+Ads are labelled as ads and are not endorsements by Oguaa; see our [Advertising Policy](/advertising). AI-assisted news reports are labelled and reviewed by an editor before publication; see our [Editorial standards](/editorial).
 
 ## Your content and the licence you give us
 

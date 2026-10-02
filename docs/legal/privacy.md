@@ -2,8 +2,8 @@
 title: Privacy Notice
 kicker: Privacy
 lede: What we collect, why we need it, who else handles it, how long we keep it, and the rights you have over it.
-version: 2026-10-01
-effective: 2026-10-01
+version: 2026-10-02
+effective: 2026-10-02
 ---
 This notice covers the Oguaa website at oguaaman.com, the web app at citizen.oguaaman.com, the creator studio, the staff console and the Oguaa mobile app for iPhone and Android. It is written to meet Ghana's Data Protection Act, 2012 (Act 843) and the privacy rules of the Apple App Store and Google Play. The same text is published on the web and in the app.
 
@@ -22,7 +22,7 @@ Oguaa is an independent community platform for Cape Coast (Oguaa), in the Centra
 - You must be 18 or older to have an account.
 - Your email address and phone number are never shown on your public profile, and other members can't look them up.
 - Your password is stored only as a one-way hash. We never see it.
-- We don't sell your data, we don't show advertising, and we don't use advertising or analytics trackers.
+- We show contextual ads. They are chosen only by the page you're on, never by who you are. We don't sell your data or share it for advertising, and we don't use advertising IDs, analytics or cross-site trackers, or profiling.
 - Some things you post are public by design: your profile, your listings, tributes, reviews and notices. Some safety notices are published straight away and checked afterwards.
 - Payments are handled by payment providers. We never see or store your card number or Mobile Money PIN.
 - You can download a copy of your data or delete your account at any time.
@@ -55,7 +55,7 @@ Listings (businesses, events, places, projects, campaigns, properties, opportuni
 
 ### Payments
 
-When you buy a ticket, make a pledge or donation, subscribe a business, promote a listing, place a shop order or fund an Oguaa Outside job, we keep: the amount, what it was for, the payment reference and status, the date, and the email address the receipt goes to. For a shop order we also keep the buyer's name, email, phone number, delivery address and note, because the seller needs them to fulfil the order. Basis: contract and legal obligation (tax and accounting records).
+When you buy a ticket, make a pledge or donation, subscribe a business, promote a listing, buy advertising, place a shop order or fund an Oguaa Outside job, we keep: the amount, what it was for, the payment reference and status, the date, and the email address the receipt goes to. For a shop order we also keep the buyer's name, email, phone number, delivery address and note, because the seller needs them to fulfil the order. Basis: contract and legal obligation (tax and accounting records).
 
 Card and Mobile Money details go straight to the payment provider (Paystack, Stripe or Apple). Oguaa never receives or stores your card number, security code or Mobile Money PIN.
 
@@ -85,6 +85,41 @@ Safety alerts, account messages and transaction messages are always sent, throug
 
 The writing assistant is optional and works only after you agree to its terms. It sends the text you choose to Anthropic (Claude), a company in the United States, to write a suggestion. Before the text leaves Oguaa, email addresses, phone numbers and Ghana Card numbers are replaced with placeholders, so the provider doesn't see them. Don't include other private details. We keep a daily count of how often you used the assistant, but not the text itself. The assistant writes suggestions only and never makes decisions about you. You can withdraw your consent at any time. Basis: consent.
 
+### Automated news
+
+The Oguaa newsroom follows public news feeds from trusted publishers and local authorities, and publishes short briefs that link to the full story. Some briefs are reworded by AI. When researched reports are switched on, Claude, an AI system made by Anthropic, searches the web and reads public pages from a fixed list of news and official sites to draft a longer report, and an editor reviews every report before it is published. OpenAI's image model may draw an illustration from a short description of a scene that names no one.
+
+No member data is sent to AI providers for news: they receive only public news reports, public web pages and illustration prompts. The pages the AI reads are used only to draft the report and are not stored. News reports can name people, mostly people in public life. If a report is about you, you can ask for a correction or send a reply (see our [Editorial standards](/editorial)), or use the [request form](/privacy/request). Basis: legitimate interest (reporting local news).
+
+### Ads and ad measurement
+
+Oguaa shows a small number of labelled ads on its websites and in the app. They are contextual: we choose them only by the page and section you are on. Requests for ads never carry your account, so we don't know which member saw or clicked an ad. See our [Advertising Policy](/advertising).
+
+- **When an ad is viewed or clicked,** we record the ad, where it was shown and the time. A view counts when at least half of the ad is on screen for one second.
+- **To filter out fraud and automated traffic,** our server makes a one-way code from your IP address and browser details, using a secret that changes every day. The code is held only in the server's memory, to limit repeated counts. We never store your IP address for ads.
+- **View records are deleted after 48 hours.** We keep only daily totals for each ad and each place on the page, which don't identify anyone.
+- **Your browser or the app remembers which ads it has shown you in this visit,** so that the same ad isn't shown more than three times. This count stays on your device, is never sent to us, and is cleared when you close the tab or the app.
+- **Ads are never emailed or pushed to you.** We don't use your profile, posts, location or reading history to choose them.
+- **When you click an ad,** Oguaa's server sends you on to the advertiser's site, which has its own privacy policy. We don't give the advertiser your details. Their site can see only that you came from Oguaa.
+
+Basis: legitimate interest (funding Oguaa through advertising, and counting and billing ads accurately).
+
+### Advertisers and sponsors
+
+If you buy advertising, we collect:
+
+- **Sponsor details:** display name and legal name, the kind of sponsor, registration number or the last four digits of your Ghana Card, tax identification number (TIN), address, phone number, email address and contact person.
+- **For political sponsors:** the party, candidate, office and constituency, your citizenship or ownership declaration and, where required, the Electoral Commission's authorisation.
+- **Documents:** identity documents and regulator approvals you upload. They are stored privately and seen only by our review staff.
+- **Your ads:** the images, text and landing pages, our review decisions and the reasons for them, and how each campaign was delivered.
+- **Payments and refunds:** the amount, tax, reference, status and receipt email. Payments go through Paystack, and Oguaa never sees your card number or Mobile Money PIN.
+
+Basis: contract, and legal obligation (tax, consumer and election rules).
+
+- **Political ads are public records.** The sponsor's legal name, the party, candidate and constituency, and the exact amount paid for each political ad are published in the public Ad Library. They are kept there for 7 years after the ad ends, **even if the account that booked it is deleted**, to meet our legal and transparency obligations.
+- **Commercial ads** show the advertiser's display name ("Sponsored ·" followed by the name), and ads that are running appear in the Ad Library.
+- **Keeping records:** campaign, sponsor and payment records for commercial ads are kept for 7 years, for tax. Political campaign and sponsor records, and the documents that verified the sponsor, are kept until 7 years after the sponsor's last political ad ends.
+
 ### Reports, blocks and moderation
 
 When you report or block someone, we keep the report or block. When someone reports content, we keep a snapshot of it as evidence. We also keep the moderation decisions staff make and the results of our automated content screen, which can hold a post for a person to review. Basis: legitimate interest (a safe community) and legal obligation.
@@ -103,27 +138,28 @@ When you make a data-rights request, we keep your name, contact details, the req
 
 ## Who can see your data
 
-- **Everyone:** your public profile and everything published that you posted.
+- **Everyone:** your public profile and everything published that you posted. If you place political ads, the sponsor details listed above are published in the Ad Library.
 - **Other members:** the people you deal with see what the transaction needs. A seller sees a buyer's order details until 30 days after the order is fulfilled. An artist sees your booking request. The person who posted a lost & found notice receives your relayed message.
-- **Oguaa staff:** curators, stewards, moderators, editors and vetting officers see what they need for their role. Staff accounts must use two-factor sign-in, and every staff look at an identity document is recorded.
+- **Oguaa staff:** curators, stewards, moderators, editors, ad reviewers and vetting officers see what they need for their role. Staff accounts must use two-factor sign-in, and every staff look at an identity document is recorded.
 - **Service providers:** the companies below process data for us.
 - **Authorities:** a court, the police or a regulator when the law requires it, or when a child or someone else is at risk (see our [Child Safety Standards](/child-safety)).
 
-We never sell personal data and never share it for advertising.
+We show contextual ads. They are chosen only by the page you're on, never by who you are. We don't sell your data or share it for advertising. We don't use advertising IDs, cross-site trackers or profiling.
 
 ## Service providers and transfers abroad
 
 These providers process personal data for us, only to deliver their service:
 
-- **Paystack** (card and Mobile Money payments): your receipt email, the amount and a reference. Only when you pay or are paid.
+- **Paystack** (card and Mobile Money payments and refunds): your receipt email, the amount and a reference. Only when you pay, are paid or are refunded.
 - **Stripe** (card payments in the mobile app): your card details and the amount. Only when you use it.
 - **Apple** (in-app purchases on iPhone): the purchase record. Only when you use it.
-- **Anthropic** (the writing assistant, United States): the redacted text you send. Only when you use it.
+- **Anthropic** (Claude, United States): for the writing assistant, the redacted text you send, only when you use it. Claude also works for the newsroom, rewording briefs and, with Anthropic's web search and web fetch tools, drafting researched reports. For news it receives only public news reports and web pages, never member data.
+- **OpenAI** (news illustrations, United States): only the illustration prompt, a short description of a scene that names no one. It receives no personal data.
 - **Moonshot AI** (Kimi, a backup writing assistant, China): would receive the same redacted text, but only if the main assistant fails and the backup is switched on. It is **switched off** on the live service. We will update this notice before switching it on.
 - **Resend** (email delivery): your email address and the message.
 - **Meta** (WhatsApp Business, message delivery): your phone number and the message. Only when you receive WhatsApp messages.
 - **Expo, Google, Apple and Mozilla push services** (push notification delivery): a device or browser push token and the alert. Only when you turn on notifications.
-- **Cloudinary** (image hosting): the images you upload, when image hosting is switched on.
+- **Cloudinary** (image hosting): the images you upload, ad images and news illustrations, when image hosting is switched on.
 - **MongoDB Atlas** (database hosting): all platform data.
 - **Render** (API hosting, Frankfurt, Germany): all platform data in transit, plus server logs.
 - **Vercel** (website hosting): your IP address and the pages you request.
@@ -142,9 +178,12 @@ Our servers are in Germany, and several providers are in the United States or ot
 - **In-app notifications:** 12 months.
 - **Writing-assistant usage counts:** 90 days.
 - **Listing-view records:** 30 days.
+- **Ad view records:** 48 hours. Daily ad totals don't identify anyone.
+- **Newsroom research records** (draft reports and their source lists): 1 year. They hold no member data.
 - **A buyer's contact details, as seen by the seller:** until 30 days after the order is fulfilled. After that the seller sees only an initial.
-- **Identity and verification documents:** until you delete your account, or earlier if you ask. We delete them when your account is deleted.
-- **Payment records** (tickets, pledges, subscriptions, promotions, orders, escrow jobs): kept after you delete your account for tax, accounting and payment-dispute purposes, with your name, email, phone number and address removed. App Store purchase records are kept for 6 years, without your identity.
+- **Identity and verification documents:** until you delete your account, or earlier if you ask. We delete them when your account is deleted, except the documents that verified a political ad sponsor, which are kept as described under advertising records below.
+- **Payment records** (tickets, pledges, subscriptions, promotions, ads, orders, escrow jobs): kept after you delete your account for tax, accounting and payment-dispute purposes, with your name, email, phone number and address removed. App Store purchase records are kept for 6 years, without your identity.
+- **Advertising records:** campaign, sponsor and payment records for 7 years, for tax. Political ad records, the sponsor details published in the Ad Library and the documents that verified the sponsor stay until 7 years after the sponsor's last political ad ends, even if the account is deleted.
 - **Reports, moderation, audit and privacy-request records:** kept without your name, so we can show how the platform was run and how your request was handled.
 - **Server logs:** kept briefly by our hosting provider for security and fault-finding.
 
@@ -152,7 +191,7 @@ Our servers are in Germany, and several providers are in the United States or ot
 
 You can delete your account from your account settings on the web or in the app. If you can't sign in, request deletion at [citizen.oguaaman.com/account/delete](/account/delete) and confirm with a code we send you.
 
-When you delete your account, we delete your profile, contact details, password, uploaded files, identity documents, blocks, follows, notifications, push registrations and usage counts. Photos and videos you uploaded that still appear on content that stays up (an institution's page, a published article or another member's page) stay with that content, no longer linked to you. Records we must keep are moved off your account id onto a new random one. Your listings are taken down and their contact details removed, except listings you posted for an institution, which stay with it. Reviews, tributes and news articles you wrote stay up under "Former member", with your name removed. The records listed under "How long we keep it" are kept without your identity. If you are a party to a funded escrow job or have unfulfilled paid orders, you need to settle those first.
+When you delete your account, we delete your profile, contact details, password, uploaded files, identity documents, blocks, follows, notifications, push registrations and usage counts. The only identity documents we keep are those that verified a political ad sponsor. Photos and videos you uploaded that still appear on content that stays up (an institution's page, a published article or another member's page) stay with that content, no longer linked to you. Records we must keep are moved off your account id onto a new random one. Your listings are taken down and their contact details removed, except listings you posted for an institution, which stay with it. Reviews, tributes and news articles you wrote stay up under "Former member", with your name removed. The records listed under "How long we keep it" are kept without your identity. Advertising records are the exception: if you advertised on Oguaa, your campaign and sponsor records are kept for the periods given there with the link to your account and the contact email and phone removed, and a political sponsor's legal name stays published in the Ad Library. If you are a party to a funded escrow job or have unfulfilled paid orders, you need to settle those first.
 
 ## Your rights
 

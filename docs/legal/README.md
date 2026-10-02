@@ -11,14 +11,22 @@ hold their own copy of the wording: `scripts/sync-legal.mjs` generates one ident
 | `terms-of-sale.md` — Terms of Sale | `/terms-of-sale` | `/legal/terms-of-sale` | links to portal |
 | `child-safety.md` — Child Safety Standards (Google Play) | `/child-safety` | `/legal/child-safety` | links to portal |
 | `safeguarding.md` — Youth & Guardian Consent Policy | `/safeguarding` | `/legal/safeguarding` | links to portal |
+| `advertising.md` — Advertising Policy | `/advertising` | `/legal/advertising` (web-only blocks left out) | links to portal |
+| `editorial.md` — Editorial standards and AI | `/editorial` | `/legal/editorial` | links to portal |
 
 Generated modules (never edit by hand): `frontend/src/content/legal.gen.ts`, `mobile/src/content/legal.gen.ts`,
-`marketing/src/content/legal.gen.ts`.
+`marketing/src/content/legal.gen.ts`. The two web modules are identical. The mobile module is the app variant: it leaves
+out every block marked `<!-- web-only -->` in the source.
 
 ## Changing a document
 
 1. Edit the Markdown. Keep to the supported subset (see the header of `scripts/sync-legal.mjs`): front matter,
    `##`/`###` headings, paragraphs, `-` and `1.` lists, `**bold**` and `[links](/path | https://… | mailto:…)`.
+   Wrap text that must not appear in the mobile app in `<!-- web-only -->` … `<!-- /web-only -->`, each marker on a
+   line of its own. Use it for anything that points people to buying on the web (pricing pages, checkout links, "buy
+   on the website"), which the App Store and Google Play treat as steering. A block can hold whole `##` sections,
+   paragraphs, list items or a single line of a paragraph; a block holding a `##` heading must end just before the
+   next `##` heading or at the end of the file.
 2. For a material change, bump `version` and `effective` in the front matter (YYYY-MM-DD). When the Terms of Use or the
    Privacy Notice version changes, also bump `domain.CurrentTermsVersion` / `domain.CurrentPrivacyVersion` in the
    backend so members are asked to accept the new version (the `consentRequired` flag).

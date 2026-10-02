@@ -22,6 +22,16 @@
 //   1. A numbered item (same rules)
 //   Inline: **bold** and [link text](href). href is a site path such as
 //   /terms, an https:// URL or a mailto: address.
+//   <!-- web-only -->         Lines between these two markers (each on a line
+//   ...                       of its own) are published on the web only: the
+//   <!-- /web-only -->        app module leaves them out. The markers themselves
+//                             never end a paragraph or list, so a block can hold
+//                             whole sections, paragraphs, list items or a single
+//                             sentence line. A block that contains a ## heading
+//                             must run to the next ## heading or the end of the
+//                             file. Use it for text the app must not show, such
+//                             as pointers to buying on the web (App Store
+//                             steering rules). No other HTML comments are allowed.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
@@ -31,14 +41,27 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE_DIR = join(ROOT, "docs", "legal");
 
 /** Document keys, in display order. Each is docs/legal/<key>.md. */
-const DOC_KEYS = ["privacy", "terms", "acceptable-use", "terms-of-sale", "child-safety", "safeguarding"];
-
-/** Every app that renders the legal texts gets the same generated module. */
-const TARGETS = [
-  "frontend/src/content/legal.gen.ts",
-  "mobile/src/content/legal.gen.ts",
-  "marketing/src/content/legal.gen.ts",
+const DOC_KEYS = [
+  "privacy",
+  "terms",
+  "acceptable-use",
+  "terms-of-sale",
+  "child-safety",
+  "safeguarding",
+  "advertising",
+  "editorial",
 ];
+
+/**
+ * Every app that renders the legal texts gets a generated module. The web
+ * targets get identical output; the app target omits the web-only blocks.
+ */
+const TARGETS = [
+  { path: "frontend/src/content/legal.gen.ts", variant: "web" },
+  { path: "mobile/src/content/legal.gen.ts", variant: "app" },
+  { path: "marketing/src/content/legal.gen.ts", variant: "web" },
+];
+const VARIANTS = ["web", "app"];
 
 const REQUIRED_META = ["title", "kicker", "lede", "version", "effective"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -170,9 +193,58 @@ class BodyParser {
   }
 }
 
-function parseBody(file, lines, start) {
+const WEB_ONLY_RE = /^<!--\s*(\/?)web-only\s*-->$/;
+
+/**
+ * Applies the web-only markers to the body lines. Returns the 1-based line
+ * numbers and text of the lines the variant keeps; the marker lines are
+ * dropped without ending a paragraph or list.
+ */
+function selectVariant(file, lines, start, variant) {
+  const kept = [];
+  let open = 0; // line number of the open marker, or 0
+  let openHasSection = false;
+  let openHasContent = false;
+  let needSectionAt = 0; // a closed block held a ## heading: the next text must be one
+  for (let i = start; i < lines.length; i++) {
+    const n = i + 1;
+    const text = lines[i].trim();
+    const marker = WEB_ONLY_RE.exec(text);
+    if (marker) {
+      if (marker[1] === "") {
+        if (open) fail(file, n, `web-only block opened again before the one on line ${open} was closed`);
+        open = n;
+        openHasSection = false;
+        openHasContent = false;
+      } else {
+        if (!open) fail(file, n, "<!-- /web-only --> without an opening <!-- web-only -->");
+        if (!openHasContent) fail(file, open, "empty web-only block");
+        if (openHasSection) needSectionAt = n;
+        open = 0;
+      }
+      continue;
+    }
+    if (text.startsWith("<!--")) fail(file, n, "only <!-- web-only --> and <!-- /web-only --> comments are supported");
+    if (text !== "" && needSectionAt) {
+      if (!text.startsWith("## ")) {
+        fail(file, needSectionAt, "a web-only block with a ## heading must end just before the next ## heading or at the end of the file");
+      }
+      needSectionAt = 0;
+    }
+    if (open) {
+      if (text !== "") openHasContent = true;
+      if (text.startsWith("## ")) openHasSection = true;
+      if (variant !== "web") continue;
+    }
+    kept.push({ n, text: lines[i] });
+  }
+  if (open) fail(file, open, "web-only block is not closed with <!-- /web-only -->");
+  return kept;
+}
+
+function parseBody(file, lines, start, variant) {
   const parser = new BodyParser(file);
-  for (let i = start; i < lines.length; i++) parser.line(i + 1, lines[i]);
+  for (const { n, text } of selectVariant(file, lines, start, variant)) parser.line(n, text);
   parser.flush();
   const { intro, sections } = parser;
   if (sections.length === 0) fail(file, start + 1, "a document needs at least one ## section");
@@ -182,12 +254,12 @@ function parseBody(file, lines, start) {
   return { intro, sections };
 }
 
-function loadDoc(key) {
+function loadDoc(key, variant) {
   const file = join(SOURCE_DIR, `${key}.md`);
   if (!existsSync(file)) fail(file, 1, "missing source document");
   const lines = readFileSync(file, "utf8").replace(/\r\n?/g, "\n").split("\n");
   const { meta, bodyStart } = parseFrontMatter(file, lines);
-  const { intro, sections } = parseBody(file, lines, bodyStart);
+  const { intro, sections } = parseBody(file, lines, bodyStart, variant);
   return {
     key,
     title: meta.title,
@@ -201,12 +273,18 @@ function loadDoc(key) {
   };
 }
 
-function render(docs) {
+const VARIANT_NOTE = {
+  web: "Web variant: includes the blocks marked <!-- web-only --> in the source.",
+  app: "App variant: the blocks marked <!-- web-only --> in the source are left out.",
+};
+
+function render(variant, docs) {
   const byKey = Object.fromEntries(docs.map((d) => [d.key, d]));
   const json = (v) => JSON.stringify(v, null, 2);
   return `// GENERATED by scripts/sync-legal.mjs from docs/legal/*.md — do not edit by hand.
 // Edit the Markdown source, then run \`node scripts/sync-legal.mjs\`. CI runs it
 // with --check and fails when this file is stale.
+// ${VARIANT_NOTE[variant]}
 
 export type LegalDocKey = ${DOC_KEYS.map((k) => JSON.stringify(k)).join(" | ")};
 
@@ -287,9 +365,11 @@ export const LEGAL_DOCS: Readonly<Record<LegalDocKey, LegalDoc>> = ${json(byKey)
 
 function main() {
   const check = process.argv.includes("--check");
-  const output = render(DOC_KEYS.map(loadDoc));
+  // Every variant is built (and so validated) on every run.
+  const outputs = Object.fromEntries(VARIANTS.map((v) => [v, render(v, DOC_KEYS.map((key) => loadDoc(key, v)))]));
   const stale = [];
-  for (const target of TARGETS) {
+  for (const { path: target, variant } of TARGETS) {
+    const output = outputs[variant];
     const file = join(ROOT, target);
     const current = existsSync(file) ? readFileSync(file, "utf8") : null;
     if (current === output) continue;
