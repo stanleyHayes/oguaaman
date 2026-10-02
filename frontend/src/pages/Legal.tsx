@@ -57,9 +57,27 @@ function Blocks({ blocks }: Readonly<{ blocks: readonly LegalBlock[] }>) {
   );
 }
 
+/** A legal route whose text has not been generated into this build yet. */
+function NotPublished() {
+  return (
+    <>
+      <PageHero tone="green" kicker="Oguaa policies" title="This policy is on its way" symbol="gye-nyame" lede="We're publishing this document shortly. Until then, write to hello@oguaaman.com with any question about it." />
+      <Container size="prose" className="py-12">
+        <nav aria-label="Legal documents" className="flex flex-wrap gap-4 text-sm">
+          {LEGAL_DOC_KEYS.map((key) => (
+            <Link key={key} to={legalPath(key)} className="text-teal-text hover:underline">{LEGAL_DOCS[key].title}</Link>
+          ))}
+        </nav>
+      </Container>
+    </>
+  );
+}
+
 export function Component() {
   const { pathname } = useLocation();
-  const doc = LEGAL_DOCS[legalDocKeyForPath(pathname) ?? "privacy"];
+  const key = legalDocKeyForPath(pathname);
+  if (!key) return <NotPublished />;
+  const doc = LEGAL_DOCS[key];
   return (
     <>
       <PageHero tone="green" kicker={doc.kicker} title={doc.title} symbol="gye-nyame" lede={doc.lede} />

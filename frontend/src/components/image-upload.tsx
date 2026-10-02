@@ -17,11 +17,22 @@ export function ImageUpload({
   onChange,
   label = "Cover image (optional)",
   hint = "A photo — JPG, PNG or WebP, up to 8 MB.",
+  allowUrl = true,
+  maxBytes = 8 * 1024 * 1024,
+  validate,
+  error: externalError,
 }: Readonly<{
   value: string;
   onChange: (url: string) => void;
   label?: string;
   hint?: string;
+  /** Offer the "paste an image URL" fallback (off for ad creatives, which must be uploaded). */
+  allowUrl?: boolean;
+  maxBytes?: number;
+  /** Extra checks on the chosen file before upload; resolve to an error message or null. */
+  validate?: (file: File) => Promise<string | null>;
+  /** An error from the surrounding form (e.g. the server rejected the image). */
+  error?: string | null;
 }>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -33,7 +44,11 @@ export function ImageUpload({
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Please choose an image file."); return; }
-    if (file.size > 8 * 1024 * 1024) { setError("Image must be under 8 MB."); return; }
+    if (file.size > maxBytes) { setError(`Image must be ${Math.round(maxBytes / (1024 * 1024))} MB or smaller.`); return; }
+    if (validate) {
+      const problem = await validate(file);
+      if (problem) { setError(problem); if (inputRef.current) inputRef.current.value = ""; return; }
+    }
     setError(null); setBusy(true); setProgress(0);
     try {
       onChange(await uploadMedia(file, setProgress));
@@ -74,7 +89,7 @@ export function ImageUpload({
             <path d="M12 16V4M7 9l5-5 5 5" /><path d="M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3" />
           </svg>
           <span className="text-sm font-medium text-ink">Click to upload an image</span>
-          <span className="text-xs text-ink-faint">JPG, PNG or WebP, up to 8 MB</span>
+          <span className="text-xs text-ink-faint">JPG, PNG or WebP, up to {Math.round(maxBytes / (1024 * 1024))} MB</span>
         </>
       )}
     </button>
@@ -102,10 +117,10 @@ export function ImageUpload({
 
       <input ref={inputRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
 
-      {error && <p className="mt-1.5 text-xs text-clay-text">{error}</p>}
+      {(error ?? externalError) && <p role="alert" className="mt-1.5 text-xs text-clay-text">{error ?? externalError}</p>}
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-faint">
         <span>{hint}</span>
-        {(manual || !value) && (
+        {allowUrl && (manual || !value) && (
           <button type="button" onClick={() => setManual((m) => !m)} className="font-medium text-green underline">
             {manual ? "upload a file instead" : "or paste an image URL"}
           </button>

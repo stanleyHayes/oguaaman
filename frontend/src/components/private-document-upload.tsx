@@ -17,13 +17,16 @@ export function PrivateDocumentUpload({
   label,
   hint,
   required = false,
+  onRecord = false,
 }: Readonly<{
   value: string;
   onChange: (ref: string) => void;
-  purpose: "agent_id" | "business_kyc";
+  purpose: "agent_id" | "business_kyc" | "document";
   label: string;
   hint?: string;
   required?: boolean;
+  /** A copy is already stored server-side; a new upload replaces it. */
+  onRecord?: boolean;
 }>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const id = useId();
@@ -51,6 +54,18 @@ export function PrivateDocumentUpload({
   }
 
   const uploaded = value !== "";
+  const tick = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M5 13l4 4L19 7" /></svg>;
+  let status = <span className="text-sm text-ink-faint">No file yet</span>;
+  if (uploaded) {
+    status = (
+      <span className="inline-flex items-center gap-2 text-sm font-semibold text-green-text" role="status">
+        {tick}
+        {fileName ? `Uploaded privately ✓ (${fileName})` : "On record — held privately ✓"}
+      </span>
+    );
+  } else if (onRecord) {
+    status = <span className="inline-flex items-center gap-2 text-sm font-semibold text-green-text">{tick}A copy is on file</span>;
+  }
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-ink">
@@ -58,14 +73,7 @@ export function PrivateDocumentUpload({
       </label>
       <input id={id} ref={inputRef} type="file" accept={ACCEPT} onChange={onFile} className="sr-only" />
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-sand bg-paper px-4 py-3">
-        {uploaded ? (
-          <span className="inline-flex items-center gap-2 text-sm font-semibold text-green-text" role="status">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M5 13l4 4L19 7" /></svg>
-            {fileName ? `Uploaded privately ✓ (${fileName})` : "On record — held privately ✓"}
-          </span>
-        ) : (
-          <span className="text-sm text-ink-faint">No file yet</span>
-        )}
+        {status}
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -73,7 +81,7 @@ export function PrivateDocumentUpload({
           className="ml-auto rounded-full border border-green/30 px-4 py-1.5 text-sm font-semibold text-green-text hover:border-green disabled:opacity-60"
         >
           {busy && "Uploading…"}
-          {!busy && (uploaded ? "Replace file" : "Choose file")}
+          {!busy && (uploaded || onRecord ? "Replace file" : "Choose file")}
         </button>
       </div>
       {hint && <p className="mt-1 text-xs text-ink-faint">{hint}</p>}

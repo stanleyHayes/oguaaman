@@ -45,7 +45,7 @@ function AiConsentPanel({ onAgreed }: Readonly<{ onAgreed: () => void }>) {
       </label>
       {error && <p role="alert" className={errorCls}>{error}</p>}
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={confirm} disabled={!agree || busy} className="min-h-10 rounded-lg bg-ai px-4 text-sm font-semibold text-white disabled:opacity-50">
+        <button type="button" onClick={confirm} disabled={!agree || busy} className="min-h-10 rounded-lg bg-ai-fill px-4 text-sm font-semibold text-white disabled:opacity-50">
           {busy ? "Saving…" : "Turn on the assistant"}
         </button>
         <span className="text-xs text-ink-faint">You can turn it off any time in Settings.</span>
@@ -97,7 +97,7 @@ export function AiWritingBar({ label, rows, value, onChange }: Readonly<{ label:
         <textarea ref={textarea} value={value} onChange={(event) => onChange(event.target.value)} onSelect={rememberSelection} onKeyUp={rememberSelection} onMouseUp={rememberSelection} rows={rows} className="w-full resize-y rounded-lg border border-sand bg-paper p-3.5 leading-relaxed text-ink focus:border-green focus:outline-none" />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <span className={`flex items-center gap-2 text-sm ${selection ? "font-medium text-ai" : "text-ink-faint"}`}><span className={`h-1.5 w-1.5 rounded-full ${selection ? "bg-ai" : "bg-ink-faint"}`} />Working on the {selection ? "selection" : "whole field"}</span>
-          <button type="button" onClick={() => { rememberSelection(); setOpen((current) => !current); setError(""); }} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-ai px-4 text-sm font-semibold text-white"><span aria-hidden>✦</span>Ask AI</button>
+          <button type="button" onClick={() => { rememberSelection(); setOpen((current) => !current); setError(""); }} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-ai-fill px-4 text-sm font-semibold text-white"><span aria-hidden>✦</span>Ask AI</button>
         </div>
       </div>
       {open && (
@@ -123,7 +123,7 @@ export function AiWritingBar({ label, rows, value, onChange }: Readonly<{ label:
                   <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">AI-suggested text</p>
                   <div className="my-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-ai-line bg-paper p-4 text-sm leading-relaxed text-ink">{result}</div>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={apply} className="min-h-10 rounded-lg bg-ai px-4 text-sm font-semibold text-white">Replace {selection ? "selection" : "field"}</button>
+                    <button type="button" onClick={apply} className="min-h-10 rounded-lg bg-ai-fill px-4 text-sm font-semibold text-white">Replace {selection ? "selection" : "field"}</button>
                     <button type="button" onClick={() => setResult("")} className="min-h-10 rounded-lg border border-ai-line px-4 text-sm font-semibold text-ai">Try another</button>
                   </div>
                 </div>

@@ -69,6 +69,13 @@ export const router = createBrowserRouter([
       { path: "map", lazy: () => import("./pages/ExploreMap") },
       { path: "submit", lazy: () => import("./pages/Submit") },
       { path: "me", lazy: () => import("./pages/Me") },
+      // The Paystack callback for ads lands here (?ad_ref=…); Me opens on "My ads".
+      { path: "me/ads", lazy: () => import("./pages/Me") },
+      // Paid advertising: the public rate card + wizard, one campaign, and the
+      // public ad library (spec §3.7, §3.10).
+      { path: "advertise", lazy: () => import("./pages/Advertise") },
+      { path: "advertise/:id", lazy: () => import("./pages/AdvertiseCampaign") },
+      { path: "ads/library", lazy: () => import("./pages/AdLibrary") },
       { path: "admin", lazy: () => import("./pages/Admin") },
       // Public data-rights pages: Google Play's web deletion URL (K6) and the
       // Act 843 request form (K10).
@@ -81,6 +88,8 @@ export const router = createBrowserRouter([
       { path: "safeguarding", lazy: () => import("./pages/Legal") },
       { path: "terms-of-sale", lazy: () => import("./pages/Legal") },
       { path: "child-safety", lazy: () => import("./pages/Legal") },
+      { path: "advertising", lazy: () => import("./pages/Legal") },
+      { path: "editorial", lazy: () => import("./pages/Legal") },
     ],
   },
 ]);

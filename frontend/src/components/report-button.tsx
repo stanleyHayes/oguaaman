@@ -41,6 +41,7 @@ const NOUN: Record<ReportTargetType, string> = {
   agent: "agent profile",
   agent_review: "review",
   ai_output: "suggestion",
+  ad: "ad",
 };
 
 function reasonsFor(memorial: boolean) {
@@ -63,6 +64,9 @@ export function ReportButton({
   target,
   memorial = false,
   compact = false,
+  label,
+  defaultOpen = false,
+  triggerClassName,
   className = "",
 }: Readonly<{
   listingId?: string;
@@ -70,12 +74,18 @@ export function ReportButton({
   memorial?: boolean;
   /** A small flag-only trigger for rows (reviews, tributes, products). */
   compact?: boolean;
+  /** The trigger's text (default "Report this"). */
+  label?: string;
+  /** Start with the form open (a page the reader reached to report something). */
+  defaultOpen?: boolean;
+  /** Replaces the quiet link look, for pages where reporting is the main action. */
+  triggerClassName?: string;
   className?: string;
 }>) {
   const { member } = useAuth();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const ref = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const reasons = reasonsFor(memorial);
   // No reason is pre-selected (an urgent one would hide the content at once),
   // except "a concern about this memorial" on memorial pages.
@@ -121,12 +131,12 @@ export function ReportButton({
         aria-expanded={open}
         aria-label={compact ? `Report this ${noun}` : undefined}
         title={compact ? `Report this ${noun}` : undefined}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint transition-colors hover:text-clay-text"
+        className={triggerClassName ?? "inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint transition-colors hover:text-clay-text"}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M4 21V4h12l-1.5 4L16 12H4" /><path d="M4 4v17" />
         </svg>
-        {compact ? <span className="sr-only sm:not-sr-only">Report</span> : "Report this"}
+        {compact ? <span className="sr-only sm:not-sr-only">Report</span> : (label ?? "Report this")}
       </button>
 
       {open && (
@@ -135,7 +145,7 @@ export function ReportButton({
             <div className="text-sm">
               <p className="font-semibold text-ink">Sign in to report this {noun}</p>
               <p className="mt-1 text-ink-muted">Reports are tied to an account so stewards can follow up. We review every report within 24 hours.</p>
-              <Link to={`/signin?next=${encodeURIComponent(pathname)}`} className="mt-3 inline-block text-xs font-semibold text-teal-text hover:underline">Sign in →</Link>
+              <Link to={`/signin?next=${encodeURIComponent(pathname + search)}`} className="mt-3 inline-block text-xs font-semibold text-teal-text hover:underline">Sign in →</Link>
             </div>
           )}
           {!needsSignIn && state === "done" && (

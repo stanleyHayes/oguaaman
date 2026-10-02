@@ -1,3 +1,4 @@
+import type { NewsArticle } from "./types";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -48,4 +49,11 @@ export function tagLabel(tag: string): string {
 
 export function initials(name: string): string {
   return name.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+}
+
+/** Alt text for a news cover: the editor's description, else a plain label for branded graphics. */
+export function newsCoverAlt(a: Pick<NewsArticle, "coverImageAlt" | "coverImageKind" | "title">): string {
+  if (a.coverImageAlt) return a.coverImageAlt;
+  if (a.coverImageKind === "branded") return `Oguaa Newsroom graphic: ${a.title}`;
+  return "";
 }

@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { ListingType } from "@/lib/types";
 import { PageHero } from "@/components/page-hero";
 import { Container, CTA as Cta } from "@/components/ui";
@@ -56,6 +56,9 @@ function SignInGate() {
             {CONTRIBUTE_TYPES.map((label) => (
               <span key={label} className="rounded-full border border-cream/15 bg-cream/10 px-3 py-1 text-xs font-medium text-cream/85">{label}</span>
             ))}
+            <Link to="/advertise" className="relative rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-medium text-gold transition-[background-color,border-color,transform] before:absolute before:inset-x-0 before:-inset-y-2.5 hover:border-gold hover:bg-gold/20 active:translate-y-px">
+              An ad (paid) <span aria-hidden>→</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -94,6 +97,26 @@ function ContributionGuide() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Paid advertising is not a listing: it has its own booking flow on /advertise. */
+function AdvertiseCard() {
+  return (
+    <Link
+      to="/advertise"
+      className="group relative block overflow-hidden rounded-[var(--radius-card)] border border-gold-border/40 bg-sand/45 p-5 transition-[border-color,transform] duration-200 hover:border-gold-border active:translate-y-px"
+    >
+      <Adinkra name="dwennimmen" size={96} labelled={false} strokeWidth={0.9} className="pointer-events-none absolute -right-4 -top-4 text-gold/20" />
+      <p className="relative text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-gold-text">Paid</p>
+      <h2 className="relative mt-1.5 text-lg font-semibold text-ink">Advertise on Oguaa</h2>
+      <p className="relative mt-1.5 text-sm leading-relaxed text-ink-muted">
+        Reach Cape Coast with a labelled ad on the home page, the news or the events list. One public price, reviewed before you pay.
+      </p>
+      <span className="relative mt-3 inline-flex items-center gap-1 text-sm font-semibold text-green-text">
+        See the rates <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+      </span>
+    </Link>
   );
 }
 
@@ -154,6 +177,7 @@ export function Component() {
 
         <aside className="space-y-5 lg:sticky lg:top-24">
           <ContributionGuide />
+          <AdvertiseCard />
           <YouthNote />
         </aside>
       </Container>

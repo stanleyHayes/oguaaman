@@ -31,6 +31,8 @@ export const STORAGE_KEYS: StorageKeyInfo[] = [
   { key: "oguaa.map.cache.v2", purpose: "Keeps the town map working offline", duration: "Until the map refreshes", kind: "Essential" },
   { key: "oguaa.civic-pledge", purpose: "Remembers civic pledges you made on this device", duration: "Until you clear site data", kind: "Essential" },
   { key: "oguaa:chunk-reloaded-at", purpose: "Recovers from an app update mid-visit", duration: "This browser tab only", kind: "Essential" },
+  { key: "oguaa.ads.seen and oguaa.ads.fill.*", purpose: "Shows the same ad at most three times a visit and keeps an ad's space while it loads. Never sent to Oguaa", duration: "This browser tab only", kind: "Essential" },
+  { key: "oguaa.ads.draft.v1", purpose: "Keeps an ad booking you haven't sent yet", duration: "Until you send it", kind: "Essential" },
   { key: AFFILIATE_KEY, purpose: "Credits the partner whose link brought you to a shop", duration: "30 days", kind: "Optional" },
 ];
 

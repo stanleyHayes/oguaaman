@@ -251,7 +251,7 @@ export interface SellerIdentity {
 }
 
 /** What can be reported through POST /api/reports. */
-export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output";
+export type ReportTargetType = "listing" | "member" | "review" | "tribute" | "product" | "news" | "agent" | "agent_review" | "ai_output" | "ad";
 
 export interface SchoolStint {
   schoolId: string;
@@ -464,6 +464,36 @@ export interface NewsArticle {
   /** Byline of the original story on automated articles. */
   sourceAuthor?: string;
   sourcePublishedAt?: string;
+  /** "" (written by a person) | brief (automated summary) | report (AI-assisted, editor-reviewed). */
+  tier?: "brief" | "report";
+  /** Report sources, numbered 1..n to match the [n] markers in the body. */
+  sources?: NewsSource[];
+  topics?: string[];
+  political?: boolean;
+  /** How the cover was made. "ai" covers carry the AI-illustration labels. */
+  coverImageKind?: "ai" | "branded" | "upload";
+  coverImageAlt?: string;
+  coverImageCredit?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  /** Dated corrections, oldest first. Never silent edits. */
+  corrections?: NewsCorrection[];
+}
+
+/** One source behind an AI-assisted report. `original` marks the feed lead. */
+export interface NewsSource {
+  name: string;
+  title?: string;
+  url: string;
+  author?: string;
+  publishedAt?: string;
+  accessedAt?: string;
+  original?: boolean;
+}
+
+export interface NewsCorrection {
+  at: string;
+  note: string;
 }
 
 export interface Notification {
@@ -1174,4 +1204,346 @@ export interface JobInput {
 export interface MyJobs {
   asClient: AgentJob[];
   asAgent: AgentJob[];
+}
+
+// ── Elections (spec §1.2; public GET /api/elections) ─────────────────────────
+
+export interface Election {
+  id: string;
+  name: string;
+  kind: "general" | "parliamentary_by" | "party_primary" | "district_assembly" | "referendum";
+  scope: "national" | "region" | "constituency";
+  areas?: string[];
+  pollDate: string;
+  politicalAdsFrom: string;
+  blackoutStart: string;
+  blackoutEnd: string;
+  newsModeFrom: string;
+  newsModeTo: string;
+  resultsDeclaredAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Paid advertising (spec §3, API §4.3–4.5) ─────────────────────────────────
+// Money is integer pesewas throughout; dates are YYYY-MM-DD in Africa/Accra.
+
+export type AdPlacementSlug = "portal-home-banner" | "portal-feed-card" | "portal-article-rect" | "marketing-card" | "app-card";
+export type AdFormat = "banner" | "card" | "rect";
+export type AdSurface = "portal" | "marketing" | "app";
+
+export interface AdRateCardPlacement {
+  slug: AdPlacementSlug;
+  name: string;
+  format: AdFormat;
+  surface: AdSurface;
+  description: string;
+  sizes: string[];
+  cpmPesewas: number;
+  politicalCpmPesewas: number;
+  active: boolean;
+}
+
+export interface AdCategory {
+  slug: string;
+  name: string;
+  /** Compliance the category needs, e.g. ["fda"] or ["licence"]. */
+  requires?: string[];
+}
+
+export interface AdOperator {
+  name: string;
+  registration: string;
+  address: string;
+  phone: string;
+  email: string;
+}
+
+export interface AdRateCard {
+  adsEnabled: boolean;
+  politicalEnabled: boolean;
+  currency: "GHS";
+  taxRateBps: number;
+  taxLabel: string;
+  minOrderPesewas: number;
+  minImpressions: number;
+  impressionStep: number;
+  maxImpressionsPerOrder: number;
+  maxCampaignDays: number;
+  minLeadDays: number;
+  effectiveFrom: string;
+  version: number;
+  placements: AdRateCardPlacement[];
+  blockedCategories: string[];
+  categories: AdCategory[];
+  operator: AdOperator;
+}
+
+export type AdPoliticalType = "" | "election" | "issue";
+
+export interface AdQuoteRequest {
+  placement: AdPlacementSlug;
+  political: boolean;
+  electionId: string;
+  politicalType: AdPoliticalType;
+  startDate: string;
+  endDate: string;
+  impressions: number;
+}
+
+export interface AdPriceSnapshot {
+  settingsVersion: number;
+  cpmPesewas: number;
+  netPesewas: number;
+  taxRateBps: number;
+  taxPesewas: number;
+  totalPesewas: number;
+}
+
+export interface AdQuote {
+  placement: AdPlacementSlug;
+  impressions: number;
+  days: number;
+  price: AdPriceSnapshot;
+  available: number;
+  latestEndDate: string;
+  expiresAt: string;
+}
+
+export type AdSponsorKind = "commercial" | "political";
+export type AdSponsorEntityType = "individual" | "business" | "ngo" | "government" | "party" | "candidate" | "campaign_committee";
+export type AdSponsorStatus = "pending" | "verified" | "rejected" | "suspended";
+export type AdSponsorOffice = "" | "presidential" | "parliamentary" | "district_assembly" | "party_internal" | "issue";
+
+/** The member's own sponsor record (GET /api/me/ad-sponsors includes contact details). */
+export interface AdSponsor {
+  id: string;
+  kind: AdSponsorKind;
+  entityType: AdSponsorEntityType;
+  displayName: string;
+  legalName: string;
+  registrationNumber?: string;
+  idNumberLast4?: string;
+  tin?: string;
+  address: string;
+  phone?: string;
+  email?: string;
+  contactPerson?: string;
+  partyName?: string;
+  candidateName?: string;
+  office?: AdSponsorOffice;
+  constituency?: string;
+  citizenshipDeclaredAt?: string;
+  /** A Ghana Card copy is stored for this sponsor (the id itself is never sent back). */
+  hasIdDocument?: boolean;
+  /** An Electoral Commission authorisation is stored for this sponsor. */
+  hasEcAuthorisation?: boolean;
+  status: AdSponsorStatus;
+  reviewNote?: string;
+  verifiedByName?: string;
+  verifiedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdSponsorInput {
+  kind: AdSponsorKind;
+  entityType: AdSponsorEntityType;
+  displayName: string;
+  legalName: string;
+  registrationNumber: string;
+  idNumberLast4: string;
+  idDocumentUploadId: string;
+  tin: string;
+  address: string;
+  phone: string;
+  email: string;
+  contactPerson: string;
+  partyName: string;
+  candidateName: string;
+  office: AdSponsorOffice;
+  constituency: string;
+  ecAuthorisationUploadId: string;
+  citizenshipDeclaration: boolean;
+}
+
+export interface AdCreative {
+  format: AdFormat;
+  imageUrl?: string;
+  imageUrlDesktop?: string;
+  imageUrlMobile?: string;
+  headline?: string;
+  body?: string;
+  alt: string;
+  landingUrl: string;
+  containsSyntheticMedia: boolean;
+}
+
+export interface AdCompliance {
+  fdaRegistrationNo?: string;
+  fdaApprovalRef?: string;
+  fdaApprovalExpiresOn?: string;
+  regulator?: "" | "SEC" | "BoG" | "NIC" | "GamingCommission" | "NLA";
+  licenceNumber?: string;
+}
+
+export type AdStatus =
+  | "pending_review" | "approved" | "scheduled" | "active" | "completed"
+  | "rejected" | "expired" | "cancelled" | "removed" | "paused";
+
+export interface AdStatusChange {
+  from: string;
+  to: string;
+  at: string;
+  actorName: string;
+  reason?: string;
+}
+
+export interface AdApproval {
+  staffName: string;
+  at: string;
+}
+
+export interface AdRefund {
+  id: string;
+  amountPesewas: number;
+  reason: string;
+  status: "requesting" | "pending" | "processed" | "failed" | "manual_check";
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A campaign in the advertiser shape (spec §4.5). */
+export interface AdCampaign {
+  id: string;
+  sponsorId: string;
+  sponsorLine: string;
+  political: boolean;
+  politicalType?: AdPoliticalType;
+  electionId?: string;
+  electionName?: string;
+  category: string;
+  compliance: AdCompliance;
+  placement: AdPlacementSlug;
+  creative: AdCreative;
+  startDate: string;
+  endDate: string;
+  bookedImpressions: number;
+  price: AdPriceSnapshot;
+  status: AdStatus;
+  statusHistory: AdStatusChange[];
+  approvals?: AdApproval[];
+  approvalExpiresAt?: string;
+  rejectReason?: string;
+  removalReason?: string;
+  startConsentAt?: string;
+  reference?: string;
+  paymentStatus: "none" | "pending" | "success" | "failed";
+  paidAt?: string;
+  simulated?: boolean;
+  failureReason?: string;
+  delivered: number;
+  clicks: number;
+  firstImpressionAt?: string;
+  lastImpressionAt?: string;
+  refunds?: AdRefund[];
+  refundedPesewas: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdDailyDelivery {
+  day: string;
+  views: number;
+  clicks: number;
+}
+
+/** GET /api/me/ads/{id}: the campaign plus its daily delivery. */
+export type AdCampaignDetail = AdCampaign & { daily?: AdDailyDelivery[] };
+
+/** POST /api/me/ads body. */
+export interface AdCampaignInput {
+  sponsorId: string;
+  placement: AdPlacementSlug;
+  political: boolean;
+  politicalType: AdPoliticalType;
+  electionId: string;
+  category: string;
+  compliance: AdCompliance & { approvalUploadId?: string };
+  creative: Omit<AdCreative, "format">;
+  startDate: string;
+  endDate: string;
+  impressions: number;
+  acceptTerms: boolean;
+  startConsent: boolean;
+  email: string;
+}
+
+/** One ad in a slate (GET /api/ads/slate). */
+export interface AdSlateAd {
+  id: string;
+  format: AdFormat;
+  imageUrl?: string;
+  imageUrlDesktop?: string;
+  imageUrlMobile?: string;
+  headline?: string;
+  body?: string;
+  alt: string;
+  /** "Ad" | "Political ad", verbatim. */
+  chip: string;
+  /** "Sponsored · X" | "Paid for by X", verbatim. */
+  sponsorLine: string;
+  political: boolean;
+  electionName?: string;
+  syntheticMedia: boolean;
+  clickUrl: string;
+  token: string;
+  exp: number;
+  weight: number;
+}
+
+export interface AdSlate {
+  placement: AdPlacementSlug;
+  /** Placement description for the "Why am I seeing this ad?" panel. */
+  why: string;
+  ads: AdSlateAd[];
+}
+
+/** One public ad-library entry (GET /api/ads/library). */
+export interface AdLibraryItem {
+  id: string;
+  format: AdFormat;
+  imageUrl?: string;
+  imageUrlDesktop?: string;
+  imageUrlMobile?: string;
+  headline?: string;
+  body?: string;
+  /** The creative's image description, as the sponsor wrote it. */
+  alt?: string;
+  chip: string;
+  sponsorLine: string;
+  political: boolean;
+  /** Political entries only; empty for commercial ads (privacy). */
+  legalName: string;
+  partyName?: string;
+  candidateName?: string;
+  constituency?: string;
+  electionName?: string;
+  placement: AdPlacementSlug;
+  startDate: string;
+  endDate: string;
+  delivered: number;
+  amountPaidPesewas: number;
+  refundedPesewas: number;
+  status: AdStatus;
+  removalReason?: string;
+  syntheticMedia: boolean;
+}
+
+export interface AdLibraryPage {
+  items: AdLibraryItem[];
+  total: number;
+  page: number;
+  perPage: number;
 }

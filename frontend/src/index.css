@@ -40,8 +40,10 @@
   --color-teal: #0e7c6b;
   --color-teal-text: #0b6557;
 
-  /* AI surfaces only */
+  /* AI surfaces only. `ai` is for text, icons and hairlines; `ai-fill` is the
+     solid fill behind white text (white on the light dark-mode `ai` fails AA). */
   --color-ai: #4c40a8;
+  --color-ai-fill: #4c40a8;
   --color-ai-tint: #f6f5fd;
   --color-ai-line: #e2dff4;
 
@@ -95,7 +97,8 @@
     --color-teal: #2dbfa5;
     --color-teal-text: #6ee7d2;
     /* AI */
-    --color-ai: #7b6fd6;
+    --color-ai: #9d93ea;
+    --color-ai-fill: #6a5ec9;
     --color-ai-tint: #1a1833;
     --color-ai-line: #3d3966;
     /* Depth */
@@ -343,4 +346,19 @@ select:not([multiple]):focus { border-color: var(--color-gold-border); box-shado
   select:not([multiple]) option { margin: .3rem; border-radius: .75rem; padding: .7rem .85rem; background: transparent; color: var(--color-ink); cursor: pointer; }
   select:not([multiple]) option:hover, select:not([multiple]) option:focus, select:not([multiple]) option:checked { background: var(--color-green); color: var(--color-on-green); }
   select:not([multiple]) option::checkmark { color: var(--color-gold); }
+}
+
+/* Report citations: the body's [n] markers link to the numbered sources as
+   quiet superscript footnotes, not as underlined body links. */
+.news-cites a[href^="#source-"] {
+  font-size: 0.7em;
+  line-height: 0;
+  vertical-align: super;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  padding-inline: 0.08em;
+  color: var(--color-teal-text);
+}
+.news-cites a[href^="#source-"]:hover {
+  text-decoration: underline;
 }

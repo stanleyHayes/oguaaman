@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
-import type { MemberView, Listing, ListingStatus, Ticket, Subscription, Promotion } from "@/lib/types";
+import type { MemberView, Listing, ListingStatus, Ticket, Subscription, Promotion, AdCampaign } from "@/lib/types";
 import { api } from "@/lib/api";
 import { paymentErrorMessage } from "@/lib/payments";
 import { usePaymentConfirm } from "@/lib/use-payment-confirm";
@@ -20,6 +20,7 @@ import { AIConsentSettings, NotificationSettings } from "@/components/notificati
 import { LEGAL } from "@/lib/legal";
 import { ProfileSkeleton } from "@/components/skeleton";
 import { OtpInput } from "@/components/otp-input";
+import { MyAds } from "@/components/ads/my-ads";
 
 const TYPE_LABELS: Record<string, string> = {
   business: "Business", property: "Property", artist: "Artist", person: "Person", memory: "Memory", event: "Event", opportunity: "Opportunity", memorial: "Memorial", project: "Project",
@@ -44,6 +45,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 const TABS = [
   { id: "profile", label: "Profile", icon: "image", title: "Your profile", desc: "How you show up across Oguaa — your photo, the town and Asafo you rep, and your birthday." },
   { id: "activity", label: "Activity", icon: "chart", title: "Listings, tickets & support", desc: "Everything you've contributed, the event tickets you hold, and the businesses you back." },
+  { id: "ads", label: "My ads", icon: "megaphone", title: "My ads", desc: "Ads you've booked on Oguaa: where each one is in review, what to pay, and how it's delivering." },
   { id: "connections", label: "Connections", icon: "users", title: "Your connections", desc: "Record your schooling to find classmates, neighbours and Asafo members you may know." },
   { id: "notifications", label: "Notifications", icon: "bell", title: "Notifications", desc: "Choose what Oguaa tells you about, and how — on the web, in the app and by email." },
   { id: "security", label: "Security", icon: "shield", title: "Sign-in & security", desc: "Verify your contact and turn on two-factor to keep your account safe." },
@@ -258,6 +260,9 @@ export function Component() {
     },
   });
   const promoConfirmed = promoPayment.confirmed;
+  // Ad payments: the Paystack hosted-checkout fallback returns to
+  // /me/ads?ad_ref=… (spec §3.7); confirm it whichever tab is open.
+  const adPayment = usePaymentConfirm<AdCampaign>(api.confirmAd, { returnParam: "ad_ref" });
   // Phone/contact verification gate for submissions.
   const [verifyCode, setVerifyCode] = useState("");
   const [verifyState, setVerifyState] = useState<SaveState>("idle");
@@ -272,6 +277,7 @@ export function Component() {
     const h = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
     if (isTabId(h)) return h;
     if (params.get("promo_ref")) return "activity";
+    if (params.get("ad_ref") || location.pathname.replace(/\/+$/, "") === "/me/ads") return "ads";
     return "profile";
   });
   const hashTab = location.hash.replace(/^#/, "");
@@ -310,7 +316,7 @@ export function Component() {
   }, [member, refreshKey]);
 
   if (loading) return <Container className="py-16"><ProfileSkeleton /></Container>;
-  if (!member) return <Navigate to="/signin" state={{ from: "/me" }} replace />;
+  if (!member) return <Navigate to="/signin" state={{ from: `${location.pathname}${location.search}` }} replace />;
   if (!view && loadError) {
     return (
       <Container className="py-16">
@@ -795,6 +801,8 @@ export function Component() {
             </div>
           </div>
         )}
+
+        {tab === "ads" && <MyAds payment={adPayment} />}
 
         {tab === "connections" && (
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(19rem,0.9fr)]">

@@ -88,7 +88,7 @@ export function Component() {
             <p className="text-xs uppercase tracking-wide text-gold/90">Back office · curators &amp; stewards</p>
             <h1 className="mt-1 text-4xl font-semibold">Curator dashboard</h1>
           </div>
-          <Link to="/admin/compose" className="inline-flex items-center gap-2 self-start rounded-full bg-ai px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 sm:self-auto">✦ Compose with AI</Link>
+          <Link to="/admin/compose" className="inline-flex items-center gap-2 self-start rounded-full bg-ai-fill px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 sm:self-auto">✦ Compose with AI</Link>
         </Container>
       </section>
 

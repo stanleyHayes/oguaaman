@@ -36,6 +36,8 @@ const TAKE_PART: FooterLink[] = [
   { to: "/diaspora", label: "The diaspora register", icon: "globe" },
   { to: "/projects", label: "Adopt a project", icon: "heart" },
   { to: "/campaigns", label: "Back a campaign", icon: "hand-heart" },
+  { to: "/advertise", label: "Advertise on Oguaa", icon: "megaphone" },
+  { to: "/ads/library", label: "Ad library", icon: "search" },
   { to: "/me", label: "Your profile", icon: "user" },
 ];
 
@@ -62,7 +64,7 @@ type IconName =
   | "compass" | "hand-heart" | "clipboard"
   | "music" | "sparkles" | "landmark" | "users" | "graduation" | "sprout"
   | "square-plus" | "calendar" | "user-plus" | "globe" | "heart" | "user" | "grid"
-  | "newspaper" | "shield-alert" | "search" | "store" | "map-pin";
+  | "newspaper" | "shield-alert" | "search" | "store" | "map-pin" | "megaphone";
 
 function FooterIcon({ name, className = "" }: Readonly<{ name: IconName; className?: string }>) {
   const body = {
@@ -87,6 +89,7 @@ function FooterIcon({ name, className = "" }: Readonly<{ name: IconName; classNa
     search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
     store: <><path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" /><path d="M3 9l1.6-5h14.8L21 9Z" /><path d="M9 20v-6h6v6" /></>,
     "map-pin": <><path d="M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></>,
+    megaphone: <><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></>,
   }[name];
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
@@ -265,6 +268,8 @@ export function SiteFooter() {
             <NavLink to="/terms-of-sale" className={legalLinkClass}>Terms of Sale</NavLink>
             <NavLink to="/child-safety" className={legalLinkClass}>Child Safety</NavLink>
             <NavLink to="/safeguarding" className={legalLinkClass}>Safeguarding Policy</NavLink>
+            <NavLink to="/advertising" className={legalLinkClass}>Advertising Policy</NavLink>
+            <NavLink to="/editorial" className={legalLinkClass}>Editorial standards</NavLink>
             <NavLink to="/privacy/request" className={legalLinkClass}>Privacy requests</NavLink>
             <NavLink to="/account/delete" className={legalLinkClass}>Delete your account</NavLink>
             <button type="button" onClick={openStorageSettings} className={legalLinkClass({ isActive: false })}>Storage &amp; cookies</button>

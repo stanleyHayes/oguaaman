@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { Listing } from "@/lib/types";
@@ -11,6 +11,7 @@ import { Thumb } from "@/components/cards";
 import { EventCalendar } from "@/components/event-calendar";
 import { LocationMap } from "@/components/location-map";
 import { LayoutPill, Reveal, StaggerItem } from "@/components/motion";
+import { AdSlot } from "@/components/ad-slot";
 import { LoadMore } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
 
@@ -508,9 +509,13 @@ export function Component() {
             {view === "list" ? (
               agenda.length > 0 ? (
                 <>
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="grid grid-flow-row-dense gap-4 lg:grid-cols-2">
                     {agenda.slice(0, shownCount).map((event, index) => (
-                      <StaggerItem key={event.id} index={index} lift><EventAgendaCard event={event} /></StaggerItem>
+                      <Fragment key={event.id}>
+                        <StaggerItem index={index} lift><EventAgendaCard event={event} /></StaggerItem>
+                        {/* The feed ad sits after the 4th event in the list. */}
+                        {index === 3 && <AdSlot placement="portal-feed-card" section="events" className="lg:col-span-2" />}
+                      </Fragment>
                     ))}
                   </div>
                   <LoadMore hasMore={shownCount < agenda.length} remaining={agenda.length - shownCount} onClick={() => setShownCount((count) => count + EVENTS_PAGE)} />

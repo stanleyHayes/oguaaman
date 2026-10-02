@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { usePageTitle } from "@/lib/use-page-title";
 import type { NewsArticle } from "@/lib/types";
@@ -10,6 +10,8 @@ import { LayoutPill, Reveal3D, StaggerItem } from "@/components/motion";
 import { LoadMore } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
+import { AdSlot } from "@/components/ad-slot";
+import { AIChip } from "@/components/ai-chip";
 
 const NEWS_PAGE = 9;
 
@@ -18,12 +20,14 @@ export async function loader() {
 }
 
 function Cover({ a, sizes }: Readonly<{ a: NewsArticle; sizes: "lg" | "sm" }>) {
-  const h = sizes === "lg" ? "h-64 sm:h-full sm:min-h-[22rem]" : "h-40";
+  // Branded covers and AI illustrations share one 3:2 frame so cards align.
+  const h = sizes === "lg" ? "h-64 sm:h-full sm:min-h-[22rem]" : "aspect-[3/2]";
   if (a.coverImageUrl) {
     return (
-      <div className={`relative ${h} w-full overflow-hidden`}>
+      <div className={`relative ${h} w-full overflow-hidden bg-green-900`}>
         <img src={cldCover(a.coverImageUrl, sizes === "lg" ? 1000 : 600)} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-green-900/70 via-green-900/10 to-transparent" />
+        {a.coverImageKind === "ai" && <AIChip className="absolute bottom-3 right-3 shadow-sm">AI illustration</AIChip>}
       </div>
     );
   }
@@ -48,6 +52,7 @@ function Meta({ a }: Readonly<{ a: NewsArticle }>) {
       <p className="flex flex-wrap items-center gap-2">
         <time dateTime={when}>{formatDate(when)}</time>
         {a.automated && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-2 py-0.5 text-[0.62rem] font-bold uppercase leading-none tracking-wide text-gold-text">Automated</span>}
+        {a.tier === "report" && <AIChip>AI-assisted</AIChip>}
       </p>
     </div>
   );
@@ -129,6 +134,7 @@ export function Component() {
   const [prevTag, setPrevTag] = useState(activeTag);
   if (prevTag !== activeTag) { setPrevTag(activeTag); setShownCount(NEWS_PAGE); }
   const shownArticles = visible.slice(0, shownCount);
+  const adAfter = leadMatches ? 2 : 3;
 
   return (
     <>
@@ -160,8 +166,14 @@ export function Component() {
                     <h2 className="mt-1 text-2xl font-semibold text-ink">From the newsroom</h2>
                   </div>
                 </div>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {shownArticles.map((a, i) => <StaggerItem key={a.id} index={i}><CoverageCard a={a} /></StaggerItem>)}
+                <div className="grid grid-flow-row-dense gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {shownArticles.map((a, i) => (
+                    <Fragment key={a.id}>
+                      <StaggerItem index={i}><CoverageCard a={a} /></StaggerItem>
+                      {/* The feed ad sits after the 4th story (the lead counts when shown). */}
+                      {i === adAfter && <AdSlot placement="portal-feed-card" section="news" className="sm:col-span-2 lg:col-span-3" />}
+                    </Fragment>
+                  ))}
                 </div>
                 <LoadMore hasMore={shownCount < visible.length} remaining={visible.length - shownCount} onClick={() => setShownCount((n) => n + NEWS_PAGE)} label="More coverage" />
               </>

@@ -218,7 +218,7 @@ export function AiWritingBar({
             <span className={`h-1.5 w-1.5 rounded-full ${sel.active ? "bg-ai" : "bg-ink-faint"}`} aria-hidden />
             Working on the {scopeLabel}
           </span>
-          <button type="button" onClick={openPanel} className="inline-flex items-center gap-2 rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-px">
+          <button type="button" onClick={openPanel} className="inline-flex items-center gap-2 rounded-lg bg-ai-fill px-4 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-px">
             <Sparkle /> Ask AI
           </button>
         </div>
@@ -229,7 +229,7 @@ export function AiWritingBar({
           <div className="flex items-center justify-between border-b border-ai-line px-4 py-3">
             <span className="flex items-center gap-2 font-semibold text-ai">
               <Sparkle /> AI assistant
-              <span className="rounded-md bg-ai px-2 py-0.5 font-mono text-[0.65rem] font-medium text-white">{scopeLabel}</span>
+              <span className="rounded-md bg-ai-fill px-2 py-0.5 font-mono text-[0.65rem] font-medium text-white">{scopeLabel}</span>
             </span>
             <div className="flex items-center gap-3">
               {remaining != null && <span className="text-xs text-ink-faint">{remaining} left today</span>}
@@ -252,7 +252,7 @@ export function AiWritingBar({
                 I agree to send the text I choose to Anthropic for suggestions.
               </label>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => void agreeToAI()} disabled={!consentTicked || consentBusy} className="rounded-lg bg-ai px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                <button type="button" onClick={() => void agreeToAI()} disabled={!consentTicked || consentBusy} className="rounded-lg bg-ai-fill px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
                   {consentBusy ? "Saving…" : "Agree and continue"}
                 </button>
                 <button type="button" onClick={() => setOpen(false)} className="rounded-lg border border-sand bg-white px-4 py-2 text-sm font-semibold text-ink">Not now</button>
@@ -271,7 +271,7 @@ export function AiWritingBar({
           {mode === "prompt" && (
             <div className="flex flex-wrap gap-2 px-4 pb-4 pt-4">
               <input autoFocus value={promptText} onChange={(e) => setPromptText(e.target.value)} placeholder="Describe what you want, e.g. 'a short invite to the prize-giving day'…" className="min-w-[12rem] flex-1 rounded-lg border border-ai-line bg-white px-3 py-2.5 text-sm focus:border-ai focus:outline-none" />
-              <button type="button" onClick={() => doFetch("prompt")} className="rounded-lg bg-ai px-4 py-2.5 text-sm font-semibold text-white">Generate</button>
+              <button type="button" onClick={() => doFetch("prompt")} className="rounded-lg bg-ai-fill px-4 py-2.5 text-sm font-semibold text-white">Generate</button>
             </div>
           )}
 
@@ -288,7 +288,7 @@ export function AiWritingBar({
                         type="button"
                         aria-pressed={selected}
                         onClick={() => setLanguage(item)}
-                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${selected ? "border-ai bg-ai text-white" : "border-ai-line bg-white text-ink hover:border-ai hover:text-ai"}`}
+                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${selected ? "border-ai-fill bg-ai-fill text-white" : "border-ai-line bg-white text-ink hover:border-ai hover:text-ai"}`}
                       >
                         {item}
                       </button>
@@ -296,7 +296,7 @@ export function AiWritingBar({
                   })}
                 </div>
               </fieldset>
-              <button type="button" onClick={() => doFetch("translate")} className="w-full rounded-lg bg-ai px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">Translate</button>
+              <button type="button" onClick={() => doFetch("translate")} className="w-full rounded-lg bg-ai-fill px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">Translate</button>
             </div>
           )}
 

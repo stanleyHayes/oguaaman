@@ -14,6 +14,7 @@ import { ABOUT_OGUAA } from "@/lib/content";
 import { cldCover, mediaUrl } from "@/lib/cloudinary";
 import { initials } from "@/lib/format";
 import { SectionIcon } from "@/components/section-icon";
+import { AdSlot } from "@/components/ad-slot";
 
 type HomeLoaderData = HomeData & { news: NewsArticle[]; businesses: Listing[]; featured: Listing[]; civic: CivicData; goals: Goal[] };
 
@@ -269,6 +270,10 @@ export function Component() {
           </Container>
         </div>
       </section>
+
+      {/* Paid banner (spec §3.1). Loads client-side after paint, never in the
+          loader, and collapses to nothing when there is no ad. */}
+      <AdSlot placement="portal-home-banner" section="home" className="mx-auto w-full max-w-[47.5rem] px-4 py-8 sm:px-6 sm:py-10" />
 
       {featuredSpots.length > 0 && (
         <section className="bg-cream py-14 sm:py-16">

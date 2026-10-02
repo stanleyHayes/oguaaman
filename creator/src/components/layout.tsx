@@ -8,10 +8,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
 import { canWriteNews } from "@/lib/creator";
 import { creatorHelpTopic } from "@/lib/help";
-import { Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone, Banknote, HeartHandshake, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing, Map, PanelLeftClose, PanelLeft, PenLine, Settings, BookOpen, CircleHelp, CalendarCheck, type LucideIcon } from "lucide-react";
+import { portalUrl } from "@/lib/portal";
+import { Gauge, LayoutDashboard, Briefcase, List, Landmark, TrendingUp, Megaphone, Banknote, HeartHandshake, UserRound, Bell, User, Users, Search, ChevronDown, LogOut, BellRing, Map, PanelLeftClose, PanelLeft, PenLine, Settings, BookOpen, CircleHelp, CalendarCheck, RectangleHorizontal, ArrowUpRight, type LucideIcon } from "lucide-react";
 import { Tour, type TourStep } from "@/components/tour";
 
-interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number }
+/** `external` items leave the studio: `to` is an absolute portal URL opened in a new tab. */
+interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: number; external?: boolean }
 interface NavGroup { title: string; icon: LucideIcon; items: NavItem[] }
 
 /**
@@ -35,6 +37,8 @@ function buildNavGroups(canWrite: boolean): NavGroup[] {
       icon: TrendingUp,
       items: [
         { to: "/grow", label: "Promote & plan", icon: Megaphone },
+        // Paid ads are bought on the portal only (one checkout, spec D9).
+        { to: portalUrl("/advertise"), label: "Advertise", icon: RectangleHorizontal, external: true },
         { to: "/campaigns", label: "Campaigns", icon: HeartHandshake },
         { to: "/money", label: "Money", icon: Banknote },
       ],
@@ -206,6 +210,25 @@ function SidebarNav({ groups, pathname, collapsed = false, onNavigate }: Readonl
               >
                 <div className="min-h-0 overflow-hidden">
                   {group.items.map((item, i) => {
+                    if (item.external) {
+                      return (
+                        <a
+                          key={item.to}
+                          href={item.to}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={onNavigate}
+                          title={collapsed ? `${item.label} (opens the portal)` : undefined}
+                          className={`relative flex h-[38px] items-center gap-2 pl-10 pr-3.5 text-[13.5px] text-aura-cream/70 transition-colors hover:text-aura-cream ${collapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""}`}
+                        >
+                          <Connector last={i === group.items.length - 1} active={false} className={collapsed ? "lg:hidden" : ""} />
+                          <item.icon size={15} className="shrink-0" aria-hidden />
+                          <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>{item.label}</span>
+                          <span className="sr-only"> (opens the Oguaa portal in a new tab)</span>
+                          <ArrowUpRight size={13} className={`ml-auto shrink-0 text-aura-gold-muted ${collapsed ? "lg:hidden" : ""}`} aria-hidden />
+                        </a>
+                      );
+                    }
                     const active = isActivePath(pathname, item.to, item.end);
                     return (
                       <Link

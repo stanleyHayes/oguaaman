@@ -29,6 +29,8 @@ const SEGMENT_TO_SECTION: Record<string, string> = {
   me: "people",
   members: "people",
   signin: "home",
+  advertise: "business",
+  ads: "business",
 };
 
 /** First route segment → a SectionIcon id, defaulting to "home". */

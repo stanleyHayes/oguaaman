@@ -5,11 +5,15 @@ import { Skeleton, SkeletonText } from "@/components/skeleton";
 import { Container, VerifiedBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { cldCover } from "@/lib/cloudinary";
-import { formatDate } from "@/lib/format";
+import { formatDate, newsCoverAlt } from "@/lib/format";
 import type { NewsArticle } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { ReportButton } from "@/components/report-button";
 import { SubjectLink } from "@/components/subject-link";
+import { AdSlot } from "@/components/ad-slot";
+import { AIChip } from "@/components/ai-chip";
+import { LEGAL } from "@/lib/legal";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   return api.newsArticle(params.slug!);
@@ -18,7 +22,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export function HydrateFallback() {
   return (
     <div className="bg-paper">
-      <div className="bg-green-900 py-12 sm:py-16">
+      <div className="on-dark on-dark-pin bg-green-900 py-12 sm:py-16">
         <Container size="wide" className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_0.72fr] lg:items-end">
           <div>
             <Skeleton className="h-5 w-32 bg-cream/15" />
@@ -37,20 +41,40 @@ export function HydrateFallback() {
   );
 }
 
+/** The exact hero caption for AI covers (spec §2.8). */
+const AI_COVER_CAPTION = "AI illustration generated with OpenAI for Oguaa. It does not show the real people, place or event.";
+
 function StoryArtwork({ article }: Readonly<{ article: NewsArticle }>) {
   if (article.coverImageUrl) {
+    const ai = article.coverImageKind === "ai";
+    // Branded covers and AI illustrations share one 3:2 frame; uploaded
+    // photos keep the taller editorial crop.
+    const framed = ai || article.coverImageKind === "branded";
+    const frame = framed ? "aspect-[3/2]" : "aspect-[4/3] min-h-72 lg:min-h-[26rem]";
     return (
-      <div className="relative aspect-[4/3] w-full min-h-72 overflow-hidden rounded-[var(--radius-card)] border border-cream/15 shadow-2xl lg:min-h-[26rem]">
-        <img
-          src={cldCover(article.coverImageUrl, 1200)}
-          alt=""
-          className="h-full w-full object-cover"
-        />
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-green-900/45 via-transparent to-transparent" />
-        <span className="absolute bottom-4 left-4 rounded-full border border-cream/25 bg-green-900/65 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-cream backdrop-blur-md">
-          Oguaa newsroom
-        </span>
-      </div>
+      <figure className="w-full">
+        <div className={`relative ${frame} w-full overflow-hidden rounded-[var(--radius-card)] border border-cream/15 bg-green-900 shadow-2xl`}>
+          <img
+            src={cldCover(article.coverImageUrl, 1200)}
+            alt={newsCoverAlt(article)}
+            className="h-full w-full object-cover"
+          />
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-green-900/45 via-transparent to-transparent" />
+          {ai ? (
+            <AIChip className="absolute bottom-4 left-4 shadow-sm">AI illustration</AIChip>
+          ) : (
+            <span className="absolute bottom-4 left-4 rounded-full border border-cream/25 bg-green-900/65 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-cream backdrop-blur-md">
+              Oguaa newsroom
+            </span>
+          )}
+        </div>
+        {ai && (
+          <figcaption className="mt-3 max-w-md text-pretty text-xs leading-relaxed text-cream/70">
+            {AI_COVER_CAPTION}
+            {article.coverImageCredit && <span className="mt-1 block text-cream/70">{article.coverImageCredit}</span>}
+          </figcaption>
+        )}
+      </figure>
     );
   }
 
@@ -67,6 +91,82 @@ function StoryArtwork({ article }: Readonly<{ article: NewsArticle }>) {
         <p className="mt-2 max-w-xs text-sm text-cream/75">Reporting the people, places and moments shaping Cape Coast.</p>
       </div>
     </div>
+  );
+}
+
+/** Only real web addresses become links; anything else stays plain text. */
+function safeHttps(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).protocol === "https:" ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Turn the report's [n] markers into links to the numbered sources below. */
+function linkCitations(body: string, count: number): string {
+  if (count === 0) return body;
+  return body.replace(/\[(\d{1,2})\](?![(:])/g, (whole, n: string) => {
+    const i = Number(n);
+    return i >= 1 && i <= count ? `[\\[${i}\\]](#source-${i})` : whole;
+  });
+}
+
+/** Footnote-style list of a report's sources (publisher, title, author). */
+function Sources({ sources }: Readonly<{ sources: NonNullable<NewsArticle["sources"]> }>) {
+  return (
+    <section aria-labelledby="sources-heading" className="mt-12 max-w-[44rem] border-t border-sand pt-6">
+      <h2 id="sources-heading" className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-ink-faint">Sources</h2>
+      <ol className="mt-4 space-y-3 text-sm leading-relaxed text-ink-muted">
+        {sources.map((src, i) => {
+          const href = safeHttps(src.url);
+          const title = src.title || src.url;
+          return (
+            <li key={`${src.url}-${src.name}`} id={`source-${i + 1}`} className="grid scroll-mt-28 grid-cols-[1.75rem_minmax(0,1fr)] gap-x-2 target:rounded-md target:bg-gold/[0.1]">
+              <span className="pt-px text-right tabular-nums text-ink-faint">{i + 1}.</span>
+              <span className="min-w-0">
+                <span className="font-semibold text-ink">{src.name}</span>
+                {", "}
+                {href ? (
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="break-words text-teal-text underline decoration-teal-text/30 underline-offset-2 hover:decoration-teal-text">
+                    {title}
+                  </a>
+                ) : (
+                  <span className="break-words">{title}</span>
+                )}
+                {src.author && <span>, by {src.author}</span>}
+                {src.original && (
+                  <span className="ml-2 inline-block rounded-sm border border-gold-border/40 px-1.5 py-px align-[1px] text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-gold-text">
+                    Original report
+                  </span>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/** Dated corrections, shown above the body: never silent edits. */
+function Corrections({ items }: Readonly<{ items: NonNullable<NewsArticle["corrections"]> }>) {
+  return (
+    <section aria-labelledby="corrections-heading" className="mb-8 max-w-[44rem] rounded-xl border border-clay/25 bg-clay/[0.05] px-5 py-4">
+      <h2 id="corrections-heading" className="text-sm font-semibold text-ink">
+        {items.length === 1 ? "Correction" : "Corrections"}
+      </h2>
+      <ul className="mt-2 space-y-2 text-sm leading-relaxed text-ink-muted">
+        {items.map((c) => (
+          <li key={`${c.at}-${c.note}`}>
+            <time dateTime={c.at} className="font-medium tabular-nums text-ink">{formatDate(c.at)}</time>
+            <span aria-hidden> · </span>
+            {c.note}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -108,15 +208,15 @@ function StoryMeta({ article }: Readonly<{ article: NewsArticle }>) {
   const tags = article.tags ?? [];
 
   return (
-    <aside aria-label="Article information" className="self-start lg:sticky lg:top-24">
+    <aside aria-label="Article information">
       <div className="rounded-[var(--radius-card)] border border-sand bg-cream p-5 shadow-[var(--shadow-card)]">
         <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-gold-text">Story details</p>
         <dl className="mt-4 divide-y divide-sand border-y border-sand text-sm">
           <div className="py-4">
             <dt className="text-xs text-ink-faint">Filed by</dt>
-            <dd className="mt-1 flex items-center gap-2 font-semibold text-ink">
-              {article.authorName}
-              {article.automated && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold-text">Automated</span>}
+            <dd className="mt-1 flex flex-wrap items-center gap-2 font-semibold text-ink">
+              {byline(article)}
+              {article.automated && article.tier !== "report" && <span className="rounded-full border border-gold/40 bg-gold/[0.1] px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold-text">Automated</span>}
               {article.authorVerified && <VerifiedBadge iconOnly verifiedAs={article.authorVerifiedAs} />}
             </dd>
           </div>
@@ -132,7 +232,17 @@ function StoryMeta({ article }: Readonly<{ article: NewsArticle }>) {
           )}
         </dl>
 
-        {article.sourceUrl?.startsWith("https://") && (
+        {article.tier === "report" && (
+          <div className="mt-5 rounded-xl border border-ai-line bg-ai-tint p-3 text-xs leading-relaxed text-ink-muted">
+            <p className="mb-1.5"><AIChip>AI-assisted</AIChip></p>
+            <p className="text-pretty">{article.automationLabel ?? "AI-assisted report, reviewed by an Oguaa editor before publication."}</p>
+            <Link to={LEGAL.editorial} className="mt-2 inline-block font-semibold text-teal-text underline-offset-2 hover:underline">
+              How Oguaa uses AI
+            </Link>
+          </div>
+        )}
+
+        {article.tier !== "report" && article.sourceUrl?.startsWith("https://") && (
           <div className="mt-5 rounded-xl border border-gold/30 bg-gold/[0.07] p-3 text-xs leading-relaxed text-ink-muted">
             {article.automated && <strong className="block text-ink">{article.automationLabel ?? "Automated report"}</strong>}
             {article.automated && "This summary was assembled from a public source. "}
@@ -172,9 +282,25 @@ function StoryMeta({ article }: Readonly<{ article: NewsArticle }>) {
   );
 }
 
+/** "Oguaa Desk · AI-assisted · Reviewed by …" for reports; the author otherwise. */
+function byline(article: NewsArticle): string {
+  if (article.tier === "report") {
+    return article.reviewedByName ? `Oguaa Desk · AI-assisted · Reviewed by ${article.reviewedByName}` : "Oguaa Desk · AI-assisted";
+  }
+  return article.authorName;
+}
+
 export function Component() {
   const article = useLoaderData() as NewsArticle;
   usePageTitle(article.title);
+  const wide = useMediaQuery("(min-width: 1024px)");
+  const tags = article.tags ?? [];
+  const sources = article.sources ?? [];
+  const corrections = article.corrections ?? [];
+  const report = article.tier === "report";
+  const name = byline(article);
+  // Election coverage never carries political ads beside it.
+  const ad = <AdSlot placement="portal-article-rect" section="news" political={Boolean(article.political) || tags.includes("Election coverage")} />;
 
   return (
     <article className="bg-paper">
@@ -186,16 +312,16 @@ export function Component() {
             <Link to="/news" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-cream/20 bg-cream/[0.06] px-4 text-sm font-semibold text-cream transition-colors hover:border-gold/60 hover:bg-cream/10">
               <span aria-hidden>←</span> News &amp; notices
             </Link>
-            <p className="mt-8 text-[0.68rem] font-bold uppercase tracking-[0.24em] text-gold">Latest from Oguaa</p>
-            <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.04] text-cream sm:text-5xl lg:text-6xl">{article.title}</h1>
-            {article.summary && <p className="mt-6 max-w-2xl border-l-2 border-gold pl-5 text-lg leading-relaxed text-cream/78 sm:text-xl">{article.summary}</p>}
+            <p className="mt-8 text-[0.68rem] font-bold uppercase tracking-[0.24em] text-gold">{report ? "Oguaa Desk report" : "Latest from Oguaa"}</p>
+            <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.04] tracking-[-0.02em] text-cream sm:text-5xl lg:text-6xl">{article.title}</h1>
+            {article.summary && <p className="mt-6 max-w-2xl text-pretty border-l-2 border-gold pl-5 text-lg leading-relaxed text-cream/78 sm:text-xl">{article.summary}</p>}
             <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-cream/70">
               <span className="grid h-9 w-9 place-items-center rounded-full border border-gold/35 bg-gold/15 font-bold text-gold" aria-hidden>
-                {article.authorName.trim().charAt(0).toUpperCase()}
+                {name.trim().charAt(0).toUpperCase()}
               </span>
-              <span className="font-semibold text-cream">{article.authorName}</span>
-              {article.automated && <span className="rounded-full border border-gold/45 bg-gold/15 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold">Automated</span>}
-              {article.authorVerified && <VerifiedBadge iconOnly onDark verifiedAs={article.authorVerifiedAs} />}
+              <span className="font-semibold text-cream">{name}</span>
+              {article.automated && !report && <span className="rounded-full border border-gold/45 bg-gold/15 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-gold">Automated</span>}
+              {article.authorVerified && !report && <VerifiedBadge iconOnly onDark verifiedAs={article.authorVerifiedAs} />}
               <span aria-hidden className="text-gold/60">•</span>
               <time dateTime={article.publishedAt ?? article.createdAt}>{formatDate(article.publishedAt ?? article.createdAt)}</time>
             </div>
@@ -209,16 +335,25 @@ export function Component() {
           <div className="mb-8 flex items-center gap-3 text-[0.68rem] font-bold uppercase tracking-[0.2em] text-gold-text" aria-hidden>
             <span className="h-px w-10 bg-gold-brand" /> The story
           </div>
-          <div className="max-w-[44rem] text-[1.05rem] leading-8 sm:text-[1.1rem]">
-            <Markdown>{article.body}</Markdown>
+          {corrections.length > 0 && <Corrections items={corrections} />}
+          <div className="news-cites max-w-[44rem] text-[1.05rem] leading-8 sm:text-[1.1rem]">
+            <Markdown allowImages={false}>{linkCitations(article.body, sources.length)}</Markdown>
           </div>
+          {sources.length > 0 && <Sources sources={sources} />}
+          {/* Below the sources on narrow screens; never inside the body. */}
+          {!wide && <div className="mt-10 max-w-[44rem]">{ad}</div>}
           <footer className="mt-12 max-w-[44rem] border-t border-sand pt-6">
             <p className="text-sm leading-relaxed text-ink-muted">
               Oguaa Newsroom brings together community updates, verified notices and stories from across Cape Coast.
             </p>
           </footer>
         </div>
-        <StoryMeta article={article} />
+        {/* The details card scrolls away with the page; only the ad stays in
+            view, clear of the header, for the rest of the read. */}
+        <div className="space-y-6">
+          <StoryMeta article={article} />
+          {wide && <div className="lg:sticky lg:top-28">{ad}</div>}
+        </div>
       </Container>
     </article>
   );

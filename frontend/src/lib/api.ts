@@ -4,6 +4,7 @@ import type {
   Listing, Organization, Office, Place, Member, Stats, HomeData, InstitutionView, MemberView, Tribute, Notification, NewsArticle, Connection, SchoolStint, SearchHit, Diaspora, MediaAsset, ProfileSection, StoreItem, Review, Pledge, Ticket, EventView, Incident, IncidentCategory, IncidentSeverity, LostFound, LostFoundKind, LostFoundStatus, FestivalSummary, FestivalView, HistoryView, Subscription, Promotion, Plan, Directive, MapData, CivicData, Goal, Page, PageParams, CommerceOrder, BusinessVerification, BusinessCoupon, AffiliateProgramme, Affiliate, AffiliateConversion,
   Agent, AgentInput, AgentJob, AgentReview, AgentService, ArtistBooking, JobInput, MyJobs, PropertyAvailability,
   NotificationPreferences, AccountDeletionResult, PledgeQuote, SellerIdentity, ReportTargetType, PaymentBank, PaymentBankType,
+  Election, AdRateCard, AdQuote, AdQuoteRequest, AdSponsor, AdSponsorInput, AdCampaign, AdCampaignDetail, AdCampaignInput, AdSlate, AdLibraryPage, AdPlacementSlug,
 } from "./types";
 
 export type { Page, PageParams } from "./types";
@@ -60,6 +61,7 @@ export function apiErrorCode(err: unknown): string | undefined {
 const MACHINE_CODES = new Set([
   "payments_unavailable", "payment_pending", "payment_check_unavailable",
   "ai_consent_required", "ai_unavailable", "mfa_required", "mfa_code_required",
+  "ads_disabled", "political_disabled", "inventory_unavailable",
 ]);
 
 /** An Error carrying the server's human message, HTTP status and JSON body. */
@@ -262,6 +264,34 @@ export interface PhoneVerificationResult {
   verified: boolean;
 }
 
+// ── Ads: anonymous calls ─────────────────────────────────────────────────────
+// Slates and view beacons never carry the member's token or cookies (spec §3.9:
+// ads are contextual only, so the server must not be able to tie a view to a
+// person). They go through plain fetch with credentials omitted.
+
+/** GET /api/ads/slate for one slot. Throws on any failure; callers render nothing. */
+async function adSlate(placement: AdPlacementSlug, section: string, political: boolean, signal?: AbortSignal): Promise<AdSlate> {
+  const q = new URLSearchParams({ placement, section, political: political ? "1" : "0", surface: "portal" });
+  const res = await fetch(`${BASE}/api/ads/slate?${q.toString()}`, { credentials: "omit", cache: "no-store", signal });
+  if (!res.ok) throw new Error(`slate ${res.status}`);
+  return res.json() as Promise<AdSlate>;
+}
+
+/** POST /api/ads/v — one viewable impression. Fire and forget; the server always answers 204. */
+function adBeacon(body: { c: string; p: string; v: string; t: string; e: number }): void {
+  try {
+    void fetch(`${BASE}/api/ads/v`, {
+      method: "POST",
+      keepalive: true,
+      credentials: "omit",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(body),
+    }).catch(() => undefined);
+  } catch {
+    // An ad must never break a page.
+  }
+}
+
 export const api = {
   home: () => get<HomeData>("/api/home"),
   stats: () => get<Stats>("/api/stats"),
@@ -323,7 +353,7 @@ export const api = {
   // First-party image upload — returns the stored asset's URL.
   uploadImage: (file: File) => upload<{ url: string }>("/api/uploads", file),
   // Private documents (ID, KYC): stored encrypted, never at a public URL (K8).
-  uploadPrivate: (file: File, purpose: "agent_id" | "business_kyc") =>
+  uploadPrivate: (file: File, purpose: "agent_id" | "business_kyc" | "document") =>
     upload<{ ref: string; id: string; contentType: string; size: number }>("/api/uploads/private", file, { purpose }),
   // Parameters for a signed Cloudinary upload (K9); 503 signed_uploads_unavailable
   // means "use uploadImage instead".
@@ -626,6 +656,39 @@ export const api = {
   cancelJob: (id: string) => post<AgentJob>(`/api/jobs/${id}/cancel`, {}),
   reviewJob: (id: string, body: { rating: number; body: string }) =>
     post<AgentReview>(`/api/jobs/${id}/review`, body),
+
+  // ── Elections (public calendar; political ads pick one) ─────────────────
+  elections: () => get<Election[]>("/api/elections?upcoming=1"),
+
+  // ── Paid advertising (spec §3.7, API §4.3–4.4) ─────────────────────────
+  // Review happens before payment: submit → review → approve → pay.
+  adRateCard: () => get<AdRateCard>("/api/ads/rate-card"),
+  adQuote: (body: AdQuoteRequest, signal?: AbortSignal) =>
+    fetch(`${BASE}/api/ads/quote`, { method: "POST", headers: headers(true), body: JSON.stringify(body), signal }).then((res) => readJSON<AdQuote>(res)),
+  myAdSponsors: () => get<AdSponsor[]>("/api/me/ad-sponsors"),
+  createAdSponsor: (body: AdSponsorInput) => post<AdSponsor>("/api/me/ad-sponsors", body),
+  updateAdSponsor: (id: string, body: AdSponsorInput) => put<AdSponsor>(`/api/me/ad-sponsors/${encodeURIComponent(id)}`, body),
+  createAd: (body: AdCampaignInput) => post<AdCampaign>("/api/me/ads", body),
+  myAds: () => get<AdCampaign[]>("/api/me/ads"),
+  myAd: (id: string) => get<AdCampaignDetail>(`/api/me/ads/${encodeURIComponent(id)}`),
+  adCheckout: (id: string) =>
+    post<{ authorizationUrl: string; accessCode?: string; reference: string; simulated: boolean }>(`/api/me/ads/${encodeURIComponent(id)}/checkout`, {}),
+  // The existing confirm sentinel answers 409 payment_pending; a 2xx body
+  // without a campaign (spec §4.3 mentions 202) is treated the same way.
+  confirmAd: async (reference: string): Promise<AdCampaign> => {
+    const r = await get<{ campaign?: AdCampaign; error?: string; message?: string }>(`/api/ads/confirm?reference=${encodeURIComponent(reference)}`);
+    if (!r.campaign) throw failure(202, { error: r.error ?? "payment_pending", message: r.message }, "Your payment is still processing.");
+    return r.campaign;
+  },
+  cancelAd: (id: string, reason?: string) =>
+    post<AdCampaign>(`/api/me/ads/${encodeURIComponent(id)}/cancel`, reason ? { reason } : {}),
+  adLibrary: (f: { tab: "political" | "running"; q?: string; page?: number }) => {
+    const q = new URLSearchParams({ tab: f.tab, page: String(f.page ?? 1) });
+    if (f.q) q.set("q", f.q);
+    return get<AdLibraryPage>(`/api/ads/library?${q.toString()}`);
+  },
+  adSlate,
+  adBeacon,
 
   queue: () => get<Listing[]>("/api/admin/queue"),
   moderate: (body: { listingId: string; action: string; reason?: string }) =>

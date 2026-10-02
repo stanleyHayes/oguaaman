@@ -4,8 +4,9 @@ import type { Listing, NewsArticle } from "@/lib/types";
 import { TONES, type NavSection } from "@/lib/sections";
 import { Card, Pill, VerifiedBadge } from "./ui";
 import { Adinkra } from "./adinkra";
+import { AIChip } from "./ai-chip";
 import { SectionIcon } from "./section-icon";
-import { dayMonth, formatDate, lifeDates, tagLabel, initials } from "@/lib/format";
+import { dayMonth, formatDate, lifeDates, tagLabel, initials, newsCoverAlt } from "@/lib/format";
 import { cldCover } from "@/lib/cloudinary";
 import { isPromotedNow } from "@/lib/featured";
 
@@ -263,9 +264,12 @@ export function NewsCard({ article, lead = false }: Readonly<{ article: NewsArti
       className={`group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-sand bg-cream shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-lift)] ${lead ? "sm:col-span-2 lg:col-span-1" : ""}`}
     >
       {article.coverImageUrl ? (
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: lead ? "16 / 9" : "16 / 10" }}>
-          <img src={cldCover(article.coverImageUrl, lead ? 1000 : 600)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        // Cards use the 3:2 frame AI illustrations and branded covers are made
+        // for, so a row stays aligned; the lead is 16:9 only while it spans two columns.
+        <div className={`relative w-full overflow-hidden ${lead ? "aspect-[16/9] lg:aspect-[3/2]" : "aspect-[3/2]"}`}>
+          <img src={cldCover(article.coverImageUrl, lead ? 1000 : 600)} alt={newsCoverAlt(article)} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
           <span className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: article.coverColor ?? "#123F2D" }} aria-hidden />
+          {article.coverImageKind === "ai" && <AIChip className="absolute bottom-3 right-3 shadow-sm">AI illustration</AIChip>}
         </div>
       ) : (
         <div className="w-full" style={{ height: lead ? 12 : 10, backgroundColor: article.coverColor ?? "#123F2D" }} />
