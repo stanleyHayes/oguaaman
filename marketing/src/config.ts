@@ -39,6 +39,14 @@ export const PORTAL_APP_URL = PORTAL_URL;
 /** Deep link into the portal's sign-in. */
 export const PORTAL_JOIN_URL = `${PORTAL_URL}/signin`;
 
+/** Advertising lives in the portal (rate card, checkout, transparency); the
+ *  marketing site only links to it. */
+export const ADVERTISE_URL = `${PORTAL_URL}/advertise`;
+export const AD_LIBRARY_URL = `${PORTAL_URL}/ads/library`;
+export const AD_POLICY_URL = `${PORTAL_URL}/advertising`;
+/** "Editorial standards and AI" — how the automated newsroom works. */
+export const EDITORIAL_URL = `${PORTAL_URL}/editorial`;
+
 /** Store links (placeholders until the apps are published). */
 export const IOS_URL = import.meta.env.VITE_IOS_URL ?? "#";
 export const ANDROID_URL = import.meta.env.VITE_ANDROID_URL ?? "#";

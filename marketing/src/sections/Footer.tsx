@@ -3,7 +3,7 @@ import { Container } from "@/components/ui";
 import { Adinkra, SymbolDivider } from "@/components/adinkra";
 import { Wordmark } from "@/components/wordmark";
 import { Reveal } from "@/components/motion";
-import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL, CONTACT_PHONE } from "@/config";
+import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL, CONTACT_PHONE, ADVERTISE_URL, AD_LIBRARY_URL, AD_POLICY_URL } from "@/config";
 
 // Hand-rolled inline icon set — no icon library is installed here, so we mirror
 // the house style used by SocialIcon: 24×24 grid, 1.7 stroke, currentColor so
@@ -11,7 +11,7 @@ import { PORTAL_APP_URL, PORTAL_JOIN_URL, CONTACT_EMAIL, CONTACT_PHONE } from "@
 type IconName =
   | "compass" | "smartphone" | "mail"
   | "scroll" | "palette" | "sparkles" | "graduation" | "map-pin" | "crown" | "newspaper"
-  | "globe" | "app-window" | "login" | "info";
+  | "globe" | "app-window" | "login" | "info" | "megaphone";
 
 function FooterIcon({ name, className = "" }: Readonly<{ name: IconName; className?: string }>) {
   const body = {
@@ -29,6 +29,7 @@ function FooterIcon({ name, className = "" }: Readonly<{ name: IconName; classNa
     "app-window": <><rect x="2" y="4" width="20" height="16" rx="2.5" /><path d="M2 9h20" /><circle cx="5.5" cy="6.5" r=".6" fill="currentColor" stroke="none" /><circle cx="8" cy="6.5" r=".6" fill="currentColor" stroke="none" /></>,
     login: <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></>,
     info: <><circle cx="12" cy="12" r="10" /><path d="M12 16v-5" /><path d="M12 8h.01" /></>,
+    megaphone: <><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></>,
   }[name];
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
@@ -82,6 +83,7 @@ const COLUMNS: FooterColumn[] = [
     links: [
       { label: "About Oguaa", to: "/about", icon: "info" },
       { label: "Contact", to: "/contact", icon: "mail" },
+      { label: "Advertise with us", href: ADVERTISE_URL, external: true, icon: "megaphone" },
     ],
   },
 ];
@@ -241,22 +243,30 @@ export function Footer() {
         </div>
 
         {/* Bottom row */}
-        <div className="flex flex-col gap-6 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <p className="font-serif text-base italic text-gold/80">Da yie.</p>
+        <div className="flex flex-col gap-6 text-sm lg:flex-row lg:items-center lg:justify-between">
+          <p className="shrink-0 whitespace-nowrap font-serif text-base italic text-gold/80">Da yie.</p>
 
-          <p className="inline-flex items-center gap-2 text-cream/60">
+          <p className="inline-flex min-w-0 items-center gap-2 text-cream/60 lg:flex-1">
             <Adinkra name="crab" size={18} labelled={false} className="text-gold/70" />
             <span>© Oguaa, operated by Dev Track (registration no. BN843072020), GE-161-2814, Ghana. Made in Cape Coast.</span>
           </p>
 
-          <nav aria-label="Legal" className="flex items-center gap-5 text-cream/55">
-            <NavLink to="/privacy" className={({ isActive }) => `transition-colors hover:text-gold ${isActive ? "font-semibold text-gold" : ""}`}>
+          <nav aria-label="Legal" className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-0 text-cream/55">
+            <NavLink to="/privacy" className={({ isActive }) => `inline-flex min-h-11 items-center transition-colors hover:text-gold ${isActive ? "font-semibold text-gold" : ""}`}>
               Privacy
             </NavLink>
             <span aria-hidden className="h-3 w-px bg-cream/20" />
-            <NavLink to="/terms" className={({ isActive }) => `transition-colors hover:text-gold ${isActive ? "font-semibold text-gold" : ""}`}>
+            <NavLink to="/terms" className={({ isActive }) => `inline-flex min-h-11 items-center transition-colors hover:text-gold ${isActive ? "font-semibold text-gold" : ""}`}>
               Terms
             </NavLink>
+            <span aria-hidden className="h-3 w-px bg-cream/20" />
+            <a href={AD_POLICY_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center transition-colors hover:text-gold">
+              Advertising Policy
+            </a>
+            <span aria-hidden className="h-3 w-px bg-cream/20" />
+            <a href={AD_LIBRARY_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center transition-colors hover:text-gold">
+              Ad library
+            </a>
           </nav>
         </div>
       </Container>

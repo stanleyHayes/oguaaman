@@ -6,6 +6,9 @@ import { CoastScene } from "@/components/scenes";
 import { Reveal } from "@/components/motion";
 import { api, type NewsArticle } from "@/lib/api";
 import { mediaUrl } from "@/lib/media";
+import { cardByline, isAiCover, isReport } from "@/lib/news";
+import { AiChip } from "@/components/ai-chip";
+import { SponsoredCard } from "@/sections/SponsoredCard";
 
 type LoadState = "loading" | "ready" | "error";
 type MediaSize = "lead" | "rail" | "desk";
@@ -60,6 +63,11 @@ function StoryMedia({ article, size }: Readonly<{ article: NewsArticle; size: Me
         />
       )}
       <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-green-900/80 via-green-900/10 to-transparent" />
+      {isAiCover(article) && (
+        <AiChip size={size === "rail" ? "sm" : "md"} className={`absolute shadow-sm ${size === "rail" ? "bottom-1.5 left-1.5" : "right-4 top-4"}`}>
+          AI illustration
+        </AiChip>
+      )}
     </div>
   );
 }
@@ -106,7 +114,10 @@ function LeadStory({ article, activeTag }: Readonly<{ article: NewsArticle; acti
         </div>
 
         <div className="mt-8 border-t border-cream/15 pt-5">
-          <p className="text-xs font-semibold text-cream/85">By {article.authorName}</p>
+          <p className="flex flex-wrap items-center gap-2 text-xs font-semibold text-cream/85">
+            {cardByline(article)}
+            {isReport(article) && <AiChip size="sm">AI-assisted</AiChip>}
+          </p>
           <StoryMeta article={article} light />
           <span className="mt-5 flex min-h-11 items-center justify-between text-sm font-semibold text-gold">
             Read the full story
@@ -138,9 +149,10 @@ function BriefingRail({ articles, activeTag }: Readonly<{ articles: NewsArticle[
             >
               <StoryMedia article={article} size="rail" />
               <div className="flex min-w-0 flex-col justify-center py-1 pr-2">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[0.62rem] font-bold tabular-nums text-gold-text">0{index + 1}</span>
                   <StoryTag article={article} preferred={activeTag} />
+                  {isReport(article) && <AiChip size="sm">AI-assisted</AiChip>}
                 </div>
                 <h3 className="mt-2 line-clamp-3 text-base font-semibold leading-snug text-ink transition-colors group-hover:text-green">
                   {article.title}
@@ -172,7 +184,10 @@ function DeskStory({ article, index, activeTag }: Readonly<{ article: NewsArticl
           <h3 className="mt-4 text-2xl font-semibold leading-tight text-ink transition-colors group-hover:text-green">{article.title}</h3>
           {article.summary && <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-ink-muted">{article.summary}</p>}
           <div className="mt-auto flex min-h-11 items-center justify-between gap-4 border-t border-green/10 pt-5 text-sm">
-            <span className="text-xs text-ink-faint">By {article.authorName}</span>
+            <span className="flex flex-wrap items-center gap-2 text-xs text-ink-faint">
+              {cardByline(article)}
+              {isReport(article) && <AiChip size="sm">AI-assisted</AiChip>}
+            </span>
             <span className="font-semibold text-green">Read <span aria-hidden>→</span></span>
           </div>
         </div>
@@ -355,6 +370,10 @@ export function Component() {
                   </section>
                 </Reveal>
               )}
+
+              {/* marketing-card after the 4th story. Kept mounted while filtering so a
+                  topic change doesn't refetch or spend the session frequency cap. */}
+              <SponsoredCard section="news" className={visible.length >= 4 ? "mt-12 sm:mt-14" : "hidden"} />
 
               {desk.length > 0 && (
                 <section id="city-desk" className="mt-14 border-t border-green/15 pt-8 sm:mt-16">

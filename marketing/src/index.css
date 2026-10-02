@@ -40,6 +40,12 @@
   --color-teal: #0e7c6b;
   --color-teal-text: #0b6557;
 
+  /* AI surfaces only (mirrors the portal): the "AI illustration" and
+     "AI-assisted" chips and the AI notes on news. Never used on ads. */
+  --color-ai: #4c40a8;
+  --color-ai-tint: #f6f5fd;
+  --color-ai-line: #e2dff4;
+
   /* Type — families loaded via Google Fonts <link> */
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Outfit", ui-sans-serif, system-ui, sans-serif;
@@ -88,6 +94,10 @@
     /* Teal */
     --color-teal: #2dbfa5;
     --color-teal-text: #6ee7d2;
+    /* AI */
+    --color-ai: #9d93ea;
+    --color-ai-tint: #1a1833;
+    --color-ai-line: #3d3966;
     /* The theme's cream surface value, for the .theme-surface counter-pin
        inside .on-dark-pin stages (keep in sync with --color-cream above). */
     --color-cream-dark: #16241e;

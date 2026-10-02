@@ -16,6 +16,29 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** One numbered source behind an AI-assisted report (spec section 2.3). */
+export interface NewsSource {
+  /** Publisher, e.g. "Ghana News Agency". */
+  name: string;
+  title?: string;
+  /** https only; anything else is shown without a link. */
+  url: string;
+  author?: string;
+  publishedAt?: string;
+  accessedAt?: string;
+  /** The feed lead the report started from. */
+  original?: boolean;
+}
+
+/** A dated, public correction. Corrections are never silent edits. */
+export interface NewsCorrection {
+  at: string;
+  note: string;
+}
+
+export type NewsTier = "brief" | "report";
+export type CoverImageKind = "ai" | "branded" | "upload";
+
 export interface NewsArticle {
   id: string;
   slug: string;
@@ -28,6 +51,29 @@ export interface NewsArticle {
   authorName: string;
   publishedAt?: string;
   createdAt: string;
+  updatedAt?: string;
+
+  // Automated newsroom (feed briefs and AI-assisted reports).
+  automated?: boolean;
+  automationLabel?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourcePublishedAt?: string;
+  /** The original reporter from the feed: "By {author} for {source}". */
+  sourceAuthor?: string;
+
+  // Section 4.1 additions.
+  tier?: NewsTier;
+  /** Numbered 1..n; matches the [n] markers in `body`. */
+  sources?: NewsSource[];
+  topics?: string[];
+  political?: boolean;
+  coverImageKind?: CoverImageKind;
+  coverImageAlt?: string;
+  coverImageCredit?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  corrections?: NewsCorrection[];
 }
 
 export const api = {

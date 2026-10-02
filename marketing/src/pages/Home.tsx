@@ -4,6 +4,7 @@ import { Marquee } from "@/sections/Marquee";
 import { Discover } from "@/components/discover";
 import { HappeningNow } from "@/sections/HappeningNow";
 import { Campaigns } from "@/sections/Campaigns";
+import { SponsoredCard } from "@/sections/SponsoredCard";
 import { TownGoal } from "@/sections/TownGoal";
 import { TownCode } from "@/sections/TownCode";
 import { FromTheCommunity } from "@/sections/FromTheCommunity";
@@ -20,6 +21,8 @@ export function Component() {
       <Marquee />
       <Discover />
       <HappeningNow />
+      {/* The marketing-card ad slot: loads client-side after paint, renders nothing when empty. */}
+      <SponsoredCard section="home" layout="band" />
       <Campaigns />
       <TownGoal />
       <TownCode />

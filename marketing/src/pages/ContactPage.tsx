@@ -3,7 +3,7 @@ import { PageHero } from "@/components/page-hero";
 import { LighthouseScene } from "@/components/scenes";
 import { CTA, Container, Eyebrow, Section } from "@/components/ui";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
-import { CONTACT_EMAIL, PORTAL_APP_URL } from "@/config";
+import { AD_LIBRARY_URL, ADVERTISE_URL, CONTACT_EMAIL, PORTAL_APP_URL } from "@/config";
 
 const CONTACT_LANES = [
   {
@@ -96,6 +96,33 @@ export function Component() {
             </StaggerItem>
           ))}
         </Stagger>
+
+        <Reveal className="relative mt-5 grid gap-7 overflow-hidden rounded-[var(--radius-card)] border border-gold-border/30 bg-paper p-7 shadow-[var(--shadow-card)] sm:p-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-12">
+          <div className="bg-dotgrid absolute inset-y-0 right-0 w-1/2 opacity-60 [mask-image:linear-gradient(to_left,black,transparent)]" aria-hidden />
+          <div className="relative">
+            <Eyebrow className="text-gold-text">Advertise on Oguaa</Eyebrow>
+            <h3 className="mt-3 max-w-xl text-2xl font-semibold leading-tight tracking-[-0.01em] text-balance text-ink sm:text-3xl">
+              Reach Cape Coast at one published rate.
+            </h3>
+            <p className="mt-3 max-w-[60ch] leading-relaxed text-pretty text-ink-muted">
+              Ads are booked and paid in the Oguaa web app, priced per thousand viewable impressions. We review every ad before
+              it runs, and every running ad is listed in the public ad library.
+            </p>
+          </div>
+          <div className="relative flex flex-wrap gap-3">
+            <CTA href={ADVERTISE_URL} variant="primary" external className="min-h-11 active:translate-y-px">
+              See rates and book <span aria-hidden>↗</span>
+            </CTA>
+            <a
+              href={AD_LIBRARY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center rounded-full border border-green/30 px-5 text-sm font-semibold text-green-text transition-[border-color,transform] duration-200 hover:border-green active:translate-y-px"
+            >
+              Ad library <span aria-hidden className="ml-1.5">↗</span>
+            </a>
+          </div>
+        </Reveal>
       </Section>
 
       <Section tone="sand" size="wide">
